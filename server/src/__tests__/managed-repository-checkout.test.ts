@@ -33,6 +33,11 @@ describe("atomic managed repository publication", () => {
     await ensureManagedRepositoriesIgnored(source);
     expect(await readFile(path.join(source, ".git", "info", "exclude"), "utf8")).toContain("/.paperclip-repositories/");
   });
+  it("skips placeholder Git metadata in a non-repository task root", async () => {
+    const { target } = await fixture();
+    await mkdir(path.join(target, ".git"), { recursive: true });
+    await expect(ensureManagedRepositoriesIgnored(target)).resolves.toBeUndefined();
+  });
   it("writes the pinned receipt inside the clone before making it visible", async () => {
     const { source, target } = await fixture();
     const result = await materializeManagedProjectWorkspace(target, { repoUrl: "https://github.com/test/source", localSource: source, beforePublish: async clone => {

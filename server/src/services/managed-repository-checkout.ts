@@ -166,8 +166,16 @@ export async function ensureManagedRepositoriesIgnored(cwd: string): Promise<voi
   const gitEntry = await fs.lstat(path.join(cwd, ".git")).catch(() => null);
   if (!gitEntry) return;
   if (gitEntry.isSymbolicLink()) throw new Error("Workspace Git metadata must not be a symlink");
-  const excludePath = await execFile("git", ["-C", cwd, "rev-parse", "--git-path", "info/exclude"], { timeout: 10_000 })
-    .then((result) => path.resolve(cwd, result.stdout.trim()));
+  let excludePath: string;
+  try {
+    excludePath = path.resolve(cwd, (await execFile("git", ["-C", cwd, "rev-parse", "--git-path", "info/exclude"], { timeout: 10_000 })).stdout.trim());
+  } catch (error) {
+    const stderr = error && typeof error === "object" && "stderr" in error
+      ? String((error as { stderr?: unknown }).stderr ?? "")
+      : "";
+    if (stderr.includes("not a git repository")) return;
+    throw error;
+  }
   const exclude = await fs.readFile(excludePath, "utf8").catch(() => "");
   if (!exclude.split(/\r?\n/).includes(`/${PROJECT_REPOSITORIES_DIR}/`)) {
     await fs.mkdir(path.dirname(excludePath), { recursive: true });
