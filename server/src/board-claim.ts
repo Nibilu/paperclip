@@ -66,9 +66,26 @@ export async function initializeBoardClaimChallenge(
   }
 }
 
-export function getBoardClaimWarningUrl(host: string, port: number): string | null {
+export function getBoardClaimWarningUrl(
+  host: string,
+  port: number,
+  publicBaseUrl?: string,
+): string | null {
   if (!activeChallenge) return null;
   if (activeChallenge.claimedAt || activeChallenge.expiresAt.getTime() <= Date.now()) return null;
+
+  if (publicBaseUrl?.trim()) {
+    try {
+      const baseUrl = new URL(publicBaseUrl.trim());
+      baseUrl.pathname = `/board-claim/${activeChallenge.token}`;
+      baseUrl.search = `?code=${activeChallenge.code}`;
+      baseUrl.hash = "";
+      return baseUrl.toString();
+    } catch {
+      // Fall back to the local listener URL when the configured public URL is invalid.
+    }
+  }
+
   const visibleHost = host === "0.0.0.0" ? "localhost" : host;
   return `http://${visibleHost}:${port}/board-claim/${activeChallenge.token}?code=${activeChallenge.code}`;
 }

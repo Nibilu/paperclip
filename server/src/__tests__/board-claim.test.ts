@@ -73,6 +73,13 @@ describeEmbeddedPostgres("board claim", () => {
     await initializeBoardClaimChallenge(db, { deploymentMode: "authenticated" });
     const warningUrl = getBoardClaimWarningUrl("127.0.0.1", 3197);
     expect(warningUrl).toBeTruthy();
+    const publicWarningUrl = getBoardClaimWarningUrl(
+      "0.0.0.0",
+      3197,
+      "https://clip.nibilu.in",
+    );
+    expect(publicWarningUrl).toMatch(/^https:\/\/clip\.nibilu\.in\/board-claim\//);
+    expect(publicWarningUrl).not.toContain(":3197");
 
     const parsed = new URL(warningUrl!);
     const token = parsed.pathname.split("/").pop()!;

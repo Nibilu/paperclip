@@ -2020,7 +2020,11 @@ async function startServerWithDatabaseTeardown(
         databaseBackupRetentionDays: config.databaseBackupRetentionDays,
         databaseBackupDir: config.databaseBackupDir,
   });
-  const boardClaimUrl = getBoardClaimWarningUrl(config.host, listenPort);
+  const boardClaimUrl = getBoardClaimWarningUrl(
+    config.host,
+    listenPort,
+    config.authPublicBaseUrl,
+  );
   if (boardClaimUrl) {
     const red = "\x1b[41m\x1b[30m";
     const yellow = "\x1b[33m";
