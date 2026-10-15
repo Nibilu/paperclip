@@ -91,6 +91,7 @@ describe("isBlobStorePath", () => {
     expect(isBlobStorePath("blobs/4f2d1c9a")).toBe(true);
     expect(isBlobStorePath("paperclip-demo/blobs/4f2d1c9a")).toBe(true);
     expect(isBlobStorePath("tasks/pap-1/TASK.md")).toBe(false);
+    expect(isBlobStorePath("blobs/nested/file")).toBe(false);
   });
 });
 
@@ -118,7 +119,8 @@ describe("bytesToPortableFileEntry", () => {
 
 describe("readZipArchive", () => {
   it("round-trips STORE, DEFLATE, and base64 blob entries byte-exactly and strips the shared root", async () => {
-    const blobBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x13, 0x37]);
+    const blobBytes = new Uint8Array([0x68, 0x69]);
+    const invalidUtf8 = new Uint8Array([0x68, 0x69, 0xff, 0xfe, 0xc0]);
     // A text body large and repetitive enough that DEFLATE actually shrinks it,
     // so the DEFLATE decode path is exercised, not just written.
     const deflated = `# Weekly report\n${"paperclip ".repeat(512)}\n`;
@@ -128,6 +130,7 @@ describe("readZipArchive", () => {
         { path: "COMPANY.md", bytes: new TextEncoder().encode("---\nname: Demo\n---\n"), method: 0 },
         { path: "reports/weekly.md", bytes: new TextEncoder().encode(deflated), method: 8 },
         { path: "blobs/4f2d1c9a", bytes: blobBytes, method: 0 },
+        { path: "notes/raw", bytes: invalidUtf8, method: 0 },
       ],
       "paperclip-demo",
     );
@@ -140,6 +143,11 @@ describe("readZipArchive", () => {
         "blobs/4f2d1c9a": {
           encoding: "base64",
           data: Buffer.from(blobBytes).toString("base64"),
+          contentType: "application/octet-stream",
+        },
+        "notes/raw": {
+          encoding: "base64",
+          data: Buffer.from(invalidUtf8).toString("base64"),
           contentType: "application/octet-stream",
         },
       },
