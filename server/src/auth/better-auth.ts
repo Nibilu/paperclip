@@ -107,6 +107,7 @@ export function shouldDisableSecureAuthCookies(input: {
   ) {
     return true;
   }
+  if (isConfiguredInsecureHttpAuthUrl(input.requestUrl)) return true;
   if (publicUrl) return publicUrl.startsWith("http://");
 
   return (
@@ -142,6 +143,21 @@ function isHttpLoopbackUrl(value: string | undefined): boolean {
   try {
     const url = new URL(value);
     return url.protocol === "http:" && isLoopbackHostname(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isConfiguredInsecureHttpAuthUrl(value: string | undefined): boolean {
+  if (!value) return false;
+  const allowedHosts = (process.env.PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS ?? "")
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+  if (allowedHosts.length === 0) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" && allowedHosts.includes(url.hostname.toLowerCase());
   } catch {
     return false;
   }
@@ -310,10 +326,14 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
   }
 
   const defaultAuth = betterAuth(authConfig);
+  const supportsConfiguredInsecureHttpAuth = (process.env.PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS ?? "")
+    .split(",")
+    .some((host) => host.trim().length > 0);
   const supportsManagedLoopbackAuth = Boolean(
-    !disableSecureCookies &&
-    isHttpsUrl(publicUrl) &&
-    isHttpsUrl(managedRuntimePublicUrl),
+    (!disableSecureCookies &&
+      isHttpsUrl(publicUrl) &&
+      isHttpsUrl(managedRuntimePublicUrl)) ||
+    supportsConfiguredInsecureHttpAuth
   );
   if (!supportsManagedLoopbackAuth) return defaultAuth;
 

@@ -11,12 +11,15 @@ import {
 
 const ORIGINAL_INSTANCE_ID = process.env.PAPERCLIP_INSTANCE_ID;
 const ORIGINAL_PUBLIC_URL = process.env.PAPERCLIP_PUBLIC_URL;
+const ORIGINAL_INSECURE_HTTP_HOSTS = process.env.PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS;
 
 afterEach(() => {
   if (ORIGINAL_INSTANCE_ID === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
   else process.env.PAPERCLIP_INSTANCE_ID = ORIGINAL_INSTANCE_ID;
   if (ORIGINAL_PUBLIC_URL === undefined) delete process.env.PAPERCLIP_PUBLIC_URL;
   else process.env.PAPERCLIP_PUBLIC_URL = ORIGINAL_PUBLIC_URL;
+  if (ORIGINAL_INSECURE_HTTP_HOSTS === undefined) delete process.env.PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS;
+  else process.env.PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS = ORIGINAL_INSECURE_HTTP_HOSTS;
 });
 
 describe("Better Auth cookie scoping", () => {
@@ -168,6 +171,28 @@ describe("Better Auth cookie scoping", () => {
       authBaseUrlMode: "explicit",
       authPublicBaseUrl: "http://board.example.test:3101",
     })).toBe(true);
+  });
+
+  it("allows explicitly configured LAN HTTP auth origins to use non-secure cookies", () => {
+    process.env.PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS = "192.168.31.16";
+
+    expect(shouldDisableSecureAuthCookies({
+      deploymentMode: "authenticated",
+      deploymentExposure: "private",
+      authBaseUrlMode: "explicit",
+      authPublicBaseUrl: "https://clip.nibilu.in",
+      publicUrl: "https://clip.nibilu.in",
+      requestUrl: "http://192.168.31.16:3102/api/auth/sign-in/email",
+    })).toBe(true);
+
+    expect(shouldDisableSecureAuthCookies({
+      deploymentMode: "authenticated",
+      deploymentExposure: "private",
+      authBaseUrlMode: "explicit",
+      authPublicBaseUrl: "https://clip.nibilu.in",
+      publicUrl: "https://clip.nibilu.in",
+      requestUrl: "https://clip.nibilu.in/api/auth/sign-in/email",
+    })).toBe(false);
   });
 
   it("keeps secure cookies for explicit HTTPS public URLs", () => {
