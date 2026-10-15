@@ -103,6 +103,23 @@ describe("stopped task recovery notice", () => {
     expect(link.getAttribute("href")).toBe("/agents/agent/runs/failed-run");
     expect(agentsApi.retryFailedRun).not.toHaveBeenCalled();
   });
+  it("hides Retry for a Hermes reconciliation hold and explains fresh continuation is unavailable", async () => {
+    await act(async () => root.render(<QueryClientProvider client={client}>
+      <ExecutionBlockerNotice companyId="company" issueId="task" onRetried={onRetried} blocker={{
+        recoveryActionId: "recovery", runId: "failed-run", agentId: "agent",
+        adapterType: "hermes_gateway", cause: "legacy_execution_requires_reconciliation",
+        replayDisposition: "blocked_reconciliation", freshContinuationDisposition: "unsupported",
+        runError: "Process lost -- server may have restarted",
+        nextAction: "Automatic recovery stopped. Inspect the stopped execution.",
+      }} />
+    </QueryClientProvider>));
+    expect(container.textContent).toContain("Process lost -- server may have restarted");
+    expect(container.textContent).toContain("will not replay this stopped run");
+    expect(container.textContent).toContain("A new instruction is not available for this adapter");
+    expect(container.querySelector("button")).toBeNull();
+    expect(container.querySelector("a")?.textContent).toBe("Inspect run");
+    expect(agentsApi.retryFailedRun).not.toHaveBeenCalled();
+  });
   it("keeps workspace repair guidance and inspection without offering the legacy Retry fallback", async () => {
     await act(async () => root.render(<QueryClientProvider client={client}>
       <ExecutionBlockerNotice companyId="company" issueId="task" issueStatus="blocked" canManage onRetried={onRetried} blocker={{

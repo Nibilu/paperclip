@@ -2,7 +2,7 @@ import { isPreDispatchReviewWait } from "./pre-dispatch-review-wait.js";
 import { and, desc, eq, gt, inArray, not, or, sql } from "drizzle-orm";
 import { conversationRecoveryActionPredicate, getConversationOwnershipBlocker } from "./conversation-continuation.js";
 import { z } from "zod";
-import { agentWakeupRequests, chatConversations, chatEndpoints, environmentLeases, heartbeatRuns, issueComments, issues, issueRecoveryActions, nativeRunFinalizations, toolConnections, type Db } from "@paperclipai/db";
+import { agentWakeupRequests, agents, chatConversations, chatEndpoints, environmentLeases, heartbeatRuns, issueComments, issues, issueRecoveryActions, nativeRunFinalizations, toolConnections, type Db } from "@paperclipai/db";
 import { canContinueCancelledRun, readRunCancellation } from "./run-cancellation.js";
 import { canRetryStoppedRun } from "./cancelled-native-startup.js";
 import { queuedCommentIdsFromWakePayload } from "./issue-queued-comment-queue.js";
@@ -99,6 +99,9 @@ export async function getExecutionBlocker(db: Db, companyId: string, issueId: st
   const [run] = runId ? await db.select().from(heartbeatRuns).where(and(
     eq(heartbeatRuns.companyId, companyId), eq(heartbeatRuns.id, runId),
   )).limit(1) : [];
+  const [runAgent] = run?.agentId ? await db.select({ adapterType: agents.adapterType }).from(agents).where(and(
+    eq(agents.companyId, companyId), eq(agents.id, run.agentId),
+  )).limit(1) : [];
   const withoutWorkspace = Boolean(run?.driverKind === "grok_bot_mcp" && nativeRunHasNoWorkspaceAccess(run));
   const workspaceRepairRequired = Boolean(restoreHold && !withoutWorkspace);
   const reconstructableExport = ["native_workspace_sync_out_unrecoverable", "native_workspace_sync_out_retry_exhausted"].includes(action.cause);
@@ -176,16 +179,27 @@ export async function getExecutionBlocker(db: Db, companyId: string, issueId: st
     nextAction = "Verify the Grok connection, then send a new message to continue. The stopped work will not be replayed.";
   }
 
+  const canContinue = eligibleContinuation && !chatBinding;
+  const replayDisposition = canContinue ? "allowed" : "blocked_reconciliation" as const;
+  const freshContinuationDisposition = canContinue
+    ? "allowed" as const
+    : runAgent?.adapterType === "hermes_gateway"
+      ? "unsupported" as const
+      : "blocked_until_reconciliation" as const;
   return {
     recoveryActionId: action.id,
     runId,
     // A stopped reviewer can differ from the task owner who receives the work back.
     agentId: run?.agentId ?? null,
+    adapterType: runAgent?.adapterType ?? null,
     cause: action.cause,
+    blockedReason: action.cause,
+    replayDisposition,
+    freshContinuationDisposition,
     nextAction: reconstructionPending ? "Continuation from saved sources is queued and waiting for execution checks." : nextAction,
     runStatus: run?.status ?? null,
     runError: runError?.slice(0, 1024) ?? null,
-    canContinue: eligibleContinuation && !chatBinding,
+    canContinue,
     canRetry: canRetry && !chatBinding,
     ...(restoreHold ? { workspaceRepairRequired, canRecordWorkspaceRepair: workspaceRepairRequired && hasRequiredWorkspaceRecovery(action.evidence) } : {}),
     savedMessageCount: saved.length,

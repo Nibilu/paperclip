@@ -11,6 +11,14 @@ export interface ExecutionBlocker {
   canContinue?: boolean;
   /** Explicit Retry candidate; the server rechecks stop proof and execution gates. */
   canRetry?: boolean;
+  /** Whether replaying the stopped run is actually admitted by reconciliation safety. */
+  replayDisposition?: "allowed" | "blocked_reconciliation";
+  /** Whether a new instruction may create a fresh run without replaying the stopped run. */
+  freshContinuationDisposition?: "allowed" | "blocked_until_reconciliation" | "unsupported";
+  /** Structured blocker cause for UI recovery guidance. */
+  blockedReason?: string | null;
+  /** Adapter associated with the stopped run, when known. */
+  adapterType?: string | null;
   /** Required workspace files must be recovered before another provider turn. */
   workspaceRepairRequired?: boolean;
   canRecordWorkspaceRepair?: boolean;

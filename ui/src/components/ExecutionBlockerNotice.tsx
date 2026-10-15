@@ -31,6 +31,8 @@ export function ExecutionBlockerNotice({ companyId, issueId, issueStatus, canMan
   const hold = recovery?.actions.find(action => action.id === blocker.recoveryActionId &&
     (action.evidence.runId ?? action.evidence.sourceRunId) === blocker.runId);
   const replayBlocked = (hold?.evidence.automaticRecovery as { replay?: unknown } | undefined)?.replay === "blocked";
+  const replayDispositionBlocked = blocker.replayDisposition === "blocked_reconciliation";
+  const freshContinuationUnsupported = blocker.freshContinuationDisposition === "unsupported";
   const { data: runs, error: runsError } = useQuery({
     queryKey: queryKeys.issues.runs(issueId),
     queryFn: () => activityApi.runsForIssue(issueId),
@@ -68,6 +70,17 @@ export function ExecutionBlockerNotice({ companyId, issueId, issueStatus, canMan
         {blocker.workspaceReconstructionPending ? <p>{blocker.nextAction}</p> : blocker.workspaceRepairRequired ? (
           <p>The workspace needs operator attention before work can continue.</p>
         ) : <p>{blocker.nextAction}</p>}
+        {replayDispositionBlocked && (
+          <p>
+            Paperclip will not replay this stopped run because its external outcome is not verified.
+            Inspect the run before requesting any continuation.
+          </p>
+        )}
+        {freshContinuationUnsupported && (
+          <p>
+            A new instruction is not available for this adapter until the previous execution is reconciled.
+          </p>
+        )}
         {Boolean(blocker.savedMessageCount) && (
           <p>{blocker.savedMessageCount} saved {blocker.savedMessageCount === 1 ? "message is" : "messages are"} waiting for recovery.</p>
         )}
@@ -78,7 +91,8 @@ export function ExecutionBlockerNotice({ companyId, issueId, issueStatus, canMan
         </Button>
       )}
       {!blocker.workspaceRepairRequired && (!requiresInspection || blocker.canRetry) && blocker.agentId && blocker.runId &&
-        ((blocker.cause === "legacy_execution_requires_reconciliation" && failedRun) || blocker.canContinue || blocker.canRetry) && (
+        (blocker.canContinue || (!replayDispositionBlocked &&
+          ((blocker.cause === "legacy_execution_requires_reconciliation" && failedRun) || blocker.canRetry))) && (
         <Button variant="outline" size="sm" disabled={retry.isPending} onClick={() => retry.mutate()}>
           {retry.isPending ? "Starting…" : blocker.canContinue ? "Continue" : "Retry"}
         </Button>
