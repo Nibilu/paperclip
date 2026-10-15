@@ -1,10 +1,14 @@
 import { randomUUID } from "node:crypto";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { agents, authUsers, companies, companyMemberships, createDb, executionWorkspaces, issueAccessGrants,
   issues, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@paperclipai/db";
-import { executionWorkspaceReadSqlCondition, type AuthorizationActor } from "../services/authorization.js";
+import { authorizationService, executionWorkspaceReadSqlCondition, type AuthorizationActor } from "../services/authorization.js";
+import { assertExecutionWorkspaceRootReadAccess } from "../services/execution-workspace-repositories.js";
 import { assertTaskWorkspaceAccess } from "../services/task-workspace-source-access.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 
@@ -102,6 +106,32 @@ const support = await getEmbeddedPostgresTestSupport();
     }
   });
 
+  it("authorizes a retained repository in bounded database round trips as its workspace history grows", async () => {
+    const cwd = await mkdtemp(path.join(tmpdir(), "root-admission-query-"));
+    const workspaceIds = Array.from({ length: 40 }, () => randomUUID());
+    const sourceIds = workspaceIds.map(() => randomUUID());
+    await db.insert(executionWorkspaces).values(workspaceIds.map(id => ({
+      id, companyId, cwd, name: "Historical root", mode: "shared_workspace", strategyType: "operator_directory",
+      metadata: { _issuePrivacySources: { [sourceId]: true } },
+    })));
+    await db.insert(issues).values(sourceIds.map((id, i) => ({ id, companyId, title: "Source", executionWorkspaceId: workspaceIds[i] })));
+    try {
+      const statements: string[] = [];
+      const recorded = drizzle(db.$client, { schema: db._.fullSchema,
+        logger: { logQuery: query => statements.push(query) } }) as unknown as typeof db;
+      await assertExecutionWorkspaceRootReadAccess(recorded, { companyId, cwd, actor: { ...actor } });
+      // Access decisions must still cover every source and both principals,
+      // without reloading the same actor/run/membership for each workspace.
+      expect(statements.length).toBeLessThan(60);
+      await db.update(issues).set({ visibility: "private", privacyRootIssueId: sourceIds[39] }).where(eq(issues.id, sourceIds[39]));
+      await expect(assertExecutionWorkspaceRootReadAccess(db, { companyId, cwd, actor: { ...actor } })).rejects.toThrow();
+    } finally {
+      await db.delete(issues).where(inArray(issues.id, sourceIds));
+      await db.delete(executionWorkspaces).where(inArray(executionWorkspaces.id, workspaceIds));
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
   it.each(["missing", "malformed", "uppercase", "foreign"])("denies a %s retained source without throwing a UUID parse error", async kind => {
     const id = kind === "malformed" ? "not-a-uuid" : kind === "uppercase" ? sourceId.toUpperCase() : randomUUID();
     if (kind === "foreign") {
@@ -123,4 +153,21 @@ const support = await getEmbeddedPostgresTestSupport();
     await db.update(issueAccessGrants).set({ revokedAt: new Date() }).where(eq(issueAccessGrants.id, grant.id));
     expect(await read()).toHaveLength(0);
   });
+  it.each(["enforce", "shadow", "off"])("matches individual read decisions for a fresh batch in %s mode", async mode => {
+    vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", mode);
+    try {
+      const resources = [{ type: "issue" as const, companyId, issueId: sourceId }, { type: "company" as const, companyId }];
+      const actors: AuthorizationActor[] = [actor, { ...actor, onBehalfOfUserId: undefined },
+        { ...actor, companyId: randomUUID() }, { type: "none" },
+        { type: "board", source: "session", userId }, { type: "board", source: "local_implicit", userId: "local-board" }];
+      const service = authorizationService(db);
+      for (const candidate of actors) {
+        const individual = [];
+        for (const resource of resources) individual.push(await service.decide({ actor: { ...candidate }, resource,
+          action: resource.type === "issue" ? "issue:read" : "company_scope:read" }));
+        expect(await service.decideReads(candidate, resources)).toEqual(individual);
+      }
+    } finally { vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", "enforce"); }
+  });
+
 });
