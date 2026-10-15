@@ -5,7 +5,7 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { agents, authUsers, companies, companyMemberships, createDb, executionWorkspaces, issueAccessGrants,
+import { agents, authUsers, companies, companyMemberships, createDb, executionWorkspaces, heartbeatRuns, issueAccessGrants,
   issues, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@paperclipai/db";
 import { authorizationService, executionWorkspaceReadSqlCondition, type AuthorizationActor } from "../services/authorization.js";
 import { assertExecutionWorkspaceRootReadAccess } from "../services/execution-workspace-repositories.js";
@@ -16,9 +16,9 @@ const support = await getEmbeddedPostgresTestSupport();
 (support.supported ? describe : describe.skip)("workspace authorization query", () => {
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: ReturnType<typeof createDb>;
-  const companyId = randomUUID(), agentId = randomUUID(), userId = randomUUID(), workspaceId = randomUUID();
+  const companyId = randomUUID(), agentId = randomUUID(), userId = randomUUID(), workspaceId = randomUUID(), runId = randomUUID();
   const sourceId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
-  const actor: AuthorizationActor = { type: "agent", source: "agent_jwt", companyId, agentId, onBehalfOfUserId: userId };
+  const actor: AuthorizationActor = { type: "agent", source: "agent_jwt", companyId, agentId, runId, onBehalfOfUserId: userId };
 
   beforeAll(async () => {
     vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", "enforce");
@@ -31,6 +31,7 @@ const support = await getEmbeddedPostgresTestSupport();
     await db.insert(executionWorkspaces).values({ id: workspaceId, companyId, name: "Retained files", mode: "shared_workspace", strategyType: "operator_directory" });
     await db.$client.unsafe(`insert into issues (company_id, title) select $1, 'Unrelated history ' || n from generate_series(1, 1200) n`, [companyId]);
     await db.insert(issues).values({ id: sourceId, companyId, title: "Retained source" });
+    await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, status: "succeeded", contextSnapshot: { issueId: sourceId } });
     await db.$client.unsafe("ANALYZE");
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
   afterAll(async () => {
@@ -168,6 +169,21 @@ const support = await getEmbeddedPostgresTestSupport();
         expect(await service.decideReads(candidate, resources)).toEqual(individual);
       }
     } finally { vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", "enforce"); }
+  });
+
+  it("reloads run trust and responsible-user membership between read batches", async () => {
+    const service = authorizationService(db);
+    const resources = [{ type: "company" as const, companyId }];
+    expect((await service.decideReads(actor, resources))[0].allowed).toBe(true);
+    await db.update(heartbeatRuns).set({ contextSnapshot: { issueId: sourceId, executionPolicy: {
+      trustPreset: "low_trust_review", authorizationPolicy: { trustPreset: "low_trust_review",
+        trustBoundary: { mode: "low_trust_review", companyId, rootIssueId: sourceId } },
+    } } }).where(eq(heartbeatRuns.id, runId));
+    expect((await service.decideReads(actor, resources))[0]).toMatchObject({ allowed: false, reason: "deny_low_trust_boundary" });
+    await db.update(heartbeatRuns).set({ contextSnapshot: { issueId: sourceId } }).where(eq(heartbeatRuns.id, runId));
+    expect((await service.decideReads(actor, resources))[0].allowed).toBe(true);
+    await db.update(companyMemberships).set({ status: "inactive" }).where(and(eq(companyMemberships.companyId, companyId), eq(companyMemberships.principalId, userId)));
+    expect((await service.decideReads(actor, resources))[0]).toMatchObject({ allowed: false, code: "RESPONSIBLE_USER_UNAVAILABLE" });
   });
 
 });
