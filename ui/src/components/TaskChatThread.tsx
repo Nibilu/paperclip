@@ -61,6 +61,7 @@ import {
   type SettledTurnMergeMeta,
 } from "@/components/task-chat/transcript-adapter";
 import { TaskChatDescriptionBubble } from "@/components/task-chat/TaskChatDescriptionBubble";
+import { hermesRunFailureExplanation } from "@/components/task-chat/hermes-evidence-explanation";
 import {
   TaskChatLiveRunPill,
   toolCountSummaryFromEntries,
@@ -1729,6 +1730,11 @@ export function TaskChatThread(props: TaskChatThreadProps) {
       if (sourceHasLegacyStop) {
         settledRunIds.add(source.id);
         const code = meta?.errorCode ?? "native_runner_process_exited";
+        const hermesExplanation = hermesRunFailureExplanation({
+          adapterType: source.adapterType,
+          errorCode: meta?.errorCode ?? null,
+          resultJson: meta?.resultJson ?? null,
+        });
         const retryDetail = meta?.scheduledRetryAt
           ? "Retry scheduled automatically."
           : canRetryFailedRun
@@ -1740,7 +1746,9 @@ export function TaskChatThread(props: TaskChatThreadProps) {
           interaction.sourceRunId === source.id && interactionTargetsPlanRevision(interaction, planDocument),
         )));
         const aiRequest = interactions?.find((interaction) => interaction.kind === "connection_intent" && interaction.payload.purpose === "ai" && interaction.sourceRunId === source.id);
-        const detail = branchUnavailable
+        const detail = hermesExplanation
+          ? hermesExplanation.detail
+          : branchUnavailable
           ? "Repair the starting branch below before retrying."
           : restoreFailed
           ? workspaceRestoreMarkerDetail({ result: meta?.resultJson, savedPlan, hasResponse: sourceHasPresentationComment || Boolean(acceptedSummary) })

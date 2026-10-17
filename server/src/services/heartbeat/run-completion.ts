@@ -41,6 +41,7 @@ import type { providerTraceStore } from "../provider-trace-store.js";
 import type { createAgentIdentityRedactor } from "../agent-identity-redaction.js";
 import type { CurrentUserRedactionOptions } from "../../log-redaction.js";
 import type { AdapterExecutionResult } from "@paperclipai/adapter-utils";
+import { projectHermesRunEvidence } from "@paperclipai/shared";
 import type { getRunLogStore, RunLogHandle } from "../run-log-store.js";
 import type { createHeartbeatRunState, getAdapterSessionCodec } from "./run-state.js";
 import type { EffectiveRunSessionConfigMetadata } from "./workspaces.js";
@@ -284,6 +285,22 @@ function isConfigurationIncompleteFailure(
   return error instanceof ConfigurationIncompleteFailure;
 }
 
+/**
+ * Project Hermes Gateway adapter evidence into the run's resultJson under
+ * `hermesEvidence` (SPEC-implementation 11.2, AMB-10 states). Adapter-specific
+ * evidence only: never a task status, never a scheduler input by itself.
+ */
+function projectHermesRunEvidenceJson(input: {
+  adapterType: string | null | undefined;
+  errorCode: string | null | undefined;
+  errorMeta?: Record<string, unknown> | null;
+  resultJson?: Record<string, unknown> | null;
+}): Record<string, unknown> | null {
+  const evidence = projectHermesRunEvidence(input);
+  if (!evidence) return null;
+  return { hermesEvidence: evidence };
+}
+
 export function isConfigurationIncompleteFailedRun(
   run: Pick<typeof heartbeatRuns.$inferSelect, "errorCode"> | null | undefined,
 ) {
@@ -451,7 +468,10 @@ export function createHeartbeatRunCompletion(db: Db, dependencies: HeartbeatRunC
       normalizeResponsibleUserDenialCode(latestRun?.errorCode);
     const runErrorCode =
       outcome === "timed_out"
-        ? "timeout"
+        ? // Preserve a stage-specific adapter timeout code (e.g.
+          // hermes_gateway_timeout): evidence projection and continuation
+          // recovery classify it differently from the generic timeout.
+          (adapterResult.errorCode ?? "timeout")
         : outcome === "cancelled"
           ? (latestRun?.errorCode ?? "cancelled")
           : outcome === "failed"
@@ -568,6 +588,12 @@ export function createHeartbeatRunCompletion(db: Db, dependencies: HeartbeatRunC
             ...(adapterResult.executionRecovery
               ? { executionRecovery: adapterResult.executionRecovery }
               : {}),
+            ...parseObject(projectHermesRunEvidenceJson({
+              adapterType: agent.adapterType,
+              errorCode: runErrorCode,
+              errorMeta: adapterResult.errorMeta ?? null,
+              resultJson: parseObject(adapterResult.resultJson),
+            })),
             ...(outcome === "cancelled" ? controllerLeaseLossResultJson(signal) : {}),
             configFreshness: configFreshnessResultMetadata,
           },

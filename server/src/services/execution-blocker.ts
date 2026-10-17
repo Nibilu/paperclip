@@ -45,6 +45,21 @@ export function executionBlockerPredicate() {
     not(conversationRecoveryActionPredicate()!),
     or(unreconciledNativeExportPredicate(), and(
       inArray(issueRecoveryActions.cause, [...EXECUTION_RECONCILIATION_CAUSES]),
+      // A later operator reconciliation supersedes every historical automatic
+      // no-replay record for the same source run. Keep those records for audit,
+      // but do not project an old blocked action as the current blocker.
+      sql`not exists (
+        select 1
+        from issue_recovery_actions reconciled
+        where reconciled.company_id = ${issueRecoveryActions.companyId}
+          and reconciled.source_issue_id = ${issueRecoveryActions.sourceIssueId}
+          and reconciled.status = 'resolved'
+          and reconciled.evidence->'executionReconciliation'->>'runId' =
+            coalesce(
+              ${issueRecoveryActions.evidence}->>'runId',
+              ${issueRecoveryActions.evidence}->>'sourceRunId'
+            )
+      )`,
       or(inArray(issueRecoveryActions.status, ["active", "escalated"]),
         sql`${issueRecoveryActions.evidence}->'automaticRecovery'->>'replay' = 'blocked'`),
     )),

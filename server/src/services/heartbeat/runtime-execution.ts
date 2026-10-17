@@ -39,7 +39,7 @@ import { remoteExecutionHasStopped } from "../remote-execution-termination.js";
 import { registerAdapterExecutionControl } from "../adapter-execution-control.js";
 import { resolveManagedOpenAiBilling } from "@paperclipai/adapter-utils";
 import { and, eq, isNull, sql } from "drizzle-orm";
-import { heartbeatRuns, nativeRunFinalizations, workspaceOperations } from "@paperclipai/db";
+import { approvals, heartbeatRuns, nativeRunFinalizations, workspaceOperations } from "@paperclipai/db";
 import { conflict } from "../../errors.js";
 import { getStartupTraceContext } from "../../instrumentation.js";
 import { logger } from "../../middleware/logger.js";
@@ -220,6 +220,69 @@ export class NativeWorkspaceFinalizeScheduledError extends Error {
 
 function readNonEmptyString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+
+type ToolApprovalRequest = NonNullable<
+  import("@paperclipai/adapter-utils").AdapterExecutionContext["onToolApproval"]
+> extends (request: infer R) => any ? R : never;
+
+const APPROVAL_RESOLUTION_POLL_MS = 2_000;
+
+/**
+ * Surface a remote engine's tool-approval request to the board as a real
+ * Paperclip approval, then wait for the user's decision. Adapter-neutral:
+ * approved → "once", rejected → "deny". Returns null when the run ends or the
+ * decision never arrives (the caller treats that as an unresolved gate).
+ */
+export async function awaitBoardToolApproval(
+  db: Db,
+  input: {
+    companyId: string;
+    agentId: string;
+    agentName: string;
+    runId: string;
+  },
+  request: ToolApprovalRequest,
+): Promise<{ choice: string } | null> {
+  const [row] = await db
+    .insert(approvals)
+    .values({
+      companyId: input.companyId,
+      type: "request_board_approval",
+      requestedByAgentId: input.agentId,
+      status: "pending",
+      payload: {
+        title: `Tool approval: ${request.toolName}`,
+        gateway: "hermes_gateway",
+        toolName: request.toolName,
+        command: request.command,
+        requestId: request.requestId,
+        runId: input.runId,
+        agentName: input.agentName,
+        choices: request.choices,
+      },
+    })
+    .returning();
+  if (!row) return null;
+  // Bounded by the run lifecycle: once the run is no longer running (timeout,
+  // cancellation, crash) stop waiting — the gateway side is already settled.
+  while (true) {
+    await new Promise((resolve) => setTimeout(resolve, APPROVAL_RESOLUTION_POLL_MS));
+    const [runRow] = await db
+      .select({ status: heartbeatRuns.status })
+      .from(heartbeatRuns)
+      .where(eq(heartbeatRuns.id, input.runId))
+      .limit(1);
+    if (!runRow || runRow.status !== "running") return null;
+    const [current] = await db
+      .select({ status: approvals.status })
+      .from(approvals)
+      .where(eq(approvals.id, row.id))
+      .limit(1);
+    if (!current || current.status === "cancelled") return null;
+    if (current.status === "approved") return { choice: "once" };
+    if (current.status === "rejected") return { choice: "deny" };
+  }
 }
 
 export async function executeHeartbeatRuntime(db: Db, input: HeartbeatRuntimeExecutionInput): Promise<HeartbeatRuntimeExecutionResult> {
@@ -818,6 +881,13 @@ export async function executeHeartbeatRuntime(db: Db, input: HeartbeatRuntimeExe
               onLog,
               onMeta: onAdapterMeta,
               onEvent: onAdapterEvent,
+              onToolApproval: (request) =>
+                awaitBoardToolApproval(db, {
+                  companyId: agent.companyId,
+                  agentId: agent.id,
+                  agentName: agent.name,
+                  runId: run.id,
+                }, request),
               onUsage: async receipt => { await usageRecorder.capture(receipt); },
               onExecutionPhase: executionControl.phases.enter,
               startupTraceContext: getStartupTraceContext(),

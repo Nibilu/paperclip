@@ -200,3 +200,26 @@ Use these entry points depending on who is driving setup:
   `@paperclipai/hermes-paperclip-adapter` as an external override, but normal
   operators should use the built-in `hermes_local` and `hermes_gateway`
   adapters.
+
+## Execution recovery and reconciliation
+
+Hermes Gateway runs use the same adapter-neutral execution recovery contract as
+other Paperclip adapters. A Gateway terminal status of `cancelled`, `stopped`,
+or `interrupted` is translated into a verified stop receipt only when the
+Gateway has returned that authoritative terminal status. A timeout or lost
+connection without a terminal status remains `remote_run_stop_unknown` and
+keeps the no-replay hold.
+
+When a hold remains, Paperclip preserves the source issue, Paperclip run ID,
+Hermes remote run ID, recovery action, and deferred user messages in the
+instance database. The operator-facing reconciliation panel is deterministic;
+it does not ask an LLM to decide whether replay is safe. It shows the recorded
+facts, requires confirmation that the provider stopped, and accepts only a
+verified outcome (`completed`, `not_performed`, or `mixed`). `unknown` leaves
+the hold in place. After successful reconciliation, Paperclip creates a fresh
+continuation linked to the source run. It never replays the old Gateway run or
+its tool calls.
+
+The canonical operator entry is the task's recovery notice and its `Inspect
+run` action. Recovery records are durable database state; run logs and artifacts
+are supporting diagnostic evidence, not the authority for replay.

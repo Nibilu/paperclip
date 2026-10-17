@@ -2851,6 +2851,40 @@ export * from "./browser-use.js";
 export * from "./types/skill-source.js";
 export * from "./validators/skill-source.js";
 export * from "./validators/agent-commentary.js";
+export {
+  AGENT_CAPABILITY_OBSERVATION_STATES,
+  AGENT_CAPABILITY_OPERATIONS,
+  AGENT_CAPABILITY_DIFF_KINDS,
+  agentCapabilityObservationStateSchema,
+  agentCapabilityOperationStateSchema,
+  agentCapabilityObservationErrorSchema,
+  agentCapabilityObservationSchema,
+  agentCapabilityDiffEntrySchema,
+  capabilityDiffRequiresUpgradeTask,
+  type AgentCapabilityObservationState,
+  type AgentCapabilityObservation,
+  type AgentCapabilityOperationState,
+  type AgentCapabilityObservationError,
+  type AgentCapabilityDiffEntry,
+  type AgentCapabilityDiffKind,
+} from "./agent-capability-observation.js";
+export {
+  createCapabilityUpgradeTaskSchema,
+  CAPABILITY_UPGRADE_ADMISSION_GATE_REASON,
+  type CreateCapabilityUpgradeTaskInput,
+  type CapabilityUpgradeTaskProvenance,
+} from "./agent-capability-upgrade-task.js";
+export {
+  HERMES_RUN_EVIDENCE_STATES,
+  HERMES_RECONCILIATION_REQUIRED_STATES,
+  HERMES_DISPLAY_ONLY_STATES,
+  hermesRunEvidenceStateSchema,
+  hermesRunEvidenceSchema,
+  hermesEvidenceStateFromAdapterError,
+  projectHermesRunEvidence,
+  type HermesRunEvidenceState,
+  type HermesRunEvidence,
+} from "./hermes-run-evidence.js";
 export * from "./github-skill-repository.js";
 export * from "./public-mcp.js";
 export * from "./mcp-setup.js";

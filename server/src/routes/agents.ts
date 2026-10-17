@@ -138,6 +138,9 @@ import type { AdapterAuthSignal, AdapterAuthSignalResponse, CodexAccountBindingC
 import { getDisabledAdapterTypes } from "../services/adapter-plugin-store.js";
 import { skillVersionSelectionMap } from "../services/runtime-skill-selections.js";
 import { isFixedClaudeOAuthBinding, secretService } from "../services/secrets.js";
+import { capabilityCheckService } from "../services/agent-capability-check.js";
+import { capabilityUpgradeTaskService } from "../services/agent-capability-upgrade-task.js";
+import { createCapabilityUpgradeTaskSchema } from "@paperclipai/shared";
 import { authorizationDeniedDetails } from "../services/authorization.js";
 import { providerTraceStore } from "../services/provider-trace-store.js";
 import {
@@ -4026,6 +4029,95 @@ export function agentRoutes(
       return;
     }
     res.json(await buildAgentDetail(agent));
+  });
+
+  // Manual adapter capability check (SPEC-implementation 11.2). Explicit user
+  // action only; company-scoped, authorization-checked, bounded, serialized,
+  // and audited. No periodic refresh endpoint exists by design.
+  router.post("/agents/:id/capability-check", async (req, res) => {
+    const id = req.params.id as string;
+    const agent = await getAccessibleResource(req, res, svc.getById(id), "Agent not found");
+    if (!agent) return;
+    await assertCanUpdateAgent(req, agent);
+    try {
+      const result = await capabilityCheckService(db).runManualCheck({
+        companyId: agent.companyId,
+        agentId: agent.id,
+        requestedByUserId: req.actor.type !== "agent" ? req.actor.userId ?? null : null,
+        requestedByAgentId: req.actor.type === "agent" ? req.actor.agentId : null,
+      });
+      res.json(result);
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === "capability_discovery_unsupported") {
+        res.status(422).json({ error: (err as Error).message, code });
+        return;
+      }
+      throw err;
+    }
+  });
+
+  // HG-A7: upgrade-task traceability list for the capability card UI.
+  router.get("/agents/:id/capability-upgrade-tasks", async (req, res) => {
+    const id = req.params.id as string;
+    const agent = await getAccessibleResource(req, res, svc.getById(id), "Agent not found");
+    if (!agent) return;
+    await assertCanReadAgent(req, agent);
+    const tasks = await capabilityUpgradeTaskService(db).listUpgradeTasksForAgent(agent.companyId, agent.id);
+    res.json({ tasks });
+  });
+
+  router.get("/agents/:id/capability-observations", async (req, res) => {
+    const id = req.params.id as string;
+    const agent = await getAccessibleResource(req, res, svc.getById(id), "Agent not found");
+    if (!agent) return;
+    await assertCanReadAgent(req, agent);
+    const observations = await capabilityCheckService(db).observationHistory(
+      agent.companyId,
+      agent.id,
+      "hermes_gateway",
+      20,
+    );
+    res.json({ observations });
+  });
+
+  // HG-A5 (SPEC-implementation 11.2): submit a capability-gap upgrade task.
+  // Explicit user action; creates an ordinary todo task behind the HG-A6
+  // admission gate. Never enqueues or wakes the task on its own.
+  router.post("/agents/:id/capability-upgrade-tasks", async (req, res) => {
+    const id = req.params.id as string;
+    const agent = await getAccessibleResource(req, res, svc.getById(id), "Agent not found");
+    if (!agent) return;
+    await assertCanUpdateAgent(req, agent);
+    const parsed = createCapabilityUpgradeTaskSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(422).json({ error: "Invalid upgrade task submission", code: "invalid_upgrade_task_payload" });
+      return;
+    }
+    if (parsed.data.agentId !== agent.id) {
+      res.status(422).json({ error: "Agent mismatch", code: "agent_mismatch" });
+      return;
+    }
+    try {
+      const issueSvc = issueService(db);
+      const result = await capabilityUpgradeTaskService(db).submitUpgradeTask(agent.companyId, {
+        ...parsed.data,
+        requestedByUserId: req.actor.type === "board" ? req.actor.userId ?? null : null,
+        createIssue: (data) => issueSvc.create(agent.companyId, data as never),
+      });
+      res.status(201).json(result);
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === "upgrade_agent_not_found" || code === "observation_not_found" || code === "no_capability_gap") {
+        res.status(422).json({ error: (err as Error).message, code });
+        return;
+      }
+      if (code === "observation_stale") {
+        res.status(409).json({ error: (err as Error).message, code });
+        return;
+      }
+      throw err;
+    }
   });
 
   router.get("/agents/:id/configuration", async (req, res) => {

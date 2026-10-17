@@ -94,6 +94,7 @@ import { getAdapterDisplay, getAdapterLabel } from "../adapters/adapter-display-
 import { useDisabledAdaptersSync } from "../adapters/use-disabled-adapters";
 import { buildAgentUpdatePatch, omitUndefinedEntries, type AgentConfigOverlay } from "../lib/agent-config-patch";
 import { useAdapterCapabilities } from "../adapters/use-adapter-capabilities";
+import { CapabilityCheckCard } from "./CapabilityCheckCard";
 import { resolveForcedKubernetesEnvironment } from "../lib/forced-kubernetes-environment";
 import { codexReasoningEffortOptions } from "../lib/codex-reasoning-effort";
 
@@ -2210,6 +2211,16 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
           error={testActionError ?? (testEnvironment.error instanceof Error ? testEnvironment.error.message : null)}
           onTest={triggerTestEnvironment}
           disabled={testEnvironmentDisabled}
+        />
+      )}
+
+      {/* Manual capability check (SPEC 11.2): saved hermes_gateway agents only. */}
+      {!isCreate && selectedCompanyId && adapterType === "hermes_gateway" && (
+        <CapabilityCheckCard
+          companyId={selectedCompanyId}
+          agentId={props.agent.id}
+          adapterType={adapterType}
+          disabled={isSavePending}
         />
       )}
     </ConfigSections>

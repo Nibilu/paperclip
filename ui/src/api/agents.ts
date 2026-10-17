@@ -109,6 +109,33 @@ function agentPath(id: string, companyId?: string, suffix = "") {
   return withCompanyScope(`/agents/${encodeURIComponent(id)}${suffix}`, companyId);
 }
 
+export type CapabilityUpgradeTaskSummary = {
+  issueId: string;
+  identifier: string | null;
+  title: string;
+  status: string;
+  completedAt: string | null;
+  createdAt: string;
+  admissionGateConfirmedAt: string | null;
+  provenance: {
+    observationId: string;
+    sourceAgentId: string;
+    sourceAdapterType: string;
+    endpointLabel: string;
+    capabilityRevision: string | null;
+    protocolVersion: string | null;
+    diff: Array<{ kind: string; scope: string; key: string; before?: unknown; after?: unknown; remediation?: string }>;
+    requestedByUserId: string | null;
+  } | null;
+};
+
+export type CapabilityUpgradeTaskSubmitted = {
+  issueId: string;
+  identifier: string | null;
+  status: "todo";
+  admissionGate: { reason: string; confirmedAt: string | null };
+};
+
 export const agentsApi = {
   setAvatar: (companyId: string, agentId: string, imageBase64: string | null) =>
     api.put<{ agentId: string; appearance: import("@paperclipai/shared").AgentAppearance; avatarUrl: string }>(`/companies/${companyId}/agents/${agentId}/avatar`, { imageBase64 }),
@@ -263,6 +290,34 @@ export const agentsApi = {
     api.post<AdapterEnvironmentTestResult>(
       `/companies/${companyId}/adapters/${type}/test-environment`,
       data,
+    ),
+  capabilityCheck: (id: string, companyId?: string) =>
+    api.post<{
+      observation: import("@paperclipai/shared").AgentCapabilityObservation;
+      diff: import("@paperclipai/shared").AgentCapabilityDiffEntry[];
+      upgradeTaskRequired: boolean;
+    }>(agentPath(id, companyId, "/capability-check"), {}),
+  capabilityObservations: (id: string, companyId?: string) =>
+    api.get<{ observations: import("@paperclipai/shared").AgentCapabilityObservation[] }>(
+      agentPath(id, companyId, "/capability-observations"),
+    ),
+  capabilityUpgradeTasks: (id: string, companyId?: string) =>
+    api.get<{ tasks: CapabilityUpgradeTaskSummary[] }>(
+      agentPath(id, companyId, "/capability-upgrade-tasks"),
+    ),
+  submitCapabilityUpgradeTask: (
+    id: string,
+    companyId: string | undefined,
+    data: { upgradeAgentId: string; observationId: string },
+  ) =>
+    api.post<CapabilityUpgradeTaskSubmitted>(
+      agentPath(id, companyId, "/capability-upgrade-tasks"),
+      { agentId: id, ...data },
+    ),
+  confirmCapabilityUpgradeTask: (issueId: string) =>
+    api.post<{ confirmed: boolean; confirmedAt: string }>(
+      `/issues/${encodeURIComponent(issueId)}/capability-upgrade-confirmation`,
+      {},
     ),
   getAdapterAuthSignal: (companyId: string, type: string, environmentId?: string | null) => {
     const query = environmentId ? `?environmentId=${encodeURIComponent(environmentId)}` : "";

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ExecutionBlocker, Issue } from "@paperclipai/shared";
+import { ExecutionReconciliationPanel } from "./ExecutionReconciliationPanel";
 import { WorkspaceReconstructionRecovery } from "./WorkspaceReconstructionRecovery";
 import { agentsApi } from "../api/agents";
 import { activityApi } from "../api/activity";
@@ -83,6 +84,10 @@ export function ExecutionBlockerNotice({ companyId, issueId, issueStatus, canMan
         )}
         {Boolean(blocker.savedMessageCount) && (
           <p>{blocker.savedMessageCount} saved {blocker.savedMessageCount === 1 ? "message is" : "messages are"} waiting for recovery.</p>
+        )}
+        {canManage && hold && replayBlocked && blocker.replayDisposition === "blocked_reconciliation" && (
+          <ExecutionReconciliationPanel issueId={issueId} issueStatus={issueStatus}
+            blocker={blocker} action={hold} onResolved={onRetried} />
         )}
       </div>
       {blocker.agentId && blocker.runId && (

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { agents, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRuns, issues, nativeRunFinalizations, runUsageReceipts, workspaceOperations, type Db } from "@paperclipai/db";
+import { agents, agentWakeupRequests, approvals, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRuns, issues, nativeRunFinalizations, runUsageReceipts, workspaceOperations, type Db } from "@paperclipai/db";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { trace } from "@opentelemetry/api";
@@ -24,7 +24,7 @@ import { nativeRuntimeContextFixture } from "../native-runtime/runtime-context.t
 import { createHeartbeatRunState } from "./run-state.js";
 import { buildEffectiveRunSessionConfigMetadata } from "./workspaces.js";
 import { revokeHeartbeatRunGatewayTokens } from "./run-preparation.js";
-import { executeHeartbeatRuntime, type HeartbeatRuntimeExecutionInput } from "./runtime-execution.js";
+import { awaitBoardToolApproval, executeHeartbeatRuntime, type HeartbeatRuntimeExecutionInput } from "./runtime-execution.js";
 
 // Keep real accounting, workspace barriers, and task-session persistence. Providers
 // and gateway delivery are external boundaries; browser acceptance covers their wiring.
@@ -367,5 +367,60 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     vi.mocked(revokeHeartbeatRunGatewayTokens).mockRejectedValueOnce(new Error("gateway unavailable"));
     expect(await executeHeartbeatRuntime(db, input)).toMatchObject({ dispatched: true });
     expectCleanup(input);
+  });
+});
+
+const toolApprovalSupport = await getEmbeddedPostgresTestSupport();
+describe("awaitBoardToolApproval", () => {
+  describe.skipIf(!toolApprovalSupport.supported)("with embedded postgres", () => {
+    let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
+    let db: Db;
+    beforeAll(async () => {
+      database = await startEmbeddedPostgresTestDatabase("paperclip-tool-approval");
+      db = createDb(database.connectionString);
+      await db.execute(sql`set client_min_messages = warning`);
+    }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
+    afterAll(async () => { await db?.$client.end(); await database?.cleanup(); vi.restoreAllMocks(); });
+    beforeEach(async () => { await db.execute(sql`truncate table companies restart identity cascade`); });
+
+    async function seed() {
+      const [company] = await db.insert(companies).values({ name: "Approvals", issuePrefix: "APR" }).returning();
+      const [agent] = await db.insert(agents).values({ companyId: company.id, name: "Gateway agent", adapterType: "hermes_gateway" }).returning();
+      const [wake] = await db.insert(agentWakeupRequests).values({ companyId: company.id, agentId: agent.id, source: "on_demand", status: "claimed" }).returning();
+      const [run] = await db.insert(heartbeatRuns).values({ companyId: company.id, agentId: agent.id, wakeupRequestId: wake.id, status: "running", runtimeMode: "legacy" }).returning();
+      return { company, agent, run };
+    }
+
+    it("creates a board approval with the tool payload and resolves approved → once", async () => {
+      const { company, agent, run } = await seed();
+      const pending = awaitBoardToolApproval(db, {
+        companyId: company.id, agentId: agent.id, agentName: agent.name, runId: run.id,
+      }, { toolName: "terminal", command: "systemctl status", requestId: "appr-9", choices: ["once", "deny"] });
+      // Give the row a moment to land, then resolve it as the board would.
+      await new Promise((resolve) => setTimeout(resolve, 2_600));
+      const [row] = await db.select().from(approvals).limit(1);
+      expect(row).toMatchObject({ type: "request_board_approval", status: "pending", requestedByAgentId: agent.id });
+      expect(row.payload).toMatchObject({ toolName: "terminal", command: "systemctl status", requestId: "appr-9", gateway: "hermes_gateway" });
+      await db.update(approvals).set({ status: "approved", decidedAt: new Date() }).where(eq(approvals.id, row.id));
+      await expect(pending).resolves.toEqual({ choice: "once" });
+    });
+
+    it("resolves rejected → deny and stops when the run stops running", async () => {
+      const { company, agent, run } = await seed();
+      const pending = awaitBoardToolApproval(db, {
+        companyId: company.id, agentId: agent.id, agentName: agent.name, runId: run.id,
+      }, { toolName: "terminal", command: "reboot", requestId: null, choices: ["once", "deny"] });
+      await new Promise((resolve) => setTimeout(resolve, 2_600));
+      const [row] = await db.select().from(approvals).limit(1);
+      await db.update(approvals).set({ status: "rejected", decidedAt: new Date() }).where(eq(approvals.id, row.id));
+      await expect(pending).resolves.toEqual({ choice: "deny" });
+
+      // Run leaves running → the next wait returns null instead of hanging.
+      await db.update(heartbeatRuns).set({ status: "timed_out" }).where(eq(heartbeatRuns.id, run.id));
+      const stopped = awaitBoardToolApproval(db, {
+        companyId: company.id, agentId: agent.id, agentName: agent.name, runId: run.id,
+      }, { toolName: "terminal", command: "ls", requestId: null, choices: ["once", "deny"] });
+      await expect(stopped).resolves.toBeNull();
+    }, 20_000);
   });
 });

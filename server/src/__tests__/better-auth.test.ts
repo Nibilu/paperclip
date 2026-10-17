@@ -6,6 +6,7 @@ import {
   buildBetterAuthRateLimitOptions,
   deriveAuthCookiePrefix,
   deriveAuthTrustedOrigins,
+  requestUrlFromHeaders,
   shouldDisableSecureAuthCookies,
 } from "../auth/better-auth.js";
 
@@ -193,6 +194,14 @@ describe("Better Auth cookie scoping", () => {
       publicUrl: "https://clip.nibilu.in",
       requestUrl: "https://clip.nibilu.in/api/auth/sign-in/email",
     })).toBe(false);
+  });
+
+  it("treats configured LAN HTTP hosts as HTTP when no proxy protocol is present", () => {
+    process.env.PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS = "192.168.31.16";
+
+    expect(requestUrlFromHeaders(new Headers({ host: "192.168.31.16:3104" }))).toBe(
+      "http://192.168.31.16:3104",
+    );
   });
 
   it("keeps secure cookies for explicit HTTPS public URLs", () => {

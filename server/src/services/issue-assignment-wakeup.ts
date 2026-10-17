@@ -39,8 +39,12 @@ export function queueIssueAssignmentWakeup(input: {
   attachmentOmissionReasons?: Record<string, number> | null;
   rethrowOnError?: boolean;
   durableChatRequest?: DurableChatWakeupRequest;
+  /** Set false by capability-upgrade submission: the admission gate holds the
+   * task until the user confirms (SPEC-implementation 11.2). */
+  admissionGateOpen?: boolean;
 }) {
   if (!input.issue.assigneeAgentId || input.issue.status === "backlog") return;
+  if (input.admissionGateOpen === false) return;
 
   return input.heartbeat
     .wakeup(input.issue.assigneeAgentId, {

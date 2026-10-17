@@ -163,7 +163,7 @@ function isConfiguredInsecureHttpAuthUrl(value: string | undefined): boolean {
   }
 }
 
-function requestUrlFromHeaders(headers: Headers): string | undefined {
+export function requestUrlFromHeaders(headers: Headers): string | undefined {
   const host = headers.get("host")?.trim();
   if (!host) return undefined;
 
@@ -172,7 +172,11 @@ function requestUrlFromHeaders(headers: Headers): string | undefined {
     ? forwardedProtocol
     : (() => {
       try {
-        return isLoopbackHostname(new URL(`http://${host}`).hostname) ? "http" : "https";
+        const hostUrl = `http://${host}`;
+        const hostname = new URL(hostUrl).hostname;
+        return isLoopbackHostname(hostname) || isConfiguredInsecureHttpAuthUrl(hostUrl)
+          ? "http"
+          : "https";
       } catch {
         return "https";
       }

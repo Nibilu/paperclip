@@ -1,6 +1,14 @@
 import type { AdapterSessionCodec } from "@paperclipai/adapter-utils";
 
 export { execute, resolveSessionKey, parseSseFramesForTest, mapFinalResultForTest } from "./execute.js";
+export {
+  discoverCapabilities,
+  capabilityCheckPrerequisites,
+  mapCapabilityDocument,
+  HERMES_CAPABILITY_DISCOVERY_TIMEOUT_MS,
+  HERMES_CAPABILITY_REVISION_UNVERSIONED,
+  type HermesCapabilityDiscoveryResult,
+} from "./capabilities.js";
 export { testEnvironment } from "./test.js";
 export { getConfigSchema } from "./config-schema.js";
 

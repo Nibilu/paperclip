@@ -921,6 +921,134 @@ describe("gateway connection failure reporting", () => {
     expect(fetchMock.mock.calls.some(([input]) => String(input).endsWith("/stop"))).toBe(true);
     expect(ctx.onLog).toHaveBeenCalledWith("stderr", expect.stringContaining("status poll failed"));
   });
+
+  it("translates a cancelled status fetched after timeout into recovery evidence", async () => {
+    let stopped = false;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/v1/runs")) return new Response(JSON.stringify({ run_id: "run-timeout-cancelled" }));
+      if (url.endsWith("/stop")) {
+        stopped = true;
+        return new Response(JSON.stringify({ status: "cancelled" }));
+      }
+      if (url.endsWith("/events")) return new Response("unavailable", { status: 503 });
+      if (url.endsWith("/v1/runs/run-timeout-cancelled")) {
+        return new Response(JSON.stringify(stopped
+          ? { status: "cancelled", last_event: "run.cancelled" }
+          : { status: "running" }));
+      }
+      throw new Error(`unexpected URL: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await execute(makeCtx({ ...config, timeoutSec: 0.05, pollIntervalMs: 500 }));
+
+    expect(result).toMatchObject({
+      timedOut: true,
+      errorCode: "hermes_gateway_timeout",
+      executionRecovery: {
+        kind: "interrupted",
+        providerStopped: true,
+        sessionPreserved: true,
+        actionOutcomes: "settled",
+      },
+      resultJson: {
+        status: "cancelled",
+        executionCancellation: { state: "acknowledged", proof: "hermes_gateway_terminal_status" },
+      },
+    });
+  });
+
+  it("bridges gateway approval.request through onToolApproval and resolves with the user's choice", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/v1/runs")) {
+        return new Response(JSON.stringify({ run_id: "run-approval-1", status: "started" }), { status: 200 });
+      }
+      if (url.endsWith("/approval")) {
+        return new Response(JSON.stringify({ object: "hermes.run.approval_response", resolved: 1 }), { status: 200 });
+      }
+      if (url.endsWith("/events")) {
+        return new Response(
+          sseStream(
+            [
+              "event: approval.request",
+              'data: {"request_id":"appr-1","command":"sudo rm -rf /tmp/x","choices":["once","deny"]}',
+              "",
+              "event: approval.responded",
+              'data: {"choice":"once"}',
+              "",
+              "event: run.completed",
+              'data: {"status":"completed","output":"approved work done"}',
+              "",
+            ].join("\n"),
+          ),
+          { status: 200, headers: { "content-type": "text/event-stream" } },
+        );
+      }
+      return new Response(JSON.stringify({ status: "completed", output: "approved work done" }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const ctx = makeCtx({ apiBaseUrl: "http://127.0.0.1:8642", apiKey: "secret-key", timeoutSec: 5 });
+    const onToolApproval = vi.fn(async (request: { toolName: string; command: string | null; requestId: string | null; choices: string[] }) => {
+      expect(request.toolName).toBe("terminal");
+      expect(request.command).toBe("sudo rm -rf /tmp/x");
+      expect(request.requestId).toBe("appr-1");
+      expect(request.choices).toEqual(["once", "deny"]);
+      return { choice: "once" };
+    });
+    ctx.onToolApproval = onToolApproval;
+
+    const result = await execute(ctx);
+    expect(result.exitCode).toBe(0);
+    expect(onToolApproval).toHaveBeenCalledTimes(1);
+    const approvalCall = (fetchMock.mock.calls as Array<[RequestInfo | URL, RequestInit?]>).find(
+      ([input]) => String(input).endsWith("/approval"),
+    );
+    expect(approvalCall).toBeTruthy();
+    const approvalInit = approvalCall?.[1] as RequestInit;
+    expect(approvalInit.method).toBe("POST");
+    expect(JSON.parse(String(approvalInit.body))).toEqual({ choice: "once", request_id: "appr-1" });
+    expect(ctx.onLog).toHaveBeenCalledWith("stdout", expect.stringContaining("approval resolved: once"));
+  });
+
+  it("denies via the gateway when the user rejects the approval", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/v1/runs")) {
+        return new Response(JSON.stringify({ run_id: "run-approval-2", status: "started" }), { status: 200 });
+      }
+      if (url.endsWith("/approval")) {
+        return new Response(JSON.stringify({ object: "hermes.run.approval_response", resolved: 1 }), { status: 200 });
+      }
+      if (url.endsWith("/events")) {
+        return new Response(
+          sseStream(
+            [
+              "event: approval.request",
+              'data: {"request_id":"appr-2","command":"curl evil.example","choices":["once","deny"]}',
+              "",
+              "event: run.failed",
+              'data: {"status":"failed","output":"denied"}',
+              "",
+            ].join("\n"),
+          ),
+          { status: 200, headers: { "content-type": "text/event-stream" } },
+        );
+      }
+      return new Response(JSON.stringify({ status: "failed", output: "denied" }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const ctx = makeCtx({ apiBaseUrl: "http://127.0.0.1:8642", apiKey: "secret-key", timeoutSec: 5 });
+    ctx.onToolApproval = vi.fn(async () => ({ choice: "deny" }));
+
+    const result = await execute(ctx);
+    const approvalCall = (fetchMock.mock.calls as Array<[RequestInfo | URL, RequestInit?]>).find(
+      ([input]) => String(input).endsWith("/approval"),
+    );
+    expect(JSON.parse(String(approvalCall?.[1]?.body))).toEqual({ choice: "deny", request_id: "appr-2" });
+    expect(result.errorCode).toBe("hermes_gateway_run_failed");
+  });
 });
 
 describe("testEnvironment", () => {
@@ -1105,5 +1233,39 @@ describe("mapFinalResultForTest", () => {
     expect(result.exitCode).toBe(1);
     expect(result.errorCode).toBe("hermes_gateway_run_failed");
     expect(result.errorMessage).toBe("boom");
+  });
+
+  it("translates an authoritative cancelled terminal into settled no-replay evidence", () => {
+    const result = mapFinalResultForTest({
+      terminal: {
+        runId: "run-2",
+        status: "cancelled",
+        eventName: "run.cancelled",
+        payload: { status: "cancelled", last_event: "run.cancelled" },
+      },
+      outputChunks: [],
+      sessionKey: "session-key",
+      strategy: "issue",
+    });
+
+    expect(result.executionRecovery).toEqual({
+      kind: "interrupted",
+      providerStopped: true,
+      sessionPreserved: true,
+      actionOutcomes: "settled",
+    });
+    expect(result.resultJson).toMatchObject({
+      final_status: { status: "cancelled", last_event: "run.cancelled" },
+      executionRecovery: {
+        kind: "interrupted",
+        providerStopped: true,
+        sessionPreserved: true,
+        actionOutcomes: "settled",
+      },
+      executionCancellation: {
+        state: "acknowledged",
+        proof: "hermes_gateway_terminal_status",
+      },
+    });
   });
 });

@@ -215,6 +215,7 @@ import {
   type QueuedCommentIssueContext,
 } from "../modules/wake-queue/index.js";
 import { artifactReviewDocumentService } from "../services/artifact-review-documents.js";
+import { capabilityUpgradeTaskService } from "../services/agent-capability-upgrade-task.js";
 import { assertCanResolveProposal } from "../services/secret-proposal-authorization.js";
 import {
   buildDocumentReviewContext,
@@ -9548,6 +9549,39 @@ export function issueRoutes(
     const receipt = await reconstructNativeWorkspace({ db, companyId: issue.companyId, issueId: issue.id,
       actorId: getActorInfo(req).actorId, request: req.body });
     res.status(202).json(receipt);
+  });
+
+  // HG-A6 (SPEC-implementation 11.2): explicit user confirmation releasing a
+  // capability-gap upgrade task from its admission gate into unified task
+  // scheduling. Idempotent; audited; no replay of any prior run.
+  router.post("/issues/:id/capability-upgrade-confirmation", async (req, res) => {
+    const id = req.params.id as string;
+    const existing = await getAccessibleResource(req, res, svc.getById(id), "Issue not found");
+    if (!existing) return;
+    if (!req.actor.companyId || existing.companyId !== req.actor.companyId) {
+      // Board actors hold company memberships; the service re-checks company scope.
+      if (req.actor.type === "agent" && req.actor.companyId !== existing.companyId) {
+        res.status(403).json({ error: "Forbidden", code: "company_mismatch" });
+        return;
+      }
+    }
+    try {
+      const result = await capabilityUpgradeTaskService(db).confirmUpgradeTask(existing.companyId, id, {
+        confirmedByUserId: req.actor.type === "board" ? req.actor.userId ?? null : null,
+      });
+      res.json(result);
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === "task_not_found") {
+        res.status(404).json({ error: (err as Error).message, code });
+        return;
+      }
+      if (code === "task_not_gated") {
+        res.status(409).json({ error: (err as Error).message, code });
+        return;
+      }
+      throw err;
+    }
   });
 
   router.post(

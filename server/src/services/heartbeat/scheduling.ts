@@ -1192,6 +1192,9 @@ export function createHeartbeatScheduling(
                 eq(issues.companyId, agent.companyId),
                 eq(issues.assigneeAgentId, agent.id),
                 inArray(issues.status, ["todo", "in_progress"]),
+                // HG-A6 admission gate: unconfirmed capability-upgrade tasks are
+                // not eligible heartbeat work (SPEC-implementation 11.2).
+                sql`coalesce(${issues.executionPolicy} -> 'admissionGate' ->> 'confirmedAt', '') <> '' OR ${issues.executionPolicy} -> 'admissionGate' IS NULL`,
                 gte(issues.createdAt, cutoff),
               ),
             )

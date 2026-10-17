@@ -272,6 +272,18 @@ export interface AdapterExecutionContext {
   onLog: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
   onMeta?: (meta: AdapterInvocationMeta) => Promise<void>;
   onEvent?: (event: AdapterRuntimeEvent) => Promise<void>;
+  /**
+   * Human-in-the-loop tool approval gate. The adapter calls it when the remote
+   * engine pauses for a user decision; the server surfaces the request to the
+   * board and resolves with the user's choice (adapter-neutral), or null when
+   * the run ended before a decision arrived.
+   */
+  onToolApproval?: (request: {
+    toolName: string;
+    command: string | null;
+    requestId: string | null;
+    choices: string[];
+  }) => Promise<{ choice: string } | null>;
   onUsage?: (receipt: AdapterUsageCheckpoint) => Promise<void>;
   onRuntimeProgress?: RuntimeStatusSink;
   /**

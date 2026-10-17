@@ -89,9 +89,9 @@ describe.skipIf(!support.supported)("heartbeat run completion boundary", () => {
   afterAll(async () => { await db?.$client.end(); await database?.cleanup(); vi.restoreAllMocks(); });
   beforeEach(async () => { await db.execute(sql`truncate table companies restart identity cascade`); });
 
-  async function fixture(patch: Partial<typeof heartbeatRuns.$inferInsert> = {}) {
+  async function fixture(patch: Partial<typeof heartbeatRuns.$inferInsert> = {}, agentPatch: Partial<typeof agents.$inferInsert> = {}) {
     const [company] = await db.insert(companies).values({ name: "Completion", issuePrefix: "CMP" }).returning();
-    const [agent] = await db.insert(agents).values({ companyId: company.id, name: "Completing agent", adapterType: "process" }).returning();
+    const [agent] = await db.insert(agents).values({ companyId: company.id, name: "Completing agent", adapterType: "process", ...agentPatch }).returning();
     const [wake] = await db.insert(agentWakeupRequests).values({ companyId: company.id, agentId: agent.id, source: "on_demand", status: "claimed" }).returning();
     const [run] = await db.insert(heartbeatRuns).values({ companyId: company.id, agentId: agent.id, wakeupRequestId: wake.id, status: "running", runtimeMode: "legacy", ...patch }).returning();
     const deps = callbacks(db);
@@ -136,6 +136,25 @@ describe.skipIf(!support.supported)("heartbeat run completion boundary", () => {
     await f.completion.completeRun(f.input);
     expect(await read(f.run.id)).toMatchObject({ status: expected, errorCode: result.errorCode });
     expect(f.deps.finalizeAgentStatus).toHaveBeenCalledWith(f.agent.id, expected, expect.any(String), expect.objectContaining({ keepIdleOnFailure: result.errorCode === "provider_quota" }));
+  });
+
+  it("preserves the hermes gateway timeout code instead of collapsing it to generic timeout", async () => {
+    const f = await fixture({}, { adapterType: "hermes_gateway" });
+    Object.assign(f.input.adapterResult, {
+      timedOut: true,
+      errorCode: "hermes_gateway_timeout",
+      errorMessage: "Hermes gateway run timed out after 600s.",
+      resultJson: { run_id: "remote-run-1", status: "running" },
+    });
+    await f.completion.completeRun(f.input);
+    const persisted = await read(f.run.id);
+    expect(persisted).toMatchObject({ status: "timed_out", errorCode: "hermes_gateway_timeout" });
+    // Evidence projection must classify this as a stop-unknown reconciliation
+    // state (never silently auto-retryable), per SPEC-implementation 11.2.
+    expect((persisted.resultJson as Record<string, unknown>).hermesEvidence).toMatchObject({
+      state: "remote_run_stop_unknown",
+      adapterErrorCode: "hermes_gateway_timeout",
+    });
   });
 
   it.each(["completeRun", "failRun"] as const)("waits for an owned Stop before %s can write a competing outcome", async operation => {

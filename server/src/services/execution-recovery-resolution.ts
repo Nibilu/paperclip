@@ -26,6 +26,38 @@ import { isSupersededConversationRun } from "./agent-conversations.js";
 import { hasRequiredWorkspaceRecovery } from "./workspace-restore-recovery-state.js";
 import { hasRemoteTerminationReceipt } from "./remote-execution-termination.js";
 
+/**
+ * Build the audit context for a post-reconciliation continuation.
+ *
+ * The reconciliation wake is admission-gated on this exact shape: the queue
+ * requires context.retryOfRunId === the reconciled source run id before it
+ * will deliver the continuation, and it stamps the same value onto the run
+ * row itself. `retryOfRunId` here is delivery bookkeeping + attribution, not
+ * a legacy replay authorization — the queue still requires
+ * `forceFreshSession: true`, the reconciled decision must be `resolved`, and
+ * no `legacyDispositionEpisode` is carried, so the new run never re-enters
+ * legacy retry admission or replays the old execution path.
+ */
+export function buildReconciledContinuationContext(input: {
+  issueId: string;
+  recoveryActionId: string;
+  previousRunId: string;
+}) {
+  return {
+    issueId: input.issueId,
+    taskId: input.issueId,
+    recoveryActionId: input.recoveryActionId,
+    previousRunId: input.previousRunId,
+    sourceRunId: input.previousRunId,
+    // Delivery-gate bookkeeping required by heartbeat queue admission for
+    // `execution.reconciled` wakes. See heartbeat/queue.ts reconciliation gate.
+    retryOfRunId: input.previousRunId,
+    forceFreshSession: true,
+    wakeReason: "issue_recovery_action_restored",
+    source: "execution.reconciled",
+  } as const;
+}
+
 /** An operator records observed outcomes; this is not permission to blindly retry. */
 export async function validateExecutionReconciliation(input: {
   db: Db;
@@ -290,31 +322,14 @@ export async function deliverReconciledExecutions(
         payload: { issueId: task.id, recoveryActionId: action.id },
         requestedByActorType: "system",
         requestedByActorId: "execution-recovery",
-        contextSnapshot: {
+        contextSnapshot: buildReconciledContinuationContext({
           issueId: task.id,
-          taskId: task.id,
           recoveryActionId: action.id,
           previousRunId: decision.runId,
-          retryOfRunId: decision.runId,
-          forceFreshSession: true,
-          wakeReason: "issue_recovery_action_restored",
-          source: "execution.reconciled",
-        },
+        }),
       });
       if (run)
         await db.transaction(async (tx) => {
-          await tx
-            .update(heartbeatRuns)
-            .set({ retryOfRunId: decision.runId })
-            .where(
-              and(
-                eq(heartbeatRuns.companyId, action.companyId),
-                eq(heartbeatRuns.id, run.id),
-                eq(heartbeatRuns.agentId, action.returnOwnerAgentId!),
-                sql`${heartbeatRuns.contextSnapshot}->>'recoveryActionId' = ${action.id}`,
-                sql`${heartbeatRuns.contextSnapshot}->>'previousRunId' = ${decision.runId}`,
-              ),
-            );
           await tx
             .update(issueRecoveryActions)
             .set({

@@ -585,6 +585,9 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
           inArray(issues.status, [...TIMER_ACTIONABLE_ISSUE_STATUSES]),
           isNull(issues.conversationAgentId),
           nonIdleSlackIssueCondition(),
+          // HG-A6 admission gate: capability-upgrade tasks waiting for explicit
+          // user confirmation are not actionable timer work (SPEC 11.2).
+          sql`coalesce(${issues.executionPolicy} -> 'admissionGate' ->> 'confirmedAt', '') <> '' OR ${issues.executionPolicy} -> 'admissionGate' IS NULL`,
         ),
       )
       .limit(1)

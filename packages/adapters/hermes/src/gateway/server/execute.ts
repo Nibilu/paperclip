@@ -55,6 +55,8 @@ type ExecutionState = {
   runId: string;
   outputChunks: string[];
   lastEventName: string | null;
+  gatewayBaseUrl: URL;
+  gatewayHeaders: Record<string, string>;
   terminal: TerminalState | null;
   resolveTerminal: (state: TerminalState) => void;
   terminalPromise: Promise<TerminalState>;
@@ -515,15 +517,21 @@ export function parseSseFramesForTest(buffer: string): { frames: SseFrame[]; res
   return { frames, rest: normalized.slice(offset) };
 }
 
-function createExecutionState(runId: string): ExecutionState {
+function createExecutionState(input: {
+  runId: string;
+  baseUrl: URL;
+  headers: Record<string, string>;
+}): ExecutionState {
   let resolveTerminal!: (state: TerminalState) => void;
   const terminalPromise = new Promise<TerminalState>((resolve) => {
     resolveTerminal = resolve;
   });
   return {
-    runId,
+    runId: input.runId,
     outputChunks: [],
     lastEventName: null,
+    gatewayBaseUrl: input.baseUrl,
+    gatewayHeaders: input.headers,
     terminal: null,
     resolveTerminal,
     terminalPromise,
@@ -575,6 +583,47 @@ async function handleEvent(
     const sanitizedDelta = redactText(delta);
     state.outputChunks.push(sanitizedDelta);
     await ctx.onLog("stdout", sanitizedDelta);
+  }
+
+  if (eventName === "approval.request") {
+    const requestId = nonEmpty(record?.request_id) ?? nonEmpty(record?.requestId);
+    const command = nonEmpty(record?.command);
+    const rawChoices = Array.isArray(record?.choices) ? record?.choices : [];
+    const choices = rawChoices.map((c) => String(c)).filter((c) => c.length > 0);
+    await ctx.onLog(
+      "stdout",
+      `[hermes-gateway] approval requested (id=${requestId ?? "unknown"}): ${redactText(command ?? "(no command text)")}\n`,
+    );
+    // Bridge to the host's human-in-the-loop gate, then relay the user's
+    // choice back to the gateway. Blocks this SSE reader while waiting — the
+    // remote run is parked in waiting_for_approval, so no events are missed.
+    const resolution = ctx.onToolApproval
+      ? await ctx.onToolApproval({
+          toolName: "terminal",
+          command,
+          requestId,
+          choices: choices.length > 0 ? choices : ["once", "deny"],
+        })
+      : null;
+    if (resolution && !state.terminal) {
+      const body: Record<string, unknown> = { choice: resolution.choice };
+      if (requestId) body.request_id = requestId;
+      try {
+        await fetchJson(
+          apiUrl(state.gatewayBaseUrl, `/v1/runs/${encodeURIComponent(state.runId)}/approval`),
+          { method: "POST", headers: state.gatewayHeaders, body: JSON.stringify(body) },
+        );
+        await ctx.onLog(
+          "stdout",
+          `[hermes-gateway] approval resolved: ${resolution.choice} (run ${state.runId})\n`,
+        );
+      } catch (err) {
+        await ctx.onLog(
+          "stderr",
+          `[hermes-gateway] approval resolution failed: ${redactErrorMessage(err, redactText)}\n`,
+        );
+      }
+    }
   }
 
   const status = extractStatus(parsed) ?? (eventName?.startsWith("run.") ? eventName.slice(4) : null);
@@ -733,6 +782,12 @@ function extractErrorMessage(value: unknown): string | null {
   return nonEmpty(record?.error) ?? nonEmpty(record?.message) ?? nonEmpty(record?.detail) ?? extractOutput(value);
 }
 
+function terminalExecutionRecovery(status: string): AdapterExecutionResult["executionRecovery"] {
+  return CANCELLED_STATUSES.has(status)
+    ? { kind: "interrupted", providerStopped: true, sessionPreserved: true, actionOutcomes: "settled" }
+    : undefined;
+}
+
 function terminalResultCode(status: string): { exitCode: number; signal: string | null; errorCode: string | null } {
   if (status === "completed") return { exitCode: 0, signal: null, errorCode: null };
   if (FAILURE_STATUSES.has(status)) return { exitCode: 1, signal: null, errorCode: "hermes_gateway_run_failed" };
@@ -755,6 +810,7 @@ export function mapFinalResultForTest(input: {
   const sessionId = extractSessionId(payload) ?? input.sessionKey;
   const sessionDisplayId = sessionId ? redactText(sessionId) : null;
   const mapped = terminalResultCode(input.terminal.status);
+  const executionRecovery = terminalExecutionRecovery(input.terminal.status);
   const usage = parseUsage(payload);
   const costUsd = parseCostUsd(payload);
   const errorMessage = mapped.errorCode
@@ -778,11 +834,25 @@ export function mapFinalResultForTest(input: {
       strategy: input.strategy,
     },
     sessionDisplayId,
+    ...(executionRecovery ? { executionRecovery } : {}),
     resultJson: {
       run_id: input.terminal.runId,
       status: input.terminal.status,
       session_id: sessionDisplayId,
       last_event: input.terminal.eventName ?? null,
+      ...(CANCELLED_STATUSES.has(input.terminal.status)
+        ? {
+            final_status: {
+              status: input.terminal.status,
+              last_event: input.terminal.eventName ?? null,
+            },
+            executionRecovery,
+            executionCancellation: {
+              state: "acknowledged",
+              proof: "hermes_gateway_terminal_status",
+            },
+          }
+        : {}),
       output: output ?? "",
       usage: usage ?? null,
       cost_usd: costUsd,
@@ -1013,7 +1083,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   await ctx.onLog("stdout", `[hermes-gateway] run created: ${runId}\n`);
 
-  const state = createExecutionState(runId);
+  const state = createExecutionState({
+    runId,
+    baseUrl,
+    headers: eventHeaders,
+  });
   const controller = new AbortController();
   void consumeEvents({
     ctx,
@@ -1047,6 +1121,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   if (outcome === "timeout") {
     await stopRun({ ctx, baseUrl, headers: eventHeaders, runId, redactText });
     const finalStatus = await fetchFinalStatus({ baseUrl, headers: eventHeaders, runId, deadlineMs: STOP_GRACE_MS });
+    const finalStatusValue = extractStatus(finalStatus);
+    const executionRecovery = finalStatusValue ? terminalExecutionRecovery(finalStatusValue) : undefined;
     return {
       exitCode: 1,
       signal: null,
@@ -1054,11 +1130,21 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       errorCode: "hermes_gateway_timeout",
       errorMessage: `Hermes gateway run timed out after ${timeoutSec}s.`,
       provider: "hermes_gateway",
+      ...(executionRecovery ? { executionRecovery } : {}),
       resultJson: {
         run_id: runId,
-        status: extractStatus(finalStatus) ?? "timeout",
+        status: finalStatusValue ?? "timeout",
         last_event: state.lastEventName,
         final_status: redactForLog(finalStatus, [], 0, redactText),
+        ...(executionRecovery
+          ? {
+              executionRecovery,
+              executionCancellation: {
+                state: "acknowledged",
+                proof: "hermes_gateway_terminal_status",
+              },
+            }
+          : {}),
       },
       sessionParams: {
         hermesRunId: runId,

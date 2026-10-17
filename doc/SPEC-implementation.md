@@ -1414,7 +1414,272 @@ Remote interruption and external usage remain unconfirmed or unavailable unless
 supported by evidence. Release requires the live journeys and bounded cadence
 qualification in [Personal Muse receiver](muse-personal-agent.md).
 
-## 11.2 Process Adapter
+## 11.2 Manual Adapter Capability Checks and Confirmed Upgrade Tasks
+
+Every built-in or plugin-provided adapter MUST expose an adapter capability
+contract in addition to its execution contract. This contract is deliberately
+separate from Paperclip task/run status: it describes what the configured
+adapter endpoint can actually do and whether that observation is current.
+
+**Current scope is manual-only.** Periodic background capability checks,
+automatic upgrade execution, and automatic dispatch are explicitly out of
+scope for this increment.
+
+### Current implementation gap (baseline audit, verified 2026-10-15)
+
+Live probe of the production Hermes Gateway (v0.21.1, `GET /v1/capabilities`
+with bearer `API_SERVER_KEY`) confirms the Gateway side of the contract already
+exists: the capability document exposes `auth` (bearer, required), `runtime`
+mode, a `features` map (`run_submission`, `run_status`, `run_events_sse`,
+`run_stop`, `run_steer`, `run_approval_response`,
+`runs_idempotency{supported,durable,retention_seconds}`, and more), and an
+`endpoints` map with method/path for every operation. Error paths are
+structured (`gateway_auth_failed` 401, `run_not_found` 404,
+`invalid_request_error` 400). Three SPEC-required fields are missing from the
+Gateway document: a protocol version, a capability revision, and a
+provider-observed timestamp; `GET /health` carries liveness only and must not
+be presented as interface support. Until the Gateway adds these fields, the
+adapter MUST treat the document revision as `unversioned` and derive freshness
+from check time only.
+
+The remaining gap is on the Paperclip side. The current `hermes_gateway`
+adapter performs a health check and uses the execution endpoints
+`POST /v1/runs`, `GET /v1/runs/{run_id}`, `GET /v1/runs/{run_id}/events`, and
+`POST /v1/runs/{run_id}/stop`, but never requests `GET /v1/capabilities`. The
+Paperclip UI capability query describes registered adapter metadata rather than
+live Hermes Gateway protocol support. There is currently no adapter-neutral
+manual capability check, no change/new-capability diff, and no standard
+capability-gap to specified-agent upgrade-task flow.
+
+This section is a requirement for the next adapter-control-plane increment; it
+must not be read as evidence that the baseline already implements these paths.
+
+### Adapter capability contract
+
+Each preset and newly registered adapter MUST declare or implement:
+
+- `capabilityDiscovery`: whether the adapter can read a live endpoint capability
+  document and how it is authenticated;
+- `capabilityVersion` or equivalent protocol revision;
+- the supported operation set, including at least `create`, `status`,
+  `events`, `cancel/stop`, `approval`, `idempotency`, and `outcomeEvidence`
+  where applicable;
+- a bounded discovery/check operation that returns structured results without
+  starting an agent task or mutating provider state;
+- an adapter-specific configuration and permission prerequisite description;
+- an upgrade-task template describing how a missing or stale capability can be
+  implemented, tested, and verified;
+- a declared agent-selection policy for upgrade work. The policy may require a
+  human-selected agent and MUST NOT silently reassign ordinary production work.
+
+For adapters that cannot support live discovery, the adapter MUST explicitly
+return `capability_discovery_unsupported`; it must not appear as if the
+registered static metadata were a live provider capability check.
+
+### Hermes Gateway discovery
+
+For `hermes_gateway`, the preferred discovery contract is a bounded authenticated
+request to a versioned capability endpoint such as `GET /v1/capabilities`.
+The response MUST identify, at minimum:
+
+- Gateway protocol version;
+- supported run creation, status, events, stop, approval, and idempotency
+  operations;
+- remote-run identity and outcome-evidence support;
+- supported authentication direction and required headers;
+- provider/runtime feature flags relevant to Paperclip admission;
+- capability document revision and provider-observed timestamp.
+
+Verified against the production Hermes Gateway (v0.21.1): the live
+`GET /v1/capabilities` document satisfies the operation, idempotency, auth, and
+feature-flag bullets through its `features` and `endpoints` maps, but does not
+yet carry a protocol version, capability revision, or provider-observed
+timestamp. The adapter therefore maps the real document as follows:
+
+- operation availability derives from `features.run_submission`,
+  `features.run_status`, `features.run_events_sse`, `features.run_stop`,
+  `features.run_approval_response`, and `features.runs_idempotency`;
+- endpoint identity (method/path) derives from the `endpoints` map and MUST be
+  compared, not assumed, so a Gateway path change surfaces as a changed
+  capability;
+- protocol version falls back to the `version` field of `GET /health` when the
+  capability document lacks one, recorded as adapter-specific evidence with the
+  `unversioned` revision marker;
+- `run_steer`, `session_*`, and other features outside Paperclip's operation
+  vocabulary are recorded as observed extras, not admission inputs.
+
+A successful `/health` response is liveness evidence only. It MUST NOT be
+presented as proof that the required Gateway interface contract is available.
+A missing, malformed, unauthorized, timed-out, or version-incompatible
+capability response MUST be classified separately from a provider run failure.
+
+### Capability states and freshness
+
+Capability observations are adapter-specific evidence, not task statuses. The
+minimum normalized states are:
+
+```text
+unknown
+checking
+available
+partially_supported
+unsupported
+stale
+unreachable
+authentication_failed
+protocol_incompatible
+malformed_response
+```
+
+Every observation MUST carry adapter type, configured endpoint identity (redacted
+where needed), capability revision, checked-at time, freshness deadline,
+operation-level results, error code/stage, and the next recommended action.
+For this increment, checks are initiated only by an explicit user action. The
+same endpoint check MUST be serialized so duplicate button clicks do not start
+parallel probes. The result MUST be compared with the previously stored
+capability revision/operation set to classify newly added, removed, changed, or
+unchanged capabilities. No check may change a task status, retry a run, or
+silently upgrade an adapter.
+
+Periodic background checks may be specified as a later phase, but are not part
+of this requirement and must not be implemented as a hidden side effect.
+
+### Backend requirements
+
+The control plane MUST provide adapter-neutral backend operations for:
+
+1. reading the last capability observation and its evidence;
+2. requesting one explicit, bounded, authenticated capability check;
+3. comparing the new observation with the stored revision and operation set;
+4. reporting newly added, removed, changed, and unchanged capabilities with
+   actionable remediation;
+5. exposing an upgrade-task action only when the manual check found a concrete
+   new or changed capability that requires development work;
+6. accepting the selected upgrade agent and the user's submission;
+7. automatically creating an ordinary `todo` upgrade task at submission time,
+   with source adapter, endpoint, capability revision, detected capability
+   diff, and selected agent in immutable creation metadata;
+8. placing the created task behind an explicit user-confirmation gate before
+   unified task scheduling;
+9. recording the manual check, capability diff, upgrade-task creation, selected
+   agent, user confirmation, queue admission, completion, verification result,
+   and rollback/recheck activity in the activity log.
+
+The upgrade task's persisted task status MUST initially be `todo`. The
+pre-dispatch confirmation gate is control-plane admission metadata, not a new
+task status. Until the user confirms, the task MUST NOT be enqueued, woken, or
+sent to the unified task scheduler. Confirmation MUST be an explicit UI action,
+be authorized for the company/task, be idempotent, and be auditable. Rejection,
+expiry, or cancellation leaves the task visible with a reason and does not
+enter the queue.
+
+Refresh and discovery endpoints MUST be company-scoped, authorization-checked,
+rate-limited, bounded by timeout, and safe to repeat. They MUST never return or
+persist API keys, bearer tokens, cookies, or raw authorization headers. There is
+no periodic refresh endpoint or scheduler requirement in this phase.
+
+Creating an upgrade task MUST be an explicit action. It MUST not mutate the
+adapter, agent, task status, or production run automatically. The created task
+is an ordinary Paperclip task with an adapter-upgrade provenance record; its
+execution still uses normal assignment, workspace, approval, budget, and
+admission rules. A task that implements an upgrade MUST be followed by a fresh
+capability check before the capability is marked available.
+
+### Frontend UI/UX requirements
+
+Every built-in and plugin adapter that declares capability discovery MUST expose
+consistent UI states in its agent detail/configuration surface:
+
+- current capability summary and per-operation availability;
+- last checked time, freshness deadline, protocol revision, and endpoint label;
+- clear distinction between liveness (`health`) and interface support;
+- a user-initiated `Check capabilities` action with pending, success, partial,
+  stale, unauthorized, timeout, malformed, and unsupported states;
+- a capability diff showing newly added, removed, changed, and unchanged
+  operations after each successful check;
+- operation-level remediation text that follows Paperclip's existing error and
+  recovery presentation conventions;
+- `Create upgrade task` action only when the latest manual check found a
+  concrete new or changed capability that requires development work;
+- an agent picker for the upgrade task, with the selected agent shown before
+  submission and no silent reassignment;
+- after submission, a visible `todo` task reference and a separate
+  `Confirm and schedule` action;
+- a clear pending-confirmation state explaining that the task has not entered
+  the unified scheduler yet;
+- links to the created task, its capability diff, confirmation record, and
+  verification history.
+
+Submitting the upgrade form MUST create the `todo` task automatically. The UI
+MUST NOT enqueue or wake it as part of submission. Only the explicit user
+confirmation action may release it to normal unified task scheduling. The UI
+must show rejection, expiry, cancellation, and queue-admission results without
+silently retrying or duplicating the task.
+
+The UI MUST preserve ordinary agent/task controls when capability discovery is
+unavailable. It MUST not label an adapter executable merely because its static
+registry entry exists, and it MUST not offer Retry when the underlying evidence
+or admission contract does not permit it. Periodic refresh controls and
+background-refresh status are out of scope for this phase.
+
+### Upgrade-task workflow
+
+The standard workflow for this phase is:
+
+```text
+registered adapter
+  -> user clicks Check capabilities
+  -> bounded authenticated capability check
+  -> compare with stored revision/operation set
+  -> newly added or changed capability requiring development
+  -> UI reveals Create upgrade task
+  -> operator selects permitted agent and submits
+  -> Paperclip automatically creates an ordinary todo upgrade task
+  -> task waits for explicit user confirmation
+  -> user confirms
+  -> task enters the unified task scheduler
+  -> selected agent implements/tests the adapter or Gateway change
+  -> operator/agent requests a fresh manual capability check
+  -> Paperclip records the verified revision and updates the UI
+```
+
+If the manual check finds no new or changed capability requiring development,
+the upgrade-task action MUST remain hidden or disabled with an explanatory
+reason. A capability that is merely unchanged does not create a duplicate task.
+
+The upgrade task is not a special bypass lane. It cannot clear a reconciliation
+hold, replay an uncertain remote run, or change the owner/status of an unrelated
+production task. If the selected agent cannot perform the upgrade, the failure
+must remain visible and the operator may create a new upgrade task with another
+permitted agent through the normal task flow. User confirmation is required for
+each newly created task; it is not implied by selecting an agent or submitting
+the form.
+
+### Adapter authoring acceptance criteria
+
+A new or upgraded adapter is incomplete until it supplies:
+
+- server-side capability declaration/discovery and structured error mapping;
+- manual capability-check API wiring and audit events;
+- capability diffing and conditional upgrade-task creation;
+- UI registration for summary, manual check, remediation, upgrade-task creation,
+  and explicit confirmation before queue admission;
+- tests for available, partial, stale, unsupported, auth failure, timeout,
+  malformed response, unchanged capability, changed capability, duplicate
+  submission, rejected confirmation, confirmed queue admission, and
+  post-upgrade recheck;
+- documentation of which fields are static declarations versus live evidence;
+- no-secret logging and redaction coverage.
+
+Periodic background capability checks, automatic upgrade execution, and
+automatic queue admission are later-phase enhancements, not acceptance criteria
+for this increment.
+
+This requirement extends the existing plugin architecture; it does not require
+rewriting the generic scheduler, task status model, recovery state machine, or
+adapter execution contract.
+
+## 11.3 Process Adapter
 
 Config shape:
 
@@ -1436,7 +1701,7 @@ Behavior:
 - mark run status on exit code/timeout
 - cancel sends SIGTERM then SIGKILL after grace
 
-## 11.3 HTTP Adapter
+## 11.4 HTTP Adapter
 
 Config shape:
 
@@ -1457,18 +1722,18 @@ Behavior:
 - non-2xx marks failed invocation
 - optional callback endpoint allows asynchronous completion updates
 
-## 11.4 Context Delivery
+## 11.5 Context Delivery
 
 - `thin`: send IDs and pointers only; agent fetches context via API
 - `fat`: include current assignments, goal summary, budget snapshot, and recent comments
 
-## 11.5 Recovery Work Classes
+## 11.6 Recovery Work Classes
 
 Status-only recovery coordination must include guard context that prevents deliverable work and document or plan updates (`allowDeliverableWork: false`, `allowDocumentUpdates: false`, `resumeRequiresNormalModel: true`). Recovery work classes do not select or change the agent model.
 
 Failed source-work retries, process-loss retries, transient or scheduled retries, max-turn continuations, source-assignee continuations, and downstream source-work child, requeue, or resume contexts use the agent's configured model. If status-only recovery repairs liveness while actual work remains, the next live continuation path must be a separate worker run.
 
-## 11.6 Scheduler Rules
+## 11.7 Scheduler Rules
 
 Per-agent schedule fields in `adapter_config`:
 
@@ -1487,7 +1752,7 @@ before provisioning. A live lease protects the run during overlapping service
 deployments. An expired controller loses dispatch authority; a recovery worker
 must establish that the previous execution stopped before starting a successor.
 
-## 11.7 Durable agent session goals
+## 11.8 Durable agent session goals
 
 Runner Protocol v2 negotiates a required `sessionGoals` capability and typed
 `session.goal.*` commands and events. PRP v1 sessions remain supported and are
@@ -1887,9 +2152,25 @@ action outcomes; do not replay tool calls or reset the failed incident's automat
 retry budget. Existing pause, approval, budget, ownership, and dependency gates
 remain in effect. See `doc/execution-semantics.md` for admission and stop-proof
 requirements.
-The task recovery notice offers Retry for eligible failures and verified native
-startup cancellations, with failed attempts explained inline. Preparing native
-turns keep the Steer label. Steer and Interrupt immediately move the submitted
+The task recovery notice offers Retry only for eligible failures and verified native
+startup cancellations, with failed attempts explained inline. For an execution
+reconciliation hold, the notice never offers a blind Retry: it opens the
+adapter-neutral reconciliation flow, shows the source run and provider evidence,
+and lets an authorized board operator confirm the provider stop and choose a
+verified outcome (`completed`, `not_performed`, or `mixed`). An unknown outcome
+keeps the hold. The reconciliation commit records the decision against the exact
+source run and starts a fresh continuation; it never replays the old provider
+turn or tool calls. The flow is deterministic and server-authoritative; optional
+language summaries cannot change available actions or safety decisions.
+
+**Implementation status (2026-10-16):** The adapter-neutral reconciliation panel,
+server-side reconciliation validation, no-replay hold, durable evidence chain,
+and fresh-continuation delivery are implemented for the current Hermes Gateway and
+legacy execution recovery path. Hermes terminal-status translation now emits the
+common recovery/cancellation evidence. Browser acceptance of the operator flow
+remains dependent on an authenticated Dev board session; unit, typecheck, and
+production UI build checks pass.
+Preparing native turns keep the Steer label. Steer and Interrupt immediately move the submitted
 messages from the composer queue into the conversation while delivery proceeds.
 Provider acknowledgement remains authoritative; failed delivery restores the
 latest queue with an inline error. Neither action produces a toast.
