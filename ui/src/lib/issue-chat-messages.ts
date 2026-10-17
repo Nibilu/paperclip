@@ -459,17 +459,55 @@ function isIssueChatRenderableTranscriptEntry(entry: IssueChatTranscriptEntry) {
     && entry.kind !== "run_terminal";
 }
 
+/**
+ * Merge delta fragments of the same kind into single entries — AFTER dropping
+ * non-renderable entries. Hermes-gateway-style adapters emit character-level
+ * `message.delta` fragments interleaved with stdout echoes of the same text,
+ * so fragments of one message are never adjacent in the raw stream. The naive
+ * "last N entries" window otherwise renders only the tail fragments of one
+ * message ("自带分", "片模式", ...) and silently drops the rest of that
+ * message — and every earlier message — out of the chat thread.
+ */
+function mergeRenderableDeltaEntries(
+  entries: readonly IssueChatTranscriptEntry[],
+): readonly IssueChatTranscriptEntry[] {
+  const merged: IssueChatTranscriptEntry[] = [];
+  for (const entry of entries) {
+    if (
+      (entry.kind === "assistant" || entry.kind === "thinking") &&
+      entry.delta === true
+    ) {
+      const last = merged[merged.length - 1];
+      if (last && last.kind === entry.kind && last.delta === true) {
+        merged[merged.length - 1] = {
+          ...last,
+          text: `${last.text ?? ""}${entry.text ?? ""}`,
+          ts: entry.ts,
+        };
+        continue;
+      }
+    }
+    merged.push(entry);
+  }
+  return merged;
+}
+
 function compactIssueChatTranscript(
   entries: readonly IssueChatTranscriptEntry[],
   maxVisibleEntries = ISSUE_CHAT_TRANSCRIPT_MAX_VISIBLE_ENTRIES,
 ): readonly IssueChatTranscriptEntry[] {
-  const renderable = entries
-    .map((entry, fullIndex) => ({ entry, fullIndex }))
-    .filter(({ entry }) => isIssueChatRenderableTranscriptEntry(entry));
+  // Filter non-renderable entries FIRST (so delta fragments separated by
+  // stdout echoes become adjacent), then merge delta runs, then window.
+  const renderableSource = mergeRenderableDeltaEntries(
+    entries.filter(isIssueChatRenderableTranscriptEntry),
+  );
 
-  if (renderable.length <= maxVisibleEntries) {
-    return entries;
+  if (renderableSource.length <= maxVisibleEntries) {
+    return renderableSource;
   }
+
+  const renderable = renderableSource
+    .map((entry, fullIndex) => ({ entry, fullIndex }));
 
   let startPos = Math.max(0, renderable.length - maxVisibleEntries);
   while (
@@ -504,7 +542,7 @@ function compactIssueChatTranscript(
     if (fullIndex !== undefined) keptFullIndices.add(fullIndex);
   }
 
-  const compactedEntries = entries.filter((_entry, index) => keptFullIndices.has(index));
+  const compactedEntries = renderableSource.filter((_entry, index) => keptFullIndices.has(index));
   return compactedEntries;
 }
 
