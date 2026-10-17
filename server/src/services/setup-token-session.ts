@@ -1454,8 +1454,16 @@ export class SetupTokenSessionService {
 
 type AdapterAuthSessionRow = typeof adapterAuthSessions.$inferSelect;
 
-/** Maps a database row to the non-secret cleanup record. */
-function toCleanupRecord(row: AdapterAuthSessionRow): SetupTokenCleanupRecord {
+/** Maps a database row to the non-secret cleanup record. Returns null for a
+ *  row the reaper cannot act on: a local-subscription login never acquires a
+ *  sandbox lease, so its null `provider_lease_id` is expected state, not a
+ *  corrupt row. Map it to the empty string and every sweep retries
+ *  `releaseById("")`, which Postgres rejects with a uuid parse error and the
+ *  catch keeps the record — an eternal, never-converging retry loop. Skip the
+ *  row instead; the device-login reaper already resolves the same shape by
+ *  falling through to a terminal state without a lease delete. */
+function toCleanupRecord(row: AdapterAuthSessionRow): SetupTokenCleanupRecord | null {
+  if (!row.providerLeaseId) return null;
   return {
     sessionId: row.publicSessionId,
     ...(row.aiConnection ? { aiConnection: row.aiConnection } : {}),
@@ -1592,7 +1600,7 @@ export function createDbSetupTokenCleanupStore(db: Db): SetupTokenCleanupStore {
             ),
           ),
         );
-      return rows.map(toCleanupRecord);
+      return rows.map(toCleanupRecord).filter((record) => record !== null);
     },
 
     async consumeStoredClaim(identity): Promise<SetupTokenCleanupRecord | null> {
