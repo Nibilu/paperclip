@@ -13,6 +13,7 @@ export {
 } from "./skills.js";
 
 import type { AdapterSessionCodec } from "@paperclipai/adapter-utils";
+import { sessionCodec as acpxSessionCodec } from "@paperclipai/adapter-utils/acpx-engine/session-codec";
 
 function readNonEmptyString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
@@ -21,8 +22,11 @@ function readNonEmptyString(value: unknown): string | null {
 /**
  * Session codec for structured validation and migration of session parameters.
  *
- * Hermes Agent uses a single `sessionId` for cross-heartbeat session continuity
- * via the `--resume` CLI flag. The codec validates and normalizes this field.
+ * Two shapes coexist by engine:
+ * - CLI engine: a single `sessionId` for cross-heartbeat session continuity
+ *   via the `--resume` CLI flag.
+ * - ACP engine: acpx's structured session params (acpSessionId,
+ *   configFingerprint, ...) handled by the shared acpx session codec.
  */
 export const sessionCodec: AdapterSessionCodec = {
   deserialize(raw: unknown) {
@@ -31,19 +35,24 @@ export const sessionCodec: AdapterSessionCodec = {
     const sessionId =
       readNonEmptyString(record.sessionId) ??
       readNonEmptyString(record.session_id);
-    if (!sessionId) return null;
-    return { sessionId };
+    if (sessionId) return { sessionId };
+    return acpxSessionCodec.deserialize(raw);
   },
   serialize(params: Record<string, unknown> | null) {
     if (!params) return null;
     const sessionId =
       readNonEmptyString(params.sessionId) ??
       readNonEmptyString(params.session_id);
-    if (!sessionId) return null;
-    return { sessionId };
+    if (sessionId) return { sessionId };
+    return acpxSessionCodec.serialize(params);
   },
   getDisplayId(params: Record<string, unknown> | null) {
     if (!params) return null;
-    return readNonEmptyString(params.sessionId) ?? readNonEmptyString(params.session_id);
+    return (
+      readNonEmptyString(params.sessionId) ??
+      readNonEmptyString(params.session_id) ??
+      acpxSessionCodec.getDisplayId?.(params) ??
+      null
+    );
   },
 };

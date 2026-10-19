@@ -84,10 +84,21 @@ tools, persistent memory, session persistence, skills, and MCP support.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
+| engine | select | cli | Execution engine. \`cli\` shells out to \`hermes chat\`; \`acp\` runs Hermes's Agent Client Protocol server (\`hermes-acp\`) through Paperclip's shared ACP engine (session resume, permission handling, and run lifecycle come from the shared engine). |
 | model | string | (Hermes configured default) | Optional explicit model in provider/model format. Leave blank to use Hermes's configured default model. |
 | provider | string | (auto) | API provider: auto, openrouter, nous, openai-codex, zai, kimi-coding, minimax, minimax-cn. Usually not needed — Hermes auto-detects from model name. |
 | timeoutSec | number | 300 | Execution timeout in seconds |
 | graceSec | number | 10 | Grace period after SIGTERM before SIGKILL |
+
+## ACP Engine Fields (engine=acp)
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| agentCommand | string | hermes-acp | Path/override for the Hermes ACP server command. |
+| mode | select | persistent | \`persistent\` keeps ACP session state across runs; \`oneshot\` starts fresh each run. |
+| nonInteractivePermissions | select | deny | Fallback when the ACP agent asks for input outside an interactive session. |
+| stateDir | string | (managed) | ACP session state directory. Defaults to Paperclip-managed company/agent scoped storage. |
+| warmHandleIdleMs | number | 0 | 0 closes the ACP process after each run while retaining persistent session state. |
 
 ## Tool Configuration
 

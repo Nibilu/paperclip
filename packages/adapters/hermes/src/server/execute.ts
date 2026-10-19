@@ -49,10 +49,16 @@ import {
 } from "../shared/constants.js";
 
 import {
+  createHermesAcpExecutor,
+  resolveHermesExecutionEngineForRun,
+} from "./acp.js";
+import {
   detectModel,
   resolveProvider,
 } from "./detect-model.js";
 import { reconcileHermesPaperclipSkills } from "./skills.js";
+
+const executeHermesAcp = createHermesAcpExecutor();
 
 // ---------------------------------------------------------------------------
 // Config helpers
@@ -345,6 +351,23 @@ function parseHermesOutput(stdout: string, stderr: string): ParsedOutput {
 export async function execute(
   ctx: AdapterExecutionContext,
 ): Promise<AdapterExecutionResult> {
+  const engineSelection = await resolveHermesExecutionEngineForRun(ctx);
+  if (engineSelection.unavailableReason) {
+    return {
+      exitCode: 1,
+      signal: null,
+      timedOut: false,
+      errorCode: "adapter_engine_unavailable",
+      errorMessage: engineSelection.unavailableReason,
+      resultJson: {
+        executionRecovery: { kind: "bootstrap", providerWorkStarted: false },
+      },
+    };
+  }
+  if (engineSelection.engine === "acp") {
+    return executeHermesAcp(ctx);
+  }
+
   const config = (ctx.config ?? ctx.agent?.adapterConfig ?? {}) as Record<string, unknown>;
 
   // ── Resolve configuration ──────────────────────────────────────────────

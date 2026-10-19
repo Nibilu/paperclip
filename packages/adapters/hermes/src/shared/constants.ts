@@ -11,6 +11,9 @@ export const ADAPTER_LABEL = "Hermes Agent";
 /** Default CLI binary name. */
 export const HERMES_CLI = "hermes";
 
+/** Default ACP server binary name (hermes-agent's Agent Client Protocol adapter). */
+export const HERMES_ACP_COMMAND = "hermes-acp";
+
 /** Default timeout for a single execution run (seconds). */
 export const DEFAULT_TIMEOUT_SEC = 1800;
 

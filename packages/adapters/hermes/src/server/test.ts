@@ -18,6 +18,11 @@ import { promisify } from "node:util";
 import { HERMES_CLI, DEFAULT_MODEL, ADAPTER_TYPE, VALID_PROVIDERS } from "../shared/constants.js";
 import { detectModel, resolveProvider, inferProviderFromModel } from "./detect-model.js";
 import { resolveHermesCommand } from "./execute.js";
+import { parseObject } from "@paperclipai/adapter-utils/server-utils";
+import {
+  resolveHermesExecutionEngineForRun,
+  testHermesAcpEnvironment,
+} from "./acp.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -329,6 +334,26 @@ export async function testEnvironment(
   ctx: AdapterEnvironmentTestContext,
 ): Promise<AdapterEnvironmentTestResult> {
   const config = (ctx.config ?? {}) as Record<string, unknown>;
+  const engineSelection = await resolveHermesExecutionEngineForRun({
+    config: parseObject(config),
+    executionTarget: ctx.executionTarget,
+  });
+  if (engineSelection.unavailableReason) {
+    return {
+      adapterType: ADAPTER_TYPE,
+      status: "fail",
+      checks: [{
+        code: "adapter_engine_unavailable",
+        level: "error",
+        message: engineSelection.unavailableReason,
+      }],
+      testedAt: new Date().toISOString(),
+    };
+  }
+  if (engineSelection.engine === "acp") {
+    return testHermesAcpEnvironment(ctx);
+  }
+
   const command = resolveHermesCommand(config);
   const checks: AdapterEnvironmentCheck[] = [];
 
