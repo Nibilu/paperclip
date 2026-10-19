@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  redactCapabilityEvidence,
   capabilityCheckPrerequisites,
   discoverCapabilities,
   mapCapabilityDocument,
@@ -110,6 +111,15 @@ describe("discoverCapabilities: live endpoint classes", () => {
       })) as typeof fetch;
   }
 
+  it("sanitizes document, extras, endpoints and revision before returning evidence", async () => {
+    mockFetchOnce(200, { ...SAMPLE_CAPABILITIES_DOC, revision: VALID_CONFIG.apiKey,
+      features: { ...SAMPLE_CAPABILITIES_DOC.features, extra: { credentials: [{ password: "must-not-persist" }], echo: VALID_CONFIG.apiKey } },
+      endpoints: { ...SAMPLE_CAPABILITIES_DOC.endpoints, runs: { method: "POST", path: "/v1/runs?token=endpoint-secret" } } });
+    const result = await discoverCapabilities({ config: VALID_CONFIG });
+    for (const value of [VALID_CONFIG.apiKey, "must-not-persist", "endpoint-secret"]) expect(JSON.stringify(result)).not.toContain(value);
+    expect(result.operations.create.supported).toBe(true);
+  });
+
   it("classifies 401 as authentication_failed", async () => {
     mockFetchOnce(401, { error: { code: "gateway_auth_failed" } });
     const result = await discoverCapabilities({ config: VALID_CONFIG });
@@ -162,5 +172,18 @@ describe("discoverCapabilities: live endpoint classes", () => {
     mockFetchOnce(200, { features: { chat_completions: true }, endpoints: {} });
     const result = await discoverCapabilities({ config: VALID_CONFIG });
     expect(result.state).toBe("partially_supported");
+  });
+});
+
+
+describe("capability evidence redaction", () => {
+  it("removes nested secrets, arrays, URL credentials, query secrets and configured values without mutation", () => {
+    const raw = { features: { extra: [{ api_key: "nested-value", note: "Bearer another-token", url: "https://user:pass@example.com/a?token=query-value" }] }, revision: "echo configured-secret", auth: { type: "bearer", required: true }, retention_seconds: 86400 };
+    const result = redactCapabilityEvidence(raw, ["configured-secret"]);
+    const text = JSON.stringify(result);
+    for (const value of ["nested-value", "another-token", "user:pass", "query-value", "configured-secret"]) expect(text).not.toContain(value);
+    expect(result.auth).toEqual(raw.auth);
+    expect(result.retention_seconds).toBe(86400);
+    expect(raw.features.extra[0].api_key).toBe("nested-value");
   });
 });

@@ -93,6 +93,19 @@ reads this history to explain its current hold; this adds no agent mutation
 authority. Route and notice regressions cover the source contract, without
 claiming live agent or provider qualification.
 
+Reconciliation analysis v0.1 adds `POST /api/issues/{id}/recovery-actions/agent-draft`.
+Only a running, source-bound analysis run of the current same-company source
+assignee may write this inert evidence. The original action/run binding and
+blocked hold are rechecked under issue/action locks. Its run JWT denies all
+other writes, including checkout, comments, task mutations and hold resolution.
+The board reviews or edits each draft field before the existing resolve POST;
+unknown outcomes and unverified provider termination retain the hold. New holds
+enter a one-shot analysis outbox; old holds without drafts retain manual review.
+[Auth regressions](../../server/src/__tests__/agent-auth-middleware.test.ts),
+[database/route regressions](../../server/src/__tests__/issue-recovery-actions.test.ts)
+and [panel regressions](../../ui/src/components/ExecutionReconciliationPanel.test.tsx)
+cover this source contract. This does not certify a live provider analysis run.
+
 Review: `baseline`.
 
 API: `present` — representative operation IDs:

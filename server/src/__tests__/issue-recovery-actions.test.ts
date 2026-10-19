@@ -19,6 +19,7 @@ import {
   environmentLeases,
   environments,
   heartbeatRuns,
+  heartbeatRunEvents,
   issueComments,
   issueInboxArchives,
   issueRecoveryActions,
@@ -34,7 +35,8 @@ import {
 import { errorHandler } from "../middleware/index.js";
 import { issueRoutes } from "../routes/issues.js";
 import { buildPaperclipWakePayload, heartbeatService } from "../services/heartbeat.js";
-import { deliverReconciledExecutions } from "../services/execution-recovery-resolution.js";
+import { deliverReconciliationAnalyses } from "../services/reconciliation-analysis.js";
+import { deliverReconciledExecutions, settleUnrecoverableExecutions } from "../services/execution-recovery-resolution.js";
 import { workspaceOperationService, isNativeWorkspaceFinalizationOperationActive } from "../services/workspace-operations.js";
 import { issueRecoveryActionService } from "../services/issue-recovery-actions.js";
 import { recoveryService } from "../services/recovery/service.js";
@@ -159,6 +161,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await db.delete(environmentLeases);
     await db.delete(activityLog);
     await db.delete(costEvents);
+    await db.delete(heartbeatRunEvents);
     await db.delete(heartbeatRuns);
     await db.delete(agentWakeupRequests);
     await db.delete(environments);
@@ -1847,6 +1850,123 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     expect(prompt).not.toContain("Recovery contract:");
     expect(prompt).not.toContain(action.nextAction);
     expect(prompt).not.toContain("Do not produce the deliverable");
+  });
+
+  async function seedAnalysisHold() {
+    const fixture = await seedCompany();
+    const { companyId, coderId, sourceIssueId } = fixture;
+    const runId = randomUUID();
+    await seedHeartbeatRun({ companyId, agentId: coderId, runId, issueId: sourceIssueId, status: "failed" });
+    await db.update(issues).set({ status: "blocked" }).where(eq(issues.id, sourceIssueId));
+    const [action] = await db.insert(issueRecoveryActions).values({
+      companyId, sourceIssueId, kind: "active_run_watchdog", status: "resolved", outcome: "blocked",
+      ownerType: "board", returnOwnerAgentId: coderId, cause: "legacy_execution_requires_reconciliation",
+      fingerprint: runId, nextAction: "Inspect before continuing.",
+      evidence: { runId, automaticRecovery: { replay: "blocked", actionOutcome: "unknown" },
+        reconciliationAnalysis: { status: "pending" } },
+    }).returning();
+    return { ...fixture, runId, action: action! };
+  }
+
+  it("enqueues analysis only when settlement creates a current no-replay hold", async () => {
+    const { sourceIssueId, action } = await seedAnalysisHold();
+    await db.update(issueRecoveryActions).set({ status: "active", outcome: null,
+      evidence: { runId: action.evidence.runId } }).where(eq(issueRecoveryActions.id, action.id));
+    await settleUnrecoverableExecutions(db);
+    const [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
+    expect(saved).toMatchObject({ status: "resolved", outcome: "blocked", evidence: {
+      automaticRecovery: { replay: "blocked", actionOutcome: "unknown" },
+      reconciliationAnalysis: { status: "pending" },
+    } });
+    expect((await db.select().from(issues).where(eq(issues.id, sourceIssueId)))[0]!.status).toBe("blocked");
+    await settleUnrecoverableExecutions(db);
+    expect((await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id)))[0]).toEqual(saved);
+  });
+
+  it("dispatches a new hold once to its source owner without acquiring the source task", async () => {
+    const { companyId, coderId, sourceIssueId, runId, action } = await seedAnalysisHold();
+    const wake = vi.fn().mockResolvedValue({ id: randomUUID() });
+    await Promise.all([deliverReconciliationAnalyses(db, wake), deliverReconciliationAnalyses(db, wake)]);
+    await deliverReconciliationAnalyses(db, wake);
+    expect(wake).toHaveBeenCalledTimes(1);
+    expect(wake).toHaveBeenCalledWith(coderId, expect.objectContaining({
+      reason: "reconciliation_analysis", allowRunCoalescing: false,
+      idempotencyKey: `reconciliation-analysis:${action.id}`,
+      contextSnapshot: expect.objectContaining({ forceFreshSession: true,
+        analysisSourceIssueId: sourceIssueId, analysisSourceRunId: runId, analysisRecoveryActionId: action.id }),
+    }));
+    const context = wake.mock.calls[0]![1].contextSnapshot;
+    expect(context).not.toHaveProperty("issueId");
+    expect(context).not.toHaveProperty("taskId");
+    expect(context.reconciliationAnalysisPrompt).toContain("untrusted evidence");
+    const [task] = await db.select().from(issues).where(eq(issues.id, sourceIssueId));
+    expect(task).toMatchObject({ companyId, status: "blocked", executionRunId: null, checkoutRunId: null });
+    const [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
+    expect(saved!.evidence).toMatchObject({ automaticRecovery: { replay: "blocked" },
+      reconciliationAnalysis: { status: "requested" } });
+  });
+
+  it.each(["owner", "legacy", "unavailable"])("falls back to manual review for %s analysis", async (mode) => {
+    const { sourceIssueId, managerId, action } = await seedAnalysisHold();
+    if (mode === "owner") await db.update(issues).set({ assigneeAgentId: managerId }).where(eq(issues.id, sourceIssueId));
+    if (mode === "legacy") await db.update(issueRecoveryActions).set({ evidence: {
+      runId: action.evidence.runId, automaticRecovery: { replay: "blocked" },
+    } }).where(eq(issueRecoveryActions.id, action.id));
+    const wake = vi.fn().mockRejectedValue(new Error("Agent unavailable"));
+    await deliverReconciliationAnalyses(db, wake);
+    expect(wake).toHaveBeenCalledTimes(mode === "unavailable" ? 1 : 0);
+    const [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
+    expect(saved!.evidence.automaticRecovery).toEqual({ replay: "blocked", ...(mode !== "legacy" ? { actionOutcome: "unknown" } : {}) });
+    expect(saved!.evidence).not.toHaveProperty("agentDraft");
+    if (mode !== "legacy") expect(saved!.evidence.reconciliationAnalysis).toMatchObject({ status: "unavailable" });
+  });
+
+  it("stores only a bound advisory draft and leaves the hold for an operator decision", async () => {
+    const { companyId, coderId, managerId, sourceIssueId, runId, action } = await seedAnalysisHold();
+    const analysisRunId = randomUUID();
+    await db.insert(heartbeatRuns).values({ id: analysisRunId, companyId, agentId: coderId,
+      invocationSource: "automation", status: "running", contextSnapshot: {
+        wakeReason: "reconciliation_analysis", analysisSourceIssueId: sourceIssueId,
+        analysisSourceRunId: runId, analysisRecoveryActionId: action.id,
+      } });
+    const actor = { type: "agent", agentId: coderId, companyId, runId: analysisRunId, source: "agent_jwt" };
+    const draft = { providerStopped: { value: true, evidence: [`run:${runId}#seq:42`] },
+      actionOutcome: { value: "mixed", confidence: 0.7, evidence: [`run:${runId}#seq:40`] },
+      evidenceSummary: `run:${runId}#seq:40 confirms a completed step; seq:42 records stop.`,
+      operatorNote: "Verify the external receipt." };
+    const body = { actionId: action.id, runId, agentDraft: draft };
+    const endpoint = `/api/issues/${sourceIssueId}/recovery-actions/agent-draft`;
+    await request(createApp()).post(endpoint).send(body).expect(403);
+    await request(createApp({ ...actor, runId })).post(endpoint).send(body).expect(403);
+    await request(createApp(actor)).post(endpoint).send({ ...body, runId: randomUUID() }).expect(403);
+    await request(createApp(actor)).post(endpoint).send({ ...body, status: "todo" }).expect(400);
+    await request(createApp({ ...actor, companyId: randomUUID() })).post(endpoint).send(body).expect(404);
+    await db.update(issues).set({ assigneeAgentId: managerId }).where(eq(issues.id, sourceIssueId));
+    await request(createApp(actor)).post(endpoint).send(body).expect(409);
+    await db.update(issues).set({ assigneeAgentId: coderId }).where(eq(issues.id, sourceIssueId));
+    await db.update(heartbeatRuns).set({ status: "succeeded" }).where(eq(heartbeatRuns.id, analysisRunId));
+    await request(createApp(actor)).post(endpoint).send(body).expect(403);
+    await db.update(heartbeatRuns).set({ status: "running" }).where(eq(heartbeatRuns.id, analysisRunId));
+    await request(createApp(actor)).post(endpoint).send(body).expect(200);
+    await request(createApp(actor)).post(endpoint).send({ ...body, agentDraft: { ...draft, operatorNote: "replacement" } }).expect(200);
+    const [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
+    expect(saved!.evidence).toMatchObject({ agentDraft: draft,
+      agentDraftProvenance: { analysisRunId, sourceRunId: runId, agentId: coderId }, automaticRecovery: { replay: "blocked" } });
+    expect(saved).toMatchObject({ status: "resolved", outcome: "blocked" });
+    expect((await db.select().from(issues).where(eq(issues.id, sourceIssueId)))[0]!.status).toBe("blocked");
+    const resolve = { actionId: action.id, outcome: "restored", sourceIssueStatus: "todo",
+      executionReconciliation: { runId, providerStopped: true, actionOutcome: "mixed",
+        outcomeEvidence: draft.evidenceSummary } };
+    await request(createApp(actor)).post(`/api/issues/${sourceIssueId}/recovery-actions/resolve`).send(resolve).expect(403);
+    await request(createApp()).post(`/api/issues/${sourceIssueId}/recovery-actions/resolve`)
+      .send({ ...resolve, executionReconciliation: { ...resolve.executionReconciliation, actionOutcome: "unknown" } }).expect(400);
+    expect((await db.select().from(issues).where(eq(issues.id, sourceIssueId)))[0]!.status).toBe("blocked");
+    await request(createApp()).post(`/api/issues/${sourceIssueId}/recovery-actions/resolve`).send(resolve).expect(200);
+    expect((await db.select().from(issues).where(eq(issues.id, sourceIssueId)))[0]!.status).toBe("todo");
+    const [resolved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
+    expect(resolved!.evidence).not.toHaveProperty("automaticRecovery");
+    expect(resolved!.evidence).toMatchObject({ agentDraft: draft, executionReconciliation: { runId } });
+    await request(createApp(actor)).post(endpoint).send(body).expect(409);
   });
 
   it("accepts new verified evidence after an automatic no-replay disposition without reopening on duplicate requests", async () => {

@@ -72,4 +72,78 @@ describe("ExecutionReconciliationPanel", () => {
     }));
     expect(onResolved).toHaveBeenCalled();
   });
+  it("keeps an unverified provider stopped draft from enabling continuation", async () => {
+    const draftAction = { ...action, agentDraft: {
+      providerStopped: { value: false, evidence: ["run-1#seq:42 timeout only"] },
+      actionOutcome: { value: "mixed" as const, confidence: 0.1, evidence: ["run-1#seq:40 partial receipt"] },
+      evidenceSummary: "The provider outcome is unknown and needs external verification.", operatorNote: "Keep this hold.",
+    } };
+    await act(async () => root.render(<QueryClientProvider client={client}>
+      <ExecutionReconciliationPanel issueId="issue-1" issueStatus="blocked"
+        blocker={blocker} action={draftAction} onResolved={onResolved} />
+    </QueryClientProvider>));
+    for (const button of container.querySelectorAll<HTMLButtonElement>("[data-testid^=accept-draft-]")) {
+      await act(async () => button.click());
+    }
+    expect(container.querySelector<HTMLButtonElement>("[data-testid=execution-reconciliation-submit]")!.disabled).toBe(true);
+    expect(issuesApi.resolveRecoveryAction).not.toHaveBeenCalled();
+  });
+
+  it("submits the operator's edits after review without changing the resolve contract", async () => {
+    vi.mocked(issuesApi.resolveRecoveryAction).mockResolvedValue({} as never);
+    const draftAction = { ...action, agentDraft: {
+      providerStopped: { value: false, evidence: ["run-1#seq:42 timeout"] },
+      actionOutcome: { value: "mixed" as const, confidence: 0.4, evidence: ["run-1#seq:40 receipt"] },
+      evidenceSummary: "Partial receipt; external verification is still required.", operatorNote: "Draft note",
+    } };
+    await act(async () => root.render(<QueryClientProvider client={client}>
+      <ExecutionReconciliationPanel issueId="issue-1" issueStatus="blocked"
+        blocker={blocker} action={draftAction} onResolved={onResolved} />
+    </QueryClientProvider>));
+    await act(async () => {
+      container.querySelector<HTMLInputElement>("input")!.click();
+      const select = container.querySelector<HTMLSelectElement>("select")!;
+      select.value = "completed"; select.dispatchEvent(new Event("change", { bubbles: true }));
+      const values = ["Operator verified the completed external receipt and provider shutdown.", "Verified by operator"];
+      container.querySelectorAll<HTMLTextAreaElement>("textarea").forEach((field, index) => {
+        Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(field, values[index]);
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    });
+    const submit = container.querySelector<HTMLButtonElement>("[data-testid=execution-reconciliation-submit]")!;
+    expect(submit.disabled).toBe(false);
+    expect(issuesApi.resolveRecoveryAction).not.toHaveBeenCalled();
+    await act(async () => submit.click());
+    expect(issuesApi.resolveRecoveryAction).toHaveBeenCalledTimes(1);
+    expect(issuesApi.resolveRecoveryAction).toHaveBeenCalledWith("issue-1", expect.objectContaining({
+      resolutionNote: "Verified by operator", executionReconciliation: {
+        runId: "run-1", providerStopped: true, actionOutcome: "completed",
+        outcomeEvidence: "Operator verified the completed external receipt and provider shutdown.",
+      },
+    }));
+  });
+
+  it("prefills the draft but requires review of every field before human submission", async () => {
+    const draftAction = { ...action, agentDraft: {
+      providerStopped: { value: true, evidence: ["run-1#seq:385 stop receipt"] },
+      actionOutcome: { value: "mixed" as const, confidence: 0.8, evidence: ["run-1#seq:240 deployment"] },
+      evidenceSummary: "run-1#seq:240 deployment succeeded; seq:385 timed out during polling.",
+      operatorNote: "Check the deployment receipt before continuing.",
+    } };
+    await act(async () => root.render(<QueryClientProvider client={client}>
+      <ExecutionReconciliationPanel issueId="issue-1" issueStatus="blocked"
+        blocker={blocker} action={draftAction} onResolved={onResolved} />
+    </QueryClientProvider>));
+    expect(container.querySelector<HTMLInputElement>("input")!.checked).toBe(true);
+    expect(container.querySelector<HTMLSelectElement>("select")!.value).toBe("mixed");
+    expect(container.querySelector<HTMLTextAreaElement>("textarea")!.value).toContain("deployment succeeded");
+    const submit = container.querySelector<HTMLButtonElement>("[data-testid=execution-reconciliation-submit]")!;
+    expect(submit.disabled).toBe(true);
+    for (const field of ["providerStopped", "actionOutcome", "evidenceSummary", "operatorNote"]) {
+      await act(async () => container.querySelector<HTMLButtonElement>(`[data-testid=accept-draft-${field}]`)!.click());
+    }
+    expect(submit.disabled).toBe(false);
+    expect(issuesApi.resolveRecoveryAction).not.toHaveBeenCalled();
+  });
+
 });

@@ -85,8 +85,13 @@ export function ExecutionBlockerNotice({ companyId, issueId, issueStatus, canMan
         {Boolean(blocker.savedMessageCount) && (
           <p>{blocker.savedMessageCount} saved {blocker.savedMessageCount === 1 ? "message is" : "messages are"} waiting for recovery.</p>
         )}
+        {replayDispositionBlocked && (!canManage || !hold || !replayBlocked) && (
+          <p className="text-xs text-muted-foreground" data-testid="reconciliation-unavailable">
+            Reconciliation unavailable: {!canManage ? "requires an operator role" : recoveryError ? "recovery action could not be loaded" : !hold ? "matching recovery action is not available yet" : "this action has no no-replay hold"}.
+          </p>
+        )}
         {canManage && hold && replayBlocked && blocker.replayDisposition === "blocked_reconciliation" && (
-          <ExecutionReconciliationPanel issueId={issueId} issueStatus={issueStatus}
+          <ExecutionReconciliationPanel key={hold.id} issueId={issueId} issueStatus={issueStatus}
             blocker={blocker} action={hold} onResolved={onRetried} />
         )}
       </div>

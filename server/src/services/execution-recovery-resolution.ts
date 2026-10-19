@@ -568,6 +568,7 @@ export async function settleUnrecoverableExecutions(
             monitorPolicy: null,
             evidence: {
               ...action.evidence,
+              ...(current ? { reconciliationAnalysis: { status: "pending", requestedAt: now.toISOString() } } : {}),
               ...(nativeFailureBlock ? { nativeFailureBlock } : {}),
               ...(nativeBootstrapFailureBlock ? { nativeBootstrapFailureBlock } : {}),
               automaticRecovery: {

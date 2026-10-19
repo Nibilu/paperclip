@@ -32,11 +32,13 @@ const provenance: CapabilityUpgradeTaskProvenance = {
 
 type SelectResult = unknown[];
 /** Minimal awaitable drizzle-ish chain; `results` are consumed per select call order. */
-function makeDb(selectResults: SelectResult[], hooks: { activity?: (action: string) => void } = {}) {
+function makeDb(selectResults: SelectResult[], hooks: { activity?: (action: string) => void; confirm?: boolean } = {}) {
   let call = 0;
+  if (!hooks.confirm) selectResults = [[], ...selectResults];
   const chain = () => {
     const builder = {
       from: () => builder,
+      for: () => builder,
       where: () => builder,
       orderBy: () => builder,
       limit: () => builder,
@@ -56,7 +58,9 @@ function makeDb(selectResults: SelectResult[], hooks: { activity?: (action: stri
     };
     return builder;
   };
-  return {
+  const db = {
+    transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(db),
+    execute: async () => [],
     select: chain,
     update: () => ({ set: () => ({ where: () => Promise.resolve([]) }) }),
     insert: () => ({
@@ -67,7 +71,8 @@ function makeDb(selectResults: SelectResult[], hooks: { activity?: (action: stri
         },
       }),
     }),
-  } as unknown as import("@paperclipai/db").Db;
+  };
+  return db as unknown as import("@paperclipai/db").Db;
 }
 
 function makeObservationRow(overrides: Record<string, unknown> = {}) {
@@ -214,8 +219,9 @@ describe("capabilityUpgradeTaskService.confirmUpgradeTask", () => {
       admissionGate: { reason: CAPABILITY_UPGRADE_ADMISSION_GATE_REASON, confirmedAt: null },
     };
     const db = makeDb([
+      [{ id: upgradeIssueId, confirmedAt: null }],
       [{ id: upgradeIssueId, status: "todo", executionPolicy: gatePolicy }], // current read
-    ]);
+    ], { confirm: true });
 
     const svc = capabilityUpgradeTaskService(db);
     const result = await svc.confirmUpgradeTask(companyId, upgradeIssueId, { confirmedByUserId: "user-1" });
@@ -223,18 +229,17 @@ describe("capabilityUpgradeTaskService.confirmUpgradeTask", () => {
     expect(typeof result.confirmedAt).toBe("string");
   });
 
-  it("is a no-op when the task has no gate (already admitted or ordinary task)", async () => {
-    const db = makeDb([[{ id: upgradeIssueId, status: "in_progress", executionPolicy: {} }]]);
-    const svc = capabilityUpgradeTaskService(db);
-    const result = await svc.confirmUpgradeTask(companyId, upgradeIssueId, { confirmedByUserId: "user-1" });
-    expect(result.confirmed).toBe(false);
+  it("is a no-op when the durable request was already confirmed", async () => {
+    const db = makeDb([[{ id: upgradeIssueId, confirmedAt: new Date("2026-10-17T00:00:00Z") }]], { confirm: true });
+    const result = await capabilityUpgradeTaskService(db).confirmUpgradeTask(companyId, upgradeIssueId, { confirmedByUserId: "user-1" });
+    expect(result).toEqual({ confirmed: false, confirmedAt: "2026-10-17T00:00:00.000Z" });
   });
 
   it("refuses tasks that are not in todo status", async () => {
     const gatePolicy = {
       admissionGate: { reason: CAPABILITY_UPGRADE_ADMISSION_GATE_REASON, confirmedAt: null },
     };
-    const db = makeDb([[{ id: upgradeIssueId, status: "in_progress", executionPolicy: gatePolicy }]]);
+    const db = makeDb([[{ id: upgradeIssueId, confirmedAt: null }], [{ id: upgradeIssueId, status: "in_progress", executionPolicy: gatePolicy }]], { confirm: true });
     const svc = capabilityUpgradeTaskService(db);
     await expect(
       svc.confirmUpgradeTask(companyId, upgradeIssueId, { confirmedByUserId: "user-1" }),

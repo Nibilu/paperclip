@@ -594,7 +594,16 @@ export interface IssueUnblockDescriptor {
   action: string;
 }
 
+/** Advisory evidence only; never a reconciliation decision or replay authorization. */
+export interface ReconciliationAgentDraft {
+  providerStopped: { value: boolean; evidence: string[] };
+  actionOutcome: { value: "not_performed" | "completed" | "mixed"; confidence: number; evidence: string[] };
+  evidenceSummary: string;
+  operatorNote: string;
+}
+
 export interface IssueRecoveryAction {
+  agentDraft?: ReconciliationAgentDraft | null;
   /** Read-only activity of the exact native run named by the wake policy. */
   nativeRunActivity?: {
     runId: string;

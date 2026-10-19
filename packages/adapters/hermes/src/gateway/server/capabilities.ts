@@ -166,6 +166,33 @@ export function mapCapabilityDocument(doc: Record<string, unknown>): {
   return { operations, observedExtras: extras, protocolVersion };
 }
 
+/** Sanitize all evidence before mapping it into document, extras or operations.
+ * JSON input only. Also remove exact configured secrets even under unknown keys.
+ */
+export function redactCapabilityEvidence<T>(value: T, secrets: string[] = []): T {
+  const sensitive = /authorization|cookie|password|passwd|secret|token|credential|api[_-]?key|private[_-]?key/i;
+  function visit(input: unknown): unknown {
+    if (typeof input === "string") {
+      let text = input;
+      for (const secret of secrets.filter(Boolean).sort((a, b) => b.length - a.length)) {
+        text = text.split(secret).join("[REDACTED]");
+      }
+      return text
+        .replace(/\b(Bearer|Basic)\s+[^\s"'<>]+/gi, "$1 [REDACTED]")
+        .replace(/(https?:\/\/)[^\s/@]+@/gi, "$1[REDACTED]@")
+        .replace(/([?&](?:[^=&\s]*(?:token|key|secret|password|credential|signature)[^=&\s]*)=)[^&#\s]*/gi, "$1[REDACTED]");
+    }
+    if (Array.isArray(input)) return input.map(visit);
+    if (input && typeof input === "object") {
+      return Object.fromEntries(Object.entries(input).map(([key, child]) => [
+        String(visit(key)), sensitive.test(key) ? "[REDACTED]" : visit(child),
+      ]));
+    }
+    return input;
+  }
+  return visit(value) as T;
+}
+
 /** Bounded authenticated capability check. Never starts a run; never mutates state. */
 export async function discoverCapabilities(
   input: HermesCapabilityDiscoveryInput,
@@ -188,7 +215,7 @@ export async function discoverCapabilities(
       "unknown",
       "hermes_gateway_api_base_url_invalid",
       "capability_check",
-      `Invalid Hermes gateway apiBaseUrl: ${apiBaseUrl}`,
+      "Invalid Hermes gateway apiBaseUrl.",
       "Set adapterConfig.apiBaseUrl to an http:// or https:// URL.",
     );
   }
@@ -222,13 +249,12 @@ export async function discoverCapabilities(
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
     const timedOut = err instanceof Error && err.name === "TimeoutError";
     return failure(
       "unreachable",
       timedOut ? "hermes_gateway_capability_timeout" : "hermes_gateway_capability_unreachable",
       "capability_check",
-      timedOut ? `Capability check timed out after ${timeoutMs}ms.` : message,
+      timedOut ? `Capability check timed out after ${timeoutMs}ms.` : "Capability endpoint could not be reached.",
       "Check apiBaseUrl and that the Hermes API server is reachable from Paperclip.",
     );
   }
@@ -274,7 +300,7 @@ export async function discoverCapabilities(
     );
   }
 
-  const doc = asRecord(body);
+  const doc = asRecord(redactCapabilityEvidence(body, [apiKey]));
   if (!doc) {
     return failure(
       "malformed_response",
@@ -316,7 +342,7 @@ export async function discoverCapabilities(
       });
       if (healthResponse.ok) {
         const health = asRecord(await healthResponse.json());
-        protocolVersion = nonEmpty(health?.version);
+        protocolVersion = nonEmpty(redactCapabilityEvidence(health?.version, [apiKey]));
       }
     } catch {
       // Liveness fallback is best-effort only; a failure here must not mask
@@ -324,8 +350,7 @@ export async function discoverCapabilities(
     }
   }
 
-  // Redact any bearer tokens that could leak into the stored document copy.
-  const redactedDoc = JSON.parse(JSON.stringify(doc)) as Record<string, unknown>;
+  // The entire evidence tree was sanitized before mapping above.
 
   return {
     state,
@@ -334,7 +359,7 @@ export async function discoverCapabilities(
     endpointLabel: label,
     operations,
     error: null,
-    document: redactedDoc,
+    document: doc,
     observedExtras,
     checkedAt: new Date().toISOString(),
   };

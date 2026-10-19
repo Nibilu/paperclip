@@ -1,4 +1,4 @@
-import { index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { foreignKey, unique, index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { companies } from "./companies.js";
 import { agents } from "./agents.js";
 
@@ -38,6 +38,9 @@ export const agentCapabilityObservations = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
+    companyIdUq: unique("agent_capability_observations_company_id_uq").on(table.companyId, table.id),
+    companyAgentFk: foreignKey({ columns: [table.companyId, table.agentId], foreignColumns: [agents.companyId, agents.id], name: "capability_observations_company_agent_fk" }).onDelete("cascade"),
+    requesterCompanyFk: foreignKey({ columns: [table.companyId, table.requestedByAgentId], foreignColumns: [agents.companyId, agents.id], name: "capability_observations_company_requester_fk" }),
     companyAgentCheckedIdx: index("agent_capability_observations_company_agent_checked_idx").on(
       table.companyId,
       table.agentId,

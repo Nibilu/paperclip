@@ -457,6 +457,12 @@ export interface SessionFingerprintIdentity {
   readonly mcpServers: readonly McpServerIdentity[];
   readonly secretManifestHash: string;
   readonly adapterEnvHash: string;
+  /**
+   * Hash of the run-scoped Paperclip auth token. A new token must force a
+   * fresh ACP process because shell environments in persistent sessions cannot
+   * safely replace the token inherited by an already-running process.
+   */
+  readonly runAuthTokenHash?: string;
 }
 
 /**

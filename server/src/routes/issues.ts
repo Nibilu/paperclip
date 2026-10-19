@@ -1,3 +1,4 @@
+import { reconciliationAgentDraftSchema, saveReconciliationAgentDraft } from "../services/reconciliation-analysis.js";
 import { parseObject } from "../adapters/utils.js";
 import { assertLegacyRunTaskOwnership } from "../legacy-run-task-ownership.js";
 import { enqueueFastResponse } from "../services/fast-responses.js";
@@ -9515,6 +9516,15 @@ export function issueRoutes(
       actions: [...(active ? [active] : []), ...retainedHolds
         .filter(action => action.id !== active?.id).map(issueRecoveryActionReadModel)],
     });
+  });
+
+  router.post("/issues/:id/recovery-actions/agent-draft", validate(reconciliationAgentDraftSchema), async (req, res) => {
+    const issue = await getAccessibleResource(req, res, getIssueById(req, req.params.id as string), "Issue not found");
+    if (!issue || !(await assertIssueReadAllowed(req, res, issue))) return;
+    if (req.actor.type !== "agent" || !req.actor.agentId || !req.actor.runId || req.actor.companyId !== issue.companyId) throw forbidden("A bound analysis agent is required");
+    const draft = await saveReconciliationAgentDraft(db, { companyId: issue.companyId, issueId: issue.id,
+      agentId: req.actor.agentId, analysisRunId: req.actor.runId, body: req.body });
+    res.json({ agentDraft: draft });
   });
 
   router.post("/issues/:id/recovery-actions/resume-workspace-finalization", validate(resumeWorkspaceFinalizationSchema), async (req, res) => {

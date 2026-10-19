@@ -59,6 +59,18 @@ describe("acpx identity split and launch environment", () => {
     void _assertOnlyIdentity;
   });
 
+  it("changes fingerprint when the run auth token fingerprint changes", () => {
+    const first = buildSessionFingerprint({
+      ...SAMPLE_FINGERPRINT_IDENTITY,
+      runAuthTokenHash: "run-token-a",
+    });
+    const second = buildSessionFingerprint({
+      ...SAMPLE_FINGERPRINT_IDENTITY,
+      runAuthTokenHash: "run-token-b",
+    });
+    expect(first).not.toBe(second);
+  });
+
   it("test_finalize_launch_environment_is_sole_constructor_of_branded_environment", () => {
     // The finalizer merges every contribution and freezes the launch env.
     const baseEnv: Record<string, string> = { LAUNCH_ENV_TEST_BASE: "base" };

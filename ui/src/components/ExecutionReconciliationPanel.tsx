@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ExecutionBlocker, Issue, IssueRecoveryAction } from "@paperclipai/shared";
 import { requiresExecutionReconciliation } from "@paperclipai/shared";
 import { issuesApi } from "../api/issues";
@@ -30,6 +30,23 @@ export function ExecutionReconciliationPanel({
   const [actionOutcome, setActionOutcome] = useState<ActionOutcome>("not_performed");
   const [outcomeEvidence, setOutcomeEvidence] = useState("");
   const [resolutionNote, setResolutionNote] = useState("");
+  const draft = action.agentDraft;
+  type Field = "providerStopped" | "actionOutcome" | "evidenceSummary" | "operatorNote";
+  const [reviewed, setReviewed] = useState<Partial<Record<Field, boolean>>>({});
+  const review = (field: Field) => setReviewed(previous => ({ ...previous, [field]: true }));
+  useEffect(() => {
+    if (!draft) return;
+    if (!reviewed.providerStopped) setProviderStopped(draft.providerStopped.value);
+    if (!reviewed.actionOutcome) setActionOutcome(draft.actionOutcome.value);
+    if (!reviewed.evidenceSummary) setOutcomeEvidence(draft.evidenceSummary);
+    if (!reviewed.operatorNote) setResolutionNote(draft.operatorNote);
+  }, [draft, reviewed]);
+  const accept = (field: Field) => draft && (
+    <Button type="button" variant="outline" size="sm" disabled={Boolean(reviewed[field])}
+      data-testid={`accept-draft-${field}`} onClick={() => review(field)}>
+      {reviewed[field] ? "Reviewed" : "Accept draft"}
+    </Button>
+  );
   const sourceRunId = blocker.runId ??
     (typeof action.evidence.runId === "string" ? action.evidence.runId :
       typeof action.evidence.sourceRunId === "string" ? action.evidence.sourceRunId : null);
@@ -54,10 +71,15 @@ export function ExecutionReconciliationPanel({
     !requiresExecutionReconciliation(blocker.cause) ||
     blocker.workspaceRepairRequired ||
     !sourceRunId
-  ) return null;
+  ) return <p className="text-xs text-muted-foreground">Reconciliation unavailable: {
+    !["todo", "blocked"].includes(issueStatus ?? "") ? "task must be todo or blocked" :
+    blocker.workspaceRepairRequired ? "workspace repair is required first" :
+    !sourceRunId ? "source run is missing" : "this recovery cause requires a different action"
+  }.</p>;
 
   const evidenceReady = outcomeEvidence.trim().length >= 20;
-  const canSubmit = providerStopped && evidenceReady && !mutation.isPending;
+  const draftReviewed = !draft || (["providerStopped", "actionOutcome", "evidenceSummary", "operatorNote"] as Field[]).every(field => reviewed[field]);
+  const canSubmit = providerStopped && evidenceReady && draftReviewed && !mutation.isPending;
   return (
     <section
       className="w-full rounded-md border border-amber-400/40 bg-amber-500/5 p-3 text-sm"
@@ -73,47 +95,56 @@ export function ExecutionReconciliationPanel({
         </p>
         <p className="text-xs text-muted-foreground">Source run: <code>{sourceRunId}</code></p>
       </div>
+      {draft && <p className="mt-3 text-muted-foreground" data-testid="reconciliation-agent-draft">
+        Agent draft: review or edit each field before submitting. Outcome confidence: {Math.round(draft.actionOutcome.confidence * 100)}%.
+      </p>}
       <div className="mt-3 space-y-3">
         <label className="flex items-start gap-2">
           <input
             type="checkbox"
             checked={providerStopped}
-            onChange={(event) => setProviderStopped(event.target.checked)}
+            onChange={(event) => { setProviderStopped(event.target.checked); review("providerStopped"); }}
             data-testid="execution-reconciliation-provider-stopped"
           />
           <span>I verified that the provider and its execution environment have stopped.</span>
         </label>
+        {draft && <p className="text-xs text-muted-foreground">{draft.providerStopped.evidence.join("; ")}</p>}
+        {accept("providerStopped")}
         <label className="block space-y-1">
           <span className="text-xs font-medium">Observed external action outcome</span>
           <select
             className="w-full rounded-md border border-input bg-background px-2 py-1.5"
             value={actionOutcome}
-            onChange={(event) => setActionOutcome(event.target.value as ActionOutcome)}
+            onChange={(event) => { setActionOutcome(event.target.value as ActionOutcome); review("actionOutcome"); }}
             data-testid="execution-reconciliation-outcome"
           >
             {OUTCOMES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
+        {draft && <p className="text-xs text-muted-foreground">{draft.actionOutcome.evidence.join("; ")}</p>}
+        {accept("actionOutcome")}
         <label className="block space-y-1">
           <span className="text-xs font-medium">Evidence <span className="text-muted-foreground">(required)</span></span>
           <textarea
             className="min-h-20 w-full rounded-md border border-input bg-background px-2 py-1.5"
             value={outcomeEvidence}
-            onChange={(event) => setOutcomeEvidence(event.target.value)}
+            onChange={(event) => { setOutcomeEvidence(event.target.value); review("evidenceSummary"); }}
             placeholder="Describe the provider receipt, tool result, or external confirmation you inspected."
             data-testid="execution-reconciliation-evidence"
             aria-required="true"
           />
         </label>
+        {accept("evidenceSummary")}
         <label className="block space-y-1">
           <span className="text-xs font-medium">Operator note <span className="text-muted-foreground">(optional)</span></span>
           <textarea
             className="min-h-16 w-full rounded-md border border-input bg-background px-2 py-1.5"
             value={resolutionNote}
-            onChange={(event) => setResolutionNote(event.target.value)}
+            onChange={(event) => { setResolutionNote(event.target.value); review("operatorNote"); }}
             data-testid="execution-reconciliation-note"
           />
         </label>
+        {accept("operatorNote")}
         <Button
           type="button"
           size="sm"

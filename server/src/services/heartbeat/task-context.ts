@@ -265,7 +265,9 @@ export async function prepareHeartbeatTaskContext(db: Db, input: HeartbeatTaskCo
     : null;
   // Unlike the frozen initial communication preferences, live-call context
   // must also reach resumed turns. Rebuild it from server records each wake.
-  const liveVoiceTaskPrefix = liveVoiceGuidance ? `${liveVoiceGuidance}\n\n` : "";
+  const analysisInstructions = typeof context.reconciliationAnalysisPrompt === "string"
+    && context.wakeReason === "reconciliation_analysis" ? context.reconciliationAnalysisPrompt + "\n\n" : "";
+  const liveVoiceTaskPrefix = analysisInstructions + (liveVoiceGuidance ? `${liveVoiceGuidance}\n\n` : "");
   let taskMarkdown = liveVoiceTaskPrefix + buildPaperclipTaskMarkdown({ ...taskMarkdownInput, taskPlan }) + chatCompletionInstruction(context);
   let taskMarkdownAssignment = liveVoiceTaskPrefix + buildPaperclipTaskMarkdown({
     ...taskMarkdownInput,

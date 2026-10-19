@@ -2163,6 +2163,14 @@ source run and starts a fresh continuation; it never replays the old provider
 turn or tool calls. The flow is deterministic and server-authoritative; optional
 language summaries cannot change available actions or safety decisions.
 
+Advisory reconciliation analysis may prepare provider-stop evidence, a proposed
+outcome with confidence, an evidence summary and an operator note for new holds.
+The current same-company source assignee inspects only their own run in a fresh,
+read-only diagnostic session, with one source-bound draft write exception. Each
+field requires operator acceptance or editing before an explicit resolve POST.
+Drafts never authorize continuation. Existing holds without drafts retain manual
+review. See [execution semantics](execution-semantics.md#advisory-reconciliation-analysis-v01).
+
 **Implementation status (2026-10-16):** The adapter-neutral reconciliation panel,
 server-side reconciliation validation, no-replay hold, durable evidence chain,
 and fresh-continuation delivery are implemented for the current Hermes Gateway and

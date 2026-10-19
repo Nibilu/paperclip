@@ -2303,6 +2303,11 @@ async function buildRuntime(input: {
     // edits and same-version secret rotations. Per-wake runtime vars never enter
     // resolvedAdapterEnv, so they don't churn the fingerprint every heartbeat.
     adapterEnvHash: shortHash(resolvedAdapterEnv),
+    // PAPERCLIP_API_KEY is a run-scoped credential injected by the harness, not
+    // adapter configuration. Persistent ACP processes retain their original
+    // shell environment, so a new run token must invalidate the session. Hash
+    // only the token; never put the credential itself in the fingerprint or logs.
+    ...(authToken ? { runAuthTokenHash: shortHash(authToken) } : {}),
   };
   const fingerprint = buildSessionFingerprint(fingerprintIdentity);
   const taskKey = asString(input.ctx.runtime.taskKey, "") || wakeTaskId || workspaceId || "default";

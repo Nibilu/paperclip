@@ -94,6 +94,7 @@ function toReadModel(row: IssueRecoveryActionRow): IssueRecoveryAction {
     cause: row.cause,
     fingerprint: row.fingerprint,
     evidence: row.evidence,
+    agentDraft: row.evidence.agentDraft as IssueRecoveryAction["agentDraft"] ?? null,
     nextAction: row.nextAction,
     wakePolicy: row.wakePolicy,
     monitorPolicy: row.monitorPolicy,

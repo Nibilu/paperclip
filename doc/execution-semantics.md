@@ -1880,3 +1880,25 @@ use the same activity projection. Board-owned repairs stay actionable until a
 verified native retry actually starts. Once an explicit board retry is running,
 its live activity takes precedence over the prior owner and exhausted budget.
 Resolved and cancelled actions remain resolved.
+
+### Advisory reconciliation analysis (v0.1)
+
+New automatic no-replay holds enqueue one diagnostic wake to the same-company
+source assignee for that agent's own run. The wake has no source-task checkout
+or continuation binding and uses a fresh session. Dispatch is claimed once; a
+failed or unavailable analyst leaves manual reconciliation available. Existing
+holds are not backfilled.
+
+The run-bound JWT permits reads and only the exact source
+`POST /api/issues/{id}/recovery-actions/agent-draft` write. The endpoint rechecks
+the running analyst, company, source run/action and current held owner, and stores
+provider-stop evidence, proposed outcome with confidence and references, evidence
+summary and operator note with provenance. Duplicate submissions preserve the
+first draft. An operator decision racing a draft makes that draft stale.
+
+Drafts do not resolve actions or authorize replay. The panel prefills the four
+fields and requires per-field acceptance or editing, followed by the existing
+explicit operator submission. Provider termination must still be verified; an
+unknown outcome stays held. No-draft holds retain the manual form. Unavailable
+panels explain the failed gate. Board-only resolution and deterministic server
+validation remain authoritative.

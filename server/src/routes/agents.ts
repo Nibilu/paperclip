@@ -4099,11 +4099,11 @@ export function agentRoutes(
       return;
     }
     try {
-      const issueSvc = issueService(db);
       const result = await capabilityUpgradeTaskService(db).submitUpgradeTask(agent.companyId, {
         ...parsed.data,
         requestedByUserId: req.actor.type === "board" ? req.actor.userId ?? null : null,
-        createIssue: (data) => issueSvc.create(agent.companyId, data as never),
+        requestedByAgentId: req.actor.type === "agent" ? req.actor.agentId : null,
+        createIssue: (data, tx) => issueService(tx).create(agent.companyId, data as never),
       });
       res.status(201).json(result);
     } catch (err) {
@@ -4112,7 +4112,7 @@ export function agentRoutes(
         res.status(422).json({ error: (err as Error).message, code });
         return;
       }
-      if (code === "observation_stale") {
+      if (code === "observation_stale" || code === "upgrade_request_conflict") {
         res.status(409).json({ error: (err as Error).message, code });
         return;
       }

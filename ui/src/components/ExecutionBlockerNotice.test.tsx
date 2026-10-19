@@ -37,6 +37,24 @@ describe("stopped task recovery notice", () => {
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)); });
   });
   afterEach(async () => { await act(async () => root.unmount()); client.clear(); container.remove(); });
+  it.each([
+    { canManage: false, hold: false, replay: false, reason: "requires an operator role" },
+    { canManage: true, hold: false, replay: false, reason: "matching recovery action is not available yet" },
+    { canManage: true, hold: true, replay: false, reason: "this action has no no-replay hold" },
+  ])("explains a hidden reconciliation panel: $reason", async ({ canManage, hold, replay, reason }) => {
+    vi.mocked(issuesApi.recoveryActions).mockResolvedValue({ active: null, actions: hold ? [{
+      id: "recovery", evidence: { runId: "failed-run", automaticRecovery: { replay: replay ? "blocked" : "allowed" } },
+    }] as never : [] });
+    await act(async () => root.render(<QueryClientProvider client={client}>
+      <ExecutionBlockerNotice companyId="company" issueId="task" issueStatus="blocked" canManage={canManage}
+        onRetried={onRetried} blocker={{ recoveryActionId: "recovery", runId: "failed-run", agentId: "agent",
+          cause: "legacy_execution_requires_reconciliation", replayDisposition: "blocked_reconciliation", nextAction: "Inspect run." }} />
+    </QueryClientProvider>));
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)); });
+    expect(container.querySelector('[data-testid="reconciliation-unavailable"]')?.textContent).toContain(reason);
+    expect(container.querySelector('[data-testid="execution-reconciliation-panel"]')).toBeNull();
+  });
+
   it("keeps the recovery guidance and an inspection link alongside Retry", () => {
     const notice = container.querySelector('[role="status"][aria-label="Task recovery"]')!;
     expect(notice.textContent).toContain("Recorded work is preserved");

@@ -206,6 +206,39 @@ describe("agent auth middleware", () => {
     expect(read.body.readable).toBe(true);
   });
 
+  it("confines analysis JWT writes to the exact source draft endpoint at the app mount", async () => {
+    const agentId = randomUUID(), companyId = randomUUID(), runId = randomUUID(), issueId = randomUUID();
+    const { db } = createDbState({ agent: { id: agentId, companyId }, run: {
+      id: runId, companyId, agentId, contextSnapshot: {
+        wakeReason: "reconciliation_analysis", analysisSourceIssueId: issueId,
+      },
+    } });
+    const token = createLocalAgentJwt(agentId, companyId, "codex_local", runId, null);
+    const app = express();
+    app.use(express.json());
+    app.use(actorMiddleware(db, { deploymentMode: "authenticated", resolveSession: async () => null }));
+    app.use((_req, res) => res.json({ reachedRoute: true }));
+    app.use(errorHandler);
+    const auth = { Authorization: `Bearer ${token}` };
+    await request(app).get(`/api/issues/${issueId}`).set(auth).expect(200);
+    await request(app).post(`/api/issues/${issueId}/recovery-actions/agent-draft`).set(auth).send({}).expect(200);
+    for (const [method, endpoint] of [
+      ["patch", `/api/issues/${issueId}`],
+      ["post", `/api/issues/${issueId}/checkout`],
+      ["post", `/api/issues/${issueId}/comments`],
+      ["post", `/api/issues/${issueId}/recovery-actions/resolve`],
+      ["post", `/api/issues/${randomUUID()}/recovery-actions/agent-draft`],
+      ["post", `/api/agents/${agentId}/wakeup`],
+      ["post", `/api/approvals/${randomUUID()}/approve`],
+    ] as const) {
+      const res = await request(app)[method](endpoint).set(auth).send({});
+      expect(res.status, endpoint).toBe(403);
+      expect(res.body.code).toBe("reconciliation_analysis_read_only");
+    }
+    await request(app).post(`/api/issues/${issueId}/recovery-actions/agent-draft`)
+      .set(auth).set("X-Paperclip-Run-Id", randomUUID()).send({}).expect(422);
+  });
+
   it("keeps header-less local requests as the implicit board actor with their run id", async () => {
     const runId = randomUUID();
     const { db } = createDbState({ agent: { id: randomUUID(), companyId: randomUUID() } });
