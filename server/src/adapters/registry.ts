@@ -834,6 +834,14 @@ const hermesGatewayAdapter: ServerAdapterModule = {
 const hermesLocalAdapter: ServerAdapterModule = {
   ...createHermesLocalServerAdapter(),
   runtimeToolDelivery: "environment",
+  acp: {
+    // engine=acp runs `hermes-acp` (Hermes's ACP server) through the shared
+    // acpx-engine. No npm package prerequisite — the command is a venv script
+    // installed with Hermes itself; availability is checked at run time.
+    agentId: "hermes",
+    skillsMode: "ephemeral",
+    prerequisites: {},
+  },
 };
 
 const openclawGatewayAdapter: ServerAdapterModule = {
