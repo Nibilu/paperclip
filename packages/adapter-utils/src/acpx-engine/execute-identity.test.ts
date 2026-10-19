@@ -59,7 +59,11 @@ describe("acpx identity split and launch environment", () => {
     void _assertOnlyIdentity;
   });
 
-  it("changes fingerprint when the run auth token fingerprint changes", () => {
+  it("keeps the fingerprint independent of the run auth token hash", () => {
+    // The run-scoped Paperclip token rotates every run; the fingerprint must
+    // not encode it, or the resumable session is orphaned after every run.
+    // Token isolation lives in the process lifecycle (fresh spawn per run +
+    // the Amendment B warm-save credential gate), not in the fingerprint.
     const first = buildSessionFingerprint({
       ...SAMPLE_FINGERPRINT_IDENTITY,
       runAuthTokenHash: "run-token-a",
@@ -68,7 +72,7 @@ describe("acpx identity split and launch environment", () => {
       ...SAMPLE_FINGERPRINT_IDENTITY,
       runAuthTokenHash: "run-token-b",
     });
-    expect(first).not.toBe(second);
+    expect(first).toBe(second);
   });
 
   it("test_finalize_launch_environment_is_sole_constructor_of_branded_environment", () => {

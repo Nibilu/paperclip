@@ -556,7 +556,14 @@ function shortHash(value: unknown): string {
  * `SessionKeyIdentity`).
  */
 export function buildSessionFingerprint(identity: SessionFingerprintIdentity): string {
-  return shortHash(identity);
+  // The run-scoped Paperclip token hash must not affect the fingerprint: the
+  // token rotates every run, so hashing it would orphan the resumable session
+  // after every run. Token isolation lives in the process lifecycle (a fresh
+  // agent spawn per run + the Amendment B warm-save credential gate), not in
+  // the conversation identity. The field stays on the identity type so a
+  // future caller cannot mistake it for session-shaping config.
+  const { runAuthTokenHash: _runAuthTokenHash, ...sessionIdentity } = identity;
+  return shortHash(sessionIdentity);
 }
 
 /**
@@ -2304,10 +2311,16 @@ async function buildRuntime(input: {
     // resolvedAdapterEnv, so they don't churn the fingerprint every heartbeat.
     adapterEnvHash: shortHash(resolvedAdapterEnv),
     // PAPERCLIP_API_KEY is a run-scoped credential injected by the harness, not
-    // adapter configuration. Persistent ACP processes retain their original
-    // shell environment, so a new run token must invalidate the session. Hash
-    // only the token; never put the credential itself in the fingerprint or logs.
-    ...(authToken ? { runAuthTokenHash: shortHash(authToken) } : {}),
+    // adapter configuration. It must NOT enter the session fingerprint: the
+    // token rotates every run, so hashing it would orphan the resumable session
+    // after every run (the interrupted-continuation contract requires the next
+    // run to resume the SAME session with the NEW token). Token safety lives in
+    // the process lifecycle instead — the Amendment B credential gate blocks a
+    // host warm-handle save while a run-scoped key is live, so every run gets a
+    // freshly spawned agent process carrying only its own token, while the
+    // session record (conversation) resumes via acpx. Never put the credential
+    // itself in the fingerprint or logs.
+    ...(process.env.PAPERCLIP_PROBE_FALLBACK ? {} : {}),
   };
   const fingerprint = buildSessionFingerprint(fingerprintIdentity);
   const taskKey = asString(input.ctx.runtime.taskKey, "") || wakeTaskId || workspaceId || "default";
@@ -3628,6 +3641,38 @@ async function emitAcpxFailure(input: {
 function isResumeFailure(err: unknown): boolean {
   const message = err instanceof Error ? err.message : String(err);
   return /resume|load|not found|no session|unknown session|conversation/i.test(message);
+}
+
+/**
+ * Silent session-loss detector for agents whose `session/resume` fabricates a
+ * fresh session instead of erroring (observed on Hermes's acp_adapter: an
+ * unprompted session is never persisted, so a cross-process resume returns a
+ * NEW session id and the subsequent prompt of the ORIGINAL id answers with
+ * `stop_reason: "refusal"` and no message — acpx's own `isResumeFailure` guard
+ * never fires because the resume RPC itself succeeded).
+ *
+ * The signature is deliberately narrow so a real model refusal cannot trigger
+ * it: a genuine refusal streams an agent message (which lands in
+ * `outputSegments`) and typically carries a non-empty result message. The
+ * silent-loss shape is exactly: refusal stop reason, no streamed output, no
+ * error message. `resumedSession` covers a resumed persisted session;
+ * `oneshot` covers the structural cross-process boundary where the turn's
+ * client process differs from the one that created the session (the engine
+ * closes the ensureSession client after a oneshot handshake, so every oneshot
+ * turn resumes cross-process even on its first run).
+ */
+export function isSilentSessionLossAfterResume(input: {
+  resumedSession: boolean;
+  oneshot: boolean;
+  stopReason: string | null | undefined;
+  hasOutputSegments: boolean;
+  errorMessage: string | null | undefined;
+}): boolean {
+  if (!input.resumedSession && !input.oneshot) return false;
+  if ((input.stopReason ?? "").trim().toLowerCase() !== "refusal") return false;
+  if (input.hasOutputSegments) return false;
+  const message = (input.errorMessage ?? "").trim();
+  return message.length === 0;
 }
 
 // Drop staged-runtime entries the session has not touched within the warm-idle
@@ -5273,6 +5318,18 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         const sessionUnavailable = terminal.status === "failed" &&
           terminal.error.detailCode === "SESSION_RESUME_REQUIRED";
         if (sessionUnavailable) clearSession = true;
+        // Silent session-loss fallback: an agent whose `session/resume` silently
+        // fabricates a new session (Hermes acp_adapter with an unprompted,
+        // never-persisted session) answers the resumed turn with
+        // `stop_reason: "refusal"`, no streamed output, and no error. Left
+        // alone this poisons the persisted session params (the run saves the
+        // agent's NEW backend session id while the prompt went nowhere), so
+        // every later run resumes the same dead id. Detecting the shape here
+        // clears the session instead, which sends the next run through the
+        // normal fresh-session bootstrap. A real model refusal streams an
+        // answer, so it never matches this shape. (Runs after `errorMessage`
+        // is derived below — see the guard there.)
+        const silentSessionLossCandidate = !clearSession;
         // Saving a conversation is independent from certifying tool outcomes.
         // Its next turn receives history, not a replay of pending tool calls.
         preserveInterruptedSession = ctx.signal?.aborted === true && !forcedStop && !timedOut && !channelLost
@@ -5321,6 +5378,24 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               ? toolStalledMessage
               : formatTerminalSessionFailure(resultErrorMessage(terminal), failureDiagnostic);
         const terminalStopReason = terminal.status === "failed" ? terminal.error.message : terminal.stopReason;
+        // Silent session-loss fallback (see `isSilentSessionLossAfterResume`).
+        // Runs here, after `errorMessage` and `terminalStopReason` exist.
+        if (
+          silentSessionLossCandidate &&
+          isSilentSessionLossAfterResume({
+            resumedSession,
+            oneshot: prepared.mode === "oneshot",
+            stopReason: terminal.status === "failed" ? null : terminal.stopReason,
+            hasOutputSegments: outputSegments.some((segment) => (segment ?? "").trim().length > 0),
+            errorMessage,
+          })
+        ) {
+          clearSession = true;
+          await ctx.onLog(
+            "stderr",
+            "[paperclip] ACPX resumed session produced a silent refusal (stopReason=refusal, no output, no error); the agent likely fabricated a new session on resume. Clearing session params so the next run bootstraps fresh.\n",
+          );
+        }
         const classifiedFailure = !timedOut && !channelLost && !toolStalled && terminal.status === "failed"
           ? terminalFailureClassification
           : null;
