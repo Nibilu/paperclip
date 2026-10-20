@@ -696,8 +696,13 @@ function createTimelineEventMessage(args: {
       : (formatAssigneeUserLabel(event.actorId, currentUserId, userLabelMap) ?? "Board");
 
   const lines: string[] = [
-    event.followUpRequested ? `${actorName} requested follow-up` : `${actorName} updated this issue`,
+    event.reconciliationAnalysis
+      ? `Reconciliation analysis executed by ${event.reconciliationAnalysis.agentName}`
+      : event.followUpRequested ? `${actorName} requested follow-up` : `${actorName} updated this issue`,
   ];
+  if (event.reconciliationAnalysis) {
+    lines.push(`Attempt: ${event.reconciliationAnalysis.attempt}`);
+  }
   if (event.statusChange) {
     lines.push(
       `Status: ${event.statusChange.from ?? "none"} -> ${event.statusChange.to ?? "none"}`,
@@ -734,6 +739,7 @@ function createTimelineEventMessage(args: {
         statusChange: event.statusChange ?? null,
         assigneeChange: event.assigneeChange ?? null,
         workspaceChange: event.workspaceChange ?? null,
+        reconciliationAnalysis: event.reconciliationAnalysis ?? null,
         followUpRequested: event.followUpRequested === true,
       },
     },

@@ -3753,6 +3753,10 @@ function IssueChatSystemMessage({ message }: { message: ThreadMessage }) {
   const workspaceChange = isTimelineWorkspaceChange(custom.workspaceChange)
     ? custom.workspaceChange
     : null;
+  const reconciliationAnalysis =
+    typeof custom.reconciliationAnalysis === "object" && custom.reconciliationAnalysis
+      ? (custom.reconciliationAnalysis as { agentName: string; attempt: number })
+      : null;
   const interaction = isIssueThreadInteraction(custom.interaction)
     ? custom.interaction
     : null;
@@ -3794,6 +3798,22 @@ function IssueChatSystemMessage({ message }: { message: ThreadMessage }) {
           />
         </div>
       </div>
+    );
+  }
+
+  if (custom.kind === "event" && reconciliationAnalysis) {
+    return (
+      <IssueChatMetadataRow anchorId={anchorId} icon={<ClipboardList className="h-3 w-3" />}>
+        <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-xs">
+          <span className="font-medium text-foreground">Reconciliation analysis</span>
+          <span className="text-muted-foreground">
+            executed by {reconciliationAnalysis.agentName} (attempt {reconciliationAnalysis.attempt})
+          </span>
+          <a href={anchorId ? `#${anchorId}` : undefined} className="text-xs text-muted-foreground/70 hover:text-foreground hover:underline">
+            {timeAgo(message.createdAt)}
+          </a>
+        </div>
+      </IssueChatMetadataRow>
     );
   }
 

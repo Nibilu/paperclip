@@ -26,6 +26,11 @@ export interface IssueTimelineEvent {
   };
   commentId?: string | null;
   followUpRequested?: boolean;
+  reconciliationAnalysis?: {
+    agentId: string;
+    agentName: string;
+    attempt: number;
+  };
 }
 
 export interface IssueTimelineWorkspace {
@@ -174,6 +179,25 @@ export function extractIssueTimelineEvents(activity: ActivityEvent[] | null | un
         runId: event.runId ?? null,
         commentId,
         followUpRequested: true,
+      });
+      continue;
+    }
+
+    if (event.action === "issue.reconciliation_analysis_dispatched") {
+      const agentId = nullableString(details.analysisAgentId);
+      const agentName = nullableString(details.analysisAgentName);
+      if (!agentId || !agentName) continue;
+      events.push({
+        id: event.id,
+        createdAt: event.createdAt,
+        actorType: event.actorType,
+        actorId: event.actorId,
+        runId: event.runId ?? null,
+        reconciliationAnalysis: {
+          agentId,
+          agentName,
+          attempt: typeof details.attempt === "number" ? details.attempt : 1,
+        },
       });
       continue;
     }

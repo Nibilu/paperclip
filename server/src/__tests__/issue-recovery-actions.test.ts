@@ -199,7 +199,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         name: "CTO",
         role: "cto",
         status: "idle",
-        adapterType: "codex_local",
+        adapterType: "hermes_local",
         adapterConfig: {},
         runtimeConfig: {},
         permissions: {},
@@ -1884,12 +1884,12 @@ describeEmbeddedPostgres("issue recovery actions", () => {
   });
 
   it("dispatches a new hold once to its source owner without acquiring the source task", async () => {
-    const { companyId, coderId, sourceIssueId, runId, action } = await seedAnalysisHold();
+    const { companyId, coderId, managerId, sourceIssueId, runId, action } = await seedAnalysisHold();
     const wake = vi.fn().mockResolvedValue({ id: randomUUID() });
     await Promise.all([deliverReconciliationAnalyses(db, wake), deliverReconciliationAnalyses(db, wake)]);
     await deliverReconciliationAnalyses(db, wake);
     expect(wake).toHaveBeenCalledTimes(1);
-    expect(wake).toHaveBeenCalledWith(coderId, expect.objectContaining({
+    expect(wake).toHaveBeenCalledWith(managerId, expect.objectContaining({
       reason: "reconciliation_analysis", allowRunCoalescing: false,
       idempotencyKey: `reconciliation-analysis:${action.id}`,
       contextSnapshot: expect.objectContaining({ forceFreshSession: true,
@@ -1903,7 +1903,21 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     expect(task).toMatchObject({ companyId, status: "blocked", executionRunId: null, checkoutRunId: null });
     const [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
     expect(saved!.evidence).toMatchObject({ automaticRecovery: { replay: "blocked" },
-      reconciliationAnalysis: { status: "requested" } });
+      reconciliationAnalysis: { status: "requested", triedAdapterTypes: ["codex_local", "hermes_local"] } });
+  });
+
+  it("delegates analysis to another ready agent when the source owner is unavailable", async () => {
+    const { companyId, coderId, managerId, sourceIssueId, runId, action } = await seedAnalysisHold();
+    await db.update(agents).set({ status: "paused", lifecycleState: "paused" }).where(eq(agents.id, coderId));
+    const wake = vi.fn().mockResolvedValue({ id: randomUUID() });
+    await deliverReconciliationAnalyses(db, wake);
+    expect(wake).toHaveBeenCalledTimes(1);
+    expect(wake).toHaveBeenCalledWith(managerId, expect.objectContaining({ reason: "reconciliation_analysis" }));
+    const context = wake.mock.calls[0]![1].contextSnapshot;
+    expect(context).toMatchObject({ analysisSourceIssueId: sourceIssueId, analysisSourceRunId: runId, analysisRecoveryActionId: action.id });
+    const [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
+    expect(saved!.evidence.reconciliationAnalysis).toMatchObject({ status: "requested" });
+    expect(companyId).toBeDefined();
   });
 
   it.each(["owner", "legacy", "unavailable"])("falls back to manual review for %s analysis", async (mode) => {
@@ -1914,7 +1928,9 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     } }).where(eq(issueRecoveryActions.id, action.id));
     const wake = vi.fn().mockRejectedValue(new Error("Agent unavailable"));
     await deliverReconciliationAnalyses(db, wake);
-    expect(wake).toHaveBeenCalledTimes(mode === "unavailable" ? 1 : 0);
+    await deliverReconciliationAnalyses(db, wake);
+    await deliverReconciliationAnalyses(db, wake);
+    expect(wake).toHaveBeenCalledTimes(mode === "legacy" ? 0 : 1);
     const [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
     expect(saved!.evidence.automaticRecovery).toEqual({ replay: "blocked", ...(mode !== "legacy" ? { actionOutcome: "unknown" } : {}) });
     expect(saved!.evidence).not.toHaveProperty("agentDraft");
@@ -1942,7 +1958,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await request(createApp(actor)).post(endpoint).send({ ...body, status: "todo" }).expect(400);
     await request(createApp({ ...actor, companyId: randomUUID() })).post(endpoint).send(body).expect(404);
     await db.update(issues).set({ assigneeAgentId: managerId }).where(eq(issues.id, sourceIssueId));
-    await request(createApp(actor)).post(endpoint).send(body).expect(409);
+    await request(createApp(actor)).post(endpoint).send(body).expect(200);
     await db.update(issues).set({ assigneeAgentId: coderId }).where(eq(issues.id, sourceIssueId));
     await db.update(heartbeatRuns).set({ status: "succeeded" }).where(eq(heartbeatRuns.id, analysisRunId));
     await request(createApp(actor)).post(endpoint).send(body).expect(403);
