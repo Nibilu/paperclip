@@ -81,6 +81,14 @@ export function buildHermesConfig(
     ac.promptTemplate = v.promptTemplate;
   }
 
+  // Schema-driven fields (execution engine cli/acp and ACP-only options)
+  // arrive through CreateConfigValues.adapterSchemaValues. Merge them last so
+  // an explicit engine choice made in new-agent setup persists to the agent
+  // record; schema defaults mirror buildSchemaAdapterConfig behavior.
+  if (v.adapterSchemaValues) {
+    Object.assign(ac, v.adapterSchemaValues);
+  }
+
   // Heartbeat config is handled by Paperclip itself
 
   return ac;
