@@ -292,8 +292,6 @@ export const issuesApi = {
     api.post<{ runId: string; actionId: string; status: "queued"; replayed: boolean }>(`/issues/${id}/recovery-actions/reconstruct-workspace`, data),
   recoveryActions: (id: string) =>
     api.get<{ active: IssueRecoveryAction | null; actions: IssueRecoveryAction[] }>(`/issues/${id}/recovery-actions`),
-  requestReconciliationAnalysis: (id: string, runId: string) =>
-    api.post<{ actionId: string; status: "requested" }>(`/issues/${id}/recovery-actions/request-analysis`, { runId }),
   resolveRecoveryAction: (
     id: string,
     data: {

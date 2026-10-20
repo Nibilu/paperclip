@@ -29,7 +29,6 @@ import { SourceResolvedFoldBadge } from "./SourceResolvedFoldBadge";
 import { ResponsibleUserDenialNotice } from "./ResponsibleUserDenialNotice";
 import { RunnerInspector } from "./RunnerInspector";
 import { agentsApi } from "../api/agents";
-import { issuesApi } from "../api/issues";
 import {
   ProviderTraceStatusBadge,
   runRequestedProviderTrace,
@@ -62,7 +61,6 @@ type IssueRunLedgerContentProps = {
   watchdogDecisionError?: string | null;
   onWatchdogDecision?: (input: WatchdogDecisionInput) => void;
   onRerunWithTrace?: (run: RunForIssue) => void;
-  onRequestAnalysis?: (run: RunForIssue) => void;
   providerTraceMetadata?: ReadonlyMap<string, ProviderTraceMetadata>;
 };
 
@@ -520,14 +518,6 @@ export function IssueRunLedger({
       });
     },
   });
-  const requestAnalysis = useMutation({
-    mutationFn: (run: RunForIssue) => issuesApi.requestReconciliationAnalysis(issueId, run.runId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.issues.activity(issueId) });
-      pushToast({ title: "Inspect delegated", body: "A separate agent is analyzing this run.", tone: "success", dedupeKey: `reconciliation-analysis:${issueId}` });
-    },
-    onError: (error) => pushToast({ title: "Inspect delegation failed", body: error instanceof Error ? error.message : "Paperclip could not delegate inspect.", tone: "error", dedupeKey: `reconciliation-analysis-error:${issueId}` }),
-  });
   const rerunWithTrace = useMutation({
     mutationFn: async (run: RunForIssue) => {
       const context = asRecord(run.contextSnapshot);
@@ -589,7 +579,6 @@ export function IssueRunLedger({
       )}
       watchdogDecisionError={watchdogDecisionError}
       onWatchdogDecision={(input) => watchdogDecision.mutate(input)}
-      onRequestAnalysis={(run) => requestAnalysis.mutate(run)}
       onRerunWithTrace={
         canInspectProviderTrace
           ? (run) => rerunWithTrace.mutate(run)
@@ -614,7 +603,6 @@ export function IssueRunLedgerContent({
   canRecordWatchdogDecisions = true,
   watchdogDecisionError,
   onWatchdogDecision,
-  onRequestAnalysis,
   onRerunWithTrace,
   providerTraceMetadata = new Map(),
 }: IssueRunLedgerContentProps) {
@@ -955,12 +943,7 @@ export function IssueRunLedgerContent({
                   <button
                     type="button"
                     className="rounded-md border border-border px-1.5 py-0.5 text-(length:--text-micro) text-foreground hover:bg-accent/40"
-                    onClick={() => {
-                      if (["failed", "cancelled", "timed_out", "interrupted"].includes(run.status)) {
-                        onRequestAnalysis?.(run);
-                      }
-                      setInspectedRun(run);
-                    }}
+                    onClick={() => setInspectedRun(run)}
                   >
                     Inspect run
                   </button>
