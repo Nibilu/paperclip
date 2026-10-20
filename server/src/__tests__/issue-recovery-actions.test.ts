@@ -35,7 +35,7 @@ import {
 import { errorHandler } from "../middleware/index.js";
 import { issueRoutes } from "../routes/issues.js";
 import { buildPaperclipWakePayload, heartbeatService } from "../services/heartbeat.js";
-import { deliverReconciliationAnalyses } from "../services/reconciliation-analysis.js";
+import { deliverReconciliationAnalyses, requestReconciliationAnalysis } from "../services/reconciliation-analysis.js";
 import { deliverReconciledExecutions, settleUnrecoverableExecutions } from "../services/execution-recovery-resolution.js";
 import { workspaceOperationService, isNativeWorkspaceFinalizationOperationActive } from "../services/workspace-operations.js";
 import { issueRecoveryActionService } from "../services/issue-recovery-actions.js";
@@ -1881,6 +1881,20 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     expect((await db.select().from(issues).where(eq(issues.id, sourceIssueId)))[0]!.status).toBe("blocked");
     await settleUnrecoverableExecutions(db);
     expect((await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id)))[0]).toEqual(saved);
+  });
+
+  it("delegates a manual inspect request even after the issue was reopened", async () => {
+    const { companyId, sourceIssueId, runId } = await seedAnalysisHold();
+    await db.update(issues).set({ status: "in_progress" }).where(eq(issues.id, sourceIssueId));
+    const wake = vi.fn().mockResolvedValue({ id: randomUUID() });
+
+    await requestReconciliationAnalysis(db, wake, { companyId, issueId: sourceIssueId, runId });
+
+    expect(wake).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+      reason: "reconciliation_analysis",
+    }));
+    const [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
+    expect(saved?.evidence.reconciliationAnalysis).toMatchObject({ manualInspect: true, status: "requested" });
   });
 
   it("dispatches a new hold once to its source owner without acquiring the source task", async () => {

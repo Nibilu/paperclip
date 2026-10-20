@@ -1,4 +1,4 @@
-import { reconciliationAgentDraftSchema, saveReconciliationAgentDraft } from "../services/reconciliation-analysis.js";
+import { reconciliationAgentDraftSchema, requestReconciliationAnalysis, saveReconciliationAgentDraft } from "../services/reconciliation-analysis.js";
 import { parseObject } from "../adapters/utils.js";
 import { assertLegacyRunTaskOwnership } from "../legacy-run-task-ownership.js";
 import { enqueueFastResponse } from "../services/fast-responses.js";
@@ -9516,6 +9516,18 @@ export function issueRoutes(
       actions: [...(active ? [active] : []), ...retainedHolds
         .filter(action => action.id !== active?.id).map(issueRecoveryActionReadModel)],
     });
+  });
+
+  router.post("/issues/:id/recovery-actions/request-analysis", async (req, res) => {
+    assertBoard(req);
+    const issue = await getAccessibleResource(req, res, getIssueById(req, req.params.id as string), "Issue not found");
+    if (!issue || !(await assertIssueReadAllowed(req, res, issue))) return;
+    const runId = typeof req.body?.runId === "string" ? req.body.runId : null;
+    if (!runId) throw conflict("runId is required to request reconciliation analysis");
+    const actionId = await requestReconciliationAnalysis(db, heartbeat.wakeup, {
+      companyId: issue.companyId, issueId: issue.id, runId,
+    });
+    res.status(202).json({ actionId, status: "requested" });
   });
 
   router.post("/issues/:id/recovery-actions/agent-draft", validate(reconciliationAgentDraftSchema), async (req, res) => {

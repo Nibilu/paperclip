@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { agents, heartbeatRuns, issueRecoveryActions, issues, type Db } from "@paperclipai/db";
@@ -26,7 +27,37 @@ export function reconciliationAnalysisPrompt(actionId: string, issueId: string, 
 
 const MAX_RECONCILIATION_ATTEMPTS = 3;
 
-/** Only newly created holds (or an explicit operator request) enter this outbox. */
+export async function requestReconciliationAnalysis(
+  db: Db,
+  wake: ReturnType<typeof import("./heartbeat.js").heartbeatService>["wakeup"],
+  input: { companyId: string; issueId: string; runId: string },
+) {
+  const [issue] = await db.select().from(issues).where(and(eq(issues.id, input.issueId), eq(issues.companyId, input.companyId)));
+  const [source] = await db.select().from(heartbeatRuns).where(and(eq(heartbeatRuns.id, input.runId), eq(heartbeatRuns.companyId, input.companyId)));
+  if (!issue || !source) throw conflict("The inspect source run is unavailable");
+  const [existing] = await db.select().from(issueRecoveryActions).where(and(
+    eq(issueRecoveryActions.companyId, input.companyId), eq(issueRecoveryActions.sourceIssueId, input.issueId),
+    sql`${issueRecoveryActions.evidence}->>'runId' = ${input.runId}`,
+  )).orderBy(sql`${issueRecoveryActions.createdAt} desc`).limit(1);
+  const evidence = {
+    ...(existing?.evidence ?? {}),
+    runId: input.runId,
+    automaticRecovery: { replay: "blocked", actionOutcome: "unknown" },
+    reconciliationAnalysis: { status: "pending", manualInspect: true, attempts: 0, triedAgentIds: [], triedAdapterTypes: [] },
+  };
+  const action = existing
+    ? (await db.update(issueRecoveryActions).set({ status: "resolved", outcome: "blocked", evidence, updatedAt: new Date() }).where(eq(issueRecoveryActions.id, existing.id)).returning())[0]
+    : (await db.insert(issueRecoveryActions).values({
+      id: randomUUID(), companyId: input.companyId, sourceIssueId: input.issueId, kind: "manual_inspect_reconciliation",
+      status: "resolved", outcome: "blocked", ownerType: "board", returnOwnerAgentId: source.agentId,
+      cause: "manual_inspect_requested", fingerprint: `manual-inspect:${input.runId}`,
+      evidence, nextAction: "Review the delegated reconciliation analysis before continuing.",
+    }).returning())[0];
+  if (!action) throw conflict("Unable to create the inspect reconciliation action");
+  await deliverReconciliationAnalyses(db, wake);
+  return action.id;
+}
+
 export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typeof import("./heartbeat.js").heartbeatService>["wakeup"]) {
   const pending = await db.select().from(issueRecoveryActions).where(and(
     eq(issueRecoveryActions.status, "resolved"), eq(issueRecoveryActions.outcome, "blocked"),
@@ -38,7 +69,7 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
   )).limit(25);
   for (const action of pending) {
     const analysis = action.evidence.reconciliationAnalysis as {
-      status?: string; runId?: string | null; attempts?: number; triedAgentIds?: string[]; triedAdapterTypes?: string[];
+      status?: string; runId?: string | null; attempts?: number; triedAgentIds?: string[]; triedAdapterTypes?: string[]; manualInspect?: boolean;
     } | undefined;
     // A delegated run can fail after wake() has returned. Re-arm the hold for the
     // next scheduler pass, carrying forward the attempted-agent history.
@@ -65,13 +96,13 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
       const [task] = await db.select().from(issues).where(and(eq(issues.companyId, action.companyId), eq(issues.id, action.sourceIssueId)));
       const runId = action.evidence.runId;
       const [source] = typeof runId === "string" ? await db.select().from(heartbeatRuns).where(and(eq(heartbeatRuns.id, runId), eq(heartbeatRuns.companyId, action.companyId))) : [];
-      if (!task || task.status !== "blocked" || !source || !action.returnOwnerAgentId) throw conflict("Analysis source owner changed or is unavailable");
+      if (!task || (!((action.evidence.reconciliationAnalysis as { manualInspect?: boolean } | undefined)?.manualInspect) && task.status !== "blocked") || !source || !action.returnOwnerAgentId) throw conflict("Analysis source owner changed or is unavailable");
 
       // Diagnostics are advisory and must not be blocked by the source agent being
       // paused, busy, or unavailable. Prefer the source owner, then delegate to a
       // different ready/idle agent in the same company. The selected agent is
       // recorded by the analysis run's agentId and draft provenance.
-      const analysisBeforeDispatch = action.evidence.reconciliationAnalysis as { attempts?: number; triedAgentIds?: string[]; triedAdapterTypes?: string[] } | undefined;
+      const analysisBeforeDispatch = action.evidence.reconciliationAnalysis as { attempts?: number; triedAgentIds?: string[]; triedAdapterTypes?: string[]; manualInspect?: boolean } | undefined;
       const triedAgentIds = new Set(analysisBeforeDispatch?.triedAgentIds ?? []);
       // An inspect run is always delegated away from the source run's agent;
       // it must not become a continuation of the same agent's work.
@@ -103,7 +134,7 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
           reconciliationAnalysisPrompt: reconciliationAnalysisPrompt(action.id, task.id, source.id) },
       });
       const attempts = (analysisBeforeDispatch?.attempts ?? 0) + (run ? 1 : 0);
-      await db.update(issueRecoveryActions).set({ evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({ status: run ? "requested" : "pending", runId: run?.id ?? null, attempts, triedAgentIds: Array.from(new Set([...triedAgentIds, ...(run ? [agent.id] : [])])), triedAdapterTypes: Array.from(new Set([...triedAdapterTypes, ...(run ? [agent.adapterType] : [])])) })}::jsonb)` })
+      await db.update(issueRecoveryActions).set({ evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({ status: run ? "requested" : "pending", manualInspect: analysisBeforeDispatch?.manualInspect === true, runId: run?.id ?? null, attempts, triedAgentIds: Array.from(new Set([...triedAgentIds, ...(run ? [agent.id] : [])])), triedAdapterTypes: Array.from(new Set([...triedAdapterTypes, ...(run ? [agent.adapterType] : [])])) })}::jsonb)` })
         .where(and(eq(issueRecoveryActions.id, action.id), sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'dispatching'`));
       if (run) {
         const [persistedRun] = await db.select({ id: heartbeatRuns.id }).from(heartbeatRuns)
@@ -136,7 +167,8 @@ export async function saveReconciliationAgentDraft(db: Db, input: {
     if (context?.wakeReason !== "reconciliation_analysis" || context.analysisSourceIssueId !== input.issueId || context.analysisSourceRunId !== body.runId || context.analysisRecoveryActionId !== body.actionId || run?.status !== "running") throw forbidden("Draft requires the bound analysis run");
     const [action] = await tx.select().from(issueRecoveryActions).where(and(eq(issueRecoveryActions.id, body.actionId), eq(issueRecoveryActions.companyId, input.companyId), eq(issueRecoveryActions.sourceIssueId, input.issueId))).for("update");
     const automatic = action?.evidence.automaticRecovery as { replay?: string } | undefined;
-    if (!task || task.status !== "blocked" || !action || !action.returnOwnerAgentId || action.evidence.runId !== body.runId || automatic?.replay !== "blocked" || action.status !== "resolved" || action.outcome !== "blocked") throw conflict("The original hold is no longer current");
+    const manualInspect = (action?.evidence.reconciliationAnalysis as { manualInspect?: boolean } | undefined)?.manualInspect === true;
+    if (!task || (task.status !== "blocked" && !manualInspect) || !action || !action.returnOwnerAgentId || action.evidence.runId !== body.runId || automatic?.replay !== "blocked" || action.status !== "resolved" || action.outcome !== "blocked") throw conflict("The original hold is no longer current");
     if (action.evidence.agentDraft) return action.evidence.agentDraft;
     await tx.update(issueRecoveryActions).set({ evidence: { ...action.evidence, agentDraft: body.agentDraft,
       agentDraftProvenance: { analysisRunId: run.id, sourceRunId: body.runId, agentId: input.agentId, createdAt: new Date().toISOString() } }, updatedAt: new Date() }).where(eq(issueRecoveryActions.id, action.id));
