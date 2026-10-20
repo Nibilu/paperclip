@@ -73,6 +73,9 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
       // recorded by the analysis run's agentId and draft provenance.
       const analysisBeforeDispatch = action.evidence.reconciliationAnalysis as { attempts?: number; triedAgentIds?: string[]; triedAdapterTypes?: string[] } | undefined;
       const triedAgentIds = new Set(analysisBeforeDispatch?.triedAgentIds ?? []);
+      // An inspect run is always delegated away from the source run's agent;
+      // it must not become a continuation of the same agent's work.
+      triedAgentIds.add(source.agentId);
       const triedAdapterTypes = new Set(analysisBeforeDispatch?.triedAdapterTypes ?? []);
       const [sourceAgent] = await db.select({ adapterType: agents.adapterType }).from(agents).where(and(eq(agents.id, source.agentId), eq(agents.companyId, action.companyId)));
       if (["failed", "cancelled", "timed_out", "interrupted"].includes(source.status)) {
