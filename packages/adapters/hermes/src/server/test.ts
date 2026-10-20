@@ -327,6 +327,104 @@ async function checkProviderConsistency(
 }
 
 // ---------------------------------------------------------------------------
+// Hello-probe failure classification
+// ---------------------------------------------------------------------------
+
+interface HelloProbeCause {
+  code?: string | number;
+  signal?: string;
+  killed?: boolean;
+  stderr?: string | Buffer;
+  stdout?: string | Buffer;
+  message?: string;
+}
+
+/**
+ * Turn a failed managed-connection hello probe into a specific, actionable
+ * check instead of one generic message. Classifies the provider-side errors
+ * the probe actually hits (quota, auth, unknown model, timeout, missing CLI)
+ * and falls back to the Hermes stderr tail for anything else. Never includes
+ * credential values — only Hermes's own error text.
+ */
+function helloProbeFailureCheck(cause: unknown): AdapterEnvironmentCheck {
+  const error = (cause ?? {}) as HelloProbeCause;
+  const stderr = String(error.stderr ?? "");
+  const combined = `${error.message ?? ""}\n${stderr}`;
+  const generic = {
+    level: "error" as const,
+    code: "hermes_hello_probe_failed",
+    message: "Hermes could not complete a request through this connection.",
+  };
+
+  // Node exec timeout / SIGTERM → the provider never answered in time.
+  if (error.killed || error.signal === "SIGTERM" || error.code === "ABORT_ERR") {
+    return {
+      ...generic,
+      code: "hermes_hello_probe_timeout",
+      message: "Hermes did not complete a hello response within the timeout.",
+      hint: "The provider may be slow or unreachable. Retry; if it persists, check the provider's status page or your network.",
+    };
+  }
+
+  // Provider quota / rate limit.
+  if (/\b429\b|rate.?limit|too many requests|quota/i.test(combined)) {
+    return {
+      ...generic,
+      code: "hermes_provider_rate_limited",
+      message: "The provider rejected the request: rate limit or quota exceeded (HTTP 429).",
+      hint: "Wait for the rate-limit window to reset, or switch to a provider with available quota. The connection itself is configured correctly.",
+    };
+  }
+
+  // Authentication / authorization.
+  if (/\b40[13]\b|unauthorized|forbidden|invalid.{0,20}api.?key|authentication/i.test(combined)) {
+    return {
+      ...generic,
+      code: "hermes_provider_auth_failed",
+      message: "The provider rejected the credential (HTTP 401/403).",
+      hint: "Re-enter the API key for this provider, or check that the key in ~/.hermes/.env is still valid for the selected model.",
+    };
+  }
+
+  // Unknown model id.
+  if (/\b404\b|model.?not.?found|does not exist|unknown model|not a valid model/i.test(combined)) {
+    return {
+      ...generic,
+      code: "hermes_provider_model_unknown",
+      message: "The provider does not recognize the selected model (HTTP 404).",
+      hint: "Pick the model again from the provider's model list — the model ID may have changed or been retired.",
+    };
+  }
+
+  // Hermes CLI missing.
+  if (error.code === "ENOENT" || /not found in PATH|ENOENT/i.test(combined)) {
+    return {
+      ...generic,
+      code: "hermes_cli_not_found",
+      message: `Hermes CLI "${resolveHermesCommand({})}" not found in PATH`,
+      hint: "Install Hermes Agent: pip install hermes-agent",
+    };
+  }
+
+  // Anything else: surface the last meaningful Hermes error line.
+  const stderrLines = stderr
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !/^\s*$/.test(line));
+  const tail = stderrLines[stderrLines.length - 1];
+  return {
+    ...generic,
+    ...(tail
+      ? {
+          hint: `Hermes reported: ${tail.slice(0, 300)}`,
+        }
+      : {
+          hint: "Check the Hermes installation, endpoint, credential, and model, then test again.",
+        }),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Main test
 // ---------------------------------------------------------------------------
 
@@ -378,8 +476,8 @@ export async function testEnvironment(
         });
         if (!/\bhello\b/i.test(stdout)) throw new Error("No hello response");
         checks.push({ level: "info", code: "hermes_hello_probe_passed", message: "Hermes responded through the selected connection." });
-      } catch {
-        checks.push({ level: "error", code: "hermes_hello_probe_failed", message: "Hermes could not complete a request through this connection.", hint: "Check the Hermes installation, endpoint, credential, and model, then test again." });
+      } catch (cause) {
+        checks.push(helloProbeFailureCheck(cause));
       }
     }
     return { adapterType: ADAPTER_TYPE, status: checks.some(check => check.level === "error") ? "fail" : "pass", checks, testedAt: new Date().toISOString() };
