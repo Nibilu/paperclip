@@ -2,6 +2,7 @@ export {
   getServerAdapter,
   listAdapterModels,
   refreshAdapterModels,
+  listAdapterProviders,
   listServerAdapters,
   findServerAdapter,
   findActiveServerAdapter,

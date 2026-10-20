@@ -528,7 +528,22 @@ export interface ServerAdapterModule {
   /** How this adapter receives Paperclip's run-scoped control tools. */
   runtimeToolDelivery?: AdapterRuntimeToolDelivery;
   models?: AdapterModel[];
-  listModels?: () => Promise<AdapterModel[]>;
+  listModels?: (provider?: string) => Promise<AdapterModel[]>;
+  /**
+   * Optional provider catalog for harnesses that route across multiple model
+   * providers (e.g. Hermes). The setup UX renders these as the "Model
+   * provider" options; each entry names its credential env vars so the UI can
+   * decide whether an API key is already available. Never includes secrets.
+   */
+  listProviders?: () => Promise<
+    Array<{
+      name: string;
+      label: string;
+      baseUrl?: string;
+      envVars: string[];
+      fallbackModels: string[];
+    }>
+  >;
   /**
    * Optional explicit refresh hook for model discovery.
    * Use this when the adapter caches discovered models and needs a bypass path

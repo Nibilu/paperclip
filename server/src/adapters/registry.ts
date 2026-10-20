@@ -1093,7 +1093,7 @@ function declaredModelsForAdapter(type: string): { id: string; label: string }[]
     : null;
 }
 
-export async function listAdapterModels(type: string): Promise<{ id: string; label: string }[]> {
+export async function listAdapterModels(type: string, provider?: string): Promise<{ id: string; label: string }[]> {
   const declaredModels = declaredModelsForAdapter(type);
   if (declaredModels) return declaredModels;
   const adapter = findActiveServerAdapter(type);
@@ -1103,13 +1103,13 @@ export async function listAdapterModels(type: string): Promise<{ id: string; lab
   // models above and custom adapter discovery remain authoritative.
   if (adapter === codexLocalAdapter) return adapter.models ?? [];
   if (adapter.listModels) {
-    const discovered = await adapter.listModels();
+    const discovered = await adapter.listModels(provider);
     if (discovered.length > 0) return discovered;
   }
   return adapter.models ?? [];
 }
 
-export async function refreshAdapterModels(type: string): Promise<{ id: string; label: string }[]> {
+export async function refreshAdapterModels(type: string, provider?: string): Promise<{ id: string; label: string }[]> {
   const declaredModels = declaredModelsForAdapter(type);
   if (declaredModels) return declaredModels;
   if (findActiveServerAdapter(type) === codexLocalAdapter) return listAdapterModels(type);
@@ -1120,7 +1120,7 @@ export async function refreshAdapterModels(type: string): Promise<{ id: string; 
     if (refreshed.length > 0) return refreshed;
   }
   if (adapter.listModels) {
-    const discovered = await adapter.listModels();
+    const discovered = await adapter.listModels(provider);
     if (discovered.length > 0) return discovered;
   }
   return adapter.models ?? [];
@@ -1128,6 +1128,32 @@ export async function refreshAdapterModels(type: string): Promise<{ id: string; 
 
 export function listServerAdapters(): ServerAdapterModule[] {
   return Array.from(adaptersByType.values());
+}
+
+/**
+ * Provider catalog for adapters that route across multiple model providers
+ * (currently hermes_local). Returns null when the adapter (or the active
+ * override) does not declare a provider catalog.
+ */
+export async function listAdapterProviders(
+  type: string,
+): Promise<
+  | Array<{
+      name: string;
+      label: string;
+      baseUrl?: string;
+      envVars: string[];
+      fallbackModels: string[];
+    }>
+  | null
+> {
+  const adapter = findActiveServerAdapter(type);
+  if (!adapter?.listProviders) return null;
+  try {
+    return await adapter.listProviders();
+  } catch {
+    return null;
+  }
 }
 
 /**

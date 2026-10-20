@@ -155,6 +155,7 @@ import {
   listServerAdapters,
   listAdapterModels,
   refreshAdapterModels,
+  listAdapterProviders,
   requireServerAdapter,
 } from "../adapters/index.js";
 import {
@@ -3019,7 +3020,7 @@ export function agentRoutes(
     }
     const models = refresh
       ? await refreshAdapterModels(modelAdapterType)
-      : await listAdapterModels(modelAdapterType);
+      : await listAdapterModels(modelAdapterType, provider || undefined);
     res.json(models);
   });
 
@@ -3030,6 +3031,17 @@ export function agentRoutes(
 
     const detected = await detectAdapterModel(type);
     res.json(detected);
+  });
+
+  // Provider catalog for adapters that route across multiple model providers.
+  // Returns [] for adapters without a catalog so the UI falls back to its
+  // static provider list. Credential values are never included.
+  router.get("/companies/:companyId/adapters/:type/providers", async (req, res) => {
+    const companyId = req.params.companyId as string;
+    assertCompanyAccess(req, companyId);
+    const type = assertKnownAdapterType(req.params.type as string);
+
+    res.json(await listAdapterProviders(type) ?? []);
   });
 
   async function validateManagedAgentBinding(req: Request, companyId: string, agentId: string, adapterType: string, config: Record<string, unknown>, binding: AiRuntimeConnectionBinding, environmentId: string | null | undefined, test: boolean, newAgent = false) {

@@ -46,6 +46,26 @@ export {
  */
 export const models: { id: string; label: string }[] = [];
 
+/** Human-readable provider names for the setup picker. */
+function providerDisplayName(provider: string): string {
+  const overrides: Record<string, string> = {
+    nvidia: "NVIDIA NIM",
+    zai: "Z.AI",
+    "kimi-coding": "Kimi Coding",
+    "openai-codex": "OpenAI Codex",
+    "minimax-cn": "MiniMax China",
+    "kilocode": "Kilo Code",
+  };
+  return (
+    overrides[provider] ??
+    provider
+      .split(/[-_]/)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ")
+  );
+}
+
+
 const sessionManagement: AdapterSessionManagement = {
   supportsSessionResume: true,
   nativeContextManagement: "confirmed",
@@ -182,6 +202,29 @@ export function createServerAdapter(): ServerAdapterModule {
     listSkills,
     syncSkills,
     models,
+    // Setup UX discovers models per provider: the Paperclip models route
+    // passes the user's chosen provider through adapter.listModels(provider).
+    // Discovery degrades to the provider registry's fallback models when a
+    // provider has no credential or its endpoint is unreachable.
+    listModels: async (provider?: string) => {
+      if (!provider || provider === "auto") return [];
+      const { listHermesProviderModels } = await import("./server/providers.js");
+      const result = await listHermesProviderModels(provider);
+      return result.models.map((id) => ({ id, label: id }));
+    },
+    // Provider catalog for the setup "Model provider" picker, sourced from
+    // Hermes's own provider registry. Never exposes credential values.
+    listProviders: async () => {
+      const { listHermesProviders } = await import("./server/providers.js");
+      const entries = await listHermesProviders();
+      return entries.map((entry) => ({
+        name: entry.name,
+        label: providerDisplayName(entry.name),
+        ...(entry.baseUrl ? { baseUrl: entry.baseUrl } : {}),
+        envVars: entry.envVars,
+        fallbackModels: entry.fallbackModels,
+      }));
+    },
     supportsLocalAgentJwt: true,
     supportsInstructionsBundle: true,
     instructionsPathKey: "instructionsFilePath",
