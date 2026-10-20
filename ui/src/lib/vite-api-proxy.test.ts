@@ -21,6 +21,26 @@ describe("createApiProxy", () => {
     expect(proxy["/api"].ws).toBe(true);
   });
 
+  it("proxies /mcp to the same API target with ws support", () => {
+    const proxy = createApiProxy("http://example.local:9999");
+    expect(proxy["/mcp"].target).toBe("http://example.local:9999");
+    expect(proxy["/mcp"].ws).toBe(true);
+  });
+
+  it("injects forwarded headers for /mcp requests too", () => {
+    const proxy = createApiProxy();
+    const proxyEmitter = new EventEmitter();
+    proxy["/mcp"].configure!(proxyEmitter as never, {} as never);
+    const setHeader = vi.fn();
+    proxyEmitter.emit(
+      "proxyReq",
+      { setHeader },
+      { socket: { encrypted: true }, headers: { host: "clip.example.com" } },
+    );
+    expect(setHeader).toHaveBeenCalledWith("x-forwarded-host", "clip.example.com");
+    expect(setHeader).toHaveBeenCalledWith("x-forwarded-proto", "https");
+  });
+
   it("injects x-forwarded-host and defaults x-forwarded-proto to http on plain sockets", () => {
     const setHeader = fireProxyReq({ headers: { host: "dev-box.tail1234.ts.net:3101" } });
     expect(setHeader).toHaveBeenCalledWith("x-forwarded-host", "dev-box.tail1234.ts.net:3101");

@@ -582,7 +582,13 @@ async function handleEvent(
   if (eventName === "message.delta" && delta) {
     const sanitizedDelta = redactText(delta);
     state.outputChunks.push(sanitizedDelta);
-    await ctx.onLog("stdout", sanitizedDelta);
+    // No bare-delta onLog here. The [hermes-gateway:event] envelope above is
+    // the single persisted record for this delta; the gateway UI parser
+    // (gateway/ui/parse-stdout.ts) extracts and delta-merges the text from it.
+    // Writing the delta a second time without a trailing newline used to glue
+    // the next envelope line into a mixed line ("delta[hermes-gateway:event]
+    // …"), which dropped the envelope's parse and collapsed the live
+    // transcript to the few deltas that happened to survive gluing.
   }
 
   if (eventName === "approval.request") {

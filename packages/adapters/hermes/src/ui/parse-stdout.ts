@@ -22,6 +22,7 @@ function stripAnsi(text: string): string {
  */
 
 import type { TranscriptEntry } from "@paperclipai/adapter-utils";
+import { parseAcpxStdoutLine } from "@paperclipai/adapter-utils/acpx-engine/ui";
 
 import { TOOL_OUTPUT_PREFIX } from "../shared/constants.js";
 
@@ -196,6 +197,24 @@ export function parseHermesStdoutLine(
 ): TranscriptEntry[] {
   const trimmed = stripAnsi(line).trim();
   if (!trimmed) return [];
+
+  // ── ACP-lane (acpx engine) events ─────────────────────────────────────
+  // Hermes runs executed through the shared acpx engine (adapter engine=acp)
+  // emit one JSON line per runtime event (acpx.text_delta with a
+  // thought/output channel, acpx.tool_call lifecycle, acpx.result, …).
+  // Delegate them to the shared acpx transcript parser so streamed text is
+  // coalesced into thinking/assistant entries (delta:true) instead of
+  // falling through to one raw-JSON assistant entry per line.
+  if (trimmed.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(trimmed) as { type?: unknown };
+      if (parsed && typeof parsed === "object" && typeof parsed.type === "string" && parsed.type.startsWith("acpx.")) {
+        return parseAcpxStdoutLine(trimmed, ts);
+      }
+    } catch {
+      // Not JSON — fall through to the Hermes CLI line grammar below.
+    }
+  }
 
   // ── System/adapter messages ────────────────────────────────────────────
   if (trimmed.startsWith("[hermes]") || trimmed.startsWith("[paperclip]")) {

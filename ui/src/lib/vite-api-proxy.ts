@@ -27,5 +27,25 @@ export function createApiProxy(
         });
       },
     },
+    // MCP streamable-HTTP endpoints live on the API process (/mcp/runtime-tools,
+    // /mcp/gateways/:id, /mcp/project-tools, /mcp/runner/*). The SPA has no /mcp
+    // routes, so forwarding the whole prefix is safe; without this, a public
+    // hostname served by `vite preview` 404s the MCP handshake and agent
+    // sessions see "MCP server `Paperclip_connections` failed to start".
+    "/mcp": {
+      target,
+      ws: true,
+      configure: (proxy) => {
+        proxy.on("proxyReq", (proxyReq, req) => {
+          const originalHost = req.headers.host;
+          if (!originalHost) return;
+          proxyReq.setHeader("x-forwarded-host", originalHost);
+          const upstreamProto = req.headers["x-forwarded-proto"];
+          const proto = Array.isArray(upstreamProto) ? upstreamProto[0] : upstreamProto;
+          const isTls = (req.socket as { encrypted?: boolean }).encrypted === true;
+          proxyReq.setHeader("x-forwarded-proto", proto ?? (isTls ? "https" : "http"));
+        });
+      },
+    },
   };
 }

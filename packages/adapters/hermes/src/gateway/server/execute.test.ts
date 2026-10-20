@@ -175,6 +175,52 @@ describe("execute", () => {
     expect(body.session_id).toBe("paperclip:company:company-1:agent:agent-1:issue:issue-1");
   });
 
+  it("persists each message.delta exactly once (envelope only, no bare-delta stdout copy)", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/v1/runs")) {
+        return new Response(JSON.stringify({ run_id: "run-hermes-1", status: "started" }), { status: 200 });
+      }
+      if (url.endsWith("/events")) {
+        return new Response(
+          sseStream(
+            [
+              "event: message.delta",
+              'data: {"delta":"继续"}',
+              "",
+              "event: message.delta",
+              'data: {"delta":" AMB-71"}',
+              "",
+              "event: run.completed",
+              'data: {"status":"completed","output":"继续 AMB-71","session_id":"session-1"}',
+              "",
+            ].join("\n"),
+          ),
+          { status: 200, headers: { "content-type": "text/event-stream" } },
+        );
+      }
+      return new Response(JSON.stringify({ status: "completed", output: "继续 AMB-71" }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const ctx = makeCtx({ apiBaseUrl: "http://127.0.0.1:8642", apiKey: "secret-key", timeoutSec: 5 });
+    await execute(ctx);
+
+    const stdoutLines = (ctx.onLog as ReturnType<typeof vi.fn>)
+      .mock.calls
+      .map(([, line]) => String(line))
+      .filter((line) => !line.startsWith("[hermes-gateway]")); // lifecycle lines are fine
+
+    const envelopeLines = stdoutLines.filter((line) => line.startsWith("[hermes-gateway:event]") && line.includes("event=message.delta"));
+    // One envelope per delta…
+    expect(envelopeLines).toHaveLength(2);
+    // …and no bare-delta copies: no stdout line is just the delta text, and no
+    // stdout line glues a delta in front of the next envelope (the historical
+    // corruption that hid all but the first few streamed words).
+    expect(stdoutLines.filter((line) => line === "继续\n" || line === " AMB-71\n")).toHaveLength(0);
+    expect(stdoutLines.some((line) => /^继续.*\[hermes-gateway:event\]/.test(line))).toBe(false);
+  });
+
   it.each([false, true])("preserves chat handoff policy on gateway turns (resumed=%s)", async (resumed) => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => new Response(JSON.stringify(
       String(input).endsWith("/v1/runs")
