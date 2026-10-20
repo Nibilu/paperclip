@@ -38,6 +38,7 @@ import { useDialogActions } from "@/context/DialogContext";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn, agentUrl } from "@/lib/utils";
 import { getUIAdapter } from "@/adapters";
+import { SchemaConfigFields } from "@/adapters/schema-config-fields";
 import { getAdapterDisplay } from "@/adapters/adapter-display-registry";
 import {
   resolveAdapterTestEnvironmentId,
@@ -173,6 +174,11 @@ function Setup({
   const [connection, setConnection] = useState<ProviderConnection | null>(null);
   const aiBinding = runtimeAiBinding ?? connection?.aiConnection;
   const connectionModels = useConnectionModels(companyId, aiBinding, brandType);
+  // Hermes exposes its schema-driven fields (engine cli/acp + ACP-only options)
+  // in new-agent setup. SchemaConfigFields reads and writes these values.
+  const [adapterSchemaValues, setAdapterSchemaValues] = useState<
+    Record<string, unknown> | undefined
+  >(undefined);
   const [repository, setRepository] = useState("");
   const [branch, setBranch] = useState("");
   const [createdInSession, setCreated] = useState<Agent | null>(null);
@@ -376,6 +382,9 @@ function Setup({
       thinkingEffort: effort,
       dangerouslyBypassSandbox: adapterType === "codex_local" && runner === "legacy",
       envBindings: nextConnection?.env ?? {},
+      ...(brandType === "hermes_local" && adapterSchemaValues
+        ? { adapterSchemaValues }
+        : {}),
       ...(isRunner
         ? {
             adapterSchemaValues: {
@@ -897,6 +906,32 @@ function Setup({
                         {!connectionAdapter && aiProviderForAdapter(brandType) && (
                           <AiConnectionField companyId={companyId} agentName={name} adapterType={brandType} model={model} environmentId={environmentId ?? undefined} value={aiBinding}
                             onChange={binding => { binding.mode !== "router" && setRuntimeAiBinding(binding); resetTest(); }} />
+                        )}
+                        {brandType === "hermes_local" && (
+                          <SchemaConfigFields
+                            adapterType="hermes_local"
+                            isCreate
+                            mode="create"
+                            values={{
+                              ...defaultCreateValues,
+                              adapterType,
+                              runner,
+                              model,
+                              thinkingEffort: effort,
+                              adapterSchemaValues,
+                            }}
+                            set={(patch) => {
+                              if (patch.adapterSchemaValues) {
+                                setAdapterSchemaValues(patch.adapterSchemaValues);
+                                resetTest();
+                              }
+                            }}
+                            config={{}}
+                            eff={(_, __, original) => original}
+                            mark={() => {}}
+                            models={[]}
+                            section="configuration"
+                          />
                         )}
                         {(connectionModels ? connectionModels.error : models.error) && <p role="alert" className="text-sm text-destructive">Could not load models. Retry or enter a model ID manually.</p>}
                         {((showModel && !usingKimiApi) ||
