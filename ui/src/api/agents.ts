@@ -57,6 +57,16 @@ export interface DetectedAdapterModel {
   provider: string;
   source: string;
   candidates?: string[];
+  /** True when the detected Hermes config carries a non-empty API key. */
+  hasApiKey?: boolean;
+}
+
+export interface AdapterProvider {
+  name: string;
+  label: string;
+  baseUrl?: string;
+  envVars: string[];
+  fallbackModels: string[];
 }
 
 export interface ClaudeLoginResult {
@@ -274,6 +284,10 @@ export const agentsApi = {
   detectModel: (companyId: string, type: string) =>
     api.get<DetectedAdapterModel | null>(
       `/companies/${encodeURIComponent(companyId)}/adapters/${encodeURIComponent(type)}/detect-model`,
+    ),
+  adapterProviders: (companyId: string, type: string) =>
+    api.get<AdapterProvider[]>(
+      `/companies/${encodeURIComponent(companyId)}/adapters/${encodeURIComponent(type)}/providers`,
     ),
   testEnvironment: (
     companyId: string,

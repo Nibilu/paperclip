@@ -171,6 +171,10 @@ function Setup({
       ? { provider: "openrouter", method: "api_key", mode: "responsible_user" }
       : undefined,
   );
+  // Hermes provider choice. "" = Default — use the host Hermes config's
+  // provider/model as-is; anything else is an explicit provider override.
+  const [hermesProvider, setHermesProvider] = useState("");
+  const isHermesDefaultProvider = hermesProvider === "";
   const [connection, setConnection] = useState<ProviderConnection | null>(null);
   const aiBinding = runtimeAiBinding ?? connection?.aiConnection;
   const connectionModels = useConnectionModels(companyId, aiBinding, brandType);
@@ -251,6 +255,33 @@ function Setup({
     enabled: Boolean(brandType) && showModel && !connectionModels,
     retry: false,
   });
+  // Hermes setup reads its provider catalog from the adapter itself so the
+  // picker mirrors what the installed Hermes can actually route to. Falls
+  // back to the static HERMES_PROVIDER_KEYS list while loading or when the
+  // adapter exposes no catalog.
+  const hermesProviders = useQuery({
+    queryKey: ["agents", companyId, "adapter-providers", brandType],
+    queryFn: () => agentsApi.adapterProviders(companyId, brandType),
+    enabled: brandType === "hermes_local",
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+  // Per-provider model discovery: re-queried whenever the user picks a
+  // non-default provider. Default keeps the unscoped (detected-model) list.
+  const providerModels = useQuery({
+    queryKey: queryKeys.agents.adapterModels(companyId, brandType, null, isHermesDefaultProvider ? undefined : hermesProvider),
+    queryFn: () => agentsApi.adapterModels(companyId, brandType, { provider: isHermesDefaultProvider ? undefined : hermesProvider }),
+    enabled: brandType === "hermes_local" && !isHermesDefaultProvider && !connectionModels,
+    retry: false,
+  });
+  // Host Hermes config summary for the Default option (read-only, no secrets).
+  const detectedHermesModel = useQuery({
+    queryKey: queryKeys.agents.detectModel(companyId, brandType),
+    queryFn: () => agentsApi.detectModel(companyId, brandType),
+    enabled: brandType === "hermes_local",
+    staleTime: 60_000,
+    retry: false,
+  });
   const companySecrets = useQuery({
     queryKey: queryKeys.secrets.list(companyId),
     queryFn: () => secretsApi.list(companyId),
@@ -309,6 +340,13 @@ function Setup({
     caps.data?.sandboxProviders?.[sandboxProvider]?.supportsLoginPty === true;
   const envKey =
     SETUP_CREDENTIAL_KEYS[adapterType] ?? providerKeys[provider] ?? "API_KEY";
+  // Hermes: the credential key follows the chosen provider (e.g. NVIDIA_API_KEY
+  // for nvidia), not the legacy openrouter default.
+  const hermesProviderEntry = hermesProviders.data?.find((item) => item.name === hermesProvider);
+  const hermesEnvKey = brandType === "hermes_local" && !isHermesDefaultProvider
+    ? (hermesProviderEntry?.envVars[0] ?? providerKeys[hermesProvider] ?? "API_KEY")
+    : null;
+  const activeEnvKey = hermesEnvKey ?? envKey;
   const savedKey = userSecrets.data?.find(
     (entry) => entry.definition.key === envKey && entry.secret,
   );
@@ -373,6 +411,13 @@ function Setup({
     nextConnection = connection,
     binding = selectedBinding,
   ): Record<string, unknown> {
+    // Explicit Hermes provider choice becomes the adapter's provider field.
+    // Default keeps provider unset so execute.ts resolves it from the host's
+    // ~/.hermes/config.yaml at runtime.
+    const hermesSchemaPatch =
+      brandType === "hermes_local" && !isHermesDefaultProvider
+        ? { provider: hermesProvider }
+        : {};
     const values = {
       ...defaultCreateValues,
       adapterType,
@@ -382,8 +427,8 @@ function Setup({
       thinkingEffort: effort,
       dangerouslyBypassSandbox: adapterType === "codex_local" && runner === "legacy",
       envBindings: nextConnection?.env ?? {},
-      ...(brandType === "hermes_local" && adapterSchemaValues
-        ? { adapterSchemaValues }
+      ...(brandType === "hermes_local" && (adapterSchemaValues || Object.keys(hermesSchemaPatch).length)
+        ? { adapterSchemaValues: { ...adapterSchemaValues, ...hermesSchemaPatch } }
         : {}),
       ...(isRunner
         ? {
@@ -408,7 +453,7 @@ function Setup({
     if (!aiBinding && !nextConnection?.aiConnection && hasCredentialField && binding) {
       if (adapterType === "hermes_gateway") config.apiKey = binding;
       else
-        config.env = { ...((config.env as object) ?? {}), [envKey]: binding };
+        config.env = { ...((config.env as object) ?? {}), [activeEnvKey]: binding };
     }
     if (adapterType === "cursor_cloud")
       Object.assign(config, {
@@ -468,7 +513,7 @@ function Setup({
     return {
       ...nextConnection?.credentials,
       ...(hasCredentialField && apiKey.trim()
-        ? { [envKey]: apiKey.trim() }
+        ? { [activeEnvKey]: apiKey.trim() }
         : {}),
     };
   }
@@ -933,15 +978,15 @@ function Setup({
                             section="configuration"
                           />
                         )}
-                        {(connectionModels ? connectionModels.error : models.error) && <p role="alert" className="text-sm text-destructive">Could not load models. Retry or enter a model ID manually.</p>}
+                        {(connectionModels ? connectionModels.error : (brandType === "hermes_local" && !isHermesDefaultProvider ? providerModels.error : models.error)) && <p role="alert" className="text-sm text-destructive">Could not load models. Retry or enter a model ID manually.</p>}
                         {((showModel && !usingKimiApi) ||
                           efforts.length > 0) && (
                           <div className="grid items-start gap-5 sm:grid-cols-2">
                             {showModel && !usingKimiApi && (
                               <ModelDropdown
                                 presentation={brandType === "codex_local" ? "searchable" : "native"}
-                                models={connectionModels?.models ?? models.data ?? []}
-                                loadingModels={connectionModels?.isLoading ?? models.isLoading}
+                                models={connectionModels?.models ?? (brandType === "hermes_local" && !isHermesDefaultProvider ? (providerModels.data ?? []) : (models.data ?? []))}
+                                loadingModels={connectionModels?.isLoading ?? (brandType === "hermes_local" && !isHermesDefaultProvider ? providerModels.isLoading : models.isLoading)}
                                 onRefreshModels={connectionModels?.refreshModels}
                                 refreshingModels={connectionModels?.refreshing}
                                 value={model}
@@ -1003,7 +1048,50 @@ function Setup({
                             {SETUP_LOGIN_HINTS[adapterType]}
                           </p>
                         )}
-                        {hasCredentialField && !aiBinding && (
+                        {brandType === "hermes_local" && !aiBinding && (
+                          <Field
+                            label="Model provider"
+                            hint="Default uses the provider and model already configured in the host's Hermes. Pick a provider only to route elsewhere."
+                          >
+                            <select
+                              aria-label="Model provider"
+                              className={controlClass}
+                              value={hermesProvider}
+                              onChange={(event) => {
+                                setHermesProvider(event.target.value);
+                                setModel("");
+                                setApiKey("");
+                                setProviderBinding(null);
+                                resetTest();
+                              }}
+                            >
+                              <option value="">Default (Hermes config)</option>
+                              {(hermesProviders.data?.length
+                                ? hermesProviders.data
+                                : Object.keys(providerKeys).map((key) => ({
+                                    name: key,
+                                    label: ({ openrouter: "OpenRouter", openai: "OpenAI", anthropic: "Anthropic" } as Record<string, string>)[key] ?? key,
+                                    envVars: [providerKeys[key]],
+                                    fallbackModels: [],
+                                  }))
+                              ).map((entry) => (
+                                <option key={entry.name} value={entry.name}>
+                                  {entry.label}
+                                </option>
+                              ))}
+                            </select>
+                          </Field>
+                        )}
+                        {brandType === "hermes_local" && isHermesDefaultProvider && detectedHermesModel.data && (
+                          <p className="text-xs text-muted-foreground">
+                            Hermes default: {detectedHermesModel.data.model}
+                            {detectedHermesModel.data.provider ? ` · provider ${detectedHermesModel.data.provider}` : ""}
+                            {detectedHermesModel.data.hasApiKey ? " · credential configured" : ""}
+                          </p>
+                        )}
+                        {hasCredentialField && !aiBinding && !(
+                          brandType === "hermes_local"
+                        ) && (
                           <div className="grid gap-5 sm:grid-cols-2">
                             {chooseProvider && (
                               <Field label="API key provider">
@@ -1118,6 +1206,31 @@ function Setup({
                             </p>
                           </div>
                         )}
+                        {brandType === "hermes_local" && !isHermesDefaultProvider && !aiBinding && (() => {
+                          const entry = hermesProviders.data?.find((item) => item.name === hermesProvider);
+                          const hermesEnvKey = entry?.envVars[0] ?? providerKeys[hermesProvider] ?? "API_KEY";
+                          const hermesSavedKey = userSecrets.data?.find((item) => item.definition.key === hermesEnvKey && item.secret);
+                          const hermesSavedOrgKey = companySecrets.data?.find((item) => item.key === hermesEnvKey && item.status === "active");
+                          return (
+                            <Field
+                              label={hermesEnvKey}
+                              hint={`${entry?.label ?? hermesProvider} needs a credential. Skip this if the host's ~/.hermes/.env already has ${hermesEnvKey}.`}
+                            >
+                              <Input
+                                aria-label={hermesEnvKey}
+                                type="password"
+                                autoComplete="off"
+                                value={apiKey}
+                                onChange={(event) => {
+                                  setApiKey(event.target.value);
+                                  setProviderBinding(null);
+                                  resetTest();
+                                }}
+                                placeholder={hermesSavedKey || hermesSavedOrgKey ? "Using saved key" : "Optional if already configured"}
+                              />
+                            </Field>
+                          );
+                        })()}
                         {adapterType === "hermes_gateway" && (
                           <Field label="Hermes API base URL">
                             <Input
