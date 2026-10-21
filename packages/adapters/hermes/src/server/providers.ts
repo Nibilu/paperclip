@@ -23,8 +23,6 @@ import { execFile } from "node:child_process";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { promisify } from "node:util";
-import { VALID_PROVIDERS } from "../shared/constants.js";
-
 const execFileAsync = promisify(execFile);
 
 export interface HermesProviderEntry {
@@ -58,7 +56,6 @@ const NON_UPSTREAM_PROVIDERS = new Set([
   "router",
   "ollama-cloud",
 ]);
-const CLI_PROVIDER_SET = new Set<string>(VALID_PROVIDERS);
 
 /** Prefer the Hermes venv interpreter; fall back to `python3` on PATH. */
 function hermesPythonCandidates(): string[] {
@@ -119,9 +116,7 @@ print(json.dumps(out))
         maxBuffer: 4 * 1024 * 1024,
       });
       const parsed = JSON.parse(stdout.trim()) as HermesProviderEntry[];
-      return parsed.filter((entry) =>
-        !NON_UPSTREAM_PROVIDERS.has(entry.name) && CLI_PROVIDER_SET.has(entry.name),
-      );
+      return parsed.filter((entry) => !NON_UPSTREAM_PROVIDERS.has(entry.name));
     } catch (error) {
       lastError = error;
     }
