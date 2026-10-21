@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTranscript, type RunLogChunk } from "./transcript";
+import { buildTranscript, createTranscriptBuilder, type RunLogChunk } from "./transcript";
 import { grokLocalUIAdapter } from "./grok-local";
 import { kimiLocalUIAdapter } from "./kimi-local";
 import type { UIAdapterModule } from "./types";
@@ -226,5 +226,103 @@ describe("buildTranscript", () => {
         errors: [],
       },
     ]);
+  });
+});
+
+describe("createTranscriptBuilder (incremental streaming)", () => {
+  const ts = "2026-03-20T13:00:00.000Z";
+
+  const mixedChunks: RunLogChunk[] = [
+    { ts, stream: "system", chunk: "[hermes] session started\n" },
+    { ts, stream: "stderr", chunk: "warn /Users/dotta/project\n" },
+    { ts, stream: "stdout", chunk: "first /Users/dotta/project\n" },
+    { ts, stream: "stdout", chunk: "second" },
+    { ts, stream: "stdout", chunk: " /Users/dotta/x tail\n" },
+    { ts, stream: "stdout", chunk: "trailing-without-newline" },
+  ];
+
+  const lineParser = (line: string, entryTs: string) => [
+    { kind: "stdout" as const, ts: entryTs, text: line },
+  ];
+
+  it("produces entries identical to buildTranscript for the same chunk stream", () => {
+    const full = buildTranscript(mixedChunks, lineParser);
+    const builder = createTranscriptBuilder(lineParser);
+    // Feed one chunk at a time, as the live transports do.
+    for (const chunk of mixedChunks) builder.append([chunk]);
+    builder.flush();
+    expect(builder.entries).toEqual(full);
+  });
+
+  it("produces entries identical to buildTranscript for a kimi ACP delta stream", () => {
+    const deltaChunks: RunLogChunk[] = [
+      { ts, stream: "stdout", chunk: `${JSON.stringify({ type: "acpx.text_delta", channel: "output", text: "Hello " })}\n` },
+      { ts, stream: "stdout", chunk: `${JSON.stringify({ type: "acpx.text_delta", channel: "output", text: "world" })}\n` },
+      { ts, stream: "stdout", chunk: `${JSON.stringify({ type: "acpx.result", summary: "done", stopReason: "end_turn" })}\n` },
+    ];
+    const full = buildTranscript(deltaChunks, kimiLocalUIAdapter);
+    const builder = createTranscriptBuilder(kimiLocalUIAdapter);
+    for (const chunk of deltaChunks) builder.append([chunk]);
+    builder.flush();
+    expect(builder.entries).toEqual(full);
+  });
+
+  it("buffers an incomplete trailing line until it is completed, then parses it once", () => {
+    const builder = createTranscriptBuilder(lineParser);
+    builder.append([{ ts, stream: "stdout", chunk: "partial-line" }]);
+    // Not emitted yet — the line may still grow.
+    expect(builder.entries).toEqual([]);
+
+    builder.append([{ ts, stream: "stdout", chunk: " continued\nnext\n" }]);
+    expect(builder.entries).toEqual([
+      { kind: "stdout", ts, text: "partial-line continued" },
+      { kind: "stdout", ts, text: "next" },
+    ]);
+
+    // Stream ends without a newline: flush emits the buffered tail exactly once.
+    builder.append([{ ts, stream: "stdout", chunk: "tail" }]);
+    builder.flush();
+    builder.flush();
+    expect(builder.entries).toEqual([
+      { kind: "stdout", ts, text: "partial-line continued" },
+      { kind: "stdout", ts, text: "next" },
+      { kind: "stdout", ts, text: "tail" },
+    ]);
+  });
+
+  it("keeps a stateful parser's state across appends (cross-append begin/finish pairing)", () => {
+    const statefulAdapter: UIAdapterModule = {
+      type: "stateful_incremental_test",
+      label: "Stateful Incremental Test",
+      parseStdoutLine: (line: string, entryTs: string) => [{ kind: "stdout", ts: entryTs, text: line }],
+      createStdoutParser: () => {
+        let pending: string | null = null;
+        return {
+          parseLine: (line: string, entryTs: string) => {
+            if (line.startsWith("begin:")) {
+              pending = line.slice("begin:".length);
+              return [];
+            }
+            if (line === "finish" && pending) {
+              const text = `completed:${pending}`;
+              pending = null;
+              return [{ kind: "stdout", ts: entryTs, text }];
+            }
+            return [{ kind: "stdout", ts: entryTs, text: `literal:${line}` }];
+          },
+          reset: () => {
+            pending = null;
+          },
+        };
+      },
+      ConfigFields: () => null,
+      buildAdapterConfig: () => ({}),
+    } as unknown as UIAdapterModule;
+
+    const builder = createTranscriptBuilder(statefulAdapter);
+    builder.append([{ ts, stream: "stdout", chunk: "begin:task-1\n" }]);
+    expect(builder.entries).toEqual([]);
+    builder.append([{ ts, stream: "stdout", chunk: "finish\n" }]);
+    expect(builder.entries).toEqual([{ kind: "stdout", ts, text: "completed:task-1" }]);
   });
 });

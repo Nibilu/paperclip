@@ -6,7 +6,7 @@ import type { LiveEvent } from "@paperclipai/shared";
 import { ApiError } from "../../api/client";
 import { instanceSettingsApi } from "../../api/instanceSettings";
 import { heartbeatsApi } from "../../api/heartbeats";
-import { buildTranscript, getUIAdapter, onAdapterChange, type RunLogChunk, type TranscriptEntry } from "../../adapters";
+import { createTranscriptBuilder, getUIAdapter, onAdapterChange, type RunLogChunk, type TranscriptBuilder, type TranscriptEntry } from "../../adapters";
 import { queryKeys } from "../../lib/queryKeys";
 import { buildSameOriginWebSocketUrl } from "../../lib/websocket-url";
 import { tryCreateWebSocket } from "../../lib/websocket";
@@ -157,9 +157,11 @@ export function useLiveRunTranscripts({
   const [pruneTick, setPruneTick] = useState(0);
   const transcriptCacheRef = useRef(new Map<string, {
     adapterType: string;
+    /** Chunk array the builder has consumed so far (identity-compared per element). */
     chunks: RunLogChunk[];
     censorUsernameInLogs: boolean;
     parserTick: number;
+    builder: TranscriptBuilder;
     transcript: TranscriptEntry[];
   }>());
   // Tick counter to force transcript recomputation when dynamic parser loads
@@ -548,16 +550,62 @@ export function useLiveRunTranscripts({
       }
 
       const adapter = getUIAdapter(run.adapterType);
-      const transcript = buildTranscript(chunks, adapter, {
-        censorUsernameInLogs,
-      });
-      cache.set(run.id, {
-        adapterType: run.adapterType,
-        chunks,
-        censorUsernameInLogs,
-        parserTick,
-        transcript,
-      });
+      const canIncrement =
+        cached &&
+        cached.censorUsernameInLogs === censorUsernameInLogs &&
+        cached.parserTick === parserTick &&
+        chunks.length > cached.chunks.length;
+      if (canIncrement) {
+        // Prefix-diff against the chunk array the builder already consumed.
+        // Chunk objects are created fresh by the merge step and never mutated,
+        // so element identity is exact: the first diverging index is where the
+        // old parse result stops being valid. A live stream only appends, so
+        // the common case parses just the new tail instead of the whole
+        // history (the O(n²) full rebuild this cache exists to avoid).
+        const priorChunks = cached.chunks;
+        let divergeAt = 0;
+        const limit = Math.min(priorChunks.length, chunks.length);
+        while (divergeAt < limit && priorChunks[divergeAt] === chunks[divergeAt]) {
+          divergeAt += 1;
+        }
+        if (divergeAt === priorChunks.length) {
+          cached.builder.append(chunks.slice(divergeAt));
+          if (isTerminalStatus(run.status)) {
+            // An incomplete trailing line is emitted once, when the stream
+            // ends without a newline — mirroring buildTranscript's trailing
+            // flush. While running it stays buffered and is parsed when a
+            // later chunk completes it.
+            cached.builder.flush();
+          }
+          cached.chunks = chunks;
+          next.set(run.id, cached.transcript);
+          continue;
+        }
+        // Mid-array insert/replace (late seq-ordered delivery): the cached
+        // entries no longer match any prefix. Full rebuild — rare, and bounded
+        // by the retention budget.
+        cached.builder.dispose();
+      }
+
+      const transcript = (() => {
+        // Single parse pass: the builder is the only parser. Its append +
+        // terminal flush reproduce buildTranscript's output exactly (same
+        // stderr/system handling, same trailing-line flush).
+        const builder = createTranscriptBuilder(adapter, {
+          censorUsernameInLogs,
+        });
+        builder.append(chunks);
+        if (isTerminalStatus(run.status)) builder.flush();
+        cache.set(run.id, {
+          adapterType: run.adapterType,
+          chunks,
+          censorUsernameInLogs,
+          parserTick,
+          builder,
+          transcript: builder.entries,
+        });
+        return builder.entries;
+      })();
       next.set(run.id, transcript);
     }
     for (const runId of cache.keys()) {

@@ -7,7 +7,7 @@ export {
   syncExternalAdapters,
   onAdapterChange,
 } from "./registry";
-export { buildTranscript } from "./transcript";
+export { buildTranscript, createTranscriptBuilder, type TranscriptBuilder } from "./transcript";
 export type {
   TranscriptEntry,
   StdoutLineParser,

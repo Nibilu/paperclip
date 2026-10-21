@@ -31,6 +31,20 @@ vi.mock("../../api/heartbeats", () => ({
 
 vi.mock("../../adapters", () => ({
   buildTranscript: buildTranscriptMock,
+  // The hook builds incrementally now: record every append call through the
+  // same mock so tests can assert the merged chunk arrays that get parsed.
+  createTranscriptBuilder: () => {
+    const entries: unknown[] = [];
+    return {
+      entries,
+      append: (chunks: unknown[]) => {
+        entries.push(...chunks);
+        buildTranscriptMock([...entries]);
+      },
+      flush: () => {},
+      dispose: () => {},
+    };
+  },
   getUIAdapter: () => null,
   onAdapterChange: () => () => {},
 }));
@@ -616,10 +630,9 @@ describe("useLiveRunTranscripts", () => {
     });
 
     expect(buildTranscriptMock).toHaveBeenCalledTimes(1);
+    // The incremental builder records only the new chunk on its append call.
     expect(buildTranscriptMock).toHaveBeenCalledWith(
       [{ ts: "2026-04-20T00:00:00.000Z", stream: "stdout", chunk: "hello from run 1\n" }],
-      null,
-      { censorUsernameInLogs: false },
     );
 
     act(() => {

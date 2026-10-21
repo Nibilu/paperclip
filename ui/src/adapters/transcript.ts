@@ -99,6 +99,100 @@ function appendParsedTranscriptLine(args: {
   }
 }
 
+/**
+ * Incremental transcript accumulator for live streaming.
+ *
+ * `buildTranscript` re-parses the entire chunk history on every call, which
+ * turns a delta-streaming run (thousands of one-token chunks) into O(n²) parse
+ * work — the dominant CPU cost on a busy task page. The builder parses each
+ * chunk exactly once and appends the resulting entries into the same array the
+ * consumer already holds, so a new chunk costs O(1) parse work instead of a
+ * full rebuild.
+ *
+ * Semantics relative to `buildTranscript`:
+ * - One parser instance is reused across appends. Stateless line parsers
+ *   (hermes/acp/claude/grok/…) behave identically. A stateful
+ *   `createStdoutParser` keeps its state across appends, which matches how the
+ *   underlying stream actually arrives; `buildTranscript` resets per call only
+ *   because it re-parses from scratch.
+ * - An incomplete trailing stdout line stays in the buffer instead of being
+ *   emitted immediately, so it is parsed once when completed by a later chunk.
+ *   `flush()` emits it for a stream that ends without a newline (mirroring the
+ *   trailing flush in `buildTranscript`).
+ * - stderr/system chunks bypass the line parser exactly as in
+ *   `buildTranscript`.
+ */
+export interface TranscriptBuilder {
+  /** Entries accumulated so far; appended in place by `append`. */
+  readonly entries: TranscriptEntry[];
+  append(chunks: readonly RunLogChunk[]): void;
+  /** Emit a buffered incomplete trailing stdout line (stream ended). */
+  flush(): void;
+  /** Release a stateful parser's accumulated state. */
+  dispose(): void;
+}
+
+export function createTranscriptBuilder(
+  parserSource: StdoutLineParser | TranscriptParserSource,
+  opts?: TranscriptBuildOptions,
+): TranscriptBuilder {
+  const entries: TranscriptEntry[] = [];
+  let stdoutBuffer = "";
+  let lastStdoutTs = "";
+  const redactionOptions = { enabled: opts?.censorUsernameInLogs ?? false };
+  const { parseLine, reset } = resolveStdoutParser(parserSource);
+
+  const append = (chunks: readonly RunLogChunk[]) => {
+    for (const chunk of chunks) {
+      if (chunk.stream === "stderr") {
+        entries.push({ kind: "stderr", ts: chunk.ts, text: redactHomePathUserSegments(chunk.chunk, redactionOptions) });
+        continue;
+      }
+      if (chunk.stream === "system") {
+        entries.push({ kind: "system", ts: chunk.ts, text: redactHomePathUserSegments(chunk.chunk, redactionOptions) });
+        continue;
+      }
+      lastStdoutTs = chunk.ts;
+
+      const combined = stdoutBuffer + chunk.chunk;
+      const lines = combined.split(/\r?\n/);
+      stdoutBuffer = lines.pop() ?? "";
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        appendParsedTranscriptLine({
+          entries,
+          line: trimmed,
+          ts: chunk.ts,
+          parseLine,
+          reset,
+          redactionOptions,
+        });
+      }
+    }
+  };
+
+  const flush = () => {
+    const trailing = stdoutBuffer.trim();
+    stdoutBuffer = "";
+    if (!trailing) return;
+    appendParsedTranscriptLine({
+      entries,
+      line: trailing,
+      ts: lastStdoutTs || new Date().toISOString(),
+      parseLine,
+      reset,
+      redactionOptions,
+    });
+  };
+
+  const dispose = () => {
+    reset?.();
+  };
+
+  return { entries, append, flush, dispose };
+}
+
 export function buildTranscript(
   chunks: RunLogChunk[],
   parserSource: StdoutLineParser | TranscriptParserSource,
