@@ -53,13 +53,13 @@ const providers = [
   {
     id: "gateway",
     name: "Custom gateway",
-    description: "Emissary or another compatible endpoint",
+    description: "Remote OpenAI/Anthropic-compatible endpoint with your own base URL",
     advanced: true,
   },
   {
     id: "local",
     name: "Local endpoint",
-    description: "A model server in the agent’s environment",
+    description: "A model server on this machine (localhost only)",
     advanced: true,
   },
 ] as const;
@@ -325,6 +325,11 @@ export function AiProviderSetup({
         >
           {(provider === "gateway" || provider === "local") && (
             <>
+              <p className="text-xs text-muted-foreground">
+                {provider === "gateway"
+                  ? "For a remote endpoint (e.g. https://integrate.api.nvidia.com/v1). Uses HTTPS with a bearer token."
+                  : "For a model server on this machine (e.g. Ollama at http://localhost:11434/v1). Only localhost/loopback HTTP is allowed."}
+              </p>
               <label className="block space-y-2 text-xs text-muted-foreground">
                 Provider URL
                 <Input

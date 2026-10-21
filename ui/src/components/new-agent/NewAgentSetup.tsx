@@ -949,8 +949,22 @@ function Setup({
                             checked={allowUnmeteredProvider} onChange={value => { setAllowUnmeteredProvider(value); resetTest(); }} />
                         </>}
                         {!connectionAdapter && aiProviderForAdapter(brandType) && (
-                          <AiConnectionField companyId={companyId} agentName={name} adapterType={brandType} model={model} environmentId={environmentId ?? undefined} value={aiBinding}
-                            onChange={binding => { binding.mode !== "router" && setRuntimeAiBinding(binding); resetTest(); }} />
+                          brandType === "hermes_local" ? (
+                            // Hermes default path needs no managed connection.
+                            // The Connections flow (account binding, shared
+                            // credentials, gateway/local endpoints) stays
+                            // reachable but collapsed under Advanced.
+                            <details className="space-y-3">
+                              <summary className="cursor-pointer text-sm text-muted-foreground">
+                                Advanced: Connect a provider account
+                              </summary>
+                              <AiConnectionField companyId={companyId} agentName={name} adapterType={brandType} model={model} environmentId={environmentId ?? undefined} value={aiBinding}
+                                onChange={binding => { binding.mode !== "router" && setRuntimeAiBinding(binding); resetTest(); }} />
+                            </details>
+                          ) : (
+                            <AiConnectionField companyId={companyId} agentName={name} adapterType={brandType} model={model} environmentId={environmentId ?? undefined} value={aiBinding}
+                              onChange={binding => { binding.mode !== "router" && setRuntimeAiBinding(binding); resetTest(); }} />
+                          )
                         )}
                         {brandType === "hermes_local" && (
                           <SchemaConfigFields
