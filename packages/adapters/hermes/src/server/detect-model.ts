@@ -160,9 +160,20 @@ export function resolveProvider(options: {
     model,
   } = options;
 
-  // 1. Explicit provider from adapterConfig — user override, always wins
-  if (explicitProvider && (VALID_PROVIDERS as readonly string[]).includes(explicitProvider)) {
-    return { provider: explicitProvider, resolvedFrom: "adapterConfig" };
+  // 1. Explicit provider from adapterConfig — user override, always wins.
+  //    The setup catalog lists every provider in the installed Hermes
+  //    registry (e.g. "nvidia"), not just the built-in CLI names in
+  //    VALID_PROVIDERS, and `hermes chat --provider` accepts registry names
+  //    too. Rerouting an explicit choice through model-name inference once
+  //    sent runs to the wrong provider entirely, so pass the user's choice
+  //    through unchanged; Hermes itself reports unknown providers clearly.
+  if (explicitProvider) {
+    return {
+      provider: explicitProvider,
+      resolvedFrom: (VALID_PROVIDERS as readonly string[]).includes(explicitProvider)
+        ? "adapterConfig"
+        : "adapterConfigRegistry",
+    };
   }
 
   const supportedProviders = VALID_PROVIDERS as readonly string[];

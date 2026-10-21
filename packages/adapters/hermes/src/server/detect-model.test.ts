@@ -89,6 +89,28 @@ test("resolveProvider still infers from the requested model when Hermes config i
     resolvedFrom: "modelInference",
   });
 });
+test("resolveProvider passes an explicit registry provider through instead of rerouting via model inference", () => {
+  // "nvidia" is in the installed Hermes provider registry (the setup catalog)
+  // but not in the CLI's built-in VALID_PROVIDERS list. The user's explicit
+  // choice must reach `hermes --provider` unchanged.
+  expect(resolveProvider({
+    explicitProvider: "nvidia",
+    model: "z-ai/glm-5.3-flash",
+  })).toEqual({
+    provider: "nvidia",
+    resolvedFrom: "adapterConfigRegistry",
+  });
+  // Built-in names keep the original provenance marker.
+  expect(resolveProvider({
+    explicitProvider: "zai",
+    detectedProvider: "nvidia",
+    detectedModel: "z-ai/glm-5.3-flash",
+  })).toEqual({
+    provider: "zai",
+    resolvedFrom: "adapterConfig",
+  });
+});
+
 
 async function withHermesHomeConfig(
   configLines: string[],
