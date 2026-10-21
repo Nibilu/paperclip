@@ -2298,6 +2298,15 @@ export function agentRoutes(
     };
   }
 
+  async function assertSupportedAdapterProvider(type: string, config: Record<string, unknown>): Promise<void> {
+    const provider = asNonEmptyString(config.provider);
+    if (!provider || (type === "hermes_local" && provider === "auto")) return;
+    const providers = await listAdapterProviders(type);
+    if (providers && !providers.some((entry) => entry.name === provider)) {
+      throw unprocessable("Unsupported provider for this adapter");
+    }
+  }
+
   function applyCreateDefaultsByAdapterType(
     adapterType: string | null | undefined,
     adapterConfig: Record<string, unknown>,
@@ -3002,6 +3011,7 @@ export function agentRoutes(
       return;
     }
     const provider = asNonEmptyString(req.query.provider);
+    if (provider) await assertSupportedAdapterProvider(type, { provider });
     if (type === "opencode_local" && provider === "openrouter") {
       res.json(await listOpenRouterModels(refresh));
       return;
@@ -3019,7 +3029,7 @@ export function agentRoutes(
       return;
     }
     const models = refresh
-      ? await refreshAdapterModels(modelAdapterType)
+      ? await refreshAdapterModels(modelAdapterType, provider || undefined)
       : await listAdapterModels(modelAdapterType, provider || undefined);
     res.json(models);
   });
@@ -4699,6 +4709,7 @@ export function agentRoutes(
     Object.assign(createInput, await resolveNewAgentRunnerForCompany(db, companyId, { ...createInput, runner: createRunner }));
     createInput.adapterType = await assertSelectableAdapterType(createInput.adapterType, createInput.adapterConfig);
     const rawCreateAdapterConfig = (createInput.adapterConfig ?? {}) as Record<string, unknown>;
+    await assertSupportedAdapterProvider(createInput.adapterType, rawCreateAdapterConfig);
     assertProviderTraceSettingTransition(req, createInput.runtimeConfig);
     await assertFreshPaperclipRunnerProvider(
       companyId,
@@ -5458,6 +5469,7 @@ export function agentRoutes(
           rawEffectiveAdapterConfig,
         );
       }
+      await assertSupportedAdapterProvider(requestedAdapterType, rawEffectiveAdapterConfig);
       const effectiveAdapterConfig = applyCodexLocalKeyIsolation(
         existing.companyId,
         existing.id,

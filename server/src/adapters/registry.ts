@@ -1116,7 +1116,7 @@ export async function refreshAdapterModels(type: string, provider?: string): Pro
   const adapter = findActiveServerAdapter(type);
   if (!adapter) return [];
   if (adapter.refreshModels) {
-    const refreshed = await adapter.refreshModels();
+    const refreshed = await adapter.refreshModels(provider);
     if (refreshed.length > 0) return refreshed;
   }
   if (adapter.listModels) {

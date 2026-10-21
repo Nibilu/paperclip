@@ -6,7 +6,7 @@ import { aiRoutingHarness } from "@paperclipai/shared";
 import { AiConnectionField } from "./ai-connections/AiConnectionField";
 import { aiConnectionBindingSchema, aiRuntimeConnectionBindingSchema } from "@paperclipai/shared";
 import { testAgentSetup } from "@/lib/test-agent-setup";
-import { setupEfforts } from "../lib/agent-setup-fields";
+import { HERMES_PROVIDER_KEYS, setupEfforts } from "../lib/agent-setup-fields";
 import { RuntimeTestCard } from "./RuntimeTestCard";
 import { useState, useEffect, useRef, useMemo, useCallback, Children, isValidElement, type ReactNode } from "react";
 import type { AdapterConfigSection } from "../adapters/types";
@@ -917,9 +917,30 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       ? "Paperclip Computer"
       : "Local";
 
-  const modelProvider = adapterType === "opencode_local" && aiConnectionBindingSchema.safeParse(
-    (overlay.runtime.runtimeConfig as Record<string, unknown> | undefined)?.aiConnection ?? runtimeConfig.aiConnection,
-  ).data?.provider === "openrouter" ? "openrouter" : runnerProvider;
+  const hermesProvider = adapterType === "hermes_local"
+    ? String(eff("adapterConfig", "provider", config.provider ?? "") ?? "")
+    : "";
+  const hermesProviders = useQuery({
+    queryKey: ["agents", selectedCompanyId, "adapter-providers", "hermes_local"],
+    queryFn: () => agentsApi.adapterProviders(selectedCompanyId!, "hermes_local"),
+    enabled: Boolean(selectedCompanyId && adapterType === "hermes_local"),
+    staleTime: 0,
+    refetchOnMount: "always",
+    retry: false,
+  });
+  const detectedHermesModel = useQuery({
+    queryKey: queryKeys.agents.detectModel(selectedCompanyId ?? "none", "hermes_local"),
+    queryFn: () => agentsApi.detectModel(selectedCompanyId!, "hermes_local"),
+    enabled: Boolean(selectedCompanyId && adapterType === "hermes_local" && !hermesProvider),
+    staleTime: 0,
+    refetchOnMount: "always",
+    retry: false,
+  });
+  const modelProvider = adapterType === "hermes_local"
+    ? hermesProvider || detectedHermesModel.data?.provider || undefined
+    : adapterType === "opencode_local" && aiConnectionBindingSchema.safeParse(
+        (overlay.runtime.runtimeConfig as Record<string, unknown> | undefined)?.aiConnection ?? runtimeConfig.aiConnection,
+      ).data?.provider === "openrouter" ? "openrouter" : runnerProvider;
   const connectionModels = useConnectionModels(isExternalRunner ? null : selectedCompanyId, isCreate ? undefined : aiConnectionBindingSchema.safeParse((overlay.runtime.runtimeConfig as Record<string, unknown> | undefined)?.aiConnection ?? runtimeConfig.aiConnection).data, aiRoutingHarness(adapterType, runnerProvider, eff("adapterConfig", "acpxAgent", config.acpxAgent)));
   // Fetch adapter models for the effective provider, including unsaved changes.
   const modelAdapterType = isCodexHarness ? harnessType : adapterType;
@@ -1000,7 +1021,12 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
   const renderAdapterFields = (section: AdapterConfigSection) => (
     <>
       {adapterType === "claude_local" && <ClaudeLocalAdvancedFields {...adapterFieldProps} section={section} />}
-      <fieldsUiAdapter.ConfigFields {...adapterFieldProps} section={section} hideModel={isLocal} />
+      <fieldsUiAdapter.ConfigFields
+        {...adapterFieldProps}
+        section={section}
+        hideModel={isLocal}
+        hiddenKeys={adapterType === "hermes_local" && section === "adapter" ? ["provider"] : undefined}
+      />
     </>
   );
   // Popover states
@@ -1773,6 +1799,40 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
 
           {renderAdapterFields("adapter")}
           {isLocal && (<>
+              {adapterType === "hermes_local" && (
+                <Field
+                  label="Model provider"
+                  hint="Default uses the provider and model configured on the Hermes host. Choose a provider to route this agent elsewhere."
+                >
+                  <NativeSelect
+                    aria-label="Model provider"
+                    value={hermesProvider}
+                    onChange={(event) => {
+                      const provider = event.target.value;
+                      mark("adapterConfig", "provider", provider || undefined);
+                      mark("adapterConfig", "model", undefined);
+                    }}
+                  >
+                    <option value="">
+                      {`Default (Hermes config)${detectedHermesModel.data?.provider ? ` — ${detectedHermesModel.data.provider}` : ""}`}
+                    </option>
+                    {(hermesProviders.data?.length
+                      ? hermesProviders.data
+                      : Object.keys(HERMES_PROVIDER_KEYS).map((name) => ({
+                          name,
+                          label: ({ openrouter: "OpenRouter", openai: "OpenAI", anthropic: "Anthropic" } as Record<string, string>)[name] ?? name,
+                        }))
+                    ).map((provider) => (
+                      <option key={provider.name} value={provider.name}>{provider.label}</option>
+                    ))}
+                  </NativeSelect>
+                  {!hermesProvider && detectedHermesModel.data?.model && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Hermes default: {detectedHermesModel.data.model}
+                    </p>
+                  )}
+                </Field>
+              )}
               <ModelDropdown
                 models={models}
                 loadingModels={connectionModels?.isLoading ?? fetchingModels}

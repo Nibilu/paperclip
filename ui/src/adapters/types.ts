@@ -25,6 +25,8 @@ export interface AdapterConfigFieldsProps {
   hideModel?: boolean;
   /** Render only these schema field keys, in schema order. Omit for all fields. */
   onlyKeys?: string[];
+  /** Omit these schema fields while preserving all other adapter settings. */
+  hiddenKeys?: string[];
   companyId?: string;
   agentId?: string;
   mode: "create" | "edit";
