@@ -12,6 +12,23 @@ import { isHeartbeatRunRuntimeStatusActive, publishHeartbeatRunRuntimeProgress, 
 const MAX_LIVE_LOG_CHUNK_BYTES = 8 * 1024;
 export const ACTIVE_RUN_OUTPUT_PROGRESS_FLUSH_INTERVAL_MS = 60 * 1000;
 export const ACTIVE_RUN_LOG_RUNTIME_STATUS_REFRESH_INTERVAL_MS = 5 * 1000;
+// Live log batching: a delta-streaming run emits hundreds of tiny chunks per
+// second and each one became a separate WebSocket broadcast, hammering every
+// open task page (measured 5744 messages / 21min run, peak 450 per 10s).
+// Buffer chunks briefly and broadcast the batch as one event; clients expand
+// the per-chunk list so their seq-based dedupe against the persisted log
+// stays exact. Persistence is untouched — every chunk still lands in the run
+// log individually.
+export const LIVE_LOG_BATCH_FLUSH_INTERVAL_MS = 300;
+export const LIVE_LOG_BATCH_MAX_CHUNKS = 64;
+export const LIVE_LOG_BATCH_MAX_BYTES = 16 * 1024;
+
+interface PendingLiveLogChunk {
+  ts: string;
+  stream: "stdout" | "stderr" | "system";
+  chunk: string;
+  seq: number;
+}
 
 type Run = typeof heartbeatRuns.$inferSelect;
 
@@ -35,6 +52,65 @@ export function createHeartbeatRunOutput(db: Db, input: HeartbeatRunOutputInput)
   let outputSeq = Number(run.lastOutputSeq ?? 0);
   let lastOutputFlushAt: Date | null = run.lastOutputAt ?? null;
   let lastLogRuntimeStatusTouchMs = 0;
+  // Live-broadcast buffer (see LIVE_LOG_BATCH_* above). Per-recorder: chunks
+  // for one run arrive serially through appendIdentityRedactedLog.
+  let pendingLiveChunks: PendingLiveLogChunk[] = [];
+  let pendingLiveBytes = 0;
+  let liveBatchTimer: NodeJS.Timeout | null = null;
+  const flushLiveLogBatch = () => {
+    if (liveBatchTimer) {
+      clearTimeout(liveBatchTimer);
+      liveBatchTimer = null;
+    }
+    const batch = pendingLiveChunks;
+    pendingLiveChunks = [];
+    pendingLiveBytes = 0;
+    if (batch.length === 0) return;
+    const first = batch[0]!;
+    const last = batch[batch.length - 1]!;
+    publishLiveEvent({
+      companyId: run.companyId,
+      type: "heartbeat.run.log",
+      payload: {
+        runId: run.id,
+        agentId: run.agentId,
+        issueId,
+        ts: first.ts,
+        seq: last.seq,
+        // Legacy single-chunk fields (last chunk) stay populated so older
+        // projections and subscribers keep working.
+        stream: last.stream,
+        chunk: last.chunk,
+        // Batched expansion: clients that understand this field replace the
+        // legacy chunk with the full per-chunk list (keeps per-seq dedupe
+        // against the persisted log exact).
+        chunks: batch.map((entry) => ({
+          ts: entry.ts,
+          stream: entry.stream,
+          chunk: entry.chunk,
+          seq: entry.seq,
+        })),
+      },
+    });
+  };
+  const queueLiveLogChunk = (entry: PendingLiveLogChunk) => {
+    pendingLiveChunks.push(entry);
+    pendingLiveBytes += entry.chunk.length;
+    if (
+      pendingLiveChunks.length >= LIVE_LOG_BATCH_MAX_CHUNKS ||
+      pendingLiveBytes >= LIVE_LOG_BATCH_MAX_BYTES
+    ) {
+      flushLiveLogBatch();
+      return;
+    }
+    if (!liveBatchTimer) {
+      liveBatchTimer = setTimeout(
+        flushLiveLogBatch,
+        LIVE_LOG_BATCH_FLUSH_INTERVAL_MS,
+      );
+      liveBatchTimer.unref?.();
+    }
+  };
   const outputProgressState: {
     pending: {
       at: Date;
@@ -147,19 +223,11 @@ export function createHeartbeatRunOutput(db: Db, input: HeartbeatRunOutputInput)
             )
           : sanitizedChunk;
 
-      publishLiveEvent({
-        companyId: run.companyId,
-        type: "heartbeat.run.log",
-        payload: {
-          runId: run.id,
-          agentId: run.agentId,
-          issueId,
-          ts,
-          seq: chunkSeq,
-          stream,
-          chunk: payloadChunk,
-          truncated: payloadChunk.length !== sanitizedChunk.length,
-        },
+      queueLiveLogChunk({
+        ts,
+        stream,
+        chunk: payloadChunk,
+        seq: chunkSeq,
       });
     };
     const onLog = (stream: "stdout" | "stderr", chunk: string) =>
@@ -202,6 +270,8 @@ export function createHeartbeatRunOutput(db: Db, input: HeartbeatRunOutputInput)
     get handle() { return handle; },
     outputProgressState,
     flushOutputProgress,
+    /** Emit any buffered live-log chunks before the run record finalizes. */
+    flushLiveLogBatch,
     // Finalization awaits I/O and can receive more output before persisting excerpts.
     get stdoutExcerpt() { return stdoutExcerpt; },
     get stderrExcerpt() { return stderrExcerpt; },

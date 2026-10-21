@@ -125,20 +125,34 @@ export function useSummaryDraftStream(
     pendingLogRowsRef.current = new Map();
   }, [runId]);
 
-  // Live token deltas over the shared company-events socket.
+  // Live token deltas over the shared company-events socket. The server may
+  // batch several chunks into one event (payload.chunks); expand the batch so
+  // no token is dropped and seq dedupe stays intact.
   useCompanyLiveEvent((event: LiveEvent) => {
     if (!visible || !runId) return;
     if (event.type !== "heartbeat.run.log") return;
     const payload = event.payload ?? {};
     if (payload.runId !== runId) return;
+    const toIncoming = (record: Record<string, unknown>): IncomingRunLogChunk | null => {
+      const chunk = readPayloadString(record.chunk);
+      if (!chunk) return null;
+      const ts = readPayloadString(record.ts) ?? event.createdAt;
+      const stream =
+        record.stream === "stderr" ? "stderr" : record.stream === "system" ? "system" : "stdout";
+      return { ts, stream, chunk, seq: readChunkSeq(record.seq), dedupeKey: `log:${runId}:${ts}:${stream}:${chunk}` };
+    };
+    const batched = Array.isArray(payload.chunks) ? payload.chunks : null;
+    if (batched && batched.length > 0) {
+      const incoming = batched
+        .map((entry) => (typeof entry === "object" && entry !== null ? toIncoming(entry as Record<string, unknown>) : null))
+        .filter((entry): entry is IncomingRunLogChunk => entry !== null);
+      if (incoming.length > 0) appendChunks(incoming);
+      return;
+    }
     const chunk = readPayloadString(payload.chunk);
     if (!chunk) return;
-    const ts = readPayloadString(payload.ts) ?? event.createdAt;
-    const stream =
-      payload.stream === "stderr" ? "stderr" : payload.stream === "system" ? "system" : "stdout";
-    appendChunks([
-      { ts, stream, chunk, seq: readChunkSeq(payload.seq), dedupeKey: `log:${runId}:${ts}:${stream}:${chunk}` },
-    ]);
+    const incoming = toIncoming(payload);
+    if (incoming) appendChunks([incoming]);
   });
 
   // Hydrate already-emitted output and fill any gaps from the persisted run log.

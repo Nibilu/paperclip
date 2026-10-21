@@ -454,6 +454,36 @@ export function useLiveRunTranscripts({
         if (!runById.has(runId)) return;
 
         if (event.type === "heartbeat.run.log") {
+          // Batched broadcast: the payload carries the full per-chunk list so
+          // seq-based dedupe against the persisted log stays exact. Expand it
+          // into the same appendChunks path the single-chunk shape uses.
+          const batched = Array.isArray(payload["chunks"]) ? payload["chunks"] : null;
+          if (batched && batched.length > 0) {
+            const expanded = batched
+              .map((entry) => {
+                if (typeof entry !== "object" || entry === null) return null;
+                const record = entry as Record<string, unknown>;
+                const chunk = readString(record["chunk"]);
+                if (!chunk) return null;
+                const ts = readString(record["ts"]) ?? event.createdAt;
+                const stream =
+                  readString(record["stream"]) === "stderr"
+                    ? "stderr" as const
+                    : readString(record["stream"]) === "system"
+                      ? "system" as const
+                      : "stdout" as const;
+                return {
+                  ts,
+                  stream,
+                  chunk,
+                  seq: readChunkSeq(record["seq"]),
+                  dedupeKey: `log:${runId}:${ts}:${stream}:${chunk}`,
+                };
+              })
+              .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+            if (expanded.length > 0) appendChunks(runId, expanded);
+            return;
+          }
           const chunk = readString(payload["chunk"]);
           if (!chunk) return;
           const ts = readString(payload["ts"]) ?? event.createdAt;

@@ -98,7 +98,7 @@ describe.skipIf(!support.supported)("heartbeat run completion boundary", () => {
     const controller = new AbortController();
     const input: CompleteHeartbeatRunInput = {
       run, agent, issueId: null, issueRef: null, signal: controller.signal,
-      output: { handle: { store: "local_file", logRef: "test-log" }, outputProgressState: { pending: { bytes: 7 } }, flushOutputProgress: vi.fn(async () => {}), stdoutExcerpt: "answer", stderrExcerpt: "diagnostic" },
+      output: { handle: { store: "local_file", logRef: "test-log" }, outputProgressState: { pending: { bytes: 7 } }, flushOutputProgress: vi.fn(async () => {}), flushLiveLogBatch: vi.fn(), stdoutExcerpt: "answer", stderrExcerpt: "diagnostic" },
       session: { runtimeForAdapter: { sessionId: null, sessionDisplayId: null }, previousSessionParams: null, taskKey: "completion-task", configuredModel: "test-model",
         sessionConfigMetadata: await buildEffectiveRunSessionConfigMetadata({ adapterType: agent.adapterType, effectiveAdapterConfig: {}, agentRuntimeConfig: {}, issueOverrides: null, workspaceConfig: null, environment: null, environmentEnv: null, projectEnv: null, routineEnv: null, runtimeSkills: [] }),
       },

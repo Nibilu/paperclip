@@ -81,6 +81,8 @@ interface RunCompletionOutput {
   handle: RunLogHandle | null;
   outputProgressState: { pending: { bytes: number } | null };
   flushOutputProgress: (options?: { force?: boolean }) => Promise<void>;
+  /** Emit buffered live-log WS chunks so the batch never outlives the run. */
+  flushLiveLogBatch: () => void;
   // Getters in the executor retain output that arrives while finalization awaits I/O.
   readonly stdoutExcerpt: string;
   readonly stderrExcerpt: string;
@@ -486,6 +488,7 @@ export function createHeartbeatRunCompletion(db: Db, dependencies: HeartbeatRunC
       compressed: boolean;
     } | null = null;
     if (handle) {
+      output.flushLiveLogBatch();
       logSummary = await measureRunPhase("completion.output", () => runLogStore.finalize(handle));
     }
     const finalLogBytes = logSummary?.bytes;
@@ -1118,6 +1121,7 @@ export function createHeartbeatRunCompletion(db: Db, dependencies: HeartbeatRunC
       compressed: boolean;
     } | null = null;
     if (handle) {
+      output.flushLiveLogBatch();
       try {
         logSummary = await measureRunPhase("completion.output", () => runLogStore.finalize(handle));
       } catch (finalizeErr) {

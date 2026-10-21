@@ -749,6 +749,71 @@ describe("useLiveRunTranscripts", () => {
     }
   });
 
+  it("expands a batched heartbeat.run.log event into per-chunk appends", async () => {
+    vi.useFakeTimers();
+    try {
+      logMock.mockResolvedValue({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: 0 });
+      function Harness() {
+        useLiveRunTranscripts({
+          companyId: "company-1",
+          runs: [{ id: "run-1", status: "running", adapterType: "codex_local" }],
+        });
+        return null;
+      }
+      const container = document.createElement("div");
+      document.body.appendChild(container);
+      const root = createRoot(container);
+
+      await act(async () => {
+        root.render(<Harness />);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      const socket = FakeWebSocket.instances[0]!;
+      await act(async () => socket.triggerOpen());
+
+      buildTranscriptMock.mockClear();
+      await act(async () => {
+        socket.onmessage?.(new MessageEvent("message", {
+          data: JSON.stringify({
+            companyId: "company-1",
+            type: "heartbeat.run.log",
+            createdAt: "2026-10-21T00:00:00.000Z",
+            payload: {
+              runId: "run-1",
+              ts: "2026-10-21T00:00:00.000Z",
+              seq: 3,
+              stream: "stdout",
+              chunk: "third\n",
+              chunks: [
+                { ts: "2026-10-21T00:00:00.000Z", stream: "stdout", chunk: "first\n", seq: 1 },
+                { ts: "2026-10-21T00:00:00.001Z", stream: "stderr", chunk: "oops\n", seq: 2 },
+                { ts: "2026-10-21T00:00:00.002Z", stream: "stdout", chunk: "third\n", seq: 3 },
+              ],
+            },
+          }),
+        }));
+        await Promise.resolve();
+      });
+
+      // Every chunk of the batch reached the parser (the incremental builder
+      // records each append through the shared mock).
+      const parsedChunks = buildTranscriptMock.mock.calls.flatMap(
+        (call) => call[0] as Array<{ chunk: string; seq?: number; stream: string }>,
+      );
+      expect(parsedChunks.map((c) => c.chunk)).toEqual(["first\n", "oops\n", "third\n"]);
+      expect(parsedChunks.map((c) => c.seq)).toEqual([1, 2, 3]);
+      expect(parsedChunks.map((c) => c.stream)).toEqual(["stdout", "stderr", "stdout"]);
+
+      act(() => {
+        root.unmount();
+      });
+      container.remove();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("keeps HTTP log polling when the socket constructor fails and retries later", async () => {
     vi.useFakeTimers();
     globalThis.WebSocket = class {
