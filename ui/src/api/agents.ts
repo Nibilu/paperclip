@@ -59,6 +59,10 @@ export interface DetectedAdapterModel {
   candidates?: string[];
   /** True when the detected Hermes config carries a non-empty API key. */
   hasApiKey?: boolean;
+  /** Base URL override from the detected Hermes config, when present. */
+  baseUrl?: string;
+  /** API mode from the detected Hermes config, when present. */
+  apiMode?: string;
 }
 
 export interface AdapterProvider {

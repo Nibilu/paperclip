@@ -49,6 +49,25 @@ it("shows advanced providers directly when entered from advanced connection mode
   }
 });
 
+it("preselects a gateway endpoint with the pre-filled base URL", async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
+  client.setQueryData(["ai-connections", "company", undefined], { canManageConnections: true, connections: [] });
+  client.setQueryData(["agents", "company", "provider-access"], []);
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<QueryClientProvider client={client}><AiProviderSetup companyId="company" initialProvider="gateway" initialProtocol="chat" initialBaseUrl="https://integrate.api.nvidia.com/v1" onCancel={() => {}} onComplete={() => {}} /></QueryClientProvider>));
+    expect(container.textContent).not.toContain("Connect a model provider");
+    const url = container.querySelector('input[aria-label="Provider URL"]') as HTMLInputElement;
+    expect(url).not.toBeNull();
+    expect(url.value).toBe("https://integrate.api.nvidia.com/v1");
+    const format = container.querySelector('button[aria-label="API format"]')?.textContent ?? "";
+    expect(format).toContain("Chat Completions");
+  } finally {
+    await act(async () => root.unmount()); client.clear();
+  }
+});
+
 it.each(providerSources)("opens %s directly with shared access folded under Advanced", async source => {
   const preset = aiProviderSetupPreset(source)!;
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });

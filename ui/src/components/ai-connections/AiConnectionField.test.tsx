@@ -5,11 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
 import type { AiManagedConnectionSummary } from "@paperclipai/shared";
+import type { AiProviderSetup } from "./AiProviderSetup";
 import { AiConnectionField } from "./AiConnectionField";
 import type { AiConnectionCredentialStep } from "./AiConnectionCredentialStep";
 
 const mocks = vi.hoisted(() => ({ list: vi.fn(), setDefault: vi.fn() }));
 let credentialProps: ComponentProps<typeof AiConnectionCredentialStep> | undefined;
+let wizardProps: ComponentProps<typeof AiProviderSetup> | undefined;
 vi.mock("@/api/ai-connections", () => ({ aiConnectionsApi: mocks }));
 vi.mock("./AiConnectionCredentialStep", () => ({
   AiConnectionCredentialStep: (props: ComponentProps<typeof AiConnectionCredentialStep>) => {
@@ -18,7 +20,12 @@ vi.mock("./AiConnectionCredentialStep", () => ({
   },
 }));
 vi.mock("./AiConnectionManagement", () => ({ AiConnectionLegacyNotice: () => null }));
-vi.mock("./AiProviderSetup", () => ({ AiProviderSetup: () => <div>Advanced provider setup</div> }));
+vi.mock("./AiProviderSetup", () => ({
+  AiProviderSetup: (props: ComponentProps<typeof AiProviderSetup>) => {
+    wizardProps = props;
+    return <div>Advanced provider setup</div>;
+  },
+}));
 vi.mock("@/pages/apps/AppLogo", () => ({ AppLogo: () => null }));
 
 let root: Root;
@@ -64,6 +71,7 @@ async function click(label: string) {
 beforeEach(() => {
   vi.clearAllMocks();
   credentialProps = undefined;
+  wizardProps = undefined;
   mocks.setDefault.mockResolvedValue({});
   container = document.createElement("div");
   document.body.append(container);
@@ -71,6 +79,23 @@ beforeEach(() => {
   client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
 });
 afterEach(() => { flushSync(() => root.unmount()); client.clear(); container.remove(); });
+
+it("forwards the Hermes provider preset into the advanced wizard", async () => {
+  mocks.list.mockResolvedValue({ currentUserId: "owner", connections: [], canManageConnections: true });
+  flushSync(() => root.render(<QueryClientProvider client={client}>
+    <AiConnectionField companyId="company" agentId="agent" agentName="Nova" adapterType="hermes_local"
+      initialWizardProvider="gateway" initialWizardProtocol="chat" initialWizardBaseUrl="https://integrate.api.nvidia.com/v1"
+      value={undefined} onChange={onChange} />
+  </QueryClientProvider>));
+  await settle();
+  await click("Connect another account");
+  expect(document.body.textContent).toContain("Advanced provider setup");
+  expect(wizardProps).toMatchObject({
+    initialProvider: "gateway",
+    initialProtocol: "chat",
+    initialBaseUrl: "https://integrate.api.nvidia.com/v1",
+  });
+});
 
 it("reconnects the unavailable personal default in place", async () => {
   await mount([account()]);

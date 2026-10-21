@@ -479,6 +479,55 @@ describe("server adapter registry", () => {
     expect(await detectAdapterModel("claude_local")).toBeNull();
     expect(detectModel).toHaveBeenCalledTimes(1);
   });
+
+  it("passes detected credential and endpoint facts through detectAdapterModel", async () => {
+    const plugin: ServerAdapterModule = {
+      type: "claude_local",
+      execute: async () => ({ exitCode: 0, signal: null, timedOut: false }),
+      testEnvironment: async () => ({
+        adapterType: "claude_local",
+        status: "pass",
+        checks: [],
+        testedAt: new Date(0).toISOString(),
+      }),
+      detectModel: async () => ({
+        model: "z-ai/glm-5.3-flash",
+        provider: "nvidia",
+        source: "config",
+        hasApiKey: true,
+        baseUrl: "https://integrate.api.nvidia.com/v1",
+        apiMode: "chat_completions",
+      }),
+      supportsLocalAgentJwt: false,
+    };
+    registerServerAdapter(plugin);
+    try {
+      expect(await detectAdapterModel("claude_local")).toEqual({
+        model: "z-ai/glm-5.3-flash",
+        provider: "nvidia",
+        source: "config",
+        hasApiKey: true,
+        baseUrl: "https://integrate.api.nvidia.com/v1",
+        apiMode: "chat_completions",
+      });
+
+      // Absent facts stay absent instead of becoming empty strings.
+      (plugin as unknown as { detectModel: NonNullable<ServerAdapterModule["detectModel"]> }).detectModel = async () => ({
+        model: "m",
+        provider: "p",
+        source: "config",
+        hasApiKey: false,
+      });
+      expect(await detectAdapterModel("claude_local")).toEqual({
+        model: "m",
+        provider: "p",
+        source: "config",
+        hasApiKey: false,
+      });
+    } finally {
+      unregisterServerAdapter("claude_local");
+    }
+  });
 });
 
 describe("resolveExternalAdapterRegistration", () => {

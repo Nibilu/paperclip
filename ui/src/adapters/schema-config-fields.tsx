@@ -323,6 +323,7 @@ export function fieldMatchesVisibleWhen(
 export function SchemaConfigFields({
   section,
   hideModel,
+  onlyKeys,
   adapterType,
   isCreate,
   values,
@@ -411,6 +412,7 @@ export function SchemaConfigFields({
     <>
       {schema.fields
         .filter((field) => !hideModel || field.key !== "model")
+        .filter((field) => !onlyKeys || onlyKeys.includes(field.key))
         .filter((field) => !section || schemaFieldSection(field.key) === section)
         .filter((field) => !(field.type === "select" && /permissionMode/i.test(field.key) && (field.options?.length ?? 0) <= 1))
         .filter((field) => fieldMatchesVisibleWhen(field, readValue, schema))

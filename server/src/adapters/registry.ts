@@ -1171,7 +1171,15 @@ export function listEnabledServerAdapters(): ServerAdapterModule[] {
 
 export async function detectAdapterModel(
   type: string,
-): Promise<{ model: string; provider: string; source: string; candidates?: string[] } | null> {
+): Promise<{
+  model: string;
+  provider: string;
+  source: string;
+  candidates?: string[];
+  hasApiKey?: boolean;
+  baseUrl?: string;
+  apiMode?: string;
+} | null> {
   const adapter = findActiveServerAdapter(type);
   if (!adapter?.detectModel) return null;
   const detected = await adapter.detectModel();
@@ -1181,6 +1189,9 @@ export async function detectAdapterModel(
     provider: detected.provider,
     source: detected.source,
     ...(detected.candidates?.length ? { candidates: detected.candidates } : {}),
+    ...(detected.hasApiKey !== undefined ? { hasApiKey: detected.hasApiKey } : {}),
+    ...(detected.baseUrl ? { baseUrl: detected.baseUrl } : {}),
+    ...(detected.apiMode ? { apiMode: detected.apiMode } : {}),
   };
 }
 

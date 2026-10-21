@@ -71,6 +71,7 @@ export function AiProviderSetup({
   environmentId,
   initialProvider,
   initialProtocol,
+  initialBaseUrl,
   providerLabel,
   advancedOnly = false,
   reconnect,
@@ -82,6 +83,8 @@ export function AiProviderSetup({
   environmentId?: string;
   initialProvider?: ProviderChoice;
   initialProtocol?: AiProviderRouting["protocol"];
+  /** Pre-filled endpoint URL for gateway/local connects (e.g. the host Hermes provider's base URL). */
+  initialBaseUrl?: string;
   providerLabel?: string;
   advancedOnly?: boolean;
   reconnect?: AiManagedConnectionSummary;
@@ -111,7 +114,7 @@ export function AiProviderSetup({
   const [auth, setAuth] = useState<AiProviderRouting["auth"]>(
     reconnect?.routing?.auth ?? "bearer",
   );
-  const [baseUrl, setBaseUrl] = useState(reconnect?.routing?.baseUrl ?? "");
+  const [baseUrl, setBaseUrl] = useState(reconnect?.routing?.baseUrl ?? initialBaseUrl ?? "");
   const [region, setRegion] = useState(
     reconnect?.routing?.region ?? "us-east-1",
   );

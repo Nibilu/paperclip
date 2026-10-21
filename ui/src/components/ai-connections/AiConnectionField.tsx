@@ -52,6 +52,9 @@ export function AiConnectionField({
   readOnly = false,
   preferAdvanced = false,
   routerAdapterType,
+  initialWizardProvider,
+  initialWizardProtocol,
+  initialWizardBaseUrl,
 }: {
   companyId: string;
   agentId?: string;
@@ -65,6 +68,12 @@ export function AiConnectionField({
   readOnly?: boolean;
   preferAdvanced?: boolean;
   routerAdapterType?: string;
+  /** Preselect this wizard entry when the connect dialog opens (e.g. the host Hermes provider's matching entry). */
+  initialWizardProvider?: "openrouter" | "bedrock" | "gateway" | "local" | "google" | "openai" | "anthropic" | "xai";
+  /** Protocol preset for gateway/local preselection; falls back to the adapter default. */
+  initialWizardProtocol?: "chat" | "responses" | "messages";
+  /** Pre-filled endpoint URL for gateway/local preselection. */
+  initialWizardBaseUrl?: string;
 }) {
   const provider = aiProviderForAdapter(adapterType);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -212,7 +221,9 @@ export function AiConnectionField({
           {advancedSetup ? <AiProviderSetup
             companyId={companyId} agentId={agentId} environmentId={environmentId}
             advancedOnly={preferAdvanced}
-            initialProtocol={adapterType === "claude_local" ? "messages" : adapterType === "codex_local" ? "responses" : "chat"}
+            initialProvider={initialWizardProvider}
+            initialProtocol={initialWizardProtocol ?? (adapterType === "claude_local" ? "messages" : adapterType === "codex_local" ? "responses" : "chat")}
+            initialBaseUrl={initialWizardBaseUrl}
             onCancel={() => preferAdvanced ? setConnecting(false) : setAdvancedSetup(false)}
             onComplete={binding => {
               void client.invalidateQueries({ queryKey: ["ai-connections", companyId] });

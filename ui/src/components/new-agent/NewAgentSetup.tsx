@@ -17,7 +17,7 @@ import {
 import { testAgentSetup } from "@/lib/test-agent-setup";
 import { useCloudInstance } from "@/hooks/useCloudInstance";
 import { isNewAgentAdapterAllowed } from "@/lib/new-agent-adapters";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { ArrowLeft, ArrowRight, Check, Settings2 } from "lucide-react";
@@ -266,6 +266,10 @@ function Setup({
     staleTime: 5 * 60_000,
     retry: false,
   });
+  // The provider behind the Default option: what the host's ~/.hermes/config.yaml
+  // routes to today. Used to fetch the Default model list and to preselect the
+  // matching entry in the Advanced connection wizard. (declared below, after
+  // the detection query it reads)
   // Per-provider model discovery: re-queried whenever the user picks a
   // non-default provider. Default keeps the unscoped (detected-model) list.
   const providerModels = useQuery({
@@ -282,6 +286,65 @@ function Setup({
     staleTime: 60_000,
     retry: false,
   });
+  // The provider behind the Default option: what the host's ~/.hermes/config.yaml
+  // routes to today. Used to fetch the Default model list and to preselect the
+  // matching entry in the Advanced connection wizard.
+  const detectedHermesProvider = detectedHermesModel.data?.provider ?? "";
+  // Default path: fetch the detected provider's live model list so the model
+  // dropdown mirrors what the host Hermes actually routes to. Falls back to
+  // the unscoped list when detection has no provider.
+  const hermesDefaultModels = useQuery({
+    queryKey: queryKeys.agents.adapterModels(companyId, brandType, null, detectedHermesProvider || undefined),
+    queryFn: () => agentsApi.adapterModels(companyId, brandType, { provider: detectedHermesProvider || undefined }),
+    enabled: brandType === "hermes_local" && isHermesDefaultProvider && Boolean(detectedHermesProvider) && !connectionModels,
+    staleTime: 60_000,
+    retry: false,
+  });
+  // Model list shown for the current Hermes provider selection. On Default it
+  // pins the host's configured default model to the top. On an explicit
+  // provider it pins that provider's first fallback model (the provider
+  // registry's own default) so the dropdown never opens on an arbitrary
+  // alphabetical entry.
+  const hermesModelList = useMemo(() => {
+    if (brandType !== "hermes_local") return null;
+    const detectedModel = isHermesDefaultProvider ? (detectedHermesModel.data?.model ?? "") : "";
+    const list = isHermesDefaultProvider
+      ? (hermesDefaultModels.data ?? (detectedHermesProvider ? [] : undefined))
+      : (providerModels.data ?? []);
+    if (list === undefined) return null;
+    const entries = [...list];
+    const pinned = detectedModel
+      || (!isHermesDefaultProvider
+        ? (hermesProviders.data?.find((item) => item.name === hermesProvider)?.fallbackModels?.[0]
+          ?? (entries[0]?.id ?? ""))
+        : "");
+    if (pinned) {
+      const at = entries.findIndex((entry) => entry.id === pinned);
+      if (at > 0) {
+        entries.splice(at, 1);
+        entries.unshift({ id: pinned, label: pinned });
+      } else if (at < 0) {
+        entries.unshift({ id: pinned, label: pinned });
+      }
+    }
+    return entries;
+  }, [brandType, isHermesDefaultProvider, detectedHermesProvider, hermesDefaultModels.data, providerModels.data, detectedHermesModel.data?.model, hermesProviders.data, hermesProvider]);
+  // Advanced connection wizard preselection (P3): mirror the host Hermes
+  // default into the Connections wizard. A managed-provider match preselects
+  // that account type; anything else preselects Custom gateway pre-filled
+  // with the detected provider's base URL. Chat Completions is the protocol
+  // Hermes itself speaks against registry providers.
+  const hermesWizardPreset = useMemo(() => {
+    if (brandType !== "hermes_local") return null;
+    const entry = hermesProviders.data?.find((item) => item.name === detectedHermesProvider);
+    if (entry && (entry.name === "openrouter" || entry.name === "openai" || entry.name === "anthropic" || entry.name === "google" || entry.name === "xai")) {
+      return { provider: entry.name as "openrouter" | "openai" | "anthropic" | "google" | "xai", protocol: undefined as "chat" | "responses" | "messages" | undefined, baseUrl: undefined as string | undefined };
+    }
+    if (entry?.baseUrl) {
+      return { provider: "gateway" as const, protocol: "chat" as const, baseUrl: entry.baseUrl };
+    }
+    return null;
+  }, [brandType, detectedHermesProvider, hermesProviders.data]);
   const companySecrets = useQuery({
     queryKey: queryKeys.secrets.list(companyId),
     queryFn: () => secretsApi.list(companyId),
@@ -958,7 +1021,17 @@ function Setup({
                               <summary className="cursor-pointer text-sm text-muted-foreground">
                                 Advanced: Connect a provider account
                               </summary>
+                              {detectedHermesModel.data && (
+                                <p className="text-xs text-muted-foreground">
+                                  Hermes default: {detectedHermesModel.data.model}
+                                  {detectedHermesProvider ? ` · provider ${detectedHermesProvider}` : ""}
+                                  {detectedHermesModel.data.hasApiKey ? " · credential configured" : " · no credential in ~/.hermes/.env"}
+                                </p>
+                              )}
                               <AiConnectionField companyId={companyId} agentName={name} adapterType={brandType} model={model} environmentId={environmentId ?? undefined} value={aiBinding}
+                                initialWizardProvider={hermesWizardPreset?.provider}
+                                initialWizardProtocol={hermesWizardPreset?.protocol}
+                                initialWizardBaseUrl={hermesWizardPreset?.baseUrl}
                                 onChange={binding => { binding.mode !== "router" && setRuntimeAiBinding(binding); resetTest(); }} />
                             </details>
                           ) : (
@@ -971,6 +1044,7 @@ function Setup({
                             adapterType="hermes_local"
                             isCreate
                             mode="create"
+                            onlyKeys={["engine"]}
                             values={{
                               ...defaultCreateValues,
                               adapterType,
@@ -989,18 +1063,55 @@ function Setup({
                             eff={(_, __, original) => original}
                             mark={() => {}}
                             models={[]}
-                            section="configuration"
                           />
                         )}
-                        {(connectionModels ? connectionModels.error : (brandType === "hermes_local" && !isHermesDefaultProvider ? providerModels.error : models.error)) && <p role="alert" className="text-sm text-destructive">Could not load models. Retry or enter a model ID manually.</p>}
+                        {(connectionModels ? connectionModels.error : (brandType === "hermes_local" ? (isHermesDefaultProvider ? (detectedHermesProvider && hermesDefaultModels.error ? hermesDefaultModels.error : null) : providerModels.error) : models.error)) && <p role="alert" className="text-sm text-destructive">Could not load models. Retry or enter a model ID manually.</p>}
+                        {brandType === "hermes_local" && !aiBinding && (
+                          <Field
+                            label="Model provider"
+                            hint="Default uses the provider and model already configured in the host's Hermes. Pick a provider only to route elsewhere."
+                          >
+                            <select
+                              aria-label="Model provider"
+                              className={controlClass}
+                              value={hermesProvider}
+                              onChange={(event) => {
+                                setHermesProvider(event.target.value);
+                                setModel("");
+                                setApiKey("");
+                                setProviderBinding(null);
+                                resetTest();
+                              }}
+                            >
+                              <option value="">Default (Hermes config){detectedHermesProvider ? ` — ${detectedHermesProvider}` : ""}</option>
+                              {(hermesProviders.data?.length
+                                ? hermesProviders.data
+                                : Object.keys(providerKeys).map((key) => ({
+                                    name: key,
+                                    label: ({ openrouter: "OpenRouter", openai: "OpenAI", anthropic: "Anthropic" } as Record<string, string>)[key] ?? key,
+                                    envVars: [providerKeys[key]],
+                                    fallbackModels: [],
+                                  }))
+                              ).map((entry) => (
+                                <option key={entry.name} value={entry.name}>
+                                  {entry.label}
+                                </option>
+                              ))}
+                            </select>
+                          </Field>
+                        )}
                         {((showModel && !usingKimiApi) ||
                           efforts.length > 0) && (
                           <div className="grid items-start gap-5 sm:grid-cols-2">
                             {showModel && !usingKimiApi && (
                               <ModelDropdown
                                 presentation={brandType === "codex_local" ? "searchable" : "native"}
-                                models={connectionModels?.models ?? (brandType === "hermes_local" && !isHermesDefaultProvider ? (providerModels.data ?? []) : (models.data ?? []))}
-                                loadingModels={connectionModels?.isLoading ?? (brandType === "hermes_local" && !isHermesDefaultProvider ? providerModels.isLoading : models.isLoading)}
+                                models={connectionModels?.models ?? (brandType === "hermes_local" ? (hermesModelList ?? (models.data ?? [])) : (models.data ?? []))}
+                                loadingModels={connectionModels?.isLoading ?? (brandType === "hermes_local"
+                                  ? (isHermesDefaultProvider
+                                    ? (detectedHermesProvider ? hermesDefaultModels.isLoading : models.isLoading)
+                                    : providerModels.isLoading)
+                                  : models.isLoading)}
                                 onRefreshModels={connectionModels?.refreshModels}
                                 refreshingModels={connectionModels?.refreshing}
                                 value={model}
@@ -1031,7 +1142,7 @@ function Setup({
                                 required={multiProvider}
                                 creatable
                                 groupByProvider={multiProvider && !connectionModels}
-                                preserveOrder={Boolean(connectionModels) || adapterCuratesModelOrder(brandType)}
+                                preserveOrder={Boolean(connectionModels) || adapterCuratesModelOrder(brandType) || brandType === "hermes_local"}
                               />
                             )}
                             {efforts.length > 0 && (
@@ -1062,39 +1173,52 @@ function Setup({
                             {SETUP_LOGIN_HINTS[adapterType]}
                           </p>
                         )}
-                        {brandType === "hermes_local" && !aiBinding && (
-                          <Field
-                            label="Model provider"
-                            hint="Default uses the provider and model already configured in the host's Hermes. Pick a provider only to route elsewhere."
-                          >
-                            <select
-                              aria-label="Model provider"
-                              className={controlClass}
-                              value={hermesProvider}
-                              onChange={(event) => {
-                                setHermesProvider(event.target.value);
-                                setModel("");
-                                setApiKey("");
-                                setProviderBinding(null);
-                                resetTest();
+                        {brandType === "hermes_local" && (
+                          <details className="space-y-3">
+                            <summary className="cursor-pointer text-sm text-muted-foreground">
+                              Custom Parameters
+                            </summary>
+                            <SchemaConfigFields
+                              adapterType="hermes_local"
+                              isCreate
+                              mode="create"
+                              onlyKeys={[
+                                "agentCommand",
+                                "mode",
+                                "nonInteractivePermissions",
+                                "stateDir",
+                                "warmHandleIdleMs",
+                                "maxTurnsPerRun",
+                                "toolsets",
+                                "worktreeMode",
+                                "checkpoints",
+                                "quiet",
+                                "verbose",
+                                "paperclipApiUrl",
+                                "promptTemplate",
+                                "timeoutSec",
+                                "graceSec",
+                              ]}
+                              values={{
+                                ...defaultCreateValues,
+                                adapterType,
+                                runner,
+                                model,
+                                thinkingEffort: effort,
+                                adapterSchemaValues,
                               }}
-                            >
-                              <option value="">Default (Hermes config)</option>
-                              {(hermesProviders.data?.length
-                                ? hermesProviders.data
-                                : Object.keys(providerKeys).map((key) => ({
-                                    name: key,
-                                    label: ({ openrouter: "OpenRouter", openai: "OpenAI", anthropic: "Anthropic" } as Record<string, string>)[key] ?? key,
-                                    envVars: [providerKeys[key]],
-                                    fallbackModels: [],
-                                  }))
-                              ).map((entry) => (
-                                <option key={entry.name} value={entry.name}>
-                                  {entry.label}
-                                </option>
-                              ))}
-                            </select>
-                          </Field>
+                              set={(patch) => {
+                                if (patch.adapterSchemaValues) {
+                                  setAdapterSchemaValues(patch.adapterSchemaValues);
+                                  resetTest();
+                                }
+                              }}
+                              config={{}}
+                              eff={(_, __, original) => original}
+                              mark={() => {}}
+                              models={[]}
+                            />
+                          </details>
                         )}
                         {brandType === "hermes_local" && isHermesDefaultProvider && detectedHermesModel.data && (
                           <p className="text-xs text-muted-foreground">
