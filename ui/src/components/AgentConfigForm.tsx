@@ -936,12 +936,22 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     refetchOnMount: "always",
     retry: false,
   });
+  const runtimeAiBinding = isCreate
+    ? undefined
+    : aiConnectionBindingSchema.safeParse(
+        (overlay.runtime.runtimeConfig as Record<string, unknown> | undefined)?.aiConnection ?? runtimeConfig.aiConnection,
+      ).data;
+  const hermesUsesManagedConnection = adapterType === "hermes_local" && Boolean(runtimeAiBinding);
   const modelProvider = adapterType === "hermes_local"
     ? hermesProvider || detectedHermesModel.data?.provider || undefined
-    : adapterType === "opencode_local" && aiConnectionBindingSchema.safeParse(
-        (overlay.runtime.runtimeConfig as Record<string, unknown> | undefined)?.aiConnection ?? runtimeConfig.aiConnection,
-      ).data?.provider === "openrouter" ? "openrouter" : runnerProvider;
-  const connectionModels = useConnectionModels(isExternalRunner ? null : selectedCompanyId, isCreate ? undefined : aiConnectionBindingSchema.safeParse((overlay.runtime.runtimeConfig as Record<string, unknown> | undefined)?.aiConnection ?? runtimeConfig.aiConnection).data, aiRoutingHarness(adapterType, runnerProvider, eff("adapterConfig", "acpxAgent", config.acpxAgent)));
+    : adapterType === "opencode_local" && runtimeAiBinding?.provider === "openrouter"
+      ? "openrouter"
+      : runnerProvider;
+  const connectionModels = useConnectionModels(
+    isExternalRunner ? null : selectedCompanyId,
+    runtimeAiBinding,
+    aiRoutingHarness(adapterType, runnerProvider, eff("adapterConfig", "acpxAgent", config.acpxAgent)),
+  );
   // Fetch adapter models for the effective provider, including unsaved changes.
   const modelAdapterType = isCodexHarness ? harnessType : adapterType;
   const modelQueryKey = selectedCompanyId
@@ -1740,10 +1750,40 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
             </Field>
           )}
 
-          {!isExternalRunner && !isCreate && selectedCompanyId && <AiConnectionField companyId={selectedCompanyId} agentId={props.agent.id} agentName={props.agent.name} adapterType={aiRoutingHarness(adapterType, eff("adapterConfig", "provider", config.provider), eff("adapterConfig", "acpxAgent", config.acpxAgent))}
-            routerAdapterType={adapterType} value={aiRuntimeConnectionBindingSchema.safeParse((overlay.runtime.runtimeConfig as Record<string, unknown> | undefined)?.aiConnection ?? runtimeConfig.aiConnection).data}
-            model={String(eff("adapterConfig", "model", config.model) ?? "")} environmentId={currentDefaultEnvironmentId || undefined} legacy
-            onChange={binding => mark("runtime", "runtimeConfig", { ...runtimeConfig, aiConnection: binding })} />}
+          {!isExternalRunner && !isCreate && selectedCompanyId && (
+            adapterType === "hermes_local" ? (
+              <details className="space-y-3">
+                <summary className="cursor-pointer text-sm text-muted-foreground">
+                  Advanced: Connect a provider account
+                </summary>
+                <AiConnectionField
+                  companyId={selectedCompanyId}
+                  agentId={props.agent.id}
+                  agentName={props.agent.name}
+                  adapterType={aiRoutingHarness(adapterType, eff("adapterConfig", "provider", config.provider), eff("adapterConfig", "acpxAgent", config.acpxAgent))}
+                  routerAdapterType={adapterType}
+                  value={runtimeAiBinding}
+                  model={String(eff("adapterConfig", "model", config.model) ?? "")}
+                  environmentId={currentDefaultEnvironmentId || undefined}
+                  legacy
+                  onChange={binding => mark("runtime", "runtimeConfig", { ...runtimeConfig, aiConnection: binding })}
+                />
+              </details>
+            ) : (
+              <AiConnectionField
+                companyId={selectedCompanyId}
+                agentId={props.agent.id}
+                agentName={props.agent.name}
+                adapterType={aiRoutingHarness(adapterType, eff("adapterConfig", "provider", config.provider), eff("adapterConfig", "acpxAgent", config.acpxAgent))}
+                routerAdapterType={adapterType}
+                value={runtimeAiBinding}
+                model={String(eff("adapterConfig", "model", config.model) ?? "")}
+                environmentId={currentDefaultEnvironmentId || undefined}
+                legacy
+                onChange={binding => mark("runtime", "runtimeConfig", { ...runtimeConfig, aiConnection: binding })}
+              />
+            )
+          )}
 
           {showInlineAdapterTestEnvironmentFeedback && !props.compactTestFeedback && (testActionError || testEnvironment.error) && (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -1799,7 +1839,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
 
           {renderAdapterFields("adapter")}
           {isLocal && (<>
-              {adapterType === "hermes_local" && (
+              {adapterType === "hermes_local" && !hermesUsesManagedConnection && (
                 <Field
                   label="Model provider"
                   hint="Default uses the provider and model configured on the Hermes host. Choose a provider to route this agent elsewhere."
