@@ -78,6 +78,8 @@ export function reconciliationAnalysisPrompt(actionId: string, issueId: string, 
 }
 
 const MAX_RECONCILIATION_ATTEMPTS = 3;
+/** Consecutive invocation-gate deferrals before a hold goes to the board. */
+const MAX_RECONCILIATION_DEFERRALS = 10;
 
 /** Only newly created holds (or an explicit operator request) enter this outbox. */
 export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typeof import("./heartbeat.js").heartbeatService>["wakeup"]) {
@@ -172,6 +174,31 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
         (candidate.runtimeConfig as Record<string, unknown> | null)?.diagnosticPriority === true ? 0 : 1;
       const agent = [...eligible].sort((a, b) => diagnosticPriority(a) - diagnosticPriority(b))[0];
       if (!agent) throw conflict("No untried adapter is available for reconciliation analysis");
+      // Recovery ladder invocation gate (user requirement): re-read the
+      // candidate's live row immediately before waking. The scan is only a
+      // snapshot; the doctor must still be ready and strictly idle right now.
+      // A failed gate defers this pass WITHOUT burning an attempt or marking
+      // the agent tried (transient busyness must not blacklist a good doctor);
+      // after MAX_RECONCILIATION_DEFERRALS consecutive deferrals the hold goes
+      // unavailable for board fallback so the outbox cannot spin forever.
+      const [live] = await db.select({ status: agents.status, lifecycleState: agents.lifecycleState })
+        .from(agents).where(and(eq(agents.id, agent.id), eq(agents.companyId, action.companyId)));
+      const [liveRun] = await db.select({ id: heartbeatRuns.id }).from(heartbeatRuns)
+        .where(and(eq(heartbeatRuns.agentId, agent.id), eq(heartbeatRuns.status, "running"))).limit(1);
+      if (!live || live.lifecycleState !== "ready" || live.status !== "idle" || liveRun) {
+        const analysisState = action.evidence.reconciliationAnalysis as { deferredCount?: number; requestedAt?: string; trigger?: string } | undefined;
+        const deferredCount = (analysisState?.deferredCount ?? 0) + 1;
+        const nextState = {
+          ...analysisState,
+          status: deferredCount >= MAX_RECONCILIATION_DEFERRALS ? "unavailable" : "pending",
+          deferredCount,
+          lastDeferredAt: new Date().toISOString(),
+        };
+        await db.update(issueRecoveryActions).set({
+          evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify(nextState)}::jsonb)`,
+        }).where(and(eq(issueRecoveryActions.id, action.id), sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'dispatching'`));
+        continue;
+      }
       dispatchedAgentId = agent.id;
       dispatchedAdapterType = agent.adapterType;
       const run = await wake(agent.id, {
