@@ -596,6 +596,79 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     expect(enqueueWakeup).not.toHaveBeenCalled();
   });
 
+  it("labels stranded evidence with the unified failure classification (R1, AMB-90 sample)", async () => {
+    // Real AMB-90 failure: hermes CLI resume policy refusal. The stranded
+    // evidence must carry the taxonomy category so doctor routing and the
+    // last-attempt digest key off classification instead of raw message text.
+    const { coderId, sourceIssue } = await seedCompany();
+    const enqueueWakeup = vi.fn(async () => null);
+    const recovery = recoveryService(db, { enqueueWakeup });
+    const latestRun = {
+      id: randomUUID(),
+      agentId: coderId,
+      status: "failed",
+      error:
+        "Error: Resume retains gateway session policy; creation overrides are unsupported on resume. --provider differs from this session's launch: resume without it and use /model after resuming to switch.",
+      errorCode: "adapter_failed",
+      contextSnapshot: { retryReason: "issue_continuation_needed" },
+      livenessState: "needs_followup",
+    } as const;
+
+    await recovery.escalateStrandedAssignedIssue({
+      issue: sourceIssue,
+      previousStatus: "in_progress",
+      latestRun,
+      comment: "Automatic continuation recovery failed.",
+    });
+
+    const [action] = await db
+      .select()
+      .from(issueRecoveryActions)
+      .where(eq(issueRecoveryActions.sourceIssueId, sourceIssue.id));
+    expect(action.evidence).toMatchObject({
+      classification: {
+        category: "session_binding.resume_policy_refusal",
+        retryPolicy: "never",
+        ladderHint: "L2",
+        matchedSignals: ["hermes_resume_policy_provider_differs"],
+      },
+    });
+  });
+
+  it("labels boot-failure stranding as runtime.adapter_boot_failure (AMB-86/96 sample)", async () => {
+    const { coderId, sourceIssue } = await seedCompany();
+    const enqueueWakeup = vi.fn(async () => null);
+    const recovery = recoveryService(db, { enqueueWakeup });
+    const latestRun = {
+      id: randomUUID(),
+      agentId: coderId,
+      status: "failed",
+      error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+      errorCode: "adapter_failed",
+      contextSnapshot: { retryReason: "issue_continuation_needed" },
+      livenessState: "needs_followup",
+    } as const;
+
+    await recovery.escalateStrandedAssignedIssue({
+      issue: sourceIssue,
+      previousStatus: "in_progress",
+      latestRun,
+      comment: "Automatic continuation recovery failed.",
+    });
+
+    const [action] = await db
+      .select()
+      .from(issueRecoveryActions)
+      .where(eq(issueRecoveryActions.sourceIssueId, sourceIssue.id));
+    expect(action.evidence).toMatchObject({
+      classification: {
+        category: "runtime.adapter_boot_failure",
+        subcategory: "python_missing_module",
+        ladderHint: "L2",
+      },
+    });
+  });
+
   // Model the production payload: `requestedRef` keeps the operator spelling,
   // and the fingerprint carries the canonical remote ref. Two equivalent
   // spellings of one remote branch share `identityRef`, so they share one

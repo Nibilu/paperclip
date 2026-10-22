@@ -1,4 +1,5 @@
 import { isAgentAwaitingSetup } from "../../modules/agent-lifecycle/index.js";
+import { classifyRunFailure } from "./error-classification.js";
 import { onboardingFirstTaskAwaitingUserSql } from "./onboarding-first-task-wait.js";
 import { isAiAuthenticationBlocked } from "../ai-auth-failure.js";
 import { RESTRICTED_WORKSPACE_SOURCE_REASON } from "../workspace-source-restriction.js";
@@ -2569,6 +2570,15 @@ export function recoveryService(
         }),
         failureSummary:
           summarizeRunFailureForIssueComment(input.latestRun)?.trim() ?? null,
+        // Unified R1 taxonomy label for downstream consumers (doctor routing,
+        // last-attempt digests, observability). Advisory only: recovery intent
+        // (quota wait vs configuration blocker) stays governed by
+        // classifyAdapterFailureForRecovery.
+        classification: classifyRunFailure({
+          errorCode: input.latestRun?.errorCode ?? null,
+          errorMessage: input.latestRun?.error ?? null,
+          resultJson: input.latestRun?.resultJson ?? null,
+        }),
       },
       evidenceOnCreate: isProviderQuotaWait
         ? {}
