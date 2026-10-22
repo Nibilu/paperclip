@@ -2158,6 +2158,48 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     expect(wakeAgain).not.toHaveBeenCalled();
   });
 
+  it("prefers runtimeConfig.diagnosticPriority agents when picking the doctor (S4)", async () => {
+    const { companyId, coderId, sourceIssue, sourceIssueId } = await seedCompany();
+    const doctorId = randomUUID();
+    await db.insert(agents).values({
+      id: doctorId,
+      companyId,
+      name: "Doctor",
+      role: "engineer",
+      status: "idle",
+      lifecycleState: "ready",
+      adapterType: "pi_local",
+      adapterConfig: {},
+      runtimeConfig: { diagnosticPriority: true },
+      permissions: {},
+    });
+    const runId = randomUUID();
+    await seedHeartbeatRun({ companyId, agentId: coderId, runId, issueId: sourceIssueId, status: "failed" });
+    await db.update(heartbeatRuns).set({
+      error: "Error: Resume retains gateway session policy; creation overrides are unsupported on resume. --provider differs from this session's launch: resume without it and use /model after resuming to switch.",
+      errorCode: "adapter_failed",
+    }).where(eq(heartbeatRuns.id, runId));
+    const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
+    await recovery.escalateStrandedAssignedIssue({
+      issue: sourceIssue,
+      previousStatus: "in_progress",
+      latestRun: {
+        id: runId,
+        agentId: coderId,
+        status: "failed",
+        error: "Error: Resume retains gateway session policy; creation overrides are unsupported on resume. --provider differs from this session's launch: resume without it and use /model after resuming to switch.",
+        errorCode: "adapter_failed",
+        contextSnapshot: { retryReason: "issue_continuation_needed" },
+        livenessState: "needs_followup",
+      } as const,
+      comment: "Automatic continuation recovery failed.",
+    });
+    const wake = vi.fn().mockResolvedValue({ id: randomUUID() });
+    await deliverReconciliationAnalyses(db, wake);
+    expect(wake).toHaveBeenCalledTimes(1);
+    expect(wake).toHaveBeenCalledWith(doctorId, expect.objectContaining({ reason: "reconciliation_analysis" }));
+  });
+
   it("does not dispatch a doctor for bounded-retry stranded causes (S3 gate)", async () => {
     const { coderId, sourceIssue, sourceIssueId } = await seedCompany();
     const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });

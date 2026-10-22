@@ -6,6 +6,56 @@ import { persistActivity } from "./activity-log.js";
 import { logger } from "../middleware/logger.js";
 
 const references = z.array(z.string().trim().min(1).max(500)).min(1).max(100);
+
+/**
+ * Closed permission axes a fix option may require (recovery ladder R5). The
+ * approval card renders these as explicit grant requests; "manual_shell" means
+ * a human must run the step, so such options are never auto-adopted on timeout.
+ */
+export const FIX_OPTION_PERMISSION_REQUIREMENTS = [
+  "environment_install",
+  "service_restart",
+  "adapter_config_change",
+  "session_rebind",
+  "workspace_repair",
+  "retry_only",
+  "manual_shell",
+] as const;
+
+const fixOptionSchema = z.object({
+  id: z.string().trim().min(1).max(64),
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(4000).default(""),
+  recommended: z.boolean().optional(),
+  /** What approvals/executions this option needs before it may run. */
+  permissionRequirements: z.array(z.enum(FIX_OPTION_PERMISSION_REQUIREMENTS)).max(7).default([]),
+  /** Whether the option's effect can be undone at all. */
+  revertible: z.boolean(),
+  /** Ordered undo instructions; required whenever revertible is true. */
+  revertSteps: z.array(z.string().trim().min(1).max(500)).max(20).default([]),
+  /** Who executes: the control plane, the doctor run, the returned owner, or a human. */
+  executionScope: z.enum(["server_side", "doctor_run", "return_owner_run", "manual"]),
+  /** How success will be verified after execution (feeds the closure executor, R8). */
+  verificationCriteria: z.string().trim().min(1).max(2000),
+}).superRefine((option, ctx) => {
+  if (option.revertible && option.revertSteps.length === 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["revertSteps"], message: "revertible options must list revertSteps" });
+  }
+  if (!option.revertible && option.revertSteps.length > 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["revertSteps"], message: "non-revertible options must not list revertSteps" });
+  }
+});
+
+const fixProposalSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  rationale: z.string().trim().min(1).max(4000),
+  options: z.array(fixOptionSchema).min(1).max(5),
+}).superRefine((proposal, ctx) => {
+  if (proposal.options.filter((option) => option.recommended === true).length !== 1) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["options"], message: "exactly one option must be recommended" });
+  }
+});
+
 export const reconciliationAgentDraftSchema = z.object({
   actionId: z.string().uuid(),
   runId: z.string().uuid(),
@@ -14,6 +64,9 @@ export const reconciliationAgentDraftSchema = z.object({
     actionOutcome: z.object({ value: z.enum(["not_performed", "completed", "mixed"]), confidence: z.number().min(0).max(1), evidence: references }).strict(),
     evidenceSummary: z.string().trim().min(20).max(20000),
     operatorNote: z.string().max(4000),
+    // Recovery ladder R4/S5: structured fix proposal. Optional so pre-ladder
+    // advisory drafts (diagnosis only) remain valid.
+    fixProposal: fixProposalSchema.optional(),
   }).strict(),
 }).strict();
 
@@ -111,7 +164,13 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
         sql`${agents.status} in ('idle', 'active')`,
         sql`not exists (select 1 from ${heartbeatRuns} where ${heartbeatRuns.agentId} = ${agents.id} and ${heartbeatRuns.status} = 'running')`,
       ));
-      const agent = candidates.find((candidate) => !triedAgentIds.has(candidate.id) && !triedAdapterTypes.has(candidate.adapterType));
+      const eligible = candidates.filter((candidate) => !triedAgentIds.has(candidate.id) && !triedAdapterTypes.has(candidate.adapterType));
+      // Recovery ladder S4: agents explicitly marked diagnosticPriority in
+      // their runtimeConfig volunteer first for doctor duty; among equals the
+      // original (stable) order stands.
+      const diagnosticPriority = (candidate: typeof agents.$inferSelect) =>
+        (candidate.runtimeConfig as Record<string, unknown> | null)?.diagnosticPriority === true ? 0 : 1;
+      const agent = [...eligible].sort((a, b) => diagnosticPriority(a) - diagnosticPriority(b))[0];
       if (!agent) throw conflict("No untried adapter is available for reconciliation analysis");
       dispatchedAgentId = agent.id;
       dispatchedAdapterType = agent.adapterType;
