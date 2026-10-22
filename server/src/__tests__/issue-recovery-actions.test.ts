@@ -2159,6 +2159,9 @@ describeEmbeddedPostgres("issue recovery actions", () => {
   });
 
   it("prefers runtimeConfig.diagnosticPriority agents when picking the doctor (S4)", async () => {
+    // The priority doctor shares the manager's adapter on purpose: without the
+    // marker the stable DB order would pick the manager, so this isolates the
+    // priority signal from any adapter-type effect.
     const { companyId, coderId, sourceIssue, sourceIssueId } = await seedCompany();
     const doctorId = randomUUID();
     await db.insert(agents).values({
@@ -2168,7 +2171,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
       role: "engineer",
       status: "idle",
       lifecycleState: "ready",
-      adapterType: "pi_local",
+      adapterType: "hermes_local",
       adapterConfig: {},
       runtimeConfig: { diagnosticPriority: true },
       permissions: {},
