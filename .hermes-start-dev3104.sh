@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -a
+. /home/amber/paperclip/.env
+set +a
+export DATABASE_URL='postgres://paperclip:paperclip@127.0.0.1:54329/paperclip_dev'
+export PORT=3104
+export HOST=0.0.0.0
+export PAPERCLIP_BIND=lan
+export PAPERCLIP_INSTANCE_ID=default
+export PAPERCLIP_DEPLOYMENT_MODE=authenticated
+export PAPERCLIP_DEPLOYMENT_EXPOSURE=private
+export PAPERCLIP_MIGRATION_AUTO_APPLY=true
+export PAPERCLIP_MIGRATION_PROMPT=never
+export HEARTBEAT_SCHEDULER_ENABLED=true
+export PAPERCLIP_UI_DEV_MIDDLEWARE=false
+export PAPERCLIP_ALLOWED_HOSTNAMES='192.168.31.16,localhost,127.0.0.1,clip.nibilu.in'
+export PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS=192.168.31.16
+export BETTER_AUTH_TRUSTED_ORIGINS='http://192.168.31.16:3104,http://localhost:3104,http://127.0.0.1:3104,https://clip.nibilu.in'
+cd /home/amber/paperclip/server
+exec ./node_modules/.bin/tsx src/index.ts
