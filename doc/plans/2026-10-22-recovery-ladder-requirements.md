@@ -2,6 +2,7 @@
 
 - 日期:2026-10-22
 - 状态:设计定稿,待实现(分解见 §5)
+- **正本**:Paperclip 文档 `Paperclip 与 Hermes 系统性修复方案`(AMB-10 #document-plan,文档 id `3b9c9be5-7a19-4206-9de8-9db75457e196`,rev 4 起含 §九 恢复阶梯补充)——本文件为实现侧伴生文档,内容以正本为权威
 - 来源:AMB-86 / AMB-90 / AMB-96 / AMB-97 事故取证(2026-10-22,dev :3104)
 - 决策约束:不向 upstream 提 issue(非致命不提);实现落在本地 fork、低耦合、便于 rebase;涉及系统级改动前先提交本地并 fetch upstream 对齐(用户流程约定)
 - E2E 验收实例:AMB-86 / AMB-90 / AMB-96 / AMB-97(§6)
