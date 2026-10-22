@@ -1,4 +1,5 @@
 import { reconciliationAgentDraftSchema, saveReconciliationAgentDraft } from "../services/reconciliation-analysis.js";
+import { requestFixRevert } from "../services/recovery/proposal-closure.js";
 import { parseObject } from "../adapters/utils.js";
 import { assertLegacyRunTaskOwnership } from "../legacy-run-task-ownership.js";
 import { enqueueFastResponse } from "../services/fast-responses.js";
@@ -9592,6 +9593,32 @@ export function issueRoutes(
       }
       throw err;
     }
+  });
+
+  // S8 — revert an executed recovery fix (R6): board-only, audited, re-runs the
+  // recorded revert steps via the fix executor agent.
+  router.post("/issues/:id/recovery-actions/revert", async (req, res) => {
+    assertBoard(req);
+    const issue = await getAccessibleResource(req, res, svc.getById(req.params.id as string), "Issue not found");
+    if (!issue || !(await assertIssueReadAllowed(req, res, issue))) return;
+    const decision = await access.decide({ actor: req.actor, action: "runtime:manage", resource: { type: "company", companyId: issue.companyId } });
+    if (!decision.allowed) throw forbidden(decision.explanation, authorizationDeniedDetails(decision));
+    const actor = getActorInfo(req);
+    const heartbeat = heartbeatService(db);
+    const result = await requestFixRevert(db, heartbeat.wakeup, {
+      companyId: issue.companyId,
+      sourceIssueId: issue.id,
+      actionId: req.body?.actionId,
+      requestedBy: actor.actorId,
+    });
+    if (!result.ok) {
+      const status = result.error === "not_found" ? 404
+        : result.error === "already_reverted_or_requested" ? 409
+        : 409;
+      res.status(status).json({ error: "Revert not available", code: result.error });
+      return;
+    }
+    res.status(202).json({ ok: true, revertRunId: result.revertRunId ?? null });
   });
 
   router.post(

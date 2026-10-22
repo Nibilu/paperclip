@@ -28,6 +28,7 @@ import { verifyStoppedNativeSessionForReplacement } from "./services/native-runt
 import { embeddedPostgresOwnerPort } from "./embedded-postgres-owner.js";
 import { deliverExecutionStatuses } from "./services/execution-status-delivery.js";
 import { deliverReconciliationAnalyses } from "./services/reconciliation-analysis.js";
+import { settleCompletedFixRuns, settleFixProposalDecisions } from "./services/recovery/proposal-closure.js";
 import { deliverReconciledExecutions, settleUnrecoverableExecutions } from "./services/execution-recovery-resolution.js";
 import { reconcileSafeNativeReplacements } from "./services/native-runtime/native-safe-replacement.js";
 import { reconcileAbandonedExecutionControl } from "./services/execution-control-reconciliation.js";
@@ -1201,6 +1202,8 @@ async function startServerWithDatabaseTeardown(
     ["reconciliation_delivery", () => heartbeat ? deliverReconciledExecutions(db, heartbeat.wakeup) : undefined],
     ["status_delivery", () => deliverExecutionStatuses(db)],
     ["reconciliation_analysis", () => heartbeat ? deliverReconciliationAnalyses(db, heartbeat.wakeup) : undefined],
+    ["recovery_fix_decisions", () => heartbeat ? settleFixProposalDecisions(db, heartbeat.wakeup) : undefined],
+    ["recovery_fix_closure", () => heartbeat ? settleCompletedFixRuns(db, heartbeat.wakeup) : undefined],
     ["automatic_disposition", () => settleUnrecoverableExecutions(db)],
     ["local_ai_login_cleanup", () => localAiLoginService(db).reapExpired()],
   ] as const;

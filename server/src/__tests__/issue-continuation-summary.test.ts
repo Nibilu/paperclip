@@ -86,6 +86,32 @@ describe("issue continuation summaries", () => {
     expect(body).toContain("Inspect the failed run, fix the cause");
   });
 
+  it("R10/S10: renders retry history and the classifier verdict into the handoff context", () => {
+    const body = buildContinuationSummaryMarkdown({
+      issue: {
+        id: "issue-1", identifier: "PAP-1580", title: "Resume after boot failure",
+        description: null, status: "in_progress", priority: "medium",
+      },
+      run: {
+        id: "run-3", status: "failed",
+        error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+        errorCode: "adapter_failed",
+        resultJson: null,
+      },
+      agent: { id: "agent-1", name: "Hermi", adapterType: "hermes_local" },
+      retryHistory: [
+        { runId: "b3b3b3b3-3333-3333-3333-333333333333", status: "failed", errorCode: "adapter_failed", finishedAt: "2026-10-22T10:00:00.000Z" },
+        { runId: "a2a2a2a2-2222-2222-2222-222222222222", status: "failed", errorCode: "acpx_session_config_failed", finishedAt: "2026-10-22T09:00:00.000Z" },
+      ],
+      failureClassification: { category: "runtime.adapter_boot_failure", retryPolicy: "never", ladderHint: "L2" },
+    });
+
+    expect(body).toContain("## Retry History");
+    expect(body).toContain("`b3b3b3b3` → `failed` (adapter_failed)");
+    expect(body).toContain("`a2a2a2a2` → `failed` (acpx_session_config_failed)");
+    expect(body).toContain("Classified failure: `runtime.adapter_boot_failure` (retry policy: never; ladder: L2)");
+  });
+
   it("detects continuation summaries that explicitly park executor work for review", () => {
     const body = [
       "# Continuation Summary",

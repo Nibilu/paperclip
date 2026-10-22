@@ -12,7 +12,11 @@ const baseDraft = {
   },
 };
 
-const validOption = (overrides: Record<string, unknown> = {}, id = "opt-1") => ({
+const validOption = (overrides: Record<string, unknown> = {}, id = "opt-1"): {
+  id: string; title: string; revertible: boolean; revertSteps: string[];
+  executionScope: "server_side"; verificationCriteria: string; recommended?: boolean;
+  permissionRequirements?: string[];
+} => ({
   id,
   title: `Option ${id}`,
   revertible: true,

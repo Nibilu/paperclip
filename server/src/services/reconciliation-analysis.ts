@@ -253,7 +253,8 @@ export async function saveReconciliationAgentDraft(db: Db, input: {
   body: z.infer<typeof reconciliationAgentDraftSchema>;
 }) {
   const { body } = input;
-  return db.transaction(async tx => {
+  let savedActionId: string | null = null;
+  const saved = await db.transaction(async tx => {
     // Same lock order as reconciliation: issue then action. An operator decision
     // racing this submission wins; stale diagnostics cannot replace its evidence.
     const [task] = await tx.select().from(issues).where(and(eq(issues.id, input.issueId), eq(issues.companyId, input.companyId))).for("update");
@@ -281,6 +282,17 @@ export async function saveReconciliationAgentDraft(db: Db, input: {
     await persistActivity(tx as unknown as Db, { companyId: input.companyId, actorType: "agent", actorId: input.agentId,
       runId: run.id, action: "issue.reconciliation_agent_draft_saved", entityType: "issue", entityId: task.id,
       details: { recoveryActionId: action.id, sourceRunId: body.runId } });
+    savedActionId = action.id;
     return body.agentDraft;
   });
+  // S11: a proposal-ready milestone tells the human reviewer (UI + bound IM)
+  // that a decision is now waiting on them. Fired only on the first draft.
+  if (saved && savedActionId && body.agentDraft.fixProposal) {
+    const { notifyRecoveryMilestone } = await import("./recovery/proposal-closure.js");
+    await notifyRecoveryMilestone(db, { companyId: input.companyId, sourceIssueId: input.issueId, id: savedActionId }, "proposal_ready", {
+      proposalTitle: body.agentDraft.fixProposal.title,
+      optionTitle: body.agentDraft.fixProposal.options.find((option) => option.recommended)?.title ?? null,
+    });
+  }
+  return saved;
 }

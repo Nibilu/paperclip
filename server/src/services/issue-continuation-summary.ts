@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "@paperclipai/db";
-import { documents, issueDocuments, issues } from "@paperclipai/db";
+import { documents, heartbeatRuns, issueDocuments, issues } from "@paperclipai/db";
 import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY, type SourceTrustMetadata } from "@paperclipai/shared";
 import { documentService } from "./documents.js";
 import { summarizeRunErrorForModel } from "./heartbeat-run-summary.js";
@@ -139,6 +139,10 @@ export function buildContinuationSummaryMarkdown(input: {
   run: RunSummaryInput;
   agent: AgentSummaryInput;
   previousSummaryBody?: string | null;
+  /** R10/S10: recent attempt lineage for the same task, newest first. */
+  retryHistory?: Array<{ runId: string; status: string; errorCode: string | null; finishedAt: Date | string | null }>;
+  /** R10/S10: unified classifier verdict for the latest failure, when classified. */
+  failureClassification?: { category: string; retryPolicy: string; ladderHint: string } | null;
 }) {
   const { issue, run, agent } = input;
   const resultSummary = readResultSummary(run.resultJson);
@@ -200,12 +204,30 @@ export function buildContinuationSummaryMarkdown(input: {
     "## Blockers / Decisions",
     "",
     bulletList(
-      run.error
-        ? [`Latest run ended with \`${run.status}\`; inspect the error before continuing.`]
-        : ["No new blocker was recorded by the latest run."],
+      [
+        ...(run.error
+          ? [`Latest run ended with \`${run.status}\`; inspect the error before continuing.`]
+          : ["No new blocker was recorded by the latest run."]),
+        ...(input.failureClassification
+          ? [`Classified failure: \`${input.failureClassification.category}\` (retry policy: ${input.failureClassification.retryPolicy}; ladder: ${input.failureClassification.ladderHint}).`]
+          : []),
+      ],
       "No blockers or decisions captured.",
     ),
     "",
+    ...(input.retryHistory && input.retryHistory.length > 0
+      ? [
+          "## Retry History",
+          "",
+          bulletList(
+            input.retryHistory.map((entry) =>
+              `Run \`${entry.runId.slice(0, 8)}\` → \`${entry.status}\`${entry.errorCode ? ` (${entry.errorCode})` : ""}${entry.finishedAt ? ` at ${new Date(entry.finishedAt).toISOString()}` : ""}`,
+            ),
+            "No retry history captured.",
+          ),
+          "",
+        ]
+      : []),
     "## Next Action",
     "",
     `- ${nextAction}`,
@@ -270,11 +292,33 @@ export async function refreshIssueContinuationSummary(input: {
   ]);
 
   if (!issue || issue.conversationAgentId) return null;
+  // R10/S10: give the next reader (a doctor or a fresh session) the attempt
+  // lineage and the unified classifier verdict without re-reading raw runs.
+  const [recentRuns, failureClassification] = await Promise.all([
+    db
+      .select({ id: heartbeatRuns.id, status: heartbeatRuns.status, errorCode: heartbeatRuns.errorCode, finishedAt: heartbeatRuns.finishedAt })
+      .from(heartbeatRuns)
+      .where(and(
+        sql`${heartbeatRuns.contextSnapshot} ->> 'issueId' = ${issueId}`,
+        inArray(heartbeatRuns.status, ["failed", "succeeded", "timed_out", "cancelled"]),
+      ))
+      .orderBy(desc(heartbeatRuns.createdAt), desc(heartbeatRuns.id))
+      .limit(5),
+    run.errorCode
+      ? import("./recovery/error-classification.js").then(({ classifyRunFailure }) =>
+          classifyRunFailure({ errorCode: run.errorCode ?? null, errorMessage: run.error ?? null }),
+        ).catch(() => null)
+      : Promise.resolve(null),
+  ]);
   const body = buildContinuationSummaryMarkdown({
     issue,
     run,
     agent,
     previousSummaryBody: existing?.body ?? null,
+    retryHistory: recentRuns.map((entry) => ({ runId: entry.id, status: entry.status, errorCode: entry.errorCode, finishedAt: entry.finishedAt })),
+    failureClassification: failureClassification
+      ? { category: failureClassification.category, retryPolicy: failureClassification.retryPolicy, ladderHint: failureClassification.ladderHint }
+      : null,
   });
   const result = await documentService(db).upsertIssueDocument({
     issueId,
