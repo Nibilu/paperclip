@@ -2560,26 +2560,42 @@ export function recoveryService(
         recoveryCause,
         latestRun: input.latestRun,
       }),
-      evidence: {
-        ...buildStrandedRecoveryActionEvidence({
-          issue: input.issue,
-          latestRun: input.latestRun,
-          previousStatus: input.previousStatus,
-          recoveryCause,
-          successfulRunHandoffEvidence: input.successfulRunHandoffEvidence,
-        }),
-        failureSummary:
-          summarizeRunFailureForIssueComment(input.latestRun)?.trim() ?? null,
-        // Unified R1 taxonomy label for downstream consumers (doctor routing,
-        // last-attempt digests, observability). Advisory only: recovery intent
-        // (quota wait vs configuration blocker) stays governed by
-        // classifyAdapterFailureForRecovery.
-        classification: classifyRunFailure({
+      evidence: (() => {
+        const classification = classifyRunFailure({
           errorCode: input.latestRun?.errorCode ?? null,
           errorMessage: input.latestRun?.error ?? null,
           resultJson: input.latestRun?.resultJson ?? null,
-        }),
-      },
+        });
+        return {
+          ...buildStrandedRecoveryActionEvidence({
+            issue: input.issue,
+            latestRun: input.latestRun,
+            previousStatus: input.previousStatus,
+            recoveryCause,
+            successfulRunHandoffEvidence: input.successfulRunHandoffEvidence,
+          }),
+          failureSummary:
+            summarizeRunFailureForIssueComment(input.latestRun)?.trim() ?? null,
+          // Unified R1 taxonomy label for downstream consumers (doctor routing,
+          // last-attempt digests, observability). Advisory only: recovery intent
+          // (quota wait vs configuration blocker) stays governed by
+          // classifyAdapterFailureForRecovery.
+          classification,
+          // Recovery ladder S3: failures the bounded retry cannot fix (binding
+          // refusals, adapter boot crashes, unclassified adapter failures) enter
+          // the cross-adapter doctor outbox while the action is still active, so
+          // L2 diagnosis runs before the board ever has to decide (L3). Bounded
+          // by MAX_RECONCILIATION_ATTEMPTS inside the outbox worker. Unknown
+          // classifications qualify only for adapter_failed runs so native
+          // runner causes keep their own durable recovery machinery.
+          ...(strandedRecoveryActionKind(recoveryCause) === "stranded_assigned_issue" &&
+          (classification.category === "session_binding.resume_policy_refusal" ||
+            classification.category === "runtime.adapter_boot_failure" ||
+            (classification.category === "unknown" && input.latestRun?.errorCode === "adapter_failed"))
+            ? { reconciliationAnalysis: { status: "pending", requestedAt: now.toISOString(), trigger: "ladder_l2_classification" } }
+            : {}),
+        };
+      })(),
       evidenceOnCreate: isProviderQuotaWait
         ? {}
         : { routingPolicy: STRANDED_BOARD_ESCALATION_POLICY },

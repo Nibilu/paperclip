@@ -2058,6 +2058,131 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await request(createApp(actor)).post(endpoint).send(body).expect(409);
   });
 
+  it("dispatches a ladder-L2 doctor for an active stranded action before any board decision (S3)", async () => {
+    const { companyId, coderId, managerId, sourceIssue, sourceIssueId } = await seedCompany();
+    const runId = randomUUID();
+    await seedHeartbeatRun({ companyId, agentId: coderId, runId, issueId: sourceIssueId, status: "failed" });
+    // Real AMB-90 failure text so classification = session_binding.resume_policy_refusal.
+    await db.update(heartbeatRuns).set({
+      error: "Error: Resume retains gateway session policy; creation overrides are unsupported on resume. --provider differs from this session's launch: resume without it and use /model after resuming to switch.",
+      errorCode: "adapter_failed",
+    }).where(eq(heartbeatRuns.id, runId));
+    const enqueueWakeup = vi.fn(async () => null);
+    const recovery = recoveryService(db, { enqueueWakeup });
+
+    await recovery.escalateStrandedAssignedIssue({
+      issue: sourceIssue,
+      previousStatus: "in_progress",
+      latestRun: {
+        id: runId,
+        agentId: coderId,
+        status: "failed",
+        error: "Error: Resume retains gateway session policy; creation overrides are unsupported on resume. --provider differs from this session's launch: resume without it and use /model after resuming to switch.",
+        errorCode: "adapter_failed",
+        contextSnapshot: { retryReason: "issue_continuation_needed" },
+        livenessState: "needs_followup",
+      } as const,
+      comment: "Automatic continuation recovery failed.",
+    });
+
+    const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
+    expect(action.kind).toBe("stranded_assigned_issue");
+    expect(action.status).toBe("active");
+    expect(action.evidence.classification).toMatchObject({ category: "session_binding.resume_policy_refusal" });
+    expect(action.evidence.reconciliationAnalysis).toMatchObject({ status: "pending", trigger: "ladder_l2_classification" });
+
+    const analysisRunId = randomUUID();
+    const wake = vi.fn().mockResolvedValue({ id: analysisRunId });
+    await Promise.all([deliverReconciliationAnalyses(db, wake), deliverReconciliationAnalyses(db, wake)]);
+    await deliverReconciliationAnalyses(db, wake);
+    expect(wake).toHaveBeenCalledTimes(1);
+    // Delegated away from the source agent and its adapter type.
+    expect(wake).toHaveBeenCalledWith(managerId, expect.objectContaining({
+      reason: "reconciliation_analysis", allowRunCoalescing: false,
+      idempotencyKey: `reconciliation-analysis:${action.id}`,
+      contextSnapshot: expect.objectContaining({ forceFreshSession: true,
+        analysisSourceIssueId: sourceIssueId, analysisSourceRunId: runId, analysisRecoveryActionId: action.id }),
+    }));
+    const [dispatched] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
+    expect(dispatched.evidence.reconciliationAnalysis).toMatchObject({
+      status: "requested", runId: analysisRunId, attempts: 1, trigger: "ladder_l2_classification",
+    });
+  });
+
+  it("accepts an advisory draft for an active stranded ladder hold and stops re-dispatch (S3)", async () => {
+    const { companyId, coderId, managerId, sourceIssue, sourceIssueId } = await seedCompany();
+    const runId = randomUUID();
+    await seedHeartbeatRun({ companyId, agentId: coderId, runId, issueId: sourceIssueId, status: "failed" });
+    await db.update(heartbeatRuns).set({
+      error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+      errorCode: "adapter_failed",
+    }).where(eq(heartbeatRuns.id, runId));
+    const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
+    await recovery.escalateStrandedAssignedIssue({
+      issue: sourceIssue,
+      previousStatus: "in_progress",
+      latestRun: {
+        id: runId,
+        agentId: coderId,
+        status: "failed",
+        error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+        errorCode: "adapter_failed",
+        contextSnapshot: { retryReason: "issue_continuation_needed" },
+        livenessState: "needs_followup",
+      } as const,
+      comment: "Automatic continuation recovery failed.",
+    });
+    const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
+    const analysisRunId = randomUUID();
+    const wake = vi.fn().mockResolvedValue({ id: analysisRunId });
+    await deliverReconciliationAnalyses(db, wake);
+    await db.insert(heartbeatRuns).values({ id: analysisRunId, companyId, agentId: managerId,
+      invocationSource: "automation", status: "running", contextSnapshot: {
+        wakeReason: "reconciliation_analysis", analysisSourceIssueId: sourceIssueId,
+        analysisSourceRunId: runId, analysisRecoveryActionId: action.id,
+      } });
+    const actor = { type: "agent", agentId: managerId, companyId, runId: analysisRunId, source: "agent_jwt" };
+    const draft = { providerStopped: { value: true, evidence: [`run:${runId}#seq:1`] },
+      actionOutcome: { value: "not_performed", confidence: 0.9, evidence: [`run:${runId}#seq:2`] },
+      evidenceSummary: `run:${runId}#seq:1 shows ModuleNotFoundError before the session existed.`,
+      operatorNote: "Install the missing acp extra, then retry." };
+    const endpoint = `/api/issues/${sourceIssueId}/recovery-actions/agent-draft`;
+    await request(createApp(actor)).post(endpoint).send({ actionId: action.id, runId, agentDraft: draft }).expect(200);
+    const [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
+    expect(saved.status).toBe("active");
+    expect(saved.evidence).toMatchObject({ agentDraft: draft, reconciliationAnalysis: { status: "drafted" } });
+    // A delivered draft must never re-dispatch, even if the analysis run dies.
+    await db.update(heartbeatRuns).set({ status: "failed" }).where(eq(heartbeatRuns.id, analysisRunId));
+    const wakeAgain = vi.fn().mockResolvedValue({ id: randomUUID() });
+    await deliverReconciliationAnalyses(db, wakeAgain);
+    expect(wakeAgain).not.toHaveBeenCalled();
+  });
+
+  it("does not dispatch a doctor for bounded-retry stranded causes (S3 gate)", async () => {
+    const { coderId, sourceIssue, sourceIssueId } = await seedCompany();
+    const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
+    await recovery.escalateStrandedAssignedIssue({
+      issue: sourceIssue,
+      previousStatus: "in_progress",
+      latestRun: {
+        id: randomUUID(),
+        agentId: coderId,
+        status: "failed",
+        error: "controller process disappeared",
+        errorCode: "process_lost",
+        contextSnapshot: { retryReason: "issue_continuation_needed" },
+        livenessState: "needs_followup",
+      } as const,
+      comment: "Automatic continuation recovery failed.",
+    });
+    const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
+    expect(action.evidence.classification).toMatchObject({ category: "runtime.process_lost" });
+    expect(action.evidence).not.toHaveProperty("reconciliationAnalysis");
+    const wake = vi.fn().mockResolvedValue({ id: randomUUID() });
+    await deliverReconciliationAnalyses(db, wake);
+    expect(wake).not.toHaveBeenCalled();
+  });
+
   it("accepts new verified evidence after an automatic no-replay disposition without reopening on duplicate requests", async () => {
     const { companyId, coderId, sourceIssueId } = await seedCompany();
     const runId = randomUUID();

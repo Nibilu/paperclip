@@ -28,12 +28,27 @@ const MAX_RECONCILIATION_ATTEMPTS = 3;
 
 /** Only newly created holds (or an explicit operator request) enter this outbox. */
 export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typeof import("./heartbeat.js").heartbeatService>["wakeup"]) {
-  const pending = await db.select().from(issueRecoveryActions).where(and(
-    eq(issueRecoveryActions.status, "resolved"), eq(issueRecoveryActions.outcome, "blocked"),
-    sql`${issueRecoveryActions.evidence}->'automaticRecovery'->>'replay' = 'blocked'`,
-    or(
-      sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'pending'`,
-      sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'requested'`,
+  const pending = await db.select().from(issueRecoveryActions).where(or(
+    // Native no-replay holds after settlement (existing path).
+    and(
+      eq(issueRecoveryActions.status, "resolved"), eq(issueRecoveryActions.outcome, "blocked"),
+      sql`${issueRecoveryActions.evidence}->'automaticRecovery'->>'replay' = 'blocked'`,
+      or(
+        sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'pending'`,
+        sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'requested'`,
+      ),
+    ),
+    // Recovery ladder L2: active stranded actions whose failure classification
+    // is unfixable by retry (binding refusals, boot crashes, unclassified
+    // adapter failures). Diagnosis runs while the board hold is open so L2
+    // evidence exists before any L3 board decision.
+    and(
+      eq(issueRecoveryActions.status, "active"),
+      eq(issueRecoveryActions.kind, "stranded_assigned_issue"),
+      or(
+        sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'pending'`,
+        sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'requested'`,
+      ),
     ),
   )).limit(25);
   for (const action of pending) {
@@ -57,13 +72,21 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
       evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis,status}', '"dispatching"'::jsonb)`,
     }).where(and(eq(issueRecoveryActions.id, action.id),
       sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'pending'`,
-      sql`${issueRecoveryActions.evidence}->'automaticRecovery'->>'replay' = 'blocked'`)).returning();
+      or(
+        sql`${issueRecoveryActions.evidence}->'automaticRecovery'->>'replay' = 'blocked'`,
+        and(eq(issueRecoveryActions.status, "active"), eq(issueRecoveryActions.kind, "stranded_assigned_issue")),
+      ))).returning();
     if (!claimed) continue;
     let dispatchedAgentId: string | null = null;
     let dispatchedAdapterType: string | null = null;
     try {
       const [task] = await db.select().from(issues).where(and(eq(issues.companyId, action.companyId), eq(issues.id, action.sourceIssueId)));
-      const runId = action.evidence.runId;
+      // Native holds carry evidence.runId; stranded ladder holds carry
+      // evidence.latestRunId for the same purpose (the failed source run).
+      const rawEvidence = action.evidence as Record<string, unknown>;
+      const runId = typeof rawEvidence.runId === "string" && rawEvidence.runId
+        ? rawEvidence.runId
+        : typeof rawEvidence.latestRunId === "string" ? rawEvidence.latestRunId : null;
       const [source] = typeof runId === "string" ? await db.select().from(heartbeatRuns).where(and(eq(heartbeatRuns.id, runId), eq(heartbeatRuns.companyId, action.companyId))) : [];
       if (!task || task.status !== "blocked" || !source || !action.returnOwnerAgentId) throw conflict("Analysis source owner changed or is unavailable");
 
@@ -103,7 +126,7 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
           reconciliationAnalysisPrompt: reconciliationAnalysisPrompt(action.id, task.id, source.id) },
       });
       const attempts = (analysisBeforeDispatch?.attempts ?? 0) + (run ? 1 : 0);
-      await db.update(issueRecoveryActions).set({ evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({ status: run ? "requested" : "pending", runId: run?.id ?? null, attempts, triedAgentIds: Array.from(new Set([...triedAgentIds, ...(run ? [agent.id] : [])])), triedAdapterTypes: Array.from(new Set([...triedAdapterTypes, ...(run ? [agent.adapterType] : [])])) })}::jsonb)` })
+      await db.update(issueRecoveryActions).set({ evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({ ...analysisBeforeDispatch, status: run ? "requested" : "pending", runId: run?.id ?? null, attempts, triedAgentIds: Array.from(new Set([...triedAgentIds, ...(run ? [agent.id] : [])])), triedAdapterTypes: Array.from(new Set([...triedAdapterTypes, ...(run ? [agent.adapterType] : [])])) })}::jsonb)` })
         .where(and(eq(issueRecoveryActions.id, action.id), sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'dispatching'`));
       if (run) {
         const [persistedRun] = await db.select({ id: heartbeatRuns.id }).from(heartbeatRuns)
@@ -116,7 +139,7 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
       logger.warn({ err, actionId: action.id }, "Reconciliation analysis attempt failed; retrying another agent when available");
       const analysisBeforeFailure = action.evidence.reconciliationAnalysis as { attempts?: number; triedAgentIds?: string[]; triedAdapterTypes?: string[] } | undefined;
       const attempts = (analysisBeforeFailure?.attempts ?? 0) + 1;
-      await db.update(issueRecoveryActions).set({ evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({ status: attempts < MAX_RECONCILIATION_ATTEMPTS ? "pending" : "unavailable", attempts, triedAgentIds: Array.from(new Set([...(analysisBeforeFailure?.triedAgentIds ?? []), ...(dispatchedAgentId ? [dispatchedAgentId] : [])])), triedAdapterTypes: Array.from(new Set([...(analysisBeforeFailure?.triedAdapterTypes ?? []), ...(dispatchedAdapterType ? [dispatchedAdapterType] : [])])) })}::jsonb)` })
+      await db.update(issueRecoveryActions).set({ evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({ ...analysisBeforeFailure, status: attempts < MAX_RECONCILIATION_ATTEMPTS ? "pending" : "unavailable", attempts, triedAgentIds: Array.from(new Set([...(analysisBeforeFailure?.triedAgentIds ?? []), ...(dispatchedAgentId ? [dispatchedAgentId] : [])])), triedAdapterTypes: Array.from(new Set([...(analysisBeforeFailure?.triedAdapterTypes ?? []), ...(dispatchedAdapterType ? [dispatchedAdapterType] : [])])) })}::jsonb)` })
         .where(and(eq(issueRecoveryActions.id, action.id), sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'dispatching'`));
     }
   }
@@ -136,10 +159,22 @@ export async function saveReconciliationAgentDraft(db: Db, input: {
     if (context?.wakeReason !== "reconciliation_analysis" || context.analysisSourceIssueId !== input.issueId || context.analysisSourceRunId !== body.runId || context.analysisRecoveryActionId !== body.actionId || run?.status !== "running") throw forbidden("Draft requires the bound analysis run");
     const [action] = await tx.select().from(issueRecoveryActions).where(and(eq(issueRecoveryActions.id, body.actionId), eq(issueRecoveryActions.companyId, input.companyId), eq(issueRecoveryActions.sourceIssueId, input.issueId))).for("update");
     const automatic = action?.evidence.automaticRecovery as { replay?: string } | undefined;
-    if (!task || task.status !== "blocked" || !action || !action.returnOwnerAgentId || action.evidence.runId !== body.runId || automatic?.replay !== "blocked" || action.status !== "resolved" || action.outcome !== "blocked") throw conflict("The original hold is no longer current");
+    const rawEvidence = (action?.evidence ?? {}) as Record<string, unknown>;
+    const evidenceRunId = typeof rawEvidence.runId === "string" && rawEvidence.runId
+      ? rawEvidence.runId
+      : typeof rawEvidence.latestRunId === "string" ? rawEvidence.latestRunId : null;
+    // Recovery ladder L2 accepts drafts for active stranded holds (diagnosis
+    // while the board decision is still open); native holds keep the resolved
+    // no-replay shape.
+    const strandedLadderHold = action?.status === "active" && action?.kind === "stranded_assigned_issue";
+    if (!task || task.status !== "blocked" || !action || !action.returnOwnerAgentId || evidenceRunId !== body.runId || (!strandedLadderHold && (automatic?.replay !== "blocked" || action.status !== "resolved" || action.outcome !== "blocked"))) throw conflict("The original hold is no longer current");
     if (action.evidence.agentDraft) return action.evidence.agentDraft;
+    const analysisState = action.evidence.reconciliationAnalysis as { status?: string; runId?: string | null; attempts?: number; triedAgentIds?: string[]; triedAdapterTypes?: string[] } | undefined;
     await tx.update(issueRecoveryActions).set({ evidence: { ...action.evidence, agentDraft: body.agentDraft,
-      agentDraftProvenance: { analysisRunId: run.id, sourceRunId: body.runId, agentId: input.agentId, createdAt: new Date().toISOString() } }, updatedAt: new Date() }).where(eq(issueRecoveryActions.id, action.id));
+      agentDraftProvenance: { analysisRunId: run.id, sourceRunId: body.runId, agentId: input.agentId, createdAt: new Date().toISOString() },
+      // Mark the diagnosis delivered so the outbox never re-dispatches after a
+      // saved draft, even if the analysis run later dies.
+      reconciliationAnalysis: { ...analysisState, status: "drafted" } }, updatedAt: new Date() }).where(eq(issueRecoveryActions.id, action.id));
     await persistActivity(tx as unknown as Db, { companyId: input.companyId, actorType: "agent", actorId: input.agentId,
       runId: run.id, action: "issue.reconciliation_agent_draft_saved", entityType: "issue", entityId: task.id,
       details: { recoveryActionId: action.id, sourceRunId: body.runId } });
