@@ -180,4 +180,27 @@ describe("classifyRunFailure - rule precedence", () => {
     });
     expect(result.category).toBe("session_binding.resume_policy_refusal");
   });
+
+  it("acp session config mismatch classifies as boot failure (AMB-99 live regression)", () => {
+    const byCode = classifyRunFailure({
+      adapterType: "hermes_local",
+      errorCode: "acpx_session_config_failed",
+      errorMessage:
+        "ACP session paperclip:c1:04a:fb does not advertise config option 'model'. Supported config options: none.",
+    });
+    expect(byCode).toMatchObject({
+      category: "runtime.adapter_boot_failure",
+      subcategory: "acp_session_config_mismatch",
+      retryPolicy: "never",
+      ladderHint: "L2",
+    });
+    // Message-only shape (errorCode withheld upstream) still matches.
+    const byMessage = classifyRunFailure({
+      adapterType: "hermes_local",
+      errorCode: "adapter_failed",
+      errorMessage:
+        "ACP session paperclip:c1:04a:fb does not advertise config option 'model'. Supported config options: none.",
+    });
+    expect(byMessage.category).toBe("runtime.adapter_boot_failure");
+  });
 });

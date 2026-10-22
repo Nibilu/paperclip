@@ -85,6 +85,19 @@ const BOOT_RULES: Rule[] = [
     test: (i) => i.errorCode === "acpx_session_init_failed",
   },
   {
+    // Real case (AMB-99): the acpx engine sends a `model` config option the
+    // hermes-acp session does not advertise — an agent-config capability
+    // mismatch, not a transient fault. Retrying the same run can never fix it.
+    signal: "acpx_session_config_failed_code",
+    category: "runtime.adapter_boot_failure",
+    subcategory: "acp_session_config_mismatch",
+    retryPolicy: "never",
+    ladderHint: "L2",
+    test: (i, m) =>
+      i.errorCode === "acpx_session_config_failed" ||
+      /does not advertise config option '[\w.-]+'/.test(m),
+  },
+  {
     signal: "executable_not_found",
     category: "runtime.adapter_boot_failure",
     subcategory: "spawn_enoent",
