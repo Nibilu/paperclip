@@ -2203,11 +2203,43 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     expect(wake).toHaveBeenCalledWith(doctorId, expect.objectContaining({ reason: "reconciliation_analysis" }));
   });
 
-  it("re-checks the doctor is strictly idle immediately before waking (invocation gate)", async () => {
-    // Selection snapshot says idle, but the live row changed before wake:
-    // the gate defers the pass WITHOUT waking, burning an attempt, or
-    // blacklisting the candidate; a later pass with the agent idle again
-    // dispatches normally. Persistent busyness ends at the deferral cap.
+  it("invocation gate reuses the canonical invokability definition: active is callable (gate)", async () => {
+    // idle vs active does NOT block a new run (shared agent-eligibility):
+    // an active, ready doctor without a running run is dispatched as-is.
+    const { companyId, coderId, managerId, sourceIssue, sourceIssueId } = await seedCompany();
+    const runId = randomUUID();
+    await seedHeartbeatRun({ companyId, agentId: coderId, runId, issueId: sourceIssueId, status: "failed" });
+    await db.update(heartbeatRuns).set({
+      error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+      errorCode: "adapter_failed",
+    }).where(eq(heartbeatRuns.id, runId));
+    const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
+    await recovery.escalateStrandedAssignedIssue({
+      issue: sourceIssue,
+      previousStatus: "in_progress",
+      latestRun: {
+        id: runId,
+        agentId: coderId,
+        status: "failed",
+        error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+        errorCode: "adapter_failed",
+        contextSnapshot: { retryReason: "issue_continuation_needed" },
+        livenessState: "needs_followup",
+      } as const,
+      comment: "Automatic continuation recovery failed.",
+    });
+    await db.update(agents).set({ status: "active" }).where(eq(agents.id, managerId));
+    const wake = vi.fn().mockResolvedValue({ id: randomUUID() });
+    await deliverReconciliationAnalyses(db, wake);
+    expect(wake).toHaveBeenCalledTimes(1);
+    expect(wake).toHaveBeenCalledWith(managerId, expect.objectContaining({ reason: "reconciliation_analysis" }));
+  });
+
+  it("never selects a paused agent as doctor; the hold burns bounded attempts then goes unavailable (gate)", async () => {
+    // paused is non-invokable per the canonical definition, so it is excluded
+    // at the candidate scan (never dispatched). With no other candidate the
+    // pass falls into the existing bounded no-candidate path: attempt burned,
+    // re-armed pending; once invokable again the hold dispatches normally.
     const { companyId, coderId, managerId, sourceIssue, sourceIssueId } = await seedCompany();
     const runId = randomUUID();
     await seedHeartbeatRun({ companyId, agentId: coderId, runId, issueId: sourceIssueId, status: "failed" });
@@ -2232,18 +2264,49 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     });
     const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
 
-    // The selected doctor flipped to active between scan and wake.
-    await db.update(agents).set({ status: "active" }).where(eq(agents.id, managerId));
+    await db.update(agents).set({ status: "paused" }).where(eq(agents.id, managerId));
     const wake = vi.fn().mockResolvedValue({ id: randomUUID() });
     await deliverReconciliationAnalyses(db, wake);
     expect(wake).not.toHaveBeenCalled();
     const [deferred] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
-    expect(deferred.evidence.reconciliationAnalysis).toMatchObject({ status: "pending", deferredCount: 1 });
+    expect(deferred.evidence.reconciliationAnalysis).toMatchObject({ status: "pending", attempts: 1 });
     expect(deferred.evidence.reconciliationAnalysis.triedAgentIds ?? []).not.toContain(managerId);
-    expect(deferred.evidence.reconciliationAnalysis.attempts ?? 0).toBe(0);
 
-    // Once strictly idle again, the same hold dispatches normally.
+    // Once invokable again, the same hold dispatches normally.
     await db.update(agents).set({ status: "idle" }).where(eq(agents.id, managerId));
+    await deliverReconciliationAnalyses(db, wake);
+    expect(wake).toHaveBeenCalledTimes(1);
+    expect(wake).toHaveBeenCalledWith(managerId, expect.objectContaining({ reason: "reconciliation_analysis" }));
+  });
+
+  it("treats an error-status agent as an invokable doctor candidate (canonical set, not hand-rolled)", async () => {
+    // The old scan hard-coded ('idle','active'); the canonical invokability
+    // set also includes 'error'. Reuse means an error-status ready agent may
+    // still be delegated diagnosis.
+    const { companyId, coderId, managerId, sourceIssue, sourceIssueId } = await seedCompany();
+    const runId = randomUUID();
+    await seedHeartbeatRun({ companyId, agentId: coderId, runId, issueId: sourceIssueId, status: "failed" });
+    await db.update(heartbeatRuns).set({
+      error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+      errorCode: "adapter_failed",
+    }).where(eq(heartbeatRuns.id, runId));
+    const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
+    await recovery.escalateStrandedAssignedIssue({
+      issue: sourceIssue,
+      previousStatus: "in_progress",
+      latestRun: {
+        id: runId,
+        agentId: coderId,
+        status: "failed",
+        error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+        errorCode: "adapter_failed",
+        contextSnapshot: { retryReason: "issue_continuation_needed" },
+        livenessState: "needs_followup",
+      } as const,
+      comment: "Automatic continuation recovery failed.",
+    });
+    await db.update(agents).set({ status: "error" }).where(eq(agents.id, managerId));
+    const wake = vi.fn().mockResolvedValue({ id: randomUUID() });
     await deliverReconciliationAnalyses(db, wake);
     expect(wake).toHaveBeenCalledTimes(1);
     expect(wake).toHaveBeenCalledWith(managerId, expect.objectContaining({ reason: "reconciliation_analysis" }));
@@ -2272,8 +2335,8 @@ describeEmbeddedPostgres("issue recovery actions", () => {
       } as const,
       comment: "Automatic continuation recovery failed.",
     });
-    // The only doctor candidate (manager) stays busy forever.
-    await db.update(agents).set({ status: "active" }).where(and(eq(agents.companyId, companyId), eq(agents.role, "cto")));
+    // The only doctor candidate (manager) stays paused forever.
+    await db.update(agents).set({ status: "paused" }).where(and(eq(agents.companyId, companyId), eq(agents.role, "cto")));
     const [hold] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
     const wake = vi.fn().mockResolvedValue({ id: randomUUID() });
     for (let pass = 0; pass < 12; pass += 1) {

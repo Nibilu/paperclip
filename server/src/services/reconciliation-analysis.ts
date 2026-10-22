@@ -1,7 +1,9 @@
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { agents, heartbeatRuns, issueRecoveryActions, issues, type Db } from "@paperclipai/db";
+import { AGENT_STATUSES, isAgentStatusInvokable } from "@paperclipai/shared";
 import { conflict, forbidden } from "../errors.js";
+import { evaluateAgentInvokabilityFromDb } from "./agent-invokability.js";
 import { persistActivity } from "./activity-log.js";
 import { logger } from "../middleware/logger.js";
 
@@ -80,6 +82,12 @@ export function reconciliationAnalysisPrompt(actionId: string, issueId: string, 
 const MAX_RECONCILIATION_ATTEMPTS = 3;
 /** Consecutive invocation-gate deferrals before a hold goes to the board. */
 const MAX_RECONCILIATION_DEFERRALS = 10;
+/**
+ * Doctor-eligible statuses, derived from the canonical invokability definition
+ * (shared agent-eligibility) instead of a hand-rolled list: {active, idle,
+ * running, error}. paused/terminated/pending_approval are never candidates.
+ */
+const CANONICAL_INVOKABLE_AGENT_STATUSES = AGENT_STATUSES.filter((status) => isAgentStatusInvokable(status));
 
 /** Only newly created holds (or an explicit operator request) enter this outbox. */
 export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typeof import("./heartbeat.js").heartbeatService>["wakeup"]) {
@@ -163,7 +171,10 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
       const candidates = await db.select().from(agents).where(and(
         eq(agents.companyId, action.companyId),
         eq(agents.lifecycleState, "ready"),
-        sql`${agents.status} in ('idle', 'active')`,
+        // Reuse the canonical invokability status set (shared agent-eligibility):
+        // {active, idle, running, error} are callable; {paused, terminated,
+        // pending_approval} never become doctor candidates.
+        inArray(agents.status, CANONICAL_INVOKABLE_AGENT_STATUSES),
         sql`not exists (select 1 from ${heartbeatRuns} where ${heartbeatRuns.agentId} = ${agents.id} and ${heartbeatRuns.status} = 'running')`,
       ));
       const eligible = candidates.filter((candidate) => !triedAgentIds.has(candidate.id) && !triedAdapterTypes.has(candidate.adapterType));
@@ -174,18 +185,24 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
         (candidate.runtimeConfig as Record<string, unknown> | null)?.diagnosticPriority === true ? 0 : 1;
       const agent = [...eligible].sort((a, b) => diagnosticPriority(a) - diagnosticPriority(b))[0];
       if (!agent) throw conflict("No untried adapter is available for reconciliation analysis");
-      // Recovery ladder invocation gate (user requirement): re-read the
-      // candidate's live row immediately before waking. The scan is only a
-      // snapshot; the doctor must still be ready and strictly idle right now.
-      // A failed gate defers this pass WITHOUT burning an attempt or marking
-      // the agent tried (transient busyness must not blacklist a good doctor);
-      // after MAX_RECONCILIATION_DEFERRALS consecutive deferrals the hold goes
-      // unavailable for board fallback so the outbox cannot spin forever.
-      const [live] = await db.select({ status: agents.status, lifecycleState: agents.lifecycleState })
-        .from(agents).where(and(eq(agents.id, agent.id), eq(agents.companyId, action.companyId)));
+      // Recovery ladder invocation gate: re-read the candidate's live row
+      // immediately before waking (the scan is only a snapshot) and reuse the
+      // canonical invokability definition (agent-invokability.ts + shared
+      // agent-eligibility): statuses {active, idle, running, error} are all
+      // callable, only {paused, terminated, pending_approval} (or a broken
+      // reporting chain) block - idle vs active does NOT block a new run. A
+      // live running run defers the pass without burning an attempt or
+      // blacklisting the candidate; after MAX_RECONCILIATION_DEFERRALS
+      // consecutive deferrals the hold goes unavailable for board fallback so
+      // the outbox cannot spin forever.
+      const [live] = await db.select({
+        id: agents.id, companyId: agents.companyId, name: agents.name,
+        reportsTo: agents.reportsTo, status: agents.status, lifecycleState: agents.lifecycleState,
+      }).from(agents).where(and(eq(agents.id, agent.id), eq(agents.companyId, action.companyId)));
       const [liveRun] = await db.select({ id: heartbeatRuns.id }).from(heartbeatRuns)
         .where(and(eq(heartbeatRuns.agentId, agent.id), eq(heartbeatRuns.status, "running"))).limit(1);
-      if (!live || live.lifecycleState !== "ready" || live.status !== "idle" || liveRun) {
+      const invokability = await evaluateAgentInvokabilityFromDb(db, live ?? null);
+      if (!live || live.lifecycleState !== "ready" || !invokability.invokable || liveRun) {
         const analysisState = action.evidence.reconciliationAnalysis as { deferredCount?: number; requestedAt?: string; trigger?: string } | undefined;
         const deferredCount = (analysisState?.deferredCount ?? 0) + 1;
         const nextState = {
