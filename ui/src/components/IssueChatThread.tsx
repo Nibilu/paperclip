@@ -574,6 +574,9 @@ interface IssueChatThreadProps {
   scheduledRetry?: IssueScheduledRetry | null;
   recoveryAction?: IssueRecoveryAction | null;
   onResolveRecoveryAction?: (outcome: RecoveryResolveOutcome) => void;
+  /** R4/S6 — decide the doctor's fix proposal attached to the recovery action. */
+  onProposalDecisionRecoveryAction?: (decision: { optionId: string; decision: "approved" | "declined" }) => void;
+  proposalDecisionRecoveryActionPending?: boolean;
   onReissueIsolatedRecoveryAction?: (request: RecoveryReissueRequest) => void;
   reissueIsolatedRecoveryActionPending?: boolean;
   onReconcileForwardRecoveryAction?: () => void;
@@ -5787,6 +5790,8 @@ export function IssueChatThread({
   scheduledRetry = null,
   recoveryAction = null,
   onResolveRecoveryAction,
+  onProposalDecisionRecoveryAction,
+  proposalDecisionRecoveryActionPending = false,
   onReissueIsolatedRecoveryAction,
   reissueIsolatedRecoveryActionPending = false,
   onReconcileForwardRecoveryAction,
@@ -6660,6 +6665,8 @@ export function IssueChatThread({
                         agentMap={agentMap}
                         scheduledRetry={scheduledRetry}
                         onResolve={onResolveRecoveryAction}
+                        onProposalDecision={onProposalDecisionRecoveryAction}
+                        proposalPending={proposalDecisionRecoveryActionPending}
                         onReissueIsolated={onReissueIsolatedRecoveryAction}
                         reissuePending={reissueIsolatedRecoveryActionPending}
                         onReconcileForward={onReconcileForwardRecoveryAction}

@@ -600,6 +600,35 @@ export interface ReconciliationAgentDraft {
   actionOutcome: { value: "not_performed" | "completed" | "mixed"; confidence: number; evidence: string[] };
   evidenceSummary: string;
   operatorNote: string;
+  /** R4/S5: structured fix proposal. Optional so diagnosis-only drafts stay valid. */
+  fixProposal?: ReconciliationFixProposal | null;
+}
+
+export type ReconciliationFixPermissionRequirement =
+  | "environment_install"
+  | "service_restart"
+  | "adapter_config_change"
+  | "session_rebind"
+  | "workspace_repair"
+  | "retry_only"
+  | "manual_shell";
+
+export interface ReconciliationFixOption {
+  id: string;
+  title: string;
+  description: string;
+  recommended?: boolean;
+  permissionRequirements: ReconciliationFixPermissionRequirement[];
+  revertible: boolean;
+  revertSteps: string[];
+  executionScope: "server_side" | "doctor_run" | "return_owner_run" | "manual";
+  verificationCriteria: string;
+}
+
+export interface ReconciliationFixProposal {
+  title: string;
+  rationale: string;
+  options: ReconciliationFixOption[];
 }
 
 export interface IssueRecoveryAction {

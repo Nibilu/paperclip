@@ -1215,6 +1215,9 @@ type IssueDetailChatTabProps = {
   onResolveRecoveryAction?: (
     outcome: import("../components/IssueRecoveryActionCard").RecoveryResolveOutcome,
   ) => void;
+  /** R4/S6 — decide the doctor's fix proposal attached to the recovery action. */
+  onProposalDecisionRecoveryAction?: (decision: { optionId: string; decision: "approved" | "declined" }) => void;
+  proposalDecisionRecoveryActionPending?: boolean;
   onReissueIsolatedRecoveryAction?: (
     request: import("../components/IssueRecoveryActionCard").RecoveryReissueRequest,
   ) => void;
@@ -1367,6 +1370,8 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
   scheduledRetry,
   recoveryAction,
   onResolveRecoveryAction,
+  onProposalDecisionRecoveryAction,
+  proposalDecisionRecoveryActionPending = false,
   onReissueIsolatedRecoveryAction,
   reissueIsolatedRecoveryActionPending,
   onReconcileForwardRecoveryAction,
@@ -2567,6 +2572,8 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
             scheduledRetry={scheduledRetry}
             recoveryAction={recoveryAction?.cause === "native_workspace_finalization_owner_unverified" ? null : recoveryAction ?? null}
             onResolveRecoveryAction={onResolveRecoveryAction}
+            onProposalDecisionRecoveryAction={onProposalDecisionRecoveryAction}
+            proposalDecisionRecoveryActionPending={proposalDecisionRecoveryActionPending}
             onReissueIsolatedRecoveryAction={onReissueIsolatedRecoveryAction}
             reissueIsolatedRecoveryActionPending={
               reissueIsolatedRecoveryActionPending
@@ -4318,6 +4325,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
       outcome: ResolveRecoveryActionOutcome;
       sourceIssueStatus: "todo" | "done" | "in_review" | "blocked";
       resolutionNote?: string | null;
+      proposalDecision?: { optionId: string; decision: "approved" | "declined" };
     }) => issuesApi.resolveRecoveryAction(issueId!, data),
     onSuccess: ({ issue: nextIssue }) => {
       const issueRefs = new Set<string>([issueId!, nextIssue.id]);
@@ -6750,6 +6758,23 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
     handleResolveRecoveryAction("todo");
   }, [handleResolveRecoveryAction]);
 
+  // R4/S6 — decide the doctor's structured fix proposal: approve the selected
+  // option or decline. The decision rides the standard resolve endpoint and is
+  // recorded as recovery-action evidence server-side.
+  const handleProposalDecisionRecoveryAction = useCallback(
+    (decision: { optionId: string; decision: "approved" | "declined" }) => {
+      const actionId = activeRecoveryActionId;
+      if (!actionId) return;
+      void resolveRecoveryAction.mutateAsync({
+        actionId,
+        outcome: decision.decision === "approved" ? "restored" : "blocked",
+        sourceIssueStatus: decision.decision === "approved" ? "todo" : "blocked",
+        proposalDecision: decision,
+      });
+    },
+    [activeRecoveryActionId, resolveRecoveryAction.mutateAsync],
+  );
+
   // Action 3 (workspace_validation): one-click re-issue of the stalled task on a fresh isolated
   // git worktree based on the live (diverged) branch. Composes the existing safe issue-creation
   // endpoint — it never mutates the current workspace, so the operator's commits are preserved.
@@ -8126,6 +8151,8 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
                   scheduledRetry={issue.scheduledRetry ?? null}
                   recoveryAction={issue.activeRecoveryAction?.cause === "native_workspace_finalization_owner_unverified" ? null : issue.activeRecoveryAction ?? null}
                   onResolveRecoveryAction={handleResolveRecoveryAction}
+                  onProposalDecisionRecoveryAction={handleProposalDecisionRecoveryAction}
+                  proposalDecisionRecoveryActionPending={resolveRecoveryAction.isPending}
                   onReissueIsolatedRecoveryAction={
                     handleReissueIsolatedRecoveryAction
                   }

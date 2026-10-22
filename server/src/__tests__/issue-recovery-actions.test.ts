@@ -1859,6 +1859,42 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     ]);
   });
 
+  it("merges the proposal decision into evidence at resolve time without clobbering existing evidence (R4/S6)", async () => {
+    const { companyId, sourceIssueId } = await seedCompany();
+    const svc = issueRecoveryActionService(db);
+    await svc.upsertSourceScoped({
+      companyId,
+      sourceIssueId,
+      kind: "stranded_assigned_issue",
+      ownerType: "agent",
+      ownerAgentId: null,
+      cause: "issue_continuation_recovery_failed",
+      fingerprint: "proposal:evidence-patch",
+      evidence: {
+        failureSummary: "Continuation retry failed.",
+        classification: { category: "runtime.adapter_boot_failure", severity: "actionable" },
+      },
+      nextAction: "A diagnostic agent will inspect the failed run.",
+      wakePolicy: { type: "board_escalation" },
+      maxAttempts: 3,
+    });
+    const resolved = await svc.resolveActiveForIssue({
+      companyId,
+      sourceIssueId,
+      status: "resolved",
+      outcome: "restored",
+      resolutionNote: "Approved the recommended option.",
+      evidencePatch: {
+        proposalDecision: { decision: "approved", optionId: "clear-model", optionTitle: "Clear the agent's model field", decidedAt: "2026-10-22T12:00:00.000Z" },
+      },
+    });
+    expect(resolved?.status).toBe("resolved");
+    // Existing evidence is preserved (jsonb merge, not replace)…
+    expect((resolved?.evidence.classification as { category: string }).category).toBe("runtime.adapter_boot_failure");
+    // …and the decision is recorded.
+    expect(resolved?.evidence.proposalDecision).toMatchObject({ decision: "approved", optionId: "clear-model" });
+  });
+
   it("projects recovery action metadata into the structured wake payload", async () => {
     const { companyId, managerId, coderId, sourceIssueId } = await seedCompany();
     const action = await issueRecoveryActionService(db).upsertSourceScoped({

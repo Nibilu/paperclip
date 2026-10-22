@@ -76,6 +76,8 @@ export type ResolveIssueRecoveryActionInput = {
   status: Extract<IssueRecoveryActionStatus, "resolved" | "cancelled">;
   outcome: IssueRecoveryActionOutcome;
   resolutionNote?: string | null;
+  /** Shallow jsonb merge into evidence at resolve time (e.g. proposalDecision audit). */
+  evidencePatch?: Record<string, unknown>;
 };
 
 function toReadModel(row: IssueRecoveryActionRow): IssueRecoveryAction {
@@ -574,6 +576,11 @@ export function issueRecoveryActionService(db: Db) {
         resolutionNote: input.resolutionNote ?? null,
         resolvedAt: now,
         updatedAt: now,
+        ...(input.evidencePatch
+          ? {
+              evidence: sql`coalesce(${issueRecoveryActions.evidence}, '{}'::jsonb) || ${JSON.stringify(input.evidencePatch)}::jsonb`,
+            }
+          : {}),
       })
       .where(and(...predicates))
       .returning();

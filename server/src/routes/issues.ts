@@ -9650,6 +9650,7 @@ export function issueRoutes(
         resolutionNote,
         executionReconciliation,
         workspaceBaseRef,
+        proposalDecision,
       } = req.body;
       if (outcome === "false_positive" || outcome === "cancelled") {
         assertBoard(req);
@@ -10122,6 +10123,32 @@ export function issueRoutes(
               ? "owner_completed"
               : outcome;
 
+        // R4/S6: the human's decision on the doctor's fix proposal is recorded
+        // as recovery-action evidence (audit + revert trail). The chosen option
+        // must exist on the draft's fixProposal; v0.1 records the decision only
+        // — execution is the closure executor's job (S9).
+        let proposalEvidencePatch: Record<string, unknown> | undefined;
+        if (proposalDecision) {
+          const proposal = activeRecoveryAction.agentDraft?.fixProposal;
+          if (!proposal) {
+            throw conflict("This recovery action carries no fix proposal to decide.");
+          }
+          const option = proposal.options.find((entry) => entry.id === proposalDecision.optionId);
+          if (!option) {
+            throw conflict("The chosen proposal option does not exist on this recovery action.");
+          }
+          proposalEvidencePatch = {
+            proposalDecision: {
+              decision: proposalDecision.decision,
+              optionId: option.id,
+              optionTitle: option.title,
+              decidedByActorId: actor.actorId,
+              decidedByActorType: actor.actorType,
+              decidedAt: new Date().toISOString(),
+            },
+          };
+        }
+
         const recoveryAction = await recoveryActionsSvc.resolveActiveForIssue(
           {
             companyId: existing.companyId,
@@ -10130,6 +10157,7 @@ export function issueRoutes(
             status: actionStatus,
             outcome: recordedOutcome,
             resolutionNote: resolutionNote ?? null,
+            ...(proposalEvidencePatch ? { evidencePatch: proposalEvidencePatch } : {}),
           },
           tx,
         );
@@ -10192,6 +10220,7 @@ export function issueRoutes(
           outcome: result.recoveryAction.outcome,
           sourceIssueStatus: sourceIssueStatus ?? null,
           resolutionNote: result.recoveryAction.resolutionNote,
+          ...(proposalDecision ? { proposalDecision } : {}),
           ...(workspaceBaseRef ? { workspaceBaseRef } : {}),
         },
       });

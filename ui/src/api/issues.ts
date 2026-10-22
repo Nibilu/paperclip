@@ -301,6 +301,7 @@ export const issuesApi = {
       outcome: "restored" | "false_positive" | "blocked" | "cancelled";
       sourceIssueStatus: Issue["status"];
       resolutionNote?: string | null;
+      proposalDecision?: { optionId: string; decision: "approved" | "declined" };
     },
   ) =>
     api.post<ResolveRecoveryActionResponse>(

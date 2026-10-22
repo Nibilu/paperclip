@@ -114,6 +114,109 @@ function buildAction(overrides: Partial<IssueRecoveryAction> = {}): IssueRecover
   };
 }
 
+const FIX_PROPOSAL = {
+  title: "Restore the Testing agent's ACP lane",
+  rationale: "The ACP session does not advertise the model config option; the agent's model field blocks every run.",
+  options: [
+    {
+      id: "clear-model",
+      title: "Clear the agent's model field",
+      description: "Falls back to the default profile model; revert by re-adding the field.",
+      recommended: true,
+      permissionRequirements: ["adapter_config_change" as const],
+      revertible: true,
+      revertSteps: ["Re-add model field deepseek-ai/deepseek-coder-6.7b-instruct"],
+      executionScope: "server_side" as const,
+      verificationCriteria: "A new run starts without acpx_session_config_failed.",
+    },
+    {
+      id: "upgrade-hermes",
+      title: "Upgrade hermes-acp to advertise model config",
+      description: "Heavier; touches the shared ACP engine for every agent.",
+      permissionRequirements: ["environment_install" as const, "service_restart" as const],
+      revertible: false,
+      revertSteps: [],
+      executionScope: "manual" as const,
+      verificationCriteria: "Session advertises the model config option.",
+    },
+  ],
+};
+
+describe("RecoveryProposalSection (R4/S6)", () => {
+  /** The harness afterEach only unmounts the LAST render; unmount before re-rendering. */
+  function renderFresh(element: ReactElement) {
+    if (root) act(() => root?.unmount());
+    return render(element);
+  }
+
+  it("renders options with the recommended preselected, badges, and records approval of the selected option", () => {
+    const onDecide = vi.fn();
+    const node = render(<IssueRecoveryActionCard
+      action={buildAction({ agentDraft: {
+        providerStopped: { value: false, evidence: ["run:r#seq:1"] },
+        actionOutcome: { value: "not_performed", confidence: 0.7, evidence: ["run:r#seq:2"] },
+        evidenceSummary: "Timeline reconstructed from the run events.",
+        operatorNote: "Uncertain about provider state.",
+        fixProposal: FIX_PROPOSAL,
+      } })}
+      onProposalDecision={onDecide}
+    />);
+    const section = node.querySelector('[data-testid="recovery-proposal-section"]');
+    expect(section).not.toBeNull();
+    expect(node.querySelector('[data-testid="recovery-proposal-title"]')?.textContent).toContain("ACP lane");
+    expect(node.querySelectorAll('[data-testid="recovery-proposal-recommended"]')).toHaveLength(1);
+    // The recommended option is preselected → approve button names it.
+    const approve = node.querySelector('[data-testid="recovery-proposal-approve"]') as HTMLButtonElement | null;
+    expect(approve?.textContent).toContain("Clear the agent's model field");
+    expect(approve?.disabled).toBe(false);
+    act(() => approve?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(onDecide).toHaveBeenCalledWith({ optionId: "clear-model", decision: "approved" });
+  });
+
+  it("records a declined decision and hides the section once the action is resolved", () => {
+    const onDecide = vi.fn();
+    const node = render(<IssueRecoveryActionCard
+      action={buildAction({ agentDraft: {
+        providerStopped: { value: false, evidence: ["run:r#seq:1"] },
+        actionOutcome: { value: "mixed", confidence: 0.5, evidence: ["run:r#seq:2"] },
+        evidenceSummary: "Timeline reconstructed from the run events.",
+        operatorNote: "",
+        fixProposal: FIX_PROPOSAL,
+      } })}
+      onProposalDecision={onDecide}
+    />);
+    const decline = node.querySelector('[data-testid="recovery-proposal-decline"]') as HTMLButtonElement | null;
+    expect(decline?.disabled).toBe(false);
+    act(() => decline?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(onDecide).toHaveBeenCalledWith(expect.objectContaining({ decision: "declined" }));
+
+    const resolved = renderFresh(<IssueRecoveryActionCard
+      action={buildAction({ status: "resolved", outcome: "restored", agentDraft: {
+        providerStopped: { value: false, evidence: [] },
+        actionOutcome: { value: "mixed", confidence: 0.5, evidence: [] },
+        evidenceSummary: "Timeline reconstructed from the run events.",
+        operatorNote: "",
+        fixProposal: FIX_PROPOSAL,
+      } })}
+      onProposalDecision={onDecide}
+    />);
+    expect(resolved.querySelector('[data-testid="recovery-proposal-section"]')).toBeNull();
+  });
+
+  it("does not render a proposal section without the handler or without a fixProposal", () => {
+    const withDraft = render(<IssueRecoveryActionCard action={buildAction({ agentDraft: {
+      providerStopped: { value: false, evidence: [] },
+      actionOutcome: { value: "mixed", confidence: 0.5, evidence: [] },
+      evidenceSummary: "Timeline reconstructed from the run events.",
+      operatorNote: "",
+      fixProposal: FIX_PROPOSAL,
+    } })} />);
+    expect(withDraft.querySelector('[data-testid="recovery-proposal-section"]')).toBeNull();
+    const withoutProposal = renderFresh(<IssueRecoveryActionCard action={buildAction()} onProposalDecision={() => {}} />);
+    expect(withoutProposal.querySelector('[data-testid="recovery-proposal-section"]')).toBeNull();
+  });
+});
+
 describe("deriveRecoveryCardState", () => {
   it("maps active missing_disposition to needed", () => {
     expect(deriveRecoveryCardState(buildAction())).toBe("needed");

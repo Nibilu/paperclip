@@ -10,6 +10,7 @@ import type {
   IssueRecoveryActionOutcome,
   IssueRecoveryActionStatus,
   IssueScheduledRetry,
+  ReconciliationFixOption,
 } from "@paperclipai/shared";
 import {
   Eye,
@@ -127,6 +128,14 @@ export interface IssueRecoveryActionCardProps {
    * diagnosis, and action footer.
    */
   variant?: "full" | "compact";
+  /**
+   * R4/S6 — handler for the doctor's structured fix-proposal decision (approve an option or
+   * decline). Rendered only when the action carries an advisory draft with a fixProposal and the
+   * card is not resolved. If omitted, the proposal section is not rendered.
+   */
+  onProposalDecision?: (decision: { optionId: string; decision: "approved" | "declined" }) => void;
+  /** Whether a proposal decision is currently in flight (disables the proposal controls). */
+  proposalPending?: boolean;
   className?: string;
 }
 
@@ -756,6 +765,147 @@ function RepairWorkspace({
   );
 }
 
+const EXECUTION_SCOPE_LABEL: Record<ReconciliationFixOption["executionScope"], string> = {
+  server_side: "Executed by Paperclip",
+  doctor_run: "Executed by the diagnostic agent",
+  return_owner_run: "Executed by the task's owner",
+  manual: "Executed manually",
+};
+
+const PERMISSION_LABEL: Record<ReconciliationFixOption["permissionRequirements"][number], string> = {
+  environment_install: "environment install",
+  service_restart: "service restart",
+  adapter_config_change: "adapter config change",
+  session_rebind: "session rebind",
+  workspace_repair: "workspace repair",
+  retry_only: "retry only",
+  manual_shell: "manual shell (never auto-adopted)",
+};
+
+/**
+ * R4/S6 — the doctor's structured fix proposal. Advisory: the human picks one
+ * option (or declines); the decision is recorded server-side as evidence. The
+ * recommended option is preselected so the default path is one confirmation.
+ */
+function RecoveryProposalSection({
+  action,
+  pending,
+  onDecide,
+}: {
+  action: IssueRecoveryAction;
+  pending: boolean;
+  onDecide: (decision: { optionId: string; decision: "approved" | "declined" }) => void;
+}) {
+  const proposal = action.agentDraft?.fixProposal;
+  const recommended = useMemo(
+    () => proposal?.options.find((option) => option.recommended === true) ?? null,
+    [proposal],
+  );
+  const [selectedId, setSelectedId] = useState<string | null>(recommended?.id ?? null);
+  const [note, setNote] = useState("");
+  const selected = proposal?.options.find((option) => option.id === selectedId) ?? null;
+  if (!proposal) return null;
+  return (
+    <div
+      data-testid="recovery-proposal-section"
+      className={cn("space-y-2.5 border-t bg-background/40 px-3 py-3 dark:bg-background/20 sm:px-4", "border-border/70")}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-(length:--text-micro) font-semibold uppercase tracking-(--tracking-eyebrow) text-muted-foreground">
+          Fix proposal
+        </span>
+        <span data-testid="recovery-proposal-title" className="text-xs font-medium text-foreground/90">
+          {proposal.title}
+        </span>
+      </div>
+      <p className="text-xs leading-5 text-muted-foreground">{proposal.rationale}</p>
+      <div className="space-y-1.5" role="radiogroup" aria-label="Fix proposal options">
+        {proposal.options.map((option) => (
+          <label
+            key={option.id}
+            data-testid={`recovery-proposal-option-${option.id}`}
+            className={cn(
+              "flex cursor-pointer items-start gap-2 rounded-md border px-2.5 py-2 text-xs transition-colors",
+              selectedId === option.id
+                ? "border-foreground/30 bg-background"
+                : "border-border/60 bg-background/40 hover:border-border",
+            )}
+          >
+            <input
+              type="radio"
+              name={`recovery-proposal-${action.id}`}
+              className="mt-0.5"
+              checked={selectedId === option.id}
+              onChange={() => setSelectedId(option.id)}
+            />
+            <span className="min-w-0 flex-1 space-y-1">
+              <span className="flex flex-wrap items-center gap-1.5">
+                <span className="font-medium text-foreground/90">{option.title}</span>
+                {option.recommended ? (
+                  <span
+                    data-testid="recovery-proposal-recommended"
+                    className="rounded-sm border border-emerald-400/50 bg-emerald-500/10 px-1.5 py-0.5 text-(length:--text-nano) font-semibold uppercase tracking-(--tracking-label) text-emerald-700 dark:text-emerald-300"
+                  >
+                    Recommended
+                  </span>
+                ) : null}
+                {!option.revertible ? (
+                  <span className="rounded-sm border border-amber-400/50 bg-amber-500/10 px-1.5 py-0.5 text-(length:--text-nano) font-semibold uppercase tracking-(--tracking-label) text-amber-700 dark:text-amber-300">
+                    Not revertible
+                  </span>
+                ) : null}
+              </span>
+              {option.description ? (
+                <span className="block leading-5 text-muted-foreground">{option.description}</span>
+              ) : null}
+              <span className="flex flex-wrap items-center gap-1 text-(length:--text-nano) text-muted-foreground">
+                <span>{EXECUTION_SCOPE_LABEL[option.executionScope]}</span>
+                {option.permissionRequirements.length > 0 ? (
+                  <span>· needs {option.permissionRequirements.map((p) => PERMISSION_LABEL[p]).join(", ")}</span>
+                ) : null}
+              </span>
+            </span>
+          </label>
+        ))}
+      </div>
+      <label className="block space-y-1">
+        <span className="text-(length:--text-micro) text-muted-foreground">Decision note (optional)</span>
+        <Textarea
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          placeholder="Why you chose this option, or why you are declining."
+          className="min-h-14 text-xs"
+          data-testid="recovery-proposal-note"
+        />
+      </label>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          disabled={!selected || pending}
+          data-testid="recovery-proposal-approve"
+          onClick={() => selected && onDecide({ optionId: selected.id, decision: "approved" })}
+        >
+          {pending ? "Recording…" : selected ? `Approve: ${selected.title}` : "Approve"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={pending}
+          data-testid="recovery-proposal-decline"
+          onClick={() => onDecide({ optionId: selected?.id ?? recommended?.id ?? "", decision: "declined" })}
+        >
+          Decline proposal
+        </Button>
+        <span className="text-(length:--text-nano) text-muted-foreground">
+          Recording a decision resolves this recovery hold; execution and verification follow afterwards.
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function readWakePolicySummary(action: IssueRecoveryAction): string | null {
   const policy = action.wakePolicy;
   if (!policy) return null;
@@ -998,6 +1148,8 @@ export function IssueRecoveryActionCard({
   canBreakGlass = false,
   reconcilePending = false,
   canFalsePositive = false,
+  onProposalDecision,
+  proposalPending = false,
   variant = "full",
   className,
 }: IssueRecoveryActionCardProps) {
@@ -1339,6 +1491,9 @@ export function IssueRecoveryActionCard({
       </dl>
       )}
       {divergence ? <DivergenceDiagnosis divergence={divergence} dividerClass={tone.divider} /> : null}
+      {onProposalDecision !== undefined && cardState !== "resolved" && action.agentDraft?.fixProposal ? (
+        <RecoveryProposalSection action={action} pending={proposalPending} onDecide={onProposalDecision} />
+      ) : null}
       {showFooter ? (
         <div className={cn("flex flex-wrap items-center gap-2 border-t px-3 py-2.5 sm:px-4", tone.divider)}>
           {showResolveActions ? (

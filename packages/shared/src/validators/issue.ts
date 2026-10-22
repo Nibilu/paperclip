@@ -604,6 +604,15 @@ export const resolveIssueRecoveryActionSchema = z
     outcome: z.enum(RESOLVE_ISSUE_RECOVERY_ACTION_OUTCOMES),
     sourceIssueStatus: z.enum(ISSUE_STATUSES),
     resolutionNote: multilineTextSchema.optional().nullable(),
+    // R4/S6: the human's decision on the doctor's structured fix proposal.
+    // The route re-validates the option against the action's draft server-side.
+    proposalDecision: z
+      .object({
+        optionId: z.string().trim().min(1).max(64),
+        decision: z.enum(["approved", "declined"]),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
   .superRefine((value, ctx) => {
