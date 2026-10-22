@@ -4,6 +4,7 @@ import { agents, heartbeatRuns, issueRecoveryActions, issues, type Db } from "@p
 import { AGENT_STATUSES, isAgentStatusInvokable } from "@paperclipai/shared";
 import { conflict, forbidden } from "../errors.js";
 import { evaluateAgentInvokabilityFromDb } from "./agent-invokability.js";
+import { classifyRunFailure } from "./recovery/error-classification.js";
 import { persistActivity } from "./activity-log.js";
 import { logger } from "../middleware/logger.js";
 
@@ -89,8 +90,67 @@ const MAX_RECONCILIATION_DEFERRALS = 10;
  */
 const CANONICAL_INVOKABLE_AGENT_STATUSES = AGENT_STATUSES.filter((status) => isAgentStatusInvokable(status));
 
-/** Only newly created holds (or an explicit operator request) enter this outbox. */
+const L2_CATEGORIES = new Set(["session_binding.resume_policy_refusal", "runtime.adapter_boot_failure"]);
+
+async function stampL2HoldsMissingAnalysis(db: Db) {
+  const candidates = await db.select().from(issueRecoveryActions).where(and(
+    eq(issueRecoveryActions.kind, "stranded_assigned_issue"),
+    eq(issueRecoveryActions.status, "active"),
+    sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis' IS NULL`,
+    sql`${issueRecoveryActions.evidence}->'agentDraft' IS NULL`,
+  ));
+  for (const action of candidates) {
+    try {
+      const evidence = action.evidence as Record<string, unknown>;
+      const errorCode = typeof evidence.latestRunErrorCode === "string" ? evidence.latestRunErrorCode : null;
+      const errorMessage = typeof evidence.latestRunError === "string" ? evidence.latestRunError : null;
+      const existing = evidence.classification as { category?: string } | null | undefined;
+      const classified = classifyRunFailure({ errorCode, errorMessage });
+      const isL2 = L2_CATEGORIES.has(classified.category)
+        || (classified.category === "unknown" && errorCode === "adapter_failed");
+      if (!isL2) continue;
+      const nextClassification = {
+        ...(existing && typeof existing === "object" ? existing : {}),
+        category: classified.category,
+        subcategory: classified.subcategory ?? null,
+        retryPolicy: classified.retryPolicy,
+        ladderHint: classified.ladderHint,
+        matchedSignals: classified.matchedSignals,
+        reclassifiedAt: new Date().toISOString(),
+        reclassifiedReason: "selfheal_current_classifier",
+      };
+      await db.update(issueRecoveryActions).set({
+        evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({
+          status: "pending", requestedAt: new Date().toISOString(), trigger: "ladder_l2_selfheal",
+        })}::jsonb)`,
+        updatedAt: new Date(),
+      }).where(and(
+        eq(issueRecoveryActions.id, action.id),
+        sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis' IS NULL`,
+      ));
+      await db.update(issueRecoveryActions).set({
+        evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{classification}', ${JSON.stringify(nextClassification)}::jsonb)`,
+      }).where(and(
+        eq(issueRecoveryActions.id, action.id),
+        sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis' IS NOT NULL`,
+      ));
+      await persistActivity(db, { companyId: action.companyId, actorType: "system", actorId: "execution-recovery",
+        action: "issue.reconciliation_selfheal_stamped", entityType: "issue", entityId: action.sourceIssueId,
+        details: { recoveryActionId: action.id, category: classified.category, subcategory: classified.subcategory ?? null } });
+    } catch (err) {
+      logger.warn({ err, actionId: action.id }, "Reconciliation self-heal stamp failed; retried next sweep");
+    }
+  }
+}
+
+/**
+ * Only newly created holds (or an explicit operator request) enter this outbox.
+ * A self-heal pre-pass first stamps pre-upgrade L2 holds with the current
+ * classifier so they join the ladder too.
+ */
 export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typeof import("./heartbeat.js").heartbeatService>["wakeup"]) {
+  await stampL2HoldsMissingAnalysis(db);
+
   const pending = await db.select().from(issueRecoveryActions).where(or(
     // Native no-replay holds after settlement (existing path).
     and(

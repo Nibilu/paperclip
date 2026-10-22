@@ -1859,6 +1859,51 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     ]);
   });
 
+  it("self-heals pre-upgrade L2 holds: re-classifies with the current classifier and stamps the outbox (S3)", async () => {
+    const { companyId, coderId, managerId, sourceIssue, sourceIssueId } = await seedCompany();
+    const runId = randomUUID();
+    await seedHeartbeatRun({ companyId, agentId: coderId, runId, issueId: sourceIssueId, status: "failed" });
+    await db.update(heartbeatRuns).set({
+      error: "ACP session does not advertise config option 'model'. Supported config options: none.",
+      errorCode: "acpx_session_config_failed",
+    }).where(eq(heartbeatRuns.id, runId));
+    const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
+    // Simulate a pre-upgrade hold: no reconciliationAnalysis, stale unknown classification.
+    await recovery.escalateStrandedAssignedIssue({
+      issue: sourceIssue,
+      previousStatus: "in_progress",
+      latestRun: {
+        id: runId,
+        agentId: coderId,
+        status: "failed",
+        error: "ACP session does not advertise config option 'model'. Supported config options: none.",
+        errorCode: "acpx_session_config_failed",
+        contextSnapshot: { retryReason: "issue_continuation_needed" },
+        livenessState: "needs_followup",
+      } as const,
+      comment: "Automatic continuation recovery failed.",
+    });
+    const [hold] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
+    await db.update(issueRecoveryActions).set({
+      evidence: { ...hold.evidence, classification: { category: "unknown", severity: "actionable" }, reconciliationAnalysis: undefined },
+    }).where(eq(issueRecoveryActions.id, hold.id));
+
+    const wake = vi.fn().mockResolvedValue({ id: randomUUID() });
+    await deliverReconciliationAnalyses(db, wake);
+
+    const [stamped] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, hold.id));
+    // The same pass stamped AND dispatched the doctor (pending -> requested).
+    expect(stamped.evidence.reconciliationAnalysis).toMatchObject({ status: "requested", trigger: "ladder_l2_selfheal", runId: expect.any(String) });
+    expect(stamped.evidence.classification).toMatchObject({
+      category: "runtime.adapter_boot_failure",
+      subcategory: "acp_session_config_mismatch",
+      reclassifiedReason: "selfheal_current_classifier",
+    });
+    // The doctor dispatch follows in the same or next pass.
+    expect(wake).toHaveBeenCalledTimes(1);
+    expect(wake).toHaveBeenCalledWith(managerId, expect.objectContaining({ reason: "reconciliation_analysis" }));
+  });
+
   it("merges the proposal decision into evidence at resolve time without clobbering existing evidence (R4/S6)", async () => {
     const { companyId, sourceIssueId } = await seedCompany();
     const svc = issueRecoveryActionService(db);
