@@ -833,10 +833,15 @@ export function mapFinalResultForTest(input: {
     ...(usage ? { usage } : {}),
     ...(costUsd !== null ? { costUsd } : {}),
     ...(output ? { summary: output.slice(0, 2_000) } : {}),
-    sessionId: sessionDisplayId,
+    // The REAL session key: heartbeat persists it into agent_runtime_state so the
+    // next run can resume the same Hermes session. The redacted text is for
+    // display only — storing it here poisoned session continuity (the canonical
+    // guard passes for hermes_gateway, so the placeholder went out as
+    // X-Hermes-Session-Key and every run silently started a fresh session).
+    sessionId: sessionId ?? undefined,
     sessionParams: {
       hermesRunId: input.terminal.runId,
-      ...(sessionId && sessionDisplayId === sessionId ? { hermesSessionId: sessionId } : {}),
+      ...(sessionId ? { hermesSessionId: sessionId } : {}),
       strategy: input.strategy,
     },
     sessionDisplayId,

@@ -584,11 +584,14 @@ describe("execute", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.summary).toBe("session [redacted-session-key]");
-    expect(result.sessionId).toBe("[redacted-session-key]");
+    // The functional session id stays REAL (heartbeat persists it for the next
+    // run's X-Hermes-Session-Key); every display/log surface stays redacted.
+    expect(result.sessionId).toBe(agentSessionKey);
     expect(result.sessionDisplayId).toBe("[redacted-session-key]");
     expect(result.resultJson?.session_id).toBe("[redacted-session-key]");
     expect(result.sessionParams).toEqual({
       hermesRunId: "run-hermes-1",
+      hermesSessionId: agentSessionKey,
       strategy: "agent",
     });
     expect(logText).toContain("[redacted-session-key]");
@@ -1313,5 +1316,42 @@ describe("mapFinalResultForTest", () => {
         proof: "hermes_gateway_terminal_status",
       },
     });
+  });
+
+  // Regression (2026-10-23): the result's sessionId used to carry the REDACTED
+  // display text. Heartbeat persisted that placeholder into agent_runtime_state,
+  // the UI Session row showed "[redacted-session-key]", and the next gateway run
+  // sent the placeholder as X-Hermes-Session-Key (the canonical-session guard
+  // only protects hermes_local, not hermes_gateway) — silently resetting Hermes
+  // session continuity on every run chain.
+  it("keeps the real session id functional while display surfaces stay redacted", () => {
+    const sessionKey = "paperclip:company:c1:agent:a1:issue:i9";
+    const result = mapFinalResultForTest({
+      terminal: {
+        runId: "run-3",
+        status: "completed",
+        payload: { status: "completed", session_id: sessionKey },
+      },
+      outputChunks: [],
+      sessionKey,
+      strategy: "issue",
+    });
+
+    expect(result.sessionId).toBe(sessionKey);
+    expect(result.sessionDisplayId).toBe("[redacted-session-key]");
+    expect(result.sessionParams?.hermesSessionId).toBe(sessionKey);
+    // Log/result surfaces keep the redacted form.
+    expect((result.resultJson as Record<string, unknown>).session_id).toBe("[redacted-session-key]");
+  });
+
+  it("falls back to the inbound session key when the payload omits session_id", () => {
+    const result = mapFinalResultForTest({
+      terminal: { runId: "run-4", status: "completed", payload: { status: "completed" } },
+      outputChunks: [],
+      sessionKey: "paperclip:company:c1:agent:a1",
+      strategy: "agent",
+    });
+    expect(result.sessionId).toBe("paperclip:company:c1:agent:a1");
+    expect(result.sessionDisplayId).toBe("[redacted-session-key]");
   });
 });
