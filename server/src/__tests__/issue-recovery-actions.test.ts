@@ -2239,6 +2239,150 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     expect(wakeAgain).not.toHaveBeenCalled();
   });
 
+  it("ingests the doctor's final output as a diagnosis-only draft when the run succeeds without one (identity-gap fallback)", async () => {
+    const { companyId, coderId, managerId, sourceIssue, sourceIssueId } = await seedCompany();
+    const runId = randomUUID();
+    await seedHeartbeatRun({ companyId, agentId: coderId, runId, issueId: sourceIssueId, status: "failed" });
+    await db.update(heartbeatRuns).set({
+      error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+      errorCode: "adapter_failed",
+    }).where(eq(heartbeatRuns.id, runId));
+    const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
+    await recovery.escalateStrandedAssignedIssue({
+      issue: sourceIssue,
+      previousStatus: "in_progress",
+      latestRun: {
+        id: runId,
+        agentId: coderId,
+        status: "failed",
+        error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+        errorCode: "adapter_failed",
+        contextSnapshot: { retryReason: "issue_continuation_needed" },
+        livenessState: "needs_followup",
+      } as const,
+      comment: "Automatic continuation recovery failed.",
+    });
+    const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
+    const analysisRunId = randomUUID();
+    const wake = vi.fn().mockResolvedValue({ id: analysisRunId });
+    await deliverReconciliationAnalyses(db, wake);
+    // Doctor run completes with a final summary but never submits a draft
+    // (e.g. hermes_gateway 403 on the agent-draft route).
+    await db.insert(heartbeatRuns).values({ id: analysisRunId, companyId, agentId: managerId,
+      invocationSource: "automation", status: "succeeded",
+      resultJson: { summary: "Analysis complete. configure_session failed with ACP_BACKEND_UNSUPPORTED_CONTROL: the session does not advertise a model config option, so the run can never start." },
+      contextSnapshot: {
+        wakeReason: "reconciliation_analysis", analysisSourceIssueId: sourceIssueId,
+        analysisSourceRunId: runId, analysisRecoveryActionId: action.id,
+      } });
+    await deliverReconciliationAnalyses(db, wake);
+    expect(wake).toHaveBeenCalledTimes(1); // diagnosis delivered; no re-dispatch
+    const [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
+    expect(saved.evidence.reconciliationAnalysis).toMatchObject({ status: "drafted" });
+    expect(String((saved.evidence.agentDraft as { evidenceSummary: string }).evidenceSummary)).toContain("ACP_BACKEND_UNSUPPORTED_CONTROL");
+    expect(saved.evidence.agentDraftProvenance).toMatchObject({ analysisRunId, sourceRunId: runId, ingestion: "server_side" });
+    const comments = await db.select().from(issueComments).where(eq(issueComments.issueId, sourceIssueId));
+    expect(comments.some(c => c.authorType === "system" && c.body.includes("analysis is ready"))).toBe(true);
+  });
+
+  it("keeps the agent-submitted draft when one lands despite a succeeded run", async () => {
+    const { companyId, coderId, managerId, sourceIssue, sourceIssueId } = await seedCompany();
+    const runId = randomUUID();
+    await seedHeartbeatRun({ companyId, agentId: coderId, runId, issueId: sourceIssueId, status: "failed" });
+    await db.update(heartbeatRuns).set({
+      error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+      errorCode: "adapter_failed",
+    }).where(eq(heartbeatRuns.id, runId));
+    const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
+    await recovery.escalateStrandedAssignedIssue({
+      issue: sourceIssue,
+      previousStatus: "in_progress",
+      latestRun: {
+        id: runId,
+        agentId: coderId,
+        status: "failed",
+        error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+        errorCode: "adapter_failed",
+        contextSnapshot: { retryReason: "issue_continuation_needed" },
+        livenessState: "needs_followup",
+      } as const,
+      comment: "Automatic continuation recovery failed.",
+    });
+    const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
+    const analysisRunId = randomUUID();
+    const wake = vi.fn().mockResolvedValue({ id: analysisRunId });
+    await deliverReconciliationAnalyses(db, wake);
+    await db.insert(heartbeatRuns).values({ id: analysisRunId, companyId, agentId: managerId,
+      invocationSource: "automation", status: "running",
+      resultJson: { summary: "Analysis complete with a summary that must NOT be ingested over the agent's own draft." },
+      contextSnapshot: {
+        wakeReason: "reconciliation_analysis", analysisSourceIssueId: sourceIssueId,
+        analysisSourceRunId: runId, analysisRecoveryActionId: action.id,
+      } });
+    const actor = { type: "agent", agentId: managerId, companyId, runId: analysisRunId, source: "agent_jwt" };
+    const draft = { providerStopped: { value: true, evidence: [`run:${runId}#seq:1`] },
+      actionOutcome: { value: "not_performed", confidence: 0.9, evidence: [`run:${runId}#seq:2`] },
+      evidenceSummary: `run:${runId}#seq:1 shows ModuleNotFoundError before the session existed.`,
+      operatorNote: "Agent-submitted operator note must win over server ingestion." };
+    await request(createApp(actor)).post(`/api/issues/${sourceIssueId}/recovery-actions/agent-draft`)
+      .send({ actionId: action.id, runId, agentDraft: draft }).expect(200);
+    // The run then completes WITHOUT the agent needing anything further.
+    await db.update(heartbeatRuns).set({ status: "succeeded" }).where(eq(heartbeatRuns.id, analysisRunId));
+    await deliverReconciliationAnalyses(db, wake);
+    const [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
+    expect((saved.evidence.agentDraft as { operatorNote: string }).operatorNote).toBe("Agent-submitted operator note must win over server ingestion.");
+    expect(saved.evidence.agentDraftProvenance).not.toHaveProperty("ingestion");
+    expect(saved.evidence.reconciliationAnalysis).toMatchObject({ status: "drafted" });
+  });
+
+  it("spends the attempt when a succeeded doctor run has no usable output and notifies on exhaustion", async () => {
+    const { companyId, coderId, managerId, sourceIssue, sourceIssueId } = await seedCompany();
+    const runId = randomUUID();
+    await seedHeartbeatRun({ companyId, agentId: coderId, runId, issueId: sourceIssueId, status: "failed" });
+    await db.update(heartbeatRuns).set({
+      error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+      errorCode: "adapter_failed",
+    }).where(eq(heartbeatRuns.id, runId));
+    const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
+    await recovery.escalateStrandedAssignedIssue({
+      issue: sourceIssue,
+      previousStatus: "in_progress",
+      latestRun: {
+        id: runId,
+        agentId: coderId,
+        status: "failed",
+        error: "Traceback (most recent call last):\nModuleNotFoundError: No module named 'acp'",
+        errorCode: "adapter_failed",
+        contextSnapshot: { retryReason: "issue_continuation_needed" },
+        livenessState: "needs_followup",
+      } as const,
+      comment: "Automatic continuation recovery failed.",
+    });
+    const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
+    const analysisRunIds = [randomUUID(), randomUUID(), randomUUID()];
+    let dispatch = 0;
+    const wake = vi.fn().mockImplementation(async () => ({ id: analysisRunIds[dispatch++] }));
+    await deliverReconciliationAnalyses(db, wake);
+    // Attempt 1 succeeds with no usable output -> spends the attempt.
+    await db.insert(heartbeatRuns).values({ id: analysisRunIds[0], companyId, agentId: managerId,
+      invocationSource: "automation", status: "succeeded", resultJson: {},
+      contextSnapshot: {
+        wakeReason: "reconciliation_analysis", analysisSourceIssueId: sourceIssueId,
+        analysisSourceRunId: runId, analysisRecoveryActionId: action.id,
+      } });
+    await deliverReconciliationAnalyses(db, wake);
+    let [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
+    expect(saved.evidence.reconciliationAnalysis).toMatchObject({ status: "pending", attempts: 1 });
+    // Attempts 2-3 find no eligible doctor (both agents already tried) -> bounded exhaustion.
+    await deliverReconciliationAnalyses(db, wake);
+    await deliverReconciliationAnalyses(db, wake);
+    await deliverReconciliationAnalyses(db, wake);
+    [saved] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
+    expect(saved.evidence.reconciliationAnalysis).toMatchObject({ status: "unavailable" });
+    const comments = await db.select().from(issueComments).where(eq(issueComments.issueId, sourceIssueId));
+    expect(comments.some(c => c.authorType === "system" && c.body.includes("diagnostic attempts were exhausted"))).toBe(true);
+  });
+
   it("prefers runtimeConfig.diagnosticPriority agents when picking the doctor (S4)", async () => {
     // The priority doctor shares the manager's adapter on purpose: without the
     // marker the stable DB order would pick the manager, so this isolates the

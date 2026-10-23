@@ -97,7 +97,7 @@ function mergeEvidence(patch: Record<string, unknown>) {
 export async function notifyRecoveryMilestone(
   db: Db,
   action: { companyId: string; sourceIssueId: string; id: string },
-  milestone: "proposal_ready" | "auto_adopted" | "decision_timeout_board" | "fix_dispatched" | "fix_verified" | "fix_failed_board" | "revert_requested",
+  milestone: "proposal_ready" | "auto_adopted" | "decision_timeout_board" | "fix_dispatched" | "fix_verified" | "fix_failed_board" | "revert_requested" | "diagnosis_ready" | "diagnosis_unavailable",
   details: Record<string, unknown>,
 ) {
   const optionLabel = typeof details.optionTitle === "string" ? details.optionTitle : null;
@@ -109,6 +109,8 @@ export async function notifyRecoveryMilestone(
     fix_verified: `Recovery: the fix${optionLabel ? ` “${optionLabel}”` : ""} was executed and verified. The recovery hold is resolved and the task returned to todo.`,
     fix_failed_board: `Recovery: the fix execution failed after its bounded retries. The task is escalated to the board${Array.isArray(details.revertSteps) && details.revertSteps.length > 0 ? "; revert steps are recorded on the recovery action" : ""}.`,
     revert_requested: `Recovery: a revert of the executed fix has been requested; the recovery agent is undoing the recorded steps.`,
+    diagnosis_ready: `Recovery: a diagnostic agent's analysis is ready for review. Open the task's recovery panel to read the diagnosis before deciding on the hold.`,
+    diagnosis_unavailable: `Recovery: the delegated diagnostic attempts were exhausted without a usable diagnosis. Board review of the recovery hold is required.`,
   };
   try {
     await db.insert(issueComments).values({

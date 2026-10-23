@@ -144,6 +144,56 @@ async function stampL2HoldsMissingAnalysis(db: Db) {
 }
 
 /**
+ * Server-side draft ingestion (recovery ladder safety net): a delegated doctor
+ * run can reach a terminal state without landing its advisory draft — most
+ * commonly a hermes_gateway analysis that completes the diagnosis but cannot
+ * authenticate the agent-draft route (run-bound agent identity gap, observed as
+ * repeated 403s). The run's final summary IS the diagnosis, so the server
+ * ingests it as a diagnosis-only draft instead of leaving the analysis
+ * `requested` forever. Adapter-agnostic: agents that CAN submit keep doing so
+ * (their drafts carry richer structured evidence); this only fires when
+ * `evidence.agentDraft` is still absent.
+ */
+async function ingestAnalysisDraftFromRun(
+  db: Db,
+  action: typeof issueRecoveryActions.$inferSelect,
+  run: { id: string; agentId: string | null; resultJson: Record<string, unknown> | null },
+): Promise<boolean> {
+  const analysis = action.evidence.reconciliationAnalysis as { runId?: string | null } | undefined;
+  if (!analysis?.runId || action.evidence.agentDraft) return false;
+  // The hold's source run (native holds: evidence.runId; stranded ladder holds:
+  // evidence.latestRunId) is what the draft references — analysis.runId is the
+  // delegated doctor run itself.
+  const rawEvidence = action.evidence as Record<string, unknown>;
+  const sourceRunId = typeof rawEvidence.runId === "string" && rawEvidence.runId
+    ? rawEvidence.runId
+    : typeof rawEvidence.latestRunId === "string" ? rawEvidence.latestRunId : null;
+  if (!sourceRunId) return false;
+  const summary = typeof run.resultJson?.summary === "string" ? run.resultJson.summary.trim() : "";
+  if (summary.length < 20) return false;
+  const draft = {
+    providerStopped: { value: false, evidence: [`run:${sourceRunId}`] },
+    actionOutcome: { value: "not_performed", confidence: 0.5, evidence: [`run:${sourceRunId}`] },
+    evidenceSummary: summary.slice(0, 20000),
+    operatorNote: "Server-ingested from the analysis run's final output: the delegated agent completed the diagnosis but its draft submission did not land (identity/transport gap or omitted call). The full output remains on the linked analysis run.",
+  };
+  await db.update(issueRecoveryActions).set({
+    evidence: { ...action.evidence,
+      agentDraft: draft,
+      agentDraftProvenance: { analysisRunId: run.id, sourceRunId, agentId: run.agentId, createdAt: new Date().toISOString(), ingestion: "server_side" },
+      reconciliationAnalysis: { ...analysis, status: "drafted" } },
+    updatedAt: new Date(),
+  }).where(eq(issueRecoveryActions.id, action.id));
+  await persistActivity(db, { companyId: action.companyId, actorType: "system", actorId: "execution-recovery",
+    action: "issue.reconciliation_agent_draft_ingested", entityType: "issue", entityId: action.sourceIssueId,
+    details: { recoveryActionId: action.id, sourceRunId } });
+  const { notifyRecoveryMilestone } = await import("./recovery/proposal-closure.js");
+  await notifyRecoveryMilestone(db, { companyId: action.companyId, sourceIssueId: action.sourceIssueId, id: action.id }, "diagnosis_ready", {});
+  logger.info({ actionId: action.id, analysisRunId: run.id }, "Ingested reconciliation draft from analysis run output");
+  return true;
+}
+
+/**
  * Only newly created holds (or an explicit operator request) enter this outbox.
  * A self-heal pre-pass first stamps pre-upgrade L2 holds with the current
  * classifier so they join the ladder too.
@@ -181,13 +231,29 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
     // A delegated run can fail after wake() has returned. Re-arm the hold for the
     // next scheduler pass, carrying forward the attempted-agent history.
     if (analysis?.status === "requested" && analysis.runId) {
-      const [analysisRun] = await db.select({ status: heartbeatRuns.status, agentId: heartbeatRuns.agentId })
+      const [analysisRun] = await db.select({ id: heartbeatRuns.id, status: heartbeatRuns.status, agentId: heartbeatRuns.agentId, resultJson: heartbeatRuns.resultJson })
         .from(heartbeatRuns).where(and(eq(heartbeatRuns.id, analysis.runId), eq(heartbeatRuns.companyId, action.companyId)));
-      if (!["failed", "cancelled", "timed_out", "interrupted"].includes(analysisRun?.status ?? "")) continue;
+      if (analysisRun?.status === "succeeded") {
+        // Doctor run finished without landing a draft (identity gap on the
+        // agent-draft route, or the agent omitted the call). Ingest its final
+        // output as the draft; an unusable output spends the attempt like a
+        // failed run so the bounded re-dispatch below still applies.
+        const ingested = await ingestAnalysisDraftFromRun(db, action, analysisRun).catch(err => {
+          logger.warn({ err, actionId: action.id }, "Reconciliation draft ingestion failed; retried next sweep");
+          return false;
+        });
+        if (ingested) continue;
+      }
+      if (!["failed", "cancelled", "timed_out", "interrupted", "succeeded"].includes(analysisRun?.status ?? "")) continue;
       const [failedAgent] = analysisRun?.agentId ? await db.select({ adapterType: agents.adapterType }).from(agents).where(and(eq(agents.id, analysisRun.agentId), eq(agents.companyId, action.companyId))) : [];
       const attempts = analysis.attempts ?? 1;
-      await db.update(issueRecoveryActions).set({ evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({ ...analysis, status: attempts < MAX_RECONCILIATION_ATTEMPTS ? "pending" : "unavailable", attempts, triedAgentIds: Array.from(new Set([...(analysis.triedAgentIds ?? []), analysisRun?.agentId].filter(Boolean))), triedAdapterTypes: Array.from(new Set([...(analysis.triedAdapterTypes ?? []), failedAgent?.adapterType].filter(Boolean))) })}::jsonb)` })
+      const nextStatus = attempts < MAX_RECONCILIATION_ATTEMPTS ? "pending" : "unavailable";
+      await db.update(issueRecoveryActions).set({ evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({ ...analysis, status: nextStatus, attempts, triedAgentIds: Array.from(new Set([...(analysis.triedAgentIds ?? []), analysisRun?.agentId].filter(Boolean))), triedAdapterTypes: Array.from(new Set([...(analysis.triedAdapterTypes ?? []), failedAgent?.adapterType].filter(Boolean))) })}::jsonb)` })
         .where(and(eq(issueRecoveryActions.id, action.id), sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'requested'`));
+      if (nextStatus === "unavailable") {
+        const { notifyRecoveryMilestone } = await import("./recovery/proposal-closure.js");
+        await notifyRecoveryMilestone(db, { companyId: action.companyId, sourceIssueId: action.sourceIssueId, id: action.id }, "diagnosis_unavailable", {});
+      }
       continue;
     }
     // Persist the one-shot claim before dispatch.
@@ -302,8 +368,13 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
       logger.warn({ err, actionId: action.id }, "Reconciliation analysis attempt failed; retrying another agent when available");
       const analysisBeforeFailure = action.evidence.reconciliationAnalysis as { attempts?: number; triedAgentIds?: string[]; triedAdapterTypes?: string[] } | undefined;
       const attempts = (analysisBeforeFailure?.attempts ?? 0) + 1;
-      await db.update(issueRecoveryActions).set({ evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({ ...analysisBeforeFailure, status: attempts < MAX_RECONCILIATION_ATTEMPTS ? "pending" : "unavailable", attempts, triedAgentIds: Array.from(new Set([...(analysisBeforeFailure?.triedAgentIds ?? []), ...(dispatchedAgentId ? [dispatchedAgentId] : [])])), triedAdapterTypes: Array.from(new Set([...(analysisBeforeFailure?.triedAdapterTypes ?? []), ...(dispatchedAdapterType ? [dispatchedAdapterType] : [])])) })}::jsonb)` })
+      const nextStatus = attempts < MAX_RECONCILIATION_ATTEMPTS ? "pending" : "unavailable";
+      await db.update(issueRecoveryActions).set({ evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({ ...analysisBeforeFailure, status: nextStatus, attempts, triedAgentIds: Array.from(new Set([...(analysisBeforeFailure?.triedAgentIds ?? []), ...(dispatchedAgentId ? [dispatchedAgentId] : [])])), triedAdapterTypes: Array.from(new Set([...(analysisBeforeFailure?.triedAdapterTypes ?? []), ...(dispatchedAdapterType ? [dispatchedAdapterType] : [])])) })}::jsonb)` })
         .where(and(eq(issueRecoveryActions.id, action.id), sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'dispatching'`));
+      if (nextStatus === "unavailable") {
+        const { notifyRecoveryMilestone } = await import("./recovery/proposal-closure.js");
+        await notifyRecoveryMilestone(db, { companyId: action.companyId, sourceIssueId: action.sourceIssueId, id: action.id }, "diagnosis_unavailable", {});
+      }
     }
   }
 }
@@ -345,14 +416,21 @@ export async function saveReconciliationAgentDraft(db: Db, input: {
     savedActionId = action.id;
     return body.agentDraft;
   });
-  // S11: a proposal-ready milestone tells the human reviewer (UI + bound IM)
-  // that a decision is now waiting on them. Fired only on the first draft.
-  if (saved && savedActionId && body.agentDraft.fixProposal) {
+  // S11: milestone notifications tell the human reviewer (UI + bound IM) what
+  // is now waiting on them. Fired only on the first draft: proposal_ready when
+  // the draft carries a structured fix proposal, diagnosis_ready for
+  // diagnosis-only drafts (which previously surfaced nowhere outside the
+  // recovery-action evidence JSON).
+  if (saved && savedActionId) {
     const { notifyRecoveryMilestone } = await import("./recovery/proposal-closure.js");
-    await notifyRecoveryMilestone(db, { companyId: input.companyId, sourceIssueId: input.issueId, id: savedActionId }, "proposal_ready", {
-      proposalTitle: body.agentDraft.fixProposal.title,
-      optionTitle: body.agentDraft.fixProposal.options.find((option) => option.recommended)?.title ?? null,
-    });
+    if (body.agentDraft.fixProposal) {
+      await notifyRecoveryMilestone(db, { companyId: input.companyId, sourceIssueId: input.issueId, id: savedActionId }, "proposal_ready", {
+        proposalTitle: body.agentDraft.fixProposal.title,
+        optionTitle: body.agentDraft.fixProposal.options.find(option => option.recommended)?.title ?? null,
+      });
+    } else {
+      await notifyRecoveryMilestone(db, { companyId: input.companyId, sourceIssueId: input.issueId, id: savedActionId }, "diagnosis_ready", {});
+    }
   }
   return saved;
 }
