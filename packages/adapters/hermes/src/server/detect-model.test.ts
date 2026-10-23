@@ -48,45 +48,28 @@ test("parseModelFromConfig tracks api_key presence without exposing the raw secr
   expect(Object.hasOwn(parsed ?? {}, "apiKey")).toBe(false);
 });
 
-test("resolveProvider does not fall through to model inference when Hermes config provider is unsupported but matches the requested model", () => {
+test("resolveProvider defers to Hermes natively when no provider is explicit (config detection retired)", () => {
+  // Paperclip no longer parses ~/.hermes/config.yaml as model truth: the
+  // effective state lives in Hermes's session DB / auth.json, and a vendor
+  // prefix does not identify a serving provider. No explicit provider → auto.
   expect(resolveProvider({
     explicitProvider: undefined,
-    detectedProvider: "custom",
-    detectedModel: "oca/gpt-5.4",
-    detectedBaseUrl: "https://example.invalid/litellm",
-    detectedHasApiKey: true,
     model: "oca/gpt-5.4",
   })).toEqual({
     provider: "auto",
-    resolvedFrom: "hermesConfigUnsupported:custom",
+    resolvedFrom: "auto",
   });
 });
 
-test("resolveProvider also defers to Hermes runtime when the matching config omits provider but includes runtime signals", () => {
+test("resolveProvider never infers a provider from the model-name prefix (retired heuristic)", () => {
+  // Regression guard for the retired prefix inference: a bare model id must
+  // not produce a --provider flag guessed from its vendor namespace.
   expect(resolveProvider({
     explicitProvider: undefined,
-    detectedProvider: "",
-    detectedModel: "oca/gpt-5.4",
-    detectedBaseUrl: "https://example.invalid/litellm",
-    detectedHasApiKey: true,
-    model: "oca/gpt-5.4",
-  })).toEqual({
-    provider: "auto",
-    resolvedFrom: "hermesConfigRuntime",
-  });
-});
-
-test("resolveProvider still infers from the requested model when Hermes config is for a different model", () => {
-  expect(resolveProvider({
-    explicitProvider: undefined,
-    detectedProvider: "custom",
-    detectedModel: "oca/gpt-5.4",
-    detectedBaseUrl: "https://example.invalid/litellm",
-    detectedHasApiKey: true,
     model: "claude-sonnet-4",
   })).toEqual({
-    provider: "anthropic",
-    resolvedFrom: "modelInference",
+    provider: "auto",
+    resolvedFrom: "auto",
   });
 });
 test("resolveProvider passes an explicit registry provider through instead of rerouting via model inference", () => {
@@ -103,8 +86,7 @@ test("resolveProvider passes an explicit registry provider through instead of re
   // Built-in names keep the original provenance marker.
   expect(resolveProvider({
     explicitProvider: "zai",
-    detectedProvider: "nvidia",
-    detectedModel: "z-ai/glm-5.3-flash",
+    model: "z-ai/glm-5.3-flash",
   })).toEqual({
     provider: "zai",
     resolvedFrom: "adapterConfig",

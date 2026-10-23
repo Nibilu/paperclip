@@ -137,11 +137,28 @@ export function buildHermesAcpConfig(config: Record<string, unknown>): Record<st
     config.acpWarmHandleIdleMs ??
     DEFAULT_ACP_ENGINE_WARM_HANDLE_IDLE_MS;
 
+  // Provider↔model transport guard: the ACP protocol carries a bare model id,
+  // and Hermes's no-explicit-provider resolution searches ITS configured
+  // custom providers before the current provider's live catalog — a stale
+  // discovered snapshot on any custom provider can hijack the route (observed:
+  // adapterConfig provider=nvidia ran on custom:proxy-router). Hermes treats
+  // "<known-provider>:" as an EXPLICIT provider (hermes_cli parse_model_input),
+  // validating the pair against THAT provider's live catalog (ModelRejected on
+  // mismatch), so qualifying the id keeps the persisted association intact
+  // across the transport.
+  const provider = firstNonEmptyString(config.provider, config.modelProvider);
+  const model = firstNonEmptyString(config.model);
+  const qualifiedModel =
+    provider && provider !== "auto" && model && !model.startsWith(`${provider}:`)
+      ? `${provider}:${model}`
+      : model;
+
   return {
     ...config,
     // acpx's built-in registry has no "hermes" entry; the explicit agentCommand
     // override is what makes the shared engine launch the Hermes ACP server.
     agent: "hermes",
+    ...(qualifiedModel ? { model: qualifiedModel } : {}),
     mode,
     permissionMode,
     nonInteractivePermissions,

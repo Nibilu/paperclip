@@ -124,12 +124,18 @@ export function inferProviderFromModel(model: string): string | undefined {
  * Resolve the correct provider for a model, using a priority chain:
  *
  *   1. Explicit provider from adapterConfig (highest priority — user override)
- *   2. Provider from Hermes config file — ONLY if the config model matches
- *      the requested model (otherwise the config provider is for a different model)
- *   3. If Hermes config matches the requested model but uses runtime settings that
- *      the adapter cannot represent directly, return "auto" and let Hermes resolve it itself
- *   4. Provider inferred from model name prefix
- *   5. "auto" (let Hermes figure it out — lowest priority)
+ *   2. "auto" (let Hermes resolve it itself)
+ *
+ * Hermes's OWN resolution is the authority for anything the adapter did not
+ * explicitly pin: its effective model/provider state lives in its session DB
+ * and auth.json credential pool, not in static config files, and its
+ * `parse_model_input` treats a `<known-provider>:` model id as an explicit
+ * provider validated against that provider's live catalog. Static-file
+ * detection (config.yaml parsing) and model-name prefix inference were
+ * retired here: a vendor prefix does not identify a serving provider
+ * (`deepseek-ai/*` is served by NVIDIA NIM and any router alike), and the
+ * config default is not the effective state — guessing produced wrong
+ * `--provider` flags that triggered resume-policy refusals and mis-routes.
  *
  * Always returns a valid provider string.
  * The `resolvedFrom` field indicates which source was used, useful for logging.
@@ -137,28 +143,10 @@ export function inferProviderFromModel(model: string): string | undefined {
 export function resolveProvider(options: {
   /** Explicit provider from adapterConfig (user override) */
   explicitProvider?: string | null;
-  /** Provider detected from Hermes config file */
-  detectedProvider?: string;
-  /** Model name from Hermes config file (to check consistency) */
-  detectedModel?: string;
-  /** Base URL detected from Hermes config file */
-  detectedBaseUrl?: string;
-  /** Whether Hermes config includes a non-empty API key */
-  detectedHasApiKey?: boolean;
-  /** API mode detected from Hermes config file */
-  detectedApiMode?: string;
-  /** Model name to infer from if no explicit/detected provider */
+  /** Model name (accepted for call-site compatibility; never used to guess) */
   model?: string;
 }): { provider: string; resolvedFrom: string } {
-  const {
-    explicitProvider,
-    detectedProvider,
-    detectedModel,
-    detectedBaseUrl,
-    detectedHasApiKey,
-    detectedApiMode,
-    model,
-  } = options;
+  const { explicitProvider } = options;
 
   // 1. Explicit provider from adapterConfig — user override, always wins.
   //    The setup catalog lists every provider in the installed Hermes
@@ -176,53 +164,7 @@ export function resolveProvider(options: {
     };
   }
 
-  const supportedProviders = VALID_PROVIDERS as readonly string[];
-  const configMatchesRequestedModel =
-    !!detectedModel &&
-    !!model &&
-    detectedModel.toLowerCase() === model.toLowerCase();
-
-  // 2. Provider from Hermes config file — but ONLY if the config model matches
-  //    the requested model. Otherwise the config provider is for a different model
-  //    and would cause exactly the kind of routing bug we're fixing.
-  if (
-    configMatchesRequestedModel &&
-    !!detectedProvider &&
-    supportedProviders.includes(detectedProvider)
-  ) {
-    return { provider: detectedProvider, resolvedFrom: "hermesConfig" };
-  }
-
-  const hasRuntimeSignals = !!detectedBaseUrl || !!detectedHasApiKey || !!detectedApiMode;
-
-  // 3a. Matching Hermes config with an unsupported provider (for example "custom")
-  //     should not fall through to model-name inference, because that can route to
-  //     the wrong provider entirely. Defer back to Hermes's own runtime resolution.
-  if (configMatchesRequestedModel && !!detectedProvider && !supportedProviders.includes(detectedProvider)) {
-    return {
-      provider: "auto",
-      resolvedFrom: `hermesConfigUnsupported:${detectedProvider}`,
-    };
-  }
-
-  // 3b. Matching Hermes config may omit provider entirely while still specifying
-  //     enough runtime information (base_url, api_key, api_mode) for Hermes itself.
-  //     In that case, also defer to Hermes instead of doing a wrong prefix inference.
-  if (configMatchesRequestedModel && !detectedProvider && hasRuntimeSignals) {
-    return {
-      provider: "auto",
-      resolvedFrom: "hermesConfigRuntime",
-    };
-  }
-
-  // 4. Infer from model name prefix
-  if (model) {
-    const inferred = inferProviderFromModel(model);
-    if (inferred) {
-      return { provider: inferred, resolvedFrom: "modelInference" };
-    }
-  }
-
-  // 5. Let Hermes auto-detect
+  // 2. Let Hermes auto-detect from its own effective state (session DB /
+  //    auth.json / host config) — never from Paperclip-side static guesses.
   return { provider: "auto", resolvedFrom: "auto" };
 }

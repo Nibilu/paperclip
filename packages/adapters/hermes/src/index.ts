@@ -233,6 +233,14 @@ export function createServerAdapter(): ServerAdapterModule {
     agentConfigurationDoc,
     detectModel,
     getConfigSchema,
+    // Persistence-boundary write-guard: the (provider, model) pair is validated
+    // against the provider's LIVE catalog before an agent config is stored, so
+    // switching a model keeps the current provider and a stale/foreign pair is
+    // rejected at write time instead of mis-routing at run time.
+    validateConfig: async (adapterConfig) => {
+      const { validateHermesAdapterConfig } = await import("./server/model-pair.js");
+      await validateHermesAdapterConfig(adapterConfig);
+    },
   };
 }
 

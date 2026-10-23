@@ -584,6 +584,17 @@ export interface ServerAdapterModule {
     apiMode?: string;
   } | null>;
   /**
+   * Optional write-guard invoked at the persistence boundary (agent create /
+   * update) with the EFFECTIVE adapterConfig. Throw an Error to reject the
+   * write with a descriptive message; degrade open when the adapter cannot
+   * verify (credential missing, endpoint unreachable) so availability never
+   * depends on discovery. Model↔provider association is validated against the
+   * adapter's LIVE provider catalog — never against static config-file
+   * heuristics (name-prefix inference, cached snapshots), which are not the
+   * provider's source of truth.
+   */
+  validateConfig?: (adapterConfig: Record<string, unknown>) => Promise<void>;
+  /**
    * Optional: return a declarative config schema so the UI can render
    * adapter-specific form fields without shipping React components.
    * Dynamic options (e.g. scanning a profiles directory) should be

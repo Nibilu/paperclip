@@ -16,7 +16,7 @@ import { readFileSync } from "node:fs";
 import { promisify } from "node:util";
 
 import { HERMES_CLI, DEFAULT_MODEL, ADAPTER_TYPE, VALID_PROVIDERS } from "../shared/constants.js";
-import { detectModel, resolveProvider, inferProviderFromModel } from "./detect-model.js";
+import { detectModel } from "./detect-model.js";
 import { resolveHermesCommand } from "./execute.js";
 import { parseObject } from "@paperclipai/adapter-utils/server-utils";
 import {
@@ -248,78 +248,41 @@ async function checkApiKeys(
 }
 
 /**
- * Check provider/model consistency.
- * Warns if the configured provider might be wrong for the model.
+ * Check provider/model consistency against the provider's LIVE catalog.
+ *
+ * The persisted pair is already validated at the persistence boundary; this
+ * preflight re-checks it (catalog drift between write and run) and degrades
+ * open when discovery cannot verify. Static config-file heuristics
+ * (config.yaml parsing, name-prefix inference) are NOT used — they are not
+ * the provider's source of truth.
  */
 async function checkProviderConsistency(
   config: Record<string, unknown>,
-  detectedConfig: Awaited<ReturnType<typeof detectModel>> | null,
 ): Promise<AdapterEnvironmentCheck | null> {
   const model = asString(config.model);
   if (!model) return null;
 
   const explicitProvider = asString(config.provider);
 
-  const { provider: resolved, resolvedFrom } = resolveProvider({
-    explicitProvider,
-    detectedProvider: detectedConfig?.provider,
-    detectedModel: detectedConfig?.model,
-    detectedBaseUrl: detectedConfig?.baseUrl,
-    detectedHasApiKey: detectedConfig?.hasApiKey,
-    detectedApiMode: detectedConfig?.apiMode,
-    model,
-  });
+  if (!explicitProvider || explicitProvider === "auto") {
+    // Host-default path: Paperclip does not guess a provider — Hermes resolves
+    // its effective state (session DB / auth.json / host config) natively.
+    return {
+      level: "info",
+      message: `No explicit provider for model "${model}" — Hermes resolves the provider from its own effective configuration`,
+      code: "hermes_provider_deferred",
+    };
+  }
 
-  // If provider was explicitly set but doesn't match what Hermes config says,
-  // that's worth flagging.
-  if (explicitProvider && detectedConfig?.provider && explicitProvider !== detectedConfig.provider) {
+  try {
+    const { validateHermesAdapterConfig } = await import("./model-pair.js");
+    await validateHermesAdapterConfig({ provider: explicitProvider, model });
+  } catch (err) {
     return {
       level: "warn",
-      message: `Provider mismatch: adapterConfig has "${explicitProvider}" but ~/.hermes/config.yaml has "${detectedConfig.provider}". Using adapterConfig value.`,
-      hint: `Model "${model}" may not work correctly with provider "${explicitProvider}". Consider aligning with your Hermes config or removing the explicit provider to use auto-detection.`,
-      code: "hermes_provider_mismatch",
-    };
-  }
-
-  // If Hermes config matches the requested model but uses an adapter-unsupported
-  // provider such as "custom", do not report a false provider inference.
-  if (!explicitProvider && resolvedFrom.startsWith("hermesConfigUnsupported:")) {
-    const unsupportedProvider = resolvedFrom.split(":", 2)[1] || detectedConfig?.provider || "unknown";
-    return {
-      level: "info",
-      message: `Hermes config uses unsupported adapter provider "${unsupportedProvider}" for model "${model}" — deferring to Hermes auto-detection`,
-      hint: "Paperclip will avoid model-name provider inference here and let Hermes resolve the provider from ~/.hermes/config.yaml at runtime.",
-      code: "hermes_provider_unsupported",
-    };
-  }
-
-  // If matching Hermes config provides runtime signals without an explicit provider,
-  // also defer to Hermes rather than inventing a provider from the model name.
-  if (!explicitProvider && resolvedFrom === "hermesConfigRuntime") {
-    return {
-      level: "info",
-      message: `Hermes config provides runtime settings for model "${model}" without an explicit adapter provider — deferring to Hermes auto-detection`,
-      hint: "Paperclip will avoid model-name provider inference here and let Hermes resolve the provider from ~/.hermes/config.yaml at runtime.",
-      code: "hermes_provider_runtime_config",
-    };
-  }
-
-  // If provider was auto-detected (not explicitly set), log what was resolved
-  if (!explicitProvider && resolvedFrom !== "auto") {
-    return {
-      level: "info",
-      message: `Provider auto-detected as "${resolved}" (from ${resolvedFrom}) for model "${model}"`,
-      code: "hermes_provider_detected",
-    };
-  }
-
-  // If we couldn't resolve any provider, warn
-  if (resolvedFrom === "auto" && !explicitProvider) {
-    return {
-      level: "warn",
-      message: `Could not determine provider for model "${model}" — will use Hermes auto-detection`,
-      hint: "Set an explicit provider in the agent config or ensure ~/.hermes/config.yaml has a matching provider for this model.",
-      code: "hermes_provider_unknown",
+      message: err instanceof Error ? err.message : String(err),
+      hint: `Re-select the model for provider "${explicitProvider}" (or clear it to use Hermes's default) — switching the model keeps the current provider.`,
+      code: "hermes_provider_model_pair_mismatch",
     };
   }
 
@@ -509,7 +472,8 @@ export async function testEnvironment(
   const modelCheck = checkModel(config);
   if (modelCheck) checks.push(modelCheck);
 
-  // 5. Detect Hermes config once for the remaining checks.
+  // 5. Detect Hermes config once for the remaining checks (display metadata
+  // for the API-key guidance; NOT a model/provider truth source).
   let detectedConfig: Awaited<ReturnType<typeof detectModel>> | null = null;
   try {
     detectedConfig = await detectModel();
@@ -521,8 +485,8 @@ export async function testEnvironment(
   const apiKeyCheck = await checkApiKeys(config, detectedConfig);
   if (apiKeyCheck) checks.push(apiKeyCheck);
 
-  // 7. Provider/model consistency
-  const providerCheck = await checkProviderConsistency(config, detectedConfig);
+  // 7. Provider/model consistency (live provider catalog)
+  const providerCheck = await checkProviderConsistency(config);
   if (providerCheck) checks.push(providerCheck);
 
   // Determine overall status

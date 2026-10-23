@@ -46,7 +46,7 @@ import {
   secretProviderConfigDiscoveryPreviewSchema,
   updateSecretProviderConfigSchema,
 } from "@paperclipai/shared";
-import { conflict, forbidden, HttpError, notFound, unprocessable } from "../errors.js";
+import { badRequest, conflict, forbidden, HttpError, notFound, unprocessable } from "../errors.js";
 import { logger } from "../middleware/logger.js";
 import {
   checkSecretProviders,
@@ -1940,6 +1940,22 @@ export function secretService(db: Db | DbTransaction) {
     const normalized = { ...adapterConfig };
     if (Object.prototype.hasOwnProperty.call(adapterConfig, "env")) {
       normalized.env = await normalizeEnvConfig(companyId, adapterConfig.env, opts);
+    }
+    // Adapter write-guard at the persistence boundary: every create/update path
+    // funnels through here, so an adapter that can verify its config (e.g. the
+    // hermes provider↔model pair against the provider's live catalog) rejects
+    // an incoherent config before it is stored rather than at run time.
+    if (opts?.adapterType) {
+      const adapter = findActiveServerAdapter(opts.adapterType);
+      if (adapter?.validateConfig) {
+        try {
+          await adapter.validateConfig(normalized);
+        } catch (err) {
+          throw badRequest(
+            err instanceof Error ? err.message : "Adapter config failed validation",
+          );
+        }
+      }
     }
     const secretFieldKeys = await listAdapterSchemaSecretFieldKeys(opts?.adapterType);
     for (const key of secretFieldKeys) {

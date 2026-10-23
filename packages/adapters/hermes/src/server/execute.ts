@@ -53,7 +53,6 @@ import {
   resolveHermesExecutionEngineForRun,
 } from "./acp.js";
 import {
-  detectModel,
   resolveProvider,
 } from "./detect-model.js";
 import { reconcileHermesPaperclipSkills } from "./skills.js";
@@ -405,33 +404,18 @@ export async function execute(
   }
 
   // ── Resolve provider (defense in depth) ────────────────────────────────
-  // Priority chain:
-  //   1. Explicit provider in adapterConfig (user override)
-  //   2. Provider from ~/.hermes/config.yaml (detected at runtime)
-  //   3. Provider inferred from model name prefix
-  //   4. "auto" (let Hermes decide)
-  //
-  // This ensures that even if the agent was created before provider tracking
-  // was added, or if the model was changed without updating provider, the
-  // correct provider is still used.
-  let detectedConfig: Awaited<ReturnType<typeof detectModel>> | null = null;
+  // Only an EXPLICIT adapterConfig provider reaches the Hermes CLI as
+  // --provider. Everything else defers to Hermes's own resolution of its
+  // effective state (session DB / auth.json / host config): Paperclip-side
+  // static detection (config.yaml parsing) and model-name prefix inference
+  // were retired — they guessed providers from non-truth sources, produced
+  // wrong --provider flags (resume-policy refusals on frozen sessions) and
+  // mis-routes. The persisted provider/model pair is validated against the
+  // provider's live catalog at the persistence boundary instead.
   const explicitProvider = cfgString(config.provider);
-
-  if (!explicitProvider) {
-    try {
-      detectedConfig = await detectModel();
-    } catch {
-      // Non-fatal — detection failure shouldn't block execution
-    }
-  }
 
   const { provider: resolvedProvider, resolvedFrom } = resolveProvider({
     explicitProvider,
-    detectedProvider: detectedConfig?.provider,
-    detectedModel: detectedConfig?.model,
-    detectedBaseUrl: detectedConfig?.baseUrl,
-    detectedHasApiKey: detectedConfig?.hasApiKey,
-    detectedApiMode: detectedConfig?.apiMode,
     model,
   });
 
