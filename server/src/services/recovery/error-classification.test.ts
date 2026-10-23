@@ -203,4 +203,40 @@ describe("classifyRunFailure - rule precedence", () => {
     });
     expect(byMessage.category).toBe("runtime.adapter_boot_failure");
   });
+
+  it("acp session resume failure classifies as transient session-lifecycle (AMB-99 2026-10-23 live regression)", () => {
+    // New engine code path.
+    const byCode = classifyRunFailure({
+      adapterType: "hermes_local",
+      errorCode: "acpx_session_resume_failed",
+      errorMessage:
+        "Persistent ACP session local-1158443d could not be resumed: Internal error",
+    });
+    expect(byCode).toMatchObject({
+      category: "session_lifecycle.resume_failed",
+      subcategory: "acp_session_resume",
+      retryPolicy: "bounded",
+      ladderHint: "L0",
+    });
+    // Legacy engines emit BOTH failures under acpx_session_config_failed; the
+    // message signal must route the resume shape away from the never-retry
+    // capability-mismatch class.
+    const legacyCode = classifyRunFailure({
+      adapterType: "hermes_local",
+      errorCode: "acpx_session_config_failed",
+      errorMessage:
+        "Persistent ACP session local-1158443d could not be resumed: Internal error",
+    });
+    expect(legacyCode.category).toBe("session_lifecycle.resume_failed");
+    expect(legacyCode.retryPolicy).toBe("bounded");
+    // The genuine capability-mismatch message keeps its class.
+    const mismatch = classifyRunFailure({
+      adapterType: "hermes_local",
+      errorCode: "acpx_session_config_failed",
+      errorMessage:
+        "ACP session paperclip:c1:04a:fb does not advertise config option 'model'. Supported config options: none.",
+    });
+    expect(mismatch.retryPolicy).toBe("never");
+    expect(mismatch.ladderHint).toBe("L2");
+  });
 });

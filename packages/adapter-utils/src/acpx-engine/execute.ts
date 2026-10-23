@@ -3560,6 +3560,19 @@ function classifyError(
       errorMeta: { category: "auth", ...baseMeta },
     };
   }
+  // A persisted session that cannot be resumed after a mid-turn death
+  // (observed: provider 502 kills the turn, acpx reconnects with a fresh
+  // child, hermes load_session raises on the mid-teardown shared-DB state) is
+  // a TRANSIENT session-lifecycle failure — acpx marks it retryable. It must
+  // not share the capability-mismatch code (`configure_session` phase would
+  // otherwise bucket both): the mismatch is never-retryable/L2, this is
+  // bounded-retry/L0.
+  if (errorName === "SessionResumeRequiredError") {
+    return {
+      errorCode: "acpx_session_resume_failed",
+      errorMeta: { category: "runtime", ...baseMeta },
+    };
+  }
   const phaseCode = (() => {
     if (acpCode === "ACP_SESSION_INIT_FAILED") return "acpx_session_init_failed";
     if (acpCode === "ACP_TURN_FAILED") return "acpx_turn_failed";

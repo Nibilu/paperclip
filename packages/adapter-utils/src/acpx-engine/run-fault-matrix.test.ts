@@ -584,6 +584,42 @@ describe("composed ACPX run fault matrix", () => {
     assertDispositionReport(capture.last(), { acquired: ["acp_runtime"] });
   });
 
+  // Case 8b — a SessionResumeRequiredError (persisted session cannot be
+  // resumed after a mid-turn death) must carry its OWN transient error code,
+  // not the never-retry capability-mismatch code the configure_session phase
+  // would otherwise assign.
+  it("case_8b_session_resume_required_error_classifies_as_resume_failed", async () => {
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const cwd = path.join(root, "worktree");
+    await fs.mkdir(cwd, { recursive: true });
+    const config = { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir, cwd };
+    const capture = captureDisposition();
+    const execute = createAcpxEngineExecutor({
+      onSettlementDisposition: capture.onSettlementDisposition,
+      createRuntime: () => {
+        const err = new Error(
+          "Persistent ACP session local-abc could not be resumed: Internal error",
+        );
+        err.name = "SessionResumeRequiredError";
+        (err as { retryable?: boolean }).retryable = true;
+        throw err;
+      },
+    });
+    const result = await execute({
+      runId: "fault-resume-required",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: {},
+      config,
+      context: {},
+      onLog: async () => {},
+      onMeta: async () => {},
+    } as never);
+    expect(result.exitCode).toBe(1);
+    expect(result.errorCode).toBe("acpx_session_resume_failed");
+    expect(result.errorMeta?.errorName).toBe("SessionResumeRequiredError");
+  });
+
   // Case 9 — a turn exception finalizes every resource (the staged runtime is
   // discarded, not transferred).
   it("case_09_turn_exception_discards_staged_runtime", async () => {

@@ -22,6 +22,7 @@
 
 export type RunFailureCategory =
   | "session_binding.resume_policy_refusal"
+  | "session_lifecycle.resume_failed"
   | "runtime.adapter_boot_failure"
   | "runtime.process_lost"
   | "provider.limit"
@@ -83,6 +84,23 @@ const BOOT_RULES: Rule[] = [
     retryPolicy: "never",
     ladderHint: "L2",
     test: (i) => i.errorCode === "acpx_session_init_failed",
+  },
+  {
+    // A persisted ACP session could not be resumed after a mid-turn death
+    // (observed AMB-99 2026-10-23: provider 502 killed the turn, acpx
+    // reconnected with a fresh hermes-acp child, load_session raised on the
+    // mid-teardown shared-DB state). TRANSIENT session-lifecycle failure —
+    // bounded retry, NOT the capability-mismatch L2 ladder. Precedes the
+    // config-mismatch rule: legacy engines emit both under the same
+    // acpx_session_config_failed errorCode, so the message signal decides.
+    signal: "acpx_session_resume_failed_code",
+    category: "session_lifecycle.resume_failed",
+    subcategory: "acp_session_resume",
+    retryPolicy: "bounded",
+    ladderHint: "L0",
+    test: (i, m) =>
+      i.errorCode === "acpx_session_resume_failed" ||
+      /Persistent ACP session \S+ could not be resumed/.test(m),
   },
   {
     // Real case (AMB-99): the acpx engine sends a `model` config option the
