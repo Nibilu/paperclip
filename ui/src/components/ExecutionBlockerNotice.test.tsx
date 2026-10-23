@@ -138,6 +138,28 @@ describe("stopped task recovery notice", () => {
     expect(container.querySelector("a")?.textContent).toBe("Inspect run");
     expect(agentsApi.retryFailedRun).not.toHaveBeenCalled();
   });
+  it("collapses duplicated guidance while the reconciliation panel is open", async () => {
+    vi.mocked(issuesApi.recoveryActions).mockResolvedValue({ active: null, actions: [{
+      id: "recovery", status: "resolved", outcome: "blocked",
+      evidence: { runId: "failed-run", automaticRecovery: { replay: "blocked" } },
+    }] as never });
+    await act(async () => root.render(<QueryClientProvider client={client}>
+      <ExecutionBlockerNotice companyId="company" issueId="dedupe-task" issueStatus="blocked" canManage onRetried={onRetried} blocker={{
+        recoveryActionId: "recovery", runId: "failed-run", agentId: "agent",
+        cause: "legacy_execution_requires_reconciliation", replayDisposition: "blocked_reconciliation",
+        freshContinuationDisposition: "unsupported",
+        nextAction: "Automatic recovery stopped. Recorded work is preserved; actions with unverified outcomes will not be repeated. Try again or send a new message to continue once the previous execution has stopped.",
+      }} />
+    </QueryClientProvider>));
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)); });
+    expect(container.querySelector('[data-testid="execution-reconciliation-panel"]')).not.toBeNull();
+    expect(container.textContent).toContain("Recorded work is preserved; actions with unverified outcomes will not be repeated.");
+    expect(container.textContent).not.toContain("Try again or send a new message");
+    expect(container.textContent).not.toContain("will not replay this stopped run");
+    expect(container.textContent).not.toContain("A new instruction is not available for this adapter");
+    expect(container.textContent).not.toContain("stopped automatic retries");
+    expect(container.querySelector("a")?.textContent).toBe("Inspect run");
+  });
   it("keeps workspace repair guidance and inspection without offering the legacy Retry fallback", async () => {
     await act(async () => root.render(<QueryClientProvider client={client}>
       <ExecutionBlockerNotice companyId="company" issueId="task" issueStatus="blocked" canManage onRetried={onRetried} blocker={{
