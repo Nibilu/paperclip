@@ -147,6 +147,7 @@ function buildRuntime(
   onSetConfigOption?: (input: { key: string; value: string }) => void,
   onEnsureSession?: (input: Record<string, unknown>) => void,
   onStartTurn?: (input: Record<string, unknown>) => void,
+  onSetSessionModel?: (input: { modelId: string }) => void,
 ) {
   return {
     ensureSession: async (input: Record<string, unknown>) => {
@@ -169,6 +170,9 @@ function buildRuntime(
     },
     setConfigOption: async (input: { key: string; value: string }) => {
       onSetConfigOption?.(input);
+    },
+    setSessionModel: async (input: { modelId: string }) => {
+      onSetSessionModel?.(input);
     },
     close: async () => {},
   };
@@ -197,6 +201,7 @@ async function runExecutor(
   }
   const runtimeOptions: Record<string, unknown>[] = [];
   const configOptions: Array<{ key: string; value: string }> = [];
+  const sessionModelCalls: Array<{ modelId: string }> = [];
   const sessionInputs: Record<string, unknown>[] = [];
   const turnInputs: Record<string, unknown>[] = [];
   const meta: Record<string, unknown>[] = [];
@@ -213,6 +218,7 @@ async function runExecutor(
         ({ key, value }) => configOptions.push({ key, value }),
         (input) => sessionInputs.push(input),
         (input) => turnInputs.push(input),
+        (input) => sessionModelCalls.push(input),
       ) as never;
     },
   });
@@ -245,7 +251,7 @@ async function runExecutor(
   } as never);
 
   expect(result.exitCode).toBe(0);
-  return { logs, meta, events, receipts, runtimeOptions, configOptions, sessionInputs, turnInputs, result };
+  return { logs, meta, events, receipts, runtimeOptions, configOptions, sessionModelCalls, sessionInputs, turnInputs, result };
 }
 
 // Under `vi.useFakeTimers()`, setup before `ensureSession` still performs real
@@ -711,6 +717,24 @@ describe("shared ACPX engine runtime behavior", () => {
 
     expect((meta[0]?.env as Record<string, string>).CODEX_CONFIG).toBeUndefined();
     expect(configOptions).toEqual([]);
+  });
+
+  it("routes the model session option through setSessionModel when the runtime exposes the capability ladder", async () => {
+    const { configOptions, sessionModelCalls, logs } = await runExecutor({
+      agent: "kimi",
+      model: "kimi-k2-turbo",
+      thinkingEffort: "high",
+    });
+
+    // Model goes through the capability-aware setter (acpx resolves advertised
+    // config option vs legacy session/set_model vs RequestedModelUnsupportedError);
+    // non-model options keep the plain config-option path.
+    expect(sessionModelCalls).toEqual([{ handle: expect.any(Object), modelId: "kimi-k2-turbo" }]);
+    expect(configOptions).toEqual([{ key: "effort", value: "high" }]);
+    expect(logs).toContainEqual({
+      stream: "stdout",
+      text: "[paperclip] Applied ACPX kimi model=kimi-k2-turbo via session model control\n",
+    });
   });
 
   it.each(["claude", "codex", "gemini", "kimi", "custom"])("delivers the shared owned sections at the %s ACP turn boundary", async (agent) => {

@@ -2754,6 +2754,23 @@ async function applySessionConfigOptions(input: {
     throw new Error(message);
   }
   for (const option of options) {
+    // Model gets a capability-aware path: the patched acpx runtime resolves
+    // advertised config option vs legacy session/set_model vs
+    // RequestedModelUnsupportedError. The raw config-option call would hard-fail
+    // (and poison the persisted session record with an empty config_options
+    // list) on backends like hermes-acp that answer session/set_config_option
+    // with an empty configOptions list instead of negotiating.
+    if (option.key === "model" && typeof input.runtime.setSessionModel === "function") {
+      await input.runtime.setSessionModel({
+        handle: input.handle,
+        modelId: option.value,
+      });
+      await input.onLog(
+        "stdout",
+        `[paperclip] Applied ACPX ${input.prepared.acpxAgent} model=${option.value} via session model control\n`,
+      );
+      continue;
+    }
     await input.runtime.setConfigOption({
       handle: input.handle,
       key: option.key,
