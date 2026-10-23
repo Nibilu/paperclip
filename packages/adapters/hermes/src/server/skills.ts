@@ -213,9 +213,68 @@ export async function listHermesSkills(
   return buildHermesSkillSnapshot(ctx.config);
 }
 
+// ---------------------------------------------------------------------------
+// Foreign-entry quarantine
+// ---------------------------------------------------------------------------
+
+/**
+ * The Hermes skills home is shared space. When a Paperclip-managed skill path
+ * is occupied by something Paperclip does not own, move the occupant aside
+ * into `<skillsHome>/.archive/` (rename only — nothing is ever deleted) and
+ * recreate the managed link, reporting what moved where through `onNotice`.
+ *
+ * Policy:
+ * - Symlinks and plain files are quarantined automatically. A symlink at a
+ *   managed path is almost always a stale pointer (observed AMB-91: a manual
+ *   2026-10-07 dev-checkout link); a rename preserves it for inspection.
+ * - Real directories are NEVER moved automatically — they may hold a
+ *   user-maintained skill tree. That case fails the run with actionable
+ *   guidance instead (see foreignOccupantConflictMessage).
+ */
+async function quarantineForeignSkillEntry(
+  skillsHome: string,
+  target: string,
+): Promise<string> {
+  const archiveDir = path.join(skillsHome, ".archive");
+  await fs.mkdir(archiveDir, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const archivePath = path.join(
+    archiveDir,
+    `${path.basename(target)}.foreign-${stamp}`,
+  );
+  await fs.rename(target, archivePath);
+  return archivePath;
+}
+
+async function readResolvedSymlinkTarget(
+  target: string,
+): Promise<string | null> {
+  const linkedSource = await fs.readlink(target).catch(() => null);
+  return linkedSource ? path.resolve(path.dirname(target), linkedSource) : null;
+}
+
+function foreignOccupantConflictMessage(
+  entryKey: string,
+  target: string,
+  skillsHome: string,
+  expectedSource: string,
+  resolvedSource: string | null,
+): string {
+  const occupantDetail = resolvedSource
+    ? `symlink -> ${resolvedSource}`
+    : "not a symlink";
+  return (
+    `Cannot reconcile Paperclip-managed skill "${entryKey}": ${target} is occupied by another installation (${occupantDetail}). ` +
+    `Paperclip expects this path to link to ${expectedSource}. ` +
+    `Fix: move or remove the occupant, e.g. \`mv ${target} ${path.join(skillsHome, ".archive")}/\`, then restart the agent. ` +
+    "Foreign symlinks and plain files are quarantined to the archive directory automatically; real directories are never moved automatically to avoid relocating user-maintained skills."
+  );
+}
+
 export async function reconcileHermesPaperclipSkills(
   config: Record<string, unknown>,
   requestedDesiredSkills?: string[],
+  onNotice?: (line: string) => Promise<void> | void,
 ): Promise<string[]> {
   const availableEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
   const desiredSkills = requestedDesiredSkills
@@ -234,13 +293,28 @@ export async function reconcileHermesPaperclipSkills(
     if (!desiredSet.has(entry.key) || isPaperclipSkillSourceMissing(entry)) continue;
     const target = path.join(skillsHome, entry.runtimeName);
     await ensurePaperclipSkillSymlink(entry.source, target);
-    const linkedSource = await fs.readlink(target).catch(() => null);
-    const resolvedSource = linkedSource
-      ? path.resolve(path.dirname(target), linkedSource)
-      : null;
+    let resolvedSource = await readResolvedSymlinkTarget(target);
+    if (resolvedSource !== path.resolve(entry.source)) {
+      const occupant = await fs.lstat(target).catch(() => null);
+      if (occupant && (occupant.isSymbolicLink() || occupant.isFile())) {
+        const linkDetail = occupant.isSymbolicLink()
+          ? await fs
+              .readlink(target)
+              .then((link) => ` -> ${link}`)
+              .catch(() => "")
+          : "";
+        const occupantKind = occupant.isSymbolicLink() ? "symlink" : "file";
+        const archivePath = await quarantineForeignSkillEntry(skillsHome, target);
+        await onNotice?.(
+          `[hermes] Quarantined foreign skill entry "${entry.key}" (${occupantKind}${linkDetail}) at ${target} -> ${archivePath}; recreated the Paperclip-managed link.`,
+        );
+        await ensurePaperclipSkillSymlink(entry.source, target);
+        resolvedSource = await readResolvedSymlinkTarget(target);
+      }
+    }
     if (resolvedSource !== path.resolve(entry.source)) {
       throw new Error(
-        `Cannot reconcile Hermes skill "${entry.key}" because ${target} is occupied by another installation.`,
+        foreignOccupantConflictMessage(entry.key, target, skillsHome, entry.source, resolvedSource),
       );
     }
   }
@@ -259,6 +333,8 @@ export async function syncHermesSkills(
   ctx: AdapterSkillContext,
   desiredSkills: string[],
 ): Promise<AdapterSkillSnapshot> {
+  // Quarantine notices are only streamed on the run path (execute.ts); the
+  // skill-sync API surface has no log channel.
   await reconcileHermesPaperclipSkills(ctx.config, desiredSkills);
   return buildHermesSkillSnapshot(ctx.config);
 }

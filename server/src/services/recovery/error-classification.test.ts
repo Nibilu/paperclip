@@ -239,4 +239,34 @@ describe("classifyRunFailure - rule precedence", () => {
     expect(mismatch.retryPolicy).toBe("never");
     expect(mismatch.ladderHint).toBe("L2");
   });
+
+  it("skill-home conflict classifies as boot failure with never-retry (AMB-108 regression)", () => {
+    // Legacy wording (AMB-91, 2026-10-21 run logs).
+    const legacy = classifyRunFailure({
+      adapterType: "hermes_local",
+      runtimeMode: "legacy",
+      errorCode: "adapter_failed",
+      exitCode: 2,
+      errorMessage:
+        '[hermes] Cannot start without the required Paperclip-managed skills: Cannot reconcile Hermes skill "paperclipai/paperclip/paperclip" because /home/amber/.hermes/skills/paperclip is occupied by another installation.',
+    });
+    expect(legacy).toMatchObject({
+      category: "runtime.adapter_boot_failure",
+      subcategory: "skills_home_occupied",
+      retryPolicy: "never",
+      ladderHint: "L2",
+    });
+    expect(legacy.matchedSignals).toContain("hermes_skills_home_occupied");
+    // New wording (post-AMB-108 residual throw: directory occupant guidance).
+    const current = classifyRunFailure({
+      adapterType: "hermes_local",
+      errorCode: "adapter_failed",
+      errorMessage:
+        '[hermes] Cannot start without the required Paperclip-managed skills: Cannot reconcile Paperclip-managed skill "paperclipai/paperclip/paperclip": /home/amber/.hermes/skills/paperclip is occupied by another installation (not a symlink). Fix: move or remove the occupant, e.g. `mv /home/amber/.hermes/skills/paperclip /home/amber/.hermes/skills/.archive/`, then restart the agent.',
+    });
+    expect(current.category).toBe("runtime.adapter_boot_failure");
+    expect(current.subcategory).toBe("skills_home_occupied");
+    expect(current.retryPolicy).toBe("never");
+    expect(current.ladderHint).toBe("L2");
+  });
 });

@@ -123,7 +123,7 @@ test("Hermes rejects a conflicting operational skill target", async () => {
   }
 });
 
-test("Hermes rejects a live symlink owned by another operational skill", async () => {
+test("Hermes quarantines a live symlink owned by another operational skill (AMB-108)", async () => {
   const home = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-hermes-core-link-conflict-"));
   try {
     const source = path.join(home, "runtime-skills", "paperclip");
@@ -137,7 +137,9 @@ test("Hermes rejects a live symlink owned by another operational skill", async (
     await fs.symlink(conflictingSource, target);
     const adapter = createServerAdapter();
 
-    await expect(adapter.syncSkills?.({
+    // AMB-108: a foreign SYMLINK is quarantined (renamed into .archive, never
+    // deleted) and the managed link is recreated — the sync no longer fails.
+    await adapter.syncSkills?.({
       adapterType: "hermes_local",
       agentId: "11111111-1111-4111-8111-111111111111",
       companyId: "22222222-2222-4222-8222-222222222222",
@@ -149,7 +151,19 @@ test("Hermes rejects a live symlink owned by another operational skill", async (
           source,
         }],
       },
-    }, [])).rejects.toThrow("occupied by another installation");
+    }, []);
+
+    const relinked = await fs.readlink(target);
+    expect(path.resolve(path.dirname(target), relinked)).toBe(path.resolve(source));
+    const linkedContent = await fs.readFile(path.join(target, "SKILL.md"), "utf8");
+    expect(linkedContent).toBe("# Paperclip\n");
+    // The foreign link survives in the quarantine archive.
+    const archiveDir = path.join(home, ".hermes", "skills", ".archive");
+    const archived = await fs.readdir(archiveDir);
+    expect(archived.length).toBe(1);
+    expect(archived[0]).toMatch(/^paperclip\.foreign-/);
+    const archivedTarget = await fs.readlink(path.join(archiveDir, archived[0]));
+    expect(path.resolve(archiveDir, archivedTarget)).toBe(path.resolve(conflictingSource));
   } finally {
     await fs.rm(home, { recursive: true, force: true });
   }

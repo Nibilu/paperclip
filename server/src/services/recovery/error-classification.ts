@@ -131,6 +131,21 @@ const BOOT_RULES: Rule[] = [
     ladderHint: "L2",
     test: (_i, m) => /Cannot find module ['"][\w.@/-]+['"]/.test(m),
   },
+  {
+    // Paperclip-managed skill link could not be established because the shared
+    // Hermes skills home path is occupied by a foreign install (observed
+    // AMB-91 2026-10-21: a manual dev-checkout symlink at
+    // ~/.hermes/skills/paperclip). Environmental: retrying the same run can
+    // never fix it — the occupant must be quarantined/removed first (the
+    // adapter now auto-quarantines symlinks/files; directories still fail
+    // with guidance). L2 so the doctor ladder proposes the fix.
+    signal: "hermes_skills_home_occupied",
+    category: "runtime.adapter_boot_failure",
+    subcategory: "skills_home_occupied",
+    retryPolicy: "never",
+    ladderHint: "L2",
+    test: (_i, m) => /is occupied by another installation/.test(m),
+  },
 ];
 
 /** Hermes CLI resume-policy refusal (AMB-90): frozen launch params vs resume flags. */
