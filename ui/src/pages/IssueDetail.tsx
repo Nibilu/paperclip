@@ -4005,6 +4005,20 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
       });
     }
   }, [issueCacheRefs, queryClient]);
+  const handleExecutionUnblocked = useCallback(() => {
+    invalidateIssueDetail();
+    // Recovery/retry unblocked the task. Once the blocker notice unmounts,
+    // settle the task chat on the latest activity so the continuation of the
+    // task is in view (matching the pinned-to-latest behavior the scroller
+    // uses when the reader is already at the bottom). Two attempts cover the
+    // invalidate refetch that removes the notice.
+    for (const delay of [250, 900]) {
+      window.setTimeout(() => {
+        const el = document.querySelector<HTMLElement>('[data-testid="task-chat-scroller"]');
+        if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      }, delay);
+    }
+  }, [invalidateIssueDetail]);
   const invalidateIssueThreadLazily = useCallback(() => {
     for (const ref of issueCacheRefs) {
       queryClient.invalidateQueries({
@@ -7767,7 +7781,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
           {resolvedDetailTab === "chat" && issue.executionBlocker && (
             <ExecutionBlockerNotice className={shellSectionClass} companyId={issue.companyId} issueId={issue.id}
               issueStatus={issue.status} canManage={canManageBoardRuntime && canResolveBoardRecoveryAction}
-              blocker={issue.executionBlocker} onRetried={invalidateIssueDetail} />
+              blocker={issue.executionBlocker} onRetried={handleExecutionUnblocked} />
           )}
 
           {issue.status === "in_review" && issue.externalConversationState === "waiting" && (
