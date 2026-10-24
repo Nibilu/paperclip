@@ -1008,6 +1008,40 @@ describe("gateway connection failure reporting", () => {
     });
   });
 
+  it("reports the created remote run id through onExternalRunCreated (AMB-16)", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/v1/runs")) {
+        return new Response(JSON.stringify({ run_id: "run-external-1", status: "started" }), { status: 200 });
+      }
+      if (url.endsWith("/events")) {
+        return new Response(
+          sseStream(
+            [
+              "event: run.completed",
+              'data: {"status":"completed","output":"done"}',
+              "",
+            ].join("\n"),
+          ),
+          { status: 200, headers: { "content-type": "text/event-stream" } },
+        );
+      }
+      return new Response(JSON.stringify({ status: "completed", output: "done" }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const ctx = makeCtx({ apiBaseUrl: "http://127.0.0.1:8642", apiKey: "secret-key", timeoutSec: 5 });
+    const onExternalRunCreated = vi.fn(async () => undefined);
+    ctx.onExternalRunCreated = onExternalRunCreated;
+
+    const result = await execute(ctx);
+    expect(result.exitCode).toBe(0);
+    expect(onExternalRunCreated).toHaveBeenCalledTimes(1);
+    expect(onExternalRunCreated).toHaveBeenCalledWith({
+      provider: "hermes_gateway",
+      externalRunId: "run-external-1",
+    });
+  });
+
   it("bridges gateway approval.request through onToolApproval and resolves with the user's choice", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);

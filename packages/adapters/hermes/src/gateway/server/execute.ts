@@ -1094,6 +1094,19 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   await ctx.onLog("stdout", `[hermes-gateway] run created: ${runId}\n`);
 
+  // Report the remote run id immediately (AMB-16): the server persists it into
+  // heartbeat_runs.external_run_id so stop/reconciliation can target the exact
+  // remote run even if Paperclip restarts mid-run. A reporting failure is
+  // logged and otherwise ignored — it must never fail the run itself.
+  try {
+    await ctx.onExternalRunCreated?.({ provider: "hermes_gateway", externalRunId: runId });
+  } catch (err) {
+    await ctx.onLog(
+      "stderr",
+      `[hermes-gateway] external run id report failed: ${redactErrorMessage(err, redactText)}\n`,
+    );
+  }
+
   const state = createExecutionState({
     runId,
     baseUrl,

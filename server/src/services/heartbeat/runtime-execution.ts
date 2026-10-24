@@ -285,6 +285,31 @@ export async function awaitBoardToolApproval(
   }
 }
 
+export async function persistExternalRunId(
+  db: Db,
+  input: {
+    companyId: string;
+    runId: string;
+  },
+  info: { provider: string; externalRunId: string },
+): Promise<void> {
+  // First write wins: the external run id is the provider-side identity of
+  // this Paperclip run (AMB-16). Scoping the update to a NULL column keeps a
+  // duplicate report from overwriting an already-persisted id, and the
+  // company predicate keeps the write tenant-scoped.
+  if (!info.externalRunId) return;
+  await db
+    .update(heartbeatRuns)
+    .set({ externalRunId: info.externalRunId })
+    .where(
+      and(
+        eq(heartbeatRuns.id, input.runId),
+        eq(heartbeatRuns.companyId, input.companyId),
+        isNull(heartbeatRuns.externalRunId),
+      ),
+    );
+}
+
 export async function executeHeartbeatRuntime(db: Db, input: HeartbeatRuntimeExecutionInput): Promise<HeartbeatRuntimeExecutionResult> {
   const { run, agent, options } = input;
   const { issueRef, issueContext, context, issueId, taskKey, executionContinuation } = input.task;
@@ -888,6 +913,20 @@ export async function executeHeartbeatRuntime(db: Db, input: HeartbeatRuntimeExe
                   agentName: agent.name,
                   runId: run.id,
                 }, request),
+              onExternalRunCreated: async (info) => {
+                // AMB-16: persist the provider-side run id as soon as it
+                // exists so stop/reconciliation can target the exact remote
+                // run even after a Paperclip restart. A failed write is
+                // logged and never fails the run.
+                try {
+                  await persistExternalRunId(db, {
+                    companyId: agent.companyId,
+                    runId: run.id,
+                  }, info);
+                } catch (error) {
+                  await onLog("stderr", `[heartbeat] external run id persist failed: ${error instanceof Error ? error.message : String(error)}\n`);
+                }
+              },
               onUsage: async receipt => { await usageRecorder.capture(receipt); },
               onExecutionPhase: executionControl.phases.enter,
               startupTraceContext: getStartupTraceContext(),
