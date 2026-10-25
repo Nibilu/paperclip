@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ExecutionBlocker, Issue } from "@paperclipai/shared";
+import { requiresExecutionReconciliation } from "@paperclipai/shared";
 import { ExecutionReconciliationPanel } from "./ExecutionReconciliationPanel";
 import { WorkspaceReconstructionRecovery } from "./WorkspaceReconstructionRecovery";
 import { agentsApi } from "../api/agents";
@@ -12,6 +13,10 @@ import { Link } from "../lib/router";
 import { deriveRecoveryDisplayState } from "../lib/recovery-display";
 import { readRecoveryRetryLineage } from "../lib/recovery-lineage";
 import { useSecondTick } from "../hooks/useSecondTick";
+
+// Mirrors the retry tail appended by server execution-blocker.ts. Under a
+// no-replay hold the Retry button is hidden, so the tail is misleading.
+const RETRY_GUIDANCE_TAIL = " Try again or send a new message to continue once the previous execution has stopped.";
 
 export function ExecutionBlockerNotice({ companyId, issueId, issueStatus, canManage = false, blocker, onRetried, className }: {
   className?: string;
@@ -61,23 +66,33 @@ export function ExecutionBlockerNotice({ companyId, issueId, issueStatus, canMan
   // expiry with the shared clock, and stop ticking once it expires or starts.
   useSecondTick(Boolean(recovering && lineage?.nextRetryAt && !lineage.liveRunId));
   if (recovering) return null;
+  // When the reconciliation panel renders below, it already owns the no-replay
+  // and fresh-continuation guidance; the notice keeps only heading + nextAction.
+  const reconciliationPanelVisible = Boolean(canManage && hold && replayBlocked &&
+    blocker.replayDisposition === "blocked_reconciliation" && blocker.runId &&
+    ["todo", "blocked"].includes(issueStatus ?? "") &&
+    requiresExecutionReconciliation(blocker.cause) && !blocker.workspaceRepairRequired);
+  const nextActionText = reconciliationPanelVisible &&
+    blocker.nextAction.endsWith(RETRY_GUIDANCE_TAIL)
+    ? blocker.nextAction.slice(0, -RETRY_GUIDANCE_TAIL.length)
+    : blocker.nextAction;
   const hasDetails = Boolean(blocker.runError || (blocker.workspaceRepairRequired && blocker.nextAction) ||
     (canManage && hold && (replayBlocked || hold.resolutionNote)));
   return (
-    <div role="status" aria-label="Task recovery" className={cn("task-context-notice flex flex-wrap items-center justify-between gap-2", className)}>
-      <div className="min-w-0 flex-1 break-words">
+    <div role="status" aria-label="Task recovery" className={cn("task-context-notice flex flex-col items-start gap-2", className)}>
+      <div className="min-w-0 break-words">
         <p className="font-medium">{blocker.workspaceReconstructionPending ? "Continuation queued." : modelRejected ? "Model unavailable." : "Work paused."}</p>
         {modelRejected && <p>Choose a supported model or clear the task's model override, then retry.</p>}
         {blocker.workspaceReconstructionPending ? <p>{blocker.nextAction}</p> : blocker.workspaceRepairRequired ? (
           <p>The workspace needs operator attention before work can continue.</p>
-        ) : <p>{blocker.nextAction}</p>}
-        {replayDispositionBlocked && (
+        ) : <p>{nextActionText}</p>}
+        {replayDispositionBlocked && !reconciliationPanelVisible && (
           <p>
             Paperclip will not replay this stopped run because its external outcome is not verified.
             Inspect the run before requesting any continuation.
           </p>
         )}
-        {freshContinuationUnsupported && (
+        {freshContinuationUnsupported && !reconciliationPanelVisible && (
           <p>
             A new instruction is not available for this adapter until the previous execution is reconciled.
           </p>
@@ -115,7 +130,7 @@ export function ExecutionBlockerNotice({ companyId, issueId, issueStatus, canMan
         <summary className="cursor-pointer">Recovery details</summary>
         {blocker.runError && <p className="break-words">{blocker.runError}</p>}
         {blocker.workspaceRepairRequired && <p>{blocker.nextAction}</p>}
-        {canManage && replayBlocked &&
+        {canManage && replayBlocked && !reconciliationPanelVisible &&
           <p>Paperclip stopped automatic retries to avoid repeating work with an unknown outcome. Inspect the run before requesting continuation.</p>}
         {canManage && hold?.resolutionNote && <p>{hold.resolutionNote}</p>}
       </details>}
