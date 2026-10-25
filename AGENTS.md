@@ -259,3 +259,36 @@ A change is done when all are true:
 ## Design system
 
 `DESIGN.md` at the repo root is the source of truth for UI design decisions. The token-only rule applies to all `ui/` changes: every color, spacing, radius, type, shadow, and motion value in `ui/src/components/**` and `ui/src/pages/**` comes from the token layer in `ui/src/index.css` — no hex, raw px, arbitrary Tailwind bracket values, or raw `font-size`/`fontSize` declarations in components, outside the documented allowlist in `ui/src/index.css`. Run `pnpm check:token-gates` (`scripts/check-token-gates.mjs`) before committing UI changes — it fails on any violation not covered by that allowlist.
+
+## Git Branch & Deployment Policy (this fork)
+
+This repository is the Nibilu fork of Paperclip. The patch mainline is the
+`clip_fork` branch (pushed to `origin/clip_fork`). These rules are binding for
+every human and agent working in any checkout or worktree of this repository.
+
+- **Mainline**: all verified work lands on `clip_fork`. A task is not done
+  while its commits live only on a side branch.
+- **`master` is read-only**: it mirrors `upstream/master`. Never commit to it.
+- **Task/feature work** happens on a branch cut from `clip_fork` — one branch
+  per task, named after the task (`AMB-<n>-<slug>`) or topic
+  (`feature/<topic>`), preferably in a dedicated `git worktree` (Paperclip
+  manages task worktrees under `.paperclip/worktrees/`). Never switch the
+  branch of a checkout that hosts someone else's in-flight work; use your own
+  worktree instead.
+- **Definition of done for a branch**: targeted tests/build green → merge back
+  into `clip_fork` (themed commit or merge) → `git push origin clip_fork`.
+  Then remove the task branch and its worktree if fully merged (verify with
+  `git branch --merged clip_fork`; never remove a worktree with uncommitted
+  changes).
+- **`/home/amber/paperclip-production` is a deploy-only checkout** (detached
+  HEAD). Never commit in it. Deployment to dev or production is a separate,
+  explicitly authorized step performed from `clip_fork` (build first, then
+  restart services).
+- **Emergency deploy lines** (a branch pushed to an ad-hoc remote to ship a
+  fix fast) are exceptional. Once their content is merged back into
+  `clip_fork` and accepted, delete the branch and any leftover
+  remote-tracking ref (`git branch -rd <name>`) — do not keep parallel
+  long-lived lines.
+- **Task authoring**: when writing Paperclip issue descriptions or prompts
+  that involve repo changes, state this policy (or link to it) so the
+  executing agent inherits the contract.
