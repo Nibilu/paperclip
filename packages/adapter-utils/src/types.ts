@@ -284,6 +284,18 @@ export interface AdapterExecutionContext {
     requestId: string | null;
     choices: string[];
   }) => Promise<{ choice: string } | null>;
+  /**
+   * Reports the provider-side run identifier as soon as the adapter has
+   * created the remote run (e.g. the Hermes gateway's `run_xxx`). The server
+   * persists it into `heartbeat_runs.external_run_id` so stop/reconciliation
+   * logic can target the exact remote run even after a Paperclip restart
+   * (AMB-16). Optional: adapters without a remote run id never call it, and
+   * failures to report must not fail the run.
+   */
+  onExternalRunCreated?: (info: {
+    provider: string;
+    externalRunId: string;
+  }) => Promise<void> | void;
   onUsage?: (receipt: AdapterUsageCheckpoint) => Promise<void>;
   onRuntimeProgress?: RuntimeStatusSink;
   /**

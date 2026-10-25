@@ -144,6 +144,30 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     expectCleanup(input);
   });
 
+  it("persists the adapter-reported external run id and keeps the first write (AMB-16)", async () => {
+    const { input, adapter, run } = await fixture();
+    adapter.execute.mockImplementationOnce(async ctx => {
+      await ctx.onExternalRunCreated?.({ provider: "hermes_gateway", externalRunId: "run_first" });
+      // A duplicate report (e.g. SSE retry re-reporting creation) must not overwrite.
+      await ctx.onExternalRunCreated?.({ provider: "hermes_gateway", externalRunId: "run_second" });
+      return { exitCode: 0, signal: null, timedOut: false };
+    });
+    expect(await executeHeartbeatRuntime(db, input)).toMatchObject({ dispatched: true });
+    expect(await read(run.id)).toMatchObject({ externalRunId: "run_first" });
+    expectCleanup(input);
+  });
+
+  it("ignores an empty external run id report without failing the run (AMB-16)", async () => {
+    const { input, adapter, run } = await fixture();
+    adapter.execute.mockImplementationOnce(async ctx => {
+      await ctx.onExternalRunCreated?.({ provider: "hermes_gateway", externalRunId: "" });
+      return { exitCode: 0, signal: null, timedOut: false };
+    });
+    expect(await executeHeartbeatRuntime(db, input)).toMatchObject({ dispatched: true });
+    expect(await read(run.id)).toMatchObject({ externalRunId: null });
+    expectCleanup(input);
+  });
+
   it("preserves Stop metadata and marks no-work accounting without manufacturing a receipt", async () => {
     const { input, adapter, run } = await fixture();
     await db.update(heartbeatRuns).set({ status: "cancelled", resultJson: { stoppedByUser: true } }).where(eq(heartbeatRuns.id, run.id));
