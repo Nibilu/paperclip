@@ -3127,6 +3127,7 @@ export function recoveryService(
     fingerprint: string;
     attemptCount: number;
     legacyEpisode?: LegacyDispositionEpisode;
+    maxAttempts?: number;
   }) {
     let active = await recoveryActionsSvc.getActiveForIssue(
       input.issue.companyId,
@@ -3191,9 +3192,9 @@ export function recoveryService(
         type: "bounded_owner_disposition_repair",
         retryAgentId: input.issue.assigneeAgentId,
         attempt: input.attemptCount,
-        maxAttempts: input.legacyEpisode?.maxAttempts ?? DISPOSITION_REPAIR_MAX_ATTEMPTS,
+        maxAttempts: input.legacyEpisode?.maxAttempts ?? input.maxAttempts ?? DISPOSITION_REPAIR_MAX_ATTEMPTS,
       },
-      maxAttempts: input.legacyEpisode?.maxAttempts ?? DISPOSITION_REPAIR_MAX_ATTEMPTS,
+      maxAttempts: input.legacyEpisode?.maxAttempts ?? input.maxAttempts ?? DISPOSITION_REPAIR_MAX_ATTEMPTS,
       attemptCount: input.attemptCount,
       lastAttemptAt: new Date(),
     });
@@ -3206,6 +3207,7 @@ export function recoveryService(
     fingerprint: string;
     attempt: number;
     legacyEpisode?: LegacyDispositionEpisode;
+    maxAttempts: number;
   }) {
     const agentId = input.issue.assigneeAgentId;
     if (!agentId) return null;
@@ -3230,7 +3232,7 @@ export function recoveryService(
         recoveryActionId: input.action.id,
         dispositionRepairFingerprint: input.fingerprint,
         dispositionRepairAttempt: input.attempt,
-        dispositionRepairMaxAttempts: input.legacyEpisode?.maxAttempts ?? DISPOSITION_REPAIR_MAX_ATTEMPTS,
+        dispositionRepairMaxAttempts: input.maxAttempts,
         ...(input.legacyEpisode ? {
           legacyDispositionEpisode: { ...input.legacyEpisode, attempt: input.attempt },
           dispositionRepairSourceRunId: input.latestRun?.id ?? null,
@@ -3633,6 +3635,7 @@ export function recoveryService(
     attemptCount: number;
     terminalReason: string;
     legacyEpisode?: LegacyDispositionEpisode;
+    maxAttempts?: number;
   }) {
     const action = await ensureDispositionRepairAction({
       issue: input.issue,
@@ -3640,6 +3643,7 @@ export function recoveryService(
       fingerprint: input.fingerprint,
       attemptCount: input.attemptCount,
       legacyEpisode: input.legacyEpisode,
+      maxAttempts: input.maxAttempts,
     });
     const now = new Date();
     await db
@@ -3657,7 +3661,7 @@ export function recoveryService(
           latestRunErrorCode: input.latestRun?.errorCode ?? null,
           terminalReason: input.terminalReason,
           sourceAttemptCount: input.attemptCount,
-          sourceMaxAttempts: input.legacyEpisode?.maxAttempts ?? DISPOSITION_REPAIR_MAX_ATTEMPTS,
+          sourceMaxAttempts: input.legacyEpisode?.maxAttempts ?? input.maxAttempts ?? DISPOSITION_REPAIR_MAX_ATTEMPTS,
           routingPolicy: STRANDED_BOARD_ESCALATION_POLICY,
         },
         nextAction:
@@ -3849,10 +3853,45 @@ export function recoveryService(
     return reconcileDispositionRepair(issue, run, { legacyEpisode: legacyDispositionEpisode(run) });
   }
 
+  async function reconcileFailedDispositionRepair(runId: string) {
+    const [run] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, runId)).limit(1);
+    if (
+      !run ||
+      run.status !== "failed" ||
+      run.errorCode !== "acpx_turn_failed" ||
+      !/Persistent ACP session .+ could not be resumed:/i.test(run.error ?? "")
+    ) return "skipped" as const;
+    const context = parseObject(run.contextSnapshot);
+    if (readNonEmptyString(context.retryReason) !== ISSUE_DISPOSITION_REPAIR_RETRY_REASON) return "skipped" as const;
+    const issueId = readNonEmptyString(context.issueId);
+    const fingerprint = readNonEmptyString(context.dispositionRepairFingerprint);
+    const attempt = Math.max(1, Math.floor(asNumber(context.dispositionRepairAttempt, 1)));
+    if (!issueId || !fingerprint) return "skipped" as const;
+    const [issue] = await db.select().from(issues).where(and(
+      eq(issues.id, issueId), eq(issues.companyId, run.companyId), eq(issues.assigneeAgentId, run.agentId),
+    )).limit(1);
+    if (!issue) return "skipped" as const;
+    const active = await recoveryActionsSvc.getActiveForIssue(issue.companyId, issue.id);
+    if (
+      active?.kind !== "deliberate_wait_without_target" ||
+      active.ownerType !== "agent" ||
+      active.ownerAgentId !== run.agentId ||
+      active.fingerprint !== fingerprint ||
+      active.attemptCount !== attempt
+    ) return "skipped" as const;
+
+    return reconcileDispositionRepair(issue, run, {
+      expectedFingerprint: fingerprint,
+      legacyEpisode: parseObject(context.legacyDispositionEpisode).id
+        ? legacyDispositionEpisode(run)
+        : undefined,
+    });
+  }
+
   async function reconcileDispositionRepair(
     issue: typeof issues.$inferSelect,
     latestRun: LatestIssueRun,
-    options: { historicalAttemptCount?: number; legacyEpisode?: LegacyDispositionEpisode } = {},
+    options: { historicalAttemptCount?: number; legacyEpisode?: LegacyDispositionEpisode; expectedFingerprint?: string } = {},
   ): Promise<"queued" | "escalated" | "covered" | "skipped"> {
     const current = await db
       .select()
@@ -3869,7 +3908,6 @@ export function recoveryService(
       parseObject(parseObject(latestRun?.contextSnapshot).legacyDispositionEpisode).id && latestRun
         ? legacyDispositionEpisode(latestRun) : undefined
     );
-    const maxAttempts = episode?.maxAttempts ?? DISPOSITION_REPAIR_MAX_ATTEMPTS;
     const dependencyWait = episode ? null : await resolveContinuationWaitingOnReview(current);
     if (dependencyWait) {
       await resolveDispositionRepairActionAsCovered(
@@ -3888,6 +3926,7 @@ export function recoveryService(
       if (decision.kind === "skip") return "skipped";
       state.fingerprint = legacyDispositionFingerprint(current.companyId, current.id, latestRun.agentId, episode.id);
     }
+    if (options.expectedFingerprint && state.fingerprint !== options.expectedFingerprint) return "skipped";
     if (state.hasActiveExecutionPath) return "skipped";
     if (state.hasDurableWaitingPath) {
       await resolveDispositionRepairActionAsCovered(
@@ -3912,6 +3951,12 @@ export function recoveryService(
       current.companyId,
       current.id,
     );
+    const persistedMaxAttempts = activeRepairAction?.kind === "deliberate_wait_without_target" &&
+      activeRepairAction.fingerprint === state.fingerprint &&
+      activeRepairAction.maxAttempts !== null
+      ? Math.max(1, Math.floor(activeRepairAction.maxAttempts))
+      : null;
+    const maxAttempts = episode?.maxAttempts ?? persistedMaxAttempts ?? DISPOSITION_REPAIR_MAX_ATTEMPTS;
     // Budget admission may wait behind another recovery worker. Read the
     // execution paths after the persisted counter so a newly reserved
     // successor cannot be mistaken for permission to schedule the next one.
@@ -3953,6 +3998,8 @@ export function recoveryService(
         terminalReason: !ownerInvokable
           ? "owner_not_invokable"
           : "owner_budget_blocked",
+        legacyEpisode: episode,
+        maxAttempts,
       });
       return escalated ? "escalated" : "skipped";
     }
@@ -3965,6 +4012,7 @@ export function recoveryService(
         attemptCount: sameFingerprintAttempt,
         terminalReason: "unchanged_source_state_exhausted",
         legacyEpisode: episode,
+        maxAttempts,
       });
       return escalated ? "escalated" : "skipped";
     }
@@ -3976,6 +4024,7 @@ export function recoveryService(
       fingerprint: state.fingerprint,
       attemptCount: sameFingerprintAttempt,
       legacyEpisode: episode,
+      maxAttempts,
     });
     const scheduled = await scheduleDispositionRepairAttempt({
       issue: current,
@@ -3984,6 +4033,7 @@ export function recoveryService(
       fingerprint: state.fingerprint,
       attempt: nextAttempt,
       legacyEpisode: episode,
+      maxAttempts,
     });
     if (!scheduled && episode) {
       // Admission can reject a stale snapshot under the issue lock. An empty
@@ -6397,6 +6447,7 @@ export function recoveryService(
     scanSilentActiveRuns,
     reconcileStrandedAssignedIssues,
     reconcileLegacyContinuation,
+    reconcileFailedDispositionRepair,
     legacyRepairDispatchBlock,
     sweepStaleIssueLocks,
     reconcileResolvedDependencyWakeBackstop,

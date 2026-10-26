@@ -55,7 +55,7 @@ function callbacks(db: Db) {
     finalizeAgentStatus: vi.fn<Dependencies["finalizeAgentStatus"]>(async () => undefined),
     enqueueWakeup: vi.fn<Dependencies["enqueueWakeup"]>(),
     issuesSvc: { addComment: vi.fn<Dependencies["issuesSvc"]["addComment"]>() },
-    recovery: { reconcileLegacyContinuation: vi.fn<Dependencies["recovery"]["reconcileLegacyContinuation"]>(), reconcileResolvedDependencyWakeBackstop: vi.fn<Dependencies["recovery"]["reconcileResolvedDependencyWakeBackstop"]>() },
+    recovery: { reconcileLegacyContinuation: vi.fn<Dependencies["recovery"]["reconcileLegacyContinuation"]>(), reconcileFailedDispositionRepair: vi.fn<Dependencies["recovery"]["reconcileFailedDispositionRepair"]>(), reconcileResolvedDependencyWakeBackstop: vi.fn<Dependencies["recovery"]["reconcileResolvedDependencyWakeBackstop"]>() },
     getCurrentUserRedactionOptions: lifecycleDeps.getCurrentUserRedactionOptions,
     budgetHooks: {},
     runLogStore: { finalize: vi.fn<Dependencies["runLogStore"]["finalize"]>(async () => ({ bytes: 123, sha256: "log-hash", compressed: true })) },
@@ -155,6 +155,31 @@ describe.skipIf(!support.supported)("heartbeat run completion boundary", () => {
       state: "remote_run_stop_unknown",
       adapterErrorCode: "hermes_gateway_timeout",
     });
+  });
+
+  it("reconciles a failed disposition repair after clearing its failed ACP session", async () => {
+    const f = await fixture({ contextSnapshot: {
+      issueId: "00000000-0000-4000-8000-000000000001",
+      retryReason: "issue_disposition_repair",
+      dispositionRepairAttempt: 1,
+      dispositionRepairFingerprint: "fingerprint-1",
+    } });
+    Object.assign(f.input.adapterResult, {
+      errorCode: "acpx_turn_failed",
+      errorMessage: "Persistent ACP session session-1 could not be resumed: Internal error",
+      clearSession: true,
+    });
+
+    await f.completion.completeRun(f.input);
+
+    expect(f.deps.clearTaskSessions).toHaveBeenCalledWith(f.agent.companyId, f.agent.id, expect.objectContaining({
+      taskKey: "completion-task",
+      expectedRunId: f.run.id,
+    }));
+    expect(f.deps.recovery.reconcileFailedDispositionRepair).toHaveBeenCalledWith(f.run.id);
+    expect(f.deps.clearTaskSessions.mock.invocationCallOrder[0]).toBeLessThan(
+      f.deps.recovery.reconcileFailedDispositionRepair.mock.invocationCallOrder[0]!,
+    );
   });
 
   it.each(["completeRun", "failRun"] as const)("waits for an owned Stop before %s can write a competing outcome", async operation => {

@@ -68,7 +68,7 @@ export interface HeartbeatRunCompletionDependencies extends Pick<RunState,
   Pick<HeartbeatRetryDependencies, "finalizeAgentStatus">,
   Pick<ReturnType<typeof createHeartbeatQueue>, "enqueueWakeup"> {
   issuesSvc: Pick<ReturnType<typeof issueService>, "addComment">;
-  recovery: Pick<ReturnType<typeof recoveryService>, "reconcileLegacyContinuation" | "reconcileResolvedDependencyWakeBackstop">;
+  recovery: Pick<ReturnType<typeof recoveryService>, "reconcileLegacyContinuation" | "reconcileFailedDispositionRepair" | "reconcileResolvedDependencyWakeBackstop">;
   getCurrentUserRedactionOptions: () => Promise<CurrentUserRedactionOptions>;
   budgetHooks: BudgetServiceHooks;
   runLogStore: Pick<ReturnType<typeof getRunLogStore>, "finalize">;
@@ -1048,6 +1048,14 @@ export function createHeartbeatRunCompletion(db: Db, dependencies: HeartbeatRunC
             lastError: runErrorMessage,
           });
         }
+      }
+      if (outcome === "failed" && taskKey && (
+        adapterResult.clearSession || (!nextSessionState.params && !nextSessionState.displayId)
+      )) {
+        // The ACP resume failure path clears the dead task session above. Let
+        // recovery consume the disposition repair's already-reserved attempt
+        // only after that fresh-session boundary has been persisted.
+        await recovery.reconcileFailedDispositionRepair(finalizedRun.id);
       }
     }
     await finalizeAgentStatus(agent.id, outcome, runErrorMessage, {
