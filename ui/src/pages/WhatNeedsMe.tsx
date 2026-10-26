@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Inbox } from "lucide-react";
 import type { Agent, AttentionItem, AttentionSubject } from "@paperclipai/shared";
 import { useNavigate, useSearchParams } from "@/lib/router";
@@ -86,6 +86,7 @@ function findScrollContainer(element: HTMLElement | null): HTMLElement | null {
 
 export function WhatNeedsMe() {
   const { selectedCompanyId } = useCompany();
+  const queryClient = useQueryClient();
   const { setBreadcrumbs } = useBreadcrumbs();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedAttentionId, setSelectedAttentionId] = useState<string | null>(null);
@@ -197,6 +198,14 @@ export function WhatNeedsMe() {
     for (const agent of agents ?? []) map.set(agent.id, agent);
     return map;
   }, [agents]);
+
+  // The attention request reconciles auto-seeded queue membership. Refresh the
+  // rail after that snapshot so its counts cannot lag the visible feed.
+  useEffect(() => {
+    if (feed?.generatedAt && selectedCompanyId) {
+      queryClient.invalidateQueries({ queryKey: queryKeys.decisionQueues.list(selectedCompanyId) });
+    }
+  }, [feed?.generatedAt, queryClient, selectedCompanyId]);
 
   // Reset optimistic state once the server sends a fresh snapshot.
   useEffect(() => {

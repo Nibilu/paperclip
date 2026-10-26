@@ -366,7 +366,18 @@ describeEmbeddedPostgres("decision queue routes", () => {
     expect(await db.select().from(activityLog).where(eq(activityLog.companyId, companyId)))
       .toHaveLength(firstActivity.length);
 
+    // Seeded queue rows are a projection of the current feed. A plan that no
+    // longer appears must not keep inflating the queue rail count.
     const questionsQueue = queues.find((queue) => queue.key === "questions")!;
+    await decisionQueueService(db).materializeSeededQueues(companyId, candidates.filter(
+      (item) => item.subject.metadata?.isPlanTarget !== true,
+    ));
+    const planQueue = queues.find((queue) => queue.key === "plans")!;
+    expect(await db.select().from(decisionQueueItems).where(eq(decisionQueueItems.queueId, planQueue.id)))
+      .toHaveLength(0);
+    expect(await db.select().from(decisionQueueItems).where(eq(decisionQueueItems.queueId, questionsQueue.id)))
+      .toHaveLength(1);
+
     await db.update(decisionQueues).set({ seedRulesEnabled: false }).where(eq(decisionQueues.id, questionsQueue.id));
     await decisionQueueService(db).materializeSeededQueues(companyId, [attentionItem({
       sourceKind: "issue_thread_interaction",

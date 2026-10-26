@@ -108,6 +108,12 @@ export function DecisionQueuePage() {
     refetchOnWindowFocus: true,
   });
 
+  useEffect(() => {
+    if (feed?.generatedAt && selectedCompanyId) {
+      queryClient.invalidateQueries({ queryKey: queryKeys.decisionQueues.list(selectedCompanyId) });
+    }
+  }, [feed?.generatedAt, queryClient, selectedCompanyId]);
+
   const { data: agents } = useQuery({
     queryKey: queryKeys.agents.list(selectedCompanyId!),
     queryFn: () => agentsApi.list(selectedCompanyId!),
