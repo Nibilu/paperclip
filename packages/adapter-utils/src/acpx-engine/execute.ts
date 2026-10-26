@@ -3364,6 +3364,22 @@ export function summarizeAcpStopActivity(
   return summary;
 }
 
+// ACPX can defer session/load until runTurn; a persisted session whose
+// `load_session` fails fails the turn with `SESSION_RESUME_REQUIRED`.
+// Intermediate terminal wrappers can drop `detailCode` (observed with the
+// Hermes acp adapter: the fork receives a message-only failed terminal whose
+// message is "Persistent ACP session <id> could not be resumed: <reason>"), so
+// also match that canonical message. Detecting the failure lets the caller
+// forget the dead session so the next bounded turn bootstraps a fresh one
+// instead of deterministically re-failing every retry on the same checkpoint.
+export function isAcpSessionResumeFailure(terminal: AcpRuntimeTurnResult): boolean {
+  if (terminal.status !== "failed") return false;
+  if (terminal.error.detailCode === "SESSION_RESUME_REQUIRED") return true;
+  return /persistent acp session .+ could not be resumed/i.test(
+    terminal.error.message,
+  );
+}
+
 function resultErrorMessage(result: AcpRuntimeTurnResult): string | null {
   if (result.status !== "failed") return null;
   return result.error.message;
@@ -5345,8 +5361,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         const failedTurn = terminal.status === "failed" || terminal.status === "cancelled" || timedOut;
         // ACPX can defer session/load until runTurn. Forget an unavailable
         // session so the next bounded turn receives the full task conversation.
-        const sessionUnavailable = terminal.status === "failed" &&
-          terminal.error.detailCode === "SESSION_RESUME_REQUIRED";
+        const sessionUnavailable = isAcpSessionResumeFailure(terminal);
         if (sessionUnavailable) clearSession = true;
         // Silent session-loss fallback: an agent whose `session/resume` silently
         // fabricates a new session (Hermes acp_adapter with an unprompted,

@@ -10,6 +10,7 @@ import {
   startAdapterExecutionTargetPaperclipBridge,
   startAdapterExecutionTargetProcessSessionBridge,
 } from "@paperclipai/adapter-utils/execution-target";
+import { isAcpSessionResumeFailure } from "@paperclipai/adapter-utils/acpx-engine/execute";
 
 // Wrap the staging seam + both sandbox bridges in call-recording spies that
 // still delegate to the real implementations (a runner-backed sandbox test
@@ -8847,4 +8848,49 @@ describe("ACPX startup handshake guard and late-completion fence", () => {
       vi.useRealTimers();
     }
   }, 10000);
+});
+
+describe("isAcpSessionResumeFailure", () => {
+  it("matches the canonical SESSION_RESUME_REQUIRED detailCode", () => {
+    expect(isAcpSessionResumeFailure({
+      status: "failed",
+      error: {
+        message: "Persistent ACP session local-abc123 could not be resumed: Internal error",
+        detailCode: "SESSION_RESUME_REQUIRED",
+      },
+    })).toBe(true);
+  });
+
+  it("matches a message-only failed terminal when an intermediate wrapper dropped detailCode", () => {
+    // Regression: the observed production failure carried only the message
+    // ("Persistent ACP session <id> could not be resumed: Internal error");
+    // the old detailCode-only check missed it, so the dead session was never
+    // forgotten and every bounded retry deterministically re-failed on the
+    // same checkpoint.
+    expect(isAcpSessionResumeFailure({
+      status: "failed",
+      error: {
+        message: "Persistent ACP session local-abc123 could not be resumed: Internal error",
+      },
+    })).toBe(true);
+  });
+
+  it("does not match unrelated turn failures", () => {
+    expect(isAcpSessionResumeFailure({
+      status: "failed",
+      error: {
+        message: "Agent disconnected before handshake completed",
+        detailCode: "AGENT_DISCONNECTED",
+      },
+    })).toBe(false);
+    expect(isAcpSessionResumeFailure({
+      status: "failed",
+      error: { message: "cannot resume: wrong passphrase" },
+    })).toBe(false);
+  });
+
+  it("does not match completed or cancelled turns", () => {
+    expect(isAcpSessionResumeFailure({ status: "completed" })).toBe(false);
+    expect(isAcpSessionResumeFailure({ status: "cancelled" })).toBe(false);
+  });
 });
