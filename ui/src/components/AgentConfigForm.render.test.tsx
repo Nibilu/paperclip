@@ -10,6 +10,7 @@ import { getEnvironmentCapabilities } from "@paperclipai/shared";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ToastProvider } from "../context/ToastContext";
 import { AgentConfigForm, AdapterLoginPanel, ModelDropdown, subtractPersistedOverlay, type AdapterLoginDescriptor } from "./AgentConfigForm";
+import { SchemaConfigFields } from "../adapters/schema-config-fields";
 import { AgentLifecycleStatus, useAgentLifecycleStatus } from "./AgentLifecycleStatus";
 import { queryKeys } from "../lib/queryKeys";
 import { defaultCreateValues } from "./agent-config-defaults";
@@ -23,6 +24,7 @@ import { DEFAULT_CODEX_LOCAL_MODEL } from "@paperclipai/adapter-codex-local";
 const mockAgentsApi = vi.hoisted(() => ({
   get: vi.fn(),
   adapterModels: vi.fn(),
+  adapterProviders: vi.fn(),
   detectModel: vi.fn(),
   list: vi.fn(),
   testEnvironment: vi.fn(),
@@ -3911,5 +3913,274 @@ describe("subtractPersistedOverlay", () => {
     expect(subtractPersistedOverlay(changed, persisted).adapterConfig).toEqual({
       args: ["--flag", "other"],
     });
+  });
+});
+
+describe("AgentConfigForm model provider catalog", () => {
+  let roots: Root[] = [];
+
+  const PROVIDERLESS_SCHEMA_TYPE = "providerless_vendor_local";
+
+  beforeEach(() => {
+    mockAgentsApi.adapterModels.mockResolvedValue([]);
+    mockAgentsApi.adapterProviders.mockResolvedValue([]);
+    mockAgentsApi.detectModel.mockResolvedValue(null);
+    mockAgentsApi.list.mockResolvedValue([]);
+    mockAgentsApi.getActiveAdapterAuthLoginSession.mockImplementation(noActiveSession);
+    mockAgentsApi.getActiveClaudeSetupTokenLoginSession.mockImplementation(noActiveSession);
+    mockInstanceSettingsApi.get.mockResolvedValue({ defaultEnvironmentId: null });
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableEnvironments: true });
+    mockInstanceSettingsApi.getGeneral.mockResolvedValue({ executionMode: "any" });
+    mockEnvironmentsApi.capabilities.mockResolvedValue(SANDBOX_CAPABILITIES);
+    mockSecretsApi.list.mockResolvedValue([]);
+    mockSecretsApi.listProposals.mockResolvedValue([]);
+  });
+
+  afterEach(async () => {
+    for (const root of roots) {
+      await act(async () => {
+        root.unmount();
+      });
+    }
+    roots = [];
+    document.body.innerHTML = "";
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+
+  function findProviderSelector(container: HTMLElement) {
+    return container.querySelector<HTMLSelectElement>('[aria-label="Model provider"]');
+  }
+
+  async function waitForProviderSelector(container: HTMLElement) {
+    await flushUntil(() => findProviderSelector(container) != null);
+    return findProviderSelector(container);
+  }
+
+  function selectProviderOption(select: HTMLSelectElement, value: string) {
+    return act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")?.set;
+      setter?.call(select, value);
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  }
+
+  // A schema-driven adapter whose config schema carries a native provider
+  // field. The schema fetch is stubbed because jsdom has no API server.
+  function stubSchemaFetch() {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input) === `/api/adapters/${PROVIDERLESS_SCHEMA_TYPE}/config-schema`) {
+        return {
+          ok: true,
+          json: async () => ({
+            fields: [
+              {
+                key: "provider",
+                label: "Provider",
+                type: "select",
+                options: [{ label: "ACPX", value: "acpx" }, { label: "Codex", value: "codex" }],
+              },
+              { key: "model", label: "Model", type: "combobox" },
+            ],
+          }),
+        };
+      }
+      throw new Error(`unexpected fetch: ${String(input)}`);
+    }));
+  }
+
+  it("falls back to the original provider flow when a local adapter has no catalog", async () => {
+    const result = await renderForm([], { adapterType: "opencode_local", adapterConfig: {} });
+    roots.push(result.root);
+    await flushUntil(() => mockAgentsApi.adapterModels.mock.calls.length > 0);
+    expect(findProviderSelector(result.container)).toBeNull();
+    // runnerProvider fallback: no managed connection, no catalog → the bare
+    // adapter model list, no provider routing.
+    expect(mockAgentsApi.adapterModels).toHaveBeenCalledWith(
+      "company-1",
+      "opencode_local",
+      expect.objectContaining({ provider: undefined }),
+    );
+  });
+
+  it("keeps routing a managed OpenRouter connection for a catalogless adapter", async () => {
+    const accountList = vi.spyOn(aiConnectionsApi, "list").mockResolvedValue({
+      currentUserId: "you",
+      canManageConnections: true,
+      connections: [],
+    });
+    try {
+      const result = await renderForm([], {
+        adapterType: "opencode_local",
+        adapterConfig: {},
+        runtimeConfig: { aiConnection: { mode: "responsible_user", provider: "openrouter", method: "api_key" } },
+      });
+      roots.push(result.root);
+      await flushUntil(() => mockAgentsApi.adapterModels.mock.calls.length > 0);
+      // A managed connection routes the model itself: no catalog dropdown.
+      expect(findProviderSelector(result.container)).toBeNull();
+      expect(mockAgentsApi.adapterModels).toHaveBeenCalledWith(
+        "company-1",
+        "opencode_local",
+        expect.objectContaining({ provider: "openrouter" }),
+      );
+    } finally {
+      accountList.mockRestore();
+    }
+  });
+
+  it("renders the catalog dropdown and clears the model when the provider changes", async () => {
+    mockAgentsApi.adapterProviders.mockResolvedValue([
+      { name: "openrouter", label: "OpenRouter", envVars: [], fallbackModels: [] },
+    ]);
+    const result = await renderForm([], { adapterType: "opencode_local", adapterConfig: { model: "qwen3-coder" } });
+    roots.push(result.root);
+    const select = await waitForProviderSelector(result.container);
+    expect(select).not.toBeNull();
+    expect([...select!.options].map((option) => option.value)).toEqual(["", "openrouter"]);
+
+    await selectProviderOption(select!, "openrouter");
+    await flushUntil(() =>
+      mockAgentsApi.adapterModels.mock.calls.some((call) => call[2]?.provider === "openrouter"));
+
+    await clickByText(result.container, "Save");
+    expect(result.onSave).toHaveBeenCalledWith(expect.objectContaining({
+      adapterConfig: expect.objectContaining({ provider: "openrouter" }),
+    }));
+    // Changing the provider cleared the previously selected model.
+    expect(result.onSave.mock.calls[0][0].adapterConfig.model).toBeUndefined();
+  });
+
+  it("keeps the Hermes default summary and maps the legacy auto provider to empty", async () => {
+    mockAgentsApi.detectModel.mockResolvedValue({ provider: "nvidia", model: "m1", source: "config" });
+    const result = await renderForm([], {
+      adapterType: "hermes_local",
+      adapterConfig: { provider: "auto", model: "m1" },
+    });
+    roots.push(result.root);
+    const select = await waitForProviderSelector(result.container);
+    expect(select).not.toBeNull();
+    // Legacy `auto` configs inherit the host configuration: empty selection.
+    expect(select!.value).toBe("");
+    expect([...select!.options].map((option) => option.textContent)[0]).toBe("Default (Hermes config) — nvidia");
+    expect(result.container.textContent).toContain("Hermes default: m1");
+    expect(mockAgentsApi.detectModel).toHaveBeenCalledWith("company-1", "hermes_local");
+  });
+
+  // The form render path in this file mocks "@/adapters" with a stand-in
+  // ConfigFields, so the hiddenKeys wiring cannot be observed through the
+  // form. These two tests mount the real SchemaConfigFields (deep import,
+  // unaffected by that mock) and assert the filtering contract the form
+  // relies on: no catalog → no hiddenKeys → the native provider field stays
+  // visible; catalog → hiddenKeys=["provider"] → it is replaced by the
+  // catalog dropdown (asserted on the form in the tests above).
+  it("keeps the native provider field visible when hiddenKeys is unset", async () => {
+    stubSchemaFetch();
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const mark = vi.fn();
+    const eff = (_group: unknown, _field: string, original: unknown) => original;
+    try {
+      await act(async () => {
+        root.render(
+          <SchemaConfigFields
+            section="adapter"
+            mode="edit"
+            adapterType={PROVIDERLESS_SCHEMA_TYPE}
+            isCreate={false}
+            values={null}
+            set={null}
+            config={{ provider: "acpx" }}
+            eff={eff as never}
+            mark={mark as never}
+            hideModel
+            models={[]}
+          />,
+        );
+      });
+      await flushUntil(() => Boolean(container.textContent?.includes("ACPX")));
+      expect(container.textContent).toContain("ACPX");
+    } finally {
+      await act(async () => root.unmount());
+      container.remove();
+    }
+  });
+
+  it("hides the native provider field when hiddenKeys includes provider", async () => {
+    stubSchemaFetch();
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const mark = vi.fn();
+    const eff = (_group: unknown, _field: string, original: unknown) => original;
+    try {
+      await act(async () => {
+        root.render(
+          <SchemaConfigFields
+            section="adapter"
+            mode="edit"
+            adapterType={PROVIDERLESS_SCHEMA_TYPE}
+            isCreate={false}
+            values={null}
+            set={null}
+            config={{ provider: "acpx" }}
+            eff={eff as never}
+            mark={mark as never}
+            hideModel
+            hiddenKeys={["provider"]}
+            models={[]}
+          />,
+        );
+      });
+      for (let i = 0; i < 6; i += 1) {
+        await flushReact();
+      }
+      // Same schema that rendered ACPX above: only hiddenKeys differs.
+      expect(container.textContent).not.toContain("ACPX");
+    } finally {
+      await act(async () => root.unmount());
+      container.remove();
+    }
+  });
+
+  it("clears the previous adapter's provider when switching harnesses", async () => {
+    mockAgentsApi.adapterProviders.mockImplementation(async (_companyId: unknown, type: unknown) =>
+      type === "hermes_local"
+        ? [{ name: "openrouter", label: "OpenRouter", envVars: [], fallbackModels: [] }]
+        : type === "codex_local"
+          ? [{ name: "openai", label: "OpenAI", envVars: [], fallbackModels: [] }]
+          : []);
+    const result = await renderForm(
+      [],
+      { adapterType: "hermes_local", adapterConfig: { provider: "openrouter", model: "qwen3-coder" } },
+      { showAdapterTypeField: true },
+    );
+    roots.push(result.root);
+    const select = await waitForProviderSelector(result.container);
+    expect(select).not.toBeNull();
+    expect([...select!.options].map((option) => option.value)).toEqual(["", "openrouter"]);
+    await flushUntil(() =>
+      mockAgentsApi.adapterModels.mock.calls.some((call) => call[2]?.provider === "openrouter"));
+
+    await clickElement(result.container.querySelector('[aria-label="Harness"]'));
+    await clickElement(document.querySelector('[role="option"][data-value="codex_local"]'));
+
+    // The dropdown re-keys to the new adapter's catalog…
+    const switched = await waitForProviderSelector(result.container);
+    expect(switched).not.toBeNull();
+    expect([...switched!.options].map((option) => option.value)).toEqual(["", "openai"]);
+    // …and the stale hermes provider must not leak into the model query.
+    await flushUntil(() => mockAgentsApi.adapterModels.mock.calls.some((call) => call[1] === "codex_local"));
+    expect(mockAgentsApi.adapterModels).toHaveBeenLastCalledWith(
+      "company-1",
+      "codex_local",
+      expect.objectContaining({ provider: undefined }),
+    );
+
+    await clickByText(result.container, "Save");
+    expect(result.onSave).toHaveBeenCalledWith(expect.objectContaining({ adapterType: "codex_local" }));
+    const payload = result.onSave.mock.calls[0][0];
+    expect(payload.adapterConfig).not.toHaveProperty("provider");
   });
 });

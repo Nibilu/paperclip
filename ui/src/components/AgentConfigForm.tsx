@@ -1752,7 +1752,10 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                             ? {
                                 ...paperclipRunnerTransitionConfig(adapterType, eff("adapterConfig", "model", config.model)),
                               }
-                          : {}),
+                          // Local -> local: drop the old adapter's provider/model so the
+                          // stale selection can't bleed through eff()'s fallback to
+                          // config.provider; the save path strips undefined anyway.
+                          : { provider: undefined }),
                       },
                     }));
                   }
