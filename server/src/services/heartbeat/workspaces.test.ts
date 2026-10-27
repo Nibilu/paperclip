@@ -11,8 +11,11 @@ import {
 } from "../heartbeat.js";
 import { resolveDefaultAgentWorkspaceDir } from "../../home-paths.js";
 import {
+  assertGitWorktreeBaseWorkspaceReady,
+  assertGitSensitiveAdapterWorkspaceValid,
   createHeartbeatWorkspaceResolver,
   ensureManagedProjectWorkspace,
+  type ResolvedWorkspaceForRun,
   WorkspaceValidationFailure,
 } from "./workspaces.js";
 
@@ -118,34 +121,125 @@ describe("heartbeat workspace module", () => {
     expect(database.select).toHaveBeenCalledTimes(3);
   });
 
-  it("fails closed with workspace diagnostics when a configured directory is unavailable", async () => {
+  it("uses an instance-managed fallback with a warning when a configured local directory is unavailable", async () => {
     const missingCwd = path.join(testRoot, "missing-configured-workspace");
+    const staleSessionCwd = path.join(testRoot, "stale-session-workspace");
+    await fs.mkdir(staleSessionCwd);
     const database = databaseWithResults([workspace("selected", "project-one", missingCwd)]);
-    await expect(createHeartbeatWorkspaceResolver(database.db).resolveWorkspaceForRun(
-      agent(), { projectId: "project-one" }, null,
-    )).rejects.toMatchObject({
-      code: "workspace_validation_failed",
-      resultJson: { workspaceValidation: {
-        reason: "configured_workspace_unavailable", resolvedProjectId: "project-one", baseCwdFallback: false,
-      } },
+    const result = await createHeartbeatWorkspaceResolver(database.db).resolveWorkspaceForRun(
+      agent(), { projectId: "project-one" }, { cwd: staleSessionCwd, workspaceId: "stale-session" },
+    );
+    const fallbackCwd = resolveDefaultAgentWorkspaceDir("agent-one");
+    expect(result).toMatchObject({
+      cwd: fallbackCwd,
+      source: "agent_home",
+      projectId: null,
+      workspaceId: null,
+      repoUrl: null,
+      repoRef: null,
+      baseCwdFallback: true,
     });
+    expect(result.warnings.join(" ")).toContain(missingCwd);
+    expect(result.warnings.join(" ")).toContain(fallbackCwd);
+    expect(result.warnings.join(" ")).toContain("WARNING");
+    expect(result.cwd).not.toBe(staleSessionCwd);
     expect(await fs.stat(missingCwd).catch(() => null)).toBeNull();
+    expect(await fs.stat(fallbackCwd).then((stats) => stats.isDirectory())).toBe(true);
   });
 
-  it("retains materialization diagnostics when a configured repository cannot be cloned", async () => {
-    const missingRepo = path.join(testRoot, "missing-repository.git");
+  it("uses an instance-managed fallback and retains the clone error when a configured git_remote cannot be cloned", async () => {
+    const missingRepo = "http://127.0.0.1:1/missing-repository.git";
     const database = databaseWithResults([{
       ...workspace("selected", "project-one", ""), repoUrl: missingRepo, sourceType: "git_remote",
     }]);
-    await expect(createHeartbeatWorkspaceResolver(database.db).resolveWorkspaceForRun(
+    const result = await createHeartbeatWorkspaceResolver(database.db).resolveWorkspaceForRun(
       agent(), { projectId: "project-one" }, null,
-    )).rejects.toMatchObject({
+    );
+    const fallbackCwd = resolveDefaultAgentWorkspaceDir("agent-one");
+    expect(result).toMatchObject({
+      cwd: fallbackCwd,
+      source: "agent_home",
+      projectId: null,
+      workspaceId: null,
+      repoUrl: null,
+      repoRef: null,
+      baseCwdFallback: true,
+      materializationFailures: [expect.objectContaining({
+        projectWorkspaceId: "selected",
+        repoUrl: missingRepo,
+        error: expect.any(String),
+      })],
+    });
+    expect(result.warnings.join(" ")).toContain(result.materializationFailures[0]!.error);
+    expect(result.warnings.join(" ")).toContain(fallbackCwd);
+    expect(result.warnings.join(" ")).toContain("WARNING");
+  });
+
+  it("does not build a git_worktree from the fallback when the configured repository is unavailable", async () => {
+    const fallbackCwd = resolveDefaultAgentWorkspaceDir("agent-one");
+    const validation = assertGitWorktreeBaseWorkspaceReady({
+      requestedExecutionWorkspaceMode: "isolated_workspace",
+      config: { workspaceStrategy: { type: "git_worktree" } },
+      issue: {
+        id: "issue-one", identifier: "T-1", projectId: "project-one",
+        projectWorkspaceId: "selected", executionWorkspaceId: null,
+        executionWorkspacePreference: null,
+      },
+      base: {
+        baseCwd: fallbackCwd, source: "agent_home",
+        projectId: null, workspaceId: null, repoUrl: null, repoRef: null,
+      },
+      anchor: {
+        baseCwdFallback: true,
+        materializationFailures: [{
+          projectWorkspaceId: "selected", repoUrl: "http://127.0.0.1:1/missing-repository.git",
+          error: "connect ECONNREFUSED 127.0.0.1:1",
+        }],
+      },
+    });
+    await expect(validation).rejects.toMatchObject({
       code: "workspace_validation_failed",
       resultJson: { workspaceValidation: {
         reason: "git_worktree_base_materialization_failed",
-        materializationFailures: [expect.objectContaining({ projectWorkspaceId: "selected", repoUrl: missingRepo, error: expect.any(String) })],
+        resolvedProjectId: null,
+        resolvedProjectWorkspaceId: null,
+        baseCwdFallback: true,
       } },
     });
+    await expect(validation).rejects.toThrow(`Paperclip fallback directory "${fallbackCwd}"`);
+  });
+
+  it("allows the managed task fallback for project_primary without claiming the missing workspace", async () => {
+    const fallbackCwd = resolveDefaultAgentWorkspaceDir("agent-one");
+    const resolvedWorkspace: ResolvedWorkspaceForRun = {
+      cwd: fallbackCwd,
+      source: "agent_home",
+      projectId: null,
+      workspaceId: null,
+      repoUrl: null,
+      repoRef: null,
+      workspaceHints: [],
+      warnings: [],
+      baseCwdFallback: true,
+      materializationFailures: [],
+      additionalWorkspaces: [],
+      referencedProjectFailures: [],
+    };
+    await expect(assertGitSensitiveAdapterWorkspaceValid({
+      adapterType: "codex_local",
+      agentId: "agent-one",
+      issue: {
+        id: "issue-one", identifier: "T-1", projectId: "project-one",
+        projectWorkspaceId: "missing-workspace",
+      },
+      resolvedWorkspace,
+      executionWorkspace: { strategy: "project_primary", cwd: fallbackCwd } as never,
+      persistedExecutionWorkspace: {
+        id: "fallback-execution", cwd: fallbackCwd, strategyType: "project_primary",
+        projectId: null, projectWorkspaceId: null,
+      } as never,
+      executionTarget: { kind: "local" },
+    })).resolves.toBeUndefined();
   });
 
   it("retains a valid prior session workspace and falls back when it disappears", async () => {

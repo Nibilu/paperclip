@@ -971,10 +971,15 @@ export async function assertGitWorktreeBaseWorkspaceReady(input: {
     });
   };
 
+  const materializationFailures = input.anchor?.materializationFailures ?? [];
   if (input.base.source === "agent_home") {
+    const sourceFailure = materializationFailures[0]?.error;
     fail(
-      "git_worktree_base_agent_home",
-      `Issue ${issueLabel} requested ${input.requestedExecutionWorkspaceMode} with git_worktree, but no project or reusable execution workspace was resolved; refusing to create a git worktree from agent fallback cwd "${input.base.baseCwd}". ${remediation}`,
+      materializationFailures.length > 0
+        ? "git_worktree_base_materialization_failed"
+        : "git_worktree_base_agent_home",
+      `Issue ${issueLabel} requested ${input.requestedExecutionWorkspaceMode} with git_worktree, but no usable project repository was available${sourceFailure ? ` (${sourceFailure})` : ""}; refusing to create a git worktree from Paperclip fallback directory "${input.base.baseCwd}". Repair the configured project workspace or repository access, then retry.`,
+      { baseCwdFallback: input.anchor?.baseCwdFallback ?? false, materializationFailures },
     );
   }
 
@@ -984,7 +989,6 @@ export async function assertGitWorktreeBaseWorkspaceReady(input: {
   // would mask the real cause (for example a clone that could not authenticate). The reason
   // is reserved for genuine materialization failures; a fallback with no failed attempt
   // (a configured path that is simply unavailable) keeps its accurate reporting below.
-  const materializationFailures = input.anchor?.materializationFailures ?? [];
   if (input.anchor?.baseCwdFallback && materializationFailures.length > 0) {
     const failureDetail = `: ${materializationFailures[0].error.replace(/\s+/g, " ")}`;
     const connections = materializationFailures.map((failure) => readConnectionFailure(failure.connectionFailure));
@@ -1157,7 +1161,7 @@ export async function assertGitSensitiveAdapterWorkspaceValid(input: {
     });
   };
 
-  if (issue.projectWorkspaceId && !issue.projectId && !input.persistedExecutionWorkspace?.projectId) {
+  if (issue.projectWorkspaceId && !issue.projectId && !input.resolvedWorkspace.baseCwdFallback && !input.persistedExecutionWorkspace?.projectId) {
     fail(
       "missing_project_id",
       `Issue ${issue.identifier ?? issue.id} is linked to a project workspace but has no project id; refusing to launch ${input.adapterType} from fallback cwd.`,
@@ -1191,6 +1195,22 @@ export async function assertGitSensitiveAdapterWorkspaceValid(input: {
       "persisted_cwd_mismatch",
       `Issue ${issue.identifier ?? issue.id} resolved adapter cwd "${effectiveCwd}" but persisted execution workspace cwd is "${persistedCwd}".`,
     );
+  }
+
+  if (
+    input.resolvedWorkspace.baseCwdFallback &&
+    environmentDriver === "local" &&
+    input.executionWorkspace.strategy === "project_primary" &&
+    input.persistedExecutionWorkspace?.strategyType !== "git_worktree" &&
+    effectiveCwd &&
+    sameResolvedPath(effectiveCwd, input.resolvedWorkspace.cwd) &&
+    input.persistedExecutionWorkspace &&
+    persistedCwd &&
+    sameResolvedPath(effectiveCwd, persistedCwd)
+  ) {
+    // A managed fallback has no project checkout. Keep the persisted cwd check
+    // above, but do not require Git metadata or the unavailable project source.
+    return;
   }
 
   const expectedProjectWorkspaceId =
@@ -3449,6 +3469,8 @@ export function createHeartbeatWorkspaceResolver(db: Db) {
       repoRef: readNonEmptyString(workspace.repoRef),
     }));
 
+    let configuredWorkspaceUnavailable: string | null = null;
+    let fallbackMaterializationFailures: WorkspaceMaterializationFailure[] = [];
     if (projectWorkspaceRows.length > 0 || configuredSourceId) {
       const preferredWorkspace = preferredProjectWorkspaceId
         ? (projectWorkspaceRows.find(
@@ -3528,31 +3550,16 @@ export function createHeartbeatWorkspaceResolver(db: Db) {
         missingProjectCwds.push(projectCwd);
       }
 
-      const connections = materializationFailures.map((failure) => readConnectionFailure(failure.connectionFailure));
-      const connectionFailure = connections.length > 0 && connections.every((failure) => failure?.provider === "git")
-        ? connections[0] as GitConnectionFailure : undefined;
-      throw new WorkspaceValidationFailure(
-        `Configured project workspace is unavailable: ${preferredWorkspaceWarning ?? materializationFailures[0]?.error ?? missingProjectCwds[0] ?? "source could not be prepared"}. Repair the configured path or repository access, then retry.`,
-        {
-          ...(connectionFailure ? { connectionFailure } : {}),
-          workspaceValidation: {
-            reason: materializationFailures.length > 0 ? "git_worktree_base_materialization_failed" : "configured_workspace_unavailable",
-            issueId,
-            issueProjectId,
-            issueProjectWorkspaceId: preferredProjectWorkspaceId,
-            resolvedWorkspaceSource: "project_primary",
-            resolvedProjectId,
-            resolvedProjectWorkspaceId: preferredWorkspace?.id ?? null,
-            baseCwdFallback: false,
-            materializationFailures,
-          },
-        },
-      );
+      configuredWorkspaceUnavailable = materializationFailures[0]?.error
+        ?? preferredWorkspaceWarning
+        ?? missingProjectCwds[0]
+        ?? "source could not be prepared";
+      fallbackMaterializationFailures = materializationFailures;
     }
 
     const sessionCwd = readNonEmptyString(previousSessionParams?.cwd);
     const sessionCwdLooksUnsafe = isUnsafeSessionWorkspaceCwd(sessionCwd);
-    if (!forceTaskDirectory && sessionCwd && !sessionCwdLooksUnsafe) {
+    if (!configuredWorkspaceUnavailable && !forceTaskDirectory && sessionCwd && !sessionCwdLooksUnsafe) {
       const sessionCwdExists = await fs
         .stat(sessionCwd)
         .then((stats) => stats.isDirectory())
@@ -3573,15 +3580,22 @@ export function createHeartbeatWorkspaceResolver(db: Db) {
       }
     }
 
-    const configuredCwd = forceTaskDirectory ? null
+    const configuredCwd = configuredWorkspaceUnavailable ? null : forceTaskDirectory ? null
       : opts?.configuredCwd !== undefined ? opts.configuredCwd
       : readNonEmptyString(parseObject(agent.adapterConfig).cwd);
-    const cwd = configuredCwd ? path.resolve(configuredCwd)
+    const cwd = configuredWorkspaceUnavailable
+      ? issueId ? await materializeIsolatedTaskDirectory({ companyId: agent.companyId, issueId })
+        : resolveDefaultAgentWorkspaceDir(agent.id)
+      : configuredCwd ? path.resolve(configuredCwd)
       : issueId ? await materializeIsolatedTaskDirectory({ companyId: agent.companyId, issueId })
       : resolveDefaultAgentWorkspaceDir(agent.id);
     await fs.mkdir(cwd, { recursive: true });
     const warnings: string[] = [];
-    if (sessionCwd && sessionCwdLooksUnsafe) {
+    if (configuredWorkspaceUnavailable) {
+      warnings.push(
+        `WARNING: Configured project workspace is unavailable (${configuredWorkspaceUnavailable}). Continuing with project_primary in Paperclip-managed fallback directory "${cwd}"; the configured project workspace was not used. A git_worktree strategy still requires an available configured repository. Repair the configured path or repository access.`,
+      );
+    } else if (sessionCwd && sessionCwdLooksUnsafe) {
       warnings.push(
         `Saved session workspace "${sessionCwd}" points at a system temp root and was rejected as untrusted. Using fallback workspace "${cwd}" for this run.`,
       );
@@ -3600,15 +3614,17 @@ export function createHeartbeatWorkspaceResolver(db: Db) {
     }
     return {
       cwd,
-      source: issueId || configuredCwd ? "task_session" as const : "agent_home" as const,
+      source: configuredWorkspaceUnavailable || !issueId && !configuredCwd
+        ? "agent_home" as const
+        : "task_session" as const,
       projectId: null,
       workspaceId: null,
       repoUrl: null,
       repoRef: null,
       workspaceHints,
       warnings,
-      baseCwdFallback: false,
-      materializationFailures: [],
+      baseCwdFallback: Boolean(configuredWorkspaceUnavailable),
+      materializationFailures: fallbackMaterializationFailures,
     };
   }
 

@@ -6069,7 +6069,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     mockAdapterExecute.mockClear();
   });
 
-  it("blocks a projectless task before launch when its configured source directory is unavailable", async () => {
+  it.each([true, false])("runs a task from a Paperclip fallback when its configured source directory is unavailable (project linked: %s)", async (projectLinked) => {
     mockAdapterExecute.mockClear();
     const { companyId, agentId, runId, issueId } =
       await seedQueuedIssueRunFixture();
@@ -6089,15 +6089,15 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       projectId,
       name: "Primary workspace",
       sourceType: "local_path",
-      cwd: `/tmp/paperclip-missing-workspace-${randomUUID()}`,
+      cwd: path.join(process.cwd(), `paperclip-missing-workspace-${randomUUID()}`),
       isPrimary: true,
     });
     await db
       .update(issues)
       .set({
-        title: "Launch from linked workspace without project id",
+        title: "Launch from unavailable linked workspace",
         identifier: `${issuePrefix}-1`,
-        projectId: null,
+        projectId: projectLinked ? projectId : null,
         projectWorkspaceId,
       })
       .where(eq(issues.id, issueId));
@@ -6106,85 +6106,23 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
     await heartbeat.resumeQueuedRuns();
     await waitForRunToSettle(heartbeat, runId, 5_000);
+    await heartbeat.waitForRunExecutionDrain(runId);
 
-    expect(mockAdapterExecute).not.toHaveBeenCalled();
+    expect(mockAdapterExecute).toHaveBeenCalledTimes(1);
+    const [boundIssue] = await db.select().from(issues).where(eq(issues.id, issueId));
+    expect(boundIssue?.executionWorkspaceId).toBeTruthy();
+    const [fallbackWorkspace] = await db.select().from(executionWorkspaces)
+      .where(eq(executionWorkspaces.id, boundIssue!.executionWorkspaceId!));
+    expect(fallbackWorkspace?.cwd).toContain(
+      path.join("isolated-workspaces", companyId, issueId),
+    );
 
-    const failedRun = await db
+    const run = await db
       .select()
       .from(heartbeatRuns)
       .where(eq(heartbeatRuns.id, runId))
       .then((rows) => rows[0] ?? null);
-    expect(failedRun).toMatchObject({
-      status: "failed",
-      errorCode: "workspace_validation_failed",
-    });
-    expect(failedRun?.error).toContain(
-      "Configured project workspace is unavailable",
-    );
-    // The adapter process never started, so no agent could post an issue
-    // comment. The comment policy is not_applicable and no missing-comment
-    // retry is queued, which stops a pre-adapter setup failure from looping.
-    expect(failedRun?.processStartedAt).toBeNull();
-    expect(failedRun?.issueCommentStatus).toBe("not_applicable");
-    const missingCommentWakeups = await db
-      .select()
-      .from(agentWakeupRequests)
-      .where(
-        and(
-          eq(agentWakeupRequests.companyId, companyId),
-          eq(agentWakeupRequests.reason, "missing_issue_comment"),
-        ),
-      );
-    expect(missingCommentWakeups).toHaveLength(0);
-    expect(failedRun?.resultJson).toMatchObject({
-      workspaceValidation: {
-        reason: "configured_workspace_unavailable",
-        issueId,
-        issueProjectId: null,
-        issueProjectWorkspaceId: projectWorkspaceId,
-      },
-    });
-
-    const issue = await waitForValue(async () =>
-      db
-        .select()
-        .from(issues)
-        .where(eq(issues.id, issueId))
-        .then((rows) => {
-          const row = rows[0] ?? null;
-          return row?.status === "blocked" ? row : null;
-        }),
-    );
-    expect(issue?.executionRunId).toBeNull();
-
-    const recoveryAction = await selectRecoveryActionForIssue(companyId, issueId);
-    expect(recoveryAction).toMatchObject({
-      kind: "workspace_validation",
-      cause: "workspace_validation_failed",
-      status: "active",
-      ownerType: "board",
-      ownerAgentId: null,
-      recoveryIssueId: null,
-    });
-    expect(recoveryAction?.evidence).toMatchObject({
-      sourceIssueId: issueId,
-      latestRunId: runId,
-      latestRunErrorCode: "workspace_validation_failed",
-      recoveryCause: "workspace_validation_failed",
-    });
-    expect(recoveryAction?.nextAction).toContain(
-      "repair the source task workspace link",
-    );
-
-    const validationComment = await waitForValue(async () => {
-      const rows = await selectRecoveryCommentsForIssue(issueId);
-      return (
-        rows.find((comment) =>
-          comment.body.includes("workspace failed validation"),
-        ) ?? null
-      );
-    });
-    expect(validationComment).toBeTruthy();
+    expect(run).toMatchObject({ status: "succeeded", errorCode: null });
   });
 
   it("keeps an explicit local-path/worktree conflict blocked with a board action and no Sentry event", async () => {
