@@ -108,6 +108,8 @@ L3 用户兜底      board 决策(现有语义,保持不变)
 
 **实施范围确认(2026-10-27)**:第一阶段 = S13(入口迁移:legacy 分支消费分类,移除 43656a5af 私有 hook)+ S14(repair 重试 forceFreshSession)+ S15(存量回填 pre-pass)+ S16(看门人)+ S17(排队通知/UI 可见性)。已确认决策:①无合格候选 → 预算内排队(scheduled_retry+backoff+通知),耗尽仍 board 兜底;②recon stamp 进 outbox(触发面再扩大)**不在第一阶段**;③repair 通道候选恒为原 owner,owner 不可用即 board 兜底。上游比对(2026-10-27):355 commits,`decideLegacyContinuation` 的 `run_not_successful` skip 语义未变,上游未覆盖本缺口,fork 本地低耦合实现。
 
+**实施范围修正(2026-10-27 下午,用户确认)**:第一阶段目标=**解决当前已发现的问题**,不是只建机制等未来——只是不引入系统级 agent 类型定义及其触发的未评估入口/跨公司身份权限复杂场景。对 AMB-116/117 这类问题,**原有 reconciliation(inspect/doctor)机制即可解决,只需在该类情况下被触发**。实测(AMB-117 13:11-13:18):①用户手动 retry 成功;②repair 5s 失败=acpx 引擎层 resume 抖动(同 session 1s 前刚成功,AMB-99 同族);③新 lane 21s 内排定 fresh-session retry+评论(S13/S14/S17 真实数据验证);④**dispatch 门 bug**:`validSource` 要求 episode 源 run succeeded,重试链锚是失败 attempt → 每次 post-failure retry 都在 dispatch 被 superseded(commit a2d9a43fc 修复,48/48 测试);⑤watchdog lane 触发 reconciliation wake,跨 adaptor 诊断正确落档(status=drafted),agent-draft 端点 403(JWT 绑定缺口,服务端 ingestion 兜底闭环未断,列为后续项)。
+
 ## 6. E2E 实例映射
 
 | 实例 | 故障类别(分类器) | 验证的阶梯路径 | 前置状态 |
