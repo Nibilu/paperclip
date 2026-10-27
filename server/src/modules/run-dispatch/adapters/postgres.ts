@@ -403,10 +403,22 @@ export function createPostgresRunDispatchAdapter(
         const source = sourceId ? await dbOrTx.select().from(heartbeatRuns).where(and(
           eq(heartbeatRuns.id, sourceId), eq(heartbeatRuns.companyId, input.companyId),
         )).limit(1).then(rows => rows[0]) : null;
-        validSource = Boolean(source && source.status === "succeeded" && source.agentId === input.agentId
-          && (source.contextSnapshot?.issueId ?? source.contextSnapshot?.taskId) === issueId
+        // Retry chains anchor on the previous attempt: a same-episode FAILED
+        // repair run is a valid anchor (its own context carries the episode).
+        // Demanding a succeeded source killed every post-failure retry at
+        // dispatch — AMB-116/117 scheduled fresh-session retries that were
+        // always superseded here before ever running.
+        const sourceContext = source ? parseObject(source.contextSnapshot) : {};
+        const sourceIsSameEpisodeRepairFailure = Boolean(
+          source
+          && ["failed", "timed_out", "interrupted"].includes(source.status)
+          && readNonEmptyString(sourceContext.retryReason) === ISSUE_DISPOSITION_REPAIR_RETRY_REASON,
+        );
+        validSource = Boolean(source && source.agentId === input.agentId
+          && (sourceContext.issueId ?? sourceContext.taskId) === issueId
           && legacyDispositionEpisode(source).id === episode.id
-          && episode.attempt >= 1 && episode.attempt <= episode.maxAttempts);
+          && episode.attempt >= 1 && episode.attempt <= episode.maxAttempts
+          && (source.status === "succeeded" || sourceIsSameEpisodeRepairFailure));
         currentFingerprint = legacyDispositionFingerprint(input.companyId, issueId, input.agentId, episode.id);
       }
       facts.dispositionRepair = {

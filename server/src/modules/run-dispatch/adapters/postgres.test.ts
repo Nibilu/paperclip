@@ -23,6 +23,7 @@ import {
   startEmbeddedPostgresTestDatabase,
 } from "../../../__tests__/helpers/embedded-postgres.js";
 import { createPostgresRunDispatchAdapter } from "./postgres.js";
+import { legacyDispositionFingerprint } from "../../../services/recovery/legacy-continuation.js";
 import { settleUnrecoverableExecutions } from "../../../services/execution-recovery-resolution.js";
 import { getExecutionBlocker } from "../../../services/execution-blocker.js";
 
@@ -849,6 +850,131 @@ describeEmbeddedPostgres("run-dispatch postgres adapter", () => {
       expect(outcome.outcome).toBe("promoted");
       const [row] = await db.select({ status: heartbeatRuns.status }).from(heartbeatRuns).where(eq(heartbeatRuns.id, runId));
       expect(row?.status).toBe("queued");
+    });
+
+    it("promotes a disposition-repair retry anchored on a same-episode failed repair run", async () => {
+      // R11/AMB-117: the retry chain anchors on the FAILED previous attempt.
+      // The old validSource gate demanded a succeeded source, so every
+      // post-failure fresh-session retry was superseded at dispatch before it
+      // could run (AMB-117 13:16形态).
+      const { companyId, agentId } = await seedCompanyAndAgent();
+      const issueId = randomUUID();
+      const sourceRunId = randomUUID();
+      const runId = randomUUID();
+      const episodeId = randomUUID();
+      const now = new Date();
+      const fingerprint = legacyDispositionFingerprint(companyId, issueId, agentId, episodeId);
+      await seedIssue({ companyId, issueId, status: "in_progress", assigneeAgentId: agentId });
+      await db.insert(heartbeatRuns).values({
+        id: sourceRunId,
+        companyId,
+        agentId,
+        invocationSource: "automation",
+        status: "failed",
+        error: "Persistent ACP session session-1 could not be resumed: Internal error",
+        errorCode: "acpx_turn_failed",
+        startedAt: new Date(now.getTime() - 60_000),
+        finishedAt: new Date(now.getTime() - 55_000),
+        contextSnapshot: {
+          issueId,
+          retryReason: "issue_disposition_repair",
+          dispositionRepairAttempt: 1,
+          dispositionRepairMaxAttempts: 2,
+          dispositionRepairFingerprint: fingerprint,
+          legacyDispositionEpisode: { id: episodeId, attempt: 1, maxAttempts: 2 },
+        },
+        createdAt: new Date(now.getTime() - 60_000),
+      });
+      await db.insert(heartbeatRuns).values({
+        id: runId,
+        companyId,
+        agentId,
+        invocationSource: "retry",
+        status: "scheduled_retry",
+        scheduledRetryAttempt: 2,
+        scheduledRetryAt: now,
+        scheduledRetryReason: "issue_disposition_repair",
+        contextSnapshot: {
+          issueId,
+          retryReason: "issue_disposition_repair",
+          dispositionRepairAttempt: 2,
+          dispositionRepairMaxAttempts: 2,
+          dispositionRepairFingerprint: fingerprint,
+          dispositionRepairSourceRunId: sourceRunId,
+          legacyDispositionEpisode: { id: episodeId, attempt: 2, maxAttempts: 2 },
+          forceFreshSession: true,
+        },
+        updatedAt: now,
+        createdAt: now,
+      });
+      await db.update(issues).set({ executionRunId: runId }).where(eq(issues.id, issueId));
+
+      const adapter = createPostgresRunDispatchAdapter(db);
+      const outcome = await adapter.promoteOrCancelDueRetry({ runId, companyId, now });
+
+      expect(outcome.outcome).toBe("promoted");
+      const [row] = await db.select({ status: heartbeatRuns.status }).from(heartbeatRuns).where(eq(heartbeatRuns.id, runId));
+      expect(row?.status).toBe("queued");
+    });
+
+    it("still supersedes a disposition-repair retry whose episode anchor belongs to another episode", async () => {
+      const { companyId, agentId } = await seedCompanyAndAgent();
+      const issueId = randomUUID();
+      const sourceRunId = randomUUID();
+      const runId = randomUUID();
+      const now = new Date();
+      await seedIssue({ companyId, issueId, status: "in_progress", assigneeAgentId: agentId });
+      await db.insert(heartbeatRuns).values({
+        id: sourceRunId,
+        companyId,
+        agentId,
+        invocationSource: "automation",
+        status: "failed",
+        errorCode: "acpx_turn_failed",
+        startedAt: new Date(now.getTime() - 60_000),
+        finishedAt: new Date(now.getTime() - 55_000),
+        contextSnapshot: {
+          issueId,
+          retryReason: "issue_disposition_repair",
+          dispositionRepairAttempt: 1,
+          dispositionRepairMaxAttempts: 2,
+          // A different episode than the scheduled retry claims.
+          legacyDispositionEpisode: { id: randomUUID(), attempt: 1, maxAttempts: 2 },
+        },
+        createdAt: new Date(now.getTime() - 60_000),
+      });
+      await db.insert(heartbeatRuns).values({
+        id: runId,
+        companyId,
+        agentId,
+        invocationSource: "retry",
+        status: "scheduled_retry",
+        scheduledRetryAttempt: 2,
+        scheduledRetryAt: now,
+        scheduledRetryReason: "issue_disposition_repair",
+        contextSnapshot: {
+          issueId,
+          retryReason: "issue_disposition_repair",
+          dispositionRepairAttempt: 2,
+          dispositionRepairMaxAttempts: 2,
+          dispositionRepairFingerprint: legacyDispositionFingerprint(companyId, issueId, agentId, randomUUID()),
+          dispositionRepairSourceRunId: sourceRunId,
+          legacyDispositionEpisode: { id: randomUUID(), attempt: 2, maxAttempts: 2 },
+        },
+        updatedAt: now,
+        createdAt: now,
+      });
+      await db.update(issues).set({ executionRunId: runId }).where(eq(issues.id, issueId));
+
+      const adapter = createPostgresRunDispatchAdapter(db);
+      const outcome = await adapter.promoteOrCancelDueRetry({ runId, companyId, now });
+
+      expect(outcome.outcome).toBe("gate_suppressed");
+      if (outcome.outcome === "gate_suppressed") {
+        expect(outcome.errorCode).toBe("issue_disposition_repair_superseded");
+      }
+      const [row] = await db.select({ status: heartbeatRuns.status }).from(heartbeatRuns).where(eq(heartbeatRuns.id, runId));
+      expect(row?.status).toBe("cancelled");
     });
 
     it("cancels a due retry a pause hold blocks", async () => {
