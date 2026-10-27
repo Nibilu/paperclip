@@ -1,7 +1,7 @@
 # 恢复阶梯需求书:系统级状态模型、控制平面与分级恢复(Recovery Ladder v1.2)
 
-- 日期:2026-10-22(v1);2026-10-27(v1.2)
-- 状态:**v1 已交付**(S0-S11,dev HEAD 1a96f7e76,2026-10-22);**v1.2 为当前有效设计**(自修复失败分类消费 + meta-recovery 看门人 + 一等公民诊断 agent 定位,源自 AMB-116/117 实证与 43656a5af 方案评审)。
+- 日期:2026-10-22(v1);2026-10-27(v1.2);2026-10-27(v1.3,实施范围确认)
+- 状态:**v1 已交付**(S0-S11,dev HEAD 1a96f7e76,2026-10-22);v1.2 设计评审完成;**v1.3 为当前有效设计**——实施范围已确认(2026-10-27):**第一阶段只做处理机制**(R11/R12+S13-S17,公司内医生挑选逻辑维持现状),**一等公民诊断主体(R13/S18)整体暂缓至第二阶段**。
 - **正本**:本文件(fork 仓库 `doc/plans/2026-10-22-recovery-ladder-requirements.md`)。伴生镜像:Paperclip 顶层任务 **AMB-98** plan 文档 `3b3347f8`(与正本同步,注明对应 commit);artifacts 文档 `09c11645` 为事故取证。同步约定:改正本必须同轮同步伴生镜像并注明 commit(§9)。
 - 来源:AMB-86 / AMB-90 / AMB-96 / AMB-97 事故取证(2026-10-22);**AMB-116 / AMB-117 事故取证(2026-10-27)**。
 - 决策约束:不向 upstream 提 issue(非致命不提);实现落在本地 fork、低耦合、便于 rebase;涉及系统级改动前先提交本地并 fetch upstream 对齐(用户流程约定)。
@@ -65,8 +65,12 @@ L3 用户兜底      board 决策(现有语义,保持不变)
 - 显式扩展(已评审交付):触发面扩大(R3);超时自动决策 = 确定性服务端策略(非 LLM)采纳 recommended 方案,仅限可回退且影响面单一,决策全文落 evidence+activity log;不可回退动作永不自动执行。
 - 闭环 resolve:批准提案时同步移交 action ownership 给 returnOwnerAgentId,按现有 requireRecoveryActionAuthority 合法 resolve,不新增 system 越权路径。
 
-### 3.2 医生角色规格(v1.2 重写:一等公民定位)
+### 3.2 医生角色规格(v1.2 重写:一等公民定位;v1.3 分阶段落地)
 【定位修正,2026-10-27】诊断能力是**系统一等公民**,不属于单一公司——**不是**"某个公司的 agent 跨公司服务",而是平台级诊断能力**按公司投影**工作:
+
+【分阶段确认,2026-10-27】
+- **第一阶段(本次实施,R11/R12+S13-S17)**:**不在系统级新增诊断 agent 类型定义与显式入口**;本阶段交付的是**处理机制**——公司内自修复失败 → 分类消费 → 重试/升级的稳定闭环。医生挑选逻辑完全维持现状:同公司、状态正常({active,idle,running,error})、排除源 agent 与源 adapter(`triedAgentIds/triedAdapterTypes`)、`diagnosticPriority` 优先。**无合格候选时修复进入 queued task 排队等待**(scheduled_retry + 既有 backoff,任务界面可见),直到出现符合条件的 agent 为止,并在任务界面显示排队通知;attempt 预算耗尽仍 board 升级兜底(防永久占坑,2026-10-27 确认)。repair 通道的候选恒为原 owner(自修复语义),owner 不可用(paused 等)时立即 board 兜底不排队。验收标准:公司内该机制稳定可靠。
+- **第二阶段(暂缓,R13/S18)**:一等公民诊断主体本体——系统级 agent 类型定义、显式调用入口、公司投影契约(业务逻辑/功能定义可查询、能力优先级=公司当前加载优先)、统一诊断状态对外查询。**待第一阶段稳定成熟后,凭积累的经验设计**(涉及复杂的公司投影权限与机制,2026-10-27 确认暂缓)。
 
 - **调用入口**(三类,统一收敛到同一诊断 run 生命周期):①阶梯自动触发(L2 类别 stamp + 看门人);②显式 API / UI 手动触发(对指定 run/hold 发起诊断);③(远期)定时巡检。
 - **对外状态**:诊断 run 生命周期可查询——现有 `evidence.reconciliationAnalysis.status`(pending/requested/dispatching/running/drafted/unavailable)即雏形,需升为对外可查询的一等状态(失败面板/通知引用)。
@@ -85,7 +89,7 @@ L3 用户兜底      board 决策(现有语义,保持不变)
 - **R5 权限与 review**【已交付】;**R6 可回退**【已交付】;**R7 通知**【已交付】;**R8 闭环执行器**【已交付】;**R9 观测**【已交付】;**R10 最后尝试摘要**【已交付】:stranding 时编译 attempts×{runId,errorCode,classification,stderrTail(脱敏),blockedOn} digest 入 evidence;Commands Run 从 run events 提取真实 tool 调用。
 - **R11 自修复失败分类消费**(v1.2,对应 G5):failed repair run 是分类输入而非旁路对象——在 legacy 分支内消费分类结果;`bounded`+fresh session 前提 → scheduled-retry;`never`/前提不成立/耗尽 → `escalateDispositionRepair`(board)。复用 43656a5af 已交付的 persistedMaxAttempts / maxAttempts 透传 / expectedFingerprint 机器,**废弃其 per-错误签名私有 hook**(私有签名与 RULES 表漂移的教训)。
 - **R12 meta-recovery 看门人**(v1.2,对应 G5/G6):与错误码解耦的收敛性触发器——sweep pre-pass(仿 `stampL2HoldsMissingAnalysis`)检测"修复通道不收敛"(active deliberate_wait/同族 hold + 最近 N tick 无 run 推进/attempt 不变/未升级)→ 按 R11 路由强制收敛;天然回填存量卡死(上线即解锁 AMB-116/117)。
-- **R13 一等公民诊断 agent**(v1.2,对应 G7,定位见 §3.2):调用入口(自动/显式 API/UI)收敛到统一诊断 run 生命周期并对外可查询;分级通知对接(R7);目标公司投影契约(业务逻辑/功能定义可查询,能力优先以公司当前加载为准,平台默认兜底);产出 advisory draft + fixProposal,修复走授权闭环;平台外 hermes agent 引导模式收编为系统内机制。
+- **R13 一等公民诊断 agent**(v1.2,对应 G7,定位见 §3.2;**第二阶段,暂缓**——第一阶段仅交付其处理机制前提,见 §3.2 分阶段确认):调用入口(自动/显式 API/UI)收敛到统一诊断 run 生命周期并对外可查询;分级通知对接(R7);目标公司投影契约(业务逻辑/功能定义可查询,能力优先以公司当前加载为准,平台默认兜底);产出 advisory draft + fixProposal,修复走授权闭环;平台外 hermes agent 引导模式收编为系统内机制。
 
 ## 5. 实施分解(每步带测试;独立 commit,优先独立 worktree)
 
@@ -98,9 +102,11 @@ L3 用户兜底      board 决策(现有语义,保持不变)
 | S15 | 存量回填 pre-pass(R12):扫现存 active hold + failed repair run → 按 R11 路由 | 单测:现存两单(AMB-116/117)数据形态 | 上线即解锁存量 |
 | S16 | 看门人触发器(R12):非收敛 tick 阈值(N) + 强制收敛 | 集成测试(mock adapter):收敛/不收敛/升级三路 | 与错误码解耦 |
 | S17 | UI 可见性(G6):blocker 谓词补 board 升级态的 deliberate_wait;通知分级对接 | 单测 + 浏览器 E2E | 可选,评审后定 |
-| S18 | 一等公民诊断 agent 骨架(R13):设计评审(入口/状态/公司投影契约/能力优先级)→ 骨架(状态对外查询 + 显式触发 API) | 设计评审记录 + API contract 测试 | 大项,先评审后实施 |
+| S18 | 一等公民诊断 agent 骨架(R13):设计评审(入口/状态/公司投影契约/能力优先级)→ 骨架(状态对外查询 + 显式触发 API) | 设计评审记录 + API contract 测试 | **第二阶段,暂缓**——待第一阶段(S13-S17)稳定成熟后凭经验设计 |
 
 执行约定:每个代码子任务独立 commit;每步完成即测试并记录证据,失败即停不跳步。
+
+**实施范围确认(2026-10-27)**:第一阶段 = S13(入口迁移:legacy 分支消费分类,移除 43656a5af 私有 hook)+ S14(repair 重试 forceFreshSession)+ S15(存量回填 pre-pass)+ S16(看门人)+ S17(排队通知/UI 可见性)。已确认决策:①无合格候选 → 预算内排队(scheduled_retry+backoff+通知),耗尽仍 board 兜底;②recon stamp 进 outbox(触发面再扩大)**不在第一阶段**;③repair 通道候选恒为原 owner,owner 不可用即 board 兜底。上游比对(2026-10-27):355 commits,`decideLegacyContinuation` 的 `run_not_successful` skip 语义未变,上游未覆盖本缺口,fork 本地低耦合实现。
 
 ## 6. E2E 实例映射
 
