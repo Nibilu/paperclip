@@ -1666,6 +1666,16 @@ async function startServerWithDatabaseTeardown(
           );
         }
 
+        // S15 (R11): startup backfill pre-pass — heal legacy failed repair
+        // runs immediately on boot instead of waiting for the periodic chain.
+        const backfilled = await heartbeat.reconcileFailedDispositionRepairBacklog();
+        if (backfilled.queued > 0 || backfilled.escalated > 0 || backfilled.covered > 0) {
+          logger.warn(
+            backfilled,
+            "startup disposition repair backlog pre-pass changed state",
+          );
+        }
+
         const dependencyWakesReconciled = await heartbeat.reconcileResolvedDependencyWakes();
         if (dependencyWakesReconciled.healed > 0) {
           logger.warn(
@@ -1877,6 +1887,22 @@ async function startServerWithDatabaseTeardown(
                 logger.warn(
                   { promotedScheduledRetries: promotion.promoted, promotedScheduledRetryRunIds: promotion.runIds, ...reconciled },
                   "periodic heartbeat recovery changed assigned issue state",
+                );
+              }
+            })
+            .then(async () => {
+              // S15 (R11): backfill pre-pass — route failed disposition repair
+              // runs (incl. blocked issues the stranded sweep does not scan)
+              // through the unified classification consumer.
+              const backfilled = await heartbeat.reconcileFailedDispositionRepairBacklog();
+              if (
+                backfilled.queued > 0 ||
+                backfilled.escalated > 0 ||
+                backfilled.covered > 0
+              ) {
+                logger.warn(
+                  backfilled,
+                  "disposition repair backlog pre-pass changed state",
                 );
               }
             })

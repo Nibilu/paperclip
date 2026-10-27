@@ -55,7 +55,7 @@ function callbacks(db: Db) {
     finalizeAgentStatus: vi.fn<Dependencies["finalizeAgentStatus"]>(async () => undefined),
     enqueueWakeup: vi.fn<Dependencies["enqueueWakeup"]>(),
     issuesSvc: { addComment: vi.fn<Dependencies["issuesSvc"]["addComment"]>() },
-    recovery: { reconcileLegacyContinuation: vi.fn<Dependencies["recovery"]["reconcileLegacyContinuation"]>(), reconcileFailedDispositionRepair: vi.fn<Dependencies["recovery"]["reconcileFailedDispositionRepair"]>(), reconcileResolvedDependencyWakeBackstop: vi.fn<Dependencies["recovery"]["reconcileResolvedDependencyWakeBackstop"]>() },
+    recovery: { reconcileLegacyContinuation: vi.fn<Dependencies["recovery"]["reconcileLegacyContinuation"]>(), reconcileResolvedDependencyWakeBackstop: vi.fn<Dependencies["recovery"]["reconcileResolvedDependencyWakeBackstop"]>() },
     getCurrentUserRedactionOptions: lifecycleDeps.getCurrentUserRedactionOptions,
     budgetHooks: {},
     runLogStore: { finalize: vi.fn<Dependencies["runLogStore"]["finalize"]>(async () => ({ bytes: 123, sha256: "log-hash", compressed: true })) },
@@ -157,7 +157,7 @@ describe.skipIf(!support.supported)("heartbeat run completion boundary", () => {
     });
   });
 
-  it("reconciles a failed disposition repair after clearing its failed ACP session", async () => {
+  it("clears the failed ACP session for a failed disposition repair without a private reconciliation hook", async () => {
     const f = await fixture({ contextSnapshot: {
       issueId: "00000000-0000-4000-8000-000000000001",
       retryReason: "issue_disposition_repair",
@@ -176,10 +176,9 @@ describe.skipIf(!support.supported)("heartbeat run completion boundary", () => {
       taskKey: "completion-task",
       expectedRunId: f.run.id,
     }));
-    expect(f.deps.recovery.reconcileFailedDispositionRepair).toHaveBeenCalledWith(f.run.id);
-    expect(f.deps.clearTaskSessions.mock.invocationCallOrder[0]).toBeLessThan(
-      f.deps.recovery.reconcileFailedDispositionRepair.mock.invocationCallOrder[0]!,
-    );
+    // R11: the private run-completion reconciliation hook is gone; the failed
+    // repair run is consumed by the unified classification lane instead.
+    expect(f.deps.recovery.reconcileLegacyContinuation).toHaveBeenCalledWith(f.run.id);
   });
 
   it.each(["completeRun", "failRun"] as const)("waits for an owned Stop before %s can write a competing outcome", async operation => {

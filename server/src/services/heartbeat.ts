@@ -1548,6 +1548,10 @@ export function heartbeatService(
     });
   }
 
+  async function reconcileFailedDispositionRepairBacklog() {
+    return recovery.reconcileFailedDispositionRepairBacklog();
+  }
+
   async function sweepStaleIssueLocks() {
     return recovery.sweepStaleIssueLocks();
   }
@@ -4023,6 +4027,7 @@ export function heartbeatService(
     scheduleBoundedRetry,
 
     reconcileStrandedAssignedIssues,
+    reconcileFailedDispositionRepairBacklog,
     recoverPendingSessionGoalActions,
     recoverActiveSessionGoals,
 

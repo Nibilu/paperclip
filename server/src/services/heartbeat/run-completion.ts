@@ -68,7 +68,7 @@ export interface HeartbeatRunCompletionDependencies extends Pick<RunState,
   Pick<HeartbeatRetryDependencies, "finalizeAgentStatus">,
   Pick<ReturnType<typeof createHeartbeatQueue>, "enqueueWakeup"> {
   issuesSvc: Pick<ReturnType<typeof issueService>, "addComment">;
-  recovery: Pick<ReturnType<typeof recoveryService>, "reconcileLegacyContinuation" | "reconcileFailedDispositionRepair" | "reconcileResolvedDependencyWakeBackstop">;
+  recovery: Pick<ReturnType<typeof recoveryService>, "reconcileLegacyContinuation" | "reconcileResolvedDependencyWakeBackstop">;
   getCurrentUserRedactionOptions: () => Promise<CurrentUserRedactionOptions>;
   budgetHooks: BudgetServiceHooks;
   runLogStore: Pick<ReturnType<typeof getRunLogStore>, "finalize">;
@@ -1049,14 +1049,11 @@ export function createHeartbeatRunCompletion(db: Db, dependencies: HeartbeatRunC
           });
         }
       }
-      if (outcome === "failed" && taskKey && (
-        adapterResult.clearSession || (!nextSessionState.params && !nextSessionState.displayId)
-      )) {
-        // The ACP resume failure path clears the dead task session above. Let
-        // recovery consume the disposition repair's already-reserved attempt
-        // only after that fresh-session boundary has been persisted.
-        await recovery.reconcileFailedDispositionRepair(finalizedRun.id);
-      }
+      // R11: failed disposition repair runs are consumed by recovery via the
+      // unified classification lane (legacy branch of
+      // reconcileDispositionRepair + the periodic backlog pre-pass), not by a
+      // private run-completion hook — the hook was unreachable on the real
+      // legacy lane (AMB-116/117) and bypassed board visibility.
     }
     await finalizeAgentStatus(agent.id, outcome, runErrorMessage, {
       keepIdleOnFailure:

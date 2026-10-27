@@ -41,6 +41,7 @@ import { workspaceOperationService, isNativeWorkspaceFinalizationOperationActive
 import { issueRecoveryActionService } from "../services/issue-recovery-actions.js";
 import { recoveryService } from "../services/recovery/service.js";
 import { collectDispositionRepairSourceState } from "../services/recovery/disposition-repair.js";
+import { legacyDispositionFingerprint } from "../services/recovery/legacy-continuation.js";
 import { issueService } from "../services/issues.js";
 import { withNativeWorkspaceFinalizationOwnership } from "../services/native-runtime/native-workspace-finalization-ownership.js";
 import { noticeMetadataReferencesRecoveryAction } from "../services/recovery/successful-run-handoff.js";
@@ -2997,8 +2998,14 @@ describeEmbeddedPostgres("issue recovery actions", () => {
 
   async function seedFailedDispositionRepair(input: { attempt?: number; errorCode?: string; error?: string } = {}) {
     const { companyId, coderId, sourceIssue } = await seedCompany();
+    // R11: real repair runs always carry a legacyDispositionEpisode (49/49 in
+    // the dev DB), so the fixture must use the legacy lane shape — the episode
+    // id is the source run and the fingerprint is episode-scoped, not derived
+    // from the live source state.
     const state = await collectDispositionRepairSourceState(db, { issue: sourceIssue });
     const attempt = input.attempt ?? 1;
+    const episode = { id: randomUUID(), attempt, maxAttempts: 2 };
+    const fingerprint = legacyDispositionFingerprint(companyId, sourceIssue.id, coderId, episode.id);
     const action = await issueRecoveryActionService(db).upsertSourceScoped({
       companyId,
       sourceIssueId: sourceIssue.id,
@@ -3008,7 +3015,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
       previousOwnerAgentId: coderId,
       returnOwnerAgentId: coderId,
       cause: "deliberate_wait_without_target",
-      fingerprint: state.fingerprint,
+      fingerprint,
       evidence: { sourceStateFingerprint: state.fingerprint },
       nextAction: "Replace the invalid parked summary with a durable disposition.",
       wakePolicy: { type: "bounded_owner_disposition_repair", retryAgentId: coderId, attempt, maxAttempts: 2 },
@@ -3032,19 +3039,29 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         retryReason: "issue_disposition_repair",
         dispositionRepairAttempt: attempt,
         dispositionRepairMaxAttempts: 2,
-        dispositionRepairFingerprint: state.fingerprint,
+        dispositionRepairFingerprint: fingerprint,
         recoveryActionId: action.id,
+        legacyDispositionEpisode: episode,
       },
     });
-    return { companyId, coderId, sourceIssue, state, action, runId };
+    return { companyId, coderId, sourceIssue, state, action, runId, episode, fingerprint };
   }
 
-  it("retries an infrastructure-failed disposition repair once and deduplicates reconciliation", async () => {
+  it("retries a legacy-failed disposition repair once with a fresh session and deduplicates reconciliation", async () => {
     const fixture = await seedFailedDispositionRepair();
     const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
 
-    expect(await recovery.reconcileFailedDispositionRepair(fixture.runId)).toBe("queued");
-    expect(await recovery.reconcileFailedDispositionRepair(fixture.runId)).toBe("skipped");
+    expect(await recovery.reconcileFailedDispositionRepairBacklog()).toMatchObject({
+      scanned: 1,
+      queued: 1,
+      escalated: 0,
+    });
+    // Idempotent while the queued slot exists.
+    expect(await recovery.reconcileFailedDispositionRepairBacklog()).toMatchObject({
+      scanned: 1,
+      queued: 0,
+      skipped: 1,
+    });
 
     const retries = await db.select().from(heartbeatRuns).where(sql`${heartbeatRuns.contextSnapshot} ->> 'retryReason' = 'issue_disposition_repair'`);
     expect(retries).toHaveLength(2);
@@ -3056,44 +3073,110 @@ describeEmbeddedPostgres("issue recovery actions", () => {
       contextSnapshot: {
         dispositionRepairAttempt: 2,
         dispositionRepairMaxAttempts: 2,
-        dispositionRepairFingerprint: fixture.state.fingerprint,
+        dispositionRepairFingerprint: fixture.fingerprint,
+        // S14: the retry follows a failed run — fresh session, no resume.
+        forceFreshSession: true,
       },
     });
     expect(await db.select().from(agentWakeupRequests).where(eq(agentWakeupRequests.idempotencyKey,
-      `issue_disposition_repair:${fixture.sourceIssue.id}:${fixture.state.fingerprint}:2`))).toHaveLength(1);
+      `issue_disposition_repair:${fixture.sourceIssue.id}:${fixture.fingerprint}:2`))).toHaveLength(1);
     expect(await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, fixture.action.id))).toMatchObject([
       expect.objectContaining({ attemptCount: 2, maxAttempts: 2, ownerType: "agent" }),
     ]);
+    // S17: the queued retry is visible on the task UI via a system comment.
+    const comments = await db.select().from(issueComments).where(and(
+      eq(issueComments.issueId, fixture.sourceIssue.id),
+      sql`${issueComments.metadata} -> 'recovery' ->> 'kind' = 'disposition_repair_queued'`,
+    ));
+    expect(comments).toHaveLength(1);
   });
 
-  it("does not retry an infrastructure-failed disposition repair after budget exhaustion", async () => {
+  it("does not retry a legacy-failed disposition repair after budget exhaustion", async () => {
     const fixture = await seedFailedDispositionRepair({ attempt: 2 });
     const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
 
-    expect(await recovery.reconcileFailedDispositionRepair(fixture.runId)).toBe("escalated");
+    expect(await recovery.reconcileFailedDispositionRepairBacklog()).toMatchObject({
+      scanned: 1,
+      escalated: 1,
+      queued: 0,
+    });
     expect(await db.select().from(agentWakeupRequests).where(sql`${agentWakeupRequests.idempotencyKey} like 'issue_disposition_repair:%:3'`)).toHaveLength(0);
     expect(await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, fixture.action.id))).toMatchObject([
       expect.objectContaining({ ownerType: "board", status: "active", wakePolicy: expect.objectContaining({ type: "board_escalation" }) }),
     ]);
   });
 
-  it("does not retry an infrastructure-failed repair after its source fingerprint changes", async () => {
+  it("routes a legacy-failed repair even when the live source state drifted (episode-scoped fingerprint)", async () => {
     const fixture = await seedFailedDispositionRepair();
     await db.update(issues).set({ executionPolicy: { mode: "normal" } }).where(eq(issues.id, fixture.sourceIssue.id));
     const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
 
-    expect(await recovery.reconcileFailedDispositionRepair(fixture.runId)).toBe("skipped");
-    expect(await db.select().from(agentWakeupRequests).where(sql`${agentWakeupRequests.idempotencyKey} like 'issue_disposition_repair:%'`)).toHaveLength(0);
-    expect(await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, fixture.action.id))).toMatchObject([
-      expect.objectContaining({ attemptCount: 1, ownerType: "agent", status: "active" }),
-    ]);
+    // The legacy fingerprint is bound to the repair episode, not the live
+    // source state, so a post-failure source drift does not strand the hold:
+    // the repair run itself revalidates the issue on a fresh session.
+    expect(await recovery.reconcileFailedDispositionRepairBacklog()).toMatchObject({
+      scanned: 1,
+      queued: 1,
+    });
+    expect(await db.select().from(agentWakeupRequests)).toHaveLength(1);
   });
 
-  it("does not disposition-retry arbitrary failed repair runs", async () => {
+  it("escalates instead of silently skipping a non-retryable failed repair run", async () => {
     const fixture = await seedFailedDispositionRepair({ error: "ACP transport failed before session resume." });
     const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
 
-    expect(await recovery.reconcileFailedDispositionRepair(fixture.runId)).toBe("skipped");
+    // Unified classification: unknown/never errors must not burn retries and
+    // must not stall the hold silently — they escalate to the board.
+    expect(await recovery.reconcileFailedDispositionRepairBacklog()).toMatchObject({
+      scanned: 1,
+      escalated: 1,
+      queued: 0,
+    });
+    expect(await db.select().from(agentWakeupRequests)).toHaveLength(0);
+    expect(await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, fixture.action.id))).toMatchObject([
+      expect.objectContaining({ ownerType: "board", status: "active", wakePolicy: expect.objectContaining({ type: "board_escalation" }) }),
+    ]);
+  });
+
+  it("backlog pre-pass skips failed runs that are not disposition repair attempts", async () => {
+    const { companyId, coderId, sourceIssue } = await seedCompany();
+    await issueRecoveryActionService(db).upsertSourceScoped({
+      companyId,
+      sourceIssueId: sourceIssue.id,
+      kind: "deliberate_wait_without_target",
+      ownerType: "agent",
+      ownerAgentId: coderId,
+      previousOwnerAgentId: coderId,
+      returnOwnerAgentId: coderId,
+      cause: "deliberate_wait_without_target",
+      fingerprint: legacyDispositionFingerprint(companyId, sourceIssue.id, coderId, randomUUID()),
+      evidence: {},
+      nextAction: "Replace the invalid parked summary with a durable disposition.",
+      wakePolicy: { type: "bounded_owner_disposition_repair", retryAgentId: coderId, attempt: 1, maxAttempts: 2 },
+      maxAttempts: 2,
+      attemptCount: 1,
+      lastAttemptAt: new Date(),
+    });
+    await db.insert(heartbeatRuns).values({
+      id: randomUUID(),
+      companyId,
+      agentId: coderId,
+      invocationSource: "automation",
+      status: "failed",
+      error: "Persistent ACP session session-1 could not be resumed: Internal error",
+      errorCode: "acpx_turn_failed",
+      startedAt: new Date("2026-10-27T10:00:00.000Z"),
+      finishedAt: new Date("2026-10-27T10:01:00.000Z"),
+      contextSnapshot: { issueId: sourceIssue.id },
+    });
+    const recovery = recoveryService(db, { enqueueWakeup: vi.fn(async () => null) });
+
+    expect(await recovery.reconcileFailedDispositionRepairBacklog()).toMatchObject({
+      scanned: 1,
+      skipped: 1,
+      queued: 0,
+      escalated: 0,
+    });
     expect(await db.select().from(agentWakeupRequests)).toHaveLength(0);
   });
 

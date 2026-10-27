@@ -1192,14 +1192,27 @@ export interface IssueCommentMetadata {
   sourceIdentityContextId?: string | null;
   authorizationReason?: string | null;
   /** Display snapshot only. Retry authority comes from the current recovery action. */
-  recovery?: {
-    kind: "disposition_repair_escalated";
-    actionId: string;
-    attemptCount: number;
-    maxAttempts: number;
-    reason: string;
-    assigneeAgentId: string | null;
-  };
+  recovery?:
+    | {
+        kind: "disposition_repair_escalated";
+        actionId: string;
+        attemptCount: number;
+        maxAttempts: number;
+        reason: string;
+        assigneeAgentId: string | null;
+      }
+    | {
+        /** R11/S17: a bounded post-failure repair retry sitting queued. */
+        kind: "disposition_repair_queued";
+        actionId: string;
+        attempt: number;
+        maxAttempts: number;
+        previousRunId: string | null;
+        previousErrorCode: string | null;
+        retryAt: string;
+        scheduledRunId: string;
+        freshSession: boolean;
+      };
   sections: IssueCommentMetadataSection[];
 }
 

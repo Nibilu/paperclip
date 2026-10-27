@@ -1084,14 +1084,27 @@ export const issueCommentMetadataSchema = z
       .max(160)
       .nullable()
       .optional(),
-    recovery: z.object({
-      kind: z.literal("disposition_repair_escalated"),
-      actionId: z.string().guid(),
-      attemptCount: z.number().int().nonnegative(),
-      maxAttempts: z.number().int().positive(),
-      reason: z.string().trim().min(1).max(160),
-      assigneeAgentId: z.string().guid().nullable(),
-    }).strict().optional(),
+    recovery: z.union([
+      z.object({
+        kind: z.literal("disposition_repair_escalated"),
+        actionId: z.string().guid(),
+        attemptCount: z.number().int().nonnegative(),
+        maxAttempts: z.number().int().positive(),
+        reason: z.string().trim().min(1).max(160),
+        assigneeAgentId: z.string().guid().nullable(),
+      }).strict(),
+      z.object({
+        kind: z.literal("disposition_repair_queued"),
+        actionId: z.string().guid(),
+        attempt: z.number().int().positive(),
+        maxAttempts: z.number().int().positive(),
+        previousRunId: z.string().guid().nullable(),
+        previousErrorCode: z.string().trim().min(1).max(120).nullable(),
+        retryAt: z.string().trim().min(1).max(64),
+        scheduledRunId: z.string().guid(),
+        freshSession: z.boolean(),
+      }).strict(),
+    ]).optional(),
     sections: z.array(issueCommentMetadataSectionSchema).min(1).max(20),
   })
   .strict();

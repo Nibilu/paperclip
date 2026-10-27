@@ -3208,6 +3208,8 @@ export function recoveryService(
     attempt: number;
     legacyEpisode?: LegacyDispositionEpisode;
     maxAttempts: number;
+    /** S14: the retry follows a failed run — bootstrap a fresh provider session. */
+    latestRetryWithFreshSession?: boolean;
   }) {
     const agentId = input.issue.assigneeAgentId;
     if (!agentId) return null;
@@ -3237,6 +3239,11 @@ export function recoveryService(
           legacyDispositionEpisode: { ...input.legacyEpisode, attempt: input.attempt },
           dispositionRepairSourceRunId: input.latestRun?.id ?? null,
         } : {}),
+        // S14: a retry following a failed run must not resume the same
+        // provider session — AMB-117 saw four consecutive failures resuming
+        // the same dead "Persistent ACP session …". The doctor-run wake uses
+        // the same flag to bootstrap fresh.
+        ...(input.latestRetryWithFreshSession ? { forceFreshSession: true } : {}),
         bypassContinuationSummaryPark: true,
         dispositionRepairInstruction:
           input.legacyEpisode ? LEGACY_DISPOSITION_REPAIR_INSTRUCTION : "Revalidate the issue and replace the invalid parked summary with a durable disposition. Continue productive work when appropriate.",
@@ -3411,6 +3418,59 @@ export function recoveryService(
           scheduledRunId: scheduledRun.id,
         },
       });
+      // S13/S17: a post-failure retry must be visible on the task UI while it
+      // sits queued (R11 phase-1 "queued task + notification" semantics), not
+      // only when the budget exhausts. Fires once per idempotency key because
+      // `created` is only true for newly reserved slots.
+      const sourceRunFailed =
+        !!sourceRun &&
+        ["failed", "timed_out", "interrupted", "cancelled"].includes(sourceRun.status);
+      if (sourceRunFailed) {
+        await issuesSvc.addComment(
+          input.issue.id,
+          [
+            "Disposition repair was queued for a bounded retry after the previous attempt failed.",
+            "",
+            `- Attempt: ${input.attempt}/${input.maxAttempts}`,
+            `- Previous attempt: \`${sourceRun.errorCode ?? "unknown"}\``,
+            `- Retry at: ${retryAt.toISOString()}`,
+            input.latestRetryWithFreshSession
+              ? "- The retry will bootstrap a fresh provider session (the previous session is presumed dead)."
+              : "",
+            "",
+            "No operator action is required while the retry is queued; exhaustion escalates to the board.",
+          ]
+            .filter((line) => line !== "")
+            .join("\n"),
+          {},
+          {
+            authorType: "system",
+            presentation: compactRecoveryPresentation(
+              "Disposition repair queued",
+            ),
+            metadata: {
+              ...recoveryNoticeMetadata({
+                cause: "deliberate_wait_without_target",
+                latestRun: input.latestRun,
+                recoveryActionId: input.action.id,
+                previousStatus: input.issue.status,
+                recoveryOwner: null,
+              }),
+              recovery: {
+                kind: "disposition_repair_queued",
+                actionId: input.action.id,
+                attempt: input.attempt,
+                maxAttempts: input.maxAttempts,
+                previousRunId: input.latestRun?.id ?? null,
+                previousErrorCode: sourceRun.errorCode ?? null,
+                retryAt: retryAt.toISOString(),
+                scheduledRunId: scheduledRun.id,
+                freshSession: input.latestRetryWithFreshSession === true,
+              },
+            },
+          },
+        );
+      }
     }
 
     return scheduledRun;
@@ -3853,39 +3913,66 @@ export function recoveryService(
     return reconcileDispositionRepair(issue, run, { legacyEpisode: legacyDispositionEpisode(run) });
   }
 
-  async function reconcileFailedDispositionRepair(runId: string) {
-    const [run] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, runId)).limit(1);
-    if (
-      !run ||
-      run.status !== "failed" ||
-      run.errorCode !== "acpx_turn_failed" ||
-      !/Persistent ACP session .+ could not be resumed:/i.test(run.error ?? "")
-    ) return "skipped" as const;
-    const context = parseObject(run.contextSnapshot);
-    if (readNonEmptyString(context.retryReason) !== ISSUE_DISPOSITION_REPAIR_RETRY_REASON) return "skipped" as const;
-    const issueId = readNonEmptyString(context.issueId);
-    const fingerprint = readNonEmptyString(context.dispositionRepairFingerprint);
-    const attempt = Math.max(1, Math.floor(asNumber(context.dispositionRepairAttempt, 1)));
-    if (!issueId || !fingerprint) return "skipped" as const;
-    const [issue] = await db.select().from(issues).where(and(
-      eq(issues.id, issueId), eq(issues.companyId, run.companyId), eq(issues.assigneeAgentId, run.agentId),
-    )).limit(1);
-    if (!issue) return "skipped" as const;
-    const active = await recoveryActionsSvc.getActiveForIssue(issue.companyId, issue.id);
-    if (
-      active?.kind !== "deliberate_wait_without_target" ||
-      active.ownerType !== "agent" ||
-      active.ownerAgentId !== run.agentId ||
-      active.fingerprint !== fingerprint ||
-      active.attemptCount !== attempt
-    ) return "skipped" as const;
-
-    return reconcileDispositionRepair(issue, run, {
-      expectedFingerprint: fingerprint,
-      legacyEpisode: parseObject(context.legacyDispositionEpisode).id
-        ? legacyDispositionEpisode(run)
-        : undefined,
-    });
+  async function reconcileFailedDispositionRepairBacklog() {
+    // S15 (R11): backfill pre-pass for holds created before R11 landed. The
+    // stranded sweep only scans todo/in_progress/in_review issues, so a
+    // blocked issue (or any issue skipped by earlier gates) carrying an active
+    // agent-owned deliberate_wait hold whose latest run is a failed repair run
+    // would stay stalled forever. Scan the actions directly and route each
+    // failed repair run through the same classification consumer.
+    const actions = await db
+      .select()
+      .from(issueRecoveryActions)
+      .where(
+        and(
+          eq(issueRecoveryActions.kind, "deliberate_wait_without_target"),
+          eq(issueRecoveryActions.status, "active"),
+          eq(issueRecoveryActions.ownerType, "agent"),
+        ),
+      )
+      .limit(50);
+    const result = {
+      scanned: actions.length,
+      queued: 0,
+      escalated: 0,
+      covered: 0,
+      skipped: 0,
+    };
+    for (const action of actions) {
+      const [issue] = await db
+        .select()
+        .from(issues)
+        .where(
+          and(
+            eq(issues.companyId, action.companyId),
+            eq(issues.id, action.sourceIssueId),
+          ),
+        )
+        .limit(1);
+      if (!issue) {
+        result.skipped += 1;
+        continue;
+      }
+      const latestRun = await getLatestIssueRun(action.companyId, issue.id);
+      const repairAttempt = readDispositionRepairAttempt(latestRun);
+      if (
+        !latestRun ||
+        repairAttempt === null ||
+        typeof latestRun.status !== "string" ||
+        !["failed", "timed_out", "interrupted", "cancelled"].includes(latestRun.status)
+      ) {
+        result.skipped += 1;
+        continue;
+      }
+      const outcome = await reconcileDispositionRepair(issue, latestRun, {
+        expectedFingerprint: action.fingerprint ?? undefined,
+      });
+      if (outcome === "queued") result.queued += 1;
+      else if (outcome === "escalated") result.escalated += 1;
+      else if (outcome === "covered") result.covered += 1;
+      else result.skipped += 1;
+    }
+    return result;
   }
 
   async function reconcileDispositionRepair(
@@ -3920,10 +4007,64 @@ export function recoveryService(
     const state = await collectDispositionRepairSourceState(db, {
       issue: current,
     });
+    let resumeFromFailedRepair = false;
     if (episode) {
       if (!latestRun) return "skipped";
       const decision = await decidePersistedLegacyContinuation(current, latestRun.id, state, episode);
-      if (decision.kind === "skip") return "skipped";
+      if (decision.kind === "skip") {
+        // R11: a failed repair run must consume its classification instead of
+        // skipping forever. AMB-116/117: every sweep tick hit the
+        // "run_not_successful" skip while attempt budget remained, so the hold
+        // silently stalled with no retry, no board escalation, and no visible
+        // entry point. Only the failed-repair resume is re-routed; every other
+        // skip reason keeps its state-based deferral semantics
+        // (stopped/paused/durable_wait/existing_execution/...).
+        const repairAttempt = readDispositionRepairAttempt(latestRun);
+        const failedRepairRun =
+          repairAttempt !== null &&
+          typeof latestRun.status === "string" &&
+          ["failed", "timed_out", "interrupted", "cancelled"].includes(latestRun.status);
+        if (!failedRepairRun) return "skipped";
+        const classification = classifyRunFailure({
+          errorCode: latestRun.errorCode ?? null,
+          errorMessage: latestRun.error ?? null,
+        });
+        // Bind to the legacy fingerprint BEFORE routing: the active action
+        // carries this episode-scoped fingerprint, so escalation reuses the
+        // same action row instead of cancelling it as "source_state_changed".
+        const legacyFingerprint = legacyDispositionFingerprint(current.companyId, current.id, latestRun.agentId, episode.id);
+        // Only consume when the active action is still THIS episode's
+        // disposition repair at the same attempt. A newer recovery identity
+        // (e.g. a legacy-execution lane action after supersession, AMB-116
+        // 11:20形态) or a resolved hold must never be resurrected or cancelled
+        // by a stale failed run.
+        const activeAction = await recoveryActionsSvc.getActiveForIssue(current.companyId, current.id);
+        if (
+          activeAction?.kind !== "deliberate_wait_without_target" ||
+          activeAction.ownerType !== "agent" ||
+          activeAction.fingerprint !== legacyFingerprint ||
+          activeAction.attemptCount !== repairAttempt.attempt
+        ) return "skipped";
+        state.fingerprint = legacyFingerprint;
+        if (classification.retryPolicy !== "bounded") {
+          const escalated = await escalateDispositionRepair({
+            issue: current,
+            latestRun,
+            fingerprint: state.fingerprint,
+            attemptCount: Math.max(1, repairAttempt.attempt),
+            terminalReason: "repair_run_failed_non_retryable",
+            legacyEpisode: episode,
+            maxAttempts: episode.maxAttempts,
+          });
+          return escalated ? "escalated" : "skipped";
+        }
+        // bounded → fall through to the shared retry/escalation gates below
+        // (expected fingerprint / active execution / durable wait / owner
+        // invokability / budget / exhaustion), keeping the legacy fingerprint
+        // binding so attempt counters and idempotency keys stay stable across
+        // the resume.
+        resumeFromFailedRepair = true;
+      }
       state.fingerprint = legacyDispositionFingerprint(current.companyId, current.id, latestRun.agentId, episode.id);
     }
     if (options.expectedFingerprint && state.fingerprint !== options.expectedFingerprint) return "skipped";
@@ -4034,6 +4175,7 @@ export function recoveryService(
       attempt: nextAttempt,
       legacyEpisode: episode,
       maxAttempts,
+      latestRetryWithFreshSession: resumeFromFailedRepair,
     });
     if (!scheduled && episode) {
       // Admission can reject a stale snapshot under the issue lock. An empty
@@ -6447,7 +6589,7 @@ export function recoveryService(
     scanSilentActiveRuns,
     reconcileStrandedAssignedIssues,
     reconcileLegacyContinuation,
-    reconcileFailedDispositionRepair,
+    reconcileFailedDispositionRepairBacklog,
     legacyRepairDispatchBlock,
     sweepStaleIssueLocks,
     reconcileResolvedDependencyWakeBackstop,
