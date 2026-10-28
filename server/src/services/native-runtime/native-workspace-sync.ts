@@ -1,20 +1,20 @@
 import { measureRunPhase } from "../execution-preparation-timing.js";
-import type { WorkspaceCheckpointMetrics } from "@paperclipai/adapter-utils/workspace-checkpoint";
-import type { RuntimeSpanRunner } from "@paperclipai/adapter-utils/acpx-engine/startup-timing";
+import type { WorkspaceCheckpointMetrics } from "@pilibalaai/adapter-utils/workspace-checkpoint";
+import type { RuntimeSpanRunner } from "@pilibalaai/adapter-utils/acpx-engine/startup-timing";
 import fs from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { environmentLeases, heartbeatRuns } from "@paperclipai/db";
-import type { EnvironmentLease } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { environmentLeases, heartbeatRuns } from "@pilibalaai/db";
+import type { EnvironmentLease } from "@pilibalaai/shared";
 import {
   prepareAdapterExecutionTargetRuntime,
   type AdapterExecutionTarget,
   type PreparedAdapterExecutionTargetRuntime,
-} from "@paperclipai/adapter-utils/execution-target";
-import { disposeGitWorkspaceSnapshot, type GitWorkspaceSnapshot } from "@paperclipai/adapter-utils/git-workspace-sync";
+} from "@pilibalaai/adapter-utils/execution-target";
+import { disposeGitWorkspaceSnapshot, type GitWorkspaceSnapshot } from "@pilibalaai/adapter-utils/git-workspace-sync";
 import {
   directorySnapshotSha256,
   disposeDirectorySnapshot,
@@ -23,21 +23,21 @@ import {
   serializeDirectorySnapshot,
   type DirectorySnapshot,
   type SerializedDirectorySnapshot,
-} from "@paperclipai/adapter-utils/workspace-restore-merge";
+} from "@pilibalaai/adapter-utils/workspace-restore-merge";
 import type {
   WorkspaceDurableSeedPaths,
   WorkspaceInboundMode,
-} from "@paperclipai/adapter-utils/sandbox-managed-runtime";
-import { assertWorkspaceManifestDiskSpace, isPathManifest, manifestFileSha256, readManifestRecords, type PathManifest, type WorkspacePaths } from "@paperclipai/adapter-utils/workspace-manifest";
-import { resolvePaperclipInstanceRoot } from "../../home-paths.js";
+} from "@pilibalaai/adapter-utils/sandbox-managed-runtime";
+import { assertWorkspaceManifestDiskSpace, isPathManifest, manifestFileSha256, readManifestRecords, type PathManifest, type WorkspacePaths } from "@pilibalaai/adapter-utils/workspace-manifest";
+import { resolvePilibalaInstanceRoot } from "../../home-paths.js";
 import { parseObject } from "../../adapters/utils.js";
 import type { NativeRestartRecoveryClaim } from "./native-restart-recovery.js";
 
-const LEGACY_DESCRIPTOR_SCHEMA = "paperclip.native-workspace-sync/v1";
-const PREVIOUS_DESCRIPTOR_SCHEMA = "paperclip.native-workspace-sync/v2";
-const DESCRIPTOR_SCHEMA = "paperclip.native-workspace-sync/v3";
+const LEGACY_DESCRIPTOR_SCHEMA = "pilibala.native-workspace-sync/v1";
+const PREVIOUS_DESCRIPTOR_SCHEMA = "pilibala.native-workspace-sync/v2";
+const DESCRIPTOR_SCHEMA = "pilibala.native-workspace-sync/v3";
 type DescriptorSchema = typeof DESCRIPTOR_SCHEMA | typeof PREVIOUS_DESCRIPTOR_SCHEMA | typeof LEGACY_DESCRIPTOR_SCHEMA;
-const STAMP_SCHEMA = "paperclip.native-workspace-stamp/v1";
+const STAMP_SCHEMA = "pilibala.native-workspace-stamp/v1";
 const STATE_ROOT_NAME = "native-workspace-sync";
 const DESCRIPTOR_NAME = "descriptor";
 const WORKSPACE_SEED_NAME = "workspace-seed.tar";
@@ -150,7 +150,7 @@ function requireSafeSegment(value: string, label: string): string {
 
 function descriptorDirectory(runId: string): string {
   return path.join(
-    resolvePaperclipInstanceRoot(),
+    resolvePilibalaInstanceRoot(),
     STATE_ROOT_NAME,
     requireSafeSegment(runId, "run_id"),
   );
@@ -412,7 +412,7 @@ function parseGitSnapshot(
     const seen = new Set<string>();
     for (const raw of candidate.repositories) {
       const repo = parseObject(raw);
-      if (typeof repo.path !== "string" || !/^\.paperclip-repositories\/[a-zA-Z0-9_-]+$/.test(repo.path) || seen.has(repo.path)) return undefined;
+      if (typeof repo.path !== "string" || !/^\.pilibala-repositories\/[a-zA-Z0-9_-]+$/.test(repo.path) || seen.has(repo.path)) return undefined;
       const snapshot = parseGitSnapshot(repo.snapshot, true);
       if (!snapshot) return undefined;
       seen.add(repo.path);
@@ -669,8 +669,8 @@ async function writeRemoteStamp(input: {
   }
   const runtimeDir = path.posix.join(
     input.target.remoteCwd,
-    ".paperclip-runtime",
-    "paperclip-runner",
+    ".pilibala-runtime",
+    "pilibala-runner",
   );
   const stampPath = path.posix.join(runtimeDir, REMOTE_STAMP_NAME);
   const tempPath = `${stampPath}.tmp`;
@@ -702,8 +702,8 @@ async function remoteStampMatches(input: {
   if (!input.target.runner) return false;
   const stampPath = path.posix.join(
     input.target.remoteCwd,
-    ".paperclip-runtime",
-    "paperclip-runner",
+    ".pilibala-runtime",
+    "pilibala-runner",
     REMOTE_STAMP_NAME,
   );
   // File hashes do not detect empty commits or branch changes. A fresh host
@@ -803,7 +803,7 @@ async function prepareRuntime(input: {
   return measureRunPhase(phase[input.mode], () => prepareAdapterExecutionTargetRuntime({
     runId: input.runId,
     target: input.target,
-    adapterKey: "paperclip-runner",
+    adapterKey: "pilibala-runner",
     workspaceLocalDir: input.workspaceLocalDir,
     workspaceRemoteDir: input.target.remoteCwd,
     workspaceInboundMode: input.mode,
@@ -835,7 +835,7 @@ async function finalizePreparedRuntime(input: {
   return measureRunPhase("execution.workspace_commit", async () => {
     await input.assertOwnership?.();
     const finalSnapshot =
-      await import("@paperclipai/adapter-utils/workspace-restore-merge").then(
+      await import("@pilibalaai/adapter-utils/workspace-restore-merge").then(
         ({ captureDirectorySnapshotOffThread: captureDirectorySnapshot }) =>
           captureDirectorySnapshot(input.descriptor.binding.localCwd, {
             exclude: input.runtime.workspaceSyncSnapshot?.baseline.exclude ?? [],
@@ -980,7 +980,7 @@ export async function prepareNativeWorkspaceSync(input: {
       acquisition,
       hasPriorStamp: priorStamp !== null,
     });
-    const seedCacheCompanyDirectory = path.join(resolvePaperclipInstanceRoot(), STATE_ROOT_NAME, "generations", requireSafeSegment(input.companyId, "company_id"));
+    const seedCacheCompanyDirectory = path.join(resolvePilibalaInstanceRoot(), STATE_ROOT_NAME, "generations", requireSafeSegment(input.companyId, "company_id"));
     const seedCacheDirectory = path.join(seedCacheCompanyDirectory, requireSafeSegment(input.workspaceId, "workspace_id"));
     runtime = await prepareRuntime({
       runId: input.runId,

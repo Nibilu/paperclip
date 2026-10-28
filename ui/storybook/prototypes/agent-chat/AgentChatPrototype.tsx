@@ -29,7 +29,7 @@ import {
   storybookCompanies,
   storybookIssues,
   storybookIssueDocuments,
-} from "../../fixtures/paperclipData";
+} from "../../fixtures/pilibalaData";
 import { chatAgents, chatIdentifier } from "./AgentChatSidebar";
 import { AgentChatSidebarReviewLayout, AgentChatSidebarLanding } from "../agent-chat-sidebar/AgentChatSidebarReview";
 import { sidebarAgents, sidebarRoster, type SidebarScenario } from "../agent-chat-sidebar/fixtures";
@@ -128,7 +128,7 @@ const logItems = [
     item: {
       id: "save-plan",
       type: "command_execution",
-      command: "paperclip documents update PAP-241 plan",
+      command: "pilibala documents update PAP-241 plan",
     },
   },
   {
@@ -136,7 +136,7 @@ const logItems = [
     item: {
       id: "save-plan",
       type: "command_execution",
-      command: "paperclip documents update PAP-241 plan",
+      command: "pilibala documents update PAP-241 plan",
       aggregated_output: "Saved launch plan revision 3.",
       status: "completed",
       exit_code: 0,
@@ -236,7 +236,7 @@ export function AgentChatPrototype({
   }, [contextInitiallyOpen, setPanelVisible]);
   useLayoutEffect(() => {
     const originalFetch = window.fetch;
-    const recentKey = `paperclip.recentAgentChats:${issue.companyId}:user-board`;
+    const recentKey = `pilibala.recentAgentChats:${issue.companyId}:user-board`;
     const previousRecents = localStorage.getItem(recentKey);
     const recentTasksKey = getRecentTasksStorageKey(issue.companyId, "user-board");
     const previousRecentTasks = localStorage.getItem(recentTasksKey);
@@ -513,8 +513,8 @@ export function AgentChatPrototype({
           name: scenario === "project-multi-repo" ? "First agent handoff across the application, documentation, and onboarding service" : "First agent handoff",
           description: "Help new teams get their first useful result.", sourceIssueId: issue.id,
           repositories: scenario === "project-no-repo" ? [] : [
-            { id: "1", name: "paperclipai/paperclip", url: "https://github.com/paperclipai/paperclip" },
-            ...(scenario === "project-multi-repo" ? [{ id: "2", name: "paperclipai/onboarding", url: "https://github.com/paperclipai/onboarding" }] : []),
+            { id: "1", name: "pilibalaai/pilibala", url: "https://github.com/pilibalaai/pilibala" },
+            ...(scenario === "project-multi-repo" ? [{ id: "2", name: "pilibalaai/onboarding", url: "https://github.com/pilibalaai/onboarding" }] : []),
           ],
         },
       }]);
@@ -591,7 +591,7 @@ export function AgentChatPrototype({
       if (entryScenario) {
         if (previousRecents === null) localStorage.removeItem(recentKey);
         else localStorage.setItem(recentKey, previousRecents);
-        window.dispatchEvent(new Event("paperclip:recent-agent-chats"));
+        window.dispatchEvent(new Event("pilibala:recent-agent-chats"));
       }
       queryClient.clear();
     };

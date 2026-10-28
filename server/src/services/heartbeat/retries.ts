@@ -29,14 +29,14 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   agentWakeupRequests,
   executionWorkspaces,
   heartbeatRuns,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   HttpError,
   notFound,
@@ -410,7 +410,7 @@ export function createHeartbeatRetries(db: Db, dependencies: HeartbeatRetryDepen
   ) {
     if (["openai_dot", "muse"].includes(String(parseObject(agent.adapterConfig).provider))
         || ["openai_dot", "muse"].includes(String(parseObject(parseObject(parseObject(run.runnerProfileJson).nativeExecutionInput).provider).kind))) {
-      return { outcome: "not_scheduled" as const, reason: "Dot external execution must be reconciled before a new assignment; Paperclip cannot confirm its external stop.", issueId: readNonEmptyString(run.contextSnapshot?.issueId) };
+      return { outcome: "not_scheduled" as const, reason: "Dot external execution must be reconciled before a new assignment; Pilibala cannot confirm its external stop.", issueId: readNonEmptyString(run.contextSnapshot?.issueId) };
     }
     if (run.errorCode === "provider_tool_definition_invalid") {
       return { outcome: "not_scheduled" as const,
@@ -1845,8 +1845,8 @@ export function createHeartbeatRetries(db: Db, dependencies: HeartbeatRetryDepen
       return {
         outcome: "waiting" as const,
         message: parseObject(currentRun.resultJson?.executionWait).cause === "execution_owner_active"
-          ? "Waiting for execution cleanup. Paperclip will retry automatically once cleanup finishes."
-          : "The retry remains scheduled. Paperclip will check again at the scheduled time.",
+          ? "Waiting for execution cleanup. Pilibala will retry automatically once cleanup finishes."
+          : "The retry remains scheduled. Pilibala will check again at the scheduled time.",
         scheduledRetry,
       };
     }

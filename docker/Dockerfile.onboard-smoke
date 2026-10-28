@@ -1,20 +1,20 @@
 FROM ubuntu:24.04
 
 ARG NODE_MAJOR=24
-ARG PAPERCLIPAI_VERSION=latest
+ARG PILIBALAAI_VERSION=latest
 ARG HOST_UID=10001
 
 ENV DEBIAN_FRONTEND=noninteractive \
-  PAPERCLIP_HOME=/paperclip \
-  PAPERCLIP_OPEN_ON_LISTEN=false \
+  PILIBALA_HOME=/pilibala \
+  PILIBALA_OPEN_ON_LISTEN=false \
   HOST=0.0.0.0 \
   PORT=3100 \
-  HOME=/home/paperclip \
+  HOME=/home/pilibala \
   LANG=en_US.UTF-8 \
   LC_ALL=en_US.UTF-8 \
   NPM_CONFIG_UPDATE_NOTIFIER=false \
   NODE_MAJOR=${NODE_MAJOR} \
-  PAPERCLIPAI_VERSION=${PAPERCLIPAI_VERSION}
+  PILIBALAAI_VERSION=${PILIBALAAI_VERSION}
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates curl gnupg locales \
@@ -26,20 +26,20 @@ RUN apt-get update \
   && apt-get update \
   && apt-get install -y --no-install-recommends nodejs \
   && locale-gen en_US.UTF-8 \
-  && groupadd --gid 10001 paperclip \
-  && useradd --create-home --shell /bin/bash --uid "${HOST_UID}" --gid 10001 paperclip \
-  && mkdir -p /paperclip /home/paperclip/workspace \
-  && chown -R paperclip:paperclip /paperclip /home/paperclip \
+  && groupadd --gid 10001 pilibala \
+  && useradd --create-home --shell /bin/bash --uid "${HOST_UID}" --gid 10001 pilibala \
+  && mkdir -p /pilibala /home/pilibala/workspace \
+  && chown -R pilibala:pilibala /pilibala /home/pilibala \
   && rm -rf /var/lib/apt/lists/*
 
-VOLUME ["/paperclip"]
-WORKDIR /home/paperclip/workspace
+VOLUME ["/pilibala"]
+WORKDIR /home/pilibala/workspace
 EXPOSE 3100
-USER paperclip
+USER pilibala
 
 # --bind lan is required: `onboard --yes` without an explicit --bind prefers
 # trusted-local defaults, which write a loopback bind into the instance config
 # and ignore the deployment env vars. A loopback listener inside the container
 # is unreachable through Docker's port mapping, so the smoke health check can
 # never pass without this flag.
-CMD ["bash", "-lc", "set -euo pipefail; mkdir -p \"$PAPERCLIP_HOME\"; npx --yes \"paperclipai@${PAPERCLIPAI_VERSION}\" onboard --yes --bind lan --data-dir \"$PAPERCLIP_HOME\""]
+CMD ["bash", "-lc", "set -euo pipefail; mkdir -p \"$PILIBALA_HOME\"; npx --yes \"pilibalaai@${PILIBALAAI_VERSION}\" onboard --yes --bind lan --data-dir \"$PILIBALA_HOME\""]

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { buildOpenApiDocument } from "../../routes/openapi.js";
 import { badRequest, notFound } from "../../errors.js";
 import { runnerApiReference } from "./runner-api-reference.js";
-import { CAPABILITY_SEMANTIC_TOOL_CATALOG } from "../../vendor/paperclip-runner/index.js";
+import { CAPABILITY_SEMANTIC_TOOL_CATALOG } from "../../vendor/pilibala-runner/index.js";
 
 type Json = Record<string, any>;
 export interface RunnerApiOperation {
@@ -95,7 +95,7 @@ export function buildRunnerApiCatalog(document: Json = buildOpenApiDocument()): 
         parameters: dereference([...(item.parameters ?? []), ...(operation.parameters ?? [])]),
         ...(operation.requestBody ? { requestBody: dereference(operation.requestBody) } : {}),
         responses: dereference(operation.responses ?? {}),
-        authorization: operation["x-paperclip-authorization"] ?? { actor: "board_or_agent" },
+        authorization: operation["x-pilibala-authorization"] ?? { actor: "board_or_agent" },
         transport: protocol ? "protocol" : "rest",
         callPolicy: protocol ? "protocol" : "rest",
         dedicatedTools: dedicatedTools(method, path),

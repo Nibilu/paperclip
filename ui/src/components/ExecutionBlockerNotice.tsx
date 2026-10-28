@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ExecutionBlocker, Issue } from "@paperclipai/shared";
-import { requiresExecutionReconciliation } from "@paperclipai/shared";
+import type { ExecutionBlocker, Issue } from "@pilibalaai/shared";
+import { requiresExecutionReconciliation } from "@pilibalaai/shared";
 import { ExecutionReconciliationPanel } from "./ExecutionReconciliationPanel";
 import { WorkspaceReconstructionRecovery } from "./WorkspaceReconstructionRecovery";
 import { agentsApi } from "../api/agents";
@@ -88,7 +88,7 @@ export function ExecutionBlockerNotice({ companyId, issueId, issueStatus, canMan
         ) : <p>{nextActionText}</p>}
         {replayDispositionBlocked && !reconciliationPanelVisible && (
           <p>
-            Paperclip will not replay this stopped run because its external outcome is not verified.
+            Pilibala will not replay this stopped run because its external outcome is not verified.
             Inspect the run before requesting any continuation.
           </p>
         )}
@@ -131,7 +131,7 @@ export function ExecutionBlockerNotice({ companyId, issueId, issueStatus, canMan
         {blocker.runError && <p className="break-words">{blocker.runError}</p>}
         {blocker.workspaceRepairRequired && <p>{blocker.nextAction}</p>}
         {canManage && replayBlocked && !reconciliationPanelVisible &&
-          <p>Paperclip stopped automatic retries to avoid repeating work with an unknown outcome. Inspect the run before requesting continuation.</p>}
+          <p>Pilibala stopped automatic retries to avoid repeating work with an unknown outcome. Inspect the run before requesting continuation.</p>}
         {canManage && hold?.resolutionNote && <p>{hold.resolutionNote}</p>}
       </details>}
       {recoveryError && <p role="alert" className="w-full text-destructive">Unable to load recovery details: {recoveryError.message}</p>}

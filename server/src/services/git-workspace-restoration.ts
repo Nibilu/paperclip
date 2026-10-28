@@ -6,21 +6,21 @@ import os from "node:os";
 import path from "node:path";
 import { execFile as execFileCallback } from "node:child_process";
 import { createHash } from "node:crypto";
-import { resolveManagedProjectWorkspaceDir, resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { resolveManagedProjectWorkspaceDir, resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { materializeManagedProjectWorkspace } from "./managed-repository-checkout.js";
 import { promisify } from "node:util";
 import type { GitRemoteAuthProvider } from "./git-credentials.js";
 import { isRuntimeOwnedGitBranch } from "./execution-workspace-branch-ownership.js";
 import { recordedIsolatedRemoteSource, verifiedRecordedIsolatedRemoteSource, materializeIsolatedRemoteWorkspaceSource } from "./isolated-remote-workspace-source.js";
 import { findRegenerableWorkspaceDirs } from "./workspace-compaction.js";
-import { PROJECT_REPOSITORIES_DIR } from "@paperclipai/adapter-utils/git-workspace-sync";
+import { PROJECT_REPOSITORIES_DIR } from "@pilibalaai/adapter-utils/git-workspace-sync";
 
 const execFile = promisify(execFileCallback);
 const shaPattern = /^[a-f0-9]{40}$/;
 export const GIT_CACHE_RESTORATION_KEY = "gitCacheRestoration";
 export const GIT_CACHE_EXPIRATION_REASON = "reproducible_git_cache_expired";
 export type GitCacheRestoration = {
-  schema: "paperclip.git-cache-restoration.v1";
+  schema: "pilibala.git-cache-restoration.v1";
   companyId: string;
   workspaceId: string;
   sourceIssueId: string;
@@ -38,7 +38,7 @@ export type GitCacheRestoration = {
   contents?: GitWorkspaceContents;
 };
 export type GitCacheExpiration = {
-  schema: "paperclip.git-cache-expiration.v1"; generation: number; workspaceRemoved: boolean;
+  schema: "pilibala.git-cache-expiration.v1"; generation: number; workspaceRemoved: boolean;
   worktreeTrash: string; worktreeAdmin: string; baseTrash: string | null; completed: boolean; lockToken?: string;
 };
 type Workspace = {
@@ -62,7 +62,7 @@ async function verifiedGitCacheSource(workspace: Workspace, sourcePath: string) 
     return (await verifiedRecordedIsolatedRemoteSource(workspace))!;
   }
   if (!managedSourcePaths(workspace).includes(sourcePath)) throw new GitCacheRestorationFailure();
-  const root = resolvePaperclipInstanceRoot();
+  const root = resolvePilibalaInstanceRoot();
   const actual = await fs.realpath(sourcePath);
   if (actual !== path.join(await fs.realpath(root), path.relative(root, sourcePath))) throw new GitCacheRestorationFailure();
   const storage = await fs.lstat(path.join(actual, ".git"));
@@ -80,7 +80,7 @@ export function readGitCacheRestoration(workspace: Workspace): GitCacheRestorati
   const value = workspace.metadata?.[GIT_CACHE_RESTORATION_KEY];
   if (value === undefined) return null;
   const recipe = value as GitCacheRestoration | null;
-  if (!recipe || recipe.schema !== "paperclip.git-cache-restoration.v1"
+  if (!recipe || recipe.schema !== "pilibala.git-cache-restoration.v1"
     || !isRuntimeOwnedGitBranch(workspace.metadata)
     || recipe.gitBranchOwnershipVersion !== 1
     || recipe.companyId !== workspace.companyId || recipe.workspaceId !== workspace.id
@@ -110,7 +110,7 @@ export async function gitCacheCommand(cwd: string, args: string[], signal?: Abor
 /** A fresh object store proves the object came from upstream, not our cache. */
 export async function verifyRemoteGitCommit(repoUrl: string, commit: string, resolveGitAuth: GitRemoteAuthProvider, signal?: AbortSignal) {
   if (!shaPattern.test(commit)) throw new GitCacheRestorationFailure();
-  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-git-proof-"));
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-git-proof-"));
   try {
     const auth = await resolveGitAuth(repoUrl);
     const env = { ...process.env, ...auth?.env, GIT_TERMINAL_PROMPT: "0", GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: os.devNull };
@@ -126,7 +126,7 @@ export async function verifyRemoteGitCommit(repoUrl: string, commit: string, res
 let templateFiles: Promise<Map<string, Buffer>> | undefined;
 async function stockGitFiles() {
   templateFiles ??= (async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-git-template-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-git-template-"));
     const files = new Map<string, Buffer>();
     try {
       await execFile("git", ["init", "--bare", root], { timeout: 10_000,
@@ -183,7 +183,7 @@ export async function assertReproducibleBaseGitStorage(cwd: string, signal?: Abo
   for (const directory of ["objects", "refs", "logs"]) await walk(directory);
 }
 
-const PAPERCLIP_CLAUDE_SETTINGS_FILE = ".claude/settings.local.json";
+const PILIBALA_CLAUDE_SETTINGS_FILE = ".claude/settings.local.json";
 
 export type ManagedCheckoutProver = (checkoutPath: string, name: string, signal?: AbortSignal) => Promise<void>;
 
@@ -220,7 +220,7 @@ const MANAGED_CHECKOUT_LOCAL_TIP_LIMIT = 5_000;
 
 async function hasCommitsMissingUpstream(checkout: string, localTips: string[], repoUrl: string,
   resolveGitAuth: GitRemoteAuthProvider, signal?: AbortSignal) {
-  const store = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-git-checkout-proof-"));
+  const store = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-git-checkout-proof-"));
   try {
     const options = { timeout: 120_000, signal, maxBuffer: 16 * 1024 * 1024, cwd: os.tmpdir(),
       env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: os.devNull } };
@@ -300,7 +300,7 @@ export async function assertReproducibleGitFiles(cwd: string, signal?: AbortSign
   if (localConfig.split("\n").filter(Boolean).some(key => !/^(core\.(repositoryformatversion|filemode|bare|logallrefupdates|ignorecase|precomposeunicode)|remote\.origin\.(url|fetch)|branch\.[^.]+\.(remote|merge))$/.test(key))) throw new Error("unsupported_local_git_config");
   const regenerable = await findRegenerableWorkspaceDirs(cwd, { signal });
   const ignored = (await gitCacheCommand(cwd, ["ls-files", "--others", "--ignored", "--exclude-standard", "-z"], signal)).split("\0").filter(Boolean);
-  const unexplained = ignored.filter(file => !(options.preserveSettings && file === PAPERCLIP_CLAUDE_SETTINGS_FILE) && !regenerable.some(dir => file.startsWith(`${dir}/`)));
+  const unexplained = ignored.filter(file => !(options.preserveSettings && file === PILIBALA_CLAUDE_SETTINGS_FILE) && !regenerable.some(dir => file.startsWith(`${dir}/`)));
   const checkouts = new Set<string>();
   for (const file of unexplained) {
     const [namespace, name, rest] = file.split("/", 3);
@@ -382,7 +382,7 @@ export async function inspectGitCacheRecipe(workspace: Workspace, resolveGitAuth
     verifyFetchedCommit: (commit, verificationSignal) => verifyRemoteGitCommit(workspace.repoUrl!, commit, resolveGitAuth, verificationSignal) });
   const commit = (await gitCacheCommand(workspace.cwd, ["rev-parse", "HEAD"], signal)).trim();
   await verifyRemoteGitCommit(workspace.repoUrl, commit, resolveGitAuth, signal);
-  return { schema: "paperclip.git-cache-restoration.v1", companyId: workspace.companyId, workspaceId: workspace.id,
+  return { schema: "pilibala.git-cache-restoration.v1", companyId: workspace.companyId, workspaceId: workspace.id,
     sourceIssueId: workspace.sourceIssueId, repoUrl: workspace.repoUrl, commit, branchName: workspace.branchName,
     sourceKind: recordedIsolatedRemoteSource(workspace) ? "isolated_remote" : "managed_project", projectId: workspace.projectId,
     sourcePath: source, worktreePath: workspace.cwd, gitBranchOwnershipVersion: 1, verifiedAt: new Date().toISOString() };
@@ -392,7 +392,7 @@ export function readGitCacheExpiration(workspace: Workspace): GitCacheExpiration
   const state = workspace.metadata?.gitCacheExpiration as GitCacheExpiration | undefined;
   if (!state) return null;
   const recipe = readGitCacheRestoration(workspace);
-  if (!recipe || state.schema !== "paperclip.git-cache-expiration.v1" || !Number.isSafeInteger(state.generation)
+  if (!recipe || state.schema !== "pilibala.git-cache-expiration.v1" || !Number.isSafeInteger(state.generation)
     || state.generation !== workspace.metadata?.lifecycleGeneration
     || (state.lockToken !== undefined && !/^[a-f0-9]{64}$/.test(state.lockToken))
     || state.worktreeTrash !== path.join(path.dirname(recipe.worktreePath), `.expired-git-worktree-${workspace.id}-${state.generation}`)
@@ -475,7 +475,7 @@ export async function restoreGitCacheBase(workspace: Workspace, recipe: GitCache
       throw error;
     });
     if (!present && recipe.sourceKind === "managed_project") {
-      const root = resolvePaperclipInstanceRoot();
+      const root = resolvePilibalaInstanceRoot();
       let parent = await fs.realpath(root);
       for (const segment of path.relative(root, path.dirname(recipe.sourcePath)).split(path.sep)) {
         parent = path.join(parent, segment);
@@ -514,7 +514,7 @@ export function savedGitWorkspaceRestoration(input: { metadata?: Record<string, 
   const raw = input.metadata?.[GIT_CACHE_RESTORATION_KEY];
   if (raw === undefined) return null;
   const value = raw as GitCacheRestoration | null;
-  if (!value || value.schema !== "paperclip.git-cache-restoration.v1" || !shaPattern.test(value.commit)
+  if (!value || value.schema !== "pilibala.git-cache-restoration.v1" || !shaPattern.test(value.commit)
     || value.companyId !== input.companyId || value.workspaceId !== input.workspaceId
     || value.worktreePath !== input.cwd || value.sourcePath !== input.baseCwd
     || value.repoUrl !== input.repoUrl || value.branchName !== input.branchName

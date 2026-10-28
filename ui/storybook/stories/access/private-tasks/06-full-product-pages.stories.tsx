@@ -56,7 +56,7 @@ const meta = {
   excludeStories: ["PrivacyPage"],
   decorators: [privacyDecorator],
   parameters: { ...privacyParameters, waitForViewport: true,
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "access/resources",
         "tasks/properties",

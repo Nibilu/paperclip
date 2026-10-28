@@ -458,8 +458,8 @@ function nonEmpty(value: string | undefined): string | null {
 /**
  * Resolves the private, instance-scoped root for every directory-merge lock:
  * `<instance root>/locks/directory-merge`. Every process that can mutate one
- * target directory must resolve to the same `PAPERCLIP_HOME` and
- * `PAPERCLIP_INSTANCE_ID`. That shared resolution is what keeps mutual
+ * target directory must resolve to the same `PILIBALA_HOME` and
+ * `PILIBALA_INSTANCE_ID`. That shared resolution is what keeps mutual
  * exclusion true for all five callers of `withDirectoryMergeLock`, including
  * the three Codex credential call sites that never touch a workspace.
  *
@@ -468,7 +468,7 @@ function nonEmpty(value: string | undefined): string | null {
  * so a read-only target parent (the workspace-restore bug) cannot block a
  * lock acquisition.
  *
- * The root reads `PAPERCLIP_HOME` and `PAPERCLIP_INSTANCE_ID` from `env`, so an
+ * The root reads `PILIBALA_HOME` and `PILIBALA_INSTANCE_ID` from `env`, so an
  * environment-parameterized caller (a Codex credential call site that builds
  * its own `env` object instead of reading `process.env`) resolves its lock
  * root under the same instance root as the directory it protects. This never
@@ -492,10 +492,10 @@ function nonEmpty(value: string | undefined): string | null {
  * would follow the symlink) before any caller treats it as the lock root.
  */
 async function resolveDirectoryMergeLockRoot(env: NodeJS.ProcessEnv = process.env): Promise<string> {
-  const { resolvePaperclipInstanceRootForAdapter } = await import("./server-utils.js");
-  const instanceRoot = resolvePaperclipInstanceRootForAdapter({
-    homeDir: nonEmpty(env.PAPERCLIP_HOME) ?? undefined,
-    instanceId: nonEmpty(env.PAPERCLIP_INSTANCE_ID) ?? undefined,
+  const { resolvePilibalaInstanceRootForAdapter } = await import("./server-utils.js");
+  const instanceRoot = resolvePilibalaInstanceRootForAdapter({
+    homeDir: nonEmpty(env.PILIBALA_HOME) ?? undefined,
+    instanceId: nonEmpty(env.PILIBALA_INSTANCE_ID) ?? undefined,
     env,
   });
   const lockRoot = path.join(instanceRoot, "locks", "directory-merge");
@@ -607,7 +607,7 @@ async function copySnapshotEntry(sourceDir: string, targetDir: string, relative:
   }
   // An interrupted restore must not leave a truncated current file. Keep the
   // incoming tree until its owner records success; exact retries deduplicate.
-  const temporary = path.join(path.dirname(targetPath), `.paperclip-merge-${randomUUID()}`);
+  const temporary = path.join(path.dirname(targetPath), `.pilibala-merge-${randomUUID()}`);
   try {
     await fs.copyFile(sourcePath, temporary, fsConstants.COPYFILE_FICLONE).catch(async () => {
       await fs.copyFile(sourcePath, temporary);
@@ -630,7 +630,7 @@ export async function captureDirectorySnapshot(
   const ignored = workspacePathMatcher(options.ignoredPaths);
   let writer: WorkspaceManifestWriter | null = null;
   try {
-    writer = options.diskBacked ? await createWorkspaceManifest("paperclip-workspace-baseline-") : null;
+    writer = options.diskBacked ? await createWorkspaceManifest("pilibala-workspace-baseline-") : null;
     const memory = new Map<string, SnapshotEntry>();
     for await (const [relative, entry] of walkDirectory(rootDir, exclude, ignored)) {
       if (writer) writer.add("baseline", relative, JSON.stringify(entry));
@@ -671,7 +671,7 @@ export async function captureDirectorySnapshotOffThread(
 export async function selectDirectorySnapshot(snapshot: DirectorySnapshot, options: {
   prefix?: string; omit?: string[]; exclude: string[]; ignoredPaths?: WorkspacePaths;
 }): Promise<DirectorySnapshot> {
-  const writer = await createWorkspaceManifest("paperclip-workspace-baseline-");
+  const writer = await createWorkspaceManifest("pilibala-workspace-baseline-");
   try {
     for (const [relative, entry] of snapshot.entries) {
       if (options.prefix && !relative.startsWith(options.prefix)) continue;

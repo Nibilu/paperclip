@@ -1,4 +1,4 @@
-import { chatConversations, issues, type Db } from "@paperclipai/db";
+import { chatConversations, issues, type Db } from "@pilibalaai/db";
 import { and, eq, sql } from "drizzle-orm";
 
 /** Read-only projection; External chat threads do not acquire Agent Chat identities. */
@@ -20,7 +20,7 @@ export function externalConversationStateSql() {
         and coalesce(r.context_snapshot->>'issueId', r.context_snapshot->>'taskId', r.native_issue_id::text) = c.issue_id::text
         and r.status in ('queued', 'running', 'scheduled_retry'))
       and not exists (select 1 from agent_wakeup_requests w where w.company_id = c.company_id
-        and coalesce(w.payload->>'issueId', w.payload->>'taskId', w.payload->'_paperclipWakeContext'->>'issueId') = c.issue_id::text
+        and coalesce(w.payload->>'issueId', w.payload->>'taskId', w.payload->'_pilibalaWakeContext'->>'issueId') = c.issue_id::text
         and w.status in ('queued', 'claimed', 'deferred_issue_execution')
         and not exists (select 1 from heartbeat_runs owner where owner.id = w.run_id
           and owner.company_id = w.company_id and owner.status = 'succeeded'))

@@ -1,4 +1,4 @@
-import type { ChatEndpointSetupState } from "@paperclipai/shared";
+import type { ChatEndpointSetupState } from "@pilibalaai/shared";
 import type { VerifiedProviderIdentity } from "../runtime-types.js";
 
 import { createSetupProbes } from "../setup-probes.js";
@@ -9,7 +9,7 @@ import { createChatResourceReconciliation } from "../resource-reconciliation.js"
 
 import { chatCredentialMutationLease, type CredentialMutationLeaseGuard } from "../../chat-credential-mutation-lease.js";
 
-import { chatGitHubRegistrations } from "@paperclipai/db";
+import { chatGitHubRegistrations } from "@pilibalaai/db";
 
 import { githubChatWizardService } from "../../chat-github-wizard.js";
 import { registerGitHubBotCloudIngress } from "../../chat-github-cloud-ingress.js";
@@ -25,19 +25,19 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatEndpointResources,
   chatEndpoints,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   ChatEndpoint,
   ChatProvider,
   ConfigureChatEndpointInput,
   ToolCredentialSecretRef,
   UpdateChatEndpointInput,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import {
   HttpError,

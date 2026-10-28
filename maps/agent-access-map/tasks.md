@@ -140,7 +140,7 @@ API: `present` — representative operation IDs:
 
 - `PATCH /api/issues/{id}`.
 
-Agent access: `available` — Native paperclip_finish/paperclip_block through runner
+Agent access: `available` — Native pilibala_finish/pilibala_block through runner
 protocol; agent REST / native `call_api` disposition under route permissions.
 
 Policy: Company/task visibility, assignment/change policy, active-run checkout ownership

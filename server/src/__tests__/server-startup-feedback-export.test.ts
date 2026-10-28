@@ -5,18 +5,18 @@ import { readIdleSleepSafety } from "../services/idle-sleep-safety.js";
 import * as idleLocalWork from "../services/idle-local-work.js";
 import { idleBackupWakeMarker, markIdleBackupWakeRequired } from "../services/idle-database-backup.js";
 import { reconcileBuiltInAgentsOnStartup, reconcileCodexLocalManagedHomesOnStartup, reconcilePersistedRuntimeServicesOnStartup } from "../services/index.js";
-import { runDatabaseBackup } from "@paperclipai/db";
+import { runDatabaseBackup } from "@pilibalaai/db";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-const ORIGINAL_PAPERCLIP_API_URL = process.env.PAPERCLIP_API_URL;
-const ORIGINAL_PAPERCLIP_RUNTIME_API_URL = process.env.PAPERCLIP_RUNTIME_API_URL;
-const ORIGINAL_PAPERCLIP_RUNTIME_API_CANDIDATES_JSON = process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON;
-const ORIGINAL_PAPERCLIP_LISTEN_HOST = process.env.PAPERCLIP_LISTEN_HOST;
-const ORIGINAL_PAPERCLIP_LISTEN_PORT = process.env.PAPERCLIP_LISTEN_PORT;
+const ORIGINAL_PILIBALA_API_URL = process.env.PILIBALA_API_URL;
+const ORIGINAL_PILIBALA_RUNTIME_API_URL = process.env.PILIBALA_RUNTIME_API_URL;
+const ORIGINAL_PILIBALA_RUNTIME_API_CANDIDATES_JSON = process.env.PILIBALA_RUNTIME_API_CANDIDATES_JSON;
+const ORIGINAL_PILIBALA_LISTEN_HOST = process.env.PILIBALA_LISTEN_HOST;
+const ORIGINAL_PILIBALA_LISTEN_PORT = process.env.PILIBALA_LISTEN_PORT;
 
 const {
   completionSweepMock,
@@ -198,21 +198,21 @@ function buildTestConfig(overrides: Record<string, unknown> = {}) {
     authPublicBaseUrl: undefined,
     authDisableSignUp: false,
     databaseMode: "postgres",
-    databaseUrl: "postgres://paperclip:paperclip@127.0.0.1:5432/paperclip",
-    embeddedPostgresDataDir: "/tmp/paperclip-test-db",
+    databaseUrl: "postgres://pilibala:pilibala@127.0.0.1:5432/pilibala",
+    embeddedPostgresDataDir: "/tmp/pilibala-test-db",
     embeddedPostgresPort: 54329,
     databaseBackupEnabled: false,
     databaseBackupIntervalMinutes: 60,
     databaseBackupRetentionDays: 30,
-    databaseBackupDir: "/tmp/paperclip-test-backups",
+    databaseBackupDir: "/tmp/pilibala-test-backups",
     serveUi: false,
     uiDevMiddleware: false,
     secretsProvider: "local_encrypted",
     secretsStrictMode: false,
-    secretsMasterKeyFilePath: "/tmp/paperclip-master.key",
+    secretsMasterKeyFilePath: "/tmp/pilibala-master.key",
     storageProvider: "local_disk",
-    storageLocalDiskBaseDir: "/tmp/paperclip-storage",
-    storageS3Bucket: "paperclip-test",
+    storageLocalDiskBaseDir: "/tmp/pilibala-storage",
+    storageS3Bucket: "pilibala-test",
     storageS3Region: "us-east-1",
     storageS3Endpoint: undefined,
     storageS3Prefix: "",
@@ -234,7 +234,7 @@ vi.mock("detect-port", () => ({
   default: detectPortMock,
 }));
 
-vi.mock("@paperclipai/db", () => ({
+vi.mock("@pilibalaai/db", () => ({
   createDb: createDbMock,
   ensurePostgresDatabase: vi.fn(),
   getPostgresDataDirectory: vi.fn(),
@@ -458,8 +458,8 @@ async function settleStartupHousekeeping() {
 describe("startServer feedback export wiring", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.PAPERCLIP_DECISION_SIGNING_SECRET = "fedcba9876543210fedcba9876543210";
-    process.env.PAPERCLIP_AGENT_JWT_SECRET = "0123456789abcdef0123456789abcdef";
+    process.env.PILIBALA_DECISION_SIGNING_SECRET = "fedcba9876543210fedcba9876543210";
+    process.env.PILIBALA_AGENT_JWT_SECRET = "0123456789abcdef0123456789abcdef";
     loadConfigMock.mockReturnValue(buildTestConfig());
     resolveHeartbeatSchedulingSuppressionMock.mockReturnValue({
       suppressed: false,
@@ -473,8 +473,8 @@ describe("startServer feedback export wiring", () => {
   it.each([false, true].flatMap(checkpointMode => [false, true].map(fails => ({ checkpointMode, fails }))))
   ("finishes restart backup before idle eligibility (checkpoint=$checkpointMode, failure=$fails)", async ({ checkpointMode, fails }) => {
     const directory = mkdtempSync(path.join(tmpdir(), "startup-idle-backup-"));
-    const previousFlag = process.env.PAPERCLIP_DB_BACKUP_IDLE_CHECKPOINT_ENABLED;
-    process.env.PAPERCLIP_DB_BACKUP_IDLE_CHECKPOINT_ENABLED = checkpointMode ? "1" : "0";
+    const previousFlag = process.env.PILIBALA_DB_BACKUP_IDLE_CHECKPOINT_ENABLED;
+    process.env.PILIBALA_DB_BACKUP_IDLE_CHECKPOINT_ENABLED = checkpointMode ? "1" : "0";
     loadConfigMock.mockReturnValue(buildTestConfig({ databaseBackupEnabled: true, databaseBackupDir: directory }));
     const eligible = vi.spyOn(idleLocalWork, "markIdleStartupComplete");
     let retry: (() => void) | undefined;
@@ -485,7 +485,7 @@ describe("startServer feedback export wiring", () => {
     let finish!: () => void;
     const pending = new Promise<void>(resolve => { finish = resolve; });
     const writeBackup = async (options: Parameters<typeof runDatabaseBackup>[0]) => {
-      const backupFile = path.join(directory, "paperclip-restart.sql.gz");
+      const backupFile = path.join(directory, "pilibala-restart.sql.gz");
       const bytes = gzipSync("SELECT 'restart recovery';\n");
       writeFileSync(backupFile, bytes);
       expect(options.retention).toEqual({ dailyDays: 7, weeklyWeeks: 4, monthlyMonths: 1 });
@@ -527,8 +527,8 @@ describe("startServer feedback export wiring", () => {
       finish();
       await starting;
       timers.mockRestore(); eligible.mockRestore();
-      if (previousFlag === undefined) delete process.env.PAPERCLIP_DB_BACKUP_IDLE_CHECKPOINT_ENABLED;
-      else process.env.PAPERCLIP_DB_BACKUP_IDLE_CHECKPOINT_ENABLED = previousFlag;
+      if (previousFlag === undefined) delete process.env.PILIBALA_DB_BACKUP_IDLE_CHECKPOINT_ENABLED;
+      else process.env.PILIBALA_DB_BACKUP_IDLE_CHECKPOINT_ENABLED = previousFlag;
       rmSync(directory, { recursive: true, force: true });
     }
   });
@@ -592,13 +592,13 @@ describe("startServer feedback export wiring", () => {
     expect(idleWorkSnapshot().active).toBe(before);
   });
 
-  it("starts without PAPERCLIP_DECISION_SIGNING_SECRET by generating a persisted key", async () => {
-    const originalHome = process.env.PAPERCLIP_HOME;
-    const originalInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
-    const tempHome = mkdtempSync(path.join(tmpdir(), "paperclip-decision-key-"));
-    process.env.PAPERCLIP_HOME = tempHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "default";
-    delete process.env.PAPERCLIP_DECISION_SIGNING_SECRET;
+  it("starts without PILIBALA_DECISION_SIGNING_SECRET by generating a persisted key", async () => {
+    const originalHome = process.env.PILIBALA_HOME;
+    const originalInstanceId = process.env.PILIBALA_INSTANCE_ID;
+    const tempHome = mkdtempSync(path.join(tmpdir(), "pilibala-decision-key-"));
+    process.env.PILIBALA_HOME = tempHome;
+    process.env.PILIBALA_INSTANCE_ID = "default";
+    delete process.env.PILIBALA_DECISION_SIGNING_SECRET;
     try {
       const started = await startServer();
       expect(started.server).toBe(fakeServer);
@@ -609,27 +609,27 @@ describe("startServer feedback export wiring", () => {
         expect(statSync(keyPath).mode & 0o777).toBe(0o600);
       }
     } finally {
-      if (originalHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = originalHome;
-      if (originalInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = originalInstanceId;
+      if (originalHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = originalHome;
+      if (originalInstanceId === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+      else process.env.PILIBALA_INSTANCE_ID = originalInstanceId;
       rmSync(tempHome, { recursive: true, force: true });
     }
   });
 
   it("repairs permissive permissions on an existing generated decision signing key", async () => {
-    const originalHome = process.env.PAPERCLIP_HOME;
-    const originalInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
-    const tempHome = mkdtempSync(path.join(tmpdir(), "paperclip-decision-key-mode-"));
+    const originalHome = process.env.PILIBALA_HOME;
+    const originalInstanceId = process.env.PILIBALA_INSTANCE_ID;
+    const tempHome = mkdtempSync(path.join(tmpdir(), "pilibala-decision-key-mode-"));
     const keyPath = path.join(tempHome, "instances", "default", "secrets", "decision-signing.key");
     const existingKey = Buffer.alloc(32, 7).toString("base64");
     mkdirSync(path.dirname(keyPath), { recursive: true, mode: 0o777 });
     chmodSync(path.dirname(keyPath), 0o777);
     writeFileSync(keyPath, existingKey, { encoding: "utf8", mode: 0o644 });
     chmodSync(keyPath, 0o644);
-    process.env.PAPERCLIP_HOME = tempHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "default";
-    delete process.env.PAPERCLIP_DECISION_SIGNING_SECRET;
+    process.env.PILIBALA_HOME = tempHome;
+    process.env.PILIBALA_INSTANCE_ID = "default";
+    delete process.env.PILIBALA_DECISION_SIGNING_SECRET;
     try {
       const started = await startServer();
       expect(started.server).toBe(fakeServer);
@@ -639,10 +639,10 @@ describe("startServer feedback export wiring", () => {
         expect(statSync(keyPath).mode & 0o777).toBe(0o600);
       }
     } finally {
-      if (originalHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = originalHome;
-      if (originalInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = originalInstanceId;
+      if (originalHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = originalHome;
+      if (originalInstanceId === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+      else process.env.PILIBALA_INSTANCE_ID = originalInstanceId;
       rmSync(tempHome, { recursive: true, force: true });
     }
   });
@@ -650,9 +650,9 @@ describe("startServer feedback export wiring", () => {
   it("refuses a symlink planted as the generated decision signing key", async () => {
     if (process.platform === "win32") return;
 
-    const originalHome = process.env.PAPERCLIP_HOME;
-    const originalInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
-    const tempHome = mkdtempSync(path.join(tmpdir(), "paperclip-decision-key-symlink-"));
+    const originalHome = process.env.PILIBALA_HOME;
+    const originalInstanceId = process.env.PILIBALA_INSTANCE_ID;
+    const tempHome = mkdtempSync(path.join(tmpdir(), "pilibala-decision-key-symlink-"));
     const keyPath = path.join(tempHome, "instances", "default", "secrets", "decision-signing.key");
     const plantedTarget = path.join(tempHome, "planted.key");
     const plantedKey = Buffer.alloc(32, 9).toString("base64");
@@ -660,24 +660,24 @@ describe("startServer feedback export wiring", () => {
     chmodSync(path.dirname(keyPath), 0o777);
     writeFileSync(plantedTarget, plantedKey, { encoding: "utf8", mode: 0o600 });
     symlinkSync(plantedTarget, keyPath);
-    process.env.PAPERCLIP_HOME = tempHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "default";
-    delete process.env.PAPERCLIP_DECISION_SIGNING_SECRET;
+    process.env.PILIBALA_HOME = tempHome;
+    process.env.PILIBALA_INSTANCE_ID = "default";
+    delete process.env.PILIBALA_DECISION_SIGNING_SECRET;
     try {
       await expect(startServer()).rejects.toThrow("must be a regular file");
       expect(readFileSync(plantedTarget, "utf8")).toBe(plantedKey);
     } finally {
-      if (originalHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = originalHome;
-      if (originalInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = originalInstanceId;
+      if (originalHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = originalHome;
+      if (originalInstanceId === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+      else process.env.PILIBALA_INSTANCE_ID = originalInstanceId;
       rmSync(tempHome, { recursive: true, force: true });
     }
   });
 
   it("refuses startup when an explicit decision signing secret is too short", async () => {
-    process.env.PAPERCLIP_DECISION_SIGNING_SECRET = "too-short";
-    await expect(startServer()).rejects.toThrow("PAPERCLIP_DECISION_SIGNING_SECRET must be at least 32 characters");
+    process.env.PILIBALA_DECISION_SIGNING_SECRET = "too-short";
+    await expect(startServer()).rejects.toThrow("PILIBALA_DECISION_SIGNING_SECRET must be at least 32 characters");
     expect(loadConfigMock).not.toHaveBeenCalled();
   });
 
@@ -984,7 +984,7 @@ describe("startServer feedback export wiring", () => {
       deploymentExposure: "public",
       authBaseUrlMode: "explicit",
       authPublicBaseUrl: "https://tenant.example.com",
-      databaseUrl: "secret://paperclip-cloud/stacks/alpha/database/runtime-url",
+      databaseUrl: "secret://pilibala-cloud/stacks/alpha/database/runtime-url",
     }));
 
     await expect(startServer()).rejects.toThrow(
@@ -997,7 +997,7 @@ describe("startServer feedback export wiring", () => {
 describe("startServer authenticated auth origin setup", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.PAPERCLIP_DECISION_SIGNING_SECRET = "fedcba9876543210fedcba9876543210";
+    process.env.PILIBALA_DECISION_SIGNING_SECRET = "fedcba9876543210fedcba9876543210";
     loadConfigMock.mockReturnValue(buildTestConfig());
     createBetterAuthInstanceMock.mockReturnValue({});
     deriveAuthTrustedOriginsMock.mockReturnValue([]);
@@ -1055,53 +1055,53 @@ describe("startServer authenticated auth origin setup", () => {
   });
 });
 
-describe("startServer PAPERCLIP_API_URL handling", () => {
+describe("startServer PILIBALA_API_URL handling", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.PAPERCLIP_DECISION_SIGNING_SECRET = "fedcba9876543210fedcba9876543210";
+    process.env.PILIBALA_DECISION_SIGNING_SECRET = "fedcba9876543210fedcba9876543210";
     loadConfigMock.mockReturnValue(buildTestConfig());
     process.env.BETTER_AUTH_SECRET = "test-secret";
-    delete process.env.PAPERCLIP_API_URL;
+    delete process.env.PILIBALA_API_URL;
   });
 
   afterEach(() => {
-    if (ORIGINAL_PAPERCLIP_API_URL === undefined) delete process.env.PAPERCLIP_API_URL;
-    else process.env.PAPERCLIP_API_URL = ORIGINAL_PAPERCLIP_API_URL;
+    if (ORIGINAL_PILIBALA_API_URL === undefined) delete process.env.PILIBALA_API_URL;
+    else process.env.PILIBALA_API_URL = ORIGINAL_PILIBALA_API_URL;
 
-    if (ORIGINAL_PAPERCLIP_RUNTIME_API_URL === undefined) delete process.env.PAPERCLIP_RUNTIME_API_URL;
-    else process.env.PAPERCLIP_RUNTIME_API_URL = ORIGINAL_PAPERCLIP_RUNTIME_API_URL;
+    if (ORIGINAL_PILIBALA_RUNTIME_API_URL === undefined) delete process.env.PILIBALA_RUNTIME_API_URL;
+    else process.env.PILIBALA_RUNTIME_API_URL = ORIGINAL_PILIBALA_RUNTIME_API_URL;
 
-    if (ORIGINAL_PAPERCLIP_RUNTIME_API_CANDIDATES_JSON === undefined) {
-      delete process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON;
+    if (ORIGINAL_PILIBALA_RUNTIME_API_CANDIDATES_JSON === undefined) {
+      delete process.env.PILIBALA_RUNTIME_API_CANDIDATES_JSON;
     } else {
-      process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON = ORIGINAL_PAPERCLIP_RUNTIME_API_CANDIDATES_JSON;
+      process.env.PILIBALA_RUNTIME_API_CANDIDATES_JSON = ORIGINAL_PILIBALA_RUNTIME_API_CANDIDATES_JSON;
     }
 
-    if (ORIGINAL_PAPERCLIP_LISTEN_HOST === undefined) delete process.env.PAPERCLIP_LISTEN_HOST;
-    else process.env.PAPERCLIP_LISTEN_HOST = ORIGINAL_PAPERCLIP_LISTEN_HOST;
+    if (ORIGINAL_PILIBALA_LISTEN_HOST === undefined) delete process.env.PILIBALA_LISTEN_HOST;
+    else process.env.PILIBALA_LISTEN_HOST = ORIGINAL_PILIBALA_LISTEN_HOST;
 
-    if (ORIGINAL_PAPERCLIP_LISTEN_PORT === undefined) delete process.env.PAPERCLIP_LISTEN_PORT;
-    else process.env.PAPERCLIP_LISTEN_PORT = ORIGINAL_PAPERCLIP_LISTEN_PORT;
+    if (ORIGINAL_PILIBALA_LISTEN_PORT === undefined) delete process.env.PILIBALA_LISTEN_PORT;
+    else process.env.PILIBALA_LISTEN_PORT = ORIGINAL_PILIBALA_LISTEN_PORT;
   });
 
-  it("uses the externally set PAPERCLIP_API_URL when provided", async () => {
-    process.env.PAPERCLIP_API_URL = "http://custom-api:3100";
+  it("uses the externally set PILIBALA_API_URL when provided", async () => {
+    process.env.PILIBALA_API_URL = "http://custom-api:3100";
 
     const started = await startServer();
 
     expect(started.apiUrl).toBe("http://custom-api:3100");
-    expect(process.env.PAPERCLIP_API_URL).toBe("http://custom-api:3100");
-    expect(JSON.parse(process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON ?? "[]")).toEqual(
+    expect(process.env.PILIBALA_API_URL).toBe("http://custom-api:3100");
+    expect(JSON.parse(process.env.PILIBALA_RUNTIME_API_CANDIDATES_JSON ?? "[]")).toEqual(
       expect.arrayContaining(["http://custom-api:3100"]),
     );
-    expect(JSON.parse(process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON ?? "[]")[0]).toBe("http://custom-api:3100");
+    expect(JSON.parse(process.env.PILIBALA_RUNTIME_API_CANDIDATES_JSON ?? "[]")[0]).toBe("http://custom-api:3100");
   });
 
-  it("falls back to host-based URL when PAPERCLIP_API_URL is not set", async () => {
+  it("falls back to host-based URL when PILIBALA_API_URL is not set", async () => {
     const started = await startServer();
 
     expect(started.apiUrl).toBe("http://127.0.0.1:3210");
-    expect(process.env.PAPERCLIP_API_URL).toBe("http://127.0.0.1:3210");
+    expect(process.env.PILIBALA_API_URL).toBe("http://127.0.0.1:3210");
   });
 
   it("keeps loopback as the runtime API URL when allowed hostnames are present", async () => {
@@ -1112,9 +1112,9 @@ describe("startServer PAPERCLIP_API_URL handling", () => {
     const started = await startServer();
 
     expect(started.apiUrl).toBe("http://127.0.0.1:3210");
-    expect(process.env.PAPERCLIP_RUNTIME_API_URL).toBe("http://127.0.0.1:3210");
-    expect(process.env.PAPERCLIP_API_URL).toBe("http://127.0.0.1:3210");
-    expect(JSON.parse(process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON ?? "[]")).toEqual(
+    expect(process.env.PILIBALA_RUNTIME_API_URL).toBe("http://127.0.0.1:3210");
+    expect(process.env.PILIBALA_API_URL).toBe("http://127.0.0.1:3210");
+    expect(JSON.parse(process.env.PILIBALA_RUNTIME_API_CANDIDATES_JSON ?? "[]")).toEqual(
       expect.arrayContaining(["http://127.0.0.1:3210", "http://192.168.1.50:3210"]),
     );
   });
@@ -1131,24 +1131,24 @@ describe("startServer PAPERCLIP_API_URL handling", () => {
 
     // The server listens internally on 3110, but an explicit *external* base URL must keep
     // its advertised port. Rewriting it to the internal listen port produced an unreachable
-    // URL that leaked to spawned agents as a dead PAPERCLIP_API_URL. (BRO-1558)
+    // URL that leaked to spawned agents as a dead PILIBALA_API_URL. (BRO-1558)
     expect(started.listenPort).toBe(3110);
     expect(started.apiUrl).toBe("http://my-host.ts.net:3100");
-    expect(process.env.PAPERCLIP_RUNTIME_API_URL).toBe("http://my-host.ts.net:3100");
+    expect(process.env.PILIBALA_RUNTIME_API_URL).toBe("http://my-host.ts.net:3100");
   });
 
   it("keeps no-port auth public URLs stable when detect-port selects a new port", async () => {
     loadConfigMock.mockReturnValueOnce(buildTestConfig({
       port: 3100,
       authBaseUrlMode: "explicit",
-      authPublicBaseUrl: "https://paperclip.example",
+      authPublicBaseUrl: "https://pilibala.example",
     }));
     detectPortMock.mockResolvedValueOnce(3110);
 
     const started = await startServer();
 
     expect(started.listenPort).toBe(3110);
-    expect(started.apiUrl).toBe("https://paperclip.example");
-    expect(process.env.PAPERCLIP_RUNTIME_API_URL).toBe("https://paperclip.example");
+    expect(started.apiUrl).toBe("https://pilibala.example");
+    expect(process.env.PILIBALA_RUNTIME_API_URL).toBe("https://pilibala.example");
   });
 });

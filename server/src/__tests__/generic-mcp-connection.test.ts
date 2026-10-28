@@ -34,9 +34,9 @@ import {
   toolProfileEntries,
   toolProfiles,
   toolRuntimeSlots,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { and, eq, sql } from "drizzle-orm";
-import { APP_DEFINITIONS, MCP_CONFIG_HELP_PROMPT } from "@paperclipai/shared";
+import { APP_DEFINITIONS, MCP_CONFIG_HELP_PROMPT } from "@pilibalaai/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -63,7 +63,7 @@ const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : 
  * deterministic and needs no network or vendor credentials.
  */
 
-const PUBLIC_BASE_URL = "https://paperclip.fixture.test";
+const PUBLIC_BASE_URL = "https://pilibala.fixture.test";
 const REDIRECT_URI = `${PUBLIC_BASE_URL}/api/tools/oauth/callback`;
 const CLIENT_METADATA_DOCUMENT_URL = `${PUBLIC_BASE_URL}/api/tools/oauth/client-metadata`;
 
@@ -162,7 +162,7 @@ function headerRecord(init: RequestInit | undefined): Record<string, string> {
 /**
  * A single fetch implementation standing in for an MCP server plus its
  * authorization server. Returns the request log so tests can assert on the exact
- * protocol parameters Paperclip sent (RFC 8707 `resource`, DCR metadata, PKCE).
+ * protocol parameters Pilibala sent (RFC 8707 `resource`, DCR metadata, PKCE).
  */
 function installMcpOAuthFixture(options: FixtureOptions = {}) {
   const auth = options.auth ?? "public";
@@ -210,7 +210,7 @@ function installMcpOAuthFixture(options: FixtureOptions = {}) {
           structuredContent: { meeting_id: "meeting-1" },
         } });
       }
-      return jsonResponse({ jsonrpc: "2.0", id: "paperclip-catalog-refresh", result: { tools } });
+      return jsonResponse({ jsonrpc: "2.0", id: "pilibala-catalog-refresh", result: { tools } });
     }
 
     if (href === resourceMetadataUrl) {
@@ -233,7 +233,7 @@ function installMcpOAuthFixture(options: FixtureOptions = {}) {
       const requested = parsedBody as Record<string, unknown>;
       return jsonResponse({
         client_id: "fixture-dcr-client",
-        // A conforming server echoes back what it registered, and Paperclip
+        // A conforming server echoes back what it registered, and Pilibala
         // requires its own callback even when the provider adds a routing URI.
         redirect_uris: [
           ...(requested.redirect_uris as string[]),
@@ -341,7 +341,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-generic-mcp-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-generic-mcp-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -517,7 +517,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
       if (String(url) === secretUrl && (init?.method ?? "GET").toUpperCase() === "POST") {
         return jsonResponse({
           jsonrpc: "2.0",
-          id: "paperclip-catalog-refresh",
+          id: "pilibala-catalog-refresh",
           result: { tools: FIXTURE_TOOLS },
         });
       }
@@ -693,11 +693,11 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
   });
 
   it("emits deployment guidance without exposing server env-var names", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "");
-    vi.stubEnv("PAPERCLIP_AUTH_PUBLIC_BASE_URL", "");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "");
+    vi.stubEnv("PILIBALA_AUTH_PUBLIC_BASE_URL", "");
     vi.stubEnv("BETTER_AUTH_URL", "");
     vi.stubEnv("BETTER_AUTH_BASE_URL", "");
-    vi.stubEnv("PAPERCLIP_MANAGED_RUNTIME_PUBLIC_URL", "");
+    vi.stubEnv("PILIBALA_MANAGED_RUNTIME_PUBLIC_URL", "");
     const app = createRouteApp(db, {
       deploymentMode: "local_trusted",
       deploymentExposure: "private",
@@ -705,13 +705,13 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
 
     const response = await request(app)
       .get("/api/tools/oauth/client-metadata")
-      .set("Host", "paperclip.example.test")
+      .set("Host", "pilibala.example.test")
       .expect(422);
 
     expect(response.body).toMatchObject({
       details: { code: "oauth_redirect_origin_unsupported" },
     });
-    expect(JSON.stringify(response.body)).not.toContain("PAPERCLIP_PUBLIC_URL");
+    expect(JSON.stringify(response.body)).not.toContain("PILIBALA_PUBLIC_URL");
   });
 
   it("stores a bearer key as a secret and never reads it back", async () => {
@@ -768,7 +768,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
     expect(serialized).toContain("X-Api-Key");
   });
 
-  it("rejects header names Paperclip refuses to send", async () => {
+  it("rejects header names Pilibala refuses to send", async () => {
     installMcpOAuthFixture({ auth: "public" });
     const company = await createCompany(db);
     const service = toolAccessService(db);
@@ -885,7 +885,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
       const company = await createCompany(db);
       const app = createRouteApp(db, { deploymentMode: "local_trusted", deploymentExposure: "private" });
       const redirectUri = "http://127.0.0.1:3100/api/tools/oauth/callback";
-      vi.stubEnv("PAPERCLIP_PUBLIC_URL", "http://127.0.0.1:3100");
+      vi.stubEnv("PILIBALA_PUBLIC_URL", "http://127.0.0.1:3100");
       const actor = { actorType: "user" as const, actorId: "board-user" };
       const connected = await request(app).post(`/api/companies/${company.id}/tools/apps/connect`)
         .send({ link: fixture.mcpUrl, name: "Offline access MCP", grantKind }).expect(201);
@@ -908,7 +908,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
       });
       const successfulCall = { decision: "allowed", result: { data: { content: [{ type: "text", text: "Authenticated MCP call succeeded" }] } } };
       await expect(call()).resolves.toMatchObject(successfulCall);
-      // The provider actually rejects its old access token. Expire Paperclip's
+      // The provider actually rejects its old access token. Expire Pilibala's
       // cached timestamp too, without waiting an hour or mocking global time.
       for (let rotation = 0; rotation < 2; rotation += 1) {
         fixture.advanceTime(3_601_000);
@@ -1058,7 +1058,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
     const fixture = installMcpOAuthFixture({ auth: "oauth" });
     const company = await createCompany(db);
     const app = createRouteApp(db);
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", PUBLIC_BASE_URL);
+    vi.stubEnv("PILIBALA_PUBLIC_URL", PUBLIC_BASE_URL);
     const actor = { actorType: "user" as const, actorId: "board-user" };
 
     const response = await request(app)
@@ -1156,7 +1156,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
       probes += 1;
       if (probes === 2) release();
       await bothProbed;
-      return jsonResponse({ jsonrpc: "2.0", id: "paperclip-catalog-refresh", result: { tools: FIXTURE_TOOLS } });
+      return jsonResponse({ jsonrpc: "2.0", id: "pilibala-catalog-refresh", result: { tools: FIXTURE_TOOLS } });
     });
 
     const results = await Promise.allSettled([0, 1].map(() => service.connectGalleryApp(company.id, {
@@ -1202,7 +1202,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
         await releaseCatalog;
         throw new Error("first retry catalog unavailable");
       }
-      return jsonResponse({ jsonrpc: "2.0", id: "paperclip-catalog-refresh", result: { tools: FIXTURE_TOOLS } });
+      return jsonResponse({ jsonrpc: "2.0", id: "pilibala-catalog-refresh", result: { tools: FIXTURE_TOOLS } });
     });
     const failure = service.connectGalleryApp(company.id, {
       link: MCP_URL, name: "Personal retry rollback", grantKind: "user",
@@ -1236,7 +1236,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
     await db.update(toolApplications).set({ status: "archived", archivedAt: new Date() }).where(eq(toolApplications.id, first.application.id));
     fixture.fetchMock.mockRestore();
     vi.spyOn(globalThis, "fetch").mockImplementation(async () => jsonResponse({
-      jsonrpc: "2.0", id: "paperclip-catalog-refresh",
+      jsonrpc: "2.0", id: "pilibala-catalog-refresh",
       result: { tools: [...FIXTURE_TOOLS, { name: "new_tool", description: "Partial catalog addition" }] },
     }));
     await db.execute(sql`
@@ -1554,7 +1554,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
 
     const connected = await service.connectGalleryApp(company.id, { link: MCP_URL, name: "Fixture private CIMD" });
     const firstStart = await service.startOAuth(company.id, connected.connectionId, {
-      redirectUri: "https://paperclip.tailnet.test:42001/api/tools/oauth/callback",
+      redirectUri: "https://pilibala.tailnet.test:42001/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "board-user" },
     });
     expect(firstStart.registrationSource).toBe("cimd");
@@ -1564,7 +1564,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
     // CIMD client id must not keep presenting it forever.
     metadataAddress = "100.100.100.100";
     const retry = await service.startOAuth(company.id, connected.connectionId, {
-      redirectUri: "https://paperclip.tailnet.test:42001/api/tools/oauth/callback",
+      redirectUri: "https://pilibala.tailnet.test:42001/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "board-user" },
     });
 
@@ -1592,7 +1592,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
 
   it("prefers a deployment-preconfigured client over any registration", async () => {
     const fixture = installMcpOAuthFixture({ auth: "oauth", cimd: true });
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_CLIENT_ID", "preconfigured-client");
+    vi.stubEnv("PILIBALA_TOOL_OAUTH_CLIENT_ID", "preconfigured-client");
     const company = await createCompany(db);
     const service = toolAccessService(db);
 
@@ -1611,7 +1611,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
     installMcpOAuthFixture({ auth: "oauth", dcr: false });
     const company = await createCompany(db);
     const app = createRouteApp(db);
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", PUBLIC_BASE_URL);
+    vi.stubEnv("PILIBALA_PUBLIC_URL", PUBLIC_BASE_URL);
 
     const response = await request(app)
       .post(`/api/companies/${company.id}/tools/apps/connect`)
@@ -1765,7 +1765,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
    */
   const PROVIDER_CANARY = "canary-sk-live-9f3a2b7c";
   const HOSTILE_ERROR_DESCRIPTION =
-    `\u001b[31mFATAL\u001b[0m **Paperclip needs your recovery key**: ${PROVIDER_CANARY} <script>alert(1)</script>`;
+    `\u001b[31mFATAL\u001b[0m **Pilibala needs your recovery key**: ${PROVIDER_CANARY} <script>alert(1)</script>`;
   const HOSTILE_ERROR_BODY = {
     error_description: HOSTILE_ERROR_DESCRIPTION,
     error_uri: `https://attacker.fixture.test/why?leak=${PROVIDER_CANARY}`,
@@ -1823,7 +1823,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
       actor: { actorType: "user", actorId: "board-user" },
     }).then(() => null, (error: unknown) => error);
 
-    // Paperclip's own copy for `invalid_grant`, not a syllable of the provider's.
+    // Pilibala's own copy for `invalid_grant`, not a syllable of the provider's.
     expect(thrown).toMatchObject({
       status: 502,
       message: "The authorization server rejected the authorization code or refresh token.",
@@ -1863,7 +1863,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
     }).then(() => null, (error: unknown) => error);
 
     // Off the allowlist, so the label collapses and the message falls back to
-    // Paperclip's generic copy rather than naming the provider's code.
+    // Pilibala's generic copy rather than naming the provider's code.
     expect(thrown).toMatchObject({
       status: 502,
       message: "OAuth token exchange failed",
@@ -1892,7 +1892,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
 
     expect(thrown).toMatchObject({
       status: 502,
-      message: "The authorization server rejected Paperclip's callback URL.",
+      message: "The authorization server rejected Pilibala's callback URL.",
       details: {
         code: "oauth_dynamic_client_registration_failed",
         providerError: "invalid_redirect_uri",
@@ -1906,7 +1906,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
   });
 
   it("redacts a hostile denial from the callback route and consumes the state", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", PUBLIC_BASE_URL);
+    vi.stubEnv("PILIBALA_PUBLIC_URL", PUBLIC_BASE_URL);
     installMcpOAuthFixture({ auth: "oauth" });
     const company = await createCompany(db);
     const service = toolAccessService(db);
@@ -1971,7 +1971,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
   });
 
   it("returns browser denials to Permissions without reflecting provider-authored details", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", PUBLIC_BASE_URL);
+    vi.stubEnv("PILIBALA_PUBLIC_URL", PUBLIC_BASE_URL);
     installMcpOAuthFixture({ auth: "oauth" });
     const company = await createCompany(db);
     const service = toolAccessService(db);
@@ -2012,10 +2012,10 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
     const service = toolAccessService(db);
     await service.connectGalleryApp(company.id, { link: MCP_URL, name: "Fixture unsolicited denial" });
 
-    // An unsolicited callback carries no state Paperclip issued, so it is
+    // An unsolicited callback carries no state Pilibala issued, so it is
     // rejected on that ground and never reaches the provider-error branch.
     await expect(service.completeOAuthCallback({
-      state: "state-paperclip-never-issued",
+      state: "state-pilibala-never-issued",
       error: "access_denied",
       redirectUri: REDIRECT_URI,
       actor: { actorType: "user", actorId: "board-user" },
@@ -2068,7 +2068,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
       const state = new URL(start.authorizationUrl).searchParams.get("state")!;
       const code = fixture.issueAuthorizationCode(start.authorizationUrl);
 
-      // Real providers invent their own cancel codes. Whether or not Paperclip
+      // Real providers invent their own cancel codes. Whether or not Pilibala
       // recognizes the label, the request is over.
       const thrown = await service.completeOAuthCallback({
         state,
@@ -2167,7 +2167,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
       expect(resolved).toMatchObject({ status: "rejected", resolvedByUserId: "board-user" });
       expect(resolved!.result).toMatchObject({ outcome: "rejected" });
       expect(resolved!.resolvedAt).not.toBeNull();
-      // The prompt's reason is Paperclip's own copy, never the provider's.
+      // The prompt's reason is Pilibala's own copy, never the provider's.
       expect(JSON.stringify(resolved!.result)).not.toContain("access_denied");
       await expect(db.select().from(toolOauthStates)).resolves.toHaveLength(0);
     });
@@ -2277,7 +2277,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
       actor: { actorType: "user", actorId: "board-user" },
     });
 
-    // The callback moved. Paperclip cannot re-register in the operator's console,
+    // The callback moved. Pilibala cannot re-register in the operator's console,
     // so it must stop and say so rather than silently minting a new client.
     await expect(service.startOAuth(company.id, connected.connectionId, {
       redirectUri: "https://other.fixture.test/api/tools/oauth/callback",
@@ -2286,7 +2286,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
   });
 
   /**
-   * PAP-17099 — the authorization endpoint is the one discovered value Paperclip
+   * PAP-17099 — the authorization endpoint is the one discovered value Pilibala
    * hands to the operator's browser as a top-level navigation, so a hostile
    * server must not be able to advertise a scheme that runs code in the board's
    * origin, reads a local file, or downgrades the authorization request.
@@ -2322,7 +2322,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
 
       const connected = await service.connectGalleryApp(company.id, { link: MCP_URL, name: "Fixture poisoned config" });
       // A row written before the gate existed (or by any other writer) is not
-      // trusted just because it is in Paperclip's own database.
+      // trusted just because it is in Pilibala's own database.
       const poisonStoredAuthorizationUrl = async () => {
         const [row] = await db.select().from(toolConnections).where(eq(toolConnections.id, connected.connectionId));
         const poisoned = {
@@ -2550,7 +2550,7 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
 
   it("serves a client metadata document with no company or secret data", async () => {
     const company = await createCompany(db);
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", PUBLIC_BASE_URL);
+    vi.stubEnv("PILIBALA_PUBLIC_URL", PUBLIC_BASE_URL);
     const app = createRouteApp(db);
 
     const response = await request(app).get("/api/tools/oauth/client-metadata").expect(200);
@@ -2565,23 +2565,23 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
   });
 
   it("uses the configured auth origin for self-hosted OAuth callbacks", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://public.paperclip.example");
-    vi.stubEnv("PAPERCLIP_AUTH_PUBLIC_BASE_URL", "https://auth.paperclip.example");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://public.pilibala.example");
+    vi.stubEnv("PILIBALA_AUTH_PUBLIC_BASE_URL", "https://auth.pilibala.example");
     const app = createRouteApp(db);
 
     const response = await request(app).get("/api/tools/oauth/client-metadata").expect(200);
 
     expect(response.body.redirect_uris).toEqual([
-      "https://auth.paperclip.example/api/tools/oauth/callback",
+      "https://auth.pilibala.example/api/tools/oauth/callback",
     ]);
   });
 
   it("uses the managed runtime origin when no explicit callback origin is configured", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "");
-    vi.stubEnv("PAPERCLIP_AUTH_PUBLIC_BASE_URL", "");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "");
+    vi.stubEnv("PILIBALA_AUTH_PUBLIC_BASE_URL", "");
     vi.stubEnv("BETTER_AUTH_URL", "");
     vi.stubEnv("BETTER_AUTH_BASE_URL", "");
-    vi.stubEnv("PAPERCLIP_MANAGED_RUNTIME_PUBLIC_URL", "https://worktree.tail29c1aa.ts.net");
+    vi.stubEnv("PILIBALA_MANAGED_RUNTIME_PUBLIC_URL", "https://worktree.tail29c1aa.ts.net");
     const app = createRouteApp(db);
 
     const response = await request(app).get("/api/tools/oauth/client-metadata").expect(200);
@@ -2592,8 +2592,8 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
   });
 
   it("keeps an explicit callback origin ahead of managed runtime inference", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", PUBLIC_BASE_URL);
-    vi.stubEnv("PAPERCLIP_MANAGED_RUNTIME_PUBLIC_URL", "https://inferred.tail29c1aa.ts.net");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", PUBLIC_BASE_URL);
+    vi.stubEnv("PILIBALA_MANAGED_RUNTIME_PUBLIC_URL", "https://inferred.tail29c1aa.ts.net");
     const app = createRouteApp(db);
 
     const response = await request(app).get("/api/tools/oauth/client-metadata").expect(200);

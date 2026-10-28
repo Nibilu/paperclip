@@ -7,11 +7,11 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { documentService } from "../services/documents.js";
 import { applyConnectorSkills, prepareConnectorSkillDelivery, resolveConnectorAssignments } from "../services/connector-runtime.js";
-import { VOICE_RESULT_NOTIFICATION } from "@paperclipai/shared";
+import { VOICE_RESULT_NOTIFICATION } from "@pilibalaai/shared";
 import { createHash, createHmac, randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { chatActions, instanceUserRoles, principalPermissionGrants, environments, chatVoiceInboundCalls, chatVoicePhoneLines, chatVoiceReports, heartbeatRuns, toolProfileBindings, chatVoiceCallbacks, agentWakeupRequests, issueThreadInteractions, issueQuestionResponseDeliveries, issueComments, agents, chatConversations, chatDeliveries, chatEndpoints, chatPublications, chatVoiceReplies, chatVoiceSessions, chatVoiceToolCalls, companies, companyMemberships, companySecrets, connectionGrants, connectionGrantMembers, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, issues, toolApplications, toolConnections, toolConnectionInstalls } from "@paperclipai/db";
+import { chatActions, instanceUserRoles, principalPermissionGrants, environments, chatVoiceInboundCalls, chatVoicePhoneLines, chatVoiceReports, heartbeatRuns, toolProfileBindings, chatVoiceCallbacks, agentWakeupRequests, issueThreadInteractions, issueQuestionResponseDeliveries, issueComments, agents, chatConversations, chatDeliveries, chatEndpoints, chatPublications, chatVoiceReplies, chatVoiceSessions, chatVoiceToolCalls, companies, companyMemberships, companySecrets, connectionGrants, connectionGrantMembers, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, issues, toolApplications, toolConnections, toolConnectionInstalls } from "@pilibalaai/db";
 import { configureSpekoSessionTools } from "../services/voice/speko-tool-setup.js";
 import { instanceSettingsService } from "../services/instance-settings.js";
 import { chatChannelService } from "../services/chat-channels.js";
@@ -24,7 +24,7 @@ import type { SpekoToolEnvelope } from "../services/voice/speko-protocol.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 
 import { liveVoiceExecutionGuidance } from "../services/voice/voice-execution-guidance.js";
-import { buildPaperclipRuntimeMcpServers } from "../services/heartbeat.js";
+import { buildPilibalaRuntimeMcpServers } from "../services/heartbeat.js";
 import { createToolGatewayService } from "../services/tool-gateway.js";
 import { initializeRunIdentity } from "../services/run-identity.js";
 import { syncSpekoVoiceTools, spekoToolsForSession, executeSpekoVoiceTool } from "../services/voice/speko-agent-tools.js";
@@ -33,7 +33,7 @@ const support = await getEmbeddedPostgresTestSupport();
   let db: ReturnType<typeof createDb>;
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-speko-store-");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-speko-store-");
     db = createDb(database.connectionString);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
   afterAll(async () => { await database?.cleanup(); });
@@ -42,7 +42,7 @@ const support = await getEmbeddedPostgresTestSupport();
     const companyId = randomUUID(), endpointId = randomUUID(), agentId = randomUUID(), applicationId = randomUUID(), connectionId = randomUUID(), issueId = randomUUID(), conversationId = randomUUID(), callerId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Voice test", issuePrefix: `V${companyId.slice(0, 7).toUpperCase()}` });
     await db.insert(companyMemberships).values({ companyId, principalType: "user", principalId: callerId, status: "active", membershipRole: "member" });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Existing agent", role: "operator", status: "idle", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Existing agent", role: "operator", status: "idle", adapterType: "pilibala_runner" });
     await db.insert(issues).values({ id: issueId, companyId, title: "Existing task", assigneeAgentId: agentId, status: "in_progress" });
     await db.insert(toolApplications).values({ id: applicationId, companyId, applicationKey: `chat:speko:${endpointId}`, name: "Speko", type: "chat", status: "active" });
     await db.insert(toolConnections).values({ id: connectionId, companyId, applicationId, name: "Speko", uid: endpointId, connectionPurpose: "channel", transport: "voice", config: { provider: "speko" }, status: "active", enabled: true });
@@ -100,7 +100,7 @@ const support = await getEmbeddedPostgresTestSupport();
   it("rejects Backlog voice work before claiming that it was accepted", async () => {
     const f = await fixture();
     await db.update(issues).set({status: "backlog"}).where(eq(issues.id, f.issueId));
-    await expect(f.store.runTool(f.toolInput("submit_request", {text: "Inspect disk space"}))).rejects.toMatchObject({status: 409, message: "Move this task to Todo in Paperclip before requesting voice work."});
+    await expect(f.store.runTool(f.toolInput("submit_request", {text: "Inspect disk space"}))).rejects.toMatchObject({status: 409, message: "Move this task to Todo in Pilibala before requesting voice work."});
     expect(await db.select().from(chatDeliveries).where(eq(chatDeliveries.endpointId, f.endpointId))).toHaveLength(0);
     expect(await db.select().from(chatVoiceToolCalls).where(eq(chatVoiceToolCalls.sessionId, f.sessionId))).toHaveLength(0);
   });
@@ -759,7 +759,7 @@ const support = await getEmbeddedPostgresTestSupport();
     const event = {type: "call.pre_call", session_id: providerSessionId, call_id: providerSessionId, organization_id: `org_${f.companyId}`, direction: "inbound", phone_number_id: line.providerNumberId, dialed_number: line.phoneNumber, from: "+12015551234"};
     const signed = sign(event);
     const response = await f.service.inbound.lifecycle(endpoint.publicId, signed.body, signed.headers);
-    const capability = (response as {toolSecrets: {paperclip_session_token: string}}).toolSecrets.paperclip_session_token;
+    const capability = (response as {toolSecrets: {pilibala_session_token: string}}).toolSecrets.pilibala_session_token;
     const [call] = await db.select().from(chatVoiceInboundCalls).where(eq(chatVoiceInboundCalls.providerSessionId, providerSessionId));
     const tool = async (name: "submit_request" | "get_updates", args: unknown, toolId = randomUUID()) => {
       const signed = sign({session_id: providerSessionId, tool_call_id: toolId, idempotency_key: `${providerSessionId}:${toolId}`, tool: name, args});
@@ -827,10 +827,10 @@ const support = await getEmbeddedPostgresTestSupport();
     expect(f.response.systemPrompt).not.toContain(f.call.approvalCode);
     // The provider must not inherit browser notification-only waiting or a
     // protected question tool that this public session cannot use.
-    expect(f.response.systemPrompt).toContain("Paperclip pushes approved task answers");
+    expect(f.response.systemPrompt).toContain("Pilibala pushes approved task answers");
     expect(f.response.systemPrompt).toContain("Do not repeatedly poll while pending.");
     expect(f.response.systemPrompt).toContain("Do not call answer_question");
-    expect(f.response.systemPrompt).toContain("Do not make the caller wait for a Paperclip turn");
+    expect(f.response.systemPrompt).toContain("Do not make the caller wait for a Pilibala turn");
     expect(f.response.systemPrompt).toContain("Submit follow-ups even while earlier work is running");
     expect(f.response.systemPrompt).toContain("inspect its actual environment");
     expect(f.response.systemPrompt).toContain("How much disk space do you have on your computer?");
@@ -1180,7 +1180,7 @@ const support = await getEmbeddedPostgresTestSupport();
     expect(f.transport.configureWebhook.mock.calls.at(-1)?.[3]).toBe("hook_test");
     expect(f.transport.configureWebhook.mock.calls.at(-1)?.[2]).toBe("whsec_rotated");
     // Even the same provider ID is no longer ours if its URL was changed outside
-    // Paperclip. A historical ID alone cannot authorize overwriting it.
+    // Pilibala. A historical ID alone cannot authorize overwriting it.
     tools[0]!.source.url = "https://another-app.example.test/tools";
     f.transport.configureTool.mockClear();
     await expect(configureSpekoSessionTools(db, {...input, callbackUrl: "https://third-tunnel.example.test/tools"})).rejects.toMatchObject({status: 409});
@@ -1265,19 +1265,19 @@ const support = await getEmbeddedPostgresTestSupport();
     const binding = { companyId: f.companyId, agentId: f.agentId };
     const assigned = async () => (await resolveConnectorAssignments(db, binding)).filter(item => item.key === "speko");
     const assignments = await assigned();
-    expect(assignments).toMatchObject([{ skillKey: "paperclipai/paperclip/speko", resources: [{ id: f.endpointId, connectionId: f.connectionId }], tools: [] }]);
+    expect(assignments).toMatchObject([{ skillKey: "pilibalaai/pilibala/speko", resources: [{ id: f.endpointId, connectionId: f.connectionId }], tools: [] }]);
     const config = await applyConnectorSkills({}, [], assignments);
-    const skill = config.paperclipRuntimeSkills[0];
+    const skill = config.pilibalaRuntimeSkills[0];
     const markdown = await readFile(join(skill.source, "SKILL.md"), "utf8");
     expect(markdown).toContain("one focused clarification");
-    expect(markdown).toContain("durable Paperclip continuation");
+    expect(markdown).toContain("durable Pilibala continuation");
     expect(markdown).toContain("never blindly redial");
     expect(markdown).not.toContain("+12015551234");
-    for (const adapter of ["paperclip_runner", "claude_local", "codex_local"]) {
-      expect((await prepareConnectorSkillDelivery({ ...config, engine: "cli" }, adapter)).config.paperclipRuntimeSkills).toEqual([skill]);
+    for (const adapter of ["pilibala_runner", "claude_local", "codex_local"]) {
+      expect((await prepareConnectorSkillDelivery({ ...config, engine: "cli" }, adapter)).config.pilibalaRuntimeSkills).toEqual([skill]);
     }
     expect((await prepareConnectorSkillDelivery(config, "cursor_local")).instructions).toContain("name: speko");
-    expect((await prepareConnectorSkillDelivery(config, "paperclip_runner")).instructions).toContain("name: speko");
+    expect((await prepareConnectorSkillDelivery(config, "pilibala_runner")).instructions).toContain("name: speko");
     expect((await resolveConnectorAssignments(db, { ...binding, agentId: randomUUID() })).filter(item => item.key === "speko")).toEqual([]);
     expect((await resolveConnectorAssignments(db, { ...binding, companyId: randomUUID() })).filter(item => item.key === "speko")).toEqual([]);
     // Browser voice guidance remains available when phone callbacks are disabled.
@@ -1297,14 +1297,14 @@ const support = await getEmbeddedPostgresTestSupport();
     expect(await assigned()).toHaveLength(1);
     await db.delete(toolProfileBindings).where(eq(toolProfileBindings.targetId, f.agentId));
     expect(await assigned()).toEqual([]);
-    const removed = await applyConnectorSkills(config, config.paperclipRuntimeSkills, []);
-    expect(removed.paperclipRuntimeSkills).toEqual([]);
+    const removed = await applyConnectorSkills(config, config.pilibalaRuntimeSkills, []);
+    expect(removed.pilibalaRuntimeSkills).toEqual([]);
   });
 
   it("makes call_my_phone discoverable through the governed gateway and reuses a durable attempt", async () => {
     const f = await phoneToolFixture();
     const tools = await f.gateway.listToolsForSession(f.gatewaySession.token);
-    const tool = tools.find(tool => tool.providerType === "paperclip_speko_voice");
+    const tool = tools.find(tool => tool.providerType === "pilibala_speko_voice");
     expect(tool).toMatchObject({ upstreamToolName: "call_my_phone", connectionId: f.connectionId });
     const call = { sessionToken: f.gatewaySession.token, tool: tool!.name, parameters: {}, idempotencyKey: randomUUID() };
     const result = await f.gateway.executeTool(call);
@@ -1322,7 +1322,7 @@ const support = await getEmbeddedPostgresTestSupport();
     const f = await phoneToolFixture();
     await db.delete(toolProfileBindings).where(eq(toolProfileBindings.targetId, f.agentId));
     await f.service.saveCallbackPreference(f.companyId, f.endpointId, f.request.caller, { phoneNumber: "+12015551234", enabled: true });
-    expect((await f.gateway.listToolsForSession(f.gatewaySession.token)).some(t => t.providerType === "paperclip_speko_voice")).toBe(false);
+    expect((await f.gateway.listToolsForSession(f.gatewaySession.token)).some(t => t.providerType === "pilibala_speko_voice")).toBe(false);
   });
   it("requires the current task requester, company, active endpoint, opt-in and agent assignment", async () => {
     const f = await phoneToolFixture();
@@ -1368,13 +1368,13 @@ const support = await getEmbeddedPostgresTestSupport();
 
   it("delivers the phone tool to the assigned agent's actual runtime MCP server", async () => {
     const f = await phoneToolFixture();
-    const previousUrl = process.env.PAPERCLIP_API_URL;
-    process.env.PAPERCLIP_API_URL = "http://127.0.0.1:3100";
+    const previousUrl = process.env.PILIBALA_API_URL;
+    process.env.PILIBALA_API_URL = "http://127.0.0.1:3100";
     try {
-      const servers = await buildPaperclipRuntimeMcpServers({ db, agent: { id: f.agentId, companyId: f.companyId, name: "Phone tool agent" }, runId: f.runId });
+      const servers = await buildPilibalaRuntimeMcpServers({ db, agent: { id: f.agentId, companyId: f.companyId, name: "Phone tool agent" }, runId: f.runId });
       expect(servers).toHaveLength(1);
       expect(servers[0]).toMatchObject({ url: expect.stringContaining("/mcp/gateways/") });
-    } finally { if (previousUrl === undefined) delete process.env.PAPERCLIP_API_URL; else process.env.PAPERCLIP_API_URL = previousUrl; }
+    } finally { if (previousUrl === undefined) delete process.env.PILIBALA_API_URL; else process.env.PILIBALA_API_URL = previousUrl; }
   });
 
 });

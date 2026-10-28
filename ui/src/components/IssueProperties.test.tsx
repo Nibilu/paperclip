@@ -10,9 +10,9 @@ import type {
   IssueLabel,
   Project,
   WorkspaceRuntimeService,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { Issue, IssueDocument } from "@paperclipai/shared";
+import type { Issue, IssueDocument } from "@pilibalaai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getLastProjectId } from "../lib/recent-projects";
 import { IssueProperties } from "./IssueProperties";
@@ -302,7 +302,7 @@ function createRuntimeService(overrides: Partial<WorkspaceRuntimeService> = {}):
     lifecycle: "shared",
     reuseKey: null,
     command: "pnpm dev",
-    cwd: "/tmp/paperclip",
+    cwd: "/tmp/pilibala",
     port: 62475,
     url: "http://127.0.0.1:62475",
     provider: "local_process",
@@ -332,12 +332,12 @@ function createExecutionWorkspace(overrides: Partial<ExecutionWorkspace> = {}): 
     name: "PAP-1 workspace",
     status: "active",
     deliveryState: "unknown",
-    cwd: "/tmp/paperclip/PAP-1",
+    cwd: "/tmp/pilibala/PAP-1",
     repoUrl: null,
     baseRef: "master",
     branchName: "pap-1-workspace",
     providerType: "git_worktree",
-    providerRef: "/tmp/paperclip/PAP-1",
+    providerRef: "/tmp/pilibala/PAP-1",
     derivedFromExecutionWorkspaceId: null,
     lastUsedAt: new Date("2026-04-06T12:04:00.000Z"),
     openedAt: new Date("2026-04-06T12:01:00.000Z"),
@@ -360,7 +360,7 @@ function createProject(overrides: Partial<Project> = {}): Project {
     projectId: "project-1",
     name: "Main",
     sourceType: "local_path" as const,
-    cwd: "/tmp/paperclip",
+    cwd: "/tmp/pilibala",
     repoUrl: null,
     repoRef: null,
     defaultRef: "master",
@@ -401,9 +401,9 @@ function createProject(overrides: Partial<Project> = {}): Project {
       repoRef: null,
       defaultRef: "master",
       repoName: null,
-      localFolder: "/tmp/paperclip",
-      managedFolder: "/tmp/paperclip",
-      effectiveLocalFolder: "/tmp/paperclip",
+      localFolder: "/tmp/pilibala",
+      managedFolder: "/tmp/pilibala",
+      effectiveLocalFolder: "/tmp/pilibala",
       origin: "local_folder",
     },
     workspaces: [primaryWorkspace],
@@ -2057,7 +2057,7 @@ describe("IssueProperties", () => {
         executionWorkspaceId: "workspace-1",
         currentExecutionWorkspace: createExecutionWorkspace({
           branchName: "pap-1-workspace",
-          cwd: "/tmp/paperclip/PAP-1",
+          cwd: "/tmp/pilibala/PAP-1",
         }),
       }),
       childIssues: [],
@@ -2070,12 +2070,12 @@ describe("IssueProperties", () => {
       'button[aria-label="Copy pap-1-workspace to clipboard"]',
     );
     const folderCopyButton = container.querySelector<HTMLButtonElement>(
-      'button[aria-label="Copy /tmp/paperclip/PAP-1 to clipboard"]',
+      'button[aria-label="Copy /tmp/pilibala/PAP-1 to clipboard"]',
     );
     expect(branchCopyButton).not.toBeNull();
     expect(folderCopyButton?.querySelector('[data-middle-truncate="true"]')?.textContent)
-      .toBe("/tmp/paperclip/PAP-1");
-    expect(folderCopyButton?.title).toBe("/tmp/paperclip/PAP-1");
+      .toBe("/tmp/pilibala/PAP-1");
+    expect(folderCopyButton?.title).toBe("/tmp/pilibala/PAP-1");
 
     await act(async () => {
       branchCopyButton!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -3369,7 +3369,7 @@ describe("IssueProperties", () => {
     expect(pullRequestLink?.textContent).not.toContain("acme/web#241");
     expect(pullRequestLink?.textContent).not.toContain("Github PR");
     expect(pullRequestLink?.querySelectorAll("svg")).toHaveLength(1);
-    expect(pullRequestLink?.className).not.toContain("paperclip-mention-chip");
+    expect(pullRequestLink?.className).not.toContain("pilibala-mention-chip");
     expect(pullRequestLink?.className).not.toContain("rounded-full");
     expect(pullRequestLink?.className).not.toContain("border");
     const unrefreshedPullRequestLink = Array.from(container.querySelectorAll("a"))
@@ -3642,14 +3642,14 @@ describe("IssueProperties", () => {
     const alphaWorkspace = createExecutionWorkspace({
       id: "workspace-alpha",
       name: "Alpha workspace",
-      cwd: "/tmp/paperclip/alpha",
+      cwd: "/tmp/pilibala/alpha",
       branchName: "alpha-branch",
       lastUsedAt: new Date(),
     });
     const betaWorkspace = createExecutionWorkspace({
       id: "workspace-beta",
       name: "Beta workspace",
-      cwd: "/tmp/paperclip/beta",
+      cwd: "/tmp/pilibala/beta",
       branchName: "beta-branch",
       lastUsedAt: new Date(),
     });

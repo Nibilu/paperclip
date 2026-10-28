@@ -1,20 +1,20 @@
 {
-  "name": "@paperclipai/google-sheets-mcp-server",
+  "name": "@pilibalaai/google-sheets-mcp-server",
   "version": "0.1.0",
   "license": "MIT",
-  "homepage": "https://github.com/paperclipai/paperclip",
+  "homepage": "https://github.com/pilibalaai/pilibala",
   "bugs": {
-    "url": "https://github.com/paperclipai/paperclip/issues"
+    "url": "https://github.com/pilibalaai/pilibala/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/paperclipai/paperclip",
+    "url": "https://github.com/pilibalaai/pilibala",
     "directory": "packages/google-sheets-mcp-server"
   },
   "type": "module",
   "bin": {
-    "paperclip-google-sheets-mcp-server": "./dist/stdio.js",
-    "paperclip-google-sheets-mcp-http-server": "./dist/http-server.js"
+    "pilibala-google-sheets-mcp-server": "./dist/stdio.js",
+    "pilibala-google-sheets-mcp-http-server": "./dist/http-server.js"
   },
   "exports": {
     ".": "./src/index.ts"
@@ -22,8 +22,8 @@
   "publishConfig": {
     "access": "public",
     "bin": {
-      "paperclip-google-sheets-mcp-server": "./dist/stdio.js",
-      "paperclip-google-sheets-mcp-http-server": "./dist/http-server.js"
+      "pilibala-google-sheets-mcp-server": "./dist/stdio.js",
+      "pilibala-google-sheets-mcp-http-server": "./dist/http-server.js"
     },
     "exports": {
       ".": {

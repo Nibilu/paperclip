@@ -40,7 +40,7 @@ describe("looksLikeCredentialJwt", () => {
     "api.openai.com",
     "agents.staging.example.com",
     "deployment.credentials.example.md",
-    "paperclip.native-model-envelope.v3",
+    "pilibala.native-model-envelope.v3",
   ])("rejects public dotted identifiers: %s", (input) => {
     expect(looksLikeCredentialJwt(input)).toBe(false);
   });

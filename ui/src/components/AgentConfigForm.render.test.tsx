@@ -5,8 +5,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Agent, Environment, UserSecretDefinition } from "@paperclipai/shared";
-import { getEnvironmentCapabilities } from "@paperclipai/shared";
+import type { Agent, Environment, UserSecretDefinition } from "@pilibalaai/shared";
+import { getEnvironmentCapabilities } from "@pilibalaai/shared";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ToastProvider } from "../context/ToastContext";
 import { AgentConfigForm, AdapterLoginPanel, ModelDropdown, subtractPersistedOverlay, type AdapterLoginDescriptor } from "./AgentConfigForm";
@@ -19,7 +19,7 @@ import { ApiError } from "../api/client";
 import { aiConnectionsApi } from "../api/ai-connections";
 import { CodexLocalConfigFields } from "../adapters/codex-local/config-fields";
 import type { AdapterConfigFieldsProps } from "../adapters/types";
-import { DEFAULT_CODEX_LOCAL_MODEL } from "@paperclipai/adapter-codex-local";
+import { DEFAULT_CODEX_LOCAL_MODEL } from "@pilibalaai/adapter-codex-local";
 
 const mockAgentsApi = vi.hoisted(() => ({
   get: vi.fn(),
@@ -82,7 +82,7 @@ vi.mock("../api/grokBot", () => ({
 }));
 
 vi.mock("../api/adapters", () => ({
-  adaptersApi: { list: async () => [{ type: "codex_local", supportedRunners: ["legacy", "paperclip"], defaultRunner: "legacy" }] },
+  adaptersApi: { list: async () => [{ type: "codex_local", supportedRunners: ["legacy", "pilibala"], defaultRunner: "legacy" }] },
 }));
 
 vi.mock("../api/environments", () => ({
@@ -103,9 +103,9 @@ vi.mock("../lib/clipboard", () => ({
 
 vi.mock("../context/CompanyContext", () => ({
   useCompany: () => ({
-    companies: [{ id: "company-1", name: "Paperclip" }],
+    companies: [{ id: "company-1", name: "Pilibala" }],
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip" },
+    selectedCompany: { id: "company-1", name: "Pilibala" },
     selectionSource: "bootstrap",
     loading: false,
     error: null,
@@ -123,7 +123,7 @@ vi.mock("../adapters", () => ({
     // adapter, so a test can assert the plumbing without rendering a real
     // adapter's fields.
     ConfigFields: (props: AdapterConfigFieldsProps) => {
-      if (type === "paperclip_runner") return <CodexLocalConfigFields {...props} />;
+      if (type === "pilibala_runner") return <CodexLocalConfigFields {...props} />;
       const { adapterType, hideInstructionsFile, managedSandboxOnly } = props;
       return adapterType === "hermes_gateway"
         ? <div data-testid="hermes-gateway-config-fields">Hermes Gateway fields</div>
@@ -675,23 +675,23 @@ describe("AgentConfigForm environment selector", () => {
     }
   });
 
-  it.each(["codex_local", "paperclip_runner"])("keeps a saved %s runner during unrelated edits", async adapterType => {
-    const adapterConfig = { model: "gpt-5.6-sol", ...(adapterType === "paperclip_runner" ? { provider: "codex", reasoningEffort: "high" } : { modelReasoningEffort: "high" }) };
+  it.each(["codex_local", "pilibala_runner"])("keeps a saved %s runner during unrelated edits", async adapterType => {
+    const adapterConfig = { model: "gpt-5.6-sol", ...(adapterType === "pilibala_runner" ? { provider: "codex", reasoningEffort: "high" } : { modelReasoningEffort: "high" }) };
     const result = await renderForm([], { adapterType, adapterConfig }, { showAdapterTypeField: true });
     roots.push(result.root);
     expect(result.container.querySelector('[aria-label="Harness"]')?.textContent).toContain("Codex");
     await clickByText(result.container, "Advanced");
-    expect(result.container.querySelector('[aria-label="Runner"]')?.textContent).toContain(adapterType === "paperclip_runner" ? "Paperclip Runner" : "Legacy runner");
+    expect(result.container.querySelector('[aria-label="Runner"]')?.textContent).toContain(adapterType === "pilibala_runner" ? "Pilibala Runner" : "Legacy runner");
     await act(async () => setInputValue(result.container.querySelector<HTMLInputElement>('[placeholder="Agent name"]')!, "Renamed Cody"));
     await flushReact();
     await clickByText(result.container, "Save");
     expect(result.onSave).toHaveBeenCalledWith({ name: "Renamed Cody" });
   });
 
-  it.each(["codex_local", "paperclip_runner"])("changes and clears the environment without changing a saved %s runner or account", async adapterType => {
+  it.each(["codex_local", "pilibala_runner"])("changes and clears the environment without changing a saved %s runner or account", async adapterType => {
     const adapterConfig = {
       model: "gpt-5.6-sol",
-      ...(adapterType === "paperclip_runner" ? { provider: "codex", reasoningEffort: "high" } : { modelReasoningEffort: "high" }),
+      ...(adapterType === "pilibala_runner" ? { provider: "codex", reasoningEffort: "high" } : { modelReasoningEffort: "high" }),
       env: { CODEX_HOME: { type: "secret_ref", secretId: "codex-account" } },
     };
     const result = await renderForm([
@@ -700,7 +700,7 @@ describe("AgentConfigForm environment selector", () => {
     ], { adapterType, adapterConfig, defaultEnvironmentId: "sandbox-1" }, { showAdapterTypeField: true });
     roots.push(result.root);
     await clickByText(result.container, "Advanced");
-    const runnerLabel = adapterType === "paperclip_runner" ? "Paperclip Runner" : "Legacy runner";
+    const runnerLabel = adapterType === "pilibala_runner" ? "Pilibala Runner" : "Legacy runner";
 
     await selectEnvironment(result.container, "sandbox-2");
     expect(result.container.querySelector('[aria-label="Environment override"]')?.textContent).toContain("Daytona Two");
@@ -723,7 +723,7 @@ describe("AgentConfigForm environment selector", () => {
   });
 
   it("submits only an explicit runner change and retains saved configuration for server translation", async () => {
-    const result = await renderForm([], { adapterType: "paperclip_runner", adapterConfig: { provider: "codex", model: "gpt-5.6-sol", reasoningEffort: "high", env: { CODEX_HOME: { type: "secret_ref", secretId: "codex-account" } } } });
+    const result = await renderForm([], { adapterType: "pilibala_runner", adapterConfig: { provider: "codex", model: "gpt-5.6-sol", reasoningEffort: "high", env: { CODEX_HOME: { type: "secret_ref", secretId: "codex-account" } } } });
     roots.push(result.root);
     await clickByText(result.container, "Advanced");
     await clickElement(result.container.querySelector('[aria-label="Runner"]'));
@@ -737,14 +737,14 @@ describe("AgentConfigForm environment selector", () => {
     const result = await renderForm([], { adapterType: "claude_local", adapterConfig: { model: "claude-sonnet-5" } }, { showAdapterTypeField: true });
     roots.push(result.root);
     await clickElement(result.container.querySelector('[aria-label="Harness"]'));
-    const option = [...document.querySelectorAll('[role="option"]')].find(element => element.getAttribute("data-value") === "paperclip_runner");
+    const option = [...document.querySelectorAll('[role="option"]')].find(element => element.getAttribute("data-value") === "pilibala_runner");
     expect(Boolean(option)).toBe(enabled);
     if (!enabled) return;
     expect(document.body.textContent).toContain("Advanced");
     await clickElement(option);
     await clickByText(result.container, "Save");
     expect(result.onSave).toHaveBeenCalledWith(expect.objectContaining({
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       adapterConfig: expect.objectContaining({ provider: "acpx", acpxAgent: "claude" }),
     }));
     expect(result.onSave.mock.calls[0][0].runner).toBeUndefined();
@@ -752,7 +752,7 @@ describe("AgentConfigForm environment selector", () => {
 
   it.each([{ provider: "opencode", model: "openrouter/anthropic/claude-sonnet-4.6" }, { provider: "acpx", acpxAgent: "claude" }, { provider: "unknown-provider" }])("preserves saved native $provider configuration with the experimental gate off", async adapterConfig => {
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableNativeRunner: false });
-    const result = await renderForm([], { adapterType: "paperclip_runner", adapterConfig }, { showAdapterTypeField: true });
+    const result = await renderForm([], { adapterType: "pilibala_runner", adapterConfig }, { showAdapterTypeField: true });
     roots.push(result.root);
     expect(result.container.querySelector('[aria-label="Runner"]')).toBeNull();
     await act(async () => setInputValue(result.container.querySelector<HTMLInputElement>('[placeholder="Agent name"]')!, "Renamed native agent"));
@@ -853,7 +853,7 @@ describe("AgentConfigForm environment selector", () => {
 
   it.each([false, true])("uses Grok connection verification without native controls (compact: %s)", async compactTestFeedback => {
     const result = await renderForm([], {
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       adapterConfig: { provider: "grok_bot", cwd: "/old/local/path", model: "old-model" },
     }, { showAdapterTypeField: true, showAdapterTestEnvironmentButton: true, compactTestFeedback });
     roots.push(result.root);
@@ -927,7 +927,7 @@ describe("AgentConfigForm environment selector", () => {
     });
     try {
       const result = await renderForm([], {
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         adapterConfig: { provider: "opencode", model: "openrouter/anthropic/claude-sonnet-4.6" },
         runtimeConfig: { aiConnection: { mode: "responsible_user", provider: "openrouter", method: "api_key" } },
       });
@@ -1156,18 +1156,18 @@ describe("AgentConfigForm environment selector", () => {
     const result = await renderForm([
       makeEnvironment({
         id: "managed-1",
-        name: "Paperclip Computer",
+        name: "Pilibala Computer",
         driver: "sandbox",
         config: { provider: "daytona" },
-        metadata: { managedByPaperclip: true },
+        metadata: { managedByPilibala: true },
       }),
     ]);
     roots.push(result.root);
 
     const selector = await environmentOptions(result.container);
 
-    expect(selector?.textContent).toContain("Default: Paperclip Computer");
-    expect(selector?.textContent).toContain("Paperclip Computer");
+    expect(selector?.textContent).toContain("Default: Pilibala Computer");
+    expect(selector?.textContent).toContain("Pilibala Computer");
     expect(selector?.textContent).not.toContain("(sandbox)");
     expect(selector?.textContent).not.toContain("· sandbox");
   });
@@ -1384,13 +1384,13 @@ describe("AgentConfigForm environment selector", () => {
     ["auth_required", false], ["auth_required", true], ["failed", false],
   ] as const)("gates native Codex sandbox login on the shared auth check (%s, %s)", async (diagnostic, authentication) => {
     mockAgentsApi.testEnvironment.mockResolvedValue({
-      adapterType: "paperclip_runner", status: "fail", testedAt: new Date(0).toISOString(),
+      adapterType: "pilibala_runner", status: "fail", testedAt: new Date(0).toISOString(),
       checks: [
         { code: `codex_hello_probe_${diagnostic}`, level: "error", message: "Native Codex setup failed." },
         ...(authentication ? [{ code: "adapter_auth_missing", level: "error", message: "The selected Codex account needs authentication." }] : []),
       ],
     });
-    const result = await renderCodexSandbox({ adapterType: "paperclip_runner", adapterConfig: { provider: "codex" } });
+    const result = await renderCodexSandbox({ adapterType: "pilibala_runner", adapterConfig: { provider: "codex" } });
     roots.push(result.root);
     expect(findButton(result.container, "Sign in")).toBeFalsy();
     await runTest(result.container);
@@ -1657,7 +1657,7 @@ describe("AgentConfigForm environment selector", () => {
           name: "Managed",
           driver: "sandbox",
           config: { provider: "daytona" },
-          metadata: { managedByPaperclip: true },
+          metadata: { managedByPilibala: true },
         }),
       ],
       { adapterType: "claude_local", defaultEnvironmentId: null },
@@ -2701,7 +2701,7 @@ describe("AgentConfigForm environment selector", () => {
       description: null,
       status: "active",
       provider: "local_encrypted",
-      managedMode: "paperclip_managed",
+      managedMode: "pilibala_managed",
       providerConfigId: null,
       providerMetadata: null,
       usageGuidance: null,

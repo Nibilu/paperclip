@@ -5,7 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CapabilityCheckCard } from "./CapabilityCheckCard";
-import type { AgentCapabilityObservation } from "@paperclipai/shared";
+import type { AgentCapabilityObservation } from "@pilibalaai/shared";
 
 vi.mock("@/api/agents", () => ({
   agentsApi: {

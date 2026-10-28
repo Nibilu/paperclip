@@ -14,7 +14,7 @@ const eligible = {
   enabled: true,
   runtimeConfig: {},
   adapterConfig: { provider: "codex" },
-  agent: { status: "running", adapterType: "paperclip_runner" },
+  agent: { status: "running", adapterType: "pilibala_runner" },
   issue: { id: "issue", workMode: "standard" },
   target: { kind: "local" },
   workspaceId: "workspace",
@@ -23,7 +23,7 @@ const eligible = {
 describe("resolveNativeRuntimeMode", () => {
   it("keeps every direct built-in adapter outside native arbitration", () => {
     for (const adapterType of BUILTIN_ADAPTER_TYPES) {
-      if (adapterType === "paperclip_runner") continue;
+      if (adapterType === "pilibala_runner") continue;
       expect(resolveNativeRuntimeMode({
         ...eligible,
         enabled: false,
@@ -64,7 +64,7 @@ describe("resolveNativeRuntimeMode", () => {
         externalBindingId: "00000000-0000-4000-8000-000000000001",
         allowUnmeteredProvider: true,
       },
-    })).toThrow(expect.objectContaining({ code: "paperclip_runner_grok_disabled" }));
+    })).toThrow(expect.objectContaining({ code: "pilibala_runner_grok_disabled" }));
   });
 
   it("admits a bound Grok Bot when its existing experimental gates are enabled", () => {
@@ -85,18 +85,18 @@ describe("resolveNativeRuntimeMode", () => {
       enabled: false,
       adapterConfig: { provider: "opencode", model: "openrouter/deepseek/deepseek-v4-flash-0731" },
     })).toThrow(expect.objectContaining({
-      code: "paperclip_runner_rollout_disabled",
+      code: "pilibala_runner_rollout_disabled",
     }));
   });
 
-  it("rejects unknown Paperclip Runner providers", () => {
+  it("rejects unknown Pilibala Runner providers", () => {
     expect(() => resolveNativeRuntimeMode({
       ...eligible,
       runtimeConfig: {},
       adapterConfig: { provider: "claude" },
-      agent: { ...eligible.agent, adapterType: "paperclip_runner" },
+      agent: { ...eligible.agent, adapterType: "pilibala_runner" },
     })).toThrow(expect.objectContaining({
-      code: "paperclip_runner_provider_unsupported",
+      code: "pilibala_runner_provider_unsupported",
     }));
   });
 
@@ -151,14 +151,14 @@ describe("resolveNativeRuntimeMode", () => {
       ...eligible,
       adapterConfig: { provider: "opencode", model: "gpt-5.6-sol" },
     })).toThrow(expect.objectContaining({
-      code: "paperclip_runner_opencode_model_invalid",
+      code: "pilibala_runner_opencode_model_invalid",
     }));
     for (const acpxAgent of ["copilot"]) {
       expect(() => resolveNativeRuntimeMode({
         ...eligible,
         adapterConfig: { provider: "acpx", acpxAgent, model: "explicit-provider-model" },
       })).toThrow(expect.objectContaining({
-        code: "paperclip_runner_acpx_agent_unavailable",
+        code: "pilibala_runner_acpx_agent_unavailable",
       }));
     }
     expect(() => resolveNativeRuntimeMode({
@@ -175,7 +175,7 @@ describe("resolveNativeRuntimeMode", () => {
         managedProfileId: "managed-primary",
       },
     })).toThrow(expect.objectContaining({
-      code: "paperclip_runner_claude_managed_retention_required",
+      code: "pilibala_runner_claude_managed_retention_required",
     }));
     expect(() => resolveNativeRuntimeMode({
       ...eligible,
@@ -184,7 +184,7 @@ describe("resolveNativeRuntimeMode", () => {
         agentCoreRetentionAcknowledged: true,
       },
     })).toThrow(expect.objectContaining({
-      code: "paperclip_runner_aws_agentcore_profile_required",
+      code: "pilibala_runner_aws_agentcore_profile_required",
     }));
   });
 
@@ -245,7 +245,7 @@ describe("resolveNativeRuntimeMode", () => {
       ...disabled,
       persisted: { runtimeMode: null, runtimeModeReason: null, runtimeModeResolvedAt: null },
     })).toThrow(expect.objectContaining({
-      code: "paperclip_runner_rollout_disabled",
+      code: "pilibala_runner_rollout_disabled",
     }));
   });
 
@@ -297,7 +297,7 @@ describe("resolveNativeRuntimeMode", () => {
           driverKind: "codex_app_server",
         },
       })).toThrow(expect.objectContaining({
-        code: "paperclip_runner_agent_ineligible",
+        code: "pilibala_runner_agent_ineligible",
       }));
     },
   );
@@ -313,7 +313,7 @@ describe("resolveNativeRuntimeMode", () => {
         driverKind: "unknown_driver",
       },
     })).toThrow(expect.objectContaining({
-      code: "paperclip_runner_driver_unsupported",
+      code: "pilibala_runner_driver_unsupported",
     }));
   });
 
@@ -329,7 +329,7 @@ describe("resolveNativeRuntimeMode", () => {
         driverKind: "codex_app_server",
       },
     })).toThrow(expect.objectContaining({
-      code: "paperclip_runner_adapter_binding_mismatch",
+      code: "pilibala_runner_adapter_binding_mismatch",
     }));
   });
 
@@ -393,13 +393,13 @@ describe("resolveNativeRuntimeMode", () => {
       .toThrow(NativeRuntimeEligibilityError);
   });
 
-  it("admits remote targets only through paperclip_runner", () => {
+  it("admits remote targets only through pilibala_runner", () => {
     expect(resolveNativeRuntimeMode({
       ...eligible,
       target: { kind: "remote" },
       runtimeConfig: {},
       adapterConfig: { provider: "codex" },
-      agent: { ...eligible.agent, adapterType: "paperclip_runner" },
+      agent: { ...eligible.agent, adapterType: "pilibala_runner" },
     })).toMatchObject({ kind: "native" });
     expect(resolveNativeRuntimeMode({
       ...eligible,
@@ -408,23 +408,23 @@ describe("resolveNativeRuntimeMode", () => {
     })).toMatchObject({ kind: "legacy", reason: "direct_adapter" });
   });
 
-  it("allows paperclip_runner to use a transient local workspace for projectless issues", () => {
+  it("allows pilibala_runner to use a transient local workspace for projectless issues", () => {
     expect(resolveNativeRuntimeMode({
       ...eligible,
       workspaceId: null,
-      agent: { ...eligible.agent, adapterType: "paperclip_runner" },
+      agent: { ...eligible.agent, adapterType: "pilibala_runner" },
       runtimeConfig: {},
       adapterConfig: { provider: "codex" },
     })).toEqual(expect.objectContaining({ kind: "native" }));
   });
 
-  it("admits planning only through paperclip_runner", () => {
+  it("admits planning only through pilibala_runner", () => {
     expect(resolveNativeRuntimeMode({
       ...eligible,
       issue: { id: "plan-issue", workMode: "planning" },
       runtimeConfig: {},
       adapterConfig: { provider: "codex" },
-      agent: { ...eligible.agent, adapterType: "paperclip_runner" },
+      agent: { ...eligible.agent, adapterType: "pilibala_runner" },
     })).toMatchObject({ kind: "native", profile: { backend: "codex_app_server" } });
     expect(resolveNativeRuntimeMode({
       ...eligible,
@@ -433,13 +433,13 @@ describe("resolveNativeRuntimeMode", () => {
     })).toEqual(expect.objectContaining({ kind: "legacy", reason: "direct_adapter" }));
   });
 
-  it("admits ask mode through paperclip_runner while preserving the legacy native boundary", () => {
+  it("admits ask mode through pilibala_runner while preserving the legacy native boundary", () => {
     expect(resolveNativeRuntimeMode({
       ...eligible,
       issue: { id: "ask-issue", workMode: "ask" },
       runtimeConfig: {},
       adapterConfig: { provider: "codex" },
-      agent: { ...eligible.agent, adapterType: "paperclip_runner" },
+      agent: { ...eligible.agent, adapterType: "pilibala_runner" },
     })).toMatchObject({ kind: "native", profile: { backend: "codex_app_server" } });
     expect(resolveNativeRuntimeMode({
       ...eligible,
@@ -461,13 +461,13 @@ const compatibilityInput = {
 describe("resolveHeartbeatRuntimeMode compatibility", () => {
   it("keeps every direct built-in adapter on the legacy path", () => {
     for (const adapterType of BUILTIN_ADAPTER_TYPES) {
-      if (adapterType === "paperclip_runner") continue;
+      if (adapterType === "pilibala_runner") continue;
       expect(resolveHeartbeatRuntimeMode({
         ...compatibilityInput,
         adapterType,
       })).toEqual({
         kind: "legacy",
-        resolverVersion: "paperclip-runner-v1",
+        resolverVersion: "pilibala-runner-v1",
         reason: "direct_adapter",
       });
     }
@@ -476,28 +476,28 @@ describe("resolveHeartbeatRuntimeMode compatibility", () => {
   it("preserves the original public result and error contracts", () => {
     expect(resolveHeartbeatRuntimeMode({
       ...compatibilityInput,
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
     })).toEqual({
       kind: "native",
-      resolverVersion: "paperclip-runner-v1",
-      reason: "explicit_paperclip_runner",
+      resolverVersion: "pilibala-runner-v1",
+      reason: "explicit_pilibala_runner",
       provider: "codex",
     });
     expect(resolveHeartbeatRuntimeMode({
       ...compatibilityInput,
       enabled: false,
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       persisted: { runtimeMode: "native", runtimeModeResolvedAt: new Date() },
     })).toEqual({
       kind: "native",
-      resolverVersion: "paperclip-runner-v1",
+      resolverVersion: "pilibala-runner-v1",
       reason: "persisted_native_selection",
       provider: "codex",
     });
     expect(() => resolveHeartbeatRuntimeMode({
       ...compatibilityInput,
       enabled: false,
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       adapterConfig: { provider: "opencode", model: "opencode/gpt-5" },
     })).toThrow(NativeRunnerSelectionError);
   });

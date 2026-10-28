@@ -18,7 +18,7 @@ import { taskTitleTasks, taskTitleDefinitionDigest, TASK_TITLE_BUDGET_CENTS } fr
 import { blockerTasks, blockerProfile } from "./blocker-cases.js";
 import { accountingTasks } from "./accounting-cases.js";
 import { continuationTasks, questionResumeTask } from "./continuation-cases.js";
-import { contextIntegrityTasks, paperclipDocumentTask } from "./context-integrity-cases.js";
+import { contextIntegrityTasks, pilibalaDocumentTask } from "./context-integrity-cases.js";
 import { productionDefaultHireProfile, stockHarnessSourceDigest, stockHarnessSkillSources } from "./stock-harness.js";
 import { lifecycleLiveTasks, lifecycleLiveDefinitionDigest } from "./lifecycle-live-cases.js";
 import { publicMcpTasks, publicMcpExpandedDigest, publicMcpSetupDigest, publicMcpWorkflowDigest, publicMcpWorkerInstructions, publicMcpWorkerSkillDigest } from "./public-mcp-cases.js";
@@ -36,9 +36,9 @@ import { DEFAULT_CODEX_LOCAL_MODEL } from "../../packages/adapters/codex-local/s
 import { models as claudeModels } from "../../packages/adapters/claude-local/src/index.js";
 import { DEFAULT_KIMI_LOCAL_MODEL } from "../../packages/adapters/kimi-local/src/index.js";
 import { DEFAULT_GROK_LOCAL_MODEL } from "../../packages/adapters/grok-local/src/index.js";
-import { QUALIFIED_ACPX_PROFILES } from "../../packages/paperclip-runner/src/drivers/acpx/qualified-profiles.js";
+import { QUALIFIED_ACPX_PROFILES } from "../../packages/pilibala-runner/src/drivers/acpx/qualified-profiles.js";
 import { ACPX_QUALIFICATION_MODELS } from "../acpx-qualification-models.js";
-import { QUALIFIED_OPENCODE_MODEL } from "../../packages/paperclip-runner/src/drivers/opencode/opencode-server-driver.js";
+import { QUALIFIED_OPENCODE_MODEL } from "../../packages/pilibala-runner/src/drivers/opencode/opencode-server-driver.js";
 import { CREDENTIAL_NAMES } from "./types.js";
 import { repositorySkillsTask, repositorySkillsProfile } from "./repository-skills.js";
 import { createGitStreamingTask } from "./daytona-git-streaming.js";
@@ -109,18 +109,18 @@ function commonAgent(
       entryFile: "AGENTS.md",
       files: {
         "AGENTS.md": [
-          "You are running a paid Paperclip end-to-end acceptance fixture.",
-          "Follow the assigned task and its Paperclip work mode literally.",
+          "You are running a paid Pilibala end-to-end acceptance fixture.",
+          "Follow the assigned task and its Pilibala work mode literally.",
           "In ongoing agent chats, follow the injected production chat directive; keep the conversation available after replying. The completion and implementation instructions below apply only to ordinary execution tasks.",
           "For ordinary standard and ask tasks, publish the requested visible answer and mark the task done.",
           "For ordinary planning tasks, publish or revise the canonical Plan document and its revision-bound request_confirmation, then wait. Only implement after that exact plan is accepted.",
           "Invoke assigned tools only through the runtime's real tool-call channel. Never print XML, DSML, JSON, or other tool-call markup as assistant text.",
-          "Legacy adapters must use the public Paperclip API and the injected PAPERCLIP_API_URL, PAPERCLIP_API_KEY, PAPERCLIP_TASK_ID, and PAPERCLIP_RUN_ID values for comments, documents, interactions, and status changes.",
-          ...(adapterType === "paperclip_runner"
+          "Legacy adapters must use the public Pilibala API and the injected PILIBALA_API_URL, PILIBALA_API_KEY, PILIBALA_TASK_ID, and PILIBALA_RUN_ID values for comments, documents, interactions, and status changes.",
+          ...(adapterType === "pilibala_runner"
             ? []
             : [
-                "Read the assigned paperclip skill before using the Paperclip API. Use its documented request payloads rather than guessing fields from memory.",
-                'For a planning task, do not inspect the OpenAPI schema. PUT /api/issues/$PAPERCLIP_TASK_ID/documents/plan with {title:"Plan",format:"markdown",body,changeSummary}; read latestRevisionId and latestRevisionNumber from that response. Then POST /api/issues/$PAPERCLIP_TASK_ID/interactions with {kind:"request_confirmation",continuationPolicy:"wake_assignee",payload:{version:1,prompt,acceptLabel:"Approve",rejectLabel:"Reject",rejectRequiresReason:true,target:{type:"issue_document",key:"plan",revisionId,revisionNumber}}}, and PATCH the issue to {status:"in_review"}. Include Authorization and X-Paperclip-Run-Id on every write.',
+                "Read the assigned pilibala skill before using the Pilibala API. Use its documented request payloads rather than guessing fields from memory.",
+                'For a planning task, do not inspect the OpenAPI schema. PUT /api/issues/$PILIBALA_TASK_ID/documents/plan with {title:"Plan",format:"markdown",body,changeSummary}; read latestRevisionId and latestRevisionNumber from that response. Then POST /api/issues/$PILIBALA_TASK_ID/interactions with {kind:"request_confirmation",continuationPolicy:"wake_assignee",payload:{version:1,prompt,acceptLabel:"Approve",rejectLabel:"Reject",rejectRequiresReason:true,target:{type:"issue_document",key:"plan",revisionId,revisionNumber}}}, and PATCH the issue to {status:"in_review"}. Include Authorization and X-Pilibala-Run-Id on every write.',
               ]),
           "Never print, persist, or expose credential values, and never create unrelated work.",
           ...additionalInstructions,
@@ -191,7 +191,7 @@ function nativeProfile(input: {
 }): RunnerProfileFixture {
   return {
     ...input,
-    adapterType: "paperclip_runner",
+    adapterType: "pilibala_runner",
     generation: "native",
     groups: ["native"],
     supportedEnvironments: input.supportedEnvironments ?? ENVIRONMENT_IDS,
@@ -208,7 +208,7 @@ function nativeProfile(input: {
     },
     ...(input.ranking ? { ranking: input.ranking } : {}),
     expectedRuntimeMetadata: {
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       provider: input.provider,
     },
     buildAgent(buildInput) {
@@ -221,7 +221,7 @@ function nativeProfile(input: {
           : input.provider === "opencode"
             ? { opencodePermissionMode: "allow" }
             : { acpxPermissionMode: "approve-all", acpxAgent: input.acpxAgent };
-      return commonAgent(buildInput, input.id, "paperclip_runner", {
+      return commonAgent(buildInput, input.id, "pilibala_runner", {
         provider: input.provider,
         model: input.model,
         ...(input.qualificationCandidate ? { timeoutSec: 120 } : {}),
@@ -506,7 +506,7 @@ export const runnerEnvironments: readonly EnvironmentFixture[] = [
     buildEnvironment(input) {
       if (!isImmutableDaytonaImage(input.daytonaImage)) {
         throw new Error(
-          "PAPERCLIP_E2E_DAYTONA_IMAGE must be an immutable image digest",
+          "PILIBALA_E2E_DAYTONA_IMAGE must be an immutable image digest",
         );
       }
       return {
@@ -553,7 +553,7 @@ export const daytonaWarmEnvironment: EnvironmentFixture = {
   buildEnvironment(input) {
     if (!isImmutableDaytonaImage(input.daytonaImage)) {
       throw new Error(
-        "PAPERCLIP_E2E_DAYTONA_IMAGE must be an immutable image digest",
+        "PILIBALA_E2E_DAYTONA_IMAGE must be an immutable image digest",
       );
     }
     return {
@@ -593,25 +593,25 @@ export const runnerTasks: readonly RunnerTaskFixture[] = [
       daytona: 15 * 60_000,
     },
     expectedTerminalState: { issue: "done", run: "succeeded" },
-    buildTitle: (nonce) => `Runner E2E PAPERCLIP_E2E_OK_${nonce}`,
-    buildVisibleMarker: (nonce) => `PAPERCLIP_E2E_OK_${nonce}`,
+    buildTitle: (nonce) => `Runner E2E PILIBALA_E2E_OK_${nonce}`,
+    buildVisibleMarker: (nonce) => `PILIBALA_E2E_OK_${nonce}`,
     buildPrompt: (nonce) =>
       [
         "Complete this task in a single run.",
-        `The exact marker also appears unescaped in the task title: PAPERCLIP_E2E_OK_${nonce}`,
-        `Your final visible task-thread response must be exactly this marker: PAPERCLIP_E2E_OK_${nonce}`,
-        `In a native runner, use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal), then call paperclip_finish exactly once with {reportedWorkDisposition:"done",summary:"PAPERCLIP_E2E_OK_${nonce}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. Wait for that tool call to succeed, then emit exactly PAPERCLIP_E2E_OK_${nonce} once as the complete user-facing final response. Do not write a user-facing final response before paperclip_finish succeeds, and do not call another tool.`,
-        `In a legacy runner, make exactly one public-API write containing the marker: PATCH /api/issues/$PAPERCLIP_TASK_ID with {"status":"done","comment":"PAPERCLIP_E2E_OK_${nonce}"}. Do not POST to /comments, and do not include the marker in any other write.`,
+        `The exact marker also appears unescaped in the task title: PILIBALA_E2E_OK_${nonce}`,
+        `Your final visible task-thread response must be exactly this marker: PILIBALA_E2E_OK_${nonce}`,
+        `In a native runner, use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal), then call pilibala_finish exactly once with {reportedWorkDisposition:"done",summary:"PILIBALA_E2E_OK_${nonce}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. Wait for that tool call to succeed, then emit exactly PILIBALA_E2E_OK_${nonce} once as the complete user-facing final response. Do not write a user-facing final response before pilibala_finish succeeds, and do not call another tool.`,
+        `In a legacy runner, make exactly one public-API write containing the marker: PATCH /api/issues/$PILIBALA_TASK_ID with {"status":"done","comment":"PILIBALA_E2E_OK_${nonce}"}. Do not POST to /comments, and do not include the marker in any other write.`,
         "The visible task-thread response is asserted; hidden reasoning or provider terminal output alone does not count.",
         "Use underscore characters exactly as shown and do not insert backslashes.",
         "Do not create files, ask questions, start additional tasks, or include any credentials.",
       ].join("\n"),
     buildMatchers(nonce, execution) {
       return [
-        { kind: "message_exact", expected: `PAPERCLIP_E2E_OK_${nonce}` },
+        { kind: "message_exact", expected: `PILIBALA_E2E_OK_${nonce}` },
         {
           kind: "message_occurrences",
-          expected: `PAPERCLIP_E2E_OK_${nonce}`,
+          expected: `PILIBALA_E2E_OK_${nonce}`,
           count: 1,
         },
         {
@@ -643,43 +643,43 @@ export const runnerTasks: readonly RunnerTaskFixture[] = [
     },
     expectedTerminalState: { issue: "done", run: "succeeded" },
     buildTitle: (nonce) => `Runner E2E plan lifecycle ${nonce}`,
-    buildVisibleMarker: (nonce) => `PAPERCLIP_E2E_PLAN_DONE_${nonce}`,
+    buildVisibleMarker: (nonce) => `PILIBALA_E2E_PLAN_DONE_${nonce}`,
     buildPlanMarkers: (nonce) => ({
-      draft: `PAPERCLIP_E2E_PLAN_DRAFT_${nonce}`,
-      revised: `PAPERCLIP_E2E_PLAN_REVISED_${nonce}`,
+      draft: `PILIBALA_E2E_PLAN_DRAFT_${nonce}`,
+      revised: `PILIBALA_E2E_PLAN_REVISED_${nonce}`,
     }),
     buildRevisionRequest: (nonce) =>
       [
         "Revise this same plan; do not implement it yet.",
-        `Remove PAPERCLIP_E2E_PLAN_DRAFT_${nonce} and include PAPERCLIP_E2E_PLAN_REVISED_${nonce}.`,
+        `Remove PILIBALA_E2E_PLAN_DRAFT_${nonce} and include PILIBALA_E2E_PLAN_REVISED_${nonce}.`,
         "Change the plan from two steps to exactly three numbered steps, with verification as step 3.",
         "Publish the revised canonical Plan revision and request confirmation for that new revision.",
-        "In a native runner, call write_document for key `plan`, then call request_human_input exactly once with interactionKind `confirmation`, targetRevisionId set to the returned latest Plan revision, and continuationPolicy `wake_assignee`; do not call paperclip_finish while waiting. After write_document succeeds, request_human_input must be your immediate next action using that call's returned latestRevisionId; do not emit assistant text, end the response or heartbeat, or stop after write_document alone.",
-        "In a legacy runner, first GET the current `plan` issue document, then PUT the revised Plan with `baseRevisionId` set to that response's `latestRevisionId`; after the update succeeds, create the equivalent request_confirmation targeting the newly returned `latestRevisionId` through the public Paperclip API.",
+        "In a native runner, call write_document for key `plan`, then call request_human_input exactly once with interactionKind `confirmation`, targetRevisionId set to the returned latest Plan revision, and continuationPolicy `wake_assignee`; do not call pilibala_finish while waiting. After write_document succeeds, request_human_input must be your immediate next action using that call's returned latestRevisionId; do not emit assistant text, end the response or heartbeat, or stop after write_document alone.",
+        "In a legacy runner, first GET the current `plan` issue document, then PUT the revised Plan with `baseRevisionId` set to that response's `latestRevisionId`; after the update succeeds, create the equivalent request_confirmation targeting the newly returned `latestRevisionId` through the public Pilibala API.",
       ].join(" "),
     buildPrompt: (nonce) =>
       [
         "This is a planning-mode lifecycle acceptance task.",
         "First, create a small canonical Plan with exactly two numbered steps and request approval; do not implement it.",
-        `The initial Plan body must contain PAPERCLIP_E2E_PLAN_DRAFT_${nonce}.`,
+        `The initial Plan body must contain PILIBALA_E2E_PLAN_DRAFT_${nonce}.`,
         "If the plan is sent back, revise that same Plan document according to the revision note, publish a new revision-bound confirmation, and still do not implement.",
-        `Before the revised Plan is accepted, do not spell, quote, repeat, announce, or include PAPERCLIP_E2E_PLAN_DONE_${nonce} in any visible response, comment, or tool payload; refer to it only as “the terminal marker.”`,
+        `Before the revised Plan is accepted, do not spell, quote, repeat, announce, or include PILIBALA_E2E_PLAN_DONE_${nonce} in any visible response, comment, or tool payload; refer to it only as “the terminal marker.”`,
         "Only after the revised plan is accepted, implement it by posting one final visible task-thread response containing exactly " +
-          `PAPERCLIP_E2E_PLAN_DONE_${nonce}` +
+          `PILIBALA_E2E_PLAN_DONE_${nonce}` +
           " and mark the task Done.",
-        `For a native runner, remain in the requested planning collaboration mode. Call write_document for key \`plan\`, then call request_human_input exactly once with interactionKind \`confirmation\`, targetRevisionId set to the returned latest Plan revision, and continuationPolicy \`wake_assignee\`. For both the initial Plan and the revised Plan, those two tool calls form one indivisible response sequence: immediately after write_document succeeds, request_human_input must be your next action using that call's returned latestRevisionId. Do not emit assistant text, end the response or heartbeat, or stop after write_document alone before the matching confirmation request succeeds. Do not call paperclip_finish while waiting for either Plan confirmation. When an acceptance wake arrives, first call get_task_context. Treat the wake as valid only when that control-plane result is for the current task and identifies the exact revised Plan revision used as the confirmation target as accepted; otherwise do not finish and continue waiting for the matching revision-bound confirmation. After that verification succeeds, your immediate next action must be the paperclip_finish tool call. Do not call list_documents or any other tool, and do not emit any assistant text, acknowledgement, progress note, or preamble between verification and paperclip_finish. Use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal). Call paperclip_finish exactly once with {reportedWorkDisposition:"done",summary:"PAPERCLIP_E2E_PLAN_DONE_${nonce}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. Wait for that tool call to succeed, then emit only PAPERCLIP_E2E_PLAN_DONE_${nonce} as the complete final response. Do not write a user-facing final response before paperclip_finish succeeds, and do not call another tool.`,
-        `For a legacy runner, use the public Paperclip API. The first PUT of the \`plan\` issue document creates it. For every later PUT, first GET the current document and set \`baseRevisionId\` to its \`latestRevisionId\`; a 409 means you must GET again and retry with the new latest revision. Create a \`request_confirmation\` targeting the successful PUT response's \`latestRevisionId\` with \`continuationPolicy: wake_assignee\`, and move the issue to \`in_review\` while waiting. After the revised Plan is accepted, write PAPERCLIP_E2E_PLAN_DONE_${nonce} exactly once through one atomic issue PATCH with status \`done\` and that exact comment; do not POST a separate comment or perform a second write.`,
+        `For a native runner, remain in the requested planning collaboration mode. Call write_document for key \`plan\`, then call request_human_input exactly once with interactionKind \`confirmation\`, targetRevisionId set to the returned latest Plan revision, and continuationPolicy \`wake_assignee\`. For both the initial Plan and the revised Plan, those two tool calls form one indivisible response sequence: immediately after write_document succeeds, request_human_input must be your next action using that call's returned latestRevisionId. Do not emit assistant text, end the response or heartbeat, or stop after write_document alone before the matching confirmation request succeeds. Do not call pilibala_finish while waiting for either Plan confirmation. When an acceptance wake arrives, first call get_task_context. Treat the wake as valid only when that control-plane result is for the current task and identifies the exact revised Plan revision used as the confirmation target as accepted; otherwise do not finish and continue waiting for the matching revision-bound confirmation. After that verification succeeds, your immediate next action must be the pilibala_finish tool call. Do not call list_documents or any other tool, and do not emit any assistant text, acknowledgement, progress note, or preamble between verification and pilibala_finish. Use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal). Call pilibala_finish exactly once with {reportedWorkDisposition:"done",summary:"PILIBALA_E2E_PLAN_DONE_${nonce}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. Wait for that tool call to succeed, then emit only PILIBALA_E2E_PLAN_DONE_${nonce} as the complete final response. Do not write a user-facing final response before pilibala_finish succeeds, and do not call another tool.`,
+        `For a legacy runner, use the public Pilibala API. The first PUT of the \`plan\` issue document creates it. For every later PUT, first GET the current document and set \`baseRevisionId\` to its \`latestRevisionId\`; a 409 means you must GET again and retry with the new latest revision. Create a \`request_confirmation\` targeting the successful PUT response's \`latestRevisionId\` with \`continuationPolicy: wake_assignee\`, and move the issue to \`in_review\` while waiting. After the revised Plan is accepted, write PILIBALA_E2E_PLAN_DONE_${nonce} exactly once through one atomic issue PATCH with status \`done\` and that exact comment; do not POST a separate comment or perform a second write.`,
         "Do not create files, child tasks, or unrelated work, and do not expose credentials.",
       ].join("\n"),
     buildMatchers(nonce, execution) {
       return [
         {
           kind: "message_exact",
-          expected: `PAPERCLIP_E2E_PLAN_DONE_${nonce}`,
+          expected: `PILIBALA_E2E_PLAN_DONE_${nonce}`,
         },
         {
           kind: "message_occurrences",
-          expected: `PAPERCLIP_E2E_PLAN_DONE_${nonce}`,
+          expected: `PILIBALA_E2E_PLAN_DONE_${nonce}`,
           count: 1,
         },
         {
@@ -718,8 +718,8 @@ export const runnerTasks: readonly RunnerTaskFixture[] = [
         `Your final visible task-thread answer must be exactly this complete marker, including its final suffix: E2E_ASK_12_${nonce}.`,
         "Do not create or modify files, do not create a plan or additional work, and do not expose credentials.",
         "After posting the direct answer, mark this task Done.",
-        `In a native runner, use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal), then call paperclip_finish exactly once with {reportedWorkDisposition:"done",summary:"E2E_ASK_12_${nonce}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. For the entire run, paperclip_finish must be your only tool call: never call report_progress or any other tool before or after it. Wait for that tool call to succeed, then emit exactly E2E_ASK_12_${nonce} as the complete final response. Do not write a user-facing final response before paperclip_finish succeeds.`,
-        `In a legacy runner, make exactly one public-API write containing the marker: PATCH /api/issues/$PAPERCLIP_TASK_ID with {"status":"done","comment":"E2E_ASK_12_${nonce}"}. Do not POST to /comments, do not PATCH the status separately, and do not include the marker in any other API write.`,
+        `In a native runner, use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal), then call pilibala_finish exactly once with {reportedWorkDisposition:"done",summary:"E2E_ASK_12_${nonce}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. For the entire run, pilibala_finish must be your only tool call: never call report_progress or any other tool before or after it. Wait for that tool call to succeed, then emit exactly E2E_ASK_12_${nonce} as the complete final response. Do not write a user-facing final response before pilibala_finish succeeds.`,
+        `In a legacy runner, make exactly one public-API write containing the marker: PATCH /api/issues/$PILIBALA_TASK_ID with {"status":"done","comment":"E2E_ASK_12_${nonce}"}. Do not POST to /comments, do not PATCH the status separately, and do not include the marker in any other API write.`,
       ].join("\n"),
     buildMatchers(nonce, execution) {
       return [
@@ -783,35 +783,35 @@ const structuredQuestionResumeTask = {
   attemptTimeoutMs: { local: 12 * 60_000, daytona: 12 * 60_000 },
   expectedTerminalState: { issue: "done", run: "succeeded" },
   buildTitle: (nonce) => `Runner E2E structured question ${nonce}`,
-  buildVisibleMarker: (nonce) => `PAPERCLIP_E2E_QUESTION_DONE_${nonce}`,
+  buildVisibleMarker: (nonce) => `PILIBALA_E2E_QUESTION_DONE_${nonce}`,
   buildQuestionAnswer: (nonce) => ({
     optionLabel: "Cobalt",
-    expectedMarker: `PAPERCLIP_E2E_QUESTION_DONE_${nonce}`,
+    expectedMarker: `PILIBALA_E2E_QUESTION_DONE_${nonce}`,
   }),
   buildPrompt: (nonce) =>
     [
       "Ask the user one structured question before completing this task.",
       "The question must be required, single-select, and offer Cobalt and Amber. Do not publish a final answer or mark the task Done while it is pending.",
-      `Before the answer arrives, do not spell, quote, repeat, announce, or include PAPERCLIP_E2E_QUESTION_DONE_${nonce} in any visible response, comment, or tool payload; refer to it only as “the terminal marker.”`,
+      `Before the answer arrives, do not spell, quote, repeat, announce, or include PILIBALA_E2E_QUESTION_DONE_${nonce} in any visible response, comment, or tool payload; refer to it only as “the terminal marker.”`,
       `In a native runner, call request_human_input exactly once with idempotencyKey \`question-${nonce}\`, interactionKind \`questions\`, title \`Verification word\`, prompt \`Choose the verification word\`, continuationPolicy \`wake_assignee\`, and payload {version:1,questions:[{id:\`verification-word\`,prompt:\`Choose the verification word.\`,selectionMode:\`single\`,required:true,options:[{id:\`cobalt\`,label:\`Cobalt\`},{id:\`amber\`,label:\`Amber\`}]}]}.`,
-      'In a legacy runner, derive `API_ORIGIN` exactly once with `API_ORIGIN="${PAPERCLIP_API_URL%/}"; API_ORIGIN="${API_ORIGIN%/api}"`. Build every endpoint as `$API_ORIGIN/api/...`; never append `/api` to a base that already ends in `/api`.',
-      `In a legacy runner, create exactly one question interaction: POST $API_ORIGIN/api/issues/$PAPERCLIP_TASK_ID/interactions once with {"kind":"ask_user_questions","idempotencyKey":"question-${nonce}","continuationPolicy":"wake_assignee","payload":{"version":1,"questions":[{"id":"verification-word","prompt":"Choose the verification word.","selectionMode":"single","required":true,"options":[{"id":"cobalt","label":"Cobalt"},{"id":"amber","label":"Amber"}]}]}} using Authorization and X-Paperclip-Run-Id. Do not create a replacement interaction if a later write fails.`,
-      'In a legacy runner, after that POST returns 2xx, PATCH $API_ORIGIN/api/issues/$PAPERCLIP_TASK_ID with exactly {"status":"in_review"}. Do not include `reviewInteractionId`: it only designates confirmation interactions, not `ask_user_questions`. If the PATCH fails, retry only that PATCH and never POST the interaction again.',
+      'In a legacy runner, derive `API_ORIGIN` exactly once with `API_ORIGIN="${PILIBALA_API_URL%/}"; API_ORIGIN="${API_ORIGIN%/api}"`. Build every endpoint as `$API_ORIGIN/api/...`; never append `/api` to a base that already ends in `/api`.',
+      `In a legacy runner, create exactly one question interaction: POST $API_ORIGIN/api/issues/$PILIBALA_TASK_ID/interactions once with {"kind":"ask_user_questions","idempotencyKey":"question-${nonce}","continuationPolicy":"wake_assignee","payload":{"version":1,"questions":[{"id":"verification-word","prompt":"Choose the verification word.","selectionMode":"single","required":true,"options":[{"id":"cobalt","label":"Cobalt"},{"id":"amber","label":"Amber"}]}]}} using Authorization and X-Pilibala-Run-Id. Do not create a replacement interaction if a later write fails.`,
+      'In a legacy runner, after that POST returns 2xx, PATCH $API_ORIGIN/api/issues/$PILIBALA_TASK_ID with exactly {"status":"in_review"}. Do not include `reviewInteractionId`: it only designates confirmation interactions, not `ask_user_questions`. If the PATCH fails, retry only that PATCH and never POST the interaction again.',
       "In a legacy runner, after those two writes succeed, end the current response and heartbeat immediately. Do not wait, sleep, poll, or fetch the interaction; `wake_assignee` will start a new heartbeat after the user answers.",
-      `After the answer arrives, if it is Cobalt, publish exactly PAPERCLIP_E2E_QUESTION_DONE_${nonce} once as the complete visible response and mark the task Done.`,
-      `In a native runner, after the answer arrives, use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal), then call paperclip_finish exactly once with {reportedWorkDisposition:"done",summary:"PAPERCLIP_E2E_QUESTION_DONE_${nonce}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. Wait for that tool call to succeed, then emit exactly PAPERCLIP_E2E_QUESTION_DONE_${nonce} as the complete final response. Do not write a user-facing final response before paperclip_finish succeeds, and do not call another tool.`,
-      `In a legacy runner, make exactly one completion write: PATCH $API_ORIGIN/api/issues/$PAPERCLIP_TASK_ID with {"status":"done","comment":"PAPERCLIP_E2E_QUESTION_DONE_${nonce}"}. Do not POST a separate comment or perform a second write containing the marker.`,
+      `After the answer arrives, if it is Cobalt, publish exactly PILIBALA_E2E_QUESTION_DONE_${nonce} once as the complete visible response and mark the task Done.`,
+      `In a native runner, after the answer arrives, use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal), then call pilibala_finish exactly once with {reportedWorkDisposition:"done",summary:"PILIBALA_E2E_QUESTION_DONE_${nonce}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. Wait for that tool call to succeed, then emit exactly PILIBALA_E2E_QUESTION_DONE_${nonce} as the complete final response. Do not write a user-facing final response before pilibala_finish succeeds, and do not call another tool.`,
+      `In a legacy runner, make exactly one completion write: PATCH $API_ORIGIN/api/issues/$PILIBALA_TASK_ID with {"status":"done","comment":"PILIBALA_E2E_QUESTION_DONE_${nonce}"}. Do not POST a separate comment or perform a second write containing the marker.`,
       "Do not create files, plans, child tasks, or unrelated work, and do not expose credentials.",
     ].join("\n"),
   buildMatchers(nonce, execution) {
     return [
       {
         kind: "message_exact",
-        expected: `PAPERCLIP_E2E_QUESTION_DONE_${nonce}`,
+        expected: `PILIBALA_E2E_QUESTION_DONE_${nonce}`,
       },
       {
         kind: "message_occurrences",
-        expected: `PAPERCLIP_E2E_QUESTION_DONE_${nonce}`,
+        expected: `PILIBALA_E2E_QUESTION_DONE_${nonce}`,
         count: 1,
       },
       {
@@ -857,8 +857,8 @@ export const openRouterBreadthTasks: readonly RunnerTaskFixture[] = [
     buildPrompt: (nonce) =>
       [
         "Complete this deterministic hello task in one turn.",
-        "Your first response action must be the paperclip_finish tool call. Do not emit any assistant text, acknowledgement, or preamble before calling it.",
-        `Use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal). Call paperclip_finish exactly once with {reportedWorkDisposition:"done",summary:"${breadthMarker("H", nonce)}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. Wait for that tool call to succeed, then emit exactly ${breadthMarker("H", nonce)} as the complete user-facing final response. Do not write a user-facing final response before paperclip_finish succeeds, and do not call another tool.`,
+        "Your first response action must be the pilibala_finish tool call. Do not emit any assistant text, acknowledgement, or preamble before calling it.",
+        `Use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal). Call pilibala_finish exactly once with {reportedWorkDisposition:"done",summary:"${breadthMarker("H", nonce)}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. Wait for that tool call to succeed, then emit exactly ${breadthMarker("H", nonce)} as the complete user-facing final response. Do not write a user-facing final response before pilibala_finish succeeds, and do not call another tool.`,
         "Do not create files, plans, interactions, or additional work.",
       ].join("\n"),
     buildMatchers: (nonce, execution) =>
@@ -884,8 +884,8 @@ export const openRouterBreadthTasks: readonly RunnerTaskFixture[] = [
         "Ask the user one structured question before completing this task.",
         `Call request_human_input exactly once with idempotencyKey \`question-${nonce}\`, interactionKind \`questions\`, title \`Verification word\`, prompt \`Choose the verification word\`, continuationPolicy \`wake_assignee\`, and payload {version:1,questions:[{id:\`verification-word\`,prompt:\`Choose the verification word.\`,selectionMode:\`single\`,required:true,options:[{id:\`cobalt\`,label:\`Cobalt\`},{id:\`amber\`,label:\`Amber\`}]}]}.`,
         `Before the answer arrives, do not spell, quote, repeat, announce, or include ${breadthMarker("Q_C", nonce)} in any visible response, comment, or tool payload; refer to it only as “the terminal marker.”`,
-        "Do not call paperclip_finish while the question is pending.",
-        `After the answer arrives, if it is Cobalt, use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal), then call paperclip_finish exactly once with {reportedWorkDisposition:"done",summary:"${breadthMarker("Q_C", nonce)}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. Wait for that tool call to succeed, then emit exactly ${breadthMarker("Q_C", nonce)} as the complete user-facing final response. Do not write a user-facing final response before paperclip_finish succeeds, and do not call another tool.`,
+        "Do not call pilibala_finish while the question is pending.",
+        `After the answer arrives, if it is Cobalt, use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal), then call pilibala_finish exactly once with {reportedWorkDisposition:"done",summary:"${breadthMarker("Q_C", nonce)}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. Wait for that tool call to succeed, then emit exactly ${breadthMarker("Q_C", nonce)} as the complete user-facing final response. Do not write a user-facing final response before pilibala_finish succeeds, and do not call another tool.`,
         "Do not create files, plans, or additional work.",
       ].join("\n"),
     buildMatchers: (nonce, execution) =>
@@ -912,8 +912,8 @@ export const openRouterBreadthTasks: readonly RunnerTaskFixture[] = [
         `The Plan body must contain ${breadthMarker("P_READY", nonce)}.`,
         "Call write_document for key `plan`, then call request_human_input exactly once with interactionKind `confirmation`, targetRevisionId set to the returned latest Plan revision, and continuationPolicy `wake_assignee`.",
         `Before that exact Plan revision is accepted, do not spell, quote, repeat, announce, or include ${breadthMarker("P_OK", nonce)} in any visible response, comment, or tool payload; refer to it only as “the terminal marker.”`,
-        "Do not call paperclip_finish while confirmation is pending.",
-        `After that exact Plan revision is accepted, use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal), then call paperclip_finish exactly once with {reportedWorkDisposition:"done",summary:"${breadthMarker("P_OK", nonce)}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. Wait for that tool call to succeed, then emit exactly ${breadthMarker("P_OK", nonce)} as the complete user-facing final response. Do not write a user-facing final response before paperclip_finish succeeds, and do not call another tool.`,
+        "Do not call pilibala_finish while confirmation is pending.",
+        `After that exact Plan revision is accepted, use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal), then call pilibala_finish exactly once with {reportedWorkDisposition:"done",summary:"${breadthMarker("P_OK", nonce)}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},evidence:[],verification:[]}. Wait for that tool call to succeed, then emit exactly ${breadthMarker("P_OK", nonce)} as the complete user-facing final response. Do not write a user-facing final response before pilibala_finish succeeds, and do not call another tool.`,
         "Do not create files, child tasks, or unrelated work.",
       ].join("\n"),
     buildMatchers: (nonce, execution) =>
@@ -926,7 +926,7 @@ const localEnvironment = runnerEnvironments.find(
 )!;
 
 function warmTurnMarker(turn: 1 | 2 | 3, nonce: string) {
-  return `PAPERCLIP_E2E_WARM_T${turn}_${nonce}`;
+  return `PILIBALA_E2E_WARM_T${turn}_${nonce}`;
 }
 
 function warmWorkspaceLine(turn: 1 | 2 | 3, nonce: string) {
@@ -949,15 +949,15 @@ function warmTurnInstructions(turn: 1 | 2 | 3, nonce: string) {
     summary: `Review the verified turn ${turn} workspace file and decide whether this task is ready to complete or needs another revision.`,
   }];
   const legacyCompletion = finalTurn
-    ? `In a legacy runner, make exactly one public-API completion write after verification: PATCH /api/issues/$PAPERCLIP_TASK_ID with {"status":"done","comment":"${marker}"}. Include Authorization and X-Paperclip-Run-Id. Do not POST a separate comment.`
-    : `In a legacy runner, after verification POST exactly one request_confirmation to /api/issues/$PAPERCLIP_TASK_ID/interactions with {"kind":"request_confirmation","idempotencyKey":"daytona-warm-review-T${turn}-${nonce}","resolverPolicy":"human_only","title":"Warm continuity turn ${turn}","summary":"Review completed warm continuity turn ${turn}.","continuationPolicy":"wake_assignee","payload":{"version":1,"prompt":"Is this warm continuity task ready to complete after turn ${turn}?","acceptLabel":"Approve completion","rejectLabel":"Continue work","rejectRequiresReason":true,"allowDeclineReason":true,"supersedeOnUserComment":false,"target":{"type":"custom","key":"daytona_warm_turn_${turn}","revisionId":"${nonce}-T${turn}","label":"Warm continuity turn ${turn}"}}}. Capture the returned interaction id. Then make exactly one issue PATCH with {"status":"in_review","comment":"${marker}","reviewInteractionId":"<returned interaction id>"}. Include Authorization and X-Paperclip-Run-Id on both writes. If the issue PATCH fails, retry only that PATCH and never create another interaction. Do not POST a separate comment. After both writes succeed, end the response and heartbeat immediately; do not wait or poll because the reviewer action will start the next turn.`;
+    ? `In a legacy runner, make exactly one public-API completion write after verification: PATCH /api/issues/$PILIBALA_TASK_ID with {"status":"done","comment":"${marker}"}. Include Authorization and X-Pilibala-Run-Id. Do not POST a separate comment.`
+    : `In a legacy runner, after verification POST exactly one request_confirmation to /api/issues/$PILIBALA_TASK_ID/interactions with {"kind":"request_confirmation","idempotencyKey":"daytona-warm-review-T${turn}-${nonce}","resolverPolicy":"human_only","title":"Warm continuity turn ${turn}","summary":"Review completed warm continuity turn ${turn}.","continuationPolicy":"wake_assignee","payload":{"version":1,"prompt":"Is this warm continuity task ready to complete after turn ${turn}?","acceptLabel":"Approve completion","rejectLabel":"Continue work","rejectRequiresReason":true,"allowDeclineReason":true,"supersedeOnUserComment":false,"target":{"type":"custom","key":"daytona_warm_turn_${turn}","revisionId":"${nonce}-T${turn}","label":"Warm continuity turn ${turn}"}}}. Capture the returned interaction id. Then make exactly one issue PATCH with {"status":"in_review","comment":"${marker}","reviewInteractionId":"<returned interaction id>"}. Include Authorization and X-Pilibala-Run-Id on both writes. If the issue PATCH fails, retry only that PATCH and never create another interaction. Do not POST a separate comment. After both writes succeed, end the response and heartbeat immediately; do not wait or poll because the reviewer action will start the next turn.`;
   return [
     `This is warm Daytona continuity turn ${turn} of 3. Work only in the current execution workspace.`,
     turn === 1
       ? `Create ${file} with exactly this one line followed by a newline: ${lines[0]}`
       : `Before changing anything, read ${file} and verify its content is exactly ${lines.slice(0, -1).join("\\n")} followed by a newline. Then append exactly ${lines.at(-1)} followed by a newline.`,
     `After the write, verify ${file} contains exactly these lines, once each and in order: ${lines.join(" | ")}.`,
-    `In a native runner, use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal), then call paperclip_finish exactly once with {reportedWorkDisposition:"${finalTurn ? "done" : "needs_review"}",summary:"${marker}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},attentionRequests:${JSON.stringify(reviewRequests)},evidence:[],verification:[{commandOrCheck:"read ${file}",status:"passed"}]}. Wait for that tool call to succeed, then emit exactly ${marker} once as the complete user-facing final response.`,
+    `In a native runner, use the current turn completion revision and criterion IDs (CURRENT_TURN_REVISION below is a placeholder, not a literal), then call pilibala_finish exactly once with {reportedWorkDisposition:"${finalTurn ? "done" : "needs_review"}",summary:"${marker}",completionClaim:{contractRevision:CURRENT_TURN_REVISION,objectiveSatisfied:true,criteria:[{criterionId:"objective",status:"satisfied",evidenceRefs:[]}],remainingWork:[]},attentionRequests:${JSON.stringify(reviewRequests)},evidence:[],verification:[{commandOrCheck:"read ${file}",status:"passed"}]}. Wait for that tool call to succeed, then emit exactly ${marker} once as the complete user-facing final response.`,
     legacyCompletion,
     `In a legacy runner, the PATCH comment is the complete visible response. After its 2xx response, finish silently: do not print, echo, or emit ${marker} again as assistant text.`,
     `Do not include ${marker} in any other visible response or write. Do not recreate, truncate, reorder, or duplicate prior lines.`,
@@ -970,7 +970,7 @@ function managedWarmTurnInstructions(turn: 1 | 2 | 3, nonce: string) {
     turn === 1
       ? `Create notes/warm-memory.txt containing exactly T1-${nonce} followed by a newline. Create notes/unchanged.bin with exactly 8388608 bytes, each byte equal to 93. Create notes/delete-me.txt containing temporary.`
       : `Read notes/warm-memory.txt under AGENT_HOME and verify it contains exactly the prior turn lines ${Array.from({ length: turn - 1 }, (_, i) => `T${i + 1}-${nonce}`).join(" | ")}, each followed by a newline. Append exactly T${turn}-${nonce} and a newline. Verify notes/unchanged.bin still has 8388608 bytes, each equal to 93, and leave it unchanged. ${turn === 2 ? "Delete notes/delete-me.txt." : "Verify notes/delete-me.txt is absent."}`,
-    "Perform these personal-file edits and verification before calling paperclip_finish. Paperclip saves them at the turn boundary.",
+    "Perform these personal-file edits and verification before calling pilibala_finish. Pilibala saves them at the turn boundary.",
   ].join("\n");
 }
 
@@ -1066,16 +1066,16 @@ export const connectionReviewSuite: RunnerSuiteFixture = {
     expectedRunCount: 2, attemptTimeoutMs: { local: 12 * 60_000, daytona: 12 * 60_000 },
     expectedTerminalState: { issue: "done", run: "succeeded" },
     buildTitle: nonce => `Runner E2E connection review ${decision} ${nonce}`,
-    buildVisibleMarker: nonce => `PAPERCLIP_E2E_REVIEW_DONE_${nonce}`,
+    buildVisibleMarker: nonce => `PILIBALA_E2E_REVIEW_DONE_${nonce}`,
     buildPrompt: nonce => [
       'Use the installed connection action "List fixture pages" with query "recent". Discover it through the runtime tool gateway. Do not simulate or invent its result.',
       'It requires human approval. When approval_required is returned, do not retry and do not create another interaction. End the turn waiting for that existing server-owned review; leave this task in_review. Do not claim completion before the decision arrives.',
       'Approval executes the stored call on the server. Your continuation receives its result; do not repeat that approved call. A decline executes nothing and must be respected.',
       ...(decision === "always" ? ['After the approved result arrives, call the same action once more with query "changed arguments" to verify the remembered permission.'] : []),
-      `After consuming the real result (or the human decline), finish the task and publish exactly PAPERCLIP_E2E_REVIEW_DONE_${nonce} once as your final task response.`,
-      'For native runners use paperclip_finish. Legacy runners PATCH the task with status done and the final comment. Do not create unrelated work.',
+      `After consuming the real result (or the human decline), finish the task and publish exactly PILIBALA_E2E_REVIEW_DONE_${nonce} once as your final task response.`,
+      'For native runners use pilibala_finish. Legacy runners PATCH the task with status done and the final comment. Do not create unrelated work.',
     ].join("\n"),
-    buildMatchers: (nonce, execution) => terminalMatchers(`PAPERCLIP_E2E_REVIEW_DONE_${nonce}`, execution),
+    buildMatchers: (nonce, execution) => terminalMatchers(`PILIBALA_E2E_REVIEW_DONE_${nonce}`, execution),
   })),
 };
 
@@ -1095,8 +1095,8 @@ export const extendedHarnessFileTask: RunnerTaskFixture = {
     `Create extended-${nonce}.txt in the current execution workspace with exactly ready-${nonce} followed by a newline.`,
     `Edit that file to contain exactly verified-${nonce} followed by a newline, then run a command that reads it and fails unless those exact bytes match.`,
     `Register the verified file as a deliverable with title extended-${nonce}.txt. Use EXTENDED-FILE-${nonce} only as completion summary and final response, never as a file title or progress message.`,
-    `After successful validation, call paperclip_finish with reportedWorkDisposition done, summary EXTENDED-FILE-${nonce}, the current completion contract revision and satisfied objective criterion, no remaining work, and the actual validation command and result.`,
-    `Wait for paperclip_finish to succeed, then emit exactly EXTENDED-FILE-${nonce} as your final response. Do not create unrelated files or work.`,
+    `After successful validation, call pilibala_finish with reportedWorkDisposition done, summary EXTENDED-FILE-${nonce}, the current completion contract revision and satisfied objective criterion, no remaining work, and the actual validation command and result.`,
+    `Wait for pilibala_finish to succeed, then emit exactly EXTENDED-FILE-${nonce} as your final response. Do not create unrelated files or work.`,
   ].join("\n"),
   buildMatchers: (nonce, execution) => [
     ...terminalMatchers(`EXTENDED-FILE-${nonce}`, execution),
@@ -1153,7 +1153,7 @@ export const runnerSuites: readonly RunnerSuiteFixture[] = [
       controlPlaneSettlement: "required-scoped-result-and-terminal-after-runner",
       steeringComment: "exact-browser-submitted-markdown",
       steeringDispatch: "require-public-api-acceptance",
-      pending: "paperclip.e2e.pi-control-pending.v1", stop: "paperclip.e2e.pi-stop-settlement.v1", steering: "paperclip.e2e.pi-steering-settlement.v1",
+      pending: "pilibala.e2e.pi-control-pending.v1", stop: "pilibala.e2e.pi-stop-settlement.v1", steering: "pilibala.e2e.pi-steering-settlement.v1",
       permissionPolicy: "approve-reads", lifecycle: "per_turn", normalCompletionProvesStop: false, nativeFollowUp: "not-covered", providerDeath: "not-covered",
       remoteObservationCoverage: "continuous-through-owned-process-retirement", filesystemAfterRemoteRetirementObserved: false },
   },
@@ -1177,14 +1177,14 @@ export const runnerSuites: readonly RunnerSuiteFixture[] = [
     description: "Stop while one exact Cursor or Copilot native permission remains unanswered; require cancelled provider settlement, caller-owned acknowledgement, stale-answer refusal and independent retirement/no effects.",
     groups: ["native"], profiles: extendedHarnessProfiles.filter(profile => ["cursor", "copilot"].includes(profile.qualificationCandidate ?? "")),
     environments: runnerEnvironments, tasks: nativeActiveStopTasks, expectedMatrixSize: 4,
-    definitionMetadata: { version: 4, qualification: "pending", scheduling: "explicit-only", evidence: "paperclip.e2e.native-active-stop-settlement.v2", pendingObservation: "retained-api-before-caller-uuid-stop", normalCompletionAccepted: false, permissionPolicy: "approve-reads", lifecycle: "per_turn", remoteEvidence: "paperclip.e2e.native-active-stop-remote-retirement.v1", remoteObservationCoverage: "continuous-through-owned-process-retirement", filesystemAfterRemoteRetirementObserved: false, localObservationCoverage: "four-phases-through-cleanup", providerDeath: "not-covered" },
+    definitionMetadata: { version: 4, qualification: "pending", scheduling: "explicit-only", evidence: "pilibala.e2e.native-active-stop-settlement.v2", pendingObservation: "retained-api-before-caller-uuid-stop", normalCompletionAccepted: false, permissionPolicy: "approve-reads", lifecycle: "per_turn", remoteEvidence: "pilibala.e2e.native-active-stop-remote-retirement.v1", remoteObservationCoverage: "continuous-through-owned-process-retirement", filesystemAfterRemoteRetirementObserved: false, localObservationCoverage: "four-phases-through-cleanup", providerDeath: "not-covered" },
   },
   {
     id: "copilot-protection", label: "Copilot native protection", manualOnly: true,
     description: "Exact native denial with independently correlated provider settlement and acknowledged run Stop, plus attached command settlement with independent process evidence.",
     groups: ["native"], profiles: extendedHarnessProfiles.filter(profile => profile.qualificationCandidate === "copilot"),
     environments: runnerEnvironments, tasks: copilotProtectionTasks, expectedMatrixSize: 4,
-    definitionMetadata: { version: 9, outputProhibition: "separate-publication-and-attachment", semanticCompletionEvidence: "paperclip.e2e.copilot-semantic-completion.v2", qualification: "pending", naturalSettlementObservationMs: 2000, scheduling: "explicit-only", evidence: "copilot_tool_evidence_v1", profileVersion: QUALIFIED_ACPX_PROFILES.copilot.agentProfileVersion, denialTerminal: "correlated-provider-settlement-and-audited-run-stop", denialSettlementEvidence: "paperclip.e2e.copilot-denial-settlement.v3", activeTurnCancellation: "not-implied-by-completed-provider-turn", settlement: "attached-finite-command-only", settlementMarker: "private-diagnostic-not-deliverable", remoteEvidence: "owned-lease-sealed-observer" },
+    definitionMetadata: { version: 9, outputProhibition: "separate-publication-and-attachment", semanticCompletionEvidence: "pilibala.e2e.copilot-semantic-completion.v2", qualification: "pending", naturalSettlementObservationMs: 2000, scheduling: "explicit-only", evidence: "copilot_tool_evidence_v1", profileVersion: QUALIFIED_ACPX_PROFILES.copilot.agentProfileVersion, denialTerminal: "correlated-provider-settlement-and-audited-run-stop", denialSettlementEvidence: "pilibala.e2e.copilot-denial-settlement.v3", activeTurnCancellation: "not-implied-by-completed-provider-turn", settlement: "attached-finite-command-only", settlementMarker: "private-diagnostic-not-deliverable", remoteEvidence: "owned-lease-sealed-observer" },
   },
   {
     id: "rich-acp-warm-continuity", label: "Rich ACP warm continuity", manualOnly: true,
@@ -1206,7 +1206,7 @@ export const runnerSuites: readonly RunnerSuiteFixture[] = [
     definitionMetadata: { version: 2, qualification: "pending", scheduling: "explicit-only", identity: "native-session-runner-provider-session-process-start", agentFiles: "unchanged-home-process-continuity" },
   },
   {
-    id: "public-mcp", label: "Paperclip through an assistant", manualOnly: true,
+    id: "public-mcp", label: "Pilibala through an assistant", manualOnly: true,
     description: "Paid assistant tool use plus actual team execution, browser OAuth consent, durable outcomes and authorization boundaries.",
     groups: ["local"], environments: [localEnvironment], tasks: publicMcpTasks, expectedMatrixSize: 63,
     profiles: [
@@ -1251,13 +1251,13 @@ export const runnerSuites: readonly RunnerSuiteFixture[] = [
       expectedTerminalState: { issue: "blocked", run: "failed" },
       buildTitle: nonce => `Native provider loss ${nonce}`,
       buildVisibleMarker: nonce => `NATIVE-PROVIDER-LOSS-${nonce}`,
-      buildPrompt: () => "Attempt the supplied exact native shell operation once and leave its permission callback unanswered. Do not retry, use another tool or path, answer your own permission, call paperclip_finish, or claim completion. The qualification fixture will deliberately lose the isolated runtime before any approval.",
+      buildPrompt: () => "Attempt the supplied exact native shell operation once and leave its permission callback unanswered. Do not retry, use another tool or path, answer your own permission, call pilibala_finish, or claim completion. The qualification fixture will deliberately lose the isolated runtime before any approval.",
       buildMatchers: () => [],
     }], expectedMatrixSize: 2,
     definitionMetadata: { version: 1, qualification: "pending", scheduling: "explicit-only", fault: "observed-per-turn-run-root-loss", remoteFaultAuthority: "pidfd-start-ticks-boot-id", replayAllowed: false },
   },  {
     id: "extended-harnesses", label: "Extended ACP harnesses", manualOnly: true,
-    description: "Explicit candidate qualification through real Paperclip tools, browser interactions, file edits and restart recovery.",
+    description: "Explicit candidate qualification through real Pilibala tools, browser interactions, file edits and restart recovery.",
     groups: ["native"], profiles: extendedHarnessProfiles, environments: runnerEnvironments,
     tasks: [...openRouterBreadthTasks, localIntegrityTasks[1]!, extendedHarnessFileTask],
     expectedMatrixSize: 30,
@@ -1377,7 +1377,7 @@ export const runnerSuites: readonly RunnerSuiteFixture[] = [
       grading: "original-workflow-plus-attributed-decline-output", scheduling: "explicit-only" },
   },
   {
-    id: "everyday-workflows", label: "Everyday Paperclip Work", manualOnly: true,
+    id: "everyday-workflows", label: "Everyday Pilibala Work", manualOnly: true,
     description: "Real user requests, useful downloaded work, and durable continuation using production instructions.",
     groups: ["native"], profiles: [...everydayProfiles,
       productionStoryProfile(runnerProfiles.find(profile => profile.id === "runner-opencode")!),
@@ -1438,18 +1438,18 @@ export const runnerSuites: readonly RunnerSuiteFixture[] = [
   },
   {
     id: "stock-harness",
-    label: "Stock harness with Paperclip",
+    label: "Stock harness with Pilibala",
     manualOnly: true,
     description: "Production-default hires, reduced shared prompts, assigned skills, continuation, and persistent chat.",
     groups: ["stock-harness", "native", "legacy"],
     profiles: [...contextIntegrityProfiles.filter(profile => !pendingContextIntegrityProfiles.includes(profile)),
       runnerProfiles.find(profile => profile.id === "legacy-opencode")!].map(productionDefaultHireProfile),
     environments: [localEnvironment],
-    tasks: [...contextIntegrityTasks, chatTasks.find(task => task.id === "continuity-restart")!, paperclipDocumentTask]
+    tasks: [...contextIntegrityTasks, chatTasks.find(task => task.id === "continuity-restart")!, pilibalaDocumentTask]
       .map(task => ({ ...task, automaticRetryPolicy: "single_attempt" as const })),
     expectedMatrixSize: 26,
     excludedExecutionIds: ["legacy-codex", "legacy-acp-codex", "legacy-acp-claude", "runner-codex", "runner-acpx-claude", "runner-opencode"]
-      .map(profile => `stock-harness.${profile}.local.${paperclipDocumentTask.id}`),
+      .map(profile => `stock-harness.${profile}.local.${pilibalaDocumentTask.id}`),
     definitionMetadata: {
       version: 2, instructions: "production-default-hire", scheduling: "explicit-only",
       automaticRetryPolicy: "single_attempt", maximumAttemptsPerCell: 1,
@@ -1543,7 +1543,7 @@ export const runnerSuites: readonly RunnerSuiteFixture[] = [
     definitionMetadata: { version: 27, runGrading: "evidenced-nonexecution-and-refusal", resultNavigation: "loaded-task-header", instructionSetup: "read-before-write-base-hash", requirementEvidence: "recorded-user-comments-and-resolved-answers", busyReferenceWait: "committed-conversation-document-response-held", busyBoundary: "source-tool-in-flight-and-public-deferred-wake", workerReference: "rsvp-code-in-saved-note", judge: "completion-quality-v14-observed-rendered-result-access", judgeMaxDollarsPerRequest: 0.5, instructions: "production", correlation: "authoritative-task-facts-required-in-reply-run", restartBoundary: "done-and-source-provider-at-reference-gate", idleBoundaryTimeoutMs: 180_000, workerBriefTimeoutMs: 240_000, workerBriefWorkspace: "managed-project", workerBriefEvidence: "released-start-time", grading: "post-completion-reply-and-result-access", semanticReview: "required-separately", chatBoundary: "worker-gated-until-source-idle", observationWindowMs: 120_000, scheduling: "explicit-only" },
 
   },
-  ...(process.env.PAPERCLIP_RUNNER_E2E_CONNECTION_REVIEWS === "1" ? [connectionReviewSuite] : []),
+  ...(process.env.PILIBALA_RUNNER_E2E_CONNECTION_REVIEWS === "1" ? [connectionReviewSuite] : []),
   {
     id: "core-compatibility",
     label: "Core Runner Compatibility",
@@ -1654,7 +1654,7 @@ export const runnerSuites: readonly RunnerSuiteFixture[] = [
     profiles: runnerProfiles.filter(profile => profile.id === "runner-codex").map(repositorySkillsProfile),
     environments: [localEnvironment, daytonaWarmEnvironment], tasks: [repositorySkillsTask], expectedMatrixSize: 2,
     definitionMetadata: { version: 1, scheduling: "explicit-only", maximumAttemptsPerCell: 1,
-      source: "paperclipai/poteto-stack", skills: ["architect", "bro"], grading: "independent-git-blob-hashes-and-file-modes-from-owned-runtime", budgetMonthlyCents: 1000 },
+      source: "pilibalaai/poteto-stack", skills: ["architect", "bro"], grading: "independent-git-blob-hashes-and-file-modes-from-owned-runtime", budgetMonthlyCents: 1000 },
   },
 ] as const;
 
@@ -1838,7 +1838,7 @@ export function validateRunnerCatalog(): MatrixExecution[] {
     const payload = environment.buildEnvironment({
       secretRefs: sampleRefs,
       daytonaImage:
-        "ghcr.io/paperclipai/paperclip-daytona-runner@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       executionId: "schema-validation",
     });
     createEnvironmentSchema.parse(payload);
@@ -1861,7 +1861,7 @@ export function validateRunnerCatalog(): MatrixExecution[] {
     const payload = profile.buildAgent({
       environmentId: SAMPLE_UUID,
       environmentFixtureId: "local",
-      workspacePath: "/tmp/paperclip-runner-e2e-schema",
+      workspacePath: "/tmp/pilibala-runner-e2e-schema",
       secretRefs: sampleRefs,
       executionId: "schema-validation",
     });

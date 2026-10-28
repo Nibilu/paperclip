@@ -1,5 +1,5 @@
-import { aggregatorContinuationInstruction, type Agent, type ToolConnection } from "@paperclipai/shared";
-import type { AggregatorAppRoute } from "@paperclipai/shared/aggregator-app-catalog";
+import { aggregatorContinuationInstruction, type Agent, type ToolConnection } from "@pilibalaai/shared";
+import type { AggregatorAppRoute } from "@pilibalaai/shared/aggregator-app-catalog";
 import { isAgentTaskTarget } from "./company-members";
 
 // Connect consumer accounts live in For You, separately from developer projects.

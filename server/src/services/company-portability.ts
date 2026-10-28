@@ -1,5 +1,5 @@
 import { createAgentLifecycle } from "./agent-lifecycle.js";
-import { agentAppearanceSchema, agentHarnessType, agentRunner, type AgentRunnerChoice } from "@paperclipai/shared";
+import { agentAppearanceSchema, agentHarnessType, agentRunner, type AgentRunnerChoice } from "@pilibalaai/shared";
 import { resolveNewAgentRunnerForCompany } from "./agent-runner-selection.js";
 import { createHash, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
@@ -12,7 +12,7 @@ import {
   issueRelations,
   principalPermissionGrants,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   CompanyPortabilityAgentManifestEntry,
   CompanyPortabilityBlobManifestEntry,
@@ -46,7 +46,7 @@ import type {
   AgentEnvConfig,
   PermissionKey,
   RoutineVariable,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   AGENT_DEFAULT_MAX_CONCURRENT_RUNS,
   ISSUE_PRIORITIES,
@@ -65,13 +65,13 @@ import {
   issueCommentPresentationSchema,
   normalizeAgentUrlKey,
   PERMISSION_KEYS,
-} from "@paperclipai/shared";
-import { sha256HexOfBytes } from "@paperclipai/shared/portability-hash";
+} from "@pilibalaai/shared";
+import { sha256HexOfBytes } from "@pilibalaai/shared/portability-hash";
 import {
-  readPaperclipSkillSyncPreference,
-  writePaperclipSkillSyncPreference,
-} from "@paperclipai/adapter-utils/server-utils";
-import { requireOpenCodeModelId } from "@paperclipai/adapter-opencode-local/server";
+  readPilibalaSkillSyncPreference,
+  writePilibalaSkillSyncPreference,
+} from "@pilibalaai/adapter-utils/server-utils";
+import { requireOpenCodeModelId } from "@pilibalaai/adapter-opencode-local/server";
 import { findServerAdapter } from "../adapters/index.js";
 import { formatAttachmentSize, MAX_ATTACHMENT_BYTES } from "../attachment-types.js";
 import { forbidden, notFound, unprocessable } from "../errors.js";
@@ -110,10 +110,10 @@ import type {
   ImportIssueAttachmentRow,
 } from "./import-write-types.js";
 import {
-  PaperclipRunnerProviderProfileError,
-  resolvePaperclipRunnerProviderProfile,
-  validatePaperclipRunnerDotConfig,
-  validatePaperclipRunnerMuseConfig,
+  PilibalaRunnerProviderProfileError,
+  resolvePilibalaRunnerProviderProfile,
+  validatePilibalaRunnerDotConfig,
+  validatePilibalaRunnerMuseConfig,
 } from "./native-runtime/provider-profile.js";
 import { managedAgentProfileService } from "./managed-agent-profiles.js";
 import { remoteAgentProfileService } from "./remote-agent-profiles.js";
@@ -198,7 +198,7 @@ const DEFAULT_INCLUDE: CompanyPortabilityInclude = {
 
 const DEFAULT_COLLISION_STRATEGY: CompanyPortabilityCollisionStrategy = "rename";
 // The bundle shape this build reads and writes. Bundles began declaring
-// their schemaVersion in the .paperclip.yaml extension at 6; undeclared
+// their schemaVersion in the .pilibala.yaml extension at 6; undeclared
 // bundles are read as 5, the last unstamped shape. 7 adds preserved task
 // timestamps and parent links; 5/6 bundles still import, with those fields
 // falling back to import-time defaults.
@@ -308,7 +308,7 @@ function collectAgentSafeImportPolicyErrors(
 function classifyPortableFileKind(pathValue: string): CompanyPortabilityExportPreviewResult["fileInventory"][number]["kind"] {
   const normalized = normalizePortablePath(pathValue);
   if (normalized === "COMPANY.md") return "company";
-  if (normalized === ".paperclip.yaml" || normalized === ".paperclip.yml") return "extension";
+  if (normalized === ".pilibala.yaml" || normalized === ".pilibala.yml") return "extension";
   if (normalized === "README.md") return "readme";
   if (normalized.startsWith("agents/")) return "agent";
   if (normalized.startsWith("skills/")) return "skill";
@@ -332,15 +332,15 @@ function normalizeSkillKey(value: string | null | undefined) {
 
 function readSkillKey(frontmatter: Record<string, unknown>) {
   const metadata = isPlainRecord(frontmatter.metadata) ? frontmatter.metadata : null;
-  const paperclip = isPlainRecord(metadata?.paperclip) ? metadata?.paperclip as Record<string, unknown> : null;
+  const pilibala = isPlainRecord(metadata?.pilibala) ? metadata?.pilibala as Record<string, unknown> : null;
   return normalizeSkillKey(
     asString(frontmatter.key)
     ?? asString(frontmatter.skillKey)
     ?? asString(metadata?.skillKey)
     ?? asString(metadata?.canonicalKey)
-    ?? asString(metadata?.paperclipSkillKey)
-    ?? asString(paperclip?.skillKey)
-    ?? asString(paperclip?.key),
+    ?? asString(metadata?.pilibalaSkillKey)
+    ?? asString(pilibala?.skillKey)
+    ?? asString(pilibala?.key),
   );
 }
 
@@ -360,8 +360,8 @@ function deriveManifestSkillKey(
   if ((sourceType === "github" || sourceType === "skills_sh" || sourceKind === "github" || sourceKind === "skills_sh") && owner && repo) {
     return `${owner}/${repo}/${slug}`;
   }
-  if (sourceKind === "paperclip_bundled") {
-    return `paperclipai/paperclip/${slug}`;
+  if (sourceKind === "pilibala_bundled") {
+    return `pilibalaai/pilibala/${slug}`;
   }
   if (sourceType === "url" || sourceKind === "url") {
     try {
@@ -502,8 +502,8 @@ function deriveSkillExportDirCandidates(
     }
   };
 
-  if (sourceKind === "paperclip_bundled") {
-    pushSuffix("paperclip");
+  if (sourceKind === "pilibala_bundled") {
+    pushSuffix("pilibala");
   }
 
   if (skill.sourceType === "github" || skill.sourceType === "skills_sh") {
@@ -691,7 +691,7 @@ type CompanyPackageIncludeEntry = {
   path: string;
 };
 
-type PaperclipExtensionDoc = {
+type PilibalaExtensionDoc = {
   schema?: string;
   company?: Record<string, unknown> | null;
   agents?: Record<string, Record<string, unknown>> | null;
@@ -708,7 +708,7 @@ type ProjectLike = {
   targetDate: string | null;
   color: string | null;
   icon: string | null;
-  appearance?: import("@paperclipai/shared").AgentAppearance | null;
+  appearance?: import("@pilibalaai/shared").AgentAppearance | null;
   status: string;
   env: Record<string, unknown> | null;
   executionWorkspacePolicy: Record<string, unknown> | null;
@@ -827,7 +827,7 @@ const ADAPTER_DEFAULT_RULES_BY_TYPE: Record<string, Array<{ path: string[]; valu
     { path: ["timeoutSec"], value: 120 },
     { path: ["waitTimeoutMs"], value: 120000 },
     { path: ["sessionKeyStrategy"], value: "fixed" },
-    { path: ["sessionKey"], value: "paperclip" },
+    { path: ["sessionKey"], value: "pilibala" },
     { path: ["role"], value: "operator" },
     { path: ["scopes"], value: ["operator.admin"] },
   ],
@@ -1653,11 +1653,11 @@ function buildLegacyRoutineTriggerFromRecurrence(
   const frequency = asString(issue.legacyRecurrence.frequency);
   const interval = asInteger(issue.legacyRecurrence.interval) ?? 1;
   if (!frequency) {
-    errors.push(`Recurring task ${issue.slug} uses legacy recurrence without frequency; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+    errors.push(`Recurring task ${issue.slug} uses legacy recurrence without frequency; add .pilibala.yaml routines.${issue.slug}.triggers.`);
     return { trigger: null, warnings, errors };
   }
   if (interval < 1) {
-    errors.push(`Recurring task ${issue.slug} uses legacy recurrence with an invalid interval; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+    errors.push(`Recurring task ${issue.slug} uses legacy recurrence with an invalid interval; add .pilibala.yaml routines.${issue.slug}.triggers.`);
     return { trigger: null, warnings, errors };
   }
 
@@ -1665,7 +1665,7 @@ function buildLegacyRoutineTriggerFromRecurrence(
   const startsAt = asString(schedule?.startsAt);
   const zonedStartsAt = startsAt ? readZonedDateParts(startsAt, timezone) : null;
   if (startsAt && !zonedStartsAt) {
-    errors.push(`Recurring task ${issue.slug} has an invalid legacy startsAt/timezone combination; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+    errors.push(`Recurring task ${issue.slug} has an invalid legacy startsAt/timezone combination; add .pilibala.yaml routines.${issue.slug}.triggers.`);
     return { trigger: null, warnings, errors };
   }
 
@@ -1673,12 +1673,12 @@ function buildLegacyRoutineTriggerFromRecurrence(
   const hour = asInteger(time?.hour) ?? zonedStartsAt?.hour ?? 0;
   const minute = asInteger(time?.minute) ?? zonedStartsAt?.minute ?? 0;
   if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-    errors.push(`Recurring task ${issue.slug} uses legacy recurrence with an invalid time; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+    errors.push(`Recurring task ${issue.slug} uses legacy recurrence with an invalid time; add .pilibala.yaml routines.${issue.slug}.triggers.`);
     return { trigger: null, warnings, errors };
   }
 
   if (issue.legacyRecurrence.until != null || issue.legacyRecurrence.count != null) {
-    warnings.push(`Recurring task ${issue.slug} uses legacy recurrence end bounds; Paperclip will import the routine trigger without those limits.`);
+    warnings.push(`Recurring task ${issue.slug} uses legacy recurrence end bounds; Pilibala will import the routine trigger without those limits.`);
   }
 
   let cronExpression: string | null = null;
@@ -1692,14 +1692,14 @@ function buildLegacyRoutineTriggerFromRecurrence(
     cronExpression = `${minute} ${hourField} * * *`;
   } else if (frequency === "daily") {
     if (Array.isArray(issue.legacyRecurrence.weekdays) || Array.isArray(issue.legacyRecurrence.monthDays) || Array.isArray(issue.legacyRecurrence.months)) {
-      errors.push(`Recurring task ${issue.slug} uses unsupported legacy daily recurrence constraints; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+      errors.push(`Recurring task ${issue.slug} uses unsupported legacy daily recurrence constraints; add .pilibala.yaml routines.${issue.slug}.triggers.`);
       return { trigger: null, warnings, errors };
     }
     const dayField = interval === 1 ? "*" : `*/${interval}`;
     cronExpression = `${minute} ${hour} ${dayField} * *`;
   } else if (frequency === "weekly") {
     if (interval !== 1) {
-      errors.push(`Recurring task ${issue.slug} uses legacy weekly recurrence with interval > 1; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+      errors.push(`Recurring task ${issue.slug} uses legacy weekly recurrence with interval > 1; add .pilibala.yaml routines.${issue.slug}.triggers.`);
       return { trigger: null, warnings, errors };
     }
     const weekdays = Array.isArray(issue.legacyRecurrence.weekdays)
@@ -1714,17 +1714,17 @@ function buildLegacyRoutineTriggerFromRecurrence(
       cronWeekdays.push(zonedStartsAt.weekday);
     }
     if (cronWeekdays.length === 0) {
-      errors.push(`Recurring task ${issue.slug} uses legacy weekly recurrence without weekdays; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+      errors.push(`Recurring task ${issue.slug} uses legacy weekly recurrence without weekdays; add .pilibala.yaml routines.${issue.slug}.triggers.`);
       return { trigger: null, warnings, errors };
     }
     cronExpression = `${minute} ${hour} * * ${normalizeCronList(cronWeekdays)}`;
   } else if (frequency === "monthly") {
     if (interval !== 1) {
-      errors.push(`Recurring task ${issue.slug} uses legacy monthly recurrence with interval > 1; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+      errors.push(`Recurring task ${issue.slug} uses legacy monthly recurrence with interval > 1; add .pilibala.yaml routines.${issue.slug}.triggers.`);
       return { trigger: null, warnings, errors };
     }
     if (Array.isArray(issue.legacyRecurrence.ordinalWeekdays) && issue.legacyRecurrence.ordinalWeekdays.length > 0) {
-      errors.push(`Recurring task ${issue.slug} uses legacy ordinal monthly recurrence; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+      errors.push(`Recurring task ${issue.slug} uses legacy ordinal monthly recurrence; add .pilibala.yaml routines.${issue.slug}.triggers.`);
       return { trigger: null, warnings, errors };
     }
     const monthDays = Array.isArray(issue.legacyRecurrence.monthDays)
@@ -1736,7 +1736,7 @@ function buildLegacyRoutineTriggerFromRecurrence(
       monthDays.push(zonedStartsAt.day);
     }
     if (monthDays.length === 0) {
-      errors.push(`Recurring task ${issue.slug} uses legacy monthly recurrence without monthDays; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+      errors.push(`Recurring task ${issue.slug} uses legacy monthly recurrence without monthDays; add .pilibala.yaml routines.${issue.slug}.triggers.`);
       return { trigger: null, warnings, errors };
     }
     const months = Array.isArray(issue.legacyRecurrence.months)
@@ -1748,7 +1748,7 @@ function buildLegacyRoutineTriggerFromRecurrence(
     cronExpression = `${minute} ${hour} ${normalizeCronList(monthDays.map(String))} ${monthField} *`;
   } else if (frequency === "yearly") {
     if (interval !== 1) {
-      errors.push(`Recurring task ${issue.slug} uses legacy yearly recurrence with interval > 1; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+      errors.push(`Recurring task ${issue.slug} uses legacy yearly recurrence with interval > 1; add .pilibala.yaml routines.${issue.slug}.triggers.`);
       return { trigger: null, warnings, errors };
     }
     const months = Array.isArray(issue.legacyRecurrence.months)
@@ -1768,12 +1768,12 @@ function buildLegacyRoutineTriggerFromRecurrence(
       monthDays.push(zonedStartsAt.day);
     }
     if (months.length === 0 || monthDays.length === 0) {
-      errors.push(`Recurring task ${issue.slug} uses legacy yearly recurrence without month/monthDay anchors; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+      errors.push(`Recurring task ${issue.slug} uses legacy yearly recurrence without month/monthDay anchors; add .pilibala.yaml routines.${issue.slug}.triggers.`);
       return { trigger: null, warnings, errors };
     }
     cronExpression = `${minute} ${hour} ${normalizeCronList(monthDays.map(String))} ${normalizeCronList(months.map(String))} *`;
   } else {
-    errors.push(`Recurring task ${issue.slug} uses unsupported legacy recurrence frequency "${frequency}"; add .paperclip.yaml routines.${issue.slug}.triggers.`);
+    errors.push(`Recurring task ${issue.slug} uses unsupported legacy recurrence frequency "${frequency}"; add .pilibala.yaml routines.${issue.slug}.triggers.`);
     return { trigger: null, warnings, errors };
   }
 
@@ -2213,7 +2213,7 @@ function filterPortableExtensionYaml(
 function filterExportFiles(
   files: Record<string, CompanyPortabilityFileEntry>,
   selectedFilesInput: string[] | undefined,
-  paperclipExtensionPath: string,
+  pilibalaExtensionPath: string,
 ) {
   if (!selectedFilesInput || selectedFilesInput.length === 0) {
     return files;
@@ -2230,23 +2230,23 @@ function filterExportFiles(
     filtered[filePath] = content;
   }
 
-  const extensionEntry = filtered[paperclipExtensionPath];
-  if (selectedFiles.has(paperclipExtensionPath) && typeof extensionEntry === "string") {
-    filtered[paperclipExtensionPath] = filterPortableExtensionYaml(
+  const extensionEntry = filtered[pilibalaExtensionPath];
+  if (selectedFiles.has(pilibalaExtensionPath) && typeof extensionEntry === "string") {
+    filtered[pilibalaExtensionPath] = filterPortableExtensionYaml(
       extensionEntry,
       selectedFiles,
       filtered,
-      paperclipExtensionPath,
+      pilibalaExtensionPath,
     );
   }
 
   return filtered;
 }
 
-function findPaperclipExtensionPath(files: Record<string, CompanyPortabilityFileEntry>) {
-  if (typeof files[".paperclip.yaml"] === "string") return ".paperclip.yaml";
-  if (typeof files[".paperclip.yml"] === "string") return ".paperclip.yml";
-  return Object.keys(files).find((entry) => entry.endsWith("/.paperclip.yaml") || entry.endsWith("/.paperclip.yml")) ?? null;
+function findPilibalaExtensionPath(files: Record<string, CompanyPortabilityFileEntry>) {
+  if (typeof files[".pilibala.yaml"] === "string") return ".pilibala.yaml";
+  if (typeof files[".pilibala.yml"] === "string") return ".pilibala.yml";
+  return Object.keys(files).find((entry) => entry.endsWith("/.pilibala.yaml") || entry.endsWith("/.pilibala.yml")) ?? null;
 }
 
 function ensureMarkdownPath(pathValue: string) {
@@ -2273,7 +2273,7 @@ function normalizePortableConfig(
       key === "instructionsEntryFile" ||
       key === "promptTemplate" ||
       key === "bootstrapPromptTemplate" || // deprecated — kept for backward compat
-      key === "paperclipSkillSync"
+      key === "pilibalaSkillSync"
     ) continue;
     if (key === "env") continue;
     next[key] = entry;
@@ -2644,15 +2644,15 @@ async function resolveBundledSkillsCommit() {
 
 async function buildSkillSourceEntry(skill: CompanySkill) {
   const metadata = isPlainRecord(skill.metadata) ? skill.metadata : null;
-  if (asString(metadata?.sourceKind) === "paperclip_bundled") {
+  if (asString(metadata?.sourceKind) === "pilibala_bundled") {
     const commit = await resolveBundledSkillsCommit();
     return {
       kind: "github-dir",
-      repo: "paperclipai/paperclip",
+      repo: "pilibalaai/pilibala",
       path: `skills/${skill.slug}`,
       commit,
       trackingRef: "master",
-      url: `https://github.com/paperclipai/paperclip/tree/master/skills/${skill.slug}`,
+      url: `https://github.com/pilibalaai/pilibala/tree/master/skills/${skill.slug}`,
     };
   }
 
@@ -2683,10 +2683,10 @@ async function buildSkillSourceEntry(skill: CompanySkill) {
 
 function shouldReferenceSkillOnExport(skill: CompanySkill, expandReferencedSkills: boolean) {
   const metadata = isPlainRecord(skill.metadata) ? skill.metadata : null;
-  // Bundled Paperclip skills ship with every build and may contain executable
+  // Bundled Pilibala skills ship with every build and may contain executable
   // scripts that import policy rejects when expanded; the target re-resolves
   // them from its own catalog via the pinned reference stub instead.
-  if (asString(metadata?.sourceKind) === "paperclip_bundled") return true;
+  if (asString(metadata?.sourceKind) === "pilibala_bundled") return true;
   if (expandReferencedSkills) return false;
   return skill.sourceType === "github" || skill.sourceType === "skills_sh" || skill.sourceType === "url";
 }
@@ -2721,9 +2721,9 @@ async function withSkillSourceMetadata(skill: CompanySkill, markdown: string) {
   }
   const catalogProvenance = buildPortableCatalogProvenance(skill);
   metadata.skillKey = skill.key;
-  metadata.paperclipSkillKey = skill.key;
-  metadata.paperclip = {
-    ...(isPlainRecord(metadata.paperclip) ? metadata.paperclip : {}),
+  metadata.pilibalaSkillKey = skill.key;
+  metadata.pilibala = {
+    ...(isPlainRecord(metadata.pilibala) ? metadata.pilibala : {}),
     skillKey: skill.key,
     slug: skill.slug,
     ...(catalogProvenance ? { catalog: catalogProvenance } : {}),
@@ -3118,26 +3118,26 @@ function buildManifestFromPackageFiles(
   }
   const companyDoc = parseFrontmatterMarkdown(companyMarkdown);
   const companyFrontmatter = companyDoc.frontmatter;
-  const paperclipExtensionPath = findPaperclipExtensionPath(normalizedFiles);
-  const paperclipExtension = paperclipExtensionPath
-    ? parseYamlFile(readPortableTextFile(normalizedFiles, paperclipExtensionPath) ?? "")
+  const pilibalaExtensionPath = findPilibalaExtensionPath(normalizedFiles);
+  const pilibalaExtension = pilibalaExtensionPath
+    ? parseYamlFile(readPortableTextFile(normalizedFiles, pilibalaExtensionPath) ?? "")
     : {};
-  const declaredSchemaVersion = asInteger(paperclipExtension.schemaVersion);
+  const declaredSchemaVersion = asInteger(pilibalaExtension.schemaVersion);
   const bundleSchemaVersion = declaredSchemaVersion !== null && declaredSchemaVersion > 0
     ? declaredSchemaVersion
     : UNSTAMPED_BUNDLE_SCHEMA_VERSION;
   if (bundleSchemaVersion > BUNDLE_SCHEMA_VERSION) {
-    throw unprocessable(`Company package declares schemaVersion ${bundleSchemaVersion}, which was produced by a newer Paperclip; this board reads up to schemaVersion ${BUNDLE_SCHEMA_VERSION}.`);
+    throw unprocessable(`Company package declares schemaVersion ${bundleSchemaVersion}, which was produced by a newer Pilibala; this board reads up to schemaVersion ${BUNDLE_SCHEMA_VERSION}.`);
   }
-  const paperclipCompany = isPlainRecord(paperclipExtension.company) ? paperclipExtension.company : {};
-  const paperclipSidebar = normalizePortableSidebarOrder(paperclipExtension.sidebar);
-  const paperclipLabels = normalizePortableLabelDefinitions(paperclipExtension.labels);
-  const paperclipBlobs = normalizePortableBlobIndex(paperclipExtension.blobs);
-  const paperclipEmbeddedAssets = normalizePortableEmbeddedAssets(paperclipExtension.embeddedAssets);
-  const paperclipAgents = isPlainRecord(paperclipExtension.agents) ? paperclipExtension.agents : {};
-  const paperclipProjects = isPlainRecord(paperclipExtension.projects) ? paperclipExtension.projects : {};
-  const paperclipTasks = isPlainRecord(paperclipExtension.tasks) ? paperclipExtension.tasks : {};
-  const paperclipRoutines = isPlainRecord(paperclipExtension.routines) ? paperclipExtension.routines : {};
+  const pilibalaCompany = isPlainRecord(pilibalaExtension.company) ? pilibalaExtension.company : {};
+  const pilibalaSidebar = normalizePortableSidebarOrder(pilibalaExtension.sidebar);
+  const pilibalaLabels = normalizePortableLabelDefinitions(pilibalaExtension.labels);
+  const pilibalaBlobs = normalizePortableBlobIndex(pilibalaExtension.blobs);
+  const pilibalaEmbeddedAssets = normalizePortableEmbeddedAssets(pilibalaExtension.embeddedAssets);
+  const pilibalaAgents = isPlainRecord(pilibalaExtension.agents) ? pilibalaExtension.agents : {};
+  const pilibalaProjects = isPlainRecord(pilibalaExtension.projects) ? pilibalaExtension.projects : {};
+  const pilibalaTasks = isPlainRecord(pilibalaExtension.tasks) ? pilibalaExtension.tasks : {};
+  const pilibalaRoutines = isPlainRecord(pilibalaExtension.routines) ? pilibalaExtension.routines : {};
   const companyName =
     asString(companyFrontmatter.name)
     ?? opts?.sourceLabel?.companyName
@@ -3192,28 +3192,28 @@ function buildManifestFromPackageFiles(
       path: resolvedCompanyPath,
       name: companyName,
       description: asString(companyFrontmatter.description),
-      logoPath: asString(paperclipCompany.logoPath) ?? asString(paperclipCompany.logo),
+      logoPath: asString(pilibalaCompany.logoPath) ?? asString(pilibalaCompany.logo),
       requireBoardApprovalForNewAgents:
-        typeof paperclipCompany.requireBoardApprovalForNewAgents === "boolean"
-          ? paperclipCompany.requireBoardApprovalForNewAgents
+        typeof pilibalaCompany.requireBoardApprovalForNewAgents === "boolean"
+          ? pilibalaCompany.requireBoardApprovalForNewAgents
           : readCompanyApprovalDefault(companyFrontmatter),
       feedbackDataSharingEnabled:
-        typeof paperclipCompany.feedbackDataSharingEnabled === "boolean"
-          ? paperclipCompany.feedbackDataSharingEnabled
+        typeof pilibalaCompany.feedbackDataSharingEnabled === "boolean"
+          ? pilibalaCompany.feedbackDataSharingEnabled
           : false,
       feedbackDataSharingConsentAt:
-        typeof paperclipCompany.feedbackDataSharingConsentAt === "string"
-          ? paperclipCompany.feedbackDataSharingConsentAt
+        typeof pilibalaCompany.feedbackDataSharingConsentAt === "string"
+          ? pilibalaCompany.feedbackDataSharingConsentAt
           : null,
       feedbackDataSharingConsentByUserId:
-        asString(paperclipCompany.feedbackDataSharingConsentByUserId),
+        asString(pilibalaCompany.feedbackDataSharingConsentByUserId),
       feedbackDataSharingTermsVersion:
-        asString(paperclipCompany.feedbackDataSharingTermsVersion),
+        asString(pilibalaCompany.feedbackDataSharingTermsVersion),
     },
-    sidebar: paperclipSidebar,
-    labels: paperclipLabels,
-    blobs: paperclipBlobs,
-    embeddedAssets: paperclipEmbeddedAssets,
+    sidebar: pilibalaSidebar,
+    labels: pilibalaLabels,
+    blobs: pilibalaBlobs,
+    embeddedAssets: pilibalaEmbeddedAssets,
     agents: [],
     skills: [],
     projects: [],
@@ -3235,11 +3235,11 @@ function buildManifestFromPackageFiles(
     const frontmatter = agentDoc.frontmatter;
     const fallbackSlug = normalizeAgentUrlKey(path.posix.basename(path.posix.dirname(agentPath))) ?? "agent";
     const slug = asString(frontmatter.slug) ?? fallbackSlug;
-    const extension = isPlainRecord(paperclipAgents[slug]) ? paperclipAgents[slug] : {};
+    const extension = isPlainRecord(pilibalaAgents[slug]) ? pilibalaAgents[slug] : {};
     const extensionAdapter = isPlainRecord(extension.adapter) ? extension.adapter : null;
     const runner = extensionAdapter?.runner;
-    if (runner !== undefined && (typeof runner !== "string" || !["auto", "paperclip", "legacy"].includes(runner))) {
-      throw unprocessable(`Invalid runner choice for agent ${slug}. Use auto, paperclip, or legacy.`, {
+    if (runner !== undefined && (typeof runner !== "string" || !["auto", "pilibala", "legacy"].includes(runner))) {
+      throw unprocessable(`Invalid runner choice for agent ${slug}. Use auto, pilibala, or legacy.`, {
         code: "agent_runner_choice_invalid", field: `agents.${slug}.adapter.runner`,
       });
     }
@@ -3330,10 +3330,10 @@ function buildManifestFromPackageFiles(
       const sourceHostname = asString(primarySource?.hostname) || "github.com";
       const [owner, repoName] = (repo ?? "").split("/");
       const canonicalKey = readSkillKey(frontmatter);
-      const normalizedSourceKind = owner === "paperclipai"
-        && repoName === "paperclip"
-        && canonicalKey?.startsWith("paperclipai/paperclip/")
-        ? "paperclip_bundled"
+      const normalizedSourceKind = owner === "pilibalaai"
+        && repoName === "pilibala"
+        && canonicalKey?.startsWith("pilibalaai/pilibala/")
+        ? "pilibala_bundled"
         : "github";
       sourceType = "github";
       sourceLocator = asString(primarySource?.url)
@@ -3399,7 +3399,7 @@ function buildManifestFromPackageFiles(
       projectPath,
     );
     const slug = asString(frontmatter.slug) ?? fallbackSlug;
-    const extension = isPlainRecord(paperclipProjects[slug]) ? paperclipProjects[slug] : {};
+    const extension = isPlainRecord(pilibalaProjects[slug]) ? pilibalaProjects[slug] : {};
     const workspaceExtensions = isPlainRecord(extension.workspaces) ? extension.workspaces : {};
     const workspaces = Object.entries(workspaceExtensions)
       .map(([workspaceKey, entry]) => normalizePortableProjectWorkspaceExtension(workspaceKey, entry))
@@ -3438,9 +3438,9 @@ function buildManifestFromPackageFiles(
     const frontmatter = taskDoc.frontmatter;
     const fallbackSlug = normalizeAgentUrlKey(path.posix.basename(path.posix.dirname(taskPath))) ?? "task";
     const slug = asString(frontmatter.slug) ?? fallbackSlug;
-    const extension = isPlainRecord(paperclipTasks[slug]) ? paperclipTasks[slug] : {};
-    const routineExtension = normalizeRoutineExtension(paperclipRoutines[slug]);
-    const routineExtensionRaw = isPlainRecord(paperclipRoutines[slug]) ? paperclipRoutines[slug] : {};
+    const extension = isPlainRecord(pilibalaTasks[slug]) ? pilibalaTasks[slug] : {};
+    const routineExtension = normalizeRoutineExtension(pilibalaRoutines[slug]);
+    const routineExtensionRaw = isPlainRecord(pilibalaRoutines[slug]) ? pilibalaRoutines[slug] : {};
     const schedule = isPlainRecord(frontmatter.schedule) ? frontmatter.schedule : null;
     const legacyRecurrence = schedule && isPlainRecord(schedule.recurrence)
       ? schedule.recurrence
@@ -3580,7 +3580,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
   const secrets = secretService(db);
   const documentsSvc = documentService(db);
   const workProductsSvc = workProductService(db);
-  const strictSecretsMode = process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true";
+  const strictSecretsMode = process.env.PILIBALA_SECRETS_STRICT_MODE === "true";
   const defaultSecretProvider = getConfiguredSecretProvider();
 
   async function applyImportedAgentPermissionGrants(
@@ -3620,20 +3620,20 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
     adapterType: string,
     adapterConfig: Record<string, unknown>,
   ) {
-    if (adapterType === "paperclip_runner") {
+    if (adapterType === "pilibala_runner") {
       let profile;
       try {
         if (adapterConfig.provider === "muse") {
-          validatePaperclipRunnerMuseConfig(adapterConfig, false);
+          validatePilibalaRunnerMuseConfig(adapterConfig, false);
           return;
         }
         if (adapterConfig.provider === "openai_dot") {
-          validatePaperclipRunnerDotConfig(adapterConfig, false);
+          validatePilibalaRunnerDotConfig(adapterConfig, false);
           return;
         }
-        profile = resolvePaperclipRunnerProviderProfile(adapterConfig);
+        profile = resolvePilibalaRunnerProviderProfile(adapterConfig);
       } catch (error) {
-        if (error instanceof PaperclipRunnerProviderProfileError) {
+        if (error instanceof PilibalaRunnerProviderProfileError) {
           throw unprocessable(error.message, { code: error.code });
         }
         throw error;
@@ -3678,7 +3678,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
     if (mode === "agent_safe" && IMPORT_FORBIDDEN_ADAPTER_TYPES.has(effectiveAdapterType)) {
       throw forbidden(`Adapter type "${effectiveAdapterType}" is not allowed in safe imports`);
     }
-    const nextAdapterConfig = writePaperclipSkillSyncPreference(
+    const nextAdapterConfig = writePilibalaSkillSyncPreference(
       applyImportAdapterRunDefaults(effectiveAdapterType, adapterConfig),
       desiredSkills,
     );
@@ -3834,8 +3834,8 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
         return (
           relative.endsWith(".md") ||
           relative.startsWith("skills/") ||
-          relative === ".paperclip.yaml" ||
-          relative === ".paperclip.yml"
+          relative === ".pilibala.yaml" ||
+          relative === ".pilibala.yml"
         );
       });
     for (const repoPath of candidatePaths) {
@@ -4154,11 +4154,11 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
       }
     }
 
-    const paperclipAgentsOut: Record<string, Record<string, unknown>> = {};
-    const paperclipProjectsOut: Record<string, Record<string, unknown>> = {};
-    const paperclipTasksOut: Record<string, Record<string, unknown>> = {};
+    const pilibalaAgentsOut: Record<string, Record<string, unknown>> = {};
+    const pilibalaProjectsOut: Record<string, Record<string, unknown>> = {};
+    const pilibalaTasksOut: Record<string, Record<string, unknown>> = {};
     const unportableTaskWorkspaceRefs = new Map<string, { workspaceId: string; taskSlugs: string[] }>();
-    const paperclipRoutinesOut: Record<string, Record<string, unknown>> = {};
+    const pilibalaRoutinesOut: Record<string, Record<string, unknown>> = {};
 
     const skillByReference = new Map<string, typeof companySkillRows[number]>();
     for (const skill of companySkillRows) {
@@ -4270,7 +4270,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
             .filter((inputValue) => inputValue.agentSlug === slug),
         );
         const reportsToSlug = agent.reportsTo ? (idToSlug.get(agent.reportsTo) ?? null) : null;
-        const desiredSkills = readPaperclipSkillSyncPreference(
+        const desiredSkills = readPilibalaSkillSyncPreference(
           (agent.adapterConfig as Record<string, unknown>) ?? {},
         ).desiredSkills;
 
@@ -4317,7 +4317,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
             env: buildEnvInputMap(agentEnvInputs),
           };
         }
-        paperclipAgentsOut[slug] = isPlainRecord(extension) ? extension : {};
+        pilibalaAgentsOut[slug] = isPlainRecord(extension) ? extension : {};
       }
     }
 
@@ -4361,7 +4361,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
           env: buildEnvInputMap(projectEnvInputs),
         };
       }
-      paperclipProjectsOut[slug] = isPlainRecord(extension) ? extension : {};
+      pilibalaProjectsOut[slug] = isPlainRecord(extension) ? extension : {};
     }
 
     const referencedLabelIds = new Set<string>();
@@ -4583,7 +4583,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
           hadSchedule: issue.monitorNextCheckAt != null ? true : undefined,
         },
       });
-      paperclipTasksOut[taskSlug] = isPlainRecord(extension) ? extension : {};
+      pilibalaTasksOut[taskSlug] = isPlainRecord(extension) ? extension : {};
     }
 
     if (unexportedBlockerEdgeCount > 0) {
@@ -4634,7 +4634,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
             : undefined,
         })),
       });
-      paperclipRoutinesOut[taskSlug] = isPlainRecord(extension) ? extension : {};
+      pilibalaRoutinesOut[taskSlug] = isPlainRecord(extension) ? extension : {};
     }
 
     // Exported markdown can embed company asset images as
@@ -4667,7 +4667,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
     }
     // Comment bodies travel in the extension yaml rather than TASK.md, so
     // scan the assembled task extension entries for their references too.
-    for (const extension of Object.values(paperclipTasksOut)) {
+    for (const extension of Object.values(pilibalaTasksOut)) {
       for (const assetId of collectEmbeddedAssetIds(JSON.stringify(extension.comments ?? []))) {
         noteEmbeddedAssetReference(assetId, "tasks");
       }
@@ -4720,24 +4720,24 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
         : `${unownedEmbeddedAssetRefCount} embedded image references point at assets that are unavailable for export (missing, outside this company, or private API response snapshots); their images were not exported.`);
     }
 
-    const paperclipExtensionPath = ".paperclip.yaml";
+    const pilibalaExtensionPath = ".pilibala.yaml";
     const exportedBlobIndex = Array.from(exportedBlobs.values())
       .sort((left, right) => left.sha256.localeCompare(right.sha256));
-    const paperclipAgents = Object.fromEntries(
-      Object.entries(paperclipAgentsOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
+    const pilibalaAgents = Object.fromEntries(
+      Object.entries(pilibalaAgentsOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
     );
-    const paperclipProjects = Object.fromEntries(
-      Object.entries(paperclipProjectsOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
+    const pilibalaProjects = Object.fromEntries(
+      Object.entries(pilibalaProjectsOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
     );
-    const paperclipTasks = Object.fromEntries(
-      Object.entries(paperclipTasksOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
+    const pilibalaTasks = Object.fromEntries(
+      Object.entries(pilibalaTasksOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
     );
-    const paperclipRoutines = Object.fromEntries(
-      Object.entries(paperclipRoutinesOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
+    const pilibalaRoutines = Object.fromEntries(
+      Object.entries(pilibalaRoutinesOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
     );
-    files[paperclipExtensionPath] = buildYamlFile(
+    files[pilibalaExtensionPath] = buildYamlFile(
       {
-        schema: "paperclip/v1",
+        schema: "pilibala/v1",
         schemaVersion: BUNDLE_SCHEMA_VERSION,
         company: stripEmptyValues({
           logoPath: companyLogoPath,
@@ -4751,15 +4751,15 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
         labels: exportedLabels.length > 0 ? exportedLabels : undefined,
         blobs: exportedBlobIndex.length > 0 ? exportedBlobIndex : undefined,
         embeddedAssets: embeddedAssetIndex.length > 0 ? embeddedAssetIndex : undefined,
-        agents: Object.keys(paperclipAgents).length > 0 ? paperclipAgents : undefined,
-        projects: Object.keys(paperclipProjects).length > 0 ? paperclipProjects : undefined,
-        tasks: Object.keys(paperclipTasks).length > 0 ? paperclipTasks : undefined,
-        routines: Object.keys(paperclipRoutines).length > 0 ? paperclipRoutines : undefined,
+        agents: Object.keys(pilibalaAgents).length > 0 ? pilibalaAgents : undefined,
+        projects: Object.keys(pilibalaProjects).length > 0 ? pilibalaProjects : undefined,
+        tasks: Object.keys(pilibalaTasks).length > 0 ? pilibalaTasks : undefined,
+        routines: Object.keys(pilibalaRoutines).length > 0 ? pilibalaRoutines : undefined,
       },
       { preserveEmptyStrings: true },
     );
 
-    let finalFiles = filterExportFiles(files, input.selectedFiles, paperclipExtensionPath);
+    let finalFiles = filterExportFiles(files, input.selectedFiles, pilibalaExtensionPath);
     let resolved = buildManifestFromPackageFiles(finalFiles, {
       sourceLabel: {
         companyId: company.id,
@@ -4815,7 +4815,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
       manifest: resolved.manifest,
       files: finalFiles,
       warnings: resolved.warnings,
-      paperclipExtensionPath,
+      pilibalaExtensionPath,
     };
   }
 
@@ -5294,23 +5294,23 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
       const runnerSelections = sourceManifest.agents.filter((agent) =>
         importedAgentSlugs.has(agent.slug)
         && (input.adapterOverrides?.[agent.slug]?.adapterType ?? agent.adapterType)
-          === "paperclip_runner",
+          === "pilibala_runner",
       );
       if (runnerSelections.length > 0) {
         const experimental = await instanceSettingsService(db).getExperimental();
         for (const agent of runnerSelections) {
           const config = input.adapterOverrides?.[agent.slug]?.adapterConfig ?? agent.adapterConfig;
           if (config.provider === "muse") {
-            if (experimental.enableMuse !== true || experimental.enableNativeRunner !== true) throw unprocessable("Muse and Paperclip Runner must be enabled before importing a Muse agent.", {code:"paperclip_runner_muse_disabled"});
+            if (experimental.enableMuse !== true || experimental.enableNativeRunner !== true) throw unprocessable("Muse and Pilibala Runner must be enabled before importing a Muse agent.", {code:"pilibala_runner_muse_disabled"});
           } else if (config.provider === "openai_dot") {
             if (experimental.enableOpenAiDot !== true) throw unprocessable(
               "OpenAI Dot is experimental and disabled on this instance.",
-              { code: "paperclip_runner_dot_disabled" },
+              { code: "pilibala_runner_dot_disabled" },
             );
           } else if (config.provider !== "codex" && config.provider !== undefined && experimental.enableNativeRunner !== true) {
             throw unprocessable(
-              "Paperclip Runner is experimental and disabled on this instance.",
-              { code: "paperclip_runner_rollout_disabled" },
+              "Pilibala Runner is experimental and disabled on this instance.",
+              { code: "pilibala_runner_rollout_disabled" },
             );
           }
         }
@@ -5642,7 +5642,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
           let selectedAdapterType = adapterOverride?.adapterType ?? manifestAgent.adapterType;
           const selectedHarness = agentHarnessType(selectedAdapterType, baseAdapterConfig);
           let runner = adapterOverride?.runner;
-          if (runner === undefined && adapterOverride?.adapterType !== "paperclip_runner") {
+          if (runner === undefined && adapterOverride?.adapterType !== "pilibala_runner") {
             if (selectedHarness === agentHarnessType(manifestAgent.adapterType, manifestAgent.adapterConfig)) {
               runner = manifestAgent.runner;
             }
@@ -5651,12 +5651,12 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
               runner = agentRunner(existingImportAgent.adapterType);
             }
           }
-          const retainedNative = runner === "paperclip" && selectedHarness === "codex_local"
-            ? [manifestAgent, existingImportAgent].find((agent) => agent?.adapterType === "paperclip_runner"
+          const retainedNative = runner === "pilibala" && selectedHarness === "codex_local"
+            ? [manifestAgent, existingImportAgent].find((agent) => agent?.adapterType === "pilibala_runner"
               && agentHarnessType(agent.adapterType, agent.adapterConfig) === selectedHarness)
             : undefined;
           if (retainedNative) {
-            selectedAdapterType = "paperclip_runner";
+            selectedAdapterType = "pilibala_runner";
             for (const field of ["provider", "acpxAgent", "acpxMode"]) {
               if (retainedNative.adapterConfig[field] !== undefined) baseAdapterConfig[field] = retainedNative.adapterConfig[field];
             }

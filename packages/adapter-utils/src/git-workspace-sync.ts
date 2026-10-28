@@ -23,7 +23,7 @@ export interface GitWorkspaceSnapshot {
   repositories?: Array<{ path: string; snapshot: GitWorkspaceSnapshot }>;
 }
 
-export const PROJECT_REPOSITORIES_DIR = ".paperclip-repositories";
+export const PROJECT_REPOSITORIES_DIR = ".pilibala-repositories";
 
 export interface ExpensiveWorkspaceGitInput {
   localDir: string;
@@ -86,9 +86,9 @@ export const GIT_ARCHIVE_EXCLUDES = [".git", ".git/*"] as const;
  */
 export const GIT_SYNC_COMMIT_IDENTITY_ARGS = [
   "-c",
-  "user.name=Paperclip",
+  "user.name=Pilibala",
   "-c",
-  "user.email=noreply@paperclip.ing",
+  "user.email=noreply@pilibala.ing",
 ] as const;
 
 function shellQuote(value: string) {
@@ -165,7 +165,7 @@ export async function disposeGitWorkspaceSnapshot(snapshot: GitWorkspaceSnapshot
 
 /** Snapshot deadlines include disk backpressure. Operators can allow up to 24h. */
 export function workspaceSnapshotTimeoutMs(): number {
-  const configured = Number(process.env.PAPERCLIP_WORKSPACE_GIT_SNAPSHOT_TIMEOUT_MS);
+  const configured = Number(process.env.PILIBALA_WORKSPACE_GIT_SNAPSHOT_TIMEOUT_MS);
   return Number.isFinite(configured) && configured >= 1000 ? Math.min(configured, 86_400_000) : 30 * 60_000;
 }
 
@@ -604,8 +604,8 @@ export async function withShallowGitWorkspaceClone<T>(
   },
   fn: (cloneDir: string) => Promise<T>,
 ): Promise<T> {
-  const cloneDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-git-workspace-"));
-  const tempRef = `refs/paperclip/git-sync/import/${randomUUID()}`;
+  const cloneDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-git-workspace-"));
+  const tempRef = `refs/pilibala/git-sync/import/${randomUUID()}`;
   try {
     const originUrl = input.snapshot.originUrl !== undefined ? input.snapshot.originUrl : await readSanitizedOriginRemoteUrl(input.localDir);
     await runLocalGit(input.localDir, ["update-ref", tempRef, input.snapshot.headCommit], {
@@ -672,11 +672,11 @@ export async function withShallowGitWorkspaceClone<T>(
 }
 
 export function createImportedGitRef(scope = "remote"): string {
-  return `refs/paperclip/git-sync/imported/${scope}/${randomUUID()}`;
+  return `refs/pilibala/git-sync/imported/${scope}/${randomUUID()}`;
 }
 
 export function createRemoteGitExportRef(scope = "remote"): string {
-  return `refs/paperclip/git-sync/export/${scope}/${randomUUID()}`;
+  return `refs/pilibala/git-sync/export/${scope}/${randomUUID()}`;
 }
 
 export async function deleteLocalGitRef(input: {
@@ -1005,7 +1005,7 @@ export async function integrateImportedGitHead(input: {
         localDir: input.localDir,
         currentHead,
         importedHead: input.importedHead,
-        syncLabel: "Paperclip remote git sync",
+        syncLabel: "Pilibala remote git sync",
       });
       try {
         await updateLocalGitHead({
@@ -1046,7 +1046,7 @@ export async function integrateImportedGitHead(input: {
         "-p",
         input.importedHead,
         "-m",
-        `Paperclip remote git sync merge ${input.importedHead.slice(0, 12)}`,
+        `Pilibala remote git sync merge ${input.importedHead.slice(0, 12)}`,
       ],
       {
         timeout: 60_000,
@@ -1097,6 +1097,6 @@ export async function resetLocalGitIndexToHead(input: {
     throw new Error("Workspace restore left staged git index changes after reset");
   }
   if (input.checkWorkingTreeClean && await hasDiff(["diff", "--quiet", "HEAD", "--"])) {
-    console.warn("[paperclip] Workspace restore preserved local working tree changes after clean sandbox restore.");
+    console.warn("[pilibala] Workspace restore preserved local working tree changes after clean sandbox restore.");
   }
 }

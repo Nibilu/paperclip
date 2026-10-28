@@ -1,4 +1,4 @@
-import { agents, companies, createDb, type Db } from "@paperclipai/db";
+import { agents, companies, createDb, type Db } from "@pilibalaai/db";
 import { asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { startAgentLifecycle } from "../index.js";
@@ -10,7 +10,7 @@ const support = await getEmbeddedPostgresTestSupport();
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: Db;
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-lifecycle-policy-");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-lifecycle-policy-");
     db = createDb(database.connectionString);
   }, 90_000);
   afterAll(async () => { await database?.cleanup(); });

@@ -3,8 +3,8 @@ import fs from "node:fs/promises";
 import { assertExecutionWorkspaceRootReadAccess } from "./execution-workspace-repositories.js";
 import path from "node:path";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { executionWorkspaces, issues, projects, projectWorkspaces } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { executionWorkspaces, issues, projects, projectWorkspaces } from "@pilibalaai/db";
 import type {
   NormalizedWorkspaceFileAvailabilityQuery,
   ResolvedWorkspaceResource,
@@ -18,7 +18,7 @@ import type {
   WorkspaceFilePreviewKind,
   WorkspaceFileSelector,
   WorkspaceFileWorkspaceKind,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { HttpError, notFound, unprocessable } from "../errors.js";
 import {
   isWorkspaceGitScanError,
@@ -45,7 +45,7 @@ export interface WorkspaceFileScanContext {
 
 const DENIED_SEGMENTS = new Set([
   ".git",
-  ".paperclip",
+  ".pilibala",
   "node_modules",
   ".pnpm-store",
   ".yarn",

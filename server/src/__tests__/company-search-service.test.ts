@@ -14,8 +14,8 @@ import {
   labels,
   projectAccessMembers,
   projects,
-} from "@paperclipai/db";
-import { companySearchQuerySchema, COMPANY_SEARCH_MAX_QUERY_LENGTH } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { companySearchQuerySchema, COMPANY_SEARCH_MAX_QUERY_LENGTH } from "@pilibalaai/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -80,7 +80,7 @@ describeEmbeddedPostgres("companySearchService", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-company-search-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-company-search-");
     db = createDb(tempDb.connectionString);
     svc = companySearchService(db);
     await db.execute(sql.raw("CREATE EXTENSION IF NOT EXISTS pg_trgm"));
@@ -103,7 +103,7 @@ describeEmbeddedPostgres("companySearchService", () => {
     await tempDb?.cleanup();
   });
 
-  async function createCompany(name = "Paperclip") {
+  async function createCompany(name = "Pilibala") {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
@@ -821,8 +821,8 @@ describeEmbeddedPostgres("companySearchService", () => {
   });
 
   it("pushes private issue filtering into list, count, and company search queries", async () => {
-    const previousMode = process.env.PAPERCLIP_ISSUE_PRIVACY_MODE;
-    process.env.PAPERCLIP_ISSUE_PRIVACY_MODE = "enforce";
+    const previousMode = process.env.PILIBALA_ISSUE_PRIVACY_MODE;
+    process.env.PILIBALA_ISSUE_PRIVACY_MODE = "enforce";
     try {
       const companyId = await createCompany();
       const ownerId = `owner-${randomUUID()}`;
@@ -869,14 +869,14 @@ describeEmbeddedPostgres("companySearchService", () => {
       );
       expect(result.results.map((row) => row.id)).toEqual([openId]);
     } finally {
-      if (previousMode === undefined) delete process.env.PAPERCLIP_ISSUE_PRIVACY_MODE;
-      else process.env.PAPERCLIP_ISSUE_PRIVACY_MODE = previousMode;
+      if (previousMode === undefined) delete process.env.PILIBALA_ISSUE_PRIVACY_MODE;
+      else process.env.PILIBALA_ISSUE_PRIVACY_MODE = previousMode;
     }
   });
 
   it("pushes private project filtering into project search and counts", async () => {
-    const previousMode = process.env.PAPERCLIP_ISSUE_PRIVACY_MODE;
-    process.env.PAPERCLIP_ISSUE_PRIVACY_MODE = "enforce";
+    const previousMode = process.env.PILIBALA_ISSUE_PRIVACY_MODE;
+    process.env.PILIBALA_ISSUE_PRIVACY_MODE = "enforce";
     try {
       const companyId = await createCompany();
       const memberId = `member-${randomUUID()}`;
@@ -910,8 +910,8 @@ describeEmbeddedPostgres("companySearchService", () => {
       expect(memberResult.results.map((row) => row.id)).toEqual(expect.arrayContaining([openId, privateId]));
       expect(memberResult.countsByType.project).toBe(2);
     } finally {
-      if (previousMode === undefined) delete process.env.PAPERCLIP_ISSUE_PRIVACY_MODE;
-      else process.env.PAPERCLIP_ISSUE_PRIVACY_MODE = previousMode;
+      if (previousMode === undefined) delete process.env.PILIBALA_ISSUE_PRIVACY_MODE;
+      else process.env.PILIBALA_ISSUE_PRIVACY_MODE = previousMode;
     }
   });
 });

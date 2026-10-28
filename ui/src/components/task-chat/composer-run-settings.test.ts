@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import {
   composerCatalogProvider, composerDefaultModel, composerEfforts, composerFastAvailable, mergeComposerRunSettings,
   readComposerRunSettings, supportsComposerModel,
@@ -19,14 +19,14 @@ describe("composer run settings", () => {
     expect(composerDefaultModel({ ...agent("claude_local"), adapterConfig: { env: { ANTHROPIC_MODEL: { type: "secret_ref", secretId: "model-secret" } } } })).toBe("");
     expect(composerDefaultModel({ ...agent("codex_local"), adapterConfig: { model: " private-codex " } })).toBe("private-codex");
     expect(composerDefaultModel(agent("codex_local"))).toBe("");
-    expect(composerDefaultModel(agent("paperclip_runner", "codex"))).toBe("gpt-5.6-sol");
+    expect(composerDefaultModel(agent("pilibala_runner", "codex"))).toBe("gpt-5.6-sol");
     expect(composerDefaultModel(agent("grok_local"))).toBe("grok-build");
     expect(composerDefaultModel(undefined)).toBe("");
   });
   it("shows only effort levels known for the selected harness and model", () => {
     expect(composerEfforts(agent("codex_local"), "gpt-6-astra", [])).toContain("ultra");
-    expect(composerEfforts(agent("paperclip_runner", "codex"), "gpt-6-astra", [])).toContain("ultra");
-    expect(composerEfforts(agent("paperclip_runner", "opencode"), "gpt-6-astra", [])).toEqual([]);
+    expect(composerEfforts(agent("pilibala_runner", "codex"), "gpt-6-astra", [])).toContain("ultra");
+    expect(composerEfforts(agent("pilibala_runner", "opencode"), "gpt-6-astra", [])).toEqual([]);
     expect(composerEfforts(agent("codex_local"), "custom-private-model", [])).toEqual([]);
     expect(composerEfforts(agent("opencode_local"), "openrouter/x/y", ["openrouter/x/y"])).toEqual([]);
     expect(composerEfforts(agent("claude_local"), "claude-sonnet-5", ["claude-sonnet-5"])).toEqual(["low", "medium", "high", "xhigh", "max"]);
@@ -54,9 +54,9 @@ describe("composer run settings", () => {
     expect(readComposerRunSettings({ adapterConfig: { reasoningEffort: "xhigh" } }, "codex_local").effort).toBe("xhigh");
     expect(mergeComposerRunSettings(previous, "codex_local", { model: "gpt-6-astra", effort: "ultra", fast: true }, true))
       .toEqual({ adapterConfig: { model: "gpt-6-astra", modelReasoningEffort: "ultra", fastMode: true } });
-    const runner = mergeComposerRunSettings(null, "paperclip_runner", { model: "gpt-6-astra", effort: "ultra", fast: false });
+    const runner = mergeComposerRunSettings(null, "pilibala_runner", { model: "gpt-6-astra", effort: "ultra", fast: false });
     expect(runner).toEqual({ adapterConfig: { model: "gpt-6-astra", modelReasoningEffort: "ultra" } });
-    expect(readComposerRunSettings(runner, "paperclip_runner").effort).toBe("ultra");
+    expect(readComposerRunSettings(runner, "pilibala_runner").effort).toBe("ultra");
     const grok = mergeComposerRunSettings(null, "grok_local", { model: "grok-4.7", effort: "xhigh", fast: false });
     expect(grok).toEqual({ adapterConfig: { model: "grok-4.7", reasoningEffort: "xhigh" } });
     expect(readComposerRunSettings(grok, "grok_local").effort).toBe("xhigh");

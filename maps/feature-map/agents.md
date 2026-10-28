@@ -40,7 +40,7 @@ Use the roster’s organization view; `/org` redirects to the roster in the stre
 Open an agent profile and choose **Set as my primary**. Inspect its crown on the
 profile/roster and its position in the Agents sidebar, then open a new task or Chat.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use a disposable company and supported adapter; hiring may require a formal approval.
 
@@ -50,7 +50,7 @@ Automated: [new agent page](../../ui/src/pages/NewAgent.test.tsx) and [configura
 
 Manual: Hire an agent with a distinct name and role. Complete any required approval, reload the roster, and open its configuration. Confirm manager, adapter, and model persisted; run a small task to prove execution readiness.
 
-For a new Codex hire, choose the Codex harness. Automatic selection uses Paperclip
+For a new Codex hire, choose the Codex harness. Automatic selection uses Pilibala
 Runner on a qualified selected target; Advanced offers an explicit Legacy runner
 override. Other harness defaults are unchanged. Record the persisted runner and
 underlying harness, rather than treating the displayed Codex name as execution
@@ -121,9 +121,9 @@ over the primary fallback. Opening Chat must not start execution.
 
 ### `connect-grok-bot`
 
-Choose **Invite an external agent → Grok Bot**, identify the Bot by its desktop name, connect its remote MCP plugin, configure a webhook-only routine, and verify delivery plus authenticated reply. Save & exit resumes the same agent. Keep pairing codes in browser authorization and routine credentials in Paperclip’s fields. A working Bot web URL is not required.
+Choose **Invite an external agent → Grok Bot**, identify the Bot by its desktop name, connect its remote MCP plugin, configure a webhook-only routine, and verify delivery plus authenticated reply. Save & exit resumes the same agent. Keep pairing codes in browser authorization and routine credentials in Pilibala’s fields. A working Bot web URL is not required.
 
-Prerequisites: authenticated public HTTPS, Assistant connections (MCP), Paperclip Runner and Grok Bot experimental settings. Cloud uses its normal managed Runner environment. Provider usage is unknown. Routine uncertainty blocks new assignments until explicit inspection and recovery; stopping work revokes Paperclip authority without confirming remote termination.
+Prerequisites: authenticated public HTTPS, Assistant connections (MCP), Pilibala Runner and Grok Bot experimental settings. Cloud uses its normal managed Runner environment. Provider usage is unknown. Routine uncertainty blocks new assignments until explicit inspection and recovery; stopping work revokes Pilibala authority without confirming remote termination.
 
 Evidence: source implementation and focused protocol tests; real provider assigned/proactive workflows and deployed managed acceptance remain release gates.
 ### Documentation scope: Agents, organization, and runtime setup

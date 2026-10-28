@@ -4,8 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
-import { MUSE_ASSET_VERSION, MUSE_PUBLIC_ROUTES } from "@paperclipai/shared";
-import { COMPANY_IMPORT_TRANSFERS_ROUTE_PATH } from "@paperclipai/shared/company-import-transfer";
+import { MUSE_ASSET_VERSION, MUSE_PUBLIC_ROUTES } from "@pilibalaai/shared";
+import { COMPANY_IMPORT_TRANSFERS_ROUTE_PATH } from "@pilibalaai/shared/company-import-transfer";
 import { errorHandler } from "../middleware/index.js";
 import { buildOpenApiSpec, openApiRoutes } from "../routes/openapi.js";
 
@@ -134,7 +134,7 @@ const explicitOpenApiOperationCoverageExclusions = new Set([
   "POST /mcp/runner/oauth/token",
   "POST /mcp/runner/oauth/revoke",
   // This endpoint is authenticated by the provider signature rather than by a
-  // Paperclip board/agent credential. It intentionally stays out of the public
+  // Pilibala board/agent credential. It intentionally stays out of the public
   // board API document, while this exact exclusion keeps route coverage honest.
   "POST /api/chat-webhooks/agentmail/{publicId}",
   "POST /api/chat-webhooks/{publicId}/{provider}",
@@ -362,8 +362,8 @@ describe("openapi routes", () => {
     expect(Object.keys(path)).toEqual(["post"]);
     const operation = path.post;
     expect(operation.security).toEqual([{ AgentBearerAuth: [] }]);
-    expect(operation["x-paperclip-authorization"]).toEqual({ actor: "agent", heartbeatBound: true });
-    expect(operation.description).toContain("X-Paperclip-Run-Id");
+    expect(operation["x-pilibala-authorization"]).toEqual({ actor: "agent", heartbeatBound: true });
+    expect(operation.description).toContain("X-Pilibala-Run-Id");
     const body = operation.requestBody.content["application/json"].schema;
     expect(body.additionalProperties).toBe(false);
     expect(Object.keys(body.properties).sort()).toEqual(["body", "idempotencyKey", "kind"]);
@@ -401,7 +401,7 @@ describe("openapi routes", () => {
     const dismiss = spec.paths["/api/announcements/{id}/dismiss"].post;
     for (const operation of [current, image, animation, dismiss]) {
       expect(operation.security).toEqual([{ BoardSessionAuth: [] }, { BoardApiKeyAuth: [] }]);
-      expect(operation["x-paperclip-authorization"]).toEqual({ actor: "board" });
+      expect(operation["x-pilibala-authorization"]).toEqual({ actor: "board" });
       const success = operation.responses["200"] ?? operation.responses["204"];
       expect(success.headers["Cache-Control"].schema.enum).toEqual(["private, no-store"]);
     }
@@ -429,7 +429,7 @@ describe("openapi routes", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.openapi).toBe("3.0.0");
-    expect(res.body.info.title).toBe("Paperclip API");
+    expect(res.body.info.title).toBe("Pilibala API");
     expect(res.body.paths["/api/openapi.json"].get.summary).toBe(
       "Get the generated OpenAPI document",
     );
@@ -446,7 +446,7 @@ describe("openapi routes", () => {
     });
     expect(res.body.paths["/api/health"].get.security).toEqual([]);
     expect(res.body.paths["/api/mcp/project-tools"].post.security).toEqual([{ AgentRunAuth: [] }]);
-    expect(res.body.paths["/api/mcp/project-tools"].post["x-paperclip-authorization"]).toEqual({ actor: "agent", heartbeatBound: true, taskBound: true });
+    expect(res.body.paths["/api/mcp/project-tools"].post["x-pilibala-authorization"]).toEqual({ actor: "agent", heartbeatBound: true, taskBound: true });
     expect(res.body.paths["/mcp/gateways/{gatewayPublicId}"].post.security).toEqual([]);
     expect(res.body.paths["/api/mcp/gateways/{gatewayPublicId}"]).toBeUndefined();
     expect(res.body.paths["/api/companies"].get.parameters).toContainEqual({
@@ -637,7 +637,7 @@ describe("openapi routes", () => {
         operation.security,
         `${method.toUpperCase()} ${routePath} is board-only`,
       ).toEqual(boardSecurity);
-      expect(operation["x-paperclip-authorization"]).toEqual({
+      expect(operation["x-pilibala-authorization"]).toEqual({
         actor: "board",
       });
       expect(operation.tags).toContain("chat-channels");
@@ -881,7 +881,7 @@ describe("openapi routes", () => {
     const {spec} = loadSpecRoutes();
     const start = spec.paths["/api/companies/{companyId}/voice-sessions"].post;
     expect(start.security).toEqual([{BoardSessionAuth: []}]);
-    expect(start["x-paperclip-authorization"]).toEqual({actor: "board", sessionBound: true});
+    expect(start["x-pilibala-authorization"]).toEqual({actor: "board", sessionBound: true});
     expect(start.requestBody.content["application/json"].schema.required).toEqual(expect.arrayContaining(["endpointId", "idempotencyKey"]));
     expect(start.responses["201"]).toBeDefined();
     expect(JSON.stringify(start.responses)).not.toContain("signingSecret");
@@ -926,7 +926,7 @@ describe("openapi routes", () => {
     const { spec } = loadSpecRoutes();
     const path = spec.paths["/api/companies/{companyId}/primary-agent/me"];
     for (const operation of [path.get, path.put]) {
-      expect(operation["x-paperclip-authorization"]).toEqual({ actor: "board" });
+      expect(operation["x-pilibala-authorization"]).toEqual({ actor: "board" });
       expect(operation.security).toEqual([{ BoardSessionAuth: [] }, { BoardApiKeyAuth: [] }]);
       expect(operation.responses["200"].content["application/json"].schema.required).toEqual([
         "companyId", "userId", "primaryAgentId", "initialized",
@@ -953,7 +953,7 @@ describe("openapi routes", () => {
     ];
     for (const [method, routePath] of operations) {
       const operation = spec.paths[routePath][method];
-      expect(operation["x-paperclip-authorization"]).toEqual({ actor: "board" });
+      expect(operation["x-pilibala-authorization"]).toEqual({ actor: "board" });
       expect(operation.security).toEqual([{ BoardSessionAuth: [] }, { BoardApiKeyAuth: [] }]);
       expect(operation.responses["403"]).toBeDefined();
     }
@@ -972,7 +972,7 @@ describe("openapi routes", () => {
     const { spec } = loadSpecRoutes();
     const invitations = spec.paths["/api/companies/{companyId}/dot-invitations"];
     for (const operation of [invitations.get, invitations.post]) {
-      expect(operation["x-paperclip-authorization"]).toEqual({ actor: "board" });
+      expect(operation["x-pilibala-authorization"]).toEqual({ actor: "board" });
       expect(operation.responses["200"]).toBeDefined();
     }
     expect(invitations.post.requestBody.content["application/json"].schema.additionalProperties).toBe(false);
@@ -986,7 +986,7 @@ describe("openapi routes", () => {
     const discovery = spec.paths["/api/companies/{companyId}/project-repositories"].get;
     const replacement = spec.paths["/api/projects/{id}/repositories"].put;
     for (const operation of [discovery, replacement]) {
-      expect(operation["x-paperclip-authorization"]).toEqual({ actor: "board" });
+      expect(operation["x-pilibala-authorization"]).toEqual({ actor: "board" });
       expect(operation.security).toEqual([{ BoardSessionAuth: [] }, { BoardApiKeyAuth: [] }]);
     }
     expect(replacement.requestBody.content["application/json"].schema.required).toContain("repositoryIds");
@@ -997,7 +997,7 @@ describe("openapi routes", () => {
     const { spec } = loadSpecRoutes();
     for (const [suffix, method] of [["draft", "put"], ["setup", "post"], ["identity/start", "post"], ["identity/confirm", "post"]]) {
       const operation = spec.paths[`/api/chat-endpoints/{endpointId}/github/${suffix}`][method];
-      expect(operation["x-paperclip-authorization"]).toEqual({ actor: "board" });
+      expect(operation["x-pilibala-authorization"]).toEqual({ actor: "board" });
       expect(operation.security).toEqual([{ BoardSessionAuth: [] }, { BoardApiKeyAuth: [] }]);
     }
     const registration = spec.paths["/api/chat-endpoints/{endpointId}/github/registration"].post;
@@ -1014,7 +1014,7 @@ describe("openapi routes", () => {
     const setup = spec.paths[root + "setup"].post.responses["200"].content["application/json"].schema;
     expect(setup.properties.restartableRegistrationId.format).toBe("uuid");
     const restart = spec.paths[root + "registration/restart"].post;
-    expect(restart["x-paperclip-authorization"]).toEqual({ actor: "board" });
+    expect(restart["x-pilibala-authorization"]).toEqual({ actor: "board" });
     const restartInput = restart.requestBody.content["application/json"].schema;
     expect(restartInput.required).toEqual(expect.arrayContaining(["registrationId", "appNotCreated"]));
     expect(restartInput.properties.appNotCreated.enum ?? [restartInput.properties.appNotCreated.const]).toEqual([true]);
@@ -1028,7 +1028,7 @@ describe("openapi routes", () => {
     const page = spec.paths[root + "repositories"].get;
     expect(page.parameters.map((param: { name: string }) => param.name)).toEqual(expect.arrayContaining(["endpointId", "offset", "limit", "search"]));
     expect(page.responses["200"].content["application/json"].schema.properties).toHaveProperty("totalCount");
-    expect(spec.paths[root + "repositories/access"].put["x-paperclip-authorization"]).toEqual({ actor: "board" });
+    expect(spec.paths[root + "repositories/access"].put["x-pilibala-authorization"]).toEqual({ actor: "board" });
     const review = spec.paths[root + "reviews/{reviewId}"].get;
     expect(review.parameters.map((param: { name: string }) => param.name)).toEqual(["endpointId", "reviewId"]);
     expect(review.responses["404"]).toBeDefined();
@@ -1046,7 +1046,7 @@ describe("openapi routes", () => {
       { BoardApiKeyAuth: [] },
     ]);
     expect(
-      spec.paths["/api/plugins/install"].post["x-paperclip-authorization"],
+      spec.paths["/api/plugins/install"].post["x-pilibala-authorization"],
     ).toEqual({
       actor: "board",
       instanceAdmin: true,
@@ -1057,7 +1057,7 @@ describe("openapi routes", () => {
     ).toEqual([{ BoardSessionAuth: [] }, { BoardApiKeyAuth: [] }]);
     expect(
       spec.paths["/api/execution-workspaces/{id}/reconcile-branch"].post[
-        "x-paperclip-authorization"
+        "x-pilibala-authorization"
       ],
     ).toEqual({
       actor: "board",

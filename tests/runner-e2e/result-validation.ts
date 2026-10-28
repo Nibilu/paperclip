@@ -150,8 +150,8 @@ const matcher: Rule = (value, at) => {
 const fields = {
   publicMcp: optional(assistant),
   schema: oneOf(
-    "paperclip.runner-e2e.result/v1",
-    "paperclip.runner-e2e.result/v2",
+    "pilibala.runner-e2e.result/v1",
+    "pilibala.runner-e2e.result/v2",
   ),
   executionId: string,
   suiteId: optional(string),

@@ -227,9 +227,9 @@ describe("agent test-environment route", () => {
         provider: "daytona",
         providerLeaseId: "provider-lease-1",
         metadata: {
-          remoteCwd: "/home/user/paperclip-workspace",
+          remoteCwd: "/home/user/pilibala-workspace",
           sandboxId: "sandbox-1",
-          sandboxName: "paperclip-probe",
+          sandboxName: "pilibala-probe",
           templateKind: "snapshot",
           templateRef: "snapshot-1",
         },
@@ -240,7 +240,7 @@ describe("agent test-environment route", () => {
       },
     });
     mockEnvironmentRuntime.realizeWorkspace.mockResolvedValue({
-      cwd: "/home/user/paperclip-workspace",
+      cwd: "/home/user/pilibala-workspace",
     });
     mockResolveEnvironmentExecutionTarget.mockResolvedValue(null);
     testEnvironmentSpy.mockResolvedValue({
@@ -265,7 +265,7 @@ describe("agent test-environment route", () => {
   });
 
   it("accepts a managed Dot environment without allocating an idle sandbox", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://paperclip.example");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://pilibala.example");
     mockInstanceSettingsService.getExperimental.mockResolvedValue({
       enableManagedSandboxOnly: false,
       enableOpenAiDot: true,
@@ -273,7 +273,7 @@ describe("agent test-environment route", () => {
     mockInstanceSettingsService.get.mockResolvedValue({ defaultEnvironmentId: "11111111-1111-4111-8111-111111111111" });
     const app = await createApp();
     try {
-      const res = await request(app).post("/api/companies/company-1/adapters/paperclip_runner/test-environment")
+      const res = await request(app).post("/api/companies/company-1/adapters/pilibala_runner/test-environment")
         .send({ adapterConfig: { provider: "openai_dot", allowUnmeteredProvider: true } });
       expect(res.status, JSON.stringify(res.body)).toBe(200);
       expect(res.body.checks).toContainEqual(expect.objectContaining({ code: "dot_controller", level: "info" }));
@@ -283,15 +283,15 @@ describe("agent test-environment route", () => {
   });
 
   it("fails the Cloud Dot check without a managed sandbox instead of probing the host", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://paperclip.example");
-    vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "test-cloud");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://pilibala.example");
+    vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "test-cloud");
     mockInstanceSettingsService.getExperimental.mockResolvedValue({
       enableManagedSandboxOnly: false,
       enableOpenAiDot: true,
     });
     const app = await createApp();
     try {
-      const res = await request(app).post("/api/companies/company-1/adapters/paperclip_runner/test-environment")
+      const res = await request(app).post("/api/companies/company-1/adapters/pilibala_runner/test-environment")
         .send({ adapterConfig: { provider: "openai_dot", allowUnmeteredProvider: true } });
       expect(res.status, JSON.stringify(res.body)).toBe(200);
       expect(res.body.status).toBe("fail");
@@ -650,7 +650,7 @@ describe("agent test-environment route", () => {
     mockResolveEnvironmentExecutionTarget.mockResolvedValueOnce({
       kind: "remote",
       transport: "sandbox",
-      remoteCwd: "/home/user/paperclip-workspace",
+      remoteCwd: "/home/user/pilibala-workspace",
       providerKey: "fake-plugin",
       runner: { execute: vi.fn() },
     });
@@ -706,7 +706,7 @@ describe("agent test-environment route", () => {
         code: "sandbox_test_identity",
         level: "info",
         message: 'Environment test identity for "Sandbox QA".',
-        detail: expect.stringContaining("paperclipLeaseId=lease-1"),
+        detail: expect.stringContaining("pilibalaLeaseId=lease-1"),
       }),
       expect.objectContaining({
         code: "external_test_hello_probe_passed",
@@ -717,7 +717,7 @@ describe("agent test-environment route", () => {
     expect(res.body.checks[0].detail).toContain("providerLeaseId=provider-lease-1");
     expect(res.body.checks[0].detail).toContain("provider=daytona");
     expect(res.body.checks[0].detail).toContain("sandboxId=sandbox-1");
-    expect(res.body.checks[0].detail).toContain("sandboxName=paperclip-probe");
+    expect(res.body.checks[0].detail).toContain("sandboxName=pilibala-probe");
     expect(res.body.checks[0].detail).toContain("snapshotRef=snapshot-1");
     expect(mockReleaseRunLease).toHaveBeenCalledWith({
       environment: expect.objectContaining({ id: "11111111-1111-4111-8111-111111111111" }),
@@ -763,7 +763,7 @@ describe("agent test-environment route", () => {
     const sandboxExecutionTarget = {
       kind: "remote",
       transport: "sandbox",
-      remoteCwd: "/home/user/paperclip-workspace",
+      remoteCwd: "/home/user/pilibala-workspace",
       providerKey: "fake-plugin",
       runner: { execute: vi.fn() },
     };
@@ -778,7 +778,7 @@ describe("agent test-environment route", () => {
         envVars: {
           CLAUDE_CODE_OAUTH_TOKEN: { type: "secret_ref", secretId: "secret-1" },
           FOO: { type: "plain", value: "env-foo" },
-          PAPERCLIP_API_KEY: { type: "plain", value: "must-not-flow" },
+          PILIBALA_API_KEY: { type: "plain", value: "must-not-flow" },
         },
       });
       mockResolveEnvironmentExecutionTarget.mockResolvedValueOnce(sandboxExecutionTarget);
@@ -1011,7 +1011,7 @@ describe("agent test-environment route", () => {
       mockResolveEnvironmentExecutionTarget.mockResolvedValueOnce({
         kind: "remote",
         transport: "sandbox",
-        remoteCwd: "/home/user/paperclip-workspace",
+        remoteCwd: "/home/user/pilibala-workspace",
         providerKey: "fake-plugin",
         runner: { execute: vi.fn() },
       });

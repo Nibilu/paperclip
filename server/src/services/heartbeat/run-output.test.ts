@@ -1,5 +1,5 @@
-import type { Db } from "@paperclipai/db";
-import { heartbeatRuns } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { heartbeatRuns } from "@pilibalaai/db";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { publishLiveEventMock } = vi.hoisted(() => ({

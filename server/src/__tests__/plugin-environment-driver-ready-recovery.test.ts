@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PaperclipPluginManifestV1 } from "@paperclipai/shared";
+import type { PilibalaPluginManifestV1 } from "@pilibalaai/shared";
 import { createManagedBundledPluginWorkerRecovery } from "../app.js";
 import { listReadyPluginEnvironmentDrivers } from "../services/plugin-environment-driver.js";
 import { pluginLoader, type PluginLoader } from "../services/plugin-loader.js";
@@ -20,15 +20,15 @@ vi.mock("../services/plugin-registry.js", () => ({
 }));
 
 const PLUGIN_ID = "plugin-daytona";
-const PLUGIN_KEY = "paperclip.daytona-sandbox-provider";
+const PLUGIN_KEY = "pilibala.daytona-sandbox-provider";
 
-const manifest: PaperclipPluginManifestV1 = {
+const manifest: PilibalaPluginManifestV1 = {
   id: PLUGIN_KEY,
   apiVersion: 1,
   version: "1.0.0",
   displayName: "Daytona Sandbox Provider",
   description: "Provides Daytona-backed sandboxes.",
-  author: "Paperclip",
+  author: "Pilibala",
   categories: ["automation"],
   capabilities: ["environment.drivers.register"],
   entrypoints: { worker: "dist/worker.js" },
@@ -145,7 +145,7 @@ describe("listReadyPluginEnvironmentDrivers worker recovery", () => {
       db: {} as never,
       workerManager: worker.workerManager,
       recoverMissingWorker: {
-        pluginKeys: ["paperclip.kubernetes-sandbox-provider"],
+        pluginKeys: ["pilibala.kubernetes-sandbox-provider"],
         startWorker,
       },
     });
@@ -354,7 +354,7 @@ describe("listReadyPluginEnvironmentDrivers worker recovery", () => {
   it("lets callers suppress shared error-state writes on activation failure", async () => {
     const plugin = {
       ...createPlugin("ready"),
-      packageName: "@paperclipai/missing-sandbox-provider",
+      packageName: "@pilibalaai/missing-sandbox-provider",
       packagePath: null,
       version: "1.0.0",
     };
@@ -404,9 +404,9 @@ describe("listReadyPluginEnvironmentDrivers worker recovery", () => {
       fs.writeFileSync(
         path.join(fixtureDir, "package.json"),
         JSON.stringify({
-          name: "@paperclipai/daytona-sandbox-provider",
+          name: "@pilibalaai/daytona-sandbox-provider",
           version: "1.0.0",
-          paperclipPlugin: { manifest: "manifest.mjs" },
+          pilibalaPlugin: { manifest: "manifest.mjs" },
         }),
       );
       fs.writeFileSync(
@@ -418,7 +418,7 @@ describe("listReadyPluginEnvironmentDrivers worker recovery", () => {
 
       const plugin = {
         ...createPlugin("ready"),
-        packageName: "@paperclipai/daytona-sandbox-provider",
+        packageName: "@pilibalaai/daytona-sandbox-provider",
         packagePath: fixtureDir,
         version: "1.0.0",
       };
@@ -486,7 +486,7 @@ describe("listReadyPluginEnvironmentDrivers worker recovery", () => {
         createPlugin("ready"),
         createPlugin("ready", {
           id: "plugin-modal",
-          pluginKey: "paperclip.modal-sandbox-provider",
+          pluginKey: "pilibala.modal-sandbox-provider",
         }),
       ];
       mockRegistry.list.mockResolvedValue(plugins);
@@ -497,7 +497,7 @@ describe("listReadyPluginEnvironmentDrivers worker recovery", () => {
         db: {} as never,
         workerManager: worker.workerManager,
         recoverMissingWorker: {
-          pluginKeys: [PLUGIN_KEY, "paperclip.modal-sandbox-provider"],
+          pluginKeys: [PLUGIN_KEY, "pilibala.modal-sandbox-provider"],
           startWorker,
           timeoutMs: 25,
         },

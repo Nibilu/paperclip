@@ -22,26 +22,26 @@ const serverSrcDir = path.join(repoRoot, "server", "src");
 const serverTestsDir = path.join(repoRoot, "server", "src", "__tests__");
 const serverScriptsDir = path.join(repoRoot, "server", "scripts");
 const nonServerProjects = [
-  "@paperclipai/shared",
-  "@paperclipai/skills-catalog",
-  "@paperclipai/db",
-  "@paperclipai/adapter-utils",
-  "@paperclipai/adapter-claude-local",
-  "@paperclipai/adapter-codex-local",
-  "@paperclipai/adapter-cursor-cloud",
-  "@paperclipai/adapter-cursor-local",
-  "@paperclipai/adapter-gemini-local",
-  "@paperclipai/adapter-grok-local",
-  "@paperclipai/hermes-paperclip-adapter",
-  "@paperclipai/adapter-kimi-local",
-  "@paperclipai/adapter-openclaw-gateway",
-  "@paperclipai/adapter-opencode-local",
-  "@paperclipai/adapter-pi-local",
-  "@paperclipai/plugin-daytona",
-  "@paperclipai/plugin-sdk",
-  "@paperclipai/create-paperclip-plugin",
-  "@paperclipai/ui",
-  "paperclipai",
+  "@pilibalaai/shared",
+  "@pilibalaai/skills-catalog",
+  "@pilibalaai/db",
+  "@pilibalaai/adapter-utils",
+  "@pilibalaai/adapter-claude-local",
+  "@pilibalaai/adapter-codex-local",
+  "@pilibalaai/adapter-cursor-cloud",
+  "@pilibalaai/adapter-cursor-local",
+  "@pilibalaai/adapter-gemini-local",
+  "@pilibalaai/adapter-grok-local",
+  "@pilibalaai/hermes-pilibala-adapter",
+  "@pilibalaai/adapter-kimi-local",
+  "@pilibalaai/adapter-openclaw-gateway",
+  "@pilibalaai/adapter-opencode-local",
+  "@pilibalaai/adapter-pi-local",
+  "@pilibalaai/plugin-daytona",
+  "@pilibalaai/plugin-sdk",
+  "@pilibalaai/create-pilibala-plugin",
+  "@pilibalaai/ui",
+  "pilibalaai",
 ];
 const routeTestPattern = /[^/]*(?:route|routes|authz)[^/]*\.test\.ts$/;
 const additionalSerializedServerTests = new Set([
@@ -92,10 +92,10 @@ const nativeRunnerSuites = [
   "server/src/services/native-runtime/native-runner-restart-recovery.integration.test.ts",
 ];
 // In the PR workflow (pr.yml, the caller of pr-trusted.yml — reusable
-// workflows inherit the caller's GITHUB_WORKFLOW), the last Verify Paperclip
+// workflows inherit the caller's GITHUB_WORKFLOW), the last Verify Pilibala
 // Runner vitest shard runs the native-runner group instead, because those
 // lanes restore the shared release-runner-v2 Rust cache (see
-// packages/paperclip-runner/scripts/run-pr-vitest-lane.mjs). Every other
+// packages/pilibala-runner/scripts/run-pr-vitest-lane.mjs). Every other
 // caller of the same group keeps the suite in the server shards, so a renamed or
 // unknown workflow degrades to today's slower-but-covered behavior rather
 // than dropping the suite.
@@ -119,7 +119,7 @@ function excludedServerSuites(groupName) {
 const generalWorkspacesAGroupName = "general-workspaces-a";
 const generalWorkspacesBGroupName = "general-workspaces-b";
 const generalWorkspacesCGroupName = "general-workspaces-c";
-const generalWorkspacesAProjects = ["@paperclipai/ui", "paperclipai"];
+const generalWorkspacesAProjects = ["@pilibalaai/ui", "pilibalaai"];
 // The db project runs in its own lane. Its vitest invocation took 168-250s
 // of a 436-513s workspaces-b job (PR runs 38084171761, 38083084276 and
 // 38083020834, 2026-10-10), which made workspaces-b the slowest check once
@@ -129,7 +129,7 @@ const generalWorkspacesAProjects = ["@paperclipai/ui", "paperclipai"];
 // slow suites on one runner. Splitting by project is deterministic and
 // leaves the remaining projects at ~265-275s of vitest time, roughly level
 // with this lane.
-const generalWorkspacesCProjects = ["@paperclipai/db"];
+const generalWorkspacesCProjects = ["@pilibalaai/db"];
 const generalWorkspacesBProjects = nonServerProjects.filter(
   (project) => !generalWorkspacesAProjects.includes(project) && !generalWorkspacesCProjects.includes(project),
 );
@@ -388,16 +388,16 @@ async function runVitest(args, label, testShard = null) {
   const env = {
     ...process.env,
     NODE_ENV: "test",
-    PAPERCLIP_TEST_HOST_HOME: process.env.PAPERCLIP_TEST_HOST_HOME
-      ?? (process.env.PAPERCLIP_HOME?.trim() || path.join(os.homedir(), ".paperclip")),
-    PAPERCLIP_HOME: path.join(testRoot, "h"),
-    // Config discovery otherwise prefers the checkout's .paperclip/config.json
-    // over PAPERCLIP_HOME, importing preview scheduling policy into unit tests.
-    PAPERCLIP_CONFIG: path.join(testRoot, "h", "config.json"),
-    PAPERCLIP_INSTANCE_ID: `vt-${process.pid}-${invocationIndex}`,
+    PILIBALA_TEST_HOST_HOME: process.env.PILIBALA_TEST_HOST_HOME
+      ?? (process.env.PILIBALA_HOME?.trim() || path.join(os.homedir(), ".pilibala")),
+    PILIBALA_HOME: path.join(testRoot, "h"),
+    // Config discovery otherwise prefers the checkout's .pilibala/config.json
+    // over PILIBALA_HOME, importing preview scheduling policy into unit tests.
+    PILIBALA_CONFIG: path.join(testRoot, "h", "config.json"),
+    PILIBALA_INSTANCE_ID: `vt-${process.pid}-${invocationIndex}`,
     TMPDIR: path.join(testRoot, "t"),
   };
-  mkdirSync(env.PAPERCLIP_HOME, { recursive: true });
+  mkdirSync(env.PILIBALA_HOME, { recursive: true });
   mkdirSync(env.TMPDIR, { recursive: true });
   if (testShard) {
     const file = path.resolve(repoRoot, chatSuite);
@@ -468,7 +468,7 @@ async function runProjectGroup(projects, groupName, shardIndex = null, shardCoun
 }
 
 function chatShardWorkers(index, count) {
-  const workers = count > 1 && !process.env.PAPERCLIP_TEST_DATABASE_URL ? 2 : 1;
+  const workers = count > 1 && !process.env.PILIBALA_TEST_DATABASE_URL ? 2 : 1;
   return Array.from({ length: workers }, (_, offset) => ({
     index: (index ?? 0) * workers + offset,
     count: (count ?? 1) * workers,
@@ -480,7 +480,7 @@ async function runGeneralGroup(routeTests, groupName, shardIndex = null, shardCo
     // Each invocation gets its own temporary home and embedded PostgreSQL.
     // Wait for both children even on failure so no sibling is abandoned.
     const results = await Promise.allSettled(chatShardWorkers(shardIndex, shardCount).map((shard) =>
-      runVitest(["--project", "@paperclipai/server", ...serializedServerVitestArgs, chatSuite],
+      runVitest(["--project", "@pilibalaai/server", ...serializedServerVitestArgs, chatSuite],
         "chat integration test shard", shard),
     ));
     const failed = results.find((result) => result.status === "rejected");
@@ -489,7 +489,7 @@ async function runGeneralGroup(routeTests, groupName, shardIndex = null, shardCo
   }
   if (groupName === generalServerNativeRunnerGroupName) {
     await runVitest(
-      ["--project", "@paperclipai/server", ...serializedServerVitestArgs, ...nativeRunnerSuites],
+      ["--project", "@pilibalaai/server", ...serializedServerVitestArgs, ...nativeRunnerSuites],
       "native runner vertical-slice suite",
     );
     return;
@@ -514,11 +514,11 @@ async function runGeneralGroup(routeTests, groupName, shardIndex = null, shardCo
       await runVitest(
         [
           "--project",
-          "@paperclipai/server",
+          "@pilibalaai/server",
           // Files have separate fork processes and isolated homes/configs.
           // Keep each file's cases serial; overlap only two independent files.
           // An explicit shared test database cannot be isolated this way.
-          ...(process.env.PAPERCLIP_TEST_DATABASE_URL
+          ...(process.env.PILIBALA_TEST_DATABASE_URL
             ? serializedServerVitestArgs
             : ["--pool=forks", "--isolate", "--fileParallelism", "--maxWorkers=2"]),
           ...shardFiles,
@@ -535,7 +535,7 @@ async function runGeneralGroup(routeTests, groupName, shardIndex = null, shardCo
     await runVitest(
       [
         "--project",
-        "@paperclipai/server",
+        "@pilibalaai/server",
         ...serializedServerVitestArgs,
         ...excludeRouteArgs,
       ],
@@ -576,7 +576,7 @@ async function runSerializedSuites(routeTests, shardIndex, shardCount) {
     await runVitest(
       [
         "--project",
-        "@paperclipai/server",
+        "@pilibalaai/server",
         ...shardTests.map((test) => test.repoPath),
         "--pool=forks",
         "--isolate",

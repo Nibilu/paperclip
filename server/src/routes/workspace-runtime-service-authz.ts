@@ -1,7 +1,7 @@
 import { and, eq, inArray, isNull, ne, or } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { agents, heartbeatRuns, issues, projects } from "@paperclipai/db";
-import { isUuidLike } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { agents, heartbeatRuns, issues, projects } from "@pilibalaai/db";
+import { isUuidLike } from "@pilibalaai/shared";
 import type { Request } from "express";
 import { forbidden, notFound } from "../errors.js";
 import { assertCompanyAccess, hasCompanyAccess } from "./authz.js";
@@ -27,8 +27,8 @@ export type WorkspaceRuntimeControlAuthorization = {
 function readRunIssueId(context: Record<string, unknown> | null) {
   const directIssueId = context?.issueId;
   if (typeof directIssueId === "string" && isUuidLike(directIssueId)) return directIssueId;
-  const paperclipIssue = readObject(context?.paperclipIssue);
-  const nestedIssueId = paperclipIssue?.id;
+  const pilibalaIssue = readObject(context?.pilibalaIssue);
+  const nestedIssueId = pilibalaIssue?.id;
   return typeof nestedIssueId === "string" && isUuidLike(nestedIssueId) ? nestedIssueId : null;
 }
 

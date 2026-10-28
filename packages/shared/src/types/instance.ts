@@ -42,7 +42,7 @@ export interface InstanceGeneralSettings {
 export interface InstanceExperimentalSettings {
   enableEnvironments: boolean;
   /**
-   * Exposes the experimental Paperclip Runner adapter for new selections.
+   * Exposes the experimental Pilibala Runner adapter for new selections.
    * Existing native runs ignore later flag changes so they remain recoverable.
    */
   enableNativeRunner: boolean;
@@ -104,8 +104,8 @@ export interface InstanceExperimentalSettings {
   enableFastResponses: boolean;
   enableGoalsSidebarLink: boolean;
   enableServerInfoDebugView: boolean;
-  /** Shows internal Paperclip maintainer tools and observability links. */
-  enablePaperclipDeveloperMode: boolean;
+  /** Shows internal Pilibala maintainer tools and observability links. */
+  enablePilibalaDeveloperMode: boolean;
   /**
    * Instructs agents to write user-interaction content (confirmations,
    * questions, suggested tasks, checkbox prompts) in ASD-STE100 Simplified
@@ -144,7 +144,7 @@ export interface InstanceExperimentalSettings {
    */
   enableRunnerPreviewIngress: boolean;
   /**
-   * Worktree preview instances (`PAPERCLIP_IN_WORKTREE=true`) suppress the
+   * Worktree preview instances (`PILIBALA_IN_WORKTREE=true`) suppress the
    * heartbeat run engine by default so previews never self-execute tasks. When
    * this is enabled the worktree-instance scheduling suppression is lifted so
    * runs actually execute inside the preview. Ignored outside a worktree.
@@ -173,17 +173,17 @@ export type ManagedExperimentalFeatureKey = {
     : never;
 }[keyof InstanceExperimentalSettings];
 
-export const PAPERCLIP_CLOUD_MANAGED_BY = "paperclip-cloud" as const;
+export const PILIBALA_CLOUD_MANAGED_BY = "pilibala-cloud" as const;
 
 /** Per-key metadata attached to settings responses for cloud-overlaid keys. */
 export interface ManagedSettingMetadata {
   managed: true;
-  managedBy: typeof PAPERCLIP_CLOUD_MANAGED_BY;
+  managedBy: typeof PILIBALA_CLOUD_MANAGED_BY;
 }
 
 /**
  * Experimental settings as returned by the settings API. On cloud-managed
- * instances (`PAPERCLIP_MANAGED_CONFIG` present) `managedKeys` lists every key
+ * instances (`PILIBALA_MANAGED_CONFIG` present) `managedKeys` lists every key
  * whose value is overlaid by the harness; self-hosted responses omit it.
  */
 export interface InstanceExperimentalSettingsWithManaged extends InstanceExperimentalSettings {

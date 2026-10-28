@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { companies, createDb, issues, routineRuns, routines } from "@paperclipai/db";
+import { companies, createDb, issues, routineRuns, routines } from "@pilibalaai/db";
 import { routineService } from "../services/routines.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 

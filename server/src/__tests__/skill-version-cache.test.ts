@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, heartbeatRuns, issues, nativeRunFinalizations, companies, companySkills, companySkillVersions, companySkillRepositorySnapshots, createDb } from "@paperclipai/db";
+import { agents, heartbeatRuns, issues, nativeRunFinalizations, companies, companySkills, companySkillVersions, companySkillRepositorySnapshots, createDb } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { companySkillService } from "../services/company-skills.js";
 import { skillVersionCachePaths, touchSkillVersionCache, withSkillVersionCacheLock } from "../services/skill-version-cache.js";
@@ -23,18 +23,18 @@ describePostgres("immutable skill version cache", () => {
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: ReturnType<typeof createDb>;
   let home: string;
-  const previousHome = process.env.PAPERCLIP_HOME;
+  const previousHome = process.env.PILIBALA_HOME;
 
   beforeAll(async () => {
     database = await startEmbeddedPostgresTestDatabase("skill-version-cache-");
     db = createDb(database.connectionString);
     home = await fs.mkdtemp(path.join(os.tmpdir(), "skill-version-cache-"));
-    process.env.PAPERCLIP_HOME = home;
+    process.env.PILIBALA_HOME = home;
   });
   afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
   afterAll(async () => {
-    if (previousHome === undefined) delete process.env.PAPERCLIP_HOME;
-    else process.env.PAPERCLIP_HOME = previousHome;
+    if (previousHome === undefined) delete process.env.PILIBALA_HOME;
+    else process.env.PILIBALA_HOME = previousHome;
     if (home) await fs.rm(home, { recursive: true, force: true });
     await database?.cleanup();
   });
@@ -79,11 +79,11 @@ describePostgres("immutable skill version cache", () => {
     await fs.rm(old.source, { recursive: true });
     const restored = await resolve(versions[0]!.id);
     expect(restored.source).toBe(old.source);
-    const repository = path.join(restored.source, ".paperclip-repository");
+    const repository = path.join(restored.source, ".pilibala-repository");
     expect(await fs.readFile(path.join(repository, "marker.bin"))).toEqual(Buffer.from([0, 1, 255]));
     expect(await fs.readFile(path.join(repository, "scripts/example.sh"), "utf8")).toBe("#!/bin/sh\necho revision-1\n");
     expect((await fs.stat(path.join(repository, "scripts/example.sh"))).mode & 0o111).toBe(0o111);
-    expect(await fs.readFile(path.join(current.source, ".paperclip-repository/marker.bin"))).toEqual(Buffer.from([0, 2, 255]));
+    expect(await fs.readFile(path.join(current.source, ".pilibala-repository/marker.bin"))).toEqual(Buffer.from([0, 2, 255]));
     expect(upstream).not.toHaveBeenCalled();
   });
 
@@ -210,7 +210,7 @@ describePostgres("immutable skill version cache", () => {
     const lstat = fs.lstat.bind(fs);
     let held = false;
     vi.spyOn(fs, "lstat").mockImplementation((async (...args: Parameters<typeof fs.lstat>) => {
-      if (!held && String(args[0]) === path.join(old.source, ".paperclip-repository", "marker.bin")) {
+      if (!held && String(args[0]) === path.join(old.source, ".pilibala-repository", "marker.bin")) {
         held = true;
         inspecting.resolve();
         await release.promise;

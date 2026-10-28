@@ -235,7 +235,7 @@ create external alarm coverage or exempt other persisted work from this report.
 
 ### Backup checkpoints for idle instances
 
-`PAPERCLIP_DB_BACKUP_IDLE_CHECKPOINT_ENABLED=1` opts an instance with automatic
+`PILIBALA_DB_BACKUP_IDLE_CHECKPOINT_ENABLED=1` opts an instance with automatic
 backups enabled into this mode. Keep its database and persistent backup volume
 attached across sleep. All writers must use the instance's admission protocol;
 this mode cannot cover independent writers to the same database.

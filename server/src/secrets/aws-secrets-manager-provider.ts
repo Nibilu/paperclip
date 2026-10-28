@@ -1,6 +1,6 @@
 import { createHash, createHmac } from "node:crypto";
 import { S3Client } from "@aws-sdk/client-s3";
-import type { DeploymentMode, SecretProviderConfigDiscoveryPreviewResult } from "@paperclipai/shared";
+import type { DeploymentMode, SecretProviderConfigDiscoveryPreviewResult } from "@pilibalaai/shared";
 import { unprocessable } from "../errors.js";
 import type {
   PreparedSecretVersion,
@@ -16,10 +16,10 @@ import type {
 import { SecretProviderClientError } from "./types.js";
 
 const AWS_SECRETS_MANAGER_SCHEME = "aws_secrets_manager_v1";
-const DEFAULT_PREFIX = "paperclip";
-const DEFAULT_OWNER_TAG = "paperclip";
+const DEFAULT_PREFIX = "pilibala";
+const DEFAULT_OWNER_TAG = "pilibala";
 const DEFAULT_VERSION_STAGE = "AWSCURRENT";
-const PAPERCLIP_PENDING_VERSION_STAGE = "PAPERCLIP_PENDING";
+const PILIBALA_PENDING_VERSION_STAGE = "PILIBALA_PENDING";
 const DEFAULT_DELETE_RECOVERY_WINDOW_DAYS = 30;
 const AWS_SECRETS_MANAGER_REQUEST_TIMEOUT_MS = 30_000;
 const AWS_CREDENTIAL_CACHE_TTL_MS = 5 * 60_000;
@@ -27,9 +27,9 @@ const AWS_CREDENTIAL_EXPIRATION_SKEW_MS = 60_000;
 const PROVIDER_CONFIG_DISCOVERY_SAMPLE_LIMIT = 3;
 const PROVIDER_CONFIG_DISCOVERY_CANDIDATE_LIMIT = 6;
 const AWS_RUNTIME_CREDENTIAL_WARNING =
-  "AWS bootstrap credentials must be available to the Paperclip server runtime through the AWS SDK default credential provider chain: IAM role/workload identity, AWS_PROFILE/SSO/shared credentials, web identity, container/instance metadata, or short-lived shell credentials.";
+  "AWS bootstrap credentials must be available to the Pilibala server runtime through the AWS SDK default credential provider chain: IAM role/workload identity, AWS_PROFILE/SSO/shared credentials, web identity, container/instance metadata, or short-lived shell credentials.";
 const AWS_CREDENTIAL_CUSTODY_WARNING =
-  "Do not store AWS root credentials or long-lived IAM user access keys in Paperclip company_secrets; the AWS provider bootstrap belongs in deployment infrastructure, the process environment, an AWS profile, or the orchestrator secret store.";
+  "Do not store AWS root credentials or long-lived IAM user access keys in Pilibala company_secrets; the AWS provider bootstrap belongs in deployment infrastructure, the process environment, an AWS profile, or the orchestrator secret store.";
 
 interface AwsSecretsManagerMaterial extends StoredSecretVersionMaterial {
   scheme: typeof AWS_SECRETS_MANAGER_SCHEME;
@@ -293,18 +293,18 @@ function readProviderVaultConfig(input: SecretProviderVaultRuntimeConfig): AwsSe
   if (!region) {
     throw unprocessable("AWS Secrets Manager provider vault requires non-secret config: region");
   }
-  const recoveryWindowRaw = process.env.PAPERCLIP_SECRETS_AWS_DELETE_RECOVERY_DAYS?.trim();
+  const recoveryWindowRaw = process.env.PILIBALA_SECRETS_AWS_DELETE_RECOVERY_DAYS?.trim();
   const recoveryWindow = recoveryWindowRaw ? Number(recoveryWindowRaw) : DEFAULT_DELETE_RECOVERY_WINDOW_DAYS;
   if (!Number.isFinite(recoveryWindow) || recoveryWindow < 7 || recoveryWindow > 30) {
     throw unprocessable(
-      "PAPERCLIP_SECRETS_AWS_DELETE_RECOVERY_DAYS must be an integer between 7 and 30",
+      "PILIBALA_SECRETS_AWS_DELETE_RECOVERY_DAYS must be an integer between 7 and 30",
     );
   }
 
   return {
     region,
     endpoint:
-      process.env.PAPERCLIP_SECRETS_AWS_ENDPOINT?.trim() ||
+      process.env.PILIBALA_SECRETS_AWS_ENDPOINT?.trim() ||
       `https://secretsmanager.${region}.amazonaws.com`,
     deploymentId: sanitizePathSegment(
       asOptionalNonEmptyString(input.config.namespace) ?? input.id,
@@ -325,22 +325,22 @@ function readProviderVaultConfig(input: SecretProviderVaultRuntimeConfig): AwsSe
 
 function getAwsConfigReadiness() {
   const region = (
-    process.env.PAPERCLIP_SECRETS_AWS_REGION ??
+    process.env.PILIBALA_SECRETS_AWS_REGION ??
     process.env.AWS_REGION ??
     process.env.AWS_DEFAULT_REGION
   )?.trim();
-  const deploymentId = process.env.PAPERCLIP_SECRETS_AWS_DEPLOYMENT_ID?.trim();
-  const kmsKeyId = process.env.PAPERCLIP_SECRETS_AWS_KMS_KEY_ID?.trim();
+  const deploymentId = process.env.PILIBALA_SECRETS_AWS_DEPLOYMENT_ID?.trim();
+  const kmsKeyId = process.env.PILIBALA_SECRETS_AWS_KMS_KEY_ID?.trim();
   const missingConfig: string[] = [];
 
   if (!region) {
-    missingConfig.push("PAPERCLIP_SECRETS_AWS_REGION or AWS_REGION/AWS_DEFAULT_REGION");
+    missingConfig.push("PILIBALA_SECRETS_AWS_REGION or AWS_REGION/AWS_DEFAULT_REGION");
   }
   if (!deploymentId) {
-    missingConfig.push("PAPERCLIP_SECRETS_AWS_DEPLOYMENT_ID");
+    missingConfig.push("PILIBALA_SECRETS_AWS_DEPLOYMENT_ID");
   }
   if (!kmsKeyId) {
-    missingConfig.push("PAPERCLIP_SECRETS_AWS_KMS_KEY_ID");
+    missingConfig.push("PILIBALA_SECRETS_AWS_KMS_KEY_ID");
   }
 
   return {
@@ -376,11 +376,11 @@ function describeDetectedAwsCredentialSources() {
 function loadAwsSecretsManagerConfig(): AwsSecretsManagerConfig {
   const readiness = getAwsConfigReadiness();
   const region =
-    process.env.PAPERCLIP_SECRETS_AWS_REGION?.trim() ||
+    process.env.PILIBALA_SECRETS_AWS_REGION?.trim() ||
     process.env.AWS_REGION?.trim() ||
     process.env.AWS_DEFAULT_REGION?.trim();
-  const deploymentId = process.env.PAPERCLIP_SECRETS_AWS_DEPLOYMENT_ID?.trim();
-  const kmsKeyId = process.env.PAPERCLIP_SECRETS_AWS_KMS_KEY_ID?.trim();
+  const deploymentId = process.env.PILIBALA_SECRETS_AWS_DEPLOYMENT_ID?.trim();
+  const kmsKeyId = process.env.PILIBALA_SECRETS_AWS_KMS_KEY_ID?.trim();
 
   if (readiness.missingConfig.length > 0) {
     throw unprocessable(
@@ -389,42 +389,42 @@ function loadAwsSecretsManagerConfig(): AwsSecretsManagerConfig {
   }
   if (!region) {
     throw unprocessable(
-      "AWS Secrets Manager provider requires PAPERCLIP_SECRETS_AWS_REGION or AWS_REGION",
+      "AWS Secrets Manager provider requires PILIBALA_SECRETS_AWS_REGION or AWS_REGION",
     );
   }
   if (!deploymentId) {
     throw unprocessable(
-      "AWS Secrets Manager provider requires PAPERCLIP_SECRETS_AWS_DEPLOYMENT_ID",
+      "AWS Secrets Manager provider requires PILIBALA_SECRETS_AWS_DEPLOYMENT_ID",
     );
   }
   if (!kmsKeyId) {
     throw unprocessable(
-      "AWS Secrets Manager provider requires PAPERCLIP_SECRETS_AWS_KMS_KEY_ID",
+      "AWS Secrets Manager provider requires PILIBALA_SECRETS_AWS_KMS_KEY_ID",
     );
   }
 
-  const recoveryWindowRaw = process.env.PAPERCLIP_SECRETS_AWS_DELETE_RECOVERY_DAYS?.trim();
+  const recoveryWindowRaw = process.env.PILIBALA_SECRETS_AWS_DELETE_RECOVERY_DAYS?.trim();
   const recoveryWindow = recoveryWindowRaw ? Number(recoveryWindowRaw) : DEFAULT_DELETE_RECOVERY_WINDOW_DAYS;
   if (!Number.isFinite(recoveryWindow) || recoveryWindow < 7 || recoveryWindow > 30) {
     throw unprocessable(
-      "PAPERCLIP_SECRETS_AWS_DELETE_RECOVERY_DAYS must be an integer between 7 and 30",
+      "PILIBALA_SECRETS_AWS_DELETE_RECOVERY_DAYS must be an integer between 7 and 30",
     );
   }
 
   return {
     region,
     endpoint:
-      process.env.PAPERCLIP_SECRETS_AWS_ENDPOINT?.trim() ||
+      process.env.PILIBALA_SECRETS_AWS_ENDPOINT?.trim() ||
       `https://secretsmanager.${region}.amazonaws.com`,
     deploymentId,
-    prefix: sanitizePathSegment(process.env.PAPERCLIP_SECRETS_AWS_PREFIX?.trim() || DEFAULT_PREFIX),
+    prefix: sanitizePathSegment(process.env.PILIBALA_SECRETS_AWS_PREFIX?.trim() || DEFAULT_PREFIX),
     kmsKeyId,
     environmentTag:
-      process.env.PAPERCLIP_SECRETS_AWS_ENVIRONMENT?.trim() ||
+      process.env.PILIBALA_SECRETS_AWS_ENVIRONMENT?.trim() ||
       process.env.NODE_ENV?.trim() ||
       "unknown",
     providerOwnerTag:
-      process.env.PAPERCLIP_SECRETS_AWS_PROVIDER_OWNER?.trim() || DEFAULT_OWNER_TAG,
+      process.env.PILIBALA_SECRETS_AWS_PROVIDER_OWNER?.trim() || DEFAULT_OWNER_TAG,
     deleteRecoveryWindowDays: recoveryWindow,
   };
 }
@@ -504,7 +504,7 @@ function assertNotManagedNamespaceExternalRef(
 ) {
   if (!isManagedSecretNamespaceRef(config, externalRef)) return;
   throw unprocessable(
-    "AWS Paperclip-managed namespace secrets cannot be imported as external references",
+    "AWS Pilibala-managed namespace secrets cannot be imported as external references",
   );
 }
 
@@ -536,12 +536,12 @@ function buildManagedSecretTags(
 ): AwsSecretsManagerTag[] {
   if (!context) return [];
   return [
-    { Key: "paperclip:managed-by", Value: "paperclip" },
-    { Key: "paperclip:provider-owner", Value: config.providerOwnerTag },
-    { Key: "paperclip:deployment-id", Value: config.deploymentId },
-    { Key: "paperclip:company-id", Value: context.companyId },
-    { Key: "paperclip:secret-key", Value: context.secretKey },
-    { Key: "paperclip:environment", Value: config.environmentTag },
+    { Key: "pilibala:managed-by", Value: "pilibala" },
+    { Key: "pilibala:provider-owner", Value: config.providerOwnerTag },
+    { Key: "pilibala:deployment-id", Value: config.deploymentId },
+    { Key: "pilibala:company-id", Value: context.companyId },
+    { Key: "pilibala:secret-key", Value: context.secretKey },
+    { Key: "pilibala:environment", Value: config.environmentTag },
   ];
 }
 
@@ -631,13 +631,13 @@ function pathSegments(name: string) {
 function inferPathSignals(entry: AwsSecretsManagerListSecretEntry, tags: Map<string, string>) {
   const name = entry.Name?.trim() || entry.ARN?.trim() || "";
   const segments = pathSegments(name);
-  const paperclipDeploymentId = tagValue(tags, ["paperclip:deployment-id"]);
-  const paperclipManaged = tagValue(tags, ["paperclip:managed-by"])?.toLowerCase() === "paperclip";
+  const pilibalaDeploymentId = tagValue(tags, ["pilibala:deployment-id"]);
+  const pilibalaManaged = tagValue(tags, ["pilibala:managed-by"])?.toLowerCase() === "pilibala";
 
-  if (paperclipDeploymentId || paperclipManaged) {
+  if (pilibalaDeploymentId || pilibalaManaged) {
     return {
       prefix: segments[0] ?? DEFAULT_PREFIX,
-      namespace: paperclipDeploymentId ?? segments[1] ?? null,
+      namespace: pilibalaDeploymentId ?? segments[1] ?? null,
     };
   }
 
@@ -685,22 +685,22 @@ function discoverAwsProviderConfigCandidates(input: {
     environmentTag: string | null;
     ownerTag: string | null;
     kmsKeyId: string | null;
-    paperclipManaged: boolean;
-    paperclipCompanyId: string | null;
+    pilibalaManaged: boolean;
+    pilibalaCompanyId: string | null;
   };
 
   const skippedWarnings: string[] = [];
-  let skippedForeignPaperclipSampleCount = 0;
+  let skippedForeignPilibalaSampleCount = 0;
   const samples: DiscoverySample[] = [];
 
   for (const entry of input.entries) {
     const name = entry.Name?.trim() || entry.ARN?.trim();
     if (!name) continue;
     const tags = normalizeAwsTags(entry.Tags);
-    const paperclipManaged = tagValue(tags, ["paperclip:managed-by"])?.toLowerCase() === "paperclip";
-    const paperclipCompanyId = tagValue(tags, ["paperclip:company-id"]);
-    if (paperclipManaged && paperclipCompanyId !== input.companyId) {
-      skippedForeignPaperclipSampleCount += 1;
+    const pilibalaManaged = tagValue(tags, ["pilibala:managed-by"])?.toLowerCase() === "pilibala";
+    const pilibalaCompanyId = tagValue(tags, ["pilibala:company-id"]);
+    if (pilibalaManaged && pilibalaCompanyId !== input.companyId) {
+      skippedForeignPilibalaSampleCount += 1;
       continue;
     }
     const path = inferPathSignals(entry, tags);
@@ -710,17 +710,17 @@ function discoverAwsProviderConfigCandidates(input: {
       tags,
       prefix: path.prefix,
       namespace: path.namespace,
-      environmentTag: tagValue(tags, ["paperclip:environment", "environment", "env", "stage"]),
-      ownerTag: tagValue(tags, ["paperclip:provider-owner", "owner", "team", "service", "application"]),
+      environmentTag: tagValue(tags, ["pilibala:environment", "environment", "env", "stage"]),
+      ownerTag: tagValue(tags, ["pilibala:provider-owner", "owner", "team", "service", "application"]),
       kmsKeyId: asOptionalNonEmptyString(entry.KmsKeyId),
-      paperclipManaged,
-      paperclipCompanyId,
+      pilibalaManaged,
+      pilibalaCompanyId,
     });
   }
 
-  if (skippedForeignPaperclipSampleCount > 0) {
+  if (skippedForeignPilibalaSampleCount > 0) {
     skippedWarnings.push(
-      `Skipped ${skippedForeignPaperclipSampleCount} Paperclip-managed AWS secret sample(s) that were not tagged for this company.`,
+      `Skipped ${skippedForeignPilibalaSampleCount} Pilibala-managed AWS secret sample(s) that were not tagged for this company.`,
     );
   }
 
@@ -764,8 +764,8 @@ function discoverAwsProviderConfigCandidates(input: {
       if (kmsKeys.length > 1 && !draftKmsKeyId) {
         candidateWarnings.push("Sampled AWS secrets use multiple KMS keys; choose the intended KMS key before saving.");
       }
-      if (group.some((sample) => sample.paperclipManaged && sample.paperclipCompanyId === input.companyId)) {
-        candidateWarnings.push("Sample includes Paperclip-managed secrets for this company; do not import them as external references.");
+      if (group.some((sample) => sample.pilibalaManaged && sample.pilibalaCompanyId === input.companyId)) {
+        candidateWarnings.push("Sample includes Pilibala-managed secrets for this company; do not import them as external references.");
       }
 
       return {
@@ -798,8 +798,8 @@ function discoverAwsProviderConfigCandidates(input: {
           kmsKeyId: kmsKeyId ?? null,
           hasKmsKey: kmsKeys.length > 0,
           sampleCount: group.length,
-          paperclipManagedSampleCount: group.filter((sample) => sample.paperclipManaged).length,
-          skippedForeignPaperclipSampleCount,
+          pilibalaManagedSampleCount: group.filter((sample) => sample.pilibalaManaged).length,
+          skippedForeignPilibalaSampleCount,
         },
         warnings: candidateWarnings,
       };
@@ -817,7 +817,7 @@ function discoverAwsProviderConfigCandidates(input: {
     provider: "aws_secrets_manager",
     nextToken: input.nextToken,
     sampledSecretCount: samples.length,
-    skippedForeignPaperclipSampleCount,
+    skippedForeignPilibalaSampleCount,
     candidates,
     warnings,
   };
@@ -1024,7 +1024,7 @@ export function createAwsSecretsManagerProvider(
     }
     const config = resolveConfig(input?.providerConfig);
     if (!config.prefix) {
-      warnings.push("PAPERCLIP_SECRETS_AWS_PREFIX should be set to a deployment-scoped prefix");
+      warnings.push("PILIBALA_SECRETS_AWS_PREFIX should be set to a deployment-scoped prefix");
     }
     return { ok: true, warnings };
   }
@@ -1064,8 +1064,8 @@ export function createAwsSecretsManagerProvider(
           detectedCredentialSources: readiness.credentialSources,
         },
         backupGuidance: [
-          "Back up Paperclip metadata separately from AWS-managed secrets.",
-          "Restoring access requires the Paperclip database plus the same AWS secret namespace and KMS permissions.",
+          "Back up Pilibala metadata separately from AWS-managed secrets.",
+          "Restoring access requires the Pilibala database plus the same AWS secret namespace and KMS permissions.",
         ],
       };
     } catch (error) {
@@ -1096,16 +1096,16 @@ export function createAwsSecretsManagerProvider(
           requiredProviderConfig: input?.providerConfig
             ? ["region"]
             : [
-                "PAPERCLIP_SECRETS_AWS_REGION or AWS_REGION/AWS_DEFAULT_REGION",
-                "PAPERCLIP_SECRETS_AWS_DEPLOYMENT_ID",
-                "PAPERCLIP_SECRETS_AWS_KMS_KEY_ID",
+                "PILIBALA_SECRETS_AWS_REGION or AWS_REGION/AWS_DEFAULT_REGION",
+                "PILIBALA_SECRETS_AWS_DEPLOYMENT_ID",
+                "PILIBALA_SECRETS_AWS_KMS_KEY_ID",
               ],
           optionalProviderConfig: [
-            "PAPERCLIP_SECRETS_AWS_PREFIX",
-            "PAPERCLIP_SECRETS_AWS_ENVIRONMENT",
-            "PAPERCLIP_SECRETS_AWS_PROVIDER_OWNER",
-            "PAPERCLIP_SECRETS_AWS_ENDPOINT",
-            "PAPERCLIP_SECRETS_AWS_DELETE_RECOVERY_DAYS",
+            "PILIBALA_SECRETS_AWS_PREFIX",
+            "PILIBALA_SECRETS_AWS_ENVIRONMENT",
+            "PILIBALA_SECRETS_AWS_PROVIDER_OWNER",
+            "PILIBALA_SECRETS_AWS_ENDPOINT",
+            "PILIBALA_SECRETS_AWS_DELETE_RECOVERY_DAYS",
           ],
           credentialSource: "AWS SDK default credential provider chain",
           detectedCredentialSources: readiness.credentialSources,
@@ -1131,7 +1131,7 @@ export function createAwsSecretsManagerProvider(
           Name: secretId,
           SecretString: input.value,
           ...(config.kmsKeyId ? { KmsKeyId: config.kmsKeyId } : {}),
-          Description: input.context ? `Paperclip secret ${input.context.secretName}` : undefined,
+          Description: input.context ? `Pilibala secret ${input.context.secretName}` : undefined,
           Tags: buildManagedSecretTags(config, input.context),
         };
         const created = await gateway.createSecret({
@@ -1163,7 +1163,7 @@ export function createAwsSecretsManagerProvider(
         const created = await gateway.putSecretValue({
           SecretId: secretId,
           SecretString: input.value,
-          VersionStages: [PAPERCLIP_PENDING_VERSION_STAGE],
+          VersionStages: [PILIBALA_PENDING_VERSION_STAGE],
         });
         const normalizedSecretId = created.ARN ?? created.Name ?? secretId;
         return {
@@ -1194,7 +1194,7 @@ export function createAwsSecretsManagerProvider(
           VersionStage: DEFAULT_VERSION_STAGE,
         });
         // No VersionStages: the new version becomes AWSCURRENT so every consumer of the
-        // referenced secret (not just Paperclip) picks up the new value.
+        // referenced secret (not just Pilibala) picks up the new value.
         const created = await gateway.putSecretValue({
           SecretId: secretId,
           SecretString: input.value,
@@ -1352,7 +1352,7 @@ export function createAwsSecretsManagerProvider(
           if (material.versionId && gateway.updateSecretVersionStage) {
             await gateway.updateSecretVersionStage({
               SecretId: secretId,
-              VersionStage: PAPERCLIP_PENDING_VERSION_STAGE,
+              VersionStage: PILIBALA_PENDING_VERSION_STAGE,
               RemoveFromVersionId: material.versionId,
             });
           }

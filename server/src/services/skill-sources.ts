@@ -7,9 +7,9 @@ import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import { folderService } from './folders.js';
 import { and, eq, isNull, lt, or, sql } from 'drizzle-orm';
-import { companySkillSources as sources, companySkillSourceEntries as entries, companySkills, companySkillRepositorySnapshots, projectSkillSources, projects, type Db, authUsers } from '@paperclipai/db';
-import type { CompanySkill, SkillSource, SkillSourceCreateRequest, SkillSourceDiscoveryRequest, SkillSourceSelectionRequest, SkillSourceRefreshResult, SkillSourcePreviewRequest, SkillSourceSettingsRequest, SkillSourceDisconnectRequest, SkillSourceDisconnectResult, SkillSourceBranchesQuery } from '@paperclipai/shared';
-import { normalizeAgentUrlKey } from '@paperclipai/shared';
+import { companySkillSources as sources, companySkillSourceEntries as entries, companySkills, companySkillRepositorySnapshots, projectSkillSources, projects, type Db, authUsers } from '@pilibalaai/db';
+import type { CompanySkill, SkillSource, SkillSourceCreateRequest, SkillSourceDiscoveryRequest, SkillSourceSelectionRequest, SkillSourceRefreshResult, SkillSourcePreviewRequest, SkillSourceSettingsRequest, SkillSourceDisconnectRequest, SkillSourceDisconnectResult, SkillSourceBranchesQuery } from '@pilibalaai/shared';
+import { normalizeAgentUrlKey } from '@pilibalaai/shared';
 import { conflict, notFound, unprocessable } from '../errors.js';
 import { companySkillService, parseSkillImportSourceInput } from './company-skills.js';
 import { scanGitHubSkillsWithPackageFallback as scanGitHubSkills, previewGitHubSkillFile, type GitHubRead, type ScannedSkillSource, type SkillScanOptions } from './github-skill-source.js';
@@ -98,7 +98,7 @@ export function skillSourceService(db: Db) {
     return `github/${scan.repositoryId}/${identity}/${normalizeAgentUrlKey(name) || 'skill'}`;
   }
   async function publish(tx: Tx, source: SourceRow, scan: ScannedSkillSource, selectedPaths: string[], excludedFolders: string[], context: SkillSourceContext, selectionReviewed: boolean): Promise<Omit<SkillSourceRefreshResult, 'source'>> {
-    await tx.execute(sql`SET CONSTRAINTS paperclip_skill_runtime_changed DEFERRED`);
+    await tx.execute(sql`SET CONSTRAINTS pilibala_skill_runtime_changed DEFERRED`);
     const mode = scan.packageMode ?? 'skills';
     if (mode === 'repository' && scan.skills.length > 0 && (scan.repositoryPackage?.error || !scan.repositoryFiles?.length)) {
       throw unprocessable(scan.repositoryPackage?.error ?? 'Repository package has no files. Scan it again before importing.');
@@ -397,7 +397,7 @@ export function skillSourceService(db: Db) {
     const directories: string[] = [];
     try {
       return await db.transaction(async tx => {
-        await tx.execute(sql`SET CONSTRAINTS paperclip_skill_runtime_changed DEFERRED`);
+        await tx.execute(sql`SET CONSTRAINTS pilibala_skill_runtime_changed DEFERRED`);
         await lock(tx);
         for (const skillId of skillIds) await skills.makeImportedSkillEditable(companyId, skillId, context.actor, folderId, tx, directories);
         await remove(tx, skillIds.length, 0);

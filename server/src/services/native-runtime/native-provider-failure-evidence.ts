@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import { heartbeatRunEvents, heartbeatRuns, type Db } from "@paperclipai/db";
-import { parseNativeExecutionInput, validatePrpEvent, type PrpTerminalState } from "../../vendor/paperclip-runner/index.js";
+import { heartbeatRunEvents, heartbeatRuns, type Db } from "@pilibalaai/db";
+import { parseNativeExecutionInput, validatePrpEvent, type PrpTerminalState } from "../../vendor/pilibala-runner/index.js";
 import { nativeSha256 } from "./canonical.js";
 import { createNativeProviderFailureObservation } from "./native-provider-failure.js";
 

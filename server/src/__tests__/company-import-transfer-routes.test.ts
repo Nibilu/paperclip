@@ -5,7 +5,7 @@ import path from "node:path";
 import express from "express";
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { companies, createDb } from "@paperclipai/db";
+import { companies, createDb } from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -186,7 +186,7 @@ function buildFixtureZip(): Buffer {
       "COMPANY.md": `---\nname: Chunked Import ${zipSeq}\n---\n`,
       "agents/ceo/AGENTS.md": "---\nname: CEO\n---\n",
     },
-    "paperclip",
+    "pilibala",
   );
 }
 
@@ -250,12 +250,12 @@ describeEmbeddedPostgres("company import transfer routes", () => {
   }
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-import-transfer-routes-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-import-transfer-routes-");
     db = createDb(tempDb.connectionString);
     // The mocked import result points at this company; the ledger's
     // company_id foreign key needs the row to exist.
     await db.insert(companies).values({ id: companyId, name: "Chunked Import Target" });
-    spoolRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-import-transfer-spool-"));
+    spoolRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-import-transfer-spool-"));
     app = await createApp();
   });
 
@@ -731,7 +731,7 @@ describeEmbeddedPostgres("company import transfer routes", () => {
     // caller can find the earlier import instead of reading it as data loss.
     mockCompanyService.getById.mockResolvedValue({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: "PAPA",
     });
     const redeclared = await request(app).post("/api/companies/import/transfers").send(body);
@@ -740,7 +740,7 @@ describeEmbeddedPostgres("company import transfer routes", () => {
     expect(redeclared.body.alreadyCompleted).toBe(true);
     expect(redeclared.body.missingParts).toEqual([]);
     expect(mockCompanyService.getById).toHaveBeenCalledWith(companyId);
-    expect(redeclared.body.company).toEqual({ id: companyId, name: "Paperclip", issuePrefix: "PAPA" });
+    expect(redeclared.body.company).toEqual({ id: companyId, name: "Pilibala", issuePrefix: "PAPA" });
 
     // A company deleted since the apply (or an attach that never happened)
     // degrades to company: null, never a 500.

@@ -1,7 +1,7 @@
 import { externalConversationStateSql } from "./slack-conversation-state.js";
 import { and, desc, eq, gte, inArray, isNotNull, isNull, notInArray, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   assets,
@@ -12,7 +12,7 @@ import {
   issueWorkProducts,
   issues,
   projects,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   COMPANY_SEARCH_MAX_LIMIT,
   COMPANY_SEARCH_MAX_OFFSET,
@@ -35,7 +35,7 @@ import {
   type CompanySearchSnippet,
   type CompanySearchSort,
   type CompanySearchUpdatedWithinOption,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { companyArtifactsService } from "./company-artifacts.js";
 import { companySearchExtractService } from "./company-search-extract.js";
 import { visibleIssueCondition } from "./issue-visibility.js";
@@ -570,7 +570,7 @@ export function companySearchService(db: Db) {
 
       const fetchLimit = companySearchBranchFetchLimit(limit, offset);
       const tokenPatternArray = sqlTextArray(taskSearch.patterns);
-      const containsPattern = hasSearchText && tokens.length > 0 ? taskSearch.containsPattern : "__paperclip_no_match__";
+      const containsPattern = hasSearchText && tokens.length > 0 ? taskSearch.containsPattern : "__pilibala_no_match__";
       const tokenCount = tokens.length;
 
       const issueFilters = issueFilterConditions(companyId, query);
@@ -931,7 +931,7 @@ export function companySearchService(db: Db) {
         const workProductConditions = [
           eq(issueWorkProducts.companyId, companyId),
           eq(issueWorkProducts.type, "artifact"),
-          eq(issueWorkProducts.provider, "paperclip"),
+          eq(issueWorkProducts.provider, "pilibala"),
           sql<boolean>`(
             ${issueWorkProducts.title} ILIKE ${containsPattern} ESCAPE '\\'
             OR coalesce(${issueWorkProducts.summary}, '') ILIKE ${containsPattern} ESCAPE '\\'

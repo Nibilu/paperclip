@@ -1,10 +1,10 @@
 import { withSkillActor } from "../skill-access.js";
 import type { AuthorizationActor } from "../authorization.js";
 import { eq, sql } from "drizzle-orm";
-import { heartbeatRuns, type Db, type agents, type projects } from "@paperclipai/db";
-import type { AiConnectionBinding } from "@paperclipai/shared";
-import { readPaperclipSkillSyncPreference, resolvePaperclipDesiredSkillNames, resolveLegacyPaperclipDesiredSkillNames,
-  writePaperclipSkillSyncPreference } from "@paperclipai/adapter-utils/server-utils";
+import { heartbeatRuns, type Db, type agents, type projects } from "@pilibalaai/db";
+import type { AiConnectionBinding } from "@pilibalaai/shared";
+import { readPilibalaSkillSyncPreference, resolvePilibalaDesiredSkillNames, resolveLegacyPilibalaDesiredSkillNames,
+  writePilibalaSkillSyncPreference } from "@pilibalaai/adapter-utils/server-utils";
 import { parseObject } from "../../adapters/utils.js";
 import { logger } from "../../middleware/logger.js";
 import { AI_CONNECTION_BUSY_RETRY_REASON, extractWakeCommentIds, isNonAssigneeWorkspaceBusyRetry } from "../../modules/run-dispatch/index.js";
@@ -34,7 +34,7 @@ import { buildExecutionWorkspaceConfigSnapshot, stripWorkspaceRuntimeFromExecuti
 import type { HeartbeatWorkspacePreparationInput } from "./workspace-preparation.js";
 
 const ACCEPTED_PLAN_CONVERSION_SKILL_KEY =
-  "paperclipai/paperclip/paperclip-converting-plans-to-tasks";
+  "pilibalaai/pilibala/pilibala-converting-plans-to-tasks";
 
 type ManagedAiRuntime = Awaited<ReturnType<typeof prepareManagedAiRuntime>>;
 type EnvironmentSelection = Awaited<ReturnType<typeof selectHeartbeatEnvironment>>;
@@ -85,11 +85,11 @@ export async function prepareHeartbeatExecutionConfiguration(db: Db, input: Hear
   const time = createHeartbeatPreparationTiming(run.id);
   const { issueId, context, responsibleUserId, acceptedPlanContinuationWake, acceptedPlanWakeRoutingDecision, taskProjectContext, routineEnvContext } = input.task;
   const { selectedEnvironmentId, selectedEnvironmentForConfig, resolvedInstanceSettings, persistedNativeExecutionInput } = input.environment;
-  const sourceWorkspaceConfig = agent.adapterType === "paperclip_runner"
+  const sourceWorkspaceConfig = agent.adapterType === "pilibala_runner"
     ? { ...input.config.sourceWorkspaceConfig,
         homeMode: bindHeartbeatRunnerHomeMode(parseObject(agent.adapterConfig), persistedNativeExecutionInput).homeMode }
     : input.config.sourceWorkspaceConfig;
-  const preconfiguredHome = agent.adapterType === "paperclip_runner" && sourceWorkspaceConfig.homeMode === "preconfigured";
+  const preconfiguredHome = agent.adapterType === "pilibala_runner" && sourceWorkspaceConfig.homeMode === "preconfigured";
   const aiBinding = preconfiguredHome ? undefined : input.config.aiBinding;
   const { trustPreset, useIsolatedTaskDirectory, explicitTaskDirectory } = input.policy;
   const { secretsSvc, companySkills, appendRunEvent, finalizeAiConnectionBusyDeferral } = input.services;
@@ -205,17 +205,17 @@ export async function prepareHeartbeatExecutionConfiguration(db: Db, input: Hear
     await db.update(heartbeatRuns).set({ contextSnapshot: sql`coalesce(${heartbeatRuns.contextSnapshot}, '{}'::jsonb) || ${JSON.stringify({ aiConnection: context.aiConnection, ...(context.aiRouterTaskKey ? { aiRouterTaskKey: context.aiRouterTaskKey } : {}), ...(context.aiRouterSelection ? { aiRouterSelection: context.aiRouterSelection } : {}) })}::jsonb` }).where(eq(heartbeatRuns.id, run.id));
   }
   if (secretManifest.length > 0) {
-    context.paperclipSecrets = {
+    context.pilibalaSecrets = {
       manifest: secretManifest,
     };
   } else {
-    delete context.paperclipSecrets;
+    delete context.pilibalaSecrets;
   }
   const effectiveResolvedConfig = applyRunScopedMentionedSkillKeys(
     resolvedConfig,
     runScopedSkillKeys,
   );
-  const runtimeSkillPreference = readPaperclipSkillSyncPreference(
+  const runtimeSkillPreference = readPilibalaSkillSyncPreference(
     effectiveResolvedConfig,
   );
   const nativeRunnerPreparationSpans: NativeRunHistoricalSpan[] = [];
@@ -235,20 +235,20 @@ export async function prepareHeartbeatExecutionConfiguration(db: Db, input: Hear
         versionSelections, snapshotLatest: true,
         ...(hasStoredVersions && run.contextSnapshot?.skillSelectionSnapshot === true
           ? { onlyKeys: new Set(Object.keys(storedVersions)) }
-          : { selectionConfig: effectiveResolvedConfig, includeLegacy: agent.adapterType !== "paperclip_runner" }),
+          : { selectionConfig: effectiveResolvedConfig, includeLegacy: agent.adapterType !== "pilibala_runner" }),
       }, async entries => {
         const available = hasStoredVersions ? entries.filter(entry => Object.prototype.hasOwnProperty.call(storedVersions, entry.key)) : entries;
         const availableKeys = new Set(available.map(entry => entry.key));
         const desiredKeys = hasStoredVersions && run.contextSnapshot?.skillSelectionSnapshot === true
           ? Object.keys(storedVersions)
-          : agent.adapterType === "paperclip_runner"
-            ? resolvePaperclipDesiredSkillNames(effectiveResolvedConfig, available)
-            : resolveLegacyPaperclipDesiredSkillNames(effectiveResolvedConfig, available);
+          : agent.adapterType === "pilibala_runner"
+            ? resolvePilibalaDesiredSkillNames(effectiveResolvedConfig, available)
+            : resolveLegacyPilibalaDesiredSkillNames(effectiveResolvedConfig, available);
         const selectedKeys = new Set(desiredKeys.filter(key => availableKeys.has(key)));
         const resolved = available.filter(entry => selectedKeys.has(entry.key));
         // Optional assignments can outlive project membership. Drop inaccessible
         // assignments from delivery; explicit task mentions remain errors below.
-        skillDeliveryConfig = writePaperclipSkillSyncPreference(effectiveResolvedConfig,
+        skillDeliveryConfig = writePilibalaSkillSyncPreference(effectiveResolvedConfig,
           resolved.map(entry => ({ key: entry.key, versionId: entry.versionId ?? null })));
         for (const key of runScopedMentionedSkillKeys) {
           const entry = resolved.find(candidate => candidate.key === key);
@@ -267,7 +267,7 @@ export async function prepareHeartbeatExecutionConfiguration(db: Db, input: Hear
         return resolved;
       }));
     } catch (error) {
-      if (agent.adapterType === "paperclip_runner") {
+      if (agent.adapterType === "pilibala_runner") {
         await recordFailedSkillPreparation({
           runId: run.id,
           startedAtMs: skillsPrepareStartedAtMs,
@@ -289,20 +289,20 @@ export async function prepareHeartbeatExecutionConfiguration(db: Db, input: Hear
   const connectorAssignments = preconfiguredHome ? [] : await time("configuration_connector_assignments", () => resolveConnectorAssignments(db, { companyId: agent.companyId, agentId: agent.id, runId: run.id, issueId: typeof context.issueId === "string" ? context.issueId : undefined }));
   const connectorSkillConfig = await time("configuration_connector_skills", () => applyConnectorSkills(skillDeliveryConfig, runtimeSkillEntries, connectorAssignments));
   // Both CLI adapters and native context materialization use the same resolved set.
-  runtimeSkillEntries.splice(0, runtimeSkillEntries.length, ...connectorSkillConfig.paperclipRuntimeSkills);
+  runtimeSkillEntries.splice(0, runtimeSkillEntries.length, ...connectorSkillConfig.pilibalaRuntimeSkills);
   const connectorDelivery = await time("configuration_connector_delivery", () => prepareConnectorSkillDelivery(connectorSkillConfig, agent.adapterType));
   // Always replace this runtime-only field; caller wake data cannot supply skills.
-  context.paperclipWake = { ...parseObject(context.paperclipWake), connectorSkillInstructions: connectorDelivery.instructions };
+  context.pilibalaWake = { ...parseObject(context.pilibalaWake), connectorSkillInstructions: connectorDelivery.instructions };
   let runtimeConfig = await time("configuration_connection_instructions", () => prepareConnectionInstructionDelivery({
     resolve: () => resolveAssignedConnectionInstructionsForRun(db, { companyId: agent.companyId, agentId: agent.id, runId: run.id }),
-    context, config: connectorDelivery.config, native: agent.adapterType === "paperclip_runner",
+    context, config: connectorDelivery.config, native: agent.adapterType === "pilibala_runner",
   }));
   const agentIdentity = supportsManagedAgentIdentity(agent.adapterType, agent.adapterConfig, run.runtimeMode === "native" ? run.driverKind : undefined)
     ? await time("configuration_agent_identity", () => agentIdentityService(db).ensureAgentIdentity(agent.companyId, agent.id))
     : undefined;
   const identityRedactor = createAgentIdentityRedactor(agentIdentity?.privateKeyPem);
   onIdentityRedactorPrepared(identityRedactor);
-  if (agentIdentity) secretKeys.add("PAPERCLIP_AGENT_PRIVATE_KEY");
+  if (agentIdentity) secretKeys.add("PILIBALA_AGENT_PRIVATE_KEY");
   return {
     prepared: true as const,
     mergedConfig, configSnapshot, runScopedMentionedSkillKeys, githubSelection, useHostGitHub,

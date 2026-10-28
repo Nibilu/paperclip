@@ -2,8 +2,8 @@ import { TextAttachmentContext } from "@/context/TextAttachmentContext";
 import { isTextAttachment } from "@/lib/issue-attachments";
 import { useContext, useMemo, useState, type DragEvent, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { IssueAttachment } from "@paperclipai/shared";
-import { Download, ExternalLink, FileText, Maximize2, Paperclip, Trash2 } from "lucide-react";
+import type { IssueAttachment } from "@pilibalaai/shared";
+import { Download, ExternalLink, FileText, Maximize2, Paperclip as Pilibala, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FoldCurtain } from "./FoldCurtain";
 import { MarkdownBody } from "./MarkdownBody";
@@ -147,7 +147,7 @@ function MarkdownAttachmentCard({
           <p className="px-1 py-2 text-xs text-destructive">Could not load markdown preview.</p>
         ) : (
           <FoldCurtain>
-            <MarkdownBody className="paperclip-edit-in-place-content min-h-(--sz-220px) text-sm leading-7" softBreaks={false}>
+            <MarkdownBody className="pilibala-edit-in-place-content min-h-(--sz-220px) text-sm leading-7" softBreaks={false}>
               {data ?? ""}
             </MarkdownBody>
           </FoldCurtain>
@@ -279,7 +279,7 @@ export function IssueAttachmentsSection({
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Paperclip className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+          <Pilibala className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <h3 className="text-sm font-medium text-muted-foreground">Attachments</h3>
           <span className="text-xs text-muted-foreground">{attachments.length}</span>
         </div>

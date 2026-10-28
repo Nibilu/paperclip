@@ -1,5 +1,5 @@
 import { installedDaytonaPluginKeys } from "./installed-daytona-plugin.js";
-import { QUALIFIED_ACPX_PROFILES } from "../../packages/paperclip-runner/src/drivers/acpx/qualified-profiles.js";
+import { QUALIFIED_ACPX_PROFILES } from "../../packages/pilibala-runner/src/drivers/acpx/qualified-profiles.js";
 import { installedCliKeys } from "./installed-cli.js";
 import path from "node:path";
 import { chatNeedsApiTools, isManagedHiringCase } from "./chat-cases.js";
@@ -7,26 +7,26 @@ import { CREDENTIAL_NAMES } from "./types.js";
 import type { MatrixExecution } from "./types.js";
 
 const DATABASE_KEYS = ["DATABASE_URL", "DATABASE_MIGRATION_URL"] as const;
-const AMBIENT_PAPERCLIP_CREDENTIAL_KEYS = [
-  "PAPERCLIP_API_KEY",
-  "PAPERCLIP_AGENT_API_KEY",
-  "PAPERCLIP_TASK_BRIDGE_TOKEN",
-  "PAPERCLIP_SETUP_TOKEN",
-  "PAPERCLIP_SECRETS_MASTER_KEY",
-  "PAPERCLIP_SECRETS_MASTER_KEY_FILE",
+const AMBIENT_PILIBALA_CREDENTIAL_KEYS = [
+  "PILIBALA_API_KEY",
+  "PILIBALA_AGENT_API_KEY",
+  "PILIBALA_TASK_BRIDGE_TOKEN",
+  "PILIBALA_SETUP_TOKEN",
+  "PILIBALA_SECRETS_MASTER_KEY",
+  "PILIBALA_SECRETS_MASTER_KEY_FILE",
 ] as const;
 const GENERATED_SERVER_SECRET_KEYS = [
-  "PAPERCLIP_AGENT_JWT_SECRET",
-  "PAPERCLIP_DECISION_SIGNING_SECRET",
-  "PAPERCLIP_TOOL_ACTION_SIGNING_SECRET",
+  "PILIBALA_AGENT_JWT_SECRET",
+  "PILIBALA_DECISION_SIGNING_SECRET",
+  "PILIBALA_TOOL_ACTION_SIGNING_SECRET",
   "BETTER_AUTH_SECRET",
 ] as const;
 const AMBIENT_EXTERNAL_STATE_KEYS = [
-  "PAPERCLIP_STORAGE_S3_BUCKET",
-  "PAPERCLIP_STORAGE_S3_REGION",
-  "PAPERCLIP_STORAGE_S3_ENDPOINT",
-  "PAPERCLIP_STORAGE_S3_PREFIX",
-  "PAPERCLIP_STORAGE_S3_FORCE_PATH_STYLE",
+  "PILIBALA_STORAGE_S3_BUCKET",
+  "PILIBALA_STORAGE_S3_REGION",
+  "PILIBALA_STORAGE_S3_ENDPOINT",
+  "PILIBALA_STORAGE_S3_PREFIX",
+  "PILIBALA_STORAGE_S3_FORCE_PATH_STYLE",
 ] as const;
 const PROVIDER_SECRET_KEY = /^(?:OPENAI|ANTHROPIC|OPENROUTER|DAYTONA|XAI|GROK|CURSOR|COPILOT|GITHUB|GH)(?:_|$)/;
 
@@ -49,10 +49,10 @@ export function runnerE2EServerControlPaths(temporaryRoot: string) {
  * Native cells use the debug binary produced once by build:runner-binaries.
  * Preserve an explicit override for release builds and developer workflows.
  */
-export function resolvePaperclipRunnerBinaryForHarness(
+export function resolvePilibalaRunnerBinaryForHarness(
   executions: readonly MatrixExecution[],
   repositoryRoot: string,
-  configuredPath = process.env.PAPERCLIP_RUNNER_BINARY,
+  configuredPath = process.env.PILIBALA_RUNNER_BINARY,
   platform: NodeJS.Platform = process.platform,
 ): string | undefined {
   if (configuredPath?.trim()) return configuredPath;
@@ -65,11 +65,11 @@ export function resolvePaperclipRunnerBinaryForHarness(
   return path.join(
     repositoryRoot,
     "packages",
-    "paperclip-runner",
+    "pilibala-runner",
     "runner",
     "target",
     "debug",
-    platform === "win32" ? "paperclip-runnerd.exe" : "paperclip-runnerd",
+    platform === "win32" ? "pilibala-runnerd.exe" : "pilibala-runnerd",
   );
 }
 
@@ -77,10 +77,10 @@ export function resolvePaperclipRunnerBinaryForHarness(
  * Remote native cells stage the same controller-owned binary whose digest is
  * authorized by the PRP control plane. Local cells launch it directly.
  */
-export function resolvePaperclipRemoteRunnerBinaryForHarness(
+export function resolvePilibalaRemoteRunnerBinaryForHarness(
   executions: readonly MatrixExecution[],
   runnerBinary: string | undefined,
-  configuredPath = process.env.PAPERCLIP_RUNNER_REMOTE_BINARY_PATH,
+  configuredPath = process.env.PILIBALA_RUNNER_REMOTE_BINARY_PATH,
   platform: NodeJS.Platform = process.platform,
 ): string | undefined {
   if (configuredPath?.trim()) return configuredPath;
@@ -109,11 +109,11 @@ export function buildRunnerE2EProcessEnvironment(
 ): NodeJS.ProcessEnv {
   const result = { ...source };
   // Announcements are unrelated to the scenarios and obscure screenshot evidence.
-  result.PAPERCLIP_ANNOUNCEMENTS_ENABLED = "false";
+  result.PILIBALA_ANNOUNCEMENTS_ENABLED = "false";
   delete result.OPENCODE_ALLOW_ALL_MODELS;
   // Discard ambient admission. Only explicit candidate cells authorize the
   // exact model in their isolated server; credentials still use company secrets.
-  delete result.PAPERCLIP_RUNNER_ACPX_QUALIFICATION;
+  delete result.PILIBALA_RUNNER_ACPX_QUALIFICATION;
   const candidates = new Map<string, string>();
   for (const execution of executions) {
     const agent = execution.profile.qualificationCandidate;
@@ -136,14 +136,14 @@ export function buildRunnerE2EProcessEnvironment(
     candidates.set(agent, execution.profile.model);
   }
   if (candidates.size > 0) {
-    result.PAPERCLIP_RUNNER_ACPX_QUALIFICATION = JSON.stringify(
+    result.PILIBALA_RUNNER_ACPX_QUALIFICATION = JSON.stringify(
       [...candidates].map(([agent, model]) => ({ agent, model })),
     );
   }
   // These stories explicitly require the native API surface. Other suites
   // retain the server default or any supplied operator restriction.
   if (executions.some((e) => isManagedHiringCase(e.suite.id, e.task.id) || chatNeedsApiTools(e.suite.id, e.task.id))) {
-    result.PAPERCLIP_RUNNER_API_TOOLS_ENABLED = "true";
+    result.PILIBALA_RUNNER_API_TOOLS_ENABLED = "true";
   }
   if (
     executions.length > 0 &&
@@ -159,12 +159,12 @@ export function buildRunnerE2EProcessEnvironment(
 }
 
 /**
- * Build the environment inherited by the Paperclip server. Paid credentials
+ * Build the environment inherited by the Pilibala server. Paid credentials
  * deliberately stay in the launcher/Playwright process and cross the server
  * boundary through encrypted company secrets. Explicit subscription fixtures
  * stage their login in the disposable company's private credential home.
  */
-export function buildPaperclipServerEnvironment(
+export function buildPilibalaServerEnvironment(
   source: NodeJS.ProcessEnv,
   overrides: NodeJS.ProcessEnv = {},
 ): NodeJS.ProcessEnv {
@@ -175,7 +175,7 @@ export function buildPaperclipServerEnvironment(
   for (const key of [
     ...CREDENTIAL_NAMES,
     ...DATABASE_KEYS,
-    ...AMBIENT_PAPERCLIP_CREDENTIAL_KEYS,
+    ...AMBIENT_PILIBALA_CREDENTIAL_KEYS,
     ...AMBIENT_EXTERNAL_STATE_KEYS,
   ]) {
     delete result[key];
@@ -189,15 +189,15 @@ export function assertIsolatedServerEnvironment(
   env: NodeJS.ProcessEnv,
   expected: {
     temporaryRoot: string;
-    paperclipHome: string;
+    pilibalaHome: string;
     configPath: string;
   },
 ) {
-  const home = env.PAPERCLIP_HOME;
-  const config = env.PAPERCLIP_CONFIG;
-  if (home !== expected.paperclipHome || config !== expected.configPath) {
+  const home = env.PILIBALA_HOME;
+  const config = env.PILIBALA_CONFIG;
+  if (home !== expected.pilibalaHome || config !== expected.configPath) {
     throw new Error(
-      "Paperclip server environment does not use the allocated home/config paths",
+      "Pilibala server environment does not use the allocated home/config paths",
     );
   }
   if (
@@ -205,27 +205,27 @@ export function assertIsolatedServerEnvironment(
     !config.startsWith(`${expected.temporaryRoot}/`)
   ) {
     throw new Error(
-      "Paperclip server paths escape the isolated temporary root",
+      "Pilibala server paths escape the isolated temporary root",
     );
   }
   if (env.XDG_CACHE_HOME !== path.join(expected.temporaryRoot, "xdg-cache")) {
     throw new Error(
-      "Paperclip server cache does not use the allocated temporary root",
+      "Pilibala server cache does not use the allocated temporary root",
     );
   }
   for (const key of [
     ...CREDENTIAL_NAMES,
     ...DATABASE_KEYS,
-    ...AMBIENT_PAPERCLIP_CREDENTIAL_KEYS,
+    ...AMBIENT_PILIBALA_CREDENTIAL_KEYS,
     ...AMBIENT_EXTERNAL_STATE_KEYS,
   ]) {
     if (env[key])
       throw new Error(
-        `Paperclip server environment unexpectedly contains ${key}`,
+        `Pilibala server environment unexpectedly contains ${key}`,
       );
   }
   for (const key of GENERATED_SERVER_SECRET_KEYS) {
     if (!env[key])
-      throw new Error(`Paperclip server environment is missing ${key}`);
+      throw new Error(`Pilibala server environment is missing ${key}`);
   }
 }

@@ -10,7 +10,7 @@ import {
 import type {
   GitHubChatConfiguration,
   GitHubTaskReview,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   githubChatApi,
   type GitHubConfigurationRecord,
@@ -442,7 +442,7 @@ function ReviewResult({ review }: { review: GitHubTaskReview }) {
           className="underline underline-offset-4"
           to={`/issues/${review.issueId}`}
         >
-          Paperclip task
+          Pilibala task
         </Link>
         {review.summaryUrl && (
           <a

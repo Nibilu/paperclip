@@ -4,9 +4,9 @@ import type { IncomingMessage, Server as HttpServer } from "node:http";
 import { createRequire } from "node:module";
 import type { Duplex } from "node:stream";
 import { and, eq, isNull } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { agentApiKeys, companyMemberships, instanceUserRoles, heartbeatRuns, issues, projects } from "@paperclipai/db";
-import type { DeploymentMode, LiveEvent } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { agentApiKeys, companyMemberships, instanceUserRoles, heartbeatRuns, issues, projects } from "@pilibalaai/db";
+import type { DeploymentMode, LiveEvent } from "@pilibalaai/shared";
 import type { BetterAuthSessionResult } from "../auth/better-auth.js";
 import { logger } from "../middleware/logger.js";
 import { activityToastIdentity } from "./activity-toast-identity.js";
@@ -55,7 +55,7 @@ interface UpgradeContext {
   actorId: string;
 }
 
-/** Cloud-proxied browser identity resolved from trusted x-paperclip-cloud-* headers. */
+/** Cloud-proxied browser identity resolved from trusted x-pilibala-cloud-* headers. */
 export interface CloudUpgradeActor {
   userId: string;
   /** Companies this actor may subscribe to (primary stack company + real memberships). */
@@ -63,8 +63,8 @@ export interface CloudUpgradeActor {
 }
 
 interface IncomingMessageWithContext extends IncomingMessage {
-  paperclipWebSocketHandled?: boolean;
-  paperclipUpgradeContext?: UpgradeContext;
+  pilibalaWebSocketHandled?: boolean;
+  pilibalaUpgradeContext?: UpgradeContext;
 }
 
 function hashToken(token: string) {
@@ -157,7 +157,7 @@ async function authorizeUpgrade(
     }
 
     // Cloud-managed deployments authenticate proxied browsers with trusted
-    // x-paperclip-cloud-* headers, never a local Better Auth session — the
+    // x-pilibala-cloud-* headers, never a local Better Auth session — the
     // session fallback below can only 403 them, which left the live-events
     // socket permanently unreachable behind the Cloud front door. A resolved
     // cloud actor is authoritative: authorize against its membership scope.
@@ -246,7 +246,7 @@ export function setupLiveEventsWebSocketServer(
     resolveSessionFromHeaders?: (headers: Headers) => Promise<BetterAuthSessionResult | null>;
     /**
      * Resolves a Cloud-proxied browser's identity from the trusted
-     * x-paperclip-cloud-* headers on the upgrade request. Wired by managed
+     * x-pilibala-cloud-* headers on the upgrade request. Wired by managed
      * deployments; self-hosted instances leave it unset.
      */
     resolveCloudActor?: (req: IncomingMessage) => Promise<CloudUpgradeActor | null>;
@@ -268,7 +268,7 @@ export function setupLiveEventsWebSocketServer(
   }, 30000);
 
   wss.on("connection", (socket: WsSocket, req: IncomingMessage) => {
-    const context = (req as IncomingMessageWithContext).paperclipUpgradeContext;
+    const context = (req as IncomingMessageWithContext).pilibalaUpgradeContext;
     if (!context) {
       socket.close(1008, "missing context");
       return;
@@ -387,7 +387,7 @@ export function setupLiveEventsWebSocketServer(
   });
 
   server.on("upgrade", (req, socket, head) => {
-    if ((req as IncomingMessageWithContext).paperclipWebSocketHandled) {
+    if ((req as IncomingMessageWithContext).pilibalaWebSocketHandled) {
       return;
     }
 
@@ -433,7 +433,7 @@ export function setupLiveEventsWebSocketServer(
         }
 
         const reqWithContext = req as IncomingMessageWithContext;
-        reqWithContext.paperclipUpgradeContext = context;
+        reqWithContext.pilibalaUpgradeContext = context;
 
         cleanupRawSocketListeners();
         wss.handleUpgrade(req, socket, head, (ws: WsSocket) => {

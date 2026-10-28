@@ -8,7 +8,7 @@ import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { agents, authUsers, companies, companyMemberships, createDb, executionWorkspaceRepositoryRoots, executionWorkspaceRepositoryAccess, executionWorkspaceRepositories, executionWorkspaces,
-  heartbeatRuns, issueAccessGrants, issues, projects, projectWorkspaces, projectAccessMembers, principalPermissionGrants, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@paperclipai/db";
+  heartbeatRuns, issueAccessGrants, issues, projects, projectWorkspaces, projectAccessMembers, principalPermissionGrants, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@pilibalaai/db";
 import { assertExecutionWorkspaceRootReadAccess, assertExecutionWorkspaceRootWriteAccess, assertIsolatedWorkspaceSourceReadAccess, retainIsolatedWorkspaceSourceAccess, executionWorkspaceRepositoryService } from "../services/execution-workspace-repositories.js";
 import { executionWorkspaceService } from "../services/execution-workspaces.js";
 import { projectService } from "../services/projects.js";
@@ -607,7 +607,7 @@ const support = await getEmbeddedPostgresTestSupport();
     await exec("git", ["-C", checkout, "add", "."]);
     await exec("git", ["-C", checkout, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", "commit", "-m", "private source"]);
     const pin = (await exec("git", ["-C", checkout, "rev-parse", "HEAD"])).stdout.trim();
-    const owner = path.join(checkout, ".git", "paperclip-workspace-owner.json");
+    const owner = path.join(checkout, ".git", "pilibala-workspace-owner.json");
     const ownerJson = JSON.stringify({ version: 1, repositoryId: receipt.operationId, pinnedCommit: pin });
     if (marker === "symlink") {
       const target = path.join(root, `${f.issueId}-untrusted-owner`);
@@ -646,7 +646,7 @@ const support = await getEmbeddedPostgresTestSupport();
       issue: { id: f.issueId, identifier: "LEG-1", title: "Legacy recovery", description: null, workMode: "standard" },
       taskPrompt: "Continue", normalizedSessionId: randomUUID(), provider: "codex",
       workspace: { id: f.runId, cwd: f.admission.cwd, repoUrl: null, repoRef: null, branchName: null },
-      completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "paperclip.run-result.v1", contract: { revision: "1", objective: "Recover", criteria: [{ id: "objective", requirement: "Keep the admitted folder" }] } },
+      completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "pilibala.run-result.v1", contract: { revision: "1", objective: "Recover", criteria: [{ id: "objective", requirement: "Keep the admitted folder" }] } },
       runtimeContext: nativeRuntimeContextFixture(),
     });
     await db.update(heartbeatRuns).set({ runtimeMode: "native", runnerProfileJson: { nativeExecutionInput: execution },
@@ -830,7 +830,7 @@ const support = await getEmbeddedPostgresTestSupport();
     expect(acquisition.materialize).not.toHaveBeenCalled();
     await db.insert(executionWorkspaceRepositories).values({ companyId: f.companyId, executionWorkspaceId: f.workspace.id,
       requestedByIssueId: f.issueId, repositoryIdentity: "https://github.com/public/example", repoUrl: "https://github.com/public/example",
-      relativePath: ".paperclip-repositories/unused", requestedRef: "HEAD", requestKey: "requires-authority", requestKeys: ["requires-authority"] });
+      relativePath: ".pilibala-repositories/unused", requestedRef: "HEAD", requestKey: "requires-authority", requestKeys: ["requires-authority"] });
     await expect(f.service.prepareForAdmission(f.admission)).rejects.toThrow();
     expect(acquisition.materialize).not.toHaveBeenCalled();
   });

@@ -20,7 +20,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatActions,
@@ -33,12 +33,12 @@ import {
   chatPublications,
   issues,
   toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   ChatAdapterCapabilities,
   ChatProvider,
   SafeChatPublicationPayload,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import {
   readTelegramCallbackProvenance,
@@ -198,8 +198,8 @@ export function createChatInteractionCallbacks(db: Db, options: InteractionCallb
             authorizationMode: "safe_notice",
             threadId: event.event.threadId,
             userId: event.event.user.userId,
-            text: "This action is no longer available. Open the linked Paperclip task or ask an operator to link this account.",
-            fallbackText: "This Paperclip action is no longer available.",
+            text: "This action is no longer available. Open the linked Pilibala task or ask an operator to link this account.",
+            fallbackText: "This Pilibala action is no longer available.",
             settleDelivery: false,
           } as const)
         : null;
@@ -241,7 +241,7 @@ export function createChatInteractionCallbacks(db: Db, options: InteractionCallb
             },
             state: "filtered",
             attempts: 1,
-            redactedError: "External action denied by Paperclip authorization",
+            redactedError: "External action denied by Pilibala authorization",
             processedAt,
             updatedAt: processedAt,
           })
@@ -339,8 +339,8 @@ export function createChatInteractionCallbacks(db: Db, options: InteractionCallb
             authorizationMode: "safe_notice",
             threadId: event.event.threadId,
             userId: event.event.user.userId,
-            text: "Paperclip could not open this form. Try the action again or open the linked Paperclip task.",
-            fallbackText: "Paperclip could not open this form.",
+            text: "Pilibala could not open this form. Try the action again or open the linked Pilibala task.",
+            fallbackText: "Pilibala could not open this form.",
             settleDelivery: false,
           } as const)
         : null;
@@ -527,7 +527,7 @@ export function createChatInteractionCallbacks(db: Db, options: InteractionCallb
           },
           state: "filtered",
           attempts: 1,
-          redactedError: "External chat modal submission denied by Paperclip",
+          redactedError: "External chat modal submission denied by Pilibala",
           processedAt,
           updatedAt: processedAt,
         })
@@ -555,7 +555,7 @@ export function createChatInteractionCallbacks(db: Db, options: InteractionCallb
       ["active"],
     );
     if (!record) {
-      throw forbidden("This chat action is not a current Paperclip question");
+      throw forbidden("This chat action is not a current Pilibala question");
     }
     const deny = async (safelyKnown?: {
       conversationId?: string | null;
@@ -576,7 +576,7 @@ export function createChatInteractionCallbacks(db: Db, options: InteractionCallb
         // adapter can withhold that misleading acknowledgement. The runtime,
         // not raw JSON or discord.js methods, supplies the ingress context.
         throw Object.assign(
-          new Error("Discord Gateway action was not admitted by Paperclip"),
+          new Error("Discord Gateway action was not admitted by Pilibala"),
           { code: "chat_discord_gateway_action_rejected" },
         );
       }
@@ -595,7 +595,7 @@ export function createChatInteractionCallbacks(db: Db, options: InteractionCallb
     );
     // Executable external actions are deliberately stricter than ordinary
     // sponsored-guest messages. They require a current endpoint-scoped link to
-    // an active non-viewer Paperclip member, and never run as a guest sponsor.
+    // an active non-viewer Pilibala member, and never run as a guest sponsor.
     if (
       principal.linkedDenied ||
       !principal.userId ||
@@ -675,7 +675,7 @@ export function createChatInteractionCallbacks(db: Db, options: InteractionCallb
     // The opaque provider action is the immutable link to the original
     // publication. Resolve the conversation from that token, then verify the
     // provider's thread independently; never trust a callback message id to
-    // select a Paperclip task.
+    // select a Pilibala task.
     const conversation = await db
       .select()
       .from(chatConversations)
@@ -1067,7 +1067,7 @@ export function createChatInteractionCallbacks(db: Db, options: InteractionCallb
         );
 
         // A provider modal open can take seconds and can outlive Slack's
-        // trigger. The final Paperclip authorization snapshot above commits
+        // trigger. The final Pilibala authorization snapshot above commits
         // before transport starts so provider latency never holds endpoint,
         // destination, identity-link, or membership row locks.
         const modal = correction
@@ -1412,7 +1412,7 @@ export function createChatInteractionCallbacks(db: Db, options: InteractionCallb
     runtimeContext: RuntimeContext,
   ): Promise<ModalResponse> {
     const denialError = () =>
-      forbidden("This chat form is not a current Paperclip question");
+      forbidden("This chat form is not a current Pilibala question");
     const record = await runtimeCallbackRecord(
       event.endpointId,
       runtimeContext,

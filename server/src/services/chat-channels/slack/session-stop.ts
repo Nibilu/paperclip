@@ -16,7 +16,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   agentWakeupRequests,
@@ -28,13 +28,13 @@ import {
   chatExternalPrincipals,
   heartbeatRuns,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   SafeChatPublicationPayload,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   isUuidLike,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import { logger } from "../../../middleware/logger.js";
 
@@ -256,8 +256,8 @@ export function createSlackSessionStop(db: Db, options: SlackSessionStopOptions)
               or(
                 sql`${agentWakeupRequests.payload}->>'issueId' = ${issue.id}`,
                 sql`${agentWakeupRequests.payload}->>'taskId' = ${issue.id}`,
-                sql`${agentWakeupRequests.payload}->'_paperclipWakeContext'->>'issueId' = ${issue.id}`,
-                sql`${agentWakeupRequests.payload}->'_paperclipWakeContext'->>'taskId' = ${issue.id}`,
+                sql`${agentWakeupRequests.payload}->'_pilibalaWakeContext'->>'issueId' = ${issue.id}`,
+                sql`${agentWakeupRequests.payload}->'_pilibalaWakeContext'->>'taskId' = ${issue.id}`,
               ),
             ),
           )
@@ -571,8 +571,8 @@ export function createSlackSessionStop(db: Db, options: SlackSessionStopOptions)
               or(
                 sql`${agentWakeupRequests.payload}->>'issueId' = ${issue.id}`,
                 sql`${agentWakeupRequests.payload}->>'taskId' = ${issue.id}`,
-                sql`${agentWakeupRequests.payload}->'_paperclipWakeContext'->>'issueId' = ${issue.id}`,
-                sql`${agentWakeupRequests.payload}->'_paperclipWakeContext'->>'taskId' = ${issue.id}`,
+                sql`${agentWakeupRequests.payload}->'_pilibalaWakeContext'->>'issueId' = ${issue.id}`,
+                sql`${agentWakeupRequests.payload}->'_pilibalaWakeContext'->>'taskId' = ${issue.id}`,
               ),
             ),
           )
@@ -611,7 +611,7 @@ export function createSlackSessionStop(db: Db, options: SlackSessionStopOptions)
                 eq(agents.id, payload.assignedAgentId),
               ),
             )
-            .then((rows) => rows[0]?.name ?? "Paperclip agent");
+            .then((rows) => rows[0]?.name ?? "Pilibala agent");
           await stageAuthorizedTaskControlPublication(tx, {
             companyId: current.companyId,
             conversationId: conversation.id,

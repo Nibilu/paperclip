@@ -94,7 +94,7 @@ function registerRouteMocks() {
 }
 
 const EXTERNAL_ADAPTER_TYPE = "external_admin_test";
-const EXTERNAL_PACKAGE_NAME = "paperclip-external-adapter";
+const EXTERNAL_PACKAGE_NAME = "pilibala-external-adapter";
 let adapterRoutes: typeof import("../routes/adapters.js").adapterRoutes;
 let errorHandler: typeof import("../middleware/index.js").errorHandler;
 let registerServerAdapter: typeof import("../adapters/registry.js").registerServerAdapter;
@@ -291,7 +291,7 @@ describe("adapter management route authorization", () => {
       ...mocks.externalRecords.values(),
     ]);
     mocks.getAdapterPluginsDir.mockReturnValue(
-      "/tmp/paperclip-adapter-route-authz-test",
+      "/tmp/pilibala-adapter-route-authz-test",
     );
     mocks.getDisabledAdapterTypes.mockReturnValue([]);
     mocks.setAdapterDisabled.mockReturnValue(true);
@@ -375,10 +375,10 @@ describe("adapter management route authorization", () => {
 
   describe("cloud-managed adapter code install floor", () => {
     beforeEach(() => {
-      process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
+      process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
     });
     afterEach(() => {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
     });
 
     it.each(["install", "reinstall"] as const)(
@@ -406,10 +406,10 @@ describe("adapter management route authorization", () => {
 
   describe("operator-hidden adapter management floor", () => {
     beforeEach(() => {
-      process.env.PAPERCLIP_HIDDEN_SETTINGS = "instance.adapters";
+      process.env.PILIBALA_HIDDEN_SETTINGS = "instance.adapters";
     });
     afterEach(() => {
-      delete process.env.PAPERCLIP_HIDDEN_SETTINGS;
+      delete process.env.PILIBALA_HIDDEN_SETTINGS;
     });
 
     it.each([

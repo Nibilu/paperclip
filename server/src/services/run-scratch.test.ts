@@ -44,8 +44,8 @@ describe("heartbeat run scratch cleanup", () => {
     await expect(fs.stat(scratch.dir)).rejects.toMatchObject({ code: "ENOENT" });
   });
 
-  it("preserves paperclip-named directories without the ownership marker", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-run-unmarked-"));
+  it("preserves pilibala-named directories without the ownership marker", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-run-unmarked-"));
     cleanupDirs.add(dir);
     const scratch: HeartbeatRunScratch = {
       dir,
@@ -113,10 +113,10 @@ describe("heartbeat run scratch cleanup", () => {
 
     const result = buildHeartbeatRunScratchEnv({ TMPDIR: "/custom/tmp" }, scratch);
 
-    expect(result.env.PAPERCLIP_RUN_SCRATCH_DIR).toBe(scratch.dir);
-    expect(result.env.PAPERCLIP_TASK_SCRATCH_DIR).toBe(scratch.dir);
-    expect(result.env.PAPERCLIP_SCRATCH_DIR).toBe(scratch.dir);
-    expect(result.env.PAPERCLIP_TMPDIR).toBe(scratch.dir);
+    expect(result.env.PILIBALA_RUN_SCRATCH_DIR).toBe(scratch.dir);
+    expect(result.env.PILIBALA_TASK_SCRATCH_DIR).toBe(scratch.dir);
+    expect(result.env.PILIBALA_SCRATCH_DIR).toBe(scratch.dir);
+    expect(result.env.PILIBALA_TMPDIR).toBe(scratch.dir);
     expect(result.env.TMPDIR).toBeUndefined();
     expect(result.env.TEMP).toBe(scratch.dir);
     expect(result.env.TMP).toBe(scratch.dir);

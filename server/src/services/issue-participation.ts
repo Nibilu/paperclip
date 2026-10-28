@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { activityLog, issueComments, issues } from "@paperclipai/db";
+import { activityLog, issueComments, issues } from "@pilibalaai/db";
 
 // Mine participation fails closed. Add new user-authored issue mutation actions
 // here instead of admitting every issue activity, because reads, previews, and

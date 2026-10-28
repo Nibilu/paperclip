@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import { heartbeatRuns, issues, type Db } from "@paperclipai/db";
-import { setIssueTitleSchema, type SetIssueTitle } from "@paperclipai/shared";
+import { heartbeatRuns, issues, type Db } from "@pilibalaai/db";
+import { setIssueTitleSchema, type SetIssueTitle } from "@pilibalaai/shared";
 import { badRequest, conflict, forbidden, notFound } from "../errors.js";
 import { persistActivity, type ActivityPublication, type LogActivityInput } from "./activity-log.js";
 import { issueReferenceService } from "./issue-references.js";

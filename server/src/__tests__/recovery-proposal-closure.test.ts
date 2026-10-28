@@ -13,7 +13,7 @@ import {
   heartbeatRuns,
   issueRecoveryActions,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -77,9 +77,9 @@ describeEmbeddedPostgres("recovery proposal closure (S7/S8/S9)", () => {
   const priorOperationLogRoot = process.env.WORKSPACE_OPERATION_LOG_BASE_PATH;
 
   beforeAll(async () => {
-    operationLogRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-proposal-closure-logs-"));
+    operationLogRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-proposal-closure-logs-"));
     process.env.WORKSPACE_OPERATION_LOG_BASE_PATH = operationLogRoot;
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-proposal-closure-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-proposal-closure-");
     db = createDb(tempDb.connectionString);
   }, 30_000);
 

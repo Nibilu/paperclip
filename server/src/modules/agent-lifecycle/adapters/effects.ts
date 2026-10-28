@@ -1,6 +1,6 @@
 import type { LifecycleFailure } from "../application/ports.js";
-import type { Db } from "@paperclipai/db";
-import type { budgetPolicies } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import type { budgetPolicies } from "@pilibalaai/db";
 import type { CreateAgentData, CreateAgentOptions, AgentConfigurationPatch, AgentConfigurationRecord, AgentHireRecord, UpdateAgentOptions } from "../../../lib/agent-records.js";
 import type { ActivityPublication } from "../../../types/activity-publication.js";
 

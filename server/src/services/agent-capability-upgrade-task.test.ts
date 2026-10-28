@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CAPABILITY_UPGRADE_ADMISSION_GATE_REASON,
   type CapabilityUpgradeTaskProvenance,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { capabilityUpgradeTaskService } from "./agent-capability-upgrade-task.js";
 
 /**
@@ -72,7 +72,7 @@ function makeDb(selectResults: SelectResult[], hooks: { activity?: (action: stri
       }),
     }),
   };
-  return db as unknown as import("@paperclipai/db").Db;
+  return db as unknown as import("@pilibalaai/db").Db;
 }
 
 function makeObservationRow(overrides: Record<string, unknown> = {}) {

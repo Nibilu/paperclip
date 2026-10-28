@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { agents, companies, createDb } from "@paperclipai/db";
+import { agents, companies, createDb } from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -24,19 +24,19 @@ describeEmbeddedPostgres("teams catalog install with no caller adapter overrides
   let db!: ReturnType<typeof createDb>;
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
   let tempHome: string | null = null;
-  let oldPaperclipHome: string | undefined;
+  let oldPilibalaHome: string | undefined;
 
   beforeAll(async () => {
-    oldPaperclipHome = process.env.PAPERCLIP_HOME;
-    tempHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-teams-catalog-no-overrides-"));
-    process.env.PAPERCLIP_HOME = tempHome;
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-teams-catalog-no-overrides-");
+    oldPilibalaHome = process.env.PILIBALA_HOME;
+    tempHome = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-teams-catalog-no-overrides-"));
+    process.env.PILIBALA_HOME = tempHome;
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-teams-catalog-no-overrides-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
   afterAll(async () => {
-    if (oldPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-    else process.env.PAPERCLIP_HOME = oldPaperclipHome;
+    if (oldPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+    else process.env.PILIBALA_HOME = oldPilibalaHome;
     if (tempHome) await fs.rm(tempHome, { recursive: true, force: true });
     await tempDb?.cleanup();
   });

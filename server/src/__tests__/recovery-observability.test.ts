@@ -7,7 +7,7 @@ import {
   heartbeatRuns,
   issueRecoveryActions,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -122,7 +122,7 @@ describeEmbeddedPostgres("recovery observability report", () => {
   const latestWeek = new Date("2026-07-14T12:00:00.000Z"); // in week 2026-07-13
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-recovery-observability-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-recovery-observability-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -146,7 +146,7 @@ describeEmbeddedPostgres("recovery observability report", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

@@ -1,0 +1,49 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "rootDir": ".",
+    "types": [
+      "vite/client",
+      "node"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@pilibalaai/pilibala-runner/browser": [
+        "src/browser/index.ts"
+      ],
+      "@pilibalaai/pilibala-runner/react": [
+        "src/react/index.ts"
+      ],
+      "@pilibalaai/pilibala-runner/standalone": [
+        "src/standalone/index.ts"
+      ],
+      "@pilibalaai/pilibala-runner/styles.css": [
+        "styles.css"
+      ],
+      "@pilibala-runner-local/capability": [
+        "src/scenarios/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "devtools/browser/src/**/*.ts",
+    "devtools/browser/src/**/*.tsx",
+    "devtools/issue-thread/src/**/*.ts",
+    "devtools/issue-thread/src/**/*.tsx",
+    "examples/*/src/**/*.ts",
+    "examples/*/src/**/*.tsx",
+    "src/standalone/**/*.ts"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}

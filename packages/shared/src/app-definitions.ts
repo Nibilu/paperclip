@@ -142,8 +142,8 @@ export function getRecommendedConnectionMethod(
     return capabilityKey === "write" || capabilityKey === "draft";
   });
   const managedMethods = methods.filter((method) =>
-    method.oauthStrategy === "paperclip_cloud_connector"
-    || method.oauthStrategy === "paperclip_id_connector"
+    method.oauthStrategy === "pilibala_cloud_connector"
+    || method.oauthStrategy === "pilibala_id_connector"
   );
 
   // Prefer the permissions needed for agent work, then the simplest sign-in.
@@ -167,7 +167,7 @@ export function getAvailableConnectionMethod(
 
 export function connectionMethodSupportsAutomaticOAuth(method: ConnectionMethodDef | null | undefined): boolean {
   return method?.auth === "oauth" && (
-    (method.oauthStrategy === "paperclip_cloud_connector" || method.oauthStrategy === "paperclip_id_connector")
+    (method.oauthStrategy === "pilibala_cloud_connector" || method.oauthStrategy === "pilibala_id_connector")
     || method.ownershipModes.includes("dcr")
   );
 }

@@ -2,7 +2,7 @@
 
 import { renderToStaticMarkup } from "react-dom/server";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { AgentDetail, AgentRuntimeState, HeartbeatRun, Issue } from "@paperclipai/shared";
+import type { AgentDetail, AgentRuntimeState, HeartbeatRun, Issue } from "@pilibalaai/shared";
 import { describe, expect, it, vi } from "vitest";
 import { AgentOverview } from "./AgentDetail";
 import { queryKeys } from "../lib/queryKeys";
@@ -25,7 +25,7 @@ describe("AgentOverview", () => {
   it("identifies Muse and shows its provider-managed model even when old model fields remain", () => {
     const agent = {
       id: "muse-agent", companyId: "company-1", name: "Muse Researcher", role: "researcher", status: "active",
-      adapterType: "paperclip_runner", adapterConfig: { provider: "muse", model: "old-model" },
+      adapterType: "pilibala_runner", adapterConfig: { provider: "muse", model: "old-model" },
       runtimeConfig: { model: "old-runtime-model" },
     } as unknown as AgentDetail;
     const markup = renderToStaticMarkup(

@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { executionWorkspaceRuntimeLeases, heartbeatRuns, issues } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { executionWorkspaceRuntimeLeases, heartbeatRuns, issues } from "@pilibalaai/db";
 import { conflict } from "../errors.js";
 
 type ExecutionWorkspaceRuntimeLeaseRow = typeof executionWorkspaceRuntimeLeases.$inferSelect;

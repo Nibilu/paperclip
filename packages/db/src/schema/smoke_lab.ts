@@ -4,7 +4,7 @@ import type {
   SmokeRunStepPath,
   SmokeRunStepStatus,
   SmokeRunTrigger,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { companies } from "./companies.js";
 
 export const smokeRuns = pgTable(

@@ -3,11 +3,11 @@ import { useConnectionModels } from "../ai-connections/useConnectionModels";
 import { AgentCharacter } from "../AgentCharacter";
 import { useAgentAppearanceDraft } from "../../hooks/useAgentAppearanceDraft";
 import { AiConnectionField, aiProviderForAdapter } from "../ai-connections/AiConnectionField";
-import type { AiConnectionBinding } from "@paperclipai/shared";
-import type { AgentRunnerChoice } from "@paperclipai/shared";
+import type { AiConnectionBinding } from "@pilibalaai/shared";
+import type { AgentRunnerChoice } from "@pilibalaai/shared";
 import { CodexRunnerSelect } from "../CodexRunnerSelect";
 import { SelectPopover } from "../ui/select";
-import { DEFAULT_CODEX_LOCAL_MODEL } from "@paperclipai/adapter-codex-local";
+import { DEFAULT_CODEX_LOCAL_MODEL } from "@pilibalaai/adapter-codex-local";
 import {
   SETUP_CREDENTIAL_KEYS,
   SETUP_LOGIN_HINTS,
@@ -25,8 +25,8 @@ import type {
   AdapterEnvironmentTestResult,
   Agent,
   EnvBinding,
-} from "@paperclipai/shared";
-import { ADAPTER_AUTH_MISSING_CHECK_CODE } from "@paperclipai/shared";
+} from "@pilibalaai/shared";
+import { ADAPTER_AUTH_MISSING_CHECK_CODE } from "@pilibalaai/shared";
 import { useNavigate, useSearchParams } from "@/lib/router";
 import { agentsApi } from "@/api/agents";
 import { adaptersApi } from "@/api/adapters";
@@ -94,9 +94,9 @@ export function NewAgentSetup() {
       key={`${selectedCompanyId}:${params.get("name")}:${params.get("adapterType")}:${params.get("runnerProvider")}:${params.get("runner")}`}
       companyId={selectedCompanyId}
       name={params.get("name") ?? ""}
-      adapterType={params.get("adapterType") === "paperclip_runner" && (params.get("runnerProvider") ?? "codex") === "codex" ? "codex_local" : params.get("adapterType") ?? ""}
-      initialRunner={params.get("runner") ?? (params.get("adapterType") === "paperclip_runner" && (params.get("runnerProvider") ?? "codex") === "codex" ? "paperclip" : "auto")}
-      preserveNativeCodex={params.get("adapterType") === "paperclip_runner" && (params.get("runnerProvider") ?? "codex") === "codex"}
+      adapterType={params.get("adapterType") === "pilibala_runner" && (params.get("runnerProvider") ?? "codex") === "codex" ? "codex_local" : params.get("adapterType") ?? ""}
+      initialRunner={params.get("runner") ?? (params.get("adapterType") === "pilibala_runner" && (params.get("runnerProvider") ?? "codex") === "codex" ? "pilibala" : "auto")}
+      preserveNativeCodex={params.get("adapterType") === "pilibala_runner" && (params.get("runnerProvider") ?? "codex") === "codex"}
       runnerProvider={params.get("runnerProvider") ?? "codex"}
       createdAgentId={params.get("createdAgentId")}
     />
@@ -124,9 +124,9 @@ function Setup({
   const cache = useQueryClient();
   const { openNewIssue } = useDialogActions();
   const appearanceDraft = useAgentAppearanceDraft(`${companyId}:new-agent`);
-  const [runner, setRunner] = useState<AgentRunnerChoice>(initialRunner === "legacy" || initialRunner === "paperclip" ? initialRunner : "auto");
-  const requestAdapterType = preserveNativeCodex && runner === "paperclip" ? "paperclip_runner" : adapterType;
-  const isRunner = adapterType === "paperclip_runner";
+  const [runner, setRunner] = useState<AgentRunnerChoice>(initialRunner === "legacy" || initialRunner === "pilibala" ? initialRunner : "auto");
+  const requestAdapterType = preserveNativeCodex && runner === "pilibala" ? "pilibala_runner" : adapterType;
+  const isRunner = adapterType === "pilibala_runner";
   const isDot = isRunner && runnerProvider === "openai_dot";
   const brandType = isDot ? "openai_dot" : isRunner
     ? runnerProvider === "grok"
@@ -449,7 +449,7 @@ function Setup({
         adapter.loaded &&
         !adapter.disabled &&
         !getAdapterDisplay(adapterType).comingSoon,
-    ) && (requestAdapterType !== "paperclip_runner" || adapterType === "paperclip_runner" || adapterInventory.data?.some(adapter => adapter.type === "paperclip_runner" && adapter.loaded && !adapter.disabled));
+    ) && (requestAdapterType !== "pilibala_runner" || adapterType === "pilibala_runner" || adapterInventory.data?.some(adapter => adapter.type === "pilibala_runner" && adapter.loaded && !adapter.disabled));
   const ready = Boolean(
     available &&
     (adapterType !== "codex_local" || runner !== "auto" || Boolean(adapters.data)) &&
@@ -504,7 +504,7 @@ function Setup({
         : {}),
     };
     const config = getUIAdapter(adapterType).buildAdapterConfig(values);
-    if (preserveNativeCodex && runner === "paperclip") {
+    if (preserveNativeCodex && runner === "pilibala") {
       Object.assign(config, { provider: "codex", codexPermissionMode: "never", lifecycleMode: "per_turn" });
     }
     if (isRunner)
@@ -806,7 +806,7 @@ function Setup({
                   ·{" "}
                   {runnerProvider === "codex"
                     ? "Native app server runner"
-                    : "Paperclip Runner"}
+                    : "Pilibala Runner"}
                 </span>
               )}
             </div>
@@ -1008,7 +1008,7 @@ function Setup({
                         {isDot && <>
                           <p className="text-sm text-muted-foreground">Create this agent, then copy its pairing prompt to your Dot.</p>
                           {experimental.data?.enablePublicMcp !== true && <p className="text-sm text-muted-foreground">Enable Assistant connections (MCP) in Experimental settings before pairing.</p>}
-                          <ToggleField label="Allow externally billed provider" hint="Dot does not report token usage or cost. Paperclip cannot enforce a provider spend ceiling; known company and agent budget limits still apply."
+                          <ToggleField label="Allow externally billed provider" hint="Dot does not report token usage or cost. Pilibala cannot enforce a provider spend ceiling; known company and agent budget limits still apply."
                             checked={allowUnmeteredProvider} onChange={value => { setAllowUnmeteredProvider(value); resetTest(); }} />
                         </>}
                         {!connectionAdapter && aiProviderForAdapter(brandType) && (
@@ -1194,7 +1194,7 @@ function Setup({
                                 "checkpoints",
                                 "quiet",
                                 "verbose",
-                                "paperclipApiUrl",
+                                "pilibalaApiUrl",
                                 "promptTemplate",
                                 "timeoutSec",
                                 "graceSec",

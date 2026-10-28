@@ -50,7 +50,7 @@ interface ApiClientOptions {
   recoverAuth?: (input: RecoverAuthInput) => Promise<string | null>;
 }
 
-export class PaperclipApiClient {
+export class PilibalaApiClient {
   readonly apiBase: string;
   apiKey?: string;
   readonly runId?: string;
@@ -128,7 +128,7 @@ export class PaperclipApiClient {
     }
 
     if (this.runId) {
-      headers["x-paperclip-run-id"] = this.runId;
+      headers["x-pilibala-run-id"] = this.runId;
     }
 
     let response: Response;
@@ -221,7 +221,7 @@ function buildConnectionErrorMessage(input: {
 }): string {
   const healthUrl = buildHealthCheckUrl(input.url);
   const lines = [
-    "Could not reach the Paperclip API.",
+    "Could not reach the Pilibala API.",
     "",
     `Request: ${input.method} ${input.url}`,
   ];
@@ -230,12 +230,12 @@ function buildConnectionErrorMessage(input: {
   }
   lines.push(
     "",
-    "This usually means the Paperclip server is not running, the configured URL is wrong, or the request is being blocked before it reaches Paperclip.",
+    "This usually means the Pilibala server is not running, the configured URL is wrong, or the request is being blocked before it reaches Pilibala.",
     "",
     "Try:",
-    "- Start Paperclip with `pnpm dev` (from a source checkout) or `npx paperclipai run`.",
+    "- Start Pilibala with `pnpm dev` (from a source checkout) or `npx pilibalaai run`.",
     `- Verify the server is reachable with \`curl ${healthUrl}\`.`,
-    `- If Paperclip is running elsewhere, pass \`--api-base ${input.apiBase.replace(/\/+$/, "")}\` or set \`PAPERCLIP_API_URL\`.`,
+    `- If Pilibala is running elsewhere, pass \`--api-base ${input.apiBase.replace(/\/+$/, "")}\` or set \`PILIBALA_API_URL\`.`,
   );
   return lines.join("\n");
 }

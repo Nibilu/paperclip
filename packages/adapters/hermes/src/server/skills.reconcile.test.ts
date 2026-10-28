@@ -4,10 +4,10 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, expect, test } from "vitest";
 
-import { reconcileHermesPaperclipSkills } from "./skills.js";
+import { reconcileHermesPilibalaSkills } from "./skills.js";
 
 /**
- * AMB-108: a foreign entry occupying a Paperclip-managed skill path in the
+ * AMB-108: a foreign entry occupying a Pilibala-managed skill path in the
  * shared Hermes skills home used to hard-crash every hermes_local agent start
  * ("occupied by another installation"). The reconciler now quarantines
  * foreign symlinks/plain files into `<skillsHome>/.archive/` (rename only —
@@ -32,10 +32,10 @@ afterEach(async () => {
 const thisDir = fileURLToPath(import.meta.url);
 // src/server/skills.reconcile.test.ts -> <pkg>/skills
 const bundledSkillsRoot = join(thisDir, "..", "..", "skills");
-const BUNDLED_SKILL_KEY = "paperclipai/paperclip/paperclip-task-bridge";
+const BUNDLED_SKILL_KEY = "pilibalaai/pilibala/pilibala-task-bridge";
 
 async function makeFixture(): Promise<{ home: string; skillsHome: string }> {
-  const home = await mkdtemp(join(tmpdir(), "paperclip-amb108-"));
+  const home = await mkdtemp(join(tmpdir(), "pilibala-amb108-"));
   tempHomes.push(home);
   const hermesHome = join(home, ".hermes");
   const skillsHome = join(hermesHome, "skills");
@@ -49,17 +49,17 @@ function hermesConfig(home: string): Record<string, unknown> {
 
 test("foreign symlink at a managed skill path is quarantined and the managed link recreated", async () => {
   const { home, skillsHome } = await makeFixture();
-  const foreignTargetDir = join(home, "dev-checkout-skills", "paperclip-task-bridge");
+  const foreignTargetDir = join(home, "dev-checkout-skills", "pilibala-task-bridge");
   await mkdir(foreignTargetDir, { recursive: true });
   await writeFile(
     join(foreignTargetDir, "SKILL.md"),
-    "---\nname: paperclip-task-bridge\n---\nforeign tree\n",
+    "---\nname: pilibala-task-bridge\n---\nforeign tree\n",
   );
-  const target = join(skillsHome, "paperclip-task-bridge");
+  const target = join(skillsHome, "pilibala-task-bridge");
   await symlink(foreignTargetDir, target);
 
   const notices: string[] = [];
-  const desired = await reconcileHermesPaperclipSkills(
+  const desired = await reconcileHermesPilibalaSkills(
     hermesConfig(home),
     [BUNDLED_SKILL_KEY],
     (line) => {
@@ -73,12 +73,12 @@ test("foreign symlink at a managed skill path is quarantined and the managed lin
   expect(link.length).toBeGreaterThan(0);
   const linked = await readFile(join(target, "SKILL.md"), "utf8");
   expect(linked).not.toContain("foreign tree");
-  expect(linked).toContain("name: paperclip-task-bridge");
+  expect(linked).toContain("name: pilibala-task-bridge");
   // Quarantine archive received the foreign link (rename, not delete).
   const archiveDir = join(skillsHome, ".archive");
   const archived = await readdir(archiveDir);
   expect(archived.length).toBe(1);
-  expect(archived[0]).toMatch(/^paperclip-task-bridge\.foreign-/);
+  expect(archived[0]).toMatch(/^pilibala-task-bridge\.foreign-/);
   // The notice reports what moved where.
   expect(
     notices.some(
@@ -89,7 +89,7 @@ test("foreign symlink at a managed skill path is quarantined and the managed lin
 
   // Reconcile is now clean and idempotent (no further notices).
   const noticesAgain: string[] = [];
-  const desiredAgain = await reconcileHermesPaperclipSkills(
+  const desiredAgain = await reconcileHermesPilibalaSkills(
     hermesConfig(home),
     [BUNDLED_SKILL_KEY],
     (line) => {
@@ -103,35 +103,35 @@ test("foreign symlink at a managed skill path is quarantined and the managed lin
 
 test("foreign plain file at a managed skill path is quarantined", async () => {
   const { home, skillsHome } = await makeFixture();
-  await writeFile(join(skillsHome, "paperclip-task-bridge"), "stray file");
+  await writeFile(join(skillsHome, "pilibala-task-bridge"), "stray file");
 
   const notices: string[] = [];
-  await reconcileHermesPaperclipSkills(hermesConfig(home), [BUNDLED_SKILL_KEY], (line) => {
+  await reconcileHermesPilibalaSkills(hermesConfig(home), [BUNDLED_SKILL_KEY], (line) => {
     notices.push(line);
   });
 
   expect(notices.some((line) => line.includes("(file) at"))).toBe(true);
   const linked = await readFile(
-    join(skillsHome, "paperclip-task-bridge", "SKILL.md"),
+    join(skillsHome, "pilibala-task-bridge", "SKILL.md"),
     "utf8",
   );
-  expect(linked).toContain("name: paperclip-task-bridge");
+  expect(linked).toContain("name: pilibala-task-bridge");
   const archived = await readdir(join(skillsHome, ".archive"));
-  expect(archived[0]).toMatch(/^paperclip-task-bridge\.foreign-/);
+  expect(archived[0]).toMatch(/^pilibala-task-bridge\.foreign-/);
 });
 
 test("real directory occupant is never moved: run fails with actionable guidance", async () => {
   const { home, skillsHome } = await makeFixture();
-  const target = join(skillsHome, "paperclip-task-bridge");
+  const target = join(skillsHome, "pilibala-task-bridge");
   await mkdir(target, { recursive: true });
   await writeFile(
     join(target, "SKILL.md"),
-    "---\nname: paperclip-task-bridge\n---\nuser tree\n",
+    "---\nname: pilibala-task-bridge\n---\nuser tree\n",
   );
 
   const notices: string[] = [];
   await expect(
-    reconcileHermesPaperclipSkills(hermesConfig(home), [BUNDLED_SKILL_KEY], (line) => {
+    reconcileHermesPilibalaSkills(hermesConfig(home), [BUNDLED_SKILL_KEY], (line) => {
       notices.push(line);
     }),
   ).rejects.toThrow(/is occupied by another installation/);
@@ -145,14 +145,14 @@ test("real directory occupant is never moved: run fails with actionable guidance
 test("clean home reconciles without quarantine notices (Reconciled-count path unaffected)", async () => {
   const { home, skillsHome } = await makeFixture();
   const notices: string[] = [];
-  const desired = await reconcileHermesPaperclipSkills(hermesConfig(home), [BUNDLED_SKILL_KEY], (line) => {
+  const desired = await reconcileHermesPilibalaSkills(hermesConfig(home), [BUNDLED_SKILL_KEY], (line) => {
     notices.push(line);
   });
   expect(desired).toContain(BUNDLED_SKILL_KEY);
   expect(notices).toEqual([]);
   const linked = await readFile(
-    join(skillsHome, "paperclip-task-bridge", "SKILL.md"),
+    join(skillsHome, "pilibala-task-bridge", "SKILL.md"),
     "utf8",
   );
-  expect(linked).toContain("name: paperclip-task-bridge");
+  expect(linked).toContain("name: pilibala-task-bridge");
 });

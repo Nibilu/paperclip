@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { afterEach, expect, it, vi } from "vitest";
 import { runnerMatrix } from "./catalog.js";
 import { installedDaytonaPluginKeys, verifyInstalledDaytonaPlugin, type InstalledDaytonaPluginAuthority } from "./installed-daytona-plugin.js";
-import { buildPaperclipServerEnvironment } from "./harness-env.js";
+import { buildPilibalaServerEnvironment } from "./harness-env.js";
 import { setupLiveFixtures } from "./live-fixtures.js";
 import type { RunnerApi } from "./api.js";
 const cell = runnerMatrix.find(e => e.id === "extended-harnesses.runner-acpx-pi.daytona.hello-complete")!;
@@ -23,12 +23,12 @@ async function fixture() {
     await writeFile(join(dir, "package.json"), content); await writeFile(join(dir, entry), "// compiled");
     return { root: dir, packageSha256: hash(content), entry, entrySha256: hash("// compiled") };
   }
-  const plugin = await pkg("@paperclipai/plugin-daytona", "0.1.1", { "@paperclipai/plugin-sdk": sdkVersion, "@daytonaio/sdk": "0.203.0" }, { paperclipPlugin: { manifest: "./dist/manifest.js", worker: "./dist/worker.js" } });
+  const plugin = await pkg("@pilibalaai/plugin-daytona", "0.1.1", { "@pilibalaai/plugin-sdk": sdkVersion, "@daytonaio/sdk": "0.203.0" }, { pilibalaPlugin: { manifest: "./dist/manifest.js", worker: "./dist/worker.js" } });
   await writeFile(join(plugin.root, "dist/manifest.js"), "// manifest"); await writeFile(join(plugin.root, "dist/worker.js"), "// worker");
-  const authority: InstalledDaytonaPluginAuthority = { schema: "paperclip.e2e.installed-daytona-plugin/v1", graphRoot: root, plugin: { ...plugin, manifestSha256: hash("// manifest"), workerSha256: hash("// worker") }, sdk: await pkg("@paperclipai/plugin-sdk", sdkVersion, { "@paperclipai/shared": "0.3.1" }), shared: await pkg("@paperclipai/shared", "0.3.1"), daytona: await pkg("@daytonaio/sdk", "0.203.0") };
+  const authority: InstalledDaytonaPluginAuthority = { schema: "pilibala.e2e.installed-daytona-plugin/v1", graphRoot: root, plugin: { ...plugin, manifestSha256: hash("// manifest"), workerSha256: hash("// worker") }, sdk: await pkg("@pilibalaai/plugin-sdk", sdkVersion, { "@pilibalaai/shared": "0.3.1" }), shared: await pkg("@pilibalaai/shared", "0.3.1"), daytona: await pkg("@daytonaio/sdk", "0.203.0") };
   const authorityPath = join(root, "authority.json");
-  const env: NodeJS.ProcessEnv = { PAPERCLIP_RUNNER_E2E_INSTALLED_CLI: "/reviewed/cli", PAPERCLIP_RUNNER_E2E_INSTALLED_CLI_SHA256: "reviewed-separately", PAPERCLIP_RUNNER_E2E_INSTALLED_SERVER_ROOT: "/reviewed/server", PAPERCLIP_RUNNER_E2E_INSTALLED_SERVER_SHA256: "reviewed-separately", PAPERCLIP_RUNNER_E2E_INSTALLED_DAYTONA_PLUGIN: plugin.root, PAPERCLIP_RUNNER_E2E_INSTALLED_DAYTONA_PLUGIN_AUTHORITY: authorityPath };
-  async function seal() { const bytes = JSON.stringify(authority); await writeFile(authorityPath, bytes); env.PAPERCLIP_RUNNER_E2E_INSTALLED_DAYTONA_PLUGIN_AUTHORITY_SHA256 = hash(bytes); }
+  const env: NodeJS.ProcessEnv = { PILIBALA_RUNNER_E2E_INSTALLED_CLI: "/reviewed/cli", PILIBALA_RUNNER_E2E_INSTALLED_CLI_SHA256: "reviewed-separately", PILIBALA_RUNNER_E2E_INSTALLED_SERVER_ROOT: "/reviewed/server", PILIBALA_RUNNER_E2E_INSTALLED_SERVER_SHA256: "reviewed-separately", PILIBALA_RUNNER_E2E_INSTALLED_DAYTONA_PLUGIN: plugin.root, PILIBALA_RUNNER_E2E_INSTALLED_DAYTONA_PLUGIN_AUTHORITY: authorityPath };
+  async function seal() { const bytes = JSON.stringify(authority); await writeFile(authorityPath, bytes); env.PILIBALA_RUNNER_E2E_INSTALLED_DAYTONA_PLUGIN_AUTHORITY_SHA256 = hash(bytes); }
   await seal(); return { root, authority, env, seal };
 }
 it("admits pinned published plugin and resolved SDK graph without claiming a full graph audit", async () => {
@@ -46,29 +46,29 @@ it("fails closed for absent/partial installed Daytona pins but preserves ordinar
 });
 it("rejects stale authority, worker, manifest and dependency entry bytes", async () => {
   const f = await fixture();
-  await expect(verifyInstalledDaytonaPlugin({ ...f.env, PAPERCLIP_RUNNER_E2E_INSTALLED_DAYTONA_PLUGIN_AUTHORITY_SHA256: "0".repeat(64) }, [cell])).rejects.toThrow("reviewed pins");
+  await expect(verifyInstalledDaytonaPlugin({ ...f.env, PILIBALA_RUNNER_E2E_INSTALLED_DAYTONA_PLUGIN_AUTHORITY_SHA256: "0".repeat(64) }, [cell])).rejects.toThrow("reviewed pins");
   for (const [path, original] of [[join(f.authority.plugin.root,"dist/worker.js"),"// worker"], [join(f.authority.plugin.root,"dist/manifest.js"),"// manifest"], [join(f.authority.sdk.root,"dist/index.js"),"// compiled"]]) {
     await writeFile(path!, "// wrong"); await expect(verifyInstalledDaytonaPlugin(f.env,[cell])).rejects.toThrow("reviewed pins"); await writeFile(path!,original!);
   }
 });
 it("rejects source exports and workspace dependency versions even with refreshed pins", async () => {
   const f = await fixture(); const p = join(f.authority.plugin.root,"package.json");
-  const original = { name:"@paperclipai/plugin-daytona",version:"0.1.1",exports:{".":{import:"./dist/index.js"}},paperclipPlugin:{manifest:"./dist/manifest.js",worker:"./dist/worker.js"},dependencies:{"@paperclipai/plugin-sdk":sdkVersion,"@daytonaio/sdk":"0.203.0"} };
-  for (const manifest of [{ ...original, exports:{".":{import:"./src/index.ts"}} }, { ...original, dependencies:{ ...original.dependencies,"@paperclipai/plugin-sdk":"workspace:*" } }]) {
+  const original = { name:"@pilibalaai/plugin-daytona",version:"0.1.1",exports:{".":{import:"./dist/index.js"}},pilibalaPlugin:{manifest:"./dist/manifest.js",worker:"./dist/worker.js"},dependencies:{"@pilibalaai/plugin-sdk":sdkVersion,"@daytonaio/sdk":"0.203.0"} };
+  for (const manifest of [{ ...original, exports:{".":{import:"./src/index.ts"}} }, { ...original, dependencies:{ ...original.dependencies,"@pilibalaai/plugin-sdk":"workspace:*" } }]) {
     const bytes=JSON.stringify(manifest);await writeFile(p,bytes);f.authority.plugin.packageSha256=hash(bytes);await f.seal();await expect(verifyInstalledDaytonaPlugin(f.env,[cell])).rejects.toThrow(/compiled package exports|dependency identity/);
   }
 });
 it("rejects linked or escaped roots and a shadowed foreign resolved dependency", async () => {
   const f = await fixture(); const other = await fixture();
   f.authority.shared=other.authority.shared;await f.seal();await expect(verifyInstalledDaytonaPlugin(f.env,[cell])).rejects.toThrow("escapes");
-  f.authority.shared={...other.authority.shared,root:join(f.root,"node_modules/@paperclipai/shared")};await f.seal();
-  const nested=join(f.authority.plugin.root,"node_modules/@paperclipai");await mkdir(nested,{recursive:true});await symlink(other.authority.sdk.root,join(nested,"plugin-sdk"));
+  f.authority.shared={...other.authority.shared,root:join(f.root,"node_modules/@pilibalaai/shared")};await f.seal();
+  const nested=join(f.authority.plugin.root,"node_modules/@pilibalaai");await mkdir(nested,{recursive:true});await symlink(other.authority.sdk.root,join(nested,"plugin-sdk"));
   await expect(verifyInstalledDaytonaPlugin(f.env,[cell])).rejects.toThrow("foreign dependency");
   await rm(nested,{recursive:true});await rm(f.authority.shared.root,{recursive:true});await symlink(other.authority.shared.root,f.authority.shared.root);
   await expect(verifyInstalledDaytonaPlugin(f.env,[cell])).rejects.toThrow("canonical and unlinked");
 });
 it.skipIf(process.platform === "win32")("rejects a FIFO authority without waiting for a writer", async () => {
-  const f=await fixture();const p=f.env.PAPERCLIP_RUNNER_E2E_INSTALLED_DAYTONA_PLUGIN_AUTHORITY!;await rm(p);execFileSync("/usr/bin/mkfifo",[p],{timeout:5000,env:{}});await expect(verifyInstalledDaytonaPlugin(f.env,[cell])).rejects.toThrow("bounded unlinked regular file");
+  const f=await fixture();const p=f.env.PILIBALA_RUNNER_E2E_INSTALLED_DAYTONA_PLUGIN_AUTHORITY!;await rm(p);execFileSync("/usr/bin/mkfifo",[p],{timeout:5000,env:{}});await expect(verifyInstalledDaytonaPlugin(f.env,[cell])).rejects.toThrow("bounded unlinked regular file");
 });
 it("uses the verified public package in the existing API and rejects changed bytes before any mutation", async () => {
   // This positive fixture models the sanitized installed launcher, not pnpm's parent environment.
@@ -93,4 +93,4 @@ it.each(["NODE_OPTIONS", "NODE_PATH"])("rejects ambient %s before the plugin ins
     expect(post).not.toHaveBeenCalled();
   }
 });
-it("keeps fixture authority out of the production server environment", async()=>{const f=await fixture();const env=buildPaperclipServerEnvironment(f.env);for(const k of installedDaytonaPluginKeys)expect(env[k]).toBeUndefined();});
+it("keeps fixture authority out of the production server environment", async()=>{const f=await fixture();const env=buildPilibalaServerEnvironment(f.env);for(const k of installedDaytonaPluginKeys)expect(env[k]).toBeUndefined();});

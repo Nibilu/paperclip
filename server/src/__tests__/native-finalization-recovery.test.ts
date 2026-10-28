@@ -14,18 +14,18 @@ import {
   statusDecisions,
   workAssessments,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   CONTROL_PLANE_CONFORMANCE_OPEN,
   CONTROL_PLANE_CONFORMANCE_RESULT,
   CONTROL_PLANE_CONFORMANCE_TERMINAL,
-} from "../vendor/paperclip-runner/testing.js";
+} from "../vendor/pilibala-runner/testing.js";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import {
   reconcileNativeFinalizations,
   reconcileRetainedNativeSessionCleanups,
 } from "../services/native-runtime/native-finalization-reconciler.js";
-import { PaperclipControlPlanePort } from "../services/native-runtime/paperclip-control-plane-port.js";
+import { PilibalaControlPlanePort } from "../services/native-runtime/pilibala-control-plane-port.js";
 import { assertRetainedNativeSourceArchiveSettled } from "../services/native-runtime/native-session-executor.js";
 
 describe("P6-16/P6-25/P6-28 native finalization recovery", () => {
@@ -41,7 +41,7 @@ describe("P6-16/P6-25/P6-28 native finalization recovery", () => {
   const staleRunId = "72000000-0000-4000-8000-000000000015";
 
   beforeAll(async () => {
-    temporary = await startEmbeddedPostgresTestDatabase("paperclip-native-recovery-");
+    temporary = await startEmbeddedPostgresTestDatabase("pilibala-native-recovery-");
     db = createDb(temporary.connectionString);
     await db.insert(companies).values({ id: companyId, name: "Native recovery", issuePrefix: "NRC" });
     await db.insert(agents).values({
@@ -64,7 +64,7 @@ describe("P6-16/P6-25/P6-28 native finalization recovery", () => {
       companyId,
       issueId,
       revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1",
+      schemaVersion: "pilibala.completion-contract.v1",
       policyVersion: "phase6-v1",
       risk: "standard",
       completionAuthority: "server_arbiter",
@@ -92,7 +92,7 @@ describe("P6-16/P6-25/P6-28 native finalization recovery", () => {
       completionContractSha256: "native-recovery-contract",
       contextSnapshot: { issueId },
     });
-    const port = new PaperclipControlPlanePort(db, {
+    const port = new PilibalaControlPlanePort(db, {
       companyId,
       issueId,
       runId,
@@ -142,7 +142,7 @@ describe("P6-16/P6-25/P6-28 native finalization recovery", () => {
       companyId,
       issueId: staleIssueId,
       revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1",
+      schemaVersion: "pilibala.completion-contract.v1",
       policyVersion: "phase6-v1",
       risk: "standard",
       completionAuthority: "server_arbiter",
@@ -170,7 +170,7 @@ describe("P6-16/P6-25/P6-28 native finalization recovery", () => {
       completionContractSha256: "stale-finalizer-contract",
       contextSnapshot: { issueId: staleIssueId },
     });
-    const stalePort = new PaperclipControlPlanePort(db, {
+    const stalePort = new PilibalaControlPlanePort(db, {
       companyId,
       issueId: staleIssueId,
       runId: staleRunId,
@@ -356,7 +356,7 @@ describe("retained native cleanup discovery", () => {
 
   beforeAll(async () => {
     temporary = await startEmbeddedPostgresTestDatabase(
-      "paperclip-native-cleanup-sweep-",
+      "pilibala-native-cleanup-sweep-",
     );
     db = createDb(temporary.connectionString);
     await db
@@ -410,7 +410,7 @@ describe("retained native cleanup discovery", () => {
       companyId,
       issueId,
       revision: options.revision ?? 1,
-      schemaVersion: "paperclip.completion-contract.v1",
+      schemaVersion: "pilibala.completion-contract.v1",
       policyVersion: "phase6-v3",
       risk: "standard",
       completionAuthority: "server_arbiter",

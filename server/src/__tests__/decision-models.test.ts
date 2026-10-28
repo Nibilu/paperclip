@@ -8,9 +8,9 @@ import {
   createDb, companies, agents, companyMemberships, companyDecisionModels, costEvents, decisionInvocations,
   connectionGrants, connectionGrantMembers, toolConnectionInstalls, budgetPolicies, budgetReservations,
   heartbeatRuns, issues, projects, runIdentityContexts, secretAccessEvents, companySecrets,
-} from "@paperclipai/db";
-import { startEmbeddedPostgresTestDatabase } from "@paperclipai/db/test-embedded-postgres";
-import { DECISION_TEST_REQUEST, updateDecisionModelSchema, createCostEventSchema } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { startEmbeddedPostgresTestDatabase } from "@pilibalaai/db/test-embedded-postgres";
+import { DECISION_TEST_REQUEST, updateDecisionModelSchema, createCostEventSchema } from "@pilibalaai/shared";
 import { aiConnectionService } from "../services/ai-connections.js";
 import { agentService } from "../services/agents.js";
 import { decisionModelService, settingsDecisionTest, defineDecisionFeature, type DecisionContext } from "../services/decision-models.js";
@@ -29,10 +29,10 @@ let home: string;
 const backgroundFeature = defineDecisionFeature("test.background", { background: true });
 const outcome: DecisionProviderOutcome = { answers: { billing: { type: "boolean", probability: 0.9 } }, receipt: decisionReceipt("openai", { usage: { inputTokens: 100, outputTokens: 0 } }) };
 beforeAll(async () => {
-  home = await realpath(await mkdtemp(path.join(os.tmpdir(), "paperclip-decisions-")));
-  vi.stubEnv("PAPERCLIP_HOME", home);
-  vi.stubEnv("PAPERCLIP_INSTANCE_ID", "decisions-fixture");
-  database = await startEmbeddedPostgresTestDatabase("paperclip-decisions-db-");
+  home = await realpath(await mkdtemp(path.join(os.tmpdir(), "pilibala-decisions-")));
+  vi.stubEnv("PILIBALA_HOME", home);
+  vi.stubEnv("PILIBALA_INSTANCE_ID", "decisions-fixture");
+  database = await startEmbeddedPostgresTestDatabase("pilibala-decisions-db-");
   db = createDb(database.connectionString);
 }, 90000);
 afterAll(async () => { await database?.cleanup(); vi.unstubAllEnvs(); if (home) await rm(home, { recursive: true, force: true }); });
@@ -214,7 +214,7 @@ describe("company decision service", () => {
   });
   it("recovers an interrupted dispatch once without paying for a retry", async () => {
     const f = await fixture();
-    const [invocation] = await db.insert(decisionInvocations).values({ companyId: f.companyId, feature: "test.background", actorType: "system", actorId: "paperclip-decisions",
+    const [invocation] = await db.insert(decisionInvocations).values({ companyId: f.companyId, feature: "test.background", actorType: "system", actorId: "pilibala-decisions",
       ...f.binding, provider: "openai", model: "gpt-6-luna", questionTypes: ["boolean"], startedAt: new Date(Date.now() - 180_000) }).returning();
     await db.insert(budgetReservations).values({ companyId: f.companyId, decisionInvocationId: invocation.id, amountCents: "0.01", providerStartedAt: invocation.startedAt });
     await Promise.all([f.service.recoverInterrupted(), f.service.recoverInterrupted()]);

@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, gt, gte, inArray, ne, notInArray, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   agentWakeupRequests,
@@ -9,7 +9,7 @@ import {
   environmentLeases,
   issues,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { parseObject } from "../../../adapters/utils.js";
 import { visibleIssueCondition } from "../../../services/issue-visibility.js";
 import { logActivity } from "../../../services/activity-log.js";

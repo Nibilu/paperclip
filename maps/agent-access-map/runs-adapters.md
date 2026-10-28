@@ -57,7 +57,7 @@ native agent an equivalent discovery binding. See
 [probe restrictions](./execution-environments.md#probe) for acquiring qualification.
 An absent forced-Kubernetes environment is an unqualified sandbox target, never
 a local target. Discovery and automatic creation keep the Legacy path without
-provisioning it; explicit Paperclip selection returns qualification guidance.
+provisioning it; explicit Pilibala selection returns qualification guidance.
 The existing execution path owns lazy environment creation. Saved runners remain
 unchanged. This is source/control evidence, not live Kubernetes qualification.
 
@@ -168,7 +168,7 @@ API: `present` — representative operation IDs:
 Agent access: `available` — REST / native call_api / CLI run, plus the listed
 read-only paths through the default queue and HTTP/2 sandbox callback bridge.
 The sandbox uses its injected run credential. See
-[run diagnostics](../../skills/paperclip/references/run-diagnostics.md) and the
+[run diagnostics](../../skills/pilibala/references/run-diagnostics.md) and the
 [activity access contract](activity.md#runs).
 
 Policy: Same company, company-scope read authority and run/task visibility still
@@ -241,7 +241,7 @@ PostgreSQL regressions cover valid native/Legacy callbacks and rejected bindings
 revised live execution and actor authorization remain `not-run`.
 
 Scoped Evidence: `source-only` — the
-[native transport](../../packages/paperclip-runner/src/live/runnerd-codex-transport.ts)
+[native transport](../../packages/pilibala-runner/src/live/runnerd-codex-transport.ts)
 joins owned startup before certifying cleanup. Rejected duplicates cannot replace
 that owner or mutate recovery state. Unconfirmed preparation or registration
 retains recovery state; late registration may release only its own route and

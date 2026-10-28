@@ -1,4 +1,4 @@
-import type { SecretStatus, UserSecretCoverageSummary } from "@paperclipai/shared";
+import type { SecretStatus, UserSecretCoverageSummary } from "@pilibalaai/shared";
 import { UserRound } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Badge } from "@/components/ui/badge";

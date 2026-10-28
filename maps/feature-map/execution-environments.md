@@ -32,7 +32,7 @@ or instance administrator.
 
 Choose the environment in agent/project/workspace configuration, then inspect the resulting task/run and workspace.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use an owned disposable target and a supported provider plugin. Record provider, target identity, account, and spending constraints before a live remote run.
 
@@ -56,7 +56,7 @@ and name-only snapshots do not qualify. Changing the target or image invalidates
 the record; normal metadata edits cannot forge or overwrite it, and API reads
 omit the private metadata. Reading this evidence for discovery or creation does
 not allocate a sandbox. The draft `probe-config` checks are not a saved-image
-qualification operation. See the [runtime contract](../../packages/paperclip-runner/README.md)
+qualification operation. See the [runtime contract](../../packages/pilibala-runner/README.md)
 and [adapter validation recipe](./runs-adapters.md#adapter-setup) for native
 binary/provider readiness after platform qualification.
 

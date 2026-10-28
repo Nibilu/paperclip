@@ -1,8 +1,8 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
-import { agents, companies, companySecrets, companySecretVersions, activityLog, plugins, createDb, type Db } from "@paperclipai/db";
-import type { AgentLifecycleRequest } from "@paperclipai/shared";
+import { agents, companies, companySecrets, companySecretVersions, activityLog, plugins, createDb, type Db } from "@pilibalaai/db";
+import type { AgentLifecycleRequest } from "@pilibalaai/shared";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { agentInstanceSecretService } from "../services/agent-instance-secrets.js";
 import { secretService } from "../services/secrets.js";
@@ -10,7 +10,7 @@ import { localEncryptedProvider } from "../secrets/local-encrypted-provider.js";
 import { createLifecycleDriver } from "../services/agent-lifecycle-driver.js";
 import { createLifecycleStore } from "../modules/agent-lifecycle/adapters/postgres.js";
 import { logger } from "../middleware/logger.js";
-import { resolveCodexAuthCacheDir } from "@paperclipai/adapter-codex-local/server";
+import { resolveCodexAuthCacheDir } from "@pilibalaai/adapter-codex-local/server";
 import path from "node:path";
 import { mkdir, rm } from "node:fs/promises";
 import { awsSecretsManagerProvider } from "../secrets/aws-secrets-manager-provider.js";
@@ -23,8 +23,8 @@ const support = await getEmbeddedPostgresTestSupport();
   let pluginId: string;
   const runtime = JSON.stringify({ url: "https://runtime.example.test", token: "e".repeat(64) });
   beforeAll(async () => {
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", randomBytes(32).toString("base64"));
-    database = await startEmbeddedPostgresTestDatabase("paperclip-instance-secrets-");
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", randomBytes(32).toString("base64"));
+    database = await startEmbeddedPostgresTestDatabase("pilibala-instance-secrets-");
     db = createDb(database.connectionString);
     companyId = randomUUID(); pluginId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Secret fixture", issuePrefix: "SCR" });
@@ -167,9 +167,9 @@ const support = await getEmbeddedPostgresTestSupport();
 
   it("can clean up after a lost master key without decrypting credentials", async () => {
     const f = await fixture(); await f.service.apply(f.request, pluginId, { runtime });
-    const masterKey = process.env.PAPERCLIP_SECRETS_MASTER_KEY!;
+    const masterKey = process.env.PILIBALA_SECRETS_MASTER_KEY!;
     try {
-      vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", randomBytes(32).toString("base64"));
+      vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", randomBytes(32).toString("base64"));
       await expect(f.service.read(f.scope)).rejects.toThrow("Agent instance secret unavailable");
       await db.update(agents).set({ lifecycleState: "cleaning_up", lifecycleVersion: 2 }).where(eq(agents.id, f.agent.id));
       const call = vi.fn(async (_id, _method, input) => ({ operationId: input.operationId, version: input.version, status: "complete", instanceSecrets: { runtime: null } }));
@@ -178,7 +178,7 @@ const support = await getEmbeddedPostgresTestSupport();
       expect(await driver.runPlugin(snapshot, pluginId)).toBe("complete");
       expect(call.mock.calls[0][2].instanceSecrets).toEqual({});
       expect(await f.service.read(f.scope)).toEqual({});
-    } finally { vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", masterKey); }
+    } finally { vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", masterKey); }
   });
 
   it("allows company vault imports with the same name and key as an instance secret", async () => {

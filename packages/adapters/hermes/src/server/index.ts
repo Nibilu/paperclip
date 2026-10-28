@@ -19,8 +19,8 @@ export {
   resolveHermesDesiredSkillNames as resolveDesiredSkillNames,
 } from "./skills.js";
 
-import type { AdapterSessionCodec } from "@paperclipai/adapter-utils";
-import { sessionCodec as acpxSessionCodec } from "@paperclipai/adapter-utils/acpx-engine/session-codec";
+import type { AdapterSessionCodec } from "@pilibalaai/adapter-utils";
+import { sessionCodec as acpxSessionCodec } from "@pilibalaai/adapter-utils/acpx-engine/session-codec";
 
 function readNonEmptyString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;

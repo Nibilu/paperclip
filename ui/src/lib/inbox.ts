@@ -1,4 +1,4 @@
-import { isHeartbeatRunVisibleInMine } from "@paperclipai/shared";
+import { isHeartbeatRunVisibleInMine } from "@pilibalaai/shared";
 import type {
   Approval,
   DashboardSummary,
@@ -6,7 +6,7 @@ import type {
   InboxDismissal,
   Issue,
   JoinRequest,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   applyIssueFilters,
   defaultIssueFilterState,
@@ -19,15 +19,15 @@ import { formatAssigneeUserLabel } from "./assignees";
 export const RECENT_ISSUES_LIMIT = 100;
 export const FAILED_RUN_STATUSES = new Set(["failed", "timed_out"]);
 export const ACTIONABLE_APPROVAL_STATUSES = new Set(["pending", "revision_requested"]);
-export const DISMISSED_KEY = "paperclip:inbox:dismissed";
-export const READ_ITEMS_KEY = "paperclip:inbox:read-items";
-export const INBOX_LAST_TAB_KEY = "paperclip:inbox:last-tab";
-export const INBOX_ISSUE_COLUMNS_KEY = "paperclip:inbox:issue-columns";
-export const INBOX_NESTING_KEY = "paperclip:inbox:nesting";
-export const INBOX_GROUP_BY_KEY = "paperclip:inbox:group-by";
-export const INBOX_FILTER_PREFERENCES_KEY_PREFIX = "paperclip:inbox:filters";
-export const INBOX_COLLAPSED_GROUPS_KEY_PREFIX = "paperclip:inbox:collapsed-groups";
-export const INBOX_COLLAPSED_PARENTS_KEY_PREFIX = "paperclip:inbox:collapsed-parents";
+export const DISMISSED_KEY = "pilibala:inbox:dismissed";
+export const READ_ITEMS_KEY = "pilibala:inbox:read-items";
+export const INBOX_LAST_TAB_KEY = "pilibala:inbox:last-tab";
+export const INBOX_ISSUE_COLUMNS_KEY = "pilibala:inbox:issue-columns";
+export const INBOX_NESTING_KEY = "pilibala:inbox:nesting";
+export const INBOX_GROUP_BY_KEY = "pilibala:inbox:group-by";
+export const INBOX_FILTER_PREFERENCES_KEY_PREFIX = "pilibala:inbox:filters";
+export const INBOX_COLLAPSED_GROUPS_KEY_PREFIX = "pilibala:inbox:collapsed-groups";
+export const INBOX_COLLAPSED_PARENTS_KEY_PREFIX = "pilibala:inbox:collapsed-parents";
 export type InboxTab = "mine" | "recent" | "unread" | "blocked" | "all";
 export type InboxCategoryFilter =
   | "everything"

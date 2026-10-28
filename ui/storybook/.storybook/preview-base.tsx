@@ -8,7 +8,7 @@ import {
   instanceExperimentalSettingsSchema,
   instanceGeneralSettingsSchema,
   type WorkTimelineResult,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { MemoryRouter } from "@/lib/router";
 import { ONBOARDING_STORAGE_KEY } from "@/components/OnboardingWizard";
 import { STORYBOOK_COMPANY_ID } from "../fixtures/onboardingDraft";
@@ -47,7 +47,7 @@ import {
   storybookSecretProviders,
   storybookSecrets,
   storybookSidebarBadges,
-} from "../fixtures/paperclipData";
+} from "../fixtures/pilibalaData";
 import timelineSample from "../fixtures/workTimeline.human.sample.json";
 import "@mdxeditor/editor/style.css";
 import "./tailwind-entry.css";
@@ -96,12 +96,12 @@ installStorybookApiFixtures();
 function installStorybookApiFixtures() {
   if (typeof window === "undefined") return;
   const currentWindow = window as typeof window & {
-    __paperclipStorybookFetchInstalled?: boolean;
+    __pilibalaStorybookFetchInstalled?: boolean;
   };
-  if (currentWindow.__paperclipStorybookFetchInstalled) return;
+  if (currentWindow.__pilibalaStorybookFetchInstalled) return;
 
   const originalFetch = window.fetch.bind(window);
-  currentWindow.__paperclipStorybookFetchInstalled = true;
+  currentWindow.__pilibalaStorybookFetchInstalled = true;
 
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const rawUrl =
@@ -136,7 +136,7 @@ function installStorybookApiFixtures() {
             status: "active",
             user: {
               id: "user-board",
-              email: "board@paperclip.local",
+              email: "board@pilibala.local",
               name: "Board Operator",
               image: null,
             },
@@ -146,7 +146,7 @@ function installStorybookApiFixtures() {
             status: "active",
             user: {
               id: "user-product",
-              email: "product@paperclip.local",
+              email: "product@pilibala.local",
               name: "Product Lead",
               image: null,
             },
@@ -331,8 +331,8 @@ function installStorybookApiFixtures() {
     if (/^\/api\/companies\/[^/]+\/ai-connections\/local\/attempts$/.test(url.pathname)) {
       const body = typeof init?.body === "string" ? JSON.parse(init.body) : {};
       return Response.json({ sessionId: "local-storybook", expiresAt: new Date(Date.now() + 1_800_000).toISOString(), command: body.provider === "anthropic"
-        ? "CLAUDE_CONFIG_DIR='/paperclip/login' claude auth login"
-        : "CODEX_HOME='/paperclip/login' codex login --device-auth" });
+        ? "CLAUDE_CONFIG_DIR='/pilibala/login' claude auth login"
+        : "CODEX_HOME='/pilibala/login' codex login --device-auth" });
     }
     if (/^\/api\/companies\/[^/]+\/ai-connections\/local\/check$/.test(url.pathname)) {
       return Response.json({ status: onboardingFixtureState.localLoginStatus });
@@ -559,9 +559,9 @@ function installStorybookApiFixtures() {
       const [, adapterType] = adapterSchemaMatch;
       const schemas = (
         window as typeof window & {
-          __paperclipStorybookAdapterSchemas?: Record<string, unknown>;
+          __pilibalaStorybookAdapterSchemas?: Record<string, unknown>;
         }
-      ).__paperclipStorybookAdapterSchemas;
+      ).__pilibalaStorybookAdapterSchemas;
       const schema = schemas?.[adapterType];
       if (schema) return Response.json(schema);
     }
@@ -838,7 +838,7 @@ const preview: Preview = {
   ],
   globalTypes: {
     theme: {
-      description: "Paperclip color mode",
+      description: "Pilibala color mode",
       defaultValue: "dark",
       toolbar: {
         title: "Theme",

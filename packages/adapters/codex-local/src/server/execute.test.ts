@@ -3,21 +3,21 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { SandboxManagedRuntimeAsset } from "@paperclipai/adapter-utils/sandbox-managed-runtime";
+import type { SandboxManagedRuntimeAsset } from "@pilibalaai/adapter-utils/sandbox-managed-runtime";
 
 // Captured Codex `home` asset descriptor + the sandbox `auth.json` fixture the
 // mocked runtime hands back during teardown. Mutated per-test so a single
 // harness drives every round-trip case through the REAL `execute()` wiring.
 const captured: { assets: SandboxManagedRuntimeAsset[] } = { assets: [] };
 const sandboxAuthFixture: { bytes: Buffer } = { bytes: Buffer.from("{}") };
-const REMOTE_RUNTIME_ROOT = "/remote/workspace/.paperclip-runtime/codex";
+const REMOTE_RUNTIME_ROOT = "/remote/workspace/.pilibala-runtime/codex";
 
 const {
   runChildProcess,
   ensureCommandResolvable,
   resolveCommandForLogs,
   prepareAdapterExecutionTargetRuntime,
-  startAdapterExecutionTargetPaperclipBridge,
+  startAdapterExecutionTargetPilibalaBridge,
 } = vi.hoisted(() => ({
   runChildProcess: vi.fn(async () => ({
     exitCode: 0,
@@ -31,12 +31,12 @@ const {
   ensureCommandResolvable: vi.fn(async () => undefined),
   resolveCommandForLogs: vi.fn(async () => "/usr/bin/codex"),
   prepareAdapterExecutionTargetRuntime: vi.fn(),
-  startAdapterExecutionTargetPaperclipBridge: vi.fn(async () => null),
+  startAdapterExecutionTargetPilibalaBridge: vi.fn(async () => null),
 }));
 
-vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/server-utils")>(
-    "@paperclipai/adapter-utils/server-utils",
+vi.mock("@pilibalaai/adapter-utils/server-utils", async () => {
+  const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/server-utils")>(
+    "@pilibalaai/adapter-utils/server-utils",
   );
   return {
     ...actual,
@@ -46,14 +46,14 @@ vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
   };
 });
 
-vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/execution-target")>(
-    "@paperclipai/adapter-utils/execution-target",
+vi.mock("@pilibalaai/adapter-utils/execution-target", async () => {
+  const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/execution-target")>(
+    "@pilibalaai/adapter-utils/execution-target",
   );
   return {
     ...actual,
     prepareAdapterExecutionTargetRuntime,
-    startAdapterExecutionTargetPaperclipBridge,
+    startAdapterExecutionTargetPilibalaBridge,
   };
 });
 
@@ -120,7 +120,7 @@ describe("codex execute — outbound auth copy-back restore contribution", () =>
 
   async function runTeardown(input: { sandboxAuth: string; hostAuth: string; onProviderStopped?: () => Promise<void>; withIdentity?: boolean }) {
     const rootDir = await mkdtemp(
-      path.join(os.tmpdir(), "paperclip-codex-copyback-e2e-"),
+      path.join(os.tmpdir(), "pilibala-codex-copyback-e2e-"),
     );
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
@@ -162,7 +162,7 @@ describe("codex execute — outbound auth copy-back restore contribution", () =>
         env: { CODEX_HOME: sharedHostHome, ...(input.withIdentity ? { MY_SERVICE_TOKEN: "assigned-tool-token" } : {}) },
       },
       context: {
-        paperclipWorkspace: {
+        pilibalaWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -197,7 +197,7 @@ describe("codex execute — outbound auth copy-back restore contribution", () =>
     const policy = commandArgs.find(arg => arg.startsWith("shell_environment_policy.include_only="));
     const keys = JSON.parse(policy!.slice(policy!.indexOf("=") + 1));
     expect(keys).toEqual(expect.arrayContaining([
-      "PAPERCLIP_API_KEY", "PAPERCLIP_AGENT_PRIVATE_KEY",
+      "PILIBALA_API_KEY", "PILIBALA_AGENT_PRIVATE_KEY",
     ]));
     expect(keys).not.toContain("MY_SERVICE_TOKEN");
     expect(keys).not.toContain("DATABASE_URL");
@@ -226,7 +226,7 @@ describe("codex execute — outbound auth copy-back restore contribution", () =>
 
   it("stops the bridge and restores the workspace when instruction collection rejects", async () => {
     const order: string[] = [];
-    startAdapterExecutionTargetPaperclipBridge.mockResolvedValueOnce({
+    startAdapterExecutionTargetPilibalaBridge.mockResolvedValueOnce({
       env: {}, stop: async () => { order.push("bridge-stop"); },
     } as never);
     prepareAdapterExecutionTargetRuntime.mockImplementationOnce(async () => ({

@@ -4,7 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { activityLog, agentWakeupRequests, agents, approvals, authUsers, companies, companyMemberships, connectionGrants, connectionGrantDelegations,
   connectionIntentDeliveries, createDb, environmentLeases, heartbeatRunEvents, heartbeatRuns, issueApprovals, issueRecoveryActions, issueThreadInteractions, issues, projects, toolApplications,
   toolCatalogEntries, toolConnectionInstalls, toolConnections, toolProfileBindings, toolProfiles, toolPolicies,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { createPostgresRunDispatchAdapter } from "../modules/run-dispatch/adapters/postgres.js";
 import { connectionIntentDeliveryService } from "../services/connection-intent-delivery.js";
 import { connectionContinuationPendingResponse, findSatisfiedToolConnection, satisfiedConnectionIntentService } from "../services/satisfied-connection-intents.js";
@@ -25,7 +25,7 @@ describePostgres("already available connection requests", () => {
   let db!: ReturnType<typeof createDb>;
   let temp!: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   beforeAll(async () => {
-    temp = await startEmbeddedPostgresTestDatabase("paperclip-satisfied-connections-");
+    temp = await startEmbeddedPostgresTestDatabase("pilibala-satisfied-connections-");
     db = createDb(temp.connectionString);
     await db.insert(authUsers).values({ id: "connection-owner", name: "Owner", email: "owner@example.test", createdAt: new Date(), updatedAt: new Date() });
   }, 20_000);
@@ -443,7 +443,7 @@ describePostgres("already available connection requests", () => {
   it("does not bypass a retained workspace hold after connecting", async () => {
     const f = await seed();
     const leaseId = randomUUID();
-    const workspaceRestoreRecovery = { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [leaseId] };
+    const workspaceRestoreRecovery = { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [leaseId] };
     const [source] = await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: f.agentId, issueId: f.issueId, status: "interrupted", finishedAt: new Date(), runtimeMode: "legacy",
       contextSnapshot: { issueId: f.issueId }, resultJson: { conversationContinuation: "continue_conversation_v1", workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery } }).returning();
     const identity = { id: leaseId, companyId: f.companyId, heartbeatRunId: source!.id, provider: "daytona", providerLeaseId: `fixture-${leaseId}` };

@@ -2,7 +2,7 @@
 
 - 日期:2026-10-22(v1);2026-10-27(v1.2);2026-10-27(v1.3,实施范围确认)
 - 状态:**v1 已交付**(S0-S11,dev HEAD 1a96f7e76,2026-10-22);v1.2 设计评审完成;**v1.3 为当前有效设计**——实施范围已确认(2026-10-27):**第一阶段只做处理机制**(R11/R12+S13-S17,公司内医生挑选逻辑维持现状),**一等公民诊断主体(R13/S18)整体暂缓至第二阶段**。
-- **正本**:本文件(fork 仓库 `doc/plans/2026-10-22-recovery-ladder-requirements.md`)。伴生镜像:Paperclip 顶层任务 **AMB-98** plan 文档 `3b3347f8`(与正本同步,注明对应 commit);artifacts 文档 `09c11645` 为事故取证。同步约定:改正本必须同轮同步伴生镜像并注明 commit(§9)。
+- **正本**:本文件(fork 仓库 `doc/plans/2026-10-22-recovery-ladder-requirements.md`)。伴生镜像:Pilibala 顶层任务 **AMB-98** plan 文档 `3b3347f8`(与正本同步,注明对应 commit);artifacts 文档 `09c11645` 为事故取证。同步约定:改正本必须同轮同步伴生镜像并注明 commit(§9)。
 - 来源:AMB-86 / AMB-90 / AMB-96 / AMB-97 事故取证(2026-10-22);**AMB-116 / AMB-117 事故取证(2026-10-27)**。
 - 决策约束:不向 upstream 提 issue(非致命不提);实现落在本地 fork、低耦合、便于 rebase;涉及系统级改动前先提交本地并 fetch upstream 对齐(用户流程约定)。
 - E2E 验收实例:AMB-86 / AMB-90 / AMB-96 / AMB-97(§6);AMB-116/117(v1.2 增量,§6)。
@@ -23,7 +23,7 @@
 - 医生优先级已交付:agent `runtimeConfig.diagnosticPriority`;候选资格完全复用规范 invokability 定义({active,idle,running,error} 可调,{paused,terminated,pending_approval} 永不)。
 
 ### 1.3 会话绑定面(通道不对称)
-- Paperclip 侧:每个 agent+issue 持久化 `sessionParams.sessionId`(续传锚点)。
+- Pilibala 侧:每个 agent+issue 持久化 `sessionParams.sessionId`(续传锚点)。
 - Hermes 侧:会话冻结 `launch_request`(state.db);CLI 引擎 resume 逐标志位同一性比较(缺键 vs 显式 = 拒绝,AMB-90 实证);ACP 引擎 `load_session/resume_session` 无策略校验。
 - 推论:同一"会话绑定"概念在两引擎语义不同;跨引擎切换会把接缝变成任务阻断故障。
 
@@ -36,7 +36,7 @@
 - 修复 run 自身 failed(实证:`acpx_turn_failed`,"Persistent ACP session … could not be resumed",~5s)后:**每个 sweep tick 静默 skip**——`readDispositionRepairAttempt(latestRun)` → `reconcileDispositionRepair` legacy 分支 → `decideLegacyContinuation` → `run_not_successful` → return,在到达 `owner_not_invokable`/耗尽升级分支之前返回。无 attempt 2(预算 1/2 未用尽)、无 board 升级、无系统评论。
 - UI 不可见:该 cause 不在 `EXECUTION_RECONCILIATION_CAUSES`,blocker 谓词不命中,"Recovery needed / Inspect run" 卡不渲染;agent `error` 状态仍属规范 invokable 集合,无其他组件标红。
 - 分类无消费者:`classifyRunFailure` 对该错误已有正式规则(`session_lifecycle.resume_failed`,retryPolicy=**bounded**,ladderHint=**L0**——设计意图是有界重试),但"failed repair run"这一状态没有任何分类消费点;L2 补章(`stampL2HoldsMissingAnalysis`)与 outbox 均不收该家族。
-- 会话层前提缺失:重试若复用同一 dead session 则确定性重败(AMB-117 人工 retry + 2 次自动 retry 共 4 连败于同一 session id;0b06553b7 的 message-only forget 对 hermes_local 无 Paperclip 侧 task-session 行的形态未生效)。
+- 会话层前提缺失:重试若复用同一 dead session 则确定性重败(AMB-117 人工 retry + 2 次自动 retry 共 4 连败于同一 session id;0b06553b7 的 message-only forget 对 hermes_local 无 Pilibala 侧 task-session 行的形态未生效)。
 
 ## 2. 问题陈述(事故暴露的缺口)
 
@@ -137,6 +137,6 @@ L3 用户兜底      board 决策(现有语义,保持不变)
 ## 9. 文档双层模式(2026-10-27 定)
 
 - **正本**:本文件(repo `doc/plans/`),版本化、随代码演进、可 PR review。
-- **伴生镜像**:Paperclip 任务内 document(如 AMB-98 plan)——agent 可读层,与正本同内容,标注对应 commit;任务内另有 artifacts 文档承载事故取证。
+- **伴生镜像**:Pilibala 任务内 document(如 AMB-98 plan)——agent 可读层,与正本同内容,标注对应 commit;任务内另有 artifacts 文档承载事故取证。
 - 同步约定:修改设计必须同轮更新两处并在伴生镜像注明 commit;任务评论只做变更审计摘要,不承载设计正文。
 - 系统级需求一律进正本(不散落任务评论);事故任务(AMB-116/117 等)留在业务公司,经 §6 映射表与链接关联。

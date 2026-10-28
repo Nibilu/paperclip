@@ -1,21 +1,21 @@
 {
-  "name": "@paperclipai/hermes-paperclip-adapter",
+  "name": "@pilibalaai/hermes-pilibala-adapter",
   "version": "0.3.1",
-  "description": "Paperclip adapters for Hermes Agent local CLI and Hermes Gateway HTTP/SSE runs",
+  "description": "Pilibala adapters for Hermes Agent local CLI and Hermes Gateway HTTP/SSE runs",
   "type": "module",
   "license": "MIT",
-  "author": "Paperclip",
+  "author": "Pilibala",
   "repository": {
     "type": "git",
-    "url": "https://github.com/paperclipai/paperclip",
+    "url": "https://github.com/pilibalaai/pilibala",
     "directory": "packages/adapters/hermes"
   },
   "bugs": {
-    "url": "https://github.com/paperclipai/paperclip/issues"
+    "url": "https://github.com/pilibalaai/pilibala/issues"
   },
-  "homepage": "https://github.com/paperclipai/paperclip/tree/master/packages/adapters/hermes#readme",
+  "homepage": "https://github.com/pilibalaai/pilibala/tree/master/packages/adapters/hermes#readme",
   "keywords": [
-    "paperclip",
+    "pilibala",
     "hermes",
     "hermes-agent",
     "ai-agent",
@@ -34,7 +34,7 @@
     "./gateway/cli": "./src/gateway/cli/index.ts",
     "./gateway/ui-parser": "./gateway-ui-parser.cjs"
   },
-  "paperclip": {
+  "pilibala": {
     "adapterUiParser": "1.0.0"
   },
   "publishConfig": {
@@ -99,7 +99,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@paperclipai/adapter-utils": "workspace:*",
+    "@pilibalaai/adapter-utils": "workspace:*",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {

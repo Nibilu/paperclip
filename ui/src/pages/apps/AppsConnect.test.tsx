@@ -3,7 +3,7 @@
 import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { CONNECTABLE_APP_DEFINITIONS, GOOGLE_WORKSPACE_CONNECTOR_PROFILES, getAppStoreDefinition } from "@paperclipai/shared";
+import { CONNECTABLE_APP_DEFINITIONS, GOOGLE_WORKSPACE_CONNECTOR_PROFILES, getAppStoreDefinition } from "@pilibalaai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/api/client";
 import { aiConnectionsApi } from "@/api/ai-connections";
@@ -42,7 +42,7 @@ const mockParams = vi.hoisted(() => ({ appKey: undefined as string | undefined }
 const mockCompany = vi.hoisted(() => ({
   value: {
     selectedCompanyId: "company-1" as string | undefined,
-    selectedCompany: { id: "company-1", name: "Paperclip" } as { id: string; name: string } | null,
+    selectedCompany: { id: "company-1", name: "Pilibala" } as { id: string; name: string } | null,
   },
 }));
 
@@ -213,7 +213,7 @@ async function openAccessAdvanced() {
  */
 async function passAccessStep() {
   const onOAuthEntryScreen = Boolean(
-    document.body.textContent?.includes("Paperclip will open")
+    document.body.textContent?.includes("Pilibala will open")
       || document.body.textContent?.includes("Your connection is saved."),
   );
   if (onOAuthEntryScreen) {
@@ -316,10 +316,10 @@ function activeConnectorEnrollment() {
   return {
     configured: true,
     status: "active",
-    brokerBaseUrl: "https://my-staging.paperclip.app",
+    brokerBaseUrl: "https://my-staging.pilibala.app",
     instanceId: "inst-test",
     environment: "staging",
-    origins: ["https://paperclip.example.test"],
+    origins: ["https://pilibala.example.test"],
   };
 }
 
@@ -327,7 +327,7 @@ function unconfiguredConnectorEnrollment() {
   return {
     configured: false,
     status: "not_configured",
-    brokerBaseUrl: "https://my-staging.paperclip.app",
+    brokerBaseUrl: "https://my-staging.pilibala.app",
     instanceId: null,
     environment: "staging",
     origins: [],
@@ -352,7 +352,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     window.sessionStorage.clear();
     mockCompany.value = {
       selectedCompanyId: "company-1",
-      selectedCompany: { id: "company-1", name: "Paperclip" },
+      selectedCompany: { id: "company-1", name: "Pilibala" },
     };
     mockSearch.value = "";
     mockParams.appKey = undefined;
@@ -381,11 +381,11 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     startCloudConnectorEnrollmentMock.mockResolvedValue({
       configured: false,
       status: "pending",
-      brokerBaseUrl: "https://my-staging.paperclip.app",
+      brokerBaseUrl: "https://my-staging.pilibala.app",
       instanceId: "inst-test",
       environment: "staging",
       origins: [],
-      verificationUrl: "https://my-staging.paperclip.app/connections/enroll?id=enroll-test",
+      verificationUrl: "https://my-staging.pilibala.app/connections/enroll?id=enroll-test",
     });
     connectAppMock.mockResolvedValue({
       connectionId: "conn-1",
@@ -440,13 +440,13 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     expect(buttonByText("Connect")?.disabled).toBe(true);
     await act(async () => buttonByText("Connect")?.click());
     expect(connectAppMock).not.toHaveBeenCalled();
-    await act(async () => setInputValue(workspace, "paperclip-acme"));
+    await act(async () => setInputValue(workspace, "pilibala-acme"));
     expect(buttonByText("Connect")?.disabled).toBe(false);
     await act(async () => buttonByText("Connect")?.click());
     await flushReact();
     expect(connectAppMock).toHaveBeenCalledOnce();
     expect(connectAppMock).toHaveBeenCalledWith("company-1", expect.objectContaining({
-      configValues: { workspaceId: "paperclip-acme" },
+      configValues: { workspaceId: "pilibala-acme" },
       agentInstructions: expect.objectContaining({ enabled: true, text: honcho.agentInstructions!.text }),
     }));
   });
@@ -540,12 +540,12 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await vi.waitFor(() => expect(startOAuthMock).toHaveBeenCalledWith(connection.id, { asCurrentUser: true, interactionId: "intent-inline" }));
     expect(popup.location.assign).toHaveBeenCalled();
     popup.closed = true;
-    expect(container.textContent).toContain("Paperclip is waiting for confirmation");
+    expect(container.textContent).toContain("Pilibala is waiting for confirmation");
     expect(container.querySelector('a[target="_blank"]')?.getAttribute("href")).toBe("https://mcp.notion.com/authorize?state=resumed");
     expect(navigateTopLevelMock).not.toHaveBeenCalled();
     expect(putConnectionInstallsMock).not.toHaveBeenCalled();
     expect(finishAppMock).not.toHaveBeenCalled();
-    const message = (origin: string, interactionId: string, outcome: string) => window.dispatchEvent(new MessageEvent("message", { origin, data: { type: "paperclip.connection-intent.oauth", interactionId, outcome } }));
+    const message = (origin: string, interactionId: string, outcome: string) => window.dispatchEvent(new MessageEvent("message", { origin, data: { type: "pilibala.connection-intent.oauth", interactionId, outcome } }));
     await act(async () => { message("https://untrusted.example", "intent-inline", "connected"); message(window.location.origin, "other-intent", "connected"); });
     expect(onComplete).not.toHaveBeenCalled();
     await act(async () => message(window.location.origin, "intent-inline", "failed"));
@@ -572,7 +572,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     connectAppMock.mockResolvedValue({ connectionId: connection.id, connection, catalog: [], auth: { kind: "oauth" } });
     await render(undefined, false, <ConnectionSetupFlow host="dialog" serviceSlug="composio" interactionId="intent-inline" onPhaseChange={onPhaseChange} onComplete={onComplete} />);
     await act(async () => buttonByText("Connect Composio")!.click());
-    await vi.waitFor(() => expect(container.textContent).toContain("Paperclip couldn’t open sign-in"));
+    await vi.waitFor(() => expect(container.textContent).toContain("Pilibala couldn’t open sign-in"));
 
     const link = container.querySelector<HTMLAnchorElement>('a[target="_blank"]')!;
     expect(link.href).toBe("https://mcp.notion.com/authorize?state=resumed");
@@ -582,7 +582,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await act(async () => link.dispatchEvent(click));
     expect(click.defaultPrevented).toBe(false);
     expect(onPhaseChange).toHaveBeenLastCalledWith("authorizing");
-    expect(container.textContent).not.toContain("Paperclip couldn’t open sign-in");
+    expect(container.textContent).not.toContain("Pilibala couldn’t open sign-in");
     expect(open).toHaveBeenCalledTimes(1);
     expect(connectAppMock).toHaveBeenCalledTimes(1);
     expect(startOAuthMock).toHaveBeenCalledTimes(1);
@@ -599,7 +599,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
       await act(async () => setInputValue(container.querySelector<HTMLInputElement>('input[id$="-url"]')!, "https://provider.example/mcp"));
     }
     await act(async () => buttonByText(`Connect ${provider[0].toUpperCase()}${provider.slice(1)}`)!.click());
-    await vi.waitFor(() => expect(container.textContent).toContain("Paperclip couldn’t open sign-in"));
+    await vi.waitFor(() => expect(container.textContent).toContain("Pilibala couldn’t open sign-in"));
 
     const link = container.querySelector<HTMLAnchorElement>('a[target="_blank"]')!;
     expect(link.textContent).toBe("open sign-in again");
@@ -626,7 +626,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await act(async () => buttonByText("Save & exit")!.click());
     await vi.waitFor(() => expect(onCancel).toHaveBeenCalled());
     expect(connectAppMock).toHaveBeenCalledWith("company-1", expect.objectContaining({ saveDraft: true }));
-    expect(sessionStorage.getItem("paperclip:mcp-intent-draft:company-1:intent-inline")).toBe(connection.id);
+    expect(sessionStorage.getItem("pilibala:mcp-intent-draft:company-1:intent-inline")).toBe(connection.id);
     expect(JSON.stringify(sessionStorage)).not.toContain("fixture-secret");
     expect(finishAppMock).not.toHaveBeenCalled();
     expect(putConnectionInstallsMock).not.toHaveBeenCalled();
@@ -751,11 +751,11 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     expect(putConnectionInstallsMock).toHaveBeenCalledWith("new-composio", [{ targetType: "company", targetId: "company-1" }]);
     expect(finishAppMock).toHaveBeenCalledWith("company-1", "new-composio", expect.objectContaining({ access: "all_agents" }));
     expect(openAggregatorTaskMock).not.toHaveBeenCalled();
-    expect(window.sessionStorage.getItem("paperclip:mcp-upstream-app:company-1:new-composio")).toBeNull();
+    expect(window.sessionStorage.getItem("pilibala:mcp-upstream-app:company-1:new-composio")).toBeNull();
   });
 
   it("recovers upstream app context after a gateway OAuth redirect", async () => {
-    window.sessionStorage.setItem("paperclip:mcp-upstream-app:company-1:composio-draft", "hubspot");
+    window.sessionStorage.setItem("pilibala:mcp-upstream-app:company-1:composio-draft", "hubspot");
     mockSearch.value = "source=composio&resume=composio-draft&oauth=connected";
     getConnectionMock.mockResolvedValue({ id: "composio-draft", status: "draft", credentialPolicy: "per_user", config: { sourceTemplateKey: "composio", connectionMethodKey: "mcp" } });
     await render();
@@ -832,7 +832,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     const choice = { id: "conn-archive", applicationId: "app-archive", name: "Archive", status: "active" as const, enabled: true };
     listApplicationsMock.mockResolvedValue({ applications: [{ id: choice.applicationId, name: "Archive", applicationKey: "archive", type: "mcp_http" }] });
     listConnectionsMock.mockResolvedValue({ connections: [{
-      ...choice, companyId: "company-1", transport: "mcp_remote", authKind: "none", credentialPolicy: "shared", credentialSource: "paperclip_vault",
+      ...choice, companyId: "company-1", transport: "mcp_remote", authKind: "none", credentialPolicy: "shared", credentialSource: "pilibala_vault",
       config: source === "config-url" ? { url: endpoint } : {},
       transportConfig: source === "transport-url" ? { url: endpoint } : source === "transport-serverUrl" ? { serverUrl: endpoint } : {},
     }] });
@@ -855,13 +855,13 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     const choice = { id: "conn-archive", applicationId: "app-archive", name: "Archive", status: "active" as const, enabled: true };
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     listApplicationsMock.mockResolvedValue({ applications: [{ id: choice.applicationId, name: "Archive", applicationKey: "archive", type: "mcp_http" }] });
-    listConnectionsMock.mockResolvedValue({ connections: [{ ...choice, companyId: "company-1", transport: "mcp_remote", authKind: "none", credentialPolicy: "shared", credentialSource: "paperclip_vault", config: { url: "https://archive.example.test/mcp" } }] });
+    listConnectionsMock.mockResolvedValue({ connections: [{ ...choice, companyId: "company-1", transport: "mcp_remote", authKind: "none", credentialPolicy: "shared", credentialSource: "pilibala_vault", config: { url: "https://archive.example.test/mcp" } }] });
     getConnectionMock.mockImplementation(async () => (await listConnectionsMock()).connections[0]);
     await render(client, false, <ConnectionSetupFlow host="dialog" configuredConnection={choice} requestedAgentId="agent-1" />);
     const input = container.querySelector<HTMLInputElement>('input[aria-label="MCP server URL"]');
     expect(input?.value).toBe("https://archive.example.test/mcp");
     await act(async () => setInputValue(input!, "https://edited.example.test/mcp"));
-    listConnectionsMock.mockResolvedValue({ connections: [{ ...choice, companyId: "company-1", transport: "mcp_remote", authKind: "none", credentialPolicy: "shared", credentialSource: "paperclip_vault", config: { url: "https://refreshed.example.test/mcp" } }] });
+    listConnectionsMock.mockResolvedValue({ connections: [{ ...choice, companyId: "company-1", transport: "mcp_remote", authKind: "none", credentialPolicy: "shared", credentialSource: "pilibala_vault", config: { url: "https://refreshed.example.test/mcp" } }] });
     await act(async () => { await client.invalidateQueries(); });
     await flushReact();
     expect(container.querySelector<HTMLInputElement>('input[aria-label="MCP server URL"]')?.value).toBe("https://edited.example.test/mcp");
@@ -1204,7 +1204,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
   });
 
   it("shows Gmail's instance configuration notice instead of a dead connect path", async () => {
-    const reason = "Configure Paperclip ID before connecting Gmail.";
+    const reason = "Configure Pilibala ID before connecting Gmail.";
     listGalleryMock.mockResolvedValue({
       apps: [{ ...GMAIL, availability: { available: false, reason } }],
     });
@@ -1224,7 +1224,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     getCloudConnectorEnrollmentMock.mockResolvedValue({ configured: false, status: "not_configured", origins: [] });
     await render();
     await passAccessStep();
-    expect(container.textContent).toContain("Connect with Paperclip");
+    expect(container.textContent).toContain("Connect with Pilibala");
     await act(async () => { buttonByText("Use your own Asana OAuth app")!.click(); });
     await flushReact();
     expect(container.textContent).toContain("Your OAuth app");
@@ -1258,7 +1258,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
   it("collects customer-owned OAuth client details for a curated manual OAuth app", async () => {
     listGalleryMock.mockResolvedValue({
       apps: [BOX],
-      oauthCallbackUrl: "https://paperclip.example.test/api/tools/oauth/callback",
+      oauthCallbackUrl: "https://pilibala.example.test/api/tools/oauth/callback",
     });
     mockParams.appKey = "box";
     await render();
@@ -1268,11 +1268,11 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     expect(container.textContent).toContain("Open Box app settings");
     // The extra work reads as the provider's limitation, not as Box's normal path.
     expect(container.textContent).toContain(
-      "does not let Paperclip register itself automatically",
+      "does not let Pilibala register itself automatically",
     );
-    expect(container.textContent).toContain("Paperclip callback URL");
+    expect(container.textContent).toContain("Pilibala callback URL");
     expect(container.textContent).toContain(
-      "https://paperclip.example.test/api/tools/oauth/callback",
+      "https://pilibala.example.test/api/tools/oauth/callback",
     );
     expect(buttonByText("Continue to sign in")?.disabled).toBe(true);
 
@@ -1460,26 +1460,26 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await render();
     await passAccessStep();
 
-    expect(container.textContent).toContain("Connect with Paperclip");
+    expect(container.textContent).toContain("Connect with Pilibala");
     expect(container.textContent).toContain(
-      "You must connect this instance to Paperclip to connect to Gmail (you only need to do this once).",
+      "You must connect this instance to Pilibala to connect to Gmail (you only need to do this once).",
     );
-    expect(buttonByText("Connect with Paperclip")?.closest(".rounded-xl")?.classList.contains("border-border")).toBe(true);
+    expect(buttonByText("Connect with Pilibala")?.closest(".rounded-xl")?.classList.contains("border-border")).toBe(true);
     expect(container.textContent).not.toContain("Required once for managed Google sign-in.");
     expect(container.textContent).not.toContain("needs its own OAuth app");
 
     await act(async () => {
-      buttonByText("Connect with Paperclip")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      buttonByText("Connect with Pilibala")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     await flushReact();
 
     expect(startCloudConnectorEnrollmentMock).toHaveBeenCalledWith(
       "company-1",
-      "Paperclip",
+      "Pilibala",
       "/apps/connect?source=gmail&stage=setup",
     );
     expect(navigateTopLevelMock).toHaveBeenCalledWith(
-      "https://my-staging.paperclip.app/connections/enroll?id=enroll-test",
+      "https://my-staging.pilibala.app/connections/enroll?id=enroll-test",
     );
   });
 
@@ -1491,19 +1491,19 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     getCloudConnectorEnrollmentMock.mockResolvedValue({ status: "not_configured" });
     await render(client, false, <ConnectionSetupFlow host="dialog" serviceSlug="gmail" interactionId="intent-1" requestedAgentId="agent-1" />);
     await passAccessStep();
-    await act(async () => buttonByText("Connect with Paperclip")?.click());
+    await act(async () => buttonByText("Connect with Pilibala")?.click());
     await flushReact();
     expect(open).toHaveBeenCalled();
     if (popupBlocked) {
       expect(popup.location.assign).not.toHaveBeenCalled();
     } else {
-      expect(popup.location.assign).toHaveBeenCalledWith("https://my-staging.paperclip.app/connections/enroll?id=enroll-test");
+      expect(popup.location.assign).toHaveBeenCalledWith("https://my-staging.pilibala.app/connections/enroll?id=enroll-test");
     }
     const fallback = container.querySelector<HTMLAnchorElement>('a[target="_blank"]');
     expect(fallback?.textContent).toBe("Open authorization in a new tab");
-    expect(fallback?.href).toBe("https://my-staging.paperclip.app/connections/enroll?id=enroll-test");
+    expect(fallback?.href).toBe("https://my-staging.pilibala.app/connections/enroll?id=enroll-test");
     expect(navigateTopLevelMock).not.toHaveBeenCalled();
-    expect(startCloudConnectorEnrollmentMock).toHaveBeenCalledWith("company-1", "Paperclip", "/apps/connect?source=gmail&stage=setup&intent=intent-1&enrollment_host=dialog");
+    expect(startCloudConnectorEnrollmentMock).toHaveBeenCalledWith("company-1", "Pilibala", "/apps/connect?source=gmail&stage=setup&intent=intent-1&enrollment_host=dialog");
     listGalleryMock.mockResolvedValue({ apps: [{ ...GMAIL, ownershipAvailability: { ...GMAIL.ownershipAvailability, platform_shared: true } }] });
     getCloudConnectorEnrollmentMock.mockResolvedValue({ status: "active" });
     await act(async () => { await client.invalidateQueries({ queryKey: ["cloud-connector", "enrollment"] }); });
@@ -1511,7 +1511,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await flushReact();
     if (!popupBlocked) expect(popup.close).toHaveBeenCalled();
     await openAccessAdvanced();
-    expect(container.textContent).toContain("What should Paperclip be able to do?");
+    expect(container.textContent).toContain("What should Pilibala be able to do?");
     connectAppMock.mockResolvedValue({ connectionId: "gmail-1", connection: { id: "gmail-1", credentialPolicy: "per_user" }, auth: { kind: "oauth", startUrl: "https://example.test/unbound" } });
     await act(async () => buttonByText("Continue to sign in")?.click());
     await flushReact();
@@ -1536,7 +1536,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     }
     await render(undefined, false, <ConnectionSetupFlow host="dialog" serviceSlug="gmail" interactionId="intent-1" requestedAgentId="agent-1" />);
     await passAccessStep();
-    await act(async () => buttonByText("Connect with Paperclip")?.click());
+    await act(async () => buttonByText("Connect with Pilibala")?.click());
     await flushReact();
     expect(popup.close).toHaveBeenCalledOnce();
     expect(popup.location.assign).not.toHaveBeenCalled();
@@ -1565,11 +1565,11 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
       getCloudConnectorEnrollmentMock.mockResolvedValue({
         configured: false,
         status: "pending",
-        brokerBaseUrl: "https://my-staging.paperclip.app",
+        brokerBaseUrl: "https://my-staging.pilibala.app",
         instanceId: "inst-test",
         environment: "staging",
         origins: [],
-        verificationUrl: "https://my-staging.paperclip.app/connections/enroll?id=cached",
+        verificationUrl: "https://my-staging.pilibala.app/connections/enroll?id=cached",
         expiresAt,
       });
 
@@ -1580,13 +1580,13 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
       await flushReact();
 
       expect(startCloudConnectorEnrollmentMock).toHaveBeenCalledWith(
-        "company-1", "Paperclip", "/apps/connect?source=github&stage=setup",
+        "company-1", "Pilibala", "/apps/connect?source=github&stage=setup",
       );
       expect(navigateTopLevelMock).toHaveBeenCalledWith(
-        "https://my-staging.paperclip.app/connections/enroll?id=enroll-test",
+        "https://my-staging.pilibala.app/connections/enroll?id=enroll-test",
       );
       expect(navigateTopLevelMock).not.toHaveBeenCalledWith(
-        "https://my-staging.paperclip.app/connections/enroll?id=cached",
+        "https://my-staging.pilibala.app/connections/enroll?id=cached",
       );
     },
   );
@@ -1636,12 +1636,12 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     expect(radioContaining("Any agent")?.getAttribute("aria-checked")).toBe("true");
     expect(container.textContent).toContain("Which agents may use your GitHub when you’re responsible?");
     // Enrolment is the screen; its own action is the only primary one.
-    expect(buttonByText("Connect with Paperclip")).toBeDefined();
+    expect(buttonByText("Connect with Pilibala")).toBeDefined();
     expect(buttonByText("Continue to GitHub")).toBeUndefined();
 
     await passAccessStep();
 
-    expect(container.textContent).toContain("Connect with Paperclip");
+    expect(container.textContent).toContain("Connect with Pilibala");
     expect(container.textContent).not.toContain("GitHub token");
   });
 
@@ -1653,7 +1653,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
 
     expect(container.textContent).toContain("Continue to GitHub");
     expect(container.textContent).not.toContain("Connect GitHub as");
-    expect(container.textContent).not.toContain("Connect with Paperclip");
+    expect(container.textContent).not.toContain("Connect with Pilibala");
   });
 
   it("explains unavailable GitHub sign-in without silently switching to a PAT", async () => {
@@ -1690,7 +1690,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
 
     await render(queryClient);
 
-    expect(container.textContent).toContain("Paperclip couldn’t check Cloud registration. Try again.");
+    expect(container.textContent).toContain("Pilibala couldn’t check Cloud registration. Try again.");
     expect(container.textContent).not.toContain("Your GitHub key");
 
     await act(async () => {
@@ -1732,12 +1732,12 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     });
     await flushReact();
     await act(async () => {
-      buttonByText("Connect with Paperclip")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      buttonByText("Connect with Pilibala")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     await flushReact();
 
     expect(JSON.parse(window.sessionStorage.getItem(
-      "paperclip.connector-enrollment-access:github",
+      "pilibala.connector-enrollment-access:github",
     ) ?? "null")).toEqual({
       companyId: "company-1",
       grantKind: "agent",
@@ -1757,10 +1757,10 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     const coldLoadClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     await render(coldLoadClient);
 
-    expect(window.sessionStorage.getItem("paperclip.connector-enrollment-access:github")).toBeNull();
+    expect(window.sessionStorage.getItem("pilibala.connector-enrollment-access:github")).toBeNull();
     mockCompany.value = {
       selectedCompanyId: "company-1",
-      selectedCompany: { id: "company-1", name: "Paperclip" },
+      selectedCompany: { id: "company-1", name: "Pilibala" },
     };
     await act(async () => {
       mountedRoot?.render(
@@ -1774,7 +1774,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
 
     expect(container.textContent).toContain("Connects as a dedicated agent account");
     expect(window.sessionStorage.getItem(
-      "paperclip.connector-enrollment-access:github",
+      "pilibala.connector-enrollment-access:github",
     )).toBeNull();
     await act(async () => {
       buttonByText("Continue to GitHub")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -1793,12 +1793,12 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     "preserves personal Workspace access for $slug when changing method (enrollment return: $enrollmentReturn)",
     async ({ slug, enrollmentReturn }) => {
       const definition = CONNECTABLE_APP_DEFINITIONS.find((app) => app.slug === slug)!;
-      const readMethod = definition.methods.find((method) => method.key === "paperclip-read")!;
+      const readMethod = definition.methods.find((method) => method.key === "pilibala-read")!;
       mockSearch.value = enrollmentReturn
         ? `source=${slug}&stage=setup&cloud_connector=enrolled`
         : `source=${slug}`;
       if (enrollmentReturn) {
-        window.sessionStorage.setItem(`paperclip.connector-enrollment-access:${slug}`, JSON.stringify({
+        window.sessionStorage.setItem(`pilibala.connector-enrollment-access:${slug}`, JSON.stringify({
           companyId: "company-1", grantKind: "user", installChoice: "all", agentIds: [],
         }));
       }
@@ -1823,7 +1823,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
       }
       await flushReact();
       // Change auth methods too, including apps with only one capability.
-      expect(container.textContent).not.toContain("Connect with Paperclip");
+      expect(container.textContent).not.toContain("Connect with Pilibala");
       expect(container.textContent).not.toContain("needs its own OAuth app");
       expect(buttonByText("Continue to sign in")?.disabled).toBe(false);
       const customerAuth = buttonByText("Use your own Google OAuth app");
@@ -1836,7 +1836,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
       expect(container.textContent).toContain("needs its own OAuth app");
       expect(container.textContent).toContain("Client ID");
       expect(buttonByText("Continue to sign in")?.disabled).toBe(true);
-      const managedAuth = buttonByText("Use Paperclip instead");
+      const managedAuth = buttonByText("Use Pilibala instead");
       expect(managedAuth).toBeDefined();
       expect(managedAuth?.getAttribute("aria-expanded")).toBe("true");
       const fieldsRegion = document.getElementById(managedAuth!.getAttribute("aria-controls")!);
@@ -1852,7 +1852,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
       });
       await flushReact();
       expect(connectAppMock).toHaveBeenCalledWith("company-1", expect.objectContaining({
-        galleryKey: slug, connectionMethodKey: "paperclip-read", grantKind: "user",
+        galleryKey: slug, connectionMethodKey: "pilibala-read", grantKind: "user",
       }));
   });
 
@@ -1864,8 +1864,8 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
 
     await render();
 
-    expect(container.textContent).not.toContain("You must connect this instance to Paperclip");
-    expect(container.textContent).not.toContain("Connect with Paperclip");
+    expect(container.textContent).not.toContain("You must connect this instance to Pilibala");
+    expect(container.textContent).not.toContain("Connect with Pilibala");
   });
 
   it("keeps Google Drive prerequisites off access and defaults to its write-capable method", async () => {
@@ -1875,7 +1875,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await render();
 
     expect(container.textContent).not.toContain("Google Developer Preview access required");
-    expect(container.textContent).not.toContain("does not enable unrelated Paperclip customers");
+    expect(container.textContent).not.toContain("does not enable unrelated Pilibala customers");
     expect(container.textContent).not.toContain("final project-registration email");
     expect(container.textContent).not.toContain("Apply or verify Developer Preview enrollment");
     await openAccessAdvanced();
@@ -1903,7 +1903,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     );
     expect(duplicateHeadings).toHaveLength(1);
     await openAccessAdvanced();
-    expect(container.textContent).toContain("What should Paperclip be able to do?");
+    expect(container.textContent).toContain("What should Pilibala be able to do?");
     expect(container.textContent).toContain("Review requirements");
     expect(container.textContent).not.toContain("Connect Google Calendar to read and manage events.");
     expect(container.textContent).not.toContain("All event mutations require approval.");
@@ -1914,7 +1914,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     expect(container.querySelector('input[placeholder="My app"]')).toBeNull();
 
     const capabilityQuestion = Array.from(container.querySelectorAll("label")).find(
-      (label) => label.textContent === "What should Paperclip be able to do?",
+      (label) => label.textContent === "What should Pilibala be able to do?",
     );
     expect(capabilityQuestion?.closest(".max-w-xl")?.classList.contains("bg-card")).toBe(false);
   });
@@ -2174,7 +2174,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
       galleryKey: "posthog",
       connectionMethodKey: "mcp-api-key",
       name: "PostHog for the organization",
-      credentialSource: "paperclip_vault",
+      credentialSource: "pilibala_vault",
       credentialValues: { "credentials.authorization": "phx_test-key" },
       configValues: {
         readOnly: false,
@@ -2213,7 +2213,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     const connectorInput = container.querySelector<HTMLInputElement>('#vercel-connect-connector');
     expect(connectorInput).toBeTruthy();
     await act(async () => {
-      setInputValue(connectorInput!, "posthog/paperclip");
+      setInputValue(connectorInput!, "posthog/pilibala");
     });
     await flushReact();
     const vercelSubmit = buttonByText("Validate and connect");
@@ -2229,7 +2229,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
       connectionMethodKey: "mcp-api-key",
       name: "PostHog for the organization",
       credentialSource: "vercel_connect",
-      vercelConnect: { connector: "posthog/paperclip" },
+      vercelConnect: { connector: "posthog/pilibala" },
       configValues: { readOnly: false, mode: "tools" },
       applicationId: undefined,
     });
@@ -2260,7 +2260,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
 
     expect(container.textContent).toContain("Use your own OAuth app");
     expect(container.querySelector("#curated-oauth-client-id")).toBeTruthy();
-    expect(container.textContent).toContain("Paperclip callback URL");
+    expect(container.textContent).toContain("Pilibala callback URL");
   });
 
   it("shows unavailable Vercel configuration only inside the isolated Vercel entry point", async () => {
@@ -2365,7 +2365,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     expect(connectAppMock).toHaveBeenCalledTimes(1);
     expect(openSpy).toHaveBeenCalledWith(
       "about:blank",
-      "paperclip-connection-oauth",
+      "pilibala-connection-oauth",
       "popup,width=720,height=760,resizable=yes,scrollbars=yes",
     );
     expect(openSpy.mock.invocationCallOrder[0]).toBeLessThan(connectAppMock.mock.invocationCallOrder[0]!);
@@ -2497,7 +2497,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
       galleryKey: "notion",
       connectionMethodKey: "mcp-oauth",
       name: "Notion for the organization",
-      credentialSource: "paperclip_vault",
+      credentialSource: "pilibala_vault",
       credentialValues: {},
       configValues: undefined,
       applicationId: undefined,
@@ -2890,7 +2890,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
 
   it("shows installation recovery for GitHub even when an advanced PAT method is available", async () => {
     const connectionId = "22222222-2222-4222-8222-222222222222";
-    mockSearch.value = `source=github&resume=${connectionId}&oauth=failed&code=github_installation_required&installation_url=https%3A%2F%2Fgithub.com%2Fapps%2Fpaperclip-for-github%2Finstallations%2Fnew`;
+    mockSearch.value = `source=github&resume=${connectionId}&oauth=failed&code=github_installation_required&installation_url=https%3A%2F%2Fgithub.com%2Fapps%2Fpilibala-for-github%2Finstallations%2Fnew`;
     listGalleryMock.mockResolvedValue({ apps: [GITHUB_MANAGED] });
     listApplicationsMock.mockResolvedValue({ applications: [{ id: "app-github", status: "draft", metadata: { sourceTemplateKey: "github" } }] });
     listConnectionsMock.mockResolvedValue({ connections: [{
@@ -2899,8 +2899,8 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     }] });
     await render();
     await flushReact();
-    expect(container.textContent).toContain("Install Paperclip and grant at least one repository");
-    expect(container.querySelector('a[href="https://github.com/apps/paperclip-for-github/installations/new"]')?.textContent).toBe("Install Paperclip on GitHub");
+    expect(container.textContent).toContain("Install Pilibala and grant at least one repository");
+    expect(container.querySelector('a[href="https://github.com/apps/pilibala-for-github/installations/new"]')?.textContent).toBe("Install Pilibala on GitHub");
     expect(container.textContent).not.toContain("Your GitHub key");
     await act(async () => buttonByText("Try again")!.click());
     await flushReact();
@@ -3075,7 +3075,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
       expect(listConnectionsMock).toHaveBeenCalledTimes(2);
       expect(listApplicationsMock).toHaveBeenCalledTimes(2);
       expect(container.textContent).not.toContain("Couldn’t load connection setup");
-      expect(container.textContent).toContain("Connect Notion to Paperclip");
+      expect(container.textContent).toContain("Connect Notion to Pilibala");
     },
   );
 
@@ -3122,7 +3122,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
       galleryKey: "notion",
       connectionMethodKey: "mcp-oauth",
       name: "Notion for the organization",
-      credentialSource: "paperclip_vault",
+      credentialSource: "pilibala_vault",
       credentialValues: {},
       configValues: undefined,
       applicationId: "app-notion",
@@ -3597,7 +3597,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
   it("shows the Google Sheets robot email and keeps empty sheet links from continuing", async () => {
     listGalleryMock.mockResolvedValueOnce({
       apps: [
-        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@paperclip.iam.gserviceaccount.com" } },
+        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@pilibala.iam.gserviceaccount.com" } },
       ],
     });
     await render();
@@ -3613,7 +3613,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await flushReact();
 
     expect(container.textContent).toContain("Share each sheet with this email");
-    expect(container.textContent).toContain("robot@paperclip.iam.gserviceaccount.com");
+    expect(container.textContent).toContain("robot@pilibala.iam.gserviceaccount.com");
     expect(container.textContent).toContain(
       "In Google Sheets, click Share and add this email as an Editor. Then paste the sheet links below.",
     );
@@ -3623,7 +3623,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
   it("shows inline validation for invalid Google Sheets links", async () => {
     listGalleryMock.mockResolvedValueOnce({
       apps: [
-        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@paperclip.iam.gserviceaccount.com" } },
+        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@pilibala.iam.gserviceaccount.com" } },
       ],
     });
     await render();
@@ -3765,7 +3765,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
   it("uses the Google Sheets app name automatically", async () => {
     listGalleryMock.mockResolvedValueOnce({
       apps: [
-        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@paperclip.iam.gserviceaccount.com" } },
+        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@pilibala.iam.gserviceaccount.com" } },
       ],
     });
     await render();
@@ -3803,7 +3803,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
   it("passes parsed Google Sheets IDs as connection config values", async () => {
     listGalleryMock.mockResolvedValueOnce({
       apps: [
-        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@paperclip.iam.gserviceaccount.com" } },
+        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@pilibala.iam.gserviceaccount.com" } },
       ],
     });
     await render();
@@ -3992,7 +3992,7 @@ describe("AppsConnect — guided generic MCP flow (PAP-17087)", () => {
     await gotoLinkFrame(container, "https://mcp.zapier.com/api/v1/connect?token=t");
 
     // Both routes are present: the branded shortcut and the generic form itself.
-    expect(container.textContent).toContain("Paperclip has a guided setup for Zapier.");
+    expect(container.textContent).toContain("Pilibala has a guided setup for Zapier.");
     expect(container.textContent).toContain("Connect your own MCP server");
     expect(buttonByText("Check link")).toBeTruthy();
   });
@@ -4031,7 +4031,7 @@ describe("AppsConnect — guided generic MCP flow (PAP-17087)", () => {
     connectAppMock.mockRejectedValue(apiError(
       422,
       "oauth_redirect_origin_unsupported",
-      "OAuth connections require PAPERCLIP_PUBLIC_URL or an auth public base URL",
+      "OAuth connections require PILIBALA_PUBLIC_URL or an auth public base URL",
     ));
     await render();
     await gotoLinkFrame(container, "https://mcp.example.test/mcp");
@@ -4041,8 +4041,8 @@ describe("AppsConnect — guided generic MCP flow (PAP-17087)", () => {
     await flushReact();
     await flushReact();
 
-    expect(container.textContent).toContain("This Paperclip needs a public HTTPS address first");
-    expect(container.textContent).not.toContain("PAPERCLIP_PUBLIC_URL");
+    expect(container.textContent).toContain("This Pilibala needs a public HTTPS address first");
+    expect(container.textContent).not.toContain("PILIBALA_PUBLIC_URL");
   });
 
   it("does not ask the operator to resolve an internal name conflict", async () => {
@@ -4059,7 +4059,7 @@ describe("AppsConnect — guided generic MCP flow (PAP-17087)", () => {
     await flushReact();
     await flushReact();
 
-    expect(container.textContent).toContain("Paperclip couldn’t name this connection");
+    expect(container.textContent).toContain("Pilibala couldn’t name this connection");
     expect(container.textContent).not.toContain("Choose a different name");
     expect(container.querySelector("#generic-mcp-name")).toBeNull();
   });
@@ -4147,8 +4147,8 @@ describe("AppsConnect — guided generic MCP flow (PAP-17087)", () => {
       suggestedDefaults: {},
       auth: {
         kind: "oauth",
-        startUrl: "https://my.paperclip.app/connections/confirm?session=legacy",
-        handoff: { kind: "paperclip_cloud", session },
+        startUrl: "https://my.pilibala.app/connections/confirm?session=legacy",
+        handoff: { kind: "pilibala_cloud", session },
       },
     });
     await render();
@@ -4297,7 +4297,7 @@ describe("AppsConnect — guided generic MCP flow (PAP-17087)", () => {
     });
   });
 
-  it("blocks a header Paperclip refuses to send before making a request", async () => {
+  it("blocks a header Pilibala refuses to send before making a request", async () => {
     await render();
     await gotoLinkFrame(container, "https://mcp.example.test/mcp");
     await openAdvanced();
@@ -4315,7 +4315,7 @@ describe("AppsConnect — guided generic MCP flow (PAP-17087)", () => {
     await act(async () => setInputValue(valueInput, "evil.example"));
     await flushReact();
 
-    expect(container.textContent).toContain('Paperclip manages the "Host" header');
+    expect(container.textContent).toContain('Pilibala manages the "Host" header');
     expect(buttonByText("Check link")?.disabled).toBe(true);
     expect(connectAppMock).not.toHaveBeenCalled();
   });

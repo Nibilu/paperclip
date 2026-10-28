@@ -5,7 +5,7 @@ import { randomBytes } from "node:crypto";
 import { acquireGitExpirationLocks } from "./git-workspace-expiration-locks.js";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { executionWorkspaces, issues, heartbeatRuns, nativeRunFinalizations, environmentLeases,
-  workspaceRuntimeServices, issueRecoveryActions, projectWorkspaces, withDedicatedDbConnection, type Db } from "@paperclipai/db";
+  workspaceRuntimeServices, issueRecoveryActions, projectWorkspaces, withDedicatedDbConnection, type Db } from "@pilibalaai/db";
 import { createGitRemoteAuthProvider } from "./git-credentials.js";
 import { withIsolatedRepositorySourceLock, verifiedRecordedIsolatedRemoteSource } from "./isolated-remote-workspace-source.js";
 import { managedProjectCheckoutName } from "./managed-project-checkout-name.js";
@@ -95,7 +95,7 @@ export async function isGitWorkspaceExpirationEligible(tx: Tx, workspace: Worksp
 
 export function hasPendingGitExpiration(workspace: Workspace) {
   const state = workspace.metadata?.[EXPIRATION_KEY] as Expiration | undefined;
-  return state?.schema === "paperclip.git-cache-expiration.v1" && !state.completed;
+  return state?.schema === "pilibala.git-cache-expiration.v1" && !state.completed;
 }
 
 async function exists(target: string) {
@@ -199,7 +199,7 @@ export async function expireReconstructableGitWorkspace(db: Db, snapshot: Worksp
           if (await fs.realpath(worktreeAdmin) !== canonicalAdmin || await fs.realpath(rawAdmin) !== canonicalAdmin) {
             throw new Error("unproven_worktree_admin");
           }
-          state = { schema: "paperclip.git-cache-expiration.v1", generation, workspaceRemoved: false,
+          state = { schema: "pilibala.git-cache-expiration.v1", generation, workspaceRemoved: false,
             worktreeTrash: path.join(path.dirname(recipe.worktreePath), `.expired-git-worktree-${workspace.id}-${generation}`),
             worktreeAdmin, baseTrash: null, completed: false, lockToken: randomBytes(32).toString("hex") };
           if (await exists(state.worktreeTrash)) throw new Error("unknown_worktree_trash");
@@ -231,7 +231,7 @@ export async function expireReconstructableGitWorkspace(db: Db, snapshot: Worksp
               await assertReproducibleGitFiles(recipe.worktreePath, options.signal, { proveManagedCheckout, preserveSettings: true,
                 verifyFetchedCommit: (commit, signal) => verifyRemoteGitCommit(recipe.repoUrl, commit, auth, signal) });
               for (const checkout of checkouts.values()) {
-                const cwd = path.join(recipe.worktreePath, ".paperclip-repositories", checkout.name);
+                const cwd = path.join(recipe.worktreePath, ".pilibala-repositories", checkout.name);
                 locks.push(await acquireGitExpirationLocks(lockLocations.filter(location => location.checkout === checkout.name), state.lockToken));
                 if ((await gitCacheCommand(cwd, ["status", "--porcelain=v1", "--untracked-files=all", "-z"], options.signal)).length) throw new Error("managed_checkouts_changed");
                 checkouts.set(checkout.name, await readManagedCheckoutContents(cwd, checkout.name, checkout.source, options.signal));

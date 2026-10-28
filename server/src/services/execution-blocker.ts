@@ -2,11 +2,11 @@ import { isPreDispatchReviewWait } from "./pre-dispatch-review-wait.js";
 import { and, desc, eq, gt, inArray, not, or, sql } from "drizzle-orm";
 import { conversationRecoveryActionPredicate, getConversationOwnershipBlocker } from "./conversation-continuation.js";
 import { z } from "zod";
-import { agentWakeupRequests, agents, chatConversations, chatEndpoints, environmentLeases, heartbeatRuns, issueComments, issues, issueRecoveryActions, nativeRunFinalizations, toolConnections, type Db } from "@paperclipai/db";
+import { agentWakeupRequests, agents, chatConversations, chatEndpoints, environmentLeases, heartbeatRuns, issueComments, issues, issueRecoveryActions, nativeRunFinalizations, toolConnections, type Db } from "@pilibalaai/db";
 import { canContinueCancelledRun, readRunCancellation } from "./run-cancellation.js";
 import { canRetryStoppedRun } from "./cancelled-native-startup.js";
 import { queuedCommentIdsFromWakePayload } from "./issue-queued-comment-queue.js";
-import { EXECUTION_RECONCILIATION_CAUSES, type ExecutionBlocker } from "@paperclipai/shared";
+import { EXECUTION_RECONCILIATION_CAUSES, type ExecutionBlocker } from "@pilibalaai/shared";
 import { hasRequiredWorkspaceRecovery, LEGACY_WORKSPACE_RECOVERY_SCHEMA, nativeRunHasNoWorkspaceAccess } from "./workspace-restore-recovery-state.js";
 import { unreconciledNativeExportPredicate } from "./native-runtime/native-workspace-reconstruction.js";
 import { hasRemoteTerminationReceipt } from "./remote-execution-termination.js";
@@ -136,7 +136,7 @@ export async function getExecutionBlocker(db: Db, companyId: string, issueId: st
     sql`${agentWakeupRequests.payload}->>'issueId' = ${issueId}`,
   ));
   const savedIds = [...new Set(queue.flatMap(entry => {
-    const context = entry.payload?._paperclipWakeContext as Record<string, unknown> | undefined;
+    const context = entry.payload?._pilibalaWakeContext as Record<string, unknown> | undefined;
     return [...queuedCommentIdsFromWakePayload(entry.payload), entry.payload?.commentId, context?.wakeCommentId]
       .filter((id): id is string => z.string().guid().safeParse(id).success);
   }))];

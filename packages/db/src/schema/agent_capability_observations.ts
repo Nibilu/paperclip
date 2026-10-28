@@ -29,7 +29,7 @@ export const agentCapabilityObservations = pgTable(
     error: jsonb("error").$type<Record<string, unknown>>(),
     /** Raw capability document, secrets redacted. Null when unavailable. */
     document: jsonb("document").$type<Record<string, unknown>>(),
-    /** Features observed outside the Paperclip operation vocabulary. */
+    /** Features observed outside the Pilibala operation vocabulary. */
     observedExtras: jsonb("observed_extras").$type<Record<string, unknown>>(),
     checkedAt: timestamp("checked_at", { withTimezone: true }).notNull().defaultNow(),
     freshnessDeadline: timestamp("freshness_deadline", { withTimezone: true }),

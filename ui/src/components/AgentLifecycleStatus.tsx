@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { agentsApi } from "../api/agents";
 import { queryKeys } from "../lib/queryKeys";
-import type { Agent, AgentLifecycleState } from "@paperclipai/shared";
+import type { Agent, AgentLifecycleState } from "@pilibalaai/shared";
 import { Loader2 } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -64,6 +64,6 @@ export function AgentLifecycleStatus({ agent, onRetry, retryPending, refreshErro
         {retryPending ? "Retrying…" : "Retry now"}
       </Button>
     </div>}
-    {phase && agent.lifecycleError && <p className="text-muted-foreground">Paperclip retries automatically; Retry now checks again immediately.</p>}
+    {phase && agent.lifecycleError && <p className="text-muted-foreground">Pilibala retries automatically; Retry now checks again immediately.</p>}
   </div>;
 }

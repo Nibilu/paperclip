@@ -58,7 +58,7 @@ import {
 
 type Row = Record<string, any>;
 export interface EverydayEvidence {
-  schema: "paperclip.everyday-workflow.v1";
+  schema: "pilibala.everyday-workflow.v1";
   caseId: string;
   prompt: string;
   harnessDigest?: string;
@@ -138,7 +138,7 @@ export async function runEverydayFlow(input: Input) {
   const { page, api, fixtures, execution, nonce } = input;
   const prefix = fixtures.company.issuePrefix!;
   const ev: EverydayEvidence = {
-    schema: "paperclip.everyday-workflow.v1",
+    schema: "pilibala.everyday-workflow.v1",
     caseId: execution.task.id,
     prompt: execution.task.buildPrompt(nonce),
     fixtureConfiguration: {
@@ -1325,7 +1325,7 @@ export async function runEverydayFlow(input: Input) {
       check(
         "hire-native-connection",
         hires.length === 1 &&
-          hires[0]!.adapterType === "paperclip_runner" &&
+          hires[0]!.adapterType === "pilibala_runner" &&
           hires[0]!.adapterConfig?.model === lead?.adapterConfig?.model &&
           isDeepStrictEqual(
             hires[0]!.runtimeConfig?.aiConnection,
@@ -1618,7 +1618,7 @@ export async function runEverydayFlow(input: Input) {
         .every(
           (r) =>
             (r.resultJson?.nativeTerminal as Row | undefined)?.schema ===
-            "paperclip.prp.terminal.v1",
+            "pilibala.prp.terminal.v1",
         ),
       "Successful runs retain the native terminal contract.",
     );

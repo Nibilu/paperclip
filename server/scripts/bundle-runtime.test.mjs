@@ -20,9 +20,9 @@ describe("bundleRuntime", () => {
   let root;
 
   beforeEach(() => {
-    root = realpathSync(mkdtempSync(path.join(tmpdir(), "paperclip-bundle-runtime-")));
+    root = realpathSync(mkdtempSync(path.join(tmpdir(), "pilibala-bundle-runtime-")));
     const pkg = path.join(root, "packages", "fixture");
-    write(path.join(pkg, "package.json"), JSON.stringify({ name: "@paperclipai/fixture", type: "module", exports: { ".": "./src/index.ts" } }));
+    write(path.join(pkg, "package.json"), JSON.stringify({ name: "@pilibalaai/fixture", type: "module", exports: { ".": "./src/index.ts" } }));
     write(path.join(pkg, "src", "asset.txt"), "asset beside its source\n");
     write(path.join(pkg, "src", "helper.ts"), "export const double = (value: number): number => value * 2;\n");
     write(path.join(pkg, "src", "index.ts"), [
@@ -44,8 +44,8 @@ describe("bundleRuntime", () => {
     write(path.join(pkg, "node_modules", "dual-build-dep", "bundler", "index.js"), "export * from \"./extensionless\";\n");
 
     const server = path.join(root, "server");
-    mkdirSync(path.join(server, "node_modules", "@paperclipai"), { recursive: true });
-    symlinkSync(pkg, path.join(server, "node_modules", "@paperclipai", "fixture"), "dir");
+    mkdirSync(path.join(server, "node_modules", "@pilibalaai"), { recursive: true });
+    symlinkSync(pkg, path.join(server, "node_modules", "@pilibalaai", "fixture"), "dir");
     write(path.join(server, "package.json"), JSON.stringify({ name: "server", type: "module" }));
     for (const [version, flavor] of [["1", "installed at build"], ["2", "replaced after build"]]) {
       const store = path.join(root, "node_modules", ".pnpm", `server-dep@${version}`);
@@ -53,9 +53,9 @@ describe("bundleRuntime", () => {
       write(path.join(store, "index.js"), `export const flavor = ${JSON.stringify(flavor)};\n`);
     }
     symlinkSync(path.join(root, "node_modules", ".pnpm", "server-dep@1"), path.join(server, "node_modules", "server-dep"), "dir");
-    write(path.join(server, "dist", "late.js"), "import { values } from \"@paperclipai/fixture\";\nexport const late = () => values.doubled + 1;\n");
+    write(path.join(server, "dist", "late.js"), "import { values } from \"@pilibalaai/fixture\";\nexport const late = () => values.doubled + 1;\n");
     write(path.join(server, "dist", "index.js"), [
-      "import { asset, location, values } from \"@paperclipai/fixture\";",
+      "import { asset, location, values } from \"@pilibalaai/fixture\";",
       "import { flavor } from \"server-dep\";",
       "import { pathToFileURL } from \"node:url\";",
       "const { late } = await import(\"./late.js\");",

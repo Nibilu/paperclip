@@ -121,10 +121,10 @@ pnpm exec vitest run server/src/__tests__/chat-channels.integration.test.ts \
 ```
 
 Branch: `codex/chat-channel-provider-messages`. The user authorized publishing
-this slice to `paperclipai/paperclip`; subsequent extractions are not part of
+this slice to `pilibalaai/pilibala`; subsequent extractions are not part of
 this PR.
 
-Review and final verification: [PR #15823](https://github.com/paperclipai/paperclip/pull/15823).
+Review and final verification: [PR #15823](https://github.com/pilibalaai/pilibala/pull/15823).
 
 ## Authorized stacked continuation
 

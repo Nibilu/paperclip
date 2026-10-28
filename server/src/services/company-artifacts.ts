@@ -1,7 +1,7 @@
 import { buffer } from "node:stream/consumers";
 import { and, desc, eq, inArray, isNotNull, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   assets,
@@ -14,7 +14,7 @@ import {
   issues,
   issueWorkProducts,
   projects,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   attachmentArtifactWorkProductMetadataSchema,
   COMPANY_ARTIFACTS_MAX_LIMIT,
@@ -26,7 +26,7 @@ import {
   type CompanyArtifactMediaKind,
   type CompanyArtifactsQuery,
   type CompanyArtifactsResponse,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { badRequest, notFound } from "../errors.js";
 import type { StorageService } from "../storage/types.js";
 
@@ -481,7 +481,7 @@ export function companyArtifactsService(db: Db, storage?: StorageService) {
         const workProductBaseConditions: SQL[] = [
           eq(issueWorkProducts.companyId, companyId),
           eq(issueWorkProducts.type, "artifact"),
-          eq(issueWorkProducts.provider, "paperclip"),
+          eq(issueWorkProducts.provider, "pilibala"),
           ...issueConditions,
         ];
         const workProductConditions: SQL[] = [...workProductBaseConditions];

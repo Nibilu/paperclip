@@ -47,7 +47,7 @@ the reviewed commit above.
 
 Scoped Evidence: `source-only` — [creation policy](../../server/src/services/agent-hiring.ts),
 [runner resolution](../../server/src/services/agent-runner-selection.ts),
-[native hire binding](../../server/src/services/native-runtime/paperclip-runner-tool-authority.ts),
+[native hire binding](../../server/src/services/native-runtime/pilibala-runner-tool-authority.ts),
 [frozen approval activation](../../server/src/modules/agent-lifecycle/adapters/approvals.ts)
 and [same-harness import preservation](../../server/src/services/company-portability.ts)
 at the scoped commit. No permitted-agent journey was executed for this map update.
@@ -223,7 +223,7 @@ Review: `baseline`.
 
 API: `present` — `POST /api/companies/{companyId}/grok-invitations`, operator-owned Grok invitations and agent-scoped `/grok-binding` setup, routine, verify, stop, recover and disconnect endpoints. Direct HTTPS `/mcp/runner` uses fixed named-agent OAuth. Grok tools expose durable assignment operations and task-bound upload/download grants.
 
-Agent access: `available` — `paperclip_grok_*` through the dedicated agent grant. First-party Paperclip operations execute through the shared Rust Runner. The Bot retains its own apps; Paperclip workspace and third-party app tools are unavailable.
+Agent access: `available` — `pilibala_grok_*` through the dedicated agent grant. First-party Pilibala operations execute through the shared Rust Runner. The Bot retains its own apps; Pilibala workspace and third-party app tools are unavailable.
 
 Policy: company/agent/client/resource/authorizer binding; current manage-agent permission for consent and subsequent calls; normal task ownership, controller lease, governance, pause, revocation and recorded budget checks. Execution and file transfers require current task-bound sessions. Secret credentials remain in encrypted secret storage and are redacted from HTTP logs.
 

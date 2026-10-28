@@ -1,5 +1,5 @@
-import type { AgentRunnerChoice } from "@paperclipai/shared";
-import { agentHarnessType } from "@paperclipai/shared";
+import type { AgentRunnerChoice } from "@pilibalaai/shared";
+import { agentHarnessType } from "@pilibalaai/shared";
 import { adaptersApi } from "../api/adapters";
 import { CodexRunnerSelect } from "./CodexRunnerSelect";
 import { healthApi } from "@/api/health";
@@ -7,10 +7,10 @@ import { LocalProviderLoginInstructions } from "./AdapterLoginChrome";
 import { useLocalAiLogin } from "./ai-connections/useLocalAiLogin";
 import { aiConnectionsApi } from "@/api/ai-connections";
 import { aiProviderForAdapter } from "./ai-connections/AiConnectionField";
-import type { AiConnectionBinding } from "@paperclipai/shared";
+import type { AiConnectionBinding } from "@pilibalaai/shared";
 import { storeProviderApiKey } from "../lib/provider-credential";
 import { SavedProviderKeySelect, useSavedProviderKeys } from "./onboarding/SavedProviderKeySelect";
-import { randomAgentAppearance, resolveAgentAppearance, agentAppearanceSchema } from "@paperclipai/shared";
+import { randomAgentAppearance, resolveAgentAppearance, agentAppearanceSchema } from "@pilibalaai/shared";
 import { OnboardingCharacter } from "./onboarding/OnboardingCharacter";
 import { useEffect, useState, useMemo, useRef } from "react";
 import type { ComponentType, CSSProperties } from "react";
@@ -22,8 +22,8 @@ import type {
   ClaudeOAuthTokenStatusResponse,
   Environment,
   InstanceSettings,
-} from "@paperclipai/shared";
-import { AGENT_ROLES, AGENT_ROLE_LABELS, ADAPTER_AUTH_MISSING_CHECK_CODE } from "@paperclipai/shared";
+} from "@pilibalaai/shared";
+import { AGENT_ROLES, AGENT_ROLE_LABELS, ADAPTER_AUTH_MISSING_CHECK_CODE } from "@pilibalaai/shared";
 import { AdapterLoginPanel } from "./AgentConfigForm";
 import {
   CONNECT_SOURCE_NAMES,
@@ -108,11 +108,11 @@ import {
   selectReusableOnboardingProject,
 } from "../lib/onboarding-launch";
 import { buildNewAgentRuntimeConfig } from "../lib/new-agent-runtime-config";
-import { DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX } from "@paperclipai/adapter-codex-local";
-import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
-import { DEFAULT_KIMI_LOCAL_MODEL } from "@paperclipai/adapter-kimi-local";
-import { DEFAULT_OPENCODE_LOCAL_MODEL, isValidOpenCodeModelId } from "@paperclipai/adapter-opencode-local";
+import { DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX } from "@pilibalaai/adapter-codex-local";
+import { DEFAULT_CURSOR_LOCAL_MODEL } from "@pilibalaai/adapter-cursor-local";
+import { DEFAULT_GEMINI_LOCAL_MODEL } from "@pilibalaai/adapter-gemini-local";
+import { DEFAULT_KIMI_LOCAL_MODEL } from "@pilibalaai/adapter-kimi-local";
+import { DEFAULT_OPENCODE_LOCAL_MODEL, isValidOpenCodeModelId } from "@pilibalaai/adapter-opencode-local";
 import {
   canGoBackFromOnboardingStep,
   canJumpToOnboardingStep,
@@ -154,12 +154,12 @@ type AdapterType = string;
 const ONBOARDING_EXCLUDED_ADAPTER_TYPES = new Set([
   "process",
   "http",
-  "paperclip_runner",
+  "pilibala_runner",
 ]);
 
 function restoreOnboardingAdapterType(savedAdapterType: unknown, provider?: unknown): AdapterType {
-  if (savedAdapterType === "paperclip_runner" && (provider === undefined || provider === "codex")) return "codex_local";
-  return typeof savedAdapterType === "string" && savedAdapterType !== "paperclip_runner"
+  if (savedAdapterType === "pilibala_runner" && (provider === undefined || provider === "codex")) return "codex_local";
+  return typeof savedAdapterType === "string" && savedAdapterType !== "pilibala_runner"
     ? savedAdapterType
     : "claude_local";
 }
@@ -275,8 +275,8 @@ function ModelSourceMark({
 
 // Exported so tests write/read the exact key the component uses, instead of
 // duplicating the literal and silently drifting from it if it's ever renamed.
-export const ONBOARDING_STORAGE_KEY = "paperclip-onboarding-state";
-const DEFAULT_TASK_TITLE = "Paperclip onboarding";
+export const ONBOARDING_STORAGE_KEY = "pilibala-onboarding-state";
+const DEFAULT_TASK_TITLE = "Pilibala onboarding";
 /**
  * The onboarding draft in `localStorage`, via a browser that is allowed to say
  * no.
@@ -598,8 +598,8 @@ function OnboardingWizardInner({
   const [adapterType, setAdapterType] = useState<AdapterType>(() =>
     restoreOnboardingAdapterType(saved?.adapterType, saved?.runnerProvider),
   );
-  const [runner, setRunner] = useState<AgentRunnerChoice>(() => saved?.runner === "legacy" || saved?.runner === "paperclip"
-    ? saved.runner : saved?.adapterType === "paperclip_runner" && (saved?.runnerProvider === undefined || saved?.runnerProvider === "codex") ? "paperclip" : "auto");
+  const [runner, setRunner] = useState<AgentRunnerChoice>(() => saved?.runner === "legacy" || saved?.runner === "pilibala"
+    ? saved.runner : saved?.adapterType === "pilibala_runner" && (saved?.runnerProvider === undefined || saved?.runnerProvider === "codex") ? "pilibala" : "auto");
   /**
    * Whether a model source has been chosen, as opposed to which one
    * `adapterType` happens to hold.
@@ -623,7 +623,7 @@ function OnboardingWizardInner({
    * whether the row has been *answered* on this visit.
    */
   const [sourcePicked, setSourcePicked] = useState(false);
-  const savedNativeRunnerDraft = saved?.adapterType === "paperclip_runner";
+  const savedNativeRunnerDraft = saved?.adapterType === "pilibala_runner";
   const [cwd, setCwd] = useState((saved?.cwd as string) ?? "");
   const [model, setModel] = useState(
     savedNativeRunnerDraft && saved?.runnerProvider !== undefined && saved.runnerProvider !== "codex" ? "" : (saved?.model as string) ?? "",
@@ -937,7 +937,7 @@ function OnboardingWizardInner({
     isFetching: adapterModelsFetching
   } = useQuery({
     // The wizard doesn't expose an environment selector, so models always
-    // resolve against the local Paperclip host (environmentId = null).
+    // resolve against the local Pilibala host (environmentId = null).
     queryKey: createdCompanyId
       ? queryKeys.agents.adapterModels(createdCompanyId, adapterType, null)
       : ["agents", "none", "adapter-models", adapterType, null],
@@ -1984,12 +1984,12 @@ function OnboardingWizardInner({
           queryFn: () => adaptersApi.list({ companyId: createdCompanyId, environmentId }) });
         if (!testIsCurrent()) return null;
         const codex = adapters.find(adapter => adapter.type === "codex_local");
-        const native = adapters.find(adapter => adapter.type === "paperclip_runner");
-        if (!codex || (codex.defaultRunner !== "paperclip" && codex.defaultRunner !== "legacy")
+        const native = adapters.find(adapter => adapter.type === "pilibala_runner");
+        if (!codex || (codex.defaultRunner !== "pilibala" && codex.defaultRunner !== "legacy")
           || !codex.supportedRunners?.includes(codex.defaultRunner)) {
           throw new Error("Could not confirm Codex runner availability for this environment. Retry setup.");
         }
-        if (codex.defaultRunner !== "paperclip" && !codex?.disabled && !codex?.overriddenBuiltin
+        if (codex.defaultRunner !== "pilibala" && !codex?.disabled && !codex?.overriddenBuiltin
           && !native?.disabled && !native?.overriddenBuiltin) {
           const probe = await environmentsApi.probe(environmentId!, createdCompanyId);
           if (!testIsCurrent()) return null;
@@ -2004,7 +2004,7 @@ function OnboardingWizardInner({
           if (!testIsCurrent()) return null;
           const refreshedCodex = refreshed.find(adapter => adapter.type === "codex_local");
           const defaultRunner = refreshedCodex?.defaultRunner;
-          if ((defaultRunner !== "paperclip" && defaultRunner !== "legacy")
+          if ((defaultRunner !== "pilibala" && defaultRunner !== "legacy")
             || !refreshedCodex?.supportedRunners?.includes(defaultRunner)) {
             throw new Error("Could not confirm the environment's default runner. Retry setup.");
           }
@@ -2083,7 +2083,7 @@ function OnboardingWizardInner({
   // doesn't hire a second agent.
   async function handleGiveHeartbeat() {
     if (!createdCompanyId) return;
-    if (adapterType === "paperclip_runner") {
+    if (adapterType === "pilibala_runner") {
       setAdapterType("claude_local");
       setModel("");
       setError("Choose a harness to continue onboarding.");
@@ -2212,7 +2212,7 @@ function OnboardingWizardInner({
         // pass or a warn result that reports missing authentication — the
         // agent cannot run without one of those.
         if (blocksAgentCreate(result)) {
-          const nativeCodexError = adapterType === "codex_local" && result.adapterType === "paperclip_runner"
+          const nativeCodexError = adapterType === "codex_local" && result.adapterType === "pilibala_runner"
             ? result.checks.find(check => check.level === "error")?.message : undefined;
           setError(
             nativeCodexError || (result.status === "fail"
@@ -2641,7 +2641,7 @@ function OnboardingWizardInner({
                       <p className="pt-2 text-base leading-relaxed text-muted-foreground">
                         <motion.span key={step} {...titleSwapMotion} className="inline-block">
                           {step === 4
-                            ? "Paperclip works with your subscription or API keys."
+                            ? "Pilibala works with your subscription or API keys."
                             : `${agentName.trim() || "Your first agent"} is ready to work!`}
                         </motion.span>
                       </p>

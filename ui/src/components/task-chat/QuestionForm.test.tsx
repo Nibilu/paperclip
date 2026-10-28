@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PaperclipQuestionResponse, PaperclipQuestionSet } from "@paperclipai/adapter-utils";
+import type { PilibalaQuestionResponse, PilibalaQuestionSet } from "@pilibalaai/adapter-utils";
 import { QuestionForm } from "./QuestionForm";
 
 vi.mock("./TaskChatRichInput", () => ({
@@ -11,7 +11,7 @@ vi.mock("./TaskChatRichInput", () => ({
 }));
 vi.mock("@/components/MarkdownBody", () => ({ MarkdownBody: ({ children }: { children: string }) => <div>{children}</div> }));
 
-const questionSet: PaperclipQuestionSet = { schema: "paperclip.question_set.v1", questions: [
+const questionSet: PilibalaQuestionSet = { schema: "pilibala.question_set.v1", questions: [
   { id: "draft", prompt: "Edit the draft", required: true, answerMode: "text", initialText: "  Draft\n漢字\n" },
 ] };
 
@@ -22,7 +22,7 @@ describe("QuestionForm initial text", () => {
   beforeEach(() => { localStorage.clear(); submit.mockReset(); container = document.createElement("div"); document.body.append(container); root = createRoot(container); });
   afterEach(async () => { await act(async () => root.unmount()); container.remove(); localStorage.clear(); });
   const input = () => container.querySelector("textarea")!;
-  async function render(set = questionSet, initialResponse?: PaperclipQuestionResponse) {
+  async function render(set = questionSet, initialResponse?: PilibalaQuestionResponse) {
     await act(async () => root.render(<QuestionForm id="edit" questionSet={set} initialResponse={initialResponse} draftKey="question-initial-text" onSubmit={submit} />));
   }
   async function edit(text: string) {
@@ -37,7 +37,7 @@ describe("QuestionForm initial text", () => {
     expect(input().value).toBe("  Draft\n漢字\n");
     expect(submit).not.toHaveBeenCalled();
     await act(async () => Array.from(container.querySelectorAll("button")).find(button => button.textContent === "Submit answers")!.click());
-    expect(submit).toHaveBeenCalledExactlyOnceWith({ schema: "paperclip.question_response.v1", answers: { draft: { text: "  Draft\n漢字\n" } } });
+    expect(submit).toHaveBeenCalledExactlyOnceWith({ schema: "pilibala.question_response.v1", answers: { draft: { text: "  Draft\n漢字\n" } } });
   });
   it("preserves edits through a refreshed request and reload instead of reapplying a default", async () => {
     await render(); await edit("Operator edit\n");
@@ -77,11 +77,11 @@ describe("QuestionForm initial text", () => {
     expect(storedText("request-b")).toBe("Operator edit B");
     expect(submit).not.toHaveBeenCalled();
     await act(async () => Array.from(container.querySelectorAll("button")).find(button => button.textContent === "Submit answers")!.click());
-    expect(submit).toHaveBeenCalledExactlyOnceWith({ schema: "paperclip.question_response.v1", answers: { draft: { text: "Operator edit B" } } });
+    expect(submit).toHaveBeenCalledExactlyOnceWith({ schema: "pilibala.question_response.v1", answers: { draft: { text: "Operator edit B" } } });
   });
 
   it("prefers an existing response and keeps text constraints on defaults", async () => {
-    await render(questionSet, { schema: "paperclip.question_response.v1", answers: { draft: { text: "Existing answer" } } });
+    await render(questionSet, { schema: "pilibala.question_response.v1", answers: { draft: { text: "Existing answer" } } });
     expect(input().value).toBe("Existing answer");
     await act(async () => root.unmount()); localStorage.clear(); root = createRoot(container);
     await render({ ...questionSet, questions: [{ ...questionSet.questions[0]!, initialText: "bad", textValidation: { minLength: 5 } }] });

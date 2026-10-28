@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import type { ExecutionBlocker, Issue, IssueRecoveryAction } from "@paperclipai/shared";
-import { requiresExecutionReconciliation } from "@paperclipai/shared";
+import type { ExecutionBlocker, Issue, IssueRecoveryAction } from "@pilibalaai/shared";
+import { requiresExecutionReconciliation } from "@pilibalaai/shared";
 import { issuesApi } from "../api/issues";
 import { Button } from "./ui/button";
 
@@ -90,7 +90,7 @@ export function ExecutionReconciliationPanel({
         <h3 className="font-medium">Verify the stopped execution before continuing</h3>
         <p className="text-muted-foreground">
           The previous execution will not be replayed. Confirm the provider stopped and record what happened;
-          Paperclip will create a fresh continuation only after the server rechecks the recovery gates.
+          Pilibala will create a fresh continuation only after the server rechecks the recovery gates.
           {issueStatus === "blocked" ? " Submitting this decision restores the task to the normal todo admission path." : ""}
         </p>
         <p className="text-xs text-muted-foreground">Source run: <code>{sourceRunId}</code></p>

@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { agentWakeupRequests, agents, heartbeatRuns, issueComments, issues } from "@paperclipai/db";
-import type { IssueComment, IssueQueuedCommentQueue } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { agentWakeupRequests, agents, heartbeatRuns, issueComments, issues } from "@pilibalaai/db";
+import type { IssueComment, IssueQueuedCommentQueue } from "@pilibalaai/shared";
 import {
   buildQueuedCommentQueueSnapshot,
   decideQueuedCommentQueueSteering,

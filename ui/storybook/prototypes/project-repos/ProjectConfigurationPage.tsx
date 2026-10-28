@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { Project } from "@paperclipai/shared";
+import type { Project } from "@pilibalaai/shared";
 import { Boxes, ChevronRight, ChevronsUpDown, CircleCheck, Folder, History, Inbox, LayoutDashboard, Menu, Package, Repeat, Search, SquarePen, Star, Unplug, Users } from "lucide-react";
 import { ProjectProperties } from "@/components/ProjectProperties";
 import { PageTabBar } from "@/components/PageTabBar";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
-import { storybookProjects } from "../../fixtures/paperclipData";
+import { storybookProjects } from "../../fixtures/pilibalaData";
 import { RepositoryConfigurationSection, type PrototypeProps } from "./ProjectReposPrototype";
 
 const navigation = [
@@ -30,10 +30,10 @@ function ReferenceSidebar() {
     <aside className="flex h-full w-60 shrink-0 flex-col bg-sidebar text-sidebar-foreground" aria-label="Bull navigation">
       <div className="flex h-14 shrink-0 items-center gap-2 px-6 text-sm font-semibold"><span className="flex size-5 items-center justify-center rounded-md border border-sidebar-border text-xs">B</span>Bull<ChevronsUpDown className="ml-auto size-3 text-muted-foreground" /></div>
       <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-4">
-        <a className="flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent" href="https://bull.staging.paperclip.app/BUL/issues" target="_blank" rel="noreferrer"><SquarePen className="size-4" />New Task</a>
+        <a className="flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent" href="https://bull.staging.pilibala.app/BUL/issues" target="_blank" rel="noreferrer"><SquarePen className="size-4" />New Task</a>
         {navigation.map(({ label, icon: Icon, path, heading }) => <div key={label}>
           {heading && <p className="px-3 pb-2 pt-6 font-mono text-xs uppercase text-muted-foreground">{heading}</p>}
-          <a href={`https://bull.staging.paperclip.app/BUL/${path}`} target="_blank" rel="noreferrer" aria-current={path === "projects" ? "page" : undefined} className={cn("flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent", path === "projects" && "bg-sidebar-accent")}><Icon className="size-4" />{label}</a>
+          <a href={`https://bull.staging.pilibala.app/BUL/${path}`} target="_blank" rel="noreferrer" aria-current={path === "projects" ? "page" : undefined} className={cn("flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent", path === "projects" && "bg-sidebar-accent")}><Icon className="size-4" />{label}</a>
         </div>)}
       </nav>
       <div className="shrink-0 px-6 py-4 text-xs text-muted-foreground">Bull workspace</div>

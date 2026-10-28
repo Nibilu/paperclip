@@ -2,7 +2,7 @@ import { prepareSlackEndpoints } from "./slack-endpoint-preparation.js";
 import { createHash } from "node:crypto";
 import { measureRunPhase } from "../execution-preparation-timing.js";
 import { and, eq, isNull, sql } from "drizzle-orm";
-import { SLACK_TOOLS } from "@paperclipai/shared";
+import { SLACK_TOOLS } from "@pilibalaai/shared";
 import {
   chatEndpoints,
   toolConnections,
@@ -12,7 +12,7 @@ import {
   toolProfileEntries,
   toolProfileBindings,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   ToolGatewayDescriptor,
   ToolGatewaySession,
@@ -256,7 +256,7 @@ async function slackToolsForEndpoint(
       description: entry.description ?? "",
       parametersSchema: entry.inputSchema,
       pluginId: `slack-bot:${authority.endpoint.id}`,
-      providerType: "paperclip_slack_chat",
+      providerType: "pilibala_slack_chat",
       risk: entry.riskLevel === "read" ? "read" : "write",
       applicationId,
       applicationKey: "slack-chat",

@@ -11,7 +11,7 @@ function ReviewGuide() {
   </main>;
 }
 export default {
-  parameters: { paperclip: {
+  parameters: { pilibala: {
       "capabilities": [
         "tasks/discussion"
       ],

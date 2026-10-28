@@ -7,7 +7,7 @@ import {
   companySkillPolicies,
   createDb,
   principalPermissionGrants,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { companySkillPolicyService } from "../services/company-skill-policy.js";
 
@@ -19,7 +19,7 @@ describeEmbeddedPostgres("companySkillPolicyService", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-skill-policy-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-skill-policy-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 

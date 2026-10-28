@@ -6,11 +6,11 @@ instrumentation contracts; see the
 [Telemetry Data Contract](../packages/shared/src/telemetry/README.md) for the
 separate first-party event system.
 
-Paperclip ships with **opt-in** OpenTelemetry auto-instrumentation for the
+Pilibala ships with **opt-in** OpenTelemetry auto-instrumentation for the
 server process. When activated it produces **traces only** — no metrics and no
 logs are exported by this integration.
 
-`@opentelemetry/api` is a normal dependency of `@paperclipai/server`. Every
+`@opentelemetry/api` is a normal dependency of `@pilibalaai/server`. Every
 install includes it. It stays a no-op interface until an SDK registers a
 provider, so it exports no telemetry by itself.
 
@@ -30,7 +30,7 @@ server tests against; install that exact version. Our Dependabot cannot bump
 these versions: its npm parser reads only `dependencies`, `devDependencies`,
 and `optionalDependencies`, never `peerDependencies`. A peer version here is a
 compatibility claim, not an installed version, so raising it is a human
-decision. `@opentelemetry/api` is the one OpenTelemetry package Paperclip
+decision. `@opentelemetry/api` is the one OpenTelemetry package Pilibala
 maintains as a dependency; once you install the packages below, they become
 normal dependencies of **your own** project, and your own Dependabot updates
 them.
@@ -46,15 +46,15 @@ cleanup when the final response is published.
 
 The Slack adapter also skips the SDK's two-second polling wait for optional link
 unfurls before message dispatch. Text, formatted content, link URLs and file
-download handles remain available. Paperclip does not consume that optional
+download handles remain available. Pilibala does not consume that optional
 preview metadata for task admission.
 
-With an operator OTLP endpoint, the `paperclip.chat` tracer records
+With an operator OTLP endpoint, the `pilibala.chat` tracer records
 `chat.slack.receipt` around each Slack reaction API attempt. Its closed attributes
-are `paperclip.chat.receipt.operation` (`add` or `remove`),
-`paperclip.chat.receipt.outcome` (`confirmed` or `failed`),
-`paperclip.chat.receipt.queue_ms` (action creation to transport), and
-`paperclip.chat.receipt.delivery_age_ms` (durable inbound receipt to provider
+are `pilibala.chat.receipt.operation` (`add` or `remove`),
+`pilibala.chat.receipt.outcome` (`confirmed` or `failed`),
+`pilibala.chat.receipt.queue_ms` (action creation to transport), and
+`pilibala.chat.receipt.delivery_age_ms` (durable inbound receipt to provider
 confirmation or failure). `already_reacted` confirms an idempotent add.
 Delivery age excludes Slack-to-webhook transit and SDK parsing; the span duration
 measures provider I/O. A failed attempt is not an acknowledgement latency sample.
@@ -64,13 +64,13 @@ cannot change reaction transport or settlement.
 
 ## Task detail loading
 
-`GET /api/issues/:id` returns `Server-Timing` with `paperclip_issue` for the
+`GET /api/issues/:id` returns `Server-Timing` with `pilibala_issue` for the
 whole handler and `issue_<phase>` for its reads. The total includes the final
 execution-blocker read after recovery revalidation. Concurrent phases overlap;
 do not sum them to obtain request duration.
 
 With the existing operator-configured OTLP endpoint, the same reads produce
-`issue.read.<phase>` child spans through the `paperclip.issue-read` tracer.
+`issue.read.<phase>` child spans through the `pilibala.issue-read` tracer.
 There are no custom attributes, identifiers, content, or exception messages.
 The closed phase names in `server/src/services/issue-read-timing.ts` are:
 `lookup`, `authorization`, `project_goal`, `ancestors`, `mentions`, `documents`,
@@ -138,7 +138,7 @@ export OTEL_EXPORTER_OTLP_ENDPOINT="http://otel-collector:4317"
 export OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
 
 # Optional — service identity attached to every span.
-export OTEL_SERVICE_NAME="paperclip"
+export OTEL_SERVICE_NAME="pilibala"
 export OTEL_SERVICE_VERSION="2026.5.0"
 ```
 
@@ -152,7 +152,7 @@ returns a value:
    `dist/build-info.json`. The stamp wins so the reported version tracks the
    true built commit and cannot go stale across rebuilds. The build script
    reads the commit from `git rev-parse --short HEAD` first. A Docker image
-   build excludes `.git`, so the build script reads the `PAPERCLIP_BUILD_COMMIT`
+   build excludes `.git`, so the build script reads the `PILIBALA_BUILD_COMMIT`
    environment variable instead. Pass the built commit in that variable so the
    image stamp records the true commit.
 2. **A runtime `git rev-parse --short HEAD`.** This covers `tsx src/index.ts`
@@ -160,14 +160,14 @@ returns a value:
    stamp. A failure here is not fatal.
 3. **The `OTEL_SERVICE_VERSION` environment variable.** This is the fallback
    for a build with no stamp and no reachable git — for example a tarball
-   build. `OTEL_SERVICE_VERSION` is a Paperclip-specific variable, not an
-   OpenTelemetry SDK variable, so Paperclip controls this precedence.
+   build. `OTEL_SERVICE_VERSION` is a Pilibala-specific variable, not an
+   OpenTelemetry SDK variable, so Pilibala controls this precedence.
 4. **`"unknown"`** when no source returns a value.
 
 The server logs the resolved `service.version` once at startup, so an operator
 can confirm the value.
 
-If `OTEL_EXPORTER_OTLP_PROTOCOL` is set to an unrecognized value, Paperclip
+If `OTEL_EXPORTER_OTLP_PROTOCOL` is set to an unrecognized value, Pilibala
 logs a single warning and falls back to gRPC.
 
 Before it imports any OTel package, the server checks the four common
@@ -190,7 +190,7 @@ Those sections follow below.
 
 ## Controller preparation phases
 
-With an operator OTLP endpoint, `paperclip.heartbeat-preparation` emits active
+With an operator OTLP endpoint, `pilibala.heartbeat-preparation` emits active
 `heartbeat.prepare.<phase>` spans around environment selection, execution
 configuration, session preparation, workspace preparation, GitHub environment
 and launcher preparation, run output initialization, workspace validation,
@@ -215,7 +215,7 @@ the current attempt. Concurrent runs have separate contexts. A phase invoked
 without a live matching attempt still starts an independent linked root.
 
 These spans exist before provider dispatch, including setup failures. Preparation phases have
-only the existing `paperclip.task.run.run_id` attribute: the first 12 hexadecimal
+only the existing `pilibala.task.run.run_id` attribute: the first 12 hexadecimal
 characters of the run UUID's SHA-256 hash. Failed operations set error status
 without recording exception messages, paths, inputs, or returned content.
 Search by that hash without a root-name filter to include these preparation
@@ -232,7 +232,7 @@ project repositories, and recovery-root reservation. These intervals are inside
 Do not add these intervals to the containing workspace duration. They use the
 same run hash and contain no workspace paths, commands, or returned records.
 
-The `paperclip.native-controller` tracer records
+The `pilibala.native-controller` tracer records
 `native.controller.<phase>` spans around GitHub access setup, wake binding,
 backend construction, connector assignments, assigned MCP discovery, tool
 authority, companion selection and Runner binary resolution. It also records
@@ -256,7 +256,7 @@ cannot repeat work or replace its result or error. Automatic database children
 are not guaranteed: an aggregate workspace trace can contain just one span.
 If a process exits before an operation settles, its open span may not be exported.
 
-With an endpoint, `paperclip.controller-startup` records independent
+With an endpoint, `pilibala.controller-startup` records independent
 `controller.startup.<phase>` root spans for tool reviews, gateway sessions,
 delivery-worker readiness, accounting, plugin-worker readiness, native recovery,
 hot-restart adoption, orphan reaping, scheduled retries, queued runs, and goal
@@ -269,17 +269,17 @@ Tracing failures cannot repeat recovery or replace its result or error.
 Native recovery and orphan reaping each run a native finalization
 reconciliation pass; the periodic recovery loop runs it on every scheduler tick.
 With an endpoint, a pass that takes at least one second records, after it ends,
-a `controller.native_reconciliation` root span from `paperclip.native-reconciliation`
+a `controller.native_reconciliation` root span from `pilibala.native-reconciliation`
 with one child span per phase: `legacy_workspace_exports`,
 `obsolete_policy_reviews`, `automatic_completion_reviews`, `candidate_scan` and
-`candidates`. The pass span carries `paperclip.native_reconciliation.scoped` and,
-once known, `paperclip.native_reconciliation.candidates` (a count). A failed
+`candidates`. The pass span carries `pilibala.native_reconciliation.scoped` and,
+once known, `pilibala.native_reconciliation.candidates` (a count). A failed
 pass marks the pass span and the phase that was running with an error status.
 Faster passes record nothing.
 
 ### Detailed execution phases
 
-The `paperclip.execution` tracer adds these content-free spans beneath the current
+The `pilibala.execution` tracer adds these content-free spans beneath the current
 attempt or owning phase:
 
 | Span family | Measured work |
@@ -318,14 +318,14 @@ or per-file spans. Adding detail spans does not itself change work, query order,
 authorization, or locks.
 Manual transaction and dispatch boundaries retain their actual lifetime.
 Asset writes and verification may add only non-negative integer
-`paperclip.execution.fileCount` and `paperclip.execution.bytes` attributes.
+`pilibala.execution.fileCount` and `pilibala.execution.bytes` attributes.
 The closed keys are declared in `EXECUTION_PREPARATION_SPAN_ATTRS` in
 `packages/adapter-utils/src/acpx-engine/startup-timing.ts`.
 Repository checkout cache phases also carry the closed
-`paperclip.execution.repositoryCache.outcome` value: `disabled`, `hit`, `miss`,
+`pilibala.execution.repositoryCache.outcome` value: `disabled`, `hit`, `miss`,
 `published`, `already_present`, `contended`, `capacity`, `budget`, `invalid`, or `error`.
 The clone span carries the boolean
-`paperclip.execution.repositoryCache.reference_supplied`, including `false` for
+`pilibala.execution.repositoryCache.reference_supplied`, including `false` for
 a fallback clone. A lookup hit means a validated cache was found, and supplying
 a reference does not prove Git avoided a download. These attributes carry no
 cache keys, remote URLs, paths, refs, credentials, or error text.
@@ -373,7 +373,7 @@ No authorization result is cached across calls.
 
 ### Reading a slow startup in Honeycomb
 
-Filter `paperclip.task.run.run_id` to the first 12 hex characters of
+Filter `pilibala.task.run.run_id` to the first 12 hex characters of
 `SHA256(run UUID)`, then inspect the attempt's waterfall with its
 `service.version`. An agent/model setting or the repository's checked-out commit
 does not establish the server revision. The detailed spans are available only
@@ -510,7 +510,7 @@ retain their documented fallback behavior.
 
 The root carries only a hashed run id, runtime label, schema version, wall time,
 and outcome. Native child attributes use the bounded
-`paperclip.native.span.` prefix and a closed key allowlist; values are limited
+`pilibala.native.span.` prefix and a closed key allowlist; values are limited
 to finite numbers, booleans, or short strings. Commands, arguments, environment
 values, paths, output, credentials, and raw identifiers are discarded by the
 trace helper. `task.provider_session.measured` records that same interval in the
@@ -525,7 +525,7 @@ run-log copy is unaffected.
 
 ## Sentry Error Monitoring
 
-Paperclip ships with **opt-in** Sentry error monitoring for the server
+Pilibala ships with **opt-in** Sentry error monitoring for the server
 process and the browser app. The operator activates it with two
 environment variables: `SENTRY_DSN_FRONTEND` for the browser and
 `SENTRY_DSN_BACKEND` for the server. Each variable is optional. A
@@ -652,7 +652,7 @@ loaded bundle, even if the server has since deployed another version.
 The feature uses built-in Sentry options only.
 
 - `sendDefaultPii` is `false`, on both runtimes.
-- `tracesSampleRate` is `0`, on both runtimes. Paperclip sends no
+- `tracesSampleRate` is `0`, on both runtimes. Pilibala sends no
   performance trace and no profile.
 - There is no `beforeSend` hook and no custom filter, on either runtime.
 
@@ -668,7 +668,7 @@ server event captured inside a real HTTP request handler carries no
 request field").
 
 The reason is `skipOpenTelemetrySetup: true`. This feature sets that
-option so it never fights Paperclip's separate, independently opt-in
+option so it never fights Pilibala's separate, independently opt-in
 OpenTelemetry feature for control of the global tracer. The same option
 turns off Sentry's per-request context tracking. Sentry's built-in
 `RequestData` integration needs that tracking to find a URL, a method, a
@@ -690,7 +690,7 @@ below.
 ### Run failure context
 
 Run failure reporting requires a separate operator choice in addition to the
-backend Sentry DSN and the audited SDK. Set `PAPERCLIP_SENTRY_RUN_FAILURES` to:
+backend Sentry DSN and the audited SDK. Set `PILIBALA_SENTRY_RUN_FAILURES` to:
 
 | Value | Reports |
 | --- | --- |
@@ -706,7 +706,7 @@ it on one staging instance without enabling it on other deployments. Restart the
 server after changing deployment environment variables.
 
 **Upgrade:** A backend DSN alone previously enabled run failure reports. Set
-`PAPERCLIP_SENTRY_RUN_FAILURES=unexpected` to preserve that reporting policy.
+`PILIBALA_SENTRY_RUN_FAILURES=unexpected` to preserve that reporting policy.
 Use `all` to investigate every failed run in a selected deployment.
 
 Terminal run failures carry the company, agent, run and optional task IDs,
@@ -720,9 +720,9 @@ They do not change the ambient Sentry scope, whose isolation is unavailable
 without an OpenTelemetry context manager. Later, unrelated exceptions must
 not inherit a previous run's identity or fingerprint.
 
-The versioned `paperclip` context supplies company and agent IDs and relative
+The versioned `pilibala` context supplies company and agent IDs and relative
 API paths for the saved run, events, log, and optional task. A valid HTTP(S)
-origin in `PAPERCLIP_PUBLIC_URL` also supplies absolute run, events, and log URLs.
+origin in `PILIBALA_PUBLIC_URL` also supplies absolute run, events, and log URLs.
 Values with credentials, query parameters, fragments, or a path are omitted.
 The event never includes an API key or an access token. These references grant
 no access. A bot must authenticate to the correct instance and pass its existing
@@ -741,7 +741,7 @@ passes through the existing secret redaction and size limits.
 
 Use the Sentry group to combine repeated investigations, and the instance and
 run ID to identify each occurrence. Automated retries or proposed code fixes
-must use normal Paperclip authority and approval checks. Receiving an event
+must use normal Pilibala authority and approval checks. Receiving an event
 does not authorize a bot to replay a run. This change provides the reporting
 contract; it does not install a bot or configure Sentry alerts.
 
@@ -1019,10 +1019,10 @@ own tool calls instead. Other ACP agents are watched only when
 The engine also observes ACP permission requests without deciding them; ACPX's
 permission mode still decides each one. A stalled run records
 `acpStalledToolPermissionRequested` (whether the stalled call's permission
-request reached Paperclip) and `acpPendingToolPermissionRequestedCount` (how many
+request reached Pilibala) and `acpPendingToolPermissionRequestedCount` (how many
 pending calls had one). These fields record only that a request arrived, not
 that the reply reached the agent. A call whose request never arrived stalled
-before the request reached Paperclip. A call whose request arrived stalled
+before the request reached Pilibala. A call whose request arrived stalled
 later: on the reply's return trip, or after the agent received the decision.
 Both fields hold only a boolean and a count.
 
@@ -1035,7 +1035,7 @@ the call stalled. The ACP kind is coarse, so peers of the same kind can be
 different tools with different permission rules. Read them this way:
 
 - All or nearly all finished peers sent a request, and the stalled call did not:
-  this supports a stall before the request reached Paperclip.
+  this supports a stall before the request reached Pilibala.
 - No finished peer sent a request: calls of that kind may skip the request, so
   its absence on the stalled call says nothing about where it stalled.
 - Some finished peers sent a request and others did not: the counts do not show
@@ -1256,7 +1256,7 @@ The server sets `release` to the full source commit from its build metadata.
 An explicit `SENTRY_RELEASE` overrides that default. If neither is available,
 the server leaves the release unset.
 
-The browser also sets `release`, using the full `PAPERCLIP_BUILD_COMMIT`
+The browser also sets `release`, using the full `PILIBALA_BUILD_COMMIT`
 supplied when its bundle is built, or the checkout commit for source and npm
 builds. The server reads its packaged build stamp when no deployment marker
 is present. Docker passes the same commit to both
@@ -1380,17 +1380,17 @@ Two controls belong to the operator. This feature ships neither one.
 
 ## Sandbox Startup Trace Spans
 
-Paperclip opens OpenTelemetry spans on the sandbox start path. These spans are
-an Observability surface. They are not Paperclip Telemetry events. The
+Pilibala opens OpenTelemetry spans on the sandbox start path. These spans are
+an Observability surface. They are not Pilibala Telemetry events. The
 generated telemetry contract does not cover them, so this section is their
 canonical contract.
 
-The spans are opt-in. Paperclip exports them only when an OTLP endpoint is
-configured. With no endpoint the whole span path is a no-op. Paperclip opens the
+The spans are opt-in. Pilibala exports them only when an OTLP endpoint is
+configured. With no endpoint the whole span path is a no-op. Pilibala opens the
 spans only for a run that targets a remote sandbox. A local run and an SSH run
 stay out of these spans.
 
-Every span attribute uses the closed `paperclip.sandbox.startup.` prefix and
+Every span attribute uses the closed `pilibala.sandbox.startup.` prefix and
 rides a fixed allowlist. A command line, an argument, an environment value, a
 file path, program output, or a raw identifier never rides a span. It rides
 neither as an attribute nor as an event. The producer bounds each free-form
@@ -1401,7 +1401,7 @@ value:
 - An image id, a sandbox id, and a lease id ride only as a non-reversible short
   hash.
 
-Each numeric attribute is finite. Paperclip omits an attribute when its value is
+Each numeric attribute is finite. Pilibala omits an attribute when its value is
 absent, never a misleading `0`.
 
 ### Spans
@@ -1419,7 +1419,7 @@ absent, never a misleading `0`.
 | `stage.asset.<key>`                   | One inbound asset stage task inside `stage.sync`. It packs and uploads one managed-home asset. The `<key>` segment is the asset key.                       | `stage.sync`                    |
 | `stage.project.<id>`                  | One inbound referenced-project stage task inside `stage.sync`. It uploads one referenced project. The `<id>` segment is the project id.                    | `stage.sync`                    |
 | `pack`                                | Host-side workspace tarball build inside the `stage.workspace` task.                                                                                       | `stage.workspace`               |
-| `bridge.paperclip`                    | Paperclip bridge start step.                                                                                                                               | `sandbox.startup`               |
+| `bridge.pilibala`                    | Pilibala bridge start step.                                                                                                                               | `sandbox.startup`               |
 | `bridge.process-session`              | Process-session bridge start step.                                                                                                                         | `sandbox.startup`               |
 | `acp.handshake`                       | ACP session handshake step.                                                                                                                                | `sandbox.startup`               |
 | `sandbox.syncBack`                    | The settlement sync-back that restores the managed home at teardown.                                                                                       | the active run span             |
@@ -1427,7 +1427,7 @@ absent, never a misleading `0`.
 | `restore.asset.<key>`                 | One outbound asset restore task at teardown. It reads one asset back to its host store. The `<key>` segment is the asset key.                              | `sandbox.syncBack`              |
 | `sandbox.agentSession.sendInput`      | One outbound ACP message to the agent — the socket handler's one `writeTextFile` exec.                                                                     | the active run span             |
 | `sandbox.agentSession.pollOutput`     | One 100 ms poll tick — `list`, then `read`+`remove` per file found (`1 + 2n` execs).                                                                       | the active run span             |
-| `sandbox.callbackBridge.relayRequest` | One Paperclip-API callback request — read the request, write the response, remove it.                                                                      | the active run span             |
+| `sandbox.callbackBridge.relayRequest` | One Pilibala-API callback request — read the request, write the response, remove it.                                                                      | the active run span             |
 | `sandbox.agentProcess`                | The persistent streamed agent process the process-session bridge launches; open until the process settles or the bridge tears down, whichever comes first. | the active run span             |
 | `sandbox.exec`                        | One host-to-sandbox execution.                                                                                                                             | the active step or wrapper span |
 
@@ -1469,7 +1469,7 @@ status when the exit code is non-zero or the execution throws.
 
 ### Outcome values
 
-The `paperclip.sandbox.startup.outcome` attribute uses a closed value set:
+The `pilibala.sandbox.startup.outcome` attribute uses a closed value set:
 
 - `ok` — the step or the execution settled with a success result.
 - `skipped` — a warm cache skipped the step; the step ran no work.
@@ -1481,15 +1481,15 @@ The `sandbox.startup` root span uses this closed attribute allowlist.
 
 | Attribute                                | Type    | Optional | Meaning                                                    |
 | ---------------------------------------- | ------- | -------- | ---------------------------------------------------------- |
-| `paperclip.sandbox.startup.root.wall_ms` | number  | no       | The root-span wall time of the whole bring-up.             |
-| `paperclip.sandbox.startup.root.work_ms` | number  | no       | The sum of the step wall times.                            |
-| `paperclip.sandbox.startup.root.diff_ms` | number  | no       | `work_ms − wall_ms`; the overlap the parallel steps saved. |
-| `paperclip.sandbox.startup.provider`     | string  | yes      | The normalized provider family.                            |
-| `paperclip.sandbox.startup.cold_start`   | boolean | yes      | Whether the bring-up is a cold start.                      |
-| `paperclip.sandbox.startup.region`       | string  | yes      | The clamped region label.                                  |
-| `paperclip.sandbox.startup.image_id`     | string  | yes      | The hashed image id.                                       |
-| `paperclip.sandbox.startup.sandbox_id`   | string  | yes      | The hashed sandbox id.                                     |
-| `paperclip.sandbox.startup.lease_id`     | string  | yes      | The hashed lease id.                                       |
+| `pilibala.sandbox.startup.root.wall_ms` | number  | no       | The root-span wall time of the whole bring-up.             |
+| `pilibala.sandbox.startup.root.work_ms` | number  | no       | The sum of the step wall times.                            |
+| `pilibala.sandbox.startup.root.diff_ms` | number  | no       | `work_ms − wall_ms`; the overlap the parallel steps saved. |
+| `pilibala.sandbox.startup.provider`     | string  | yes      | The normalized provider family.                            |
+| `pilibala.sandbox.startup.cold_start`   | boolean | yes      | Whether the bring-up is a cold start.                      |
+| `pilibala.sandbox.startup.region`       | string  | yes      | The clamped region label.                                  |
+| `pilibala.sandbox.startup.image_id`     | string  | yes      | The hashed image id.                                       |
+| `pilibala.sandbox.startup.sandbox_id`   | string  | yes      | The hashed sandbox id.                                     |
+| `pilibala.sandbox.startup.lease_id`     | string  | yes      | The hashed lease id.                                       |
 
 ### Step span attributes
 
@@ -1498,36 +1498,36 @@ rides the span name, so no `step` attribute repeats it.
 
 | Attribute                                                    | Type   | Optional | Meaning                                                  |
 | ------------------------------------------------------------ | ------ | -------- | -------------------------------------------------------- |
-| `paperclip.sandbox.startup.step.wall_ms`                     | number | no       | The wall time of the step.                               |
-| `paperclip.sandbox.startup.outcome`                          | string | no       | The step outcome (`ok`, `skipped`, or `failed`).         |
-| `paperclip.sandbox.startup.provider`                         | string | yes      | The normalized provider family.                          |
-| `paperclip.sandbox.startup.batch`                            | string | yes      | A shared tag that marks two parallel steps as one batch. |
-| `paperclip.sandbox.startup.handshake.create_runtime.wall_ms` | number | yes      | The create-runtime sub-time of the `acp.handshake` step. |
-| `paperclip.sandbox.startup.handshake.ensure_session.wall_ms` | number | yes      | The ensure-session sub-time of the `acp.handshake` step. |
+| `pilibala.sandbox.startup.step.wall_ms`                     | number | no       | The wall time of the step.                               |
+| `pilibala.sandbox.startup.outcome`                          | string | no       | The step outcome (`ok`, `skipped`, or `failed`).         |
+| `pilibala.sandbox.startup.provider`                         | string | yes      | The normalized provider family.                          |
+| `pilibala.sandbox.startup.batch`                            | string | yes      | A shared tag that marks two parallel steps as one batch. |
+| `pilibala.sandbox.startup.handshake.create_runtime.wall_ms` | number | yes      | The create-runtime sub-time of the `acp.handshake` step. |
+| `pilibala.sandbox.startup.handshake.ensure_session.wall_ms` | number | yes      | The ensure-session sub-time of the `acp.handshake` step. |
 
 The round-trip count and the provider durations no longer ride a step span. The
 per-execution `sandbox.exec` child spans carry that detail.
 
 ### `sandbox.exec` span attributes
 
-The `sandbox.exec` span uses this closed attribute allowlist. Paperclip omits a
+The `sandbox.exec` span uses this closed attribute allowlist. Pilibala omits a
 numeric attribute when the provider does not report the value.
 
 | Attribute                                       | Type    | Optional | Meaning                                                                    |
 | ----------------------------------------------- | ------- | -------- | -------------------------------------------------------------------------- |
-| `paperclip.sandbox.startup.provider`            | string  | no       | The normalized provider family.                                            |
-| `paperclip.sandbox.startup.exec.command`        | string  | no       | The clamped `argv[0]` command label.                                       |
-| `paperclip.sandbox.startup.exec.exit_code`      | number  | yes      | The numeric process exit code.                                             |
-| `paperclip.sandbox.startup.exec.wall_ms`        | number  | no       | The host-measured wall time of the execution.                              |
-| `paperclip.sandbox.startup.exec.wait_before_ms` | number  | yes      | The provider handle-fetch wait before the execution ran.                   |
-| `paperclip.sandbox.startup.exec.sandbox_ms`     | number  | yes      | The in-sandbox run time of the execution.                                  |
-| `paperclip.sandbox.startup.exec.network_ms`     | number  | yes      | The transport time the host adds; `wall_ms − wait_before_ms − sandbox_ms`. |
-| `paperclip.sandbox.startup.exec.critical_path`  | boolean | no       | Whether the execution sits on the startup critical path.                   |
-| `paperclip.sandbox.startup.exec.cache_hit`      | boolean | yes      | Whether the provider served the sandbox handle from its warm cache.        |
-| `paperclip.sandbox.startup.outcome`             | string  | no       | The execution outcome (`ok` or `failed`).                                  |
+| `pilibala.sandbox.startup.provider`            | string  | no       | The normalized provider family.                                            |
+| `pilibala.sandbox.startup.exec.command`        | string  | no       | The clamped `argv[0]` command label.                                       |
+| `pilibala.sandbox.startup.exec.exit_code`      | number  | yes      | The numeric process exit code.                                             |
+| `pilibala.sandbox.startup.exec.wall_ms`        | number  | no       | The host-measured wall time of the execution.                              |
+| `pilibala.sandbox.startup.exec.wait_before_ms` | number  | yes      | The provider handle-fetch wait before the execution ran.                   |
+| `pilibala.sandbox.startup.exec.sandbox_ms`     | number  | yes      | The in-sandbox run time of the execution.                                  |
+| `pilibala.sandbox.startup.exec.network_ms`     | number  | yes      | The transport time the host adds; `wall_ms − wait_before_ms − sandbox_ms`. |
+| `pilibala.sandbox.startup.exec.critical_path`  | boolean | no       | Whether the execution sits on the startup critical path.                   |
+| `pilibala.sandbox.startup.exec.cache_hit`      | boolean | yes      | Whether the provider served the sandbox handle from its warm cache.        |
+| `pilibala.sandbox.startup.outcome`             | string  | no       | The execution outcome (`ok` or `failed`).                                  |
 
 The plugin decides the cache hit at the sandbox-handle lookup. The span no
-longer infers a cache hit from `wait_before_ms == 0`. Paperclip omits the
+longer infers a cache hit from `wait_before_ms == 0`. Pilibala omits the
 `cache_hit` attribute when the provider does not report the value.
 
 To add a span attribute, extend the `SANDBOX_STARTUP_SPAN_ATTRS` allowlist in
@@ -1537,7 +1537,7 @@ the code first. Keep the attribute low-cardinality and free of user content.
 
 A sandbox provider plugin also opens spans for its own sync steps. These spans
 use the `sandbox.daytona.` name prefix. They share the
-`paperclip.sandbox.startup.` attribute prefix and obey the same opt-in and
+`pilibala.sandbox.startup.` attribute prefix and obey the same opt-in and
 no-user-content rules as the startup spans above.
 
 The plugin worker runs in a separate process from the host. So the host treats
@@ -1548,7 +1548,7 @@ before it records the span.
 | Span                                 | Scope                                                                                                                                                                                | Parent                                                                                       |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
 | `sandbox.daytona.pack`               | The host-local pack step that builds the upload tarball. It makes no sandbox round trip.                                                                                             | the active startup step span                                                                 |
-| `sandbox.daytona.transfer`           | The transfer step: an upload to the sandbox (inbound) or a download from the sandbox (outbound). The `paperclip.sandbox.startup.transfer.direction` attribute records the direction. | the active sync task span (`stage.*` inbound, `restore.*` under `sandbox.syncBack` outbound) |
+| `sandbox.daytona.transfer`           | The transfer step: an upload to the sandbox (inbound) or a download from the sandbox (outbound). The `pilibala.sandbox.startup.transfer.direction` attribute records the direction. | the active sync task span (`stage.*` inbound, `restore.*` under `sandbox.syncBack` outbound) |
 | `sandbox.daytona.ensureDirectory`    | The `mkdir -p` step that ensures a directory exists before a write.                                                                                                                  | the active startup step span                                                                 |
 | `sandbox.daytona.checkSymlinkEscape` | The re-check step that a path resolves inside the workspace root before use.                                                                                                         | the active startup step span                                                                 |
 | `sandbox.daytona.promote`            | The atomic move of a staged temp onto its target via a pinned dir handle.                                                                                                            | the active startup step span                                                                 |
@@ -1573,12 +1573,12 @@ the attributes that the producer sends for one span.
 
 | Attribute                                        | Type   | Optional | Meaning                                                                                                   |
 | ------------------------------------------------ | ------ | -------- | --------------------------------------------------------------------------------------------------------- |
-| `paperclip.sandbox.startup.provider`             | string | no       | The normalized provider family.                                                                           |
-| `paperclip.sandbox.startup.outcome`              | string | yes      | The step outcome (`ok`, `skipped`, or `failed`).                                                          |
-| `paperclip.sandbox.startup.pack.wall_ms`         | number | yes      | The host-local wall time of the pack step. It rides the `sandbox.daytona.pack` span.                      |
-| `paperclip.sandbox.startup.transfer.wall_ms`     | number | yes      | The wall time of the transfer step. It rides the `sandbox.daytona.transfer` span.                         |
-| `paperclip.sandbox.startup.transfer.guard.count` | number | yes      | The number of serial guard round trips before one transfer. It rides the `sandbox.daytona.transfer` span. |
-| `paperclip.sandbox.startup.transfer.direction`   | string | yes      | The transfer direction (`inbound` or `outbound`). It rides the `sandbox.daytona.transfer` span.           |
+| `pilibala.sandbox.startup.provider`             | string | no       | The normalized provider family.                                                                           |
+| `pilibala.sandbox.startup.outcome`              | string | yes      | The step outcome (`ok`, `skipped`, or `failed`).                                                          |
+| `pilibala.sandbox.startup.pack.wall_ms`         | number | yes      | The host-local wall time of the pack step. It rides the `sandbox.daytona.pack` span.                      |
+| `pilibala.sandbox.startup.transfer.wall_ms`     | number | yes      | The wall time of the transfer step. It rides the `sandbox.daytona.transfer` span.                         |
+| `pilibala.sandbox.startup.transfer.guard.count` | number | yes      | The number of serial guard round trips before one transfer. It rides the `sandbox.daytona.transfer` span. |
+| `pilibala.sandbox.startup.transfer.direction`   | string | yes      | The transfer direction (`inbound` or `outbound`). It rides the `sandbox.daytona.transfer` span.           |
 
 The `span.record` host handler enforces the allowlist. It re-maps `provider`
 through the provider-family normalizer. It keeps `outcome` only when the value
@@ -1614,8 +1614,8 @@ This section documents one duplex transport with three sinks: an
 OpenTelemetry span, a counter in the `tool_runtime_metric_counters` table, and
 one run-log event.
 
-Paperclip opens a fixed observability surface for the sandbox duplex transport.
-This instrumentation is separate from Paperclip Telemetry events and from the
+Pilibala opens a fixed observability surface for the sandbox duplex transport.
+This instrumentation is separate from Pilibala Telemetry events and from the
 sandbox startup trace spans above. The generated telemetry contract does not
 cover it, so this section is its canonical contract. The code owner is
 `packages/adapter-utils/src/duplex-observability.ts`. That module holds each name and
@@ -1766,7 +1766,7 @@ Read-only listings validate caches without downloading or repairing them. A
 publication lock left by an abruptly terminated process is reported for operator
 cleanup; remove it only after confirming its recorded PID is no longer running.
 
-Run `pnpm --filter @paperclipai/server exec tsx ../scripts/benchmark-skill-preparation.ts` for an isolated embedded
+Run `pnpm --filter @pilibalaai/server exec tsx ../scripts/benchmark-skill-preparation.ts` for an isolated embedded
 PostgreSQL benchmark with 114 mixed skills and at least 400 remote files. It
 reports one cold sample and ten warm samples (one in a new process), refresh and
 fetch counts, rebuilds, missing entries, and content checks. Upstream responses are

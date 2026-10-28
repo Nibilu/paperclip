@@ -73,7 +73,7 @@ describe("shell navigation", () => {
 
   it("falls back when storage contains an unsafe path", () => {
     window.sessionStorage.setItem(
-      "paperclip.contextualSidebar.origin:PAP:settings",
+      "pilibala.contextualSidebar.origin:PAP:settings",
       "/OTHER/company/settings",
     );
     expect(readContextualSidebarOrigin({

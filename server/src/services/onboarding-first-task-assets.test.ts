@@ -37,7 +37,7 @@ describe("fillFirstTaskPlaceholders", () => {
 describe("renderOnboardingFirstTaskGreeting", () => {
   it("renders the board-approved greeting with the agent name", async () => {
     const greeting = await renderOnboardingFirstTaskGreeting({ agentName: "Ada" });
-    expect(greeting).toContain("Welcome to Paperclip! I'm Ada, your first agent teammate.");
+    expect(greeting).toContain("Welcome to Pilibala! I'm Ada, your first agent teammate.");
     // The "what would you like to do" question moved onto the opening card.
     expect(greeting).not.toContain("What would you like to do?");
   });
@@ -99,13 +99,13 @@ describe("first-task proposal mode policy", () => {
     expect(skill).toContain("If the accepted child work requires a file deliverable");
     expect(skill).toContain("self-contained child description");
     expect(skill).toContain("requested filenames");
-    expect(skill).toContain("child's own Paperclip execution");
+    expect(skill).toContain("child's own Pilibala execution");
     expect(skill).toContain("even when the child is assigned to yourself");
     expect(skill).toContain("Do not create or register that file from the onboarding run");
     expect(skill).toContain("`register_deliverable` is bound to its current task");
     expect(skill).toContain("preserve existing blocker IDs");
     expect(skill).toContain("`set_dependencies`");
-    expect(skill).toContain("`paperclip_block`");
+    expect(skill).toContain("`pilibala_block`");
     expect(skill).toContain("`blockedByIssueIds`");
     expect(skill).toContain("End the turn so the child can execute");
     expect(skill).toContain("Do not poll for its result");

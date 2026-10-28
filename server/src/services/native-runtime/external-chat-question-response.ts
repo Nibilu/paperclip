@@ -1,6 +1,6 @@
 import { photonAnswersMatch } from "../photon/interactions.js";
 import { and, or, eq, lte, inArray, notExists, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agentWakeupRequests,
   chatActions,
@@ -19,8 +19,8 @@ import {
   issueComments,
   issueQuestionResponseDeliveries,
   issueThreadInteractions,
-} from "@paperclipai/db";
-import type { AskUserQuestionsInteraction } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import type { AskUserQuestionsInteraction } from "@pilibalaai/shared";
 import {
   parseChatQuestionFormSubmitTokenPayload,
   validateChatQuestionFormSubmission,
@@ -30,7 +30,7 @@ import { voiceSessionStore, type VoiceTransaction, currentVoiceCredentialFingerp
 import { nativeSha256 } from "./canonical.js";
 
 export const EXTERNAL_CHAT_QUESTION_RESPONSE_KEY =
-  "paperclipExternalChatQuestionResponse";
+  "pilibalaExternalChatQuestionResponse";
 type Binding = {
   companyId: string;
   issueId: string;
@@ -39,7 +39,7 @@ type Binding = {
 };
 type LockMode = "blocking" | "nonblocking" | "read";
 type Marker = {
-  schema: "paperclip.external_chat_question_response.v1";
+  schema: "pilibala.external_chat_question_response.v1";
   interactionId: string;
   responseDeliveryId: string;
   sourceRunId: string;
@@ -321,7 +321,7 @@ async function resolveQuestionResponseChain(
   chain.interactionIds.add(interaction.id);
   chain.deliveryIds.add(delivery.id);
   const sourceContext = record(source.contextSnapshot);
-  const sourceWake = record(sourceContext.paperclipWake);
+  const sourceWake = record(sourceContext.pilibalaWake);
   // A follow-up question inherits no authority from its marker alone. Rebuild
   // every parent proof from current durable state until the direct-chat root.
   const parent =
@@ -373,9 +373,9 @@ async function resolveQuestionResponseChain(
       )) ||
     sourceWake.externalChatProvider !== provider ||
     !(
-      (sourceContext.paperclipHarnessCheckedOut === true &&
+      (sourceContext.pilibalaHarnessCheckedOut === true &&
         sourceWake.checkedOutByHarness === true) ||
-      (sourceContext.paperclipExternalChatExecutionBound === true &&
+      (sourceContext.pilibalaExternalChatExecutionBound === true &&
         sourceWake.externalChatExecutionBound === true)
     ) ||
     sourceIds.length !== 1 ||
@@ -478,7 +478,7 @@ async function resolveQuestionResponseChain(
         return null;
       }
       const marker: Marker = {
-        schema: "paperclip.external_chat_question_response.v1", interactionId: interaction.id,
+        schema: "pilibala.external_chat_question_response.v1", interactionId: interaction.id,
         responseDeliveryId: delivery.id, sourceRunId: source.id, sourceCommentId: context.sourceCommentId,
         endpointId: endpoint.id, conversationId: conversation.id,
         bindingSha256: nativeSha256({ binding: {companyId: binding.companyId, issueId: binding.issueId, runId: binding.runId, agentId: binding.agentId}, responseDeliveryId: delivery.id, payloadSha256: delivery.payloadSha256,
@@ -493,7 +493,7 @@ async function resolveQuestionResponseChain(
       if (!mint && nativeSha256(record(context[EXTERNAL_CHAT_QUESTION_RESPONSE_KEY])) !== nativeSha256(marker)) return null;
       return { marker, provider, answeredAtMs: interaction.resolvedAt.getTime(),
         interactionIds: [...(parent?.interactionIds ?? []), interaction.id],
-        authorizationContext: { ...context, source: "chat:speko", paperclipHarnessCheckedOut: false, paperclipExternalChatExecutionBound: true } };
+        authorizationContext: { ...context, source: "chat:speko", pilibalaHarnessCheckedOut: false, pilibalaExternalChatExecutionBound: true } };
     }
     if (proofs.length !== 1) return null;
     const proof = proofs[0]!;
@@ -520,7 +520,7 @@ async function resolveQuestionResponseChain(
       || receipt.response.resultSha256 !== nativeSha256(interaction.result)
       || (parent && (parent.marker.endpointId !== endpoint.id || parent.marker.conversationId !== conversation.id))) return null;
     const marker: Marker = {
-      schema: "paperclip.external_chat_question_response.v1", interactionId: interaction.id,
+      schema: "pilibala.external_chat_question_response.v1", interactionId: interaction.id,
       responseDeliveryId: delivery.id, sourceRunId: source.id, sourceCommentId: context.sourceCommentId,
       endpointId: endpoint.id, conversationId: conversation.id,
       bindingSha256: nativeSha256({ binding: { companyId: binding.companyId, issueId: binding.issueId, runId: binding.runId, agentId: binding.agentId }, responseDeliveryId: delivery.id, payloadSha256: delivery.payloadSha256,
@@ -536,7 +536,7 @@ async function resolveQuestionResponseChain(
     if (!mint && nativeSha256(record(context[EXTERNAL_CHAT_QUESTION_RESPONSE_KEY])) !== nativeSha256(marker)) return null;
     return { marker, provider, answeredAtMs: interaction.resolvedAt.getTime(),
       interactionIds: [...(parent?.interactionIds ?? []), interaction.id],
-      authorizationContext: { ...context, source: "chat:speko", paperclipHarnessCheckedOut: false, paperclipExternalChatExecutionBound: true } };
+      authorizationContext: { ...context, source: "chat:speko", pilibalaHarnessCheckedOut: false, pilibalaExternalChatExecutionBound: true } };
   }
 
   const actionQuery = tx
@@ -730,7 +730,7 @@ async function resolveQuestionResponseChain(
       );
       if (!lock?.acquired)
         throw Object.assign(
-          new Error("paperclip_external_chat_wait_authorization_contended"),
+          new Error("pilibala_external_chat_wait_authorization_contended"),
           { code: "55P03" },
         );
     }
@@ -840,11 +840,11 @@ async function resolveQuestionResponseChain(
     publication.issueId !== binding.issueId ||
     record(publication.payload).interactionId !== interaction.id ||
     identity.status !== "linked" ||
-    identity.paperclipUserId !== interaction.resolvedByUserId
+    identity.pilibalaUserId !== interaction.resolvedByUserId
   )
     return null;
   const marker: Marker = {
-    schema: "paperclip.external_chat_question_response.v1",
+    schema: "pilibala.external_chat_question_response.v1",
     interactionId: interaction.id,
     responseDeliveryId: delivery.id,
     sourceRunId: source.id,
@@ -892,7 +892,7 @@ async function resolveQuestionResponseChain(
           }
         : {
             boardResponse: {
-              schema: "paperclip.github_board_question_response.v1",
+              schema: "pilibala.github_board_question_response.v1",
               principalId: inbound.principalId,
               runtimeGeneration: boardGeneration,
               credentialFingerprint: boardRuntime.credentialFingerprint,
@@ -927,8 +927,8 @@ async function resolveQuestionResponseChain(
     authorizationContext: {
       ...context,
       source: `chat:${provider}`,
-      paperclipHarnessCheckedOut: false,
-      paperclipExternalChatExecutionBound: true,
+      pilibalaHarnessCheckedOut: false,
+      pilibalaExternalChatExecutionBound: true,
     },
   };
 }

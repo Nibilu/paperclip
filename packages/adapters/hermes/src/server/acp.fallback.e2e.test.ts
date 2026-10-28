@@ -37,9 +37,9 @@ describe.skipIf(!timeoutSec)("hermes acp silent-loss fallback e2e (HERMES_ACP_E2
       runtime: { taskKey: "e2e-fallback" } as never,
       context: {
         wakeReason: "e2e_fallback_proof",
-        paperclipWake: { version: 1, kind: "e2e_fallback_proof" },
+        pilibalaWake: { version: 1, kind: "e2e_fallback_proof" },
         taskTitle: "E2E echo proof",
-        taskBody: "Reply with exactly the single token PAPERCLIP_FALLBACK_OK and nothing else. Do not use tools.",
+        taskBody: "Reply with exactly the single token PILIBALA_FALLBACK_OK and nothing else. Do not use tools.",
       },
       cwd,
       timeoutSec,
@@ -67,9 +67,9 @@ describe.skipIf(!timeoutSec)("hermes acp silent-loss fallback e2e (HERMES_ACP_E2
       runtime: { taskKey: "e2e-fallback" } as never,
       context: {
         wakeReason: "e2e_fallback_proof",
-        paperclipWake: { version: 1, kind: "e2e_fallback_proof" },
+        pilibalaWake: { version: 1, kind: "e2e_fallback_proof" },
         taskTitle: "E2E echo proof",
-        taskBody: "Reply with exactly the single token PAPERCLIP_FALLBACK_OK and nothing else. Do not use tools.",
+        taskBody: "Reply with exactly the single token PILIBALA_FALLBACK_OK and nothing else. Do not use tools.",
       },
       cwd,
       timeoutSec,
@@ -78,6 +78,6 @@ describe.skipIf(!timeoutSec)("hermes acp silent-loss fallback e2e (HERMES_ACP_E2
       },
     } as never);
     expect(second.exitCode).toBe(0);
-    expect(String(second.summary ?? "")).toContain("PAPERCLIP_FALLBACK_OK");
+    expect(String(second.summary ?? "")).toContain("PILIBALA_FALLBACK_OK");
   }, 400_000);
 });

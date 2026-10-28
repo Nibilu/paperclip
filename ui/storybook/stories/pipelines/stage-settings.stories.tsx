@@ -28,7 +28,7 @@ const meta = {
           "Shipped PipelineSettings with isolated API receipts. Guards, durable transitions, automation execution and learning provenance require production tests.",
       },
     },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "pipelines/stages"
       ],

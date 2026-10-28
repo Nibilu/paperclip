@@ -16,25 +16,25 @@ overrides:
 
 patchedDependencies:
   '@agentclientprotocol/claude-agent-acp@0.73.0':
-    hash: riqgguivxjxydoydnzpedjy5au
+    hash: aw636qikwoipq5cwapz7sllmvm
     path: patches/@agentclientprotocol__claude-agent-acp@0.73.0.patch
   '@agentclientprotocol/codex-acp@1.6.2':
-    hash: 2iynuypg76nxmydiylgtffhr7e
+    hash: 24i6r7uzcn5qhkggqdwbp67num
     path: patches/@agentclientprotocol__codex-acp@1.6.2.patch
   '@chat-adapter/discord@4.39.0':
-    hash: nywlhls7dd4npegrgax7jqdbxa
+    hash: 72aj7lm4lgxpbveaqa5hcx6eoe
     path: patches/@chat-adapter__discord@4.39.0.patch
   '@chat-adapter/github@4.39.0':
     hash: x25bk7vvljpm57viwan5qoaddi
     path: patches/@chat-adapter__github@4.39.0.patch
   '@chat-adapter/slack@4.39.0':
-    hash: 226jj24akljccsfbw7bcxujz4u
+    hash: j74mxsyqmdaznbx47ybfhgp7tm
     path: patches/@chat-adapter__slack@4.39.0.patch
   '@chat-adapter/teams@4.39.0':
     hash: jfm44m5wrw3jrn2jijafzk7s5a
     path: patches/@chat-adapter__teams@4.39.0.patch
   '@chat-adapter/telegram@4.39.0':
-    hash: wl4uiwewrapxf5u6ksnm7elv44
+    hash: ifpdnurhdazgp65vc567p7gdne
     path: patches/@chat-adapter__telegram@4.39.0.patch
   '@discordjs/ws@1.2.3':
     hash: vbylpnnxt5av2zdnuqmf6hjyjy
@@ -43,7 +43,7 @@ patchedDependencies:
     hash: xg2o7snrzmabhiym6dtbbfzava
     path: patches/acpx@0.12.0.patch
   acpx@0.13.1:
-    hash: j4huaoi2baejrlq7vdcgzlx54m
+    hash: av33eboalwetmjmss2spbup65u
     path: patches/acpx@0.13.1.patch
   embedded-postgres@18.1.0-beta.16:
     hash: 55uhvnotpqyiy37rn3pqpukhei
@@ -80,49 +80,49 @@ importers:
       '@clack/prompts':
         specifier: ^1.7.0
         version: 1.7.0
-      '@paperclipai/adapter-claude-local':
+      '@pilibalaai/adapter-claude-local':
         specifier: workspace:*
         version: link:../packages/adapters/claude-local
-      '@paperclipai/adapter-codex-local':
+      '@pilibalaai/adapter-codex-local':
         specifier: workspace:*
         version: link:../packages/adapters/codex-local
-      '@paperclipai/adapter-cursor-cloud':
+      '@pilibalaai/adapter-cursor-cloud':
         specifier: workspace:*
         version: link:../packages/adapters/cursor-cloud
-      '@paperclipai/adapter-cursor-local':
+      '@pilibalaai/adapter-cursor-local':
         specifier: workspace:*
         version: link:../packages/adapters/cursor-local
-      '@paperclipai/adapter-gemini-local':
+      '@pilibalaai/adapter-gemini-local':
         specifier: workspace:*
         version: link:../packages/adapters/gemini-local
-      '@paperclipai/adapter-grok-local':
+      '@pilibalaai/adapter-grok-local':
         specifier: workspace:*
         version: link:../packages/adapters/grok-local
-      '@paperclipai/adapter-kimi-local':
+      '@pilibalaai/adapter-kimi-local':
         specifier: workspace:*
         version: link:../packages/adapters/kimi-local
-      '@paperclipai/adapter-openclaw-gateway':
+      '@pilibalaai/adapter-openclaw-gateway':
         specifier: workspace:*
         version: link:../packages/adapters/openclaw-gateway
-      '@paperclipai/adapter-opencode-local':
+      '@pilibalaai/adapter-opencode-local':
         specifier: workspace:*
         version: link:../packages/adapters/opencode-local
-      '@paperclipai/adapter-pi-local':
+      '@pilibalaai/adapter-pi-local':
         specifier: workspace:*
         version: link:../packages/adapters/pi-local
-      '@paperclipai/adapter-utils':
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../packages/adapter-utils
-      '@paperclipai/db':
+      '@pilibalaai/db':
         specifier: workspace:*
         version: link:../packages/db
-      '@paperclipai/hermes-paperclip-adapter':
+      '@pilibalaai/hermes-pilibala-adapter':
         specifier: workspace:*
         version: link:../packages/adapters/hermes
-      '@paperclipai/server':
+      '@pilibalaai/server':
         specifier: workspace:*
         version: link:../server
-      '@paperclipai/shared':
+      '@pilibalaai/shared':
         specifier: workspace:*
         version: link:../packages/shared
       commander:
@@ -153,7 +153,7 @@ importers:
 
   packages/adapter-utils:
     dependencies:
-      '@paperclipai/shared':
+      '@pilibalaai/shared':
         specifier: workspace:*
         version: link:../shared
       acpx:
@@ -177,14 +177,14 @@ importers:
     dependencies:
       '@agentclientprotocol/claude-agent-acp':
         specifier: ^0.73.0
-        version: 0.73.0(patch_hash=riqgguivxjxydoydnzpedjy5au)(@anthropic-ai/sdk@0.129.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.31.0(zod@4.6.5))
+        version: 0.73.0(patch_hash=aw636qikwoipq5cwapz7sllmvm)(@anthropic-ai/sdk@0.129.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.31.0(zod@4.6.5))
       '@anthropic-ai/sdk':
         specifier: 0.129.0
         version: 0.129.0(zod@4.6.5)
-      '@paperclipai/adapter-utils':
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../../adapter-utils
-      '@paperclipai/shared':
+      '@pilibalaai/shared':
         specifier: workspace:*
         version: link:../../shared
       picocolors:
@@ -202,11 +202,11 @@ importers:
     dependencies:
       '@agentclientprotocol/codex-acp':
         specifier: ^1.6.2
-        version: 1.6.2(patch_hash=2iynuypg76nxmydiylgtffhr7e)
-      '@paperclipai/adapter-utils':
+        version: 1.6.2(patch_hash=24i6r7uzcn5qhkggqdwbp67num)
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../../adapter-utils
-      '@paperclipai/shared':
+      '@pilibalaai/shared':
         specifier: workspace:*
         version: link:../../shared
       picocolors:
@@ -225,7 +225,7 @@ importers:
       '@cursor/sdk':
         specifier: ^1.0.28
         version: 1.0.28
-      '@paperclipai/adapter-utils':
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../../adapter-utils
       picocolors:
@@ -241,7 +241,7 @@ importers:
 
   packages/adapters/cursor-local:
     dependencies:
-      '@paperclipai/adapter-utils':
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../../adapter-utils
       picocolors:
@@ -257,7 +257,7 @@ importers:
 
   packages/adapters/gemini-local:
     dependencies:
-      '@paperclipai/adapter-utils':
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../../adapter-utils
       picocolors:
@@ -273,10 +273,10 @@ importers:
 
   packages/adapters/grok-local:
     dependencies:
-      '@paperclipai/adapter-utils':
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../../adapter-utils
-      '@paperclipai/shared':
+      '@pilibalaai/shared':
         specifier: workspace:*
         version: link:../../shared
       picocolors:
@@ -292,7 +292,7 @@ importers:
 
   packages/adapters/hermes:
     dependencies:
-      '@paperclipai/adapter-utils':
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../../adapter-utils
       picocolors:
@@ -311,7 +311,7 @@ importers:
 
   packages/adapters/hermes-gateway:
     dependencies:
-      '@paperclipai/hermes-paperclip-adapter':
+      '@pilibalaai/hermes-pilibala-adapter':
         specifier: workspace:*
         version: link:../hermes
     devDependencies:
@@ -327,7 +327,7 @@ importers:
 
   packages/adapters/kimi-local:
     dependencies:
-      '@paperclipai/adapter-utils':
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../../adapter-utils
       picocolors:
@@ -343,7 +343,7 @@ importers:
 
   packages/adapters/openclaw-gateway:
     dependencies:
-      '@paperclipai/adapter-utils':
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../../adapter-utils
       picocolors:
@@ -365,7 +365,7 @@ importers:
 
   packages/adapters/opencode-local:
     dependencies:
-      '@paperclipai/adapter-utils':
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../../adapter-utils
       picocolors:
@@ -381,7 +381,7 @@ importers:
 
   packages/adapters/pi-local:
     dependencies:
-      '@paperclipai/adapter-utils':
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../../adapter-utils
       picocolors:
@@ -397,7 +397,7 @@ importers:
 
   packages/db:
     dependencies:
-      '@paperclipai/shared':
+      '@pilibalaai/shared':
         specifier: workspace:*
         version: link:../shared
       drizzle-orm:
@@ -472,7 +472,7 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.31.0
         version: 1.31.0(zod@4.4.3)
-      '@paperclipai/shared':
+      '@pilibalaai/shared':
         specifier: workspace:*
         version: link:../shared
       zod:
@@ -489,7 +489,7 @@ importers:
         specifier: ^5.0.3
         version: 5.0.3(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.4.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
 
-  packages/paperclip-eval-kernel:
+  packages/pilibala-eval-kernel:
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -498,20 +498,20 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
-  packages/paperclip-runner:
+  packages/pilibala-runner:
     dependencies:
       '@agentclientprotocol/claude-agent-acp':
         specifier: 0.73.0
-        version: 0.73.0(patch_hash=riqgguivxjxydoydnzpedjy5au)(@anthropic-ai/sdk@0.129.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.31.0(zod@4.6.5))
+        version: 0.73.0(patch_hash=aw636qikwoipq5cwapz7sllmvm)(@anthropic-ai/sdk@0.129.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.31.0(zod@4.6.5))
       '@agentclientprotocol/codex-acp':
         specifier: 1.6.2
-        version: 1.6.2(patch_hash=2iynuypg76nxmydiylgtffhr7e)
+        version: 1.6.2(patch_hash=24i6r7uzcn5qhkggqdwbp67num)
       '@openai/codex':
         specifier: 0.160.0
         version: 0.160.0
       acpx:
         specifier: 0.13.1
-        version: 0.13.1(patch_hash=j4huaoi2baejrlq7vdcgzlx54m)
+        version: 0.13.1(patch_hash=av33eboalwetmjmss2spbup65u)
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
@@ -541,9 +541,9 @@ importers:
         specifier: 1.0.88
         version: 1.0.88
     devDependencies:
-      '@paperclipai/paperclip-eval-kernel':
+      '@pilibalaai/pilibala-eval-kernel':
         specifier: workspace:*
-        version: link:../paperclip-eval-kernel
+        version: link:../pilibala-eval-kernel
       '@playwright/test':
         specifier: ^1.61.1
         version: 1.62.1
@@ -581,9 +581,9 @@ importers:
         specifier: ^5.0.3
         version: 5.0.3(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.4.0))(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.15))
 
-  packages/plugins/create-paperclip-plugin:
+  packages/plugins/create-pilibala-plugin:
     dependencies:
-      '@paperclipai/plugin-sdk':
+      '@pilibalaai/plugin-sdk':
         specifier: workspace:*
         version: link:../sdk
     devDependencies:
@@ -596,7 +596,7 @@ importers:
 
   packages/plugins/examples/plugin-authoring-smoke-example:
     dependencies:
-      '@paperclipai/plugin-sdk':
+      '@pilibalaai/plugin-sdk':
         specifier: workspace:*
         version: link:../../sdk
     devDependencies:
@@ -645,7 +645,7 @@ importers:
       '@lezer/highlight':
         specifier: ^1.2.1
         version: 1.2.3
-      '@paperclipai/plugin-sdk':
+      '@pilibalaai/plugin-sdk':
         specifier: workspace:*
         version: link:../../sdk
       codemirror:
@@ -676,7 +676,7 @@ importers:
 
   packages/plugins/examples/plugin-hello-world-example:
     dependencies:
-      '@paperclipai/plugin-sdk':
+      '@pilibalaai/plugin-sdk':
         specifier: workspace:*
         version: link:../../sdk
     devDependencies:
@@ -701,10 +701,10 @@ importers:
 
   packages/plugins/examples/plugin-kitchen-sink-example:
     dependencies:
-      '@paperclipai/plugin-sdk':
+      '@pilibalaai/plugin-sdk':
         specifier: workspace:*
         version: link:../../sdk
-      '@paperclipai/shared':
+      '@pilibalaai/shared':
         specifier: workspace:*
         version: link:../../../shared
     devDependencies:
@@ -730,9 +730,9 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
-  packages/plugins/paperclip-plugin-fake-sandbox:
+  packages/plugins/pilibala-plugin-fake-sandbox:
     dependencies:
-      '@paperclipai/plugin-sdk':
+      '@pilibalaai/plugin-sdk':
         specifier: workspace:*
         version: link:../sdk
     devDependencies:
@@ -748,7 +748,7 @@ importers:
 
   packages/plugins/plugin-llm-wiki:
     devDependencies:
-      '@paperclipai/plugin-sdk':
+      '@pilibalaai/plugin-sdk':
         specifier: workspace:*
         version: link:../sdk
       '@rollup/plugin-node-resolve':
@@ -787,12 +787,12 @@ importers:
 
   packages/plugins/plugin-workspace-diff:
     dependencies:
-      '@paperclipai/plugin-sdk':
-        specifier: workspace:*
-        version: link:../sdk
       '@pierre/diffs':
         specifier: ^1.3.6
         version: 1.3.6(@shikijs/themes@4.4.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@pilibalaai/plugin-sdk':
+        specifier: workspace:*
+        version: link:../sdk
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -821,7 +821,7 @@ importers:
 
   packages/plugins/sdk:
     dependencies:
-      '@paperclipai/shared':
+      '@pilibalaai/shared':
         specifier: workspace:*
         version: link:../../shared
       zod:
@@ -859,7 +859,7 @@ importers:
 
   packages/skills-catalog:
     dependencies:
-      '@paperclipai/shared':
+      '@pilibalaai/shared':
         specifier: workspace:*
         version: link:../shared
     devDependencies:
@@ -889,10 +889,10 @@ importers:
     dependencies:
       '@agentclientprotocol/claude-agent-acp':
         specifier: 0.73.0
-        version: 0.73.0(patch_hash=riqgguivxjxydoydnzpedjy5au)(@anthropic-ai/sdk@0.129.0(zod@4.4.3))(@modelcontextprotocol/sdk@1.31.0(zod@4.4.3))
+        version: 0.73.0(patch_hash=aw636qikwoipq5cwapz7sllmvm)(@anthropic-ai/sdk@0.129.0(zod@4.4.3))(@modelcontextprotocol/sdk@1.31.0(zod@4.4.3))
       '@agentclientprotocol/codex-acp':
         specifier: 1.6.2
-        version: 1.6.2(patch_hash=2iynuypg76nxmydiylgtffhr7e)
+        version: 1.6.2(patch_hash=24i6r7uzcn5qhkggqdwbp67num)
       '@ai-sdk/amazon-bedrock':
         specifier: 5.0.113
         version: 5.0.113(zod@4.4.3)
@@ -913,19 +913,19 @@ importers:
         version: 3.1141.0
       '@chat-adapter/discord':
         specifier: 4.39.0
-        version: 4.39.0(patch_hash=nywlhls7dd4npegrgax7jqdbxa)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
+        version: 4.39.0(patch_hash=72aj7lm4lgxpbveaqa5hcx6eoe)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
       '@chat-adapter/github':
         specifier: 4.39.0
         version: 4.39.0(patch_hash=x25bk7vvljpm57viwan5qoaddi)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
       '@chat-adapter/slack':
         specifier: 4.39.0
-        version: 4.39.0(patch_hash=226jj24akljccsfbw7bcxujz4u)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
+        version: 4.39.0(patch_hash=j74mxsyqmdaznbx47ybfhgp7tm)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
       '@chat-adapter/teams':
         specifier: 4.39.0
         version: 4.39.0(patch_hash=jfm44m5wrw3jrn2jijafzk7s5a)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
       '@chat-adapter/telegram':
         specifier: 4.39.0
-        version: 4.39.0(patch_hash=wl4uiwewrapxf5u6ksnm7elv44)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
+        version: 4.39.0(patch_hash=ifpdnurhdazgp65vc567p7gdne)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
       '@discordjs/ws':
         specifier: 1.2.3
         version: 1.2.3(patch_hash=vbylpnnxt5av2zdnuqmf6hjyjy)
@@ -941,66 +941,66 @@ importers:
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.1
-      '@paperclipai/adapter-claude-local':
-        specifier: workspace:*
-        version: link:../packages/adapters/claude-local
-      '@paperclipai/adapter-codex-local':
-        specifier: workspace:*
-        version: link:../packages/adapters/codex-local
-      '@paperclipai/adapter-cursor-cloud':
-        specifier: workspace:*
-        version: link:../packages/adapters/cursor-cloud
-      '@paperclipai/adapter-cursor-local':
-        specifier: workspace:*
-        version: link:../packages/adapters/cursor-local
-      '@paperclipai/adapter-gemini-local':
-        specifier: workspace:*
-        version: link:../packages/adapters/gemini-local
-      '@paperclipai/adapter-grok-local':
-        specifier: workspace:*
-        version: link:../packages/adapters/grok-local
-      '@paperclipai/adapter-kimi-local':
-        specifier: workspace:*
-        version: link:../packages/adapters/kimi-local
-      '@paperclipai/adapter-openclaw-gateway':
-        specifier: workspace:*
-        version: link:../packages/adapters/openclaw-gateway
-      '@paperclipai/adapter-opencode-local':
-        specifier: workspace:*
-        version: link:../packages/adapters/opencode-local
-      '@paperclipai/adapter-pi-local':
-        specifier: workspace:*
-        version: link:../packages/adapters/pi-local
-      '@paperclipai/adapter-utils':
-        specifier: workspace:*
-        version: link:../packages/adapter-utils
-      '@paperclipai/db':
-        specifier: workspace:*
-        version: link:../packages/db
-      '@paperclipai/hermes-paperclip-adapter':
-        specifier: workspace:*
-        version: link:../packages/adapters/hermes
-      '@paperclipai/plugin-sdk':
-        specifier: workspace:*
-        version: link:../packages/plugins/sdk
-      '@paperclipai/shared':
-        specifier: workspace:*
-        version: link:../packages/shared
-      '@paperclipai/skills-catalog':
-        specifier: workspace:*
-        version: link:../packages/skills-catalog
       '@photon-ai/advanced-imessage':
         specifier: 2.1.0
         version: 2.1.0(@grpc/grpc-js@1.14.5)(nice-grpc-common@2.0.4)(nice-grpc@2.1.17)
+      '@pilibalaai/adapter-claude-local':
+        specifier: workspace:*
+        version: link:../packages/adapters/claude-local
+      '@pilibalaai/adapter-codex-local':
+        specifier: workspace:*
+        version: link:../packages/adapters/codex-local
+      '@pilibalaai/adapter-cursor-cloud':
+        specifier: workspace:*
+        version: link:../packages/adapters/cursor-cloud
+      '@pilibalaai/adapter-cursor-local':
+        specifier: workspace:*
+        version: link:../packages/adapters/cursor-local
+      '@pilibalaai/adapter-gemini-local':
+        specifier: workspace:*
+        version: link:../packages/adapters/gemini-local
+      '@pilibalaai/adapter-grok-local':
+        specifier: workspace:*
+        version: link:../packages/adapters/grok-local
+      '@pilibalaai/adapter-kimi-local':
+        specifier: workspace:*
+        version: link:../packages/adapters/kimi-local
+      '@pilibalaai/adapter-openclaw-gateway':
+        specifier: workspace:*
+        version: link:../packages/adapters/openclaw-gateway
+      '@pilibalaai/adapter-opencode-local':
+        specifier: workspace:*
+        version: link:../packages/adapters/opencode-local
+      '@pilibalaai/adapter-pi-local':
+        specifier: workspace:*
+        version: link:../packages/adapters/pi-local
+      '@pilibalaai/adapter-utils':
+        specifier: workspace:*
+        version: link:../packages/adapter-utils
+      '@pilibalaai/db':
+        specifier: workspace:*
+        version: link:../packages/db
+      '@pilibalaai/hermes-pilibala-adapter':
+        specifier: workspace:*
+        version: link:../packages/adapters/hermes
+      '@pilibalaai/plugin-sdk':
+        specifier: workspace:*
+        version: link:../packages/plugins/sdk
+      '@pilibalaai/shared':
+        specifier: workspace:*
+        version: link:../packages/shared
+      '@pilibalaai/skills-catalog':
+        specifier: workspace:*
+        version: link:../packages/skills-catalog
       '@vercel/connect':
         specifier: 2.3.3
-        version: 2.3.3(@chat-adapter/slack@4.39.0(patch_hash=226jj24akljccsfbw7bcxujz4u)(ai@7.0.130(zod@4.4.3))(zod@4.4.3))(@modelcontextprotocol/sdk@1.31.0(zod@4.4.3))(ai@7.0.130(zod@4.4.3))(better-auth@1.7.2(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(pg@8.18.0)(postgres@3.4.9(patch_hash=sryle6qd5qfmnxvoebal4gashi)))(pg@8.18.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@5.0.3(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.4.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))))
+        version: 2.3.3(@chat-adapter/slack@4.39.0(patch_hash=j74mxsyqmdaznbx47ybfhgp7tm)(ai@7.0.130(zod@4.4.3))(zod@4.4.3))(@modelcontextprotocol/sdk@1.31.0(zod@4.4.3))(ai@7.0.130(zod@4.4.3))(better-auth@1.7.2(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(pg@8.18.0)(postgres@3.4.9(patch_hash=sryle6qd5qfmnxvoebal4gashi)))(pg@8.18.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@5.0.3(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.4.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))))
       acorn:
         specifier: 8.18.0
         version: 8.18.0
       acpx:
         specifier: 0.13.1
-        version: 0.13.1(patch_hash=j4huaoi2baejrlq7vdcgzlx54m)
+        version: 0.13.1(patch_hash=av33eboalwetmjmss2spbup65u)
       ai:
         specifier: 7.0.130
         version: 7.0.130(zod@4.4.3)
@@ -1108,9 +1108,9 @@ importers:
       '@opentelemetry/sdk-trace':
         specifier: 2.10.0
         version: 2.10.0(@opentelemetry/api@1.9.1)
-      '@paperclipai/paperclip-runner':
+      '@pilibalaai/pilibala-runner':
         specifier: workspace:*
-        version: link:../packages/paperclip-runner
+        version: link:../packages/pilibala-runner
       '@types/compression':
         specifier: ^1.8.1
         version: 1.8.1
@@ -1180,43 +1180,43 @@ importers:
       '@mdxeditor/editor':
         specifier: ^4.2.3
         version: 4.2.3(@codemirror/language@6.12.4)(@lezer/highlight@1.2.3)(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2)(yjs@13.6.32)
-      '@paperclipai/adapter-claude-local':
+      '@pilibalaai/adapter-claude-local':
         specifier: workspace:*
         version: link:../packages/adapters/claude-local
-      '@paperclipai/adapter-codex-local':
+      '@pilibalaai/adapter-codex-local':
         specifier: workspace:*
         version: link:../packages/adapters/codex-local
-      '@paperclipai/adapter-cursor-cloud':
+      '@pilibalaai/adapter-cursor-cloud':
         specifier: workspace:*
         version: link:../packages/adapters/cursor-cloud
-      '@paperclipai/adapter-cursor-local':
+      '@pilibalaai/adapter-cursor-local':
         specifier: workspace:*
         version: link:../packages/adapters/cursor-local
-      '@paperclipai/adapter-gemini-local':
+      '@pilibalaai/adapter-gemini-local':
         specifier: workspace:*
         version: link:../packages/adapters/gemini-local
-      '@paperclipai/adapter-grok-local':
+      '@pilibalaai/adapter-grok-local':
         specifier: workspace:*
         version: link:../packages/adapters/grok-local
-      '@paperclipai/adapter-kimi-local':
+      '@pilibalaai/adapter-kimi-local':
         specifier: workspace:*
         version: link:../packages/adapters/kimi-local
-      '@paperclipai/adapter-openclaw-gateway':
+      '@pilibalaai/adapter-openclaw-gateway':
         specifier: workspace:*
         version: link:../packages/adapters/openclaw-gateway
-      '@paperclipai/adapter-opencode-local':
+      '@pilibalaai/adapter-opencode-local':
         specifier: workspace:*
         version: link:../packages/adapters/opencode-local
-      '@paperclipai/adapter-pi-local':
+      '@pilibalaai/adapter-pi-local':
         specifier: workspace:*
         version: link:../packages/adapters/pi-local
-      '@paperclipai/adapter-utils':
+      '@pilibalaai/adapter-utils':
         specifier: workspace:*
         version: link:../packages/adapter-utils
-      '@paperclipai/hermes-paperclip-adapter':
+      '@pilibalaai/hermes-pilibala-adapter':
         specifier: workspace:*
         version: link:../packages/adapters/hermes
-      '@paperclipai/shared':
+      '@pilibalaai/shared':
         specifier: workspace:*
         version: link:../packages/shared
       '@radix-ui/react-slot':
@@ -1292,7 +1292,7 @@ importers:
         specifier: 13.6.32
         version: 13.6.32
     devDependencies:
-      '@paperclipai/plugin-sdk':
+      '@pilibalaai/plugin-sdk':
         specifier: workspace:*
         version: link:../packages/plugins/sdk
       '@sentry/browser':
@@ -9266,7 +9266,7 @@ snapshots:
 
   '@adobe/css-tools@4.5.0': {}
 
-  '@agentclientprotocol/claude-agent-acp@0.73.0(patch_hash=riqgguivxjxydoydnzpedjy5au)(@anthropic-ai/sdk@0.129.0(zod@4.4.3))(@modelcontextprotocol/sdk@1.31.0(zod@4.4.3))':
+  '@agentclientprotocol/claude-agent-acp@0.73.0(patch_hash=aw636qikwoipq5cwapz7sllmvm)(@anthropic-ai/sdk@0.129.0(zod@4.4.3))(@modelcontextprotocol/sdk@1.31.0(zod@4.4.3))':
     dependencies:
       '@agentclientprotocol/sdk': 1.4.0(zod@4.4.3)
       '@anthropic-ai/claude-agent-sdk': 0.3.286(@anthropic-ai/sdk@0.129.0(zod@4.4.3))(@modelcontextprotocol/sdk@1.31.0(zod@4.4.3))(zod@4.4.3)
@@ -9275,7 +9275,7 @@ snapshots:
       - '@anthropic-ai/sdk'
       - '@modelcontextprotocol/sdk'
 
-  '@agentclientprotocol/claude-agent-acp@0.73.0(patch_hash=riqgguivxjxydoydnzpedjy5au)(@anthropic-ai/sdk@0.129.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.31.0(zod@4.6.5))':
+  '@agentclientprotocol/claude-agent-acp@0.73.0(patch_hash=aw636qikwoipq5cwapz7sllmvm)(@anthropic-ai/sdk@0.129.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.31.0(zod@4.6.5))':
     dependencies:
       '@agentclientprotocol/sdk': 1.4.0(zod@4.4.3)
       '@anthropic-ai/claude-agent-sdk': 0.3.286(@anthropic-ai/sdk@0.129.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.31.0(zod@4.6.5))(zod@4.4.3)
@@ -9284,7 +9284,7 @@ snapshots:
       - '@anthropic-ai/sdk'
       - '@modelcontextprotocol/sdk'
 
-  '@agentclientprotocol/codex-acp@1.6.2(patch_hash=2iynuypg76nxmydiylgtffhr7e)':
+  '@agentclientprotocol/codex-acp@1.6.2(patch_hash=24i6r7uzcn5qhkggqdwbp67num)':
     dependencies:
       '@agentclientprotocol/sdk': 1.4.0(zod@4.4.3)
       '@openai/codex': 0.160.0
@@ -9912,7 +9912,7 @@ snapshots:
 
   '@bufbuild/protobuf@2.15.0': {}
 
-  '@chat-adapter/discord@4.39.0(patch_hash=nywlhls7dd4npegrgax7jqdbxa)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)':
+  '@chat-adapter/discord@4.39.0(patch_hash=72aj7lm4lgxpbveaqa5hcx6eoe)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)':
     dependencies:
       '@chat-adapter/shared': 4.39.0(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
       chat: 4.39.0(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
@@ -9948,7 +9948,7 @@ snapshots:
       - workflow
       - zod
 
-  '@chat-adapter/slack@4.39.0(patch_hash=226jj24akljccsfbw7bcxujz4u)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)':
+  '@chat-adapter/slack@4.39.0(patch_hash=j74mxsyqmdaznbx47ybfhgp7tm)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)':
     dependencies:
       '@chat-adapter/shared': 4.39.0(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
       '@slack/socket-mode': 2.0.7
@@ -9978,7 +9978,7 @@ snapshots:
       - workflow
       - zod
 
-  '@chat-adapter/telegram@4.39.0(patch_hash=wl4uiwewrapxf5u6ksnm7elv44)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)':
+  '@chat-adapter/telegram@4.39.0(patch_hash=ifpdnurhdazgp65vc567p7gdne)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)':
     dependencies:
       '@chat-adapter/shared': 4.39.0(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
       chat: 4.39.0(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
@@ -13680,11 +13680,11 @@ snapshots:
     dependencies:
       execa: 5.1.1
 
-  '@vercel/connect@2.3.3(@chat-adapter/slack@4.39.0(patch_hash=226jj24akljccsfbw7bcxujz4u)(ai@7.0.130(zod@4.4.3))(zod@4.4.3))(@modelcontextprotocol/sdk@1.31.0(zod@4.4.3))(ai@7.0.130(zod@4.4.3))(better-auth@1.7.2(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(pg@8.18.0)(postgres@3.4.9(patch_hash=sryle6qd5qfmnxvoebal4gashi)))(pg@8.18.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@5.0.3(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.4.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))))':
+  '@vercel/connect@2.3.3(@chat-adapter/slack@4.39.0(patch_hash=j74mxsyqmdaznbx47ybfhgp7tm)(ai@7.0.130(zod@4.4.3))(zod@4.4.3))(@modelcontextprotocol/sdk@1.31.0(zod@4.4.3))(ai@7.0.130(zod@4.4.3))(better-auth@1.7.2(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(pg@8.18.0)(postgres@3.4.9(patch_hash=sryle6qd5qfmnxvoebal4gashi)))(pg@8.18.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@5.0.3(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.4.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))))':
     dependencies:
       '@vercel/oidc': 3.8.9
     optionalDependencies:
-      '@chat-adapter/slack': 4.39.0(patch_hash=226jj24akljccsfbw7bcxujz4u)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
+      '@chat-adapter/slack': 4.39.0(patch_hash=j74mxsyqmdaznbx47ybfhgp7tm)(ai@7.0.130(zod@4.4.3))(zod@4.4.3)
       '@modelcontextprotocol/sdk': 1.31.0(zod@4.4.3)
       ai: 7.0.130(zod@4.4.3)
       better-auth: 1.7.2(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(kysely@0.29.5)(pg@8.18.0)(postgres@3.4.9(patch_hash=sryle6qd5qfmnxvoebal4gashi)))(pg@8.18.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@5.0.3(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@2.4.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)))
@@ -13793,7 +13793,7 @@ snapshots:
       - bare-buffer
       - react-native-b4a
 
-  acpx@0.13.1(patch_hash=j4huaoi2baejrlq7vdcgzlx54m):
+  acpx@0.13.1(patch_hash=av33eboalwetmjmss2spbup65u):
     dependencies:
       '@agentclientprotocol/sdk': 1.4.0(zod@4.4.3)
       commander: 15.0.0

@@ -1,7 +1,7 @@
 # Agent cryptographic identity
 
 Each agent has one persistent Ed25519 keypair. New agents receive it in the
-agent-creation transaction. Existing agents receive it when Paperclip prepares
+agent-creation transaction. Existing agents receive it when Pilibala prepares
 their next managed run. Migration, startup, public API reads, and opening the
 agent page do not provision existing agents. There is no backfill command.
 
@@ -17,7 +17,7 @@ Public keys use SPKI PEM and private keys use PKCS#8 PEM. `keyId` is `sha256:`
 followed by the base64url SHA-256 digest of the public key's SPKI DER bytes.
 Private material is encrypted using the existing `local_encrypted` provider and
 stored separately from company secrets. The wrapping key is the stack's
-`PAPERCLIP_SECRETS_MASTER_KEY` or the local instance's secrets master-key file.
+`PILIBALA_SECRETS_MASTER_KEY` or the local instance's secrets master-key file.
 The file is published atomically with mode `0600` on first use. No per-agent
 Cloud secret or Cloud registry record is needed.
 
@@ -28,12 +28,12 @@ restarts preserve the keypair.
 
 ## Managed runs
 
-Paperclip supplies these server-owned environment variables:
+Pilibala supplies these server-owned environment variables:
 
 ```text
-PAPERCLIP_AGENT_KEY_ID
-PAPERCLIP_AGENT_PUBLIC_KEY
-PAPERCLIP_AGENT_PRIVATE_KEY
+PILIBALA_AGENT_KEY_ID
+PILIBALA_AGENT_PUBLIC_KEY
+PILIBALA_AGENT_PRIVATE_KEY
 ```
 
 The two key values are multiline PEM strings. Runtime-only adapter context and
@@ -50,7 +50,7 @@ routing, timing, and interpretation metadata remain available.
 Managed remote providers, including Cursor Cloud, receive the same private key
 as managed local processes. Selecting a runtime therefore trusts its host with
 the agent's persistent identity: the agent and its host can retain the key and
-sign outside Paperclip. Encryption at rest protects database storage, not an
+sign outside Pilibala. Encryption at rest protects database storage, not an
 executing runtime. Move an agent only between runtime hosts trusted with that
 identity.
 
@@ -62,10 +62,10 @@ An agent can sign using an ordinary cryptographic library, for example Node.js:
 
 ```js
 import { sign } from "node:crypto";
-const signature = sign(null, challengeBytes, process.env.PAPERCLIP_AGENT_PRIVATE_KEY);
+const signature = sign(null, challengeBytes, process.env.PILIBALA_AGENT_PRIVATE_KEY);
 ```
 
-This identity does not change Paperclip bearer-token authentication. There is no
+This identity does not change Pilibala bearer-token authentication. There is no
 signing API, private-key download endpoint, Git integration, rotation UI, or
 external-key import. Agents possess their private keys. External consumers must
 define their own authorization, expiry, and revocation rules.
@@ -97,7 +97,7 @@ have distinct identities.
 
 Native failure records and reports redact the assigned key before truncating diagnostics. Streaming output buffers settle at item or turn completion: short structural prefixes (such as a trailing dash) are preserved, longer interrupted key fragments become redaction markers, and pending buffers are cleared. Terminal events carry these settled `outputTails`; transcript projection displays them as deltas without changing the source event receipt.
 
-Codex shell delivery preserves its default `KEY`/`SECRET`/`TOKEN` name exclusions for other configured credentials. The exceptions are the three identity variables and `PAPERCLIP_API_KEY`: the latter is the short-lived, scoped run/bridge credential required by the Paperclip agent skill’s Bash/curl API calls. Disabling Codex’s automatic exclusions is paired with this explicit filtered allowlist; it does not admit arbitrary host environment variables. Provider authentication secrets can still reach the provider process without being newly exposed to shell commands by this feature.
+Codex shell delivery preserves its default `KEY`/`SECRET`/`TOKEN` name exclusions for other configured credentials. The exceptions are the three identity variables and `PILIBALA_API_KEY`: the latter is the short-lived, scoped run/bridge credential required by the Pilibala agent skill’s Bash/curl API calls. Disabling Codex’s automatic exclusions is paired with this explicit filtered allowlist; it does not admit arbitrary host environment variables. Provider authentication secrets can still reach the provider process without being newly exposed to shell commands by this feature.
 
 Cloud customer-success inspection can consume this existing identity together
 with strict active-run authority. See [inspection support](CUSTOMER-SUCCESS-INSPECTION.md).

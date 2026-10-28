@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "packageName": "@paperclipai/skills-catalog",
+  "packageName": "@pilibalaai/skills-catalog",
   "packageVersion": "0.3.1",
-  "generatedAt": "2026-10-06T01:21:47.421Z",
+  "generatedAt": "2026-10-28T05:36:35.056Z",
   "skills": [
     {
-      "id": "paperclipai:bundled:docs:doc-maintenance",
-      "key": "paperclipai/bundled/docs/doc-maintenance",
+      "id": "pilibalaai:bundled:docs:doc-maintenance",
+      "key": "pilibalaai/bundled/docs/doc-maintenance",
       "kind": "bundled",
       "category": "docs",
       "slug": "doc-maintenance",
@@ -32,21 +32,21 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 4478,
-          "sha256": "fb0353386c5e5e5e13bcbb3233f044e3dccecf371f429d6328f26c26d7cb6169"
+          "sizeBytes": 4477,
+          "sha256": "047a21f1c8706c37d9a2af99b0be762dccebe3e823608fa2e3bf5b113a0ad3a1"
         }
       ],
-      "contentHash": "sha256:2e02299210fd17c1fe1867b4ee8c144a11b6fe1fe481f83b8268cfbaaf10f9aa"
+      "contentHash": "sha256:e7bdc6e16205a4700223eb3268a65cb3f0835e5309f727ed5ccf345551f5e128"
     },
     {
-      "id": "paperclipai:bundled:paperclip-operations:issue-triage",
-      "key": "paperclipai/bundled/paperclip-operations/issue-triage",
+      "id": "pilibalaai:bundled:pilibala-operations:issue-triage",
+      "key": "pilibalaai/bundled/pilibala-operations/issue-triage",
       "kind": "bundled",
-      "category": "paperclip-operations",
+      "category": "pilibala-operations",
       "slug": "issue-triage",
       "name": "issue-triage",
-      "description": "Triage Paperclip inbox issues that are stale, blocked, in-review, or assigned-but-not-progressing, and decide a single next action per issue (resume, reassign, unblock, escalate, or close).",
-      "path": "catalog/bundled/paperclip-operations/issue-triage",
+      "description": "Triage Pilibala inbox issues that are stale, blocked, in-review, or assigned-but-not-progressing, and decide a single next action per issue (resume, reassign, unblock, escalate, or close).",
+      "path": "catalog/bundled/pilibala-operations/issue-triage",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
@@ -58,7 +58,7 @@
       ],
       "requires": [],
       "tags": [
-        "paperclip",
+        "pilibala",
         "triage",
         "inbox",
         "workflow"
@@ -67,21 +67,21 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 4042,
-          "sha256": "df5bdc8bf5e017b7ba5f70a4b5323fad51d0c323278f386580f26cf43ad09160"
+          "sizeBytes": 4038,
+          "sha256": "c4284c405c56c85a352a3d6e295181bb703caa9e377ec05ae8c47f684b334e62"
         }
       ],
-      "contentHash": "sha256:88dc13560371fb364963782cb4f6eeb4090fcde92ee3774479428ed6b90e11c1"
+      "contentHash": "sha256:89e65efa2f1b07f1540e2bd6773b35508743c2bbc66f58a1d4c9f09722a735fb"
     },
     {
-      "id": "paperclipai:bundled:paperclip-operations:reflection-coach",
-      "key": "paperclipai/bundled/paperclip-operations/reflection-coach",
+      "id": "pilibalaai:bundled:pilibala-operations:reflection-coach",
+      "key": "pilibalaai/bundled/pilibala-operations/reflection-coach",
       "kind": "bundled",
-      "category": "paperclip-operations",
+      "category": "pilibala-operations",
       "slug": "reflection-coach",
       "name": "reflection-coach",
       "description": "Reflect on another agent's recent execution record and propose the smallest durable instruction, skill, or tool-description change. Use for evidence-backed coaching proposals, never hot-swaps.",
-      "path": "catalog/bundled/paperclip-operations/reflection-coach",
+      "path": "catalog/bundled/pilibala-operations/reflection-coach",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
@@ -92,7 +92,7 @@
       ],
       "requires": [],
       "tags": [
-        "paperclip",
+        "pilibala",
         "reflection",
         "coaching",
         "agents",
@@ -102,21 +102,21 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 12028,
-          "sha256": "083d5fa8dc43c3ce7747e89c1afb6f6f42d0603a31808bffc5f8e56735f2d865"
+          "sizeBytes": 12012,
+          "sha256": "08e39737d2b22ff6606d2f56afb5bb0a6bab341b95683c9a383d5a48adb5894f"
         }
       ],
-      "contentHash": "sha256:f2592d81f616628a3eba92636616424f2eed82ec22bb504240a58f6be115e407"
+      "contentHash": "sha256:1ed52d87c5fef349756dd3046f562ca48940c61b83c122ce9242198d61a8518b"
     },
     {
-      "id": "paperclipai:bundled:paperclip-operations:status-card-query",
-      "key": "paperclipai/bundled/paperclip-operations/status-card-query",
+      "id": "pilibalaai:bundled:pilibala-operations:status-card-query",
+      "key": "pilibalaai/bundled/pilibala-operations/status-card-query",
       "kind": "bundled",
-      "category": "paperclip-operations",
+      "category": "pilibala-operations",
       "slug": "status-card-query",
       "name": "status-card-query",
-      "description": "Create and maintain agent-authored Paperclip status cards, or compile a prose interest prompt into bounded CompanySearchQuery objects and write the first summary from the assigned Summarizer run.",
-      "path": "catalog/bundled/paperclip-operations/status-card-query",
+      "description": "Create and maintain agent-authored Pilibala status cards, or compile a prose interest prompt into bounded CompanySearchQuery objects and write the first summary from the assigned Summarizer run.",
+      "path": "catalog/bundled/pilibala-operations/status-card-query",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
@@ -127,7 +127,7 @@
       ],
       "requires": [],
       "tags": [
-        "paperclip",
+        "pilibala",
         "status",
         "search",
         "reporting",
@@ -137,21 +137,21 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 6368,
-          "sha256": "0c6140f51d503cbadc98723ce54c0def48e7e31ea159b0935b8ad6369291498a"
+          "sizeBytes": 6352,
+          "sha256": "c83c468c89cdd3c1dc45bbf9eef35f658889e0fdeaf2e9f05d8b5655fe5b27b7"
         }
       ],
-      "contentHash": "sha256:2b6e53bf8491f027afdbd6961ad84f677cfd385a0a6a73616ea84111ca8886ed"
+      "contentHash": "sha256:8468cf6482d693eb7ba87c2675359dcab0018a91042f0fb36229e03d15fe15fd"
     },
     {
-      "id": "paperclipai:bundled:paperclip-operations:summarize-status",
-      "key": "paperclipai/bundled/paperclip-operations/summarize-status",
+      "id": "pilibalaai:bundled:pilibala-operations:summarize-status",
+      "key": "pilibalaai/bundled/pilibala-operations/summarize-status",
       "kind": "bundled",
-      "category": "paperclip-operations",
+      "category": "pilibala-operations",
       "slug": "summarize-status",
       "name": "summarize-status",
-      "description": "Write a short, colloquial summary for a Paperclip summary slot: open with the 1–3 specific, concrete actions the reader needs to take right now to unblock the work, then a brief plain-language status, streaming progress as it works.",
-      "path": "catalog/bundled/paperclip-operations/summarize-status",
+      "description": "Write a short, colloquial summary for a Pilibala summary slot: open with the 1–3 specific, concrete actions the reader needs to take right now to unblock the work, then a brief plain-language status, streaming progress as it works.",
+      "path": "catalog/bundled/pilibala-operations/summarize-status",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
@@ -162,7 +162,7 @@
       ],
       "requires": [],
       "tags": [
-        "paperclip",
+        "pilibala",
         "summary",
         "status",
         "reporting",
@@ -172,21 +172,21 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 8877,
-          "sha256": "4cb3d177f5d16e3cc2052d2f80e7fb245ab95e79c1e947abdc84cd4ee3d8c61e"
+          "sizeBytes": 8868,
+          "sha256": "7d57dd365b34c1c188d77bcdb457df020c8f10ab2e927a8849a9486a2fcfe148"
         }
       ],
-      "contentHash": "sha256:3e49ee2b8d83d1371fb0f59197bb96c46b64f722540405f46d4a5a756fbe1b89"
+      "contentHash": "sha256:e7db7ccdb93fe08427b3e07e9700ba262b0a91875aaedd115c1943268f06c838"
     },
     {
-      "id": "paperclipai:bundled:paperclip-operations:task-planning",
-      "key": "paperclipai/bundled/paperclip-operations/task-planning",
+      "id": "pilibalaai:bundled:pilibala-operations:task-planning",
+      "key": "pilibalaai/bundled/pilibala-operations/task-planning",
       "kind": "bundled",
-      "category": "paperclip-operations",
+      "category": "pilibala-operations",
       "slug": "task-planning",
       "name": "task-planning",
-      "description": "Write or revise a useful Paperclip plan with a clear outcome and verification. Use when a plan is requested or uncertainty needs resolving before execution.",
-      "path": "catalog/bundled/paperclip-operations/task-planning",
+      "description": "Write or revise a useful Pilibala plan with a clear outcome and verification. Use when a plan is requested or uncertainty needs resolving before execution.",
+      "path": "catalog/bundled/pilibala-operations/task-planning",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
@@ -198,7 +198,7 @@
       ],
       "requires": [],
       "tags": [
-        "paperclip",
+        "pilibala",
         "planning",
         "issues",
         "delegation"
@@ -207,21 +207,21 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 1517,
-          "sha256": "48d6501d6ef481d5b19d0e0cd1507436d1cee1acf155e5038e1f0b2f0230d9e1"
+          "sizeBytes": 1511,
+          "sha256": "95a919171f0bb62207a129edf552d72c04b2307f3872a43e385733dcdbc15b84"
         }
       ],
-      "contentHash": "sha256:a1724bde58be85c445590aeaa2f5f2f1de2bee24fe62f07fa3b579c6e4b28e6d"
+      "contentHash": "sha256:d38e377e48cc50a9f4cee2446bba95b8da0cf67f54534b96ad0e6d602f75f93a"
     },
     {
-      "id": "paperclipai:bundled:product:paperclip-capsules",
-      "key": "paperclipai/bundled/product/paperclip-capsules",
+      "id": "pilibalaai:bundled:product:pilibala-capsules",
+      "key": "pilibalaai/bundled/product/pilibala-capsules",
       "kind": "bundled",
       "category": "product",
-      "slug": "paperclip-capsules",
-      "name": "paperclip-capsules",
-      "description": "Generate, implement, or review Paperclip capsule visuals. Use for capsule art, agent capsules, heartbeat status capsules, identicons, capsule banks, or brand-usage validation.",
-      "path": "catalog/bundled/product/paperclip-capsules",
+      "slug": "pilibala-capsules",
+      "name": "pilibala-capsules",
+      "description": "Generate, implement, or review Pilibala capsule visuals. Use for capsule art, agent capsules, heartbeat status capsules, identicons, capsule banks, or brand-usage validation.",
+      "path": "catalog/bundled/product/pilibala-capsules",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
@@ -234,7 +234,7 @@
       ],
       "requires": [],
       "tags": [
-        "paperclip",
+        "pilibala",
         "brand",
         "capsules",
         "agents",
@@ -245,39 +245,39 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 5831,
-          "sha256": "dd659ccb46e105336eb00fbe689b1d5531347fc69493c3156390d40ee413c93e"
+          "sizeBytes": 5819,
+          "sha256": "cffc4cba323838abe82a7c917c6b88504ec2b1a9718d8f6bb2348cf4973b3349"
         },
         {
           "path": "references/generator-workflows.md",
           "kind": "reference",
-          "sizeBytes": 4356,
-          "sha256": "b5f72e5b6683e8f93f2d852e84c2cc19e6ab438b250bf777dfb2480dd4f6e1b6"
+          "sizeBytes": 4345,
+          "sha256": "ae8222a670be53f2c21742d84d0ad3affa2bc4637c0220f3e424a96aeea6cb58"
         },
         {
           "path": "references/hero-capsule-bank.md",
           "kind": "reference",
-          "sizeBytes": 5981,
-          "sha256": "ec3d34113aa7bb527560d1eb4d8ab7667c73e18284c85a2019122743a767525a"
+          "sizeBytes": 5977,
+          "sha256": "f0ddca1c251682730f32a6b85d69a9970a307fdbc27f38cf70fe724f84d785ab"
         },
         {
           "path": "references/identicon-prototyper.md",
           "kind": "reference",
-          "sizeBytes": 6669,
-          "sha256": "0b19419efa1396a402097decabe24ea9ae649678569449c8ce855e0678df6bfe"
+          "sizeBytes": 6660,
+          "sha256": "ded8b212ca353dc3e76a5a55952a204ab39e93cb975d27ca6db8f6a639867493"
         },
         {
           "path": "references/individual-status-capsules.md",
           "kind": "reference",
-          "sizeBytes": 5031,
-          "sha256": "be1f2eccf96b4d2deefe45b3bc1dd0a3597278472c2ffedadc43c57161e9103d"
+          "sizeBytes": 5029,
+          "sha256": "9d1bbe69286f54155bd678d71cff92df00f3c704c4f4be23d572a517c4d3ed4f"
         }
       ],
-      "contentHash": "sha256:a2b26cf6895affeeb70c85567a061094450a59bd3c4fdcf28ee65858599ac12c"
+      "contentHash": "sha256:2750a871c1730834dd5896c1f62d368ebd7dca6a8363c9f1b7b38eaae4025bf4"
     },
     {
-      "id": "paperclipai:bundled:product:wireframe",
-      "key": "paperclipai/bundled/product/wireframe",
+      "id": "pilibalaai:bundled:product:wireframe",
+      "key": "pilibalaai/bundled/product/wireframe",
       "kind": "bundled",
       "category": "product",
       "slug": "wireframe",
@@ -305,8 +305,8 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 11509,
-          "sha256": "6992047cc97b67211cc8c1183718ab9aa26b8afc34c70d54d20558c215daaf48"
+          "sizeBytes": 11508,
+          "sha256": "752743d09775c7f0eef5006b2e1ebd26cdee964f02ac395a5f11465c410daa58"
         },
         {
           "path": "assets/site-template.html",
@@ -345,11 +345,11 @@
           "sha256": "017260d2216859d57e5fa869e0efc6b88c7ed4d8a8a4f5af04fe89a3ef2445bd"
         }
       ],
-      "contentHash": "sha256:7106d84fc9db2053090f692706e41cfc586e7dd85a44f568e3319c4eefbdde46"
+      "contentHash": "sha256:5e1f77608cc41d894d418c7929cf04f933e0736c9fbc1654edbf9d7e747f9221"
     },
     {
-      "id": "paperclipai:bundled:quality:qa-acceptance",
-      "key": "paperclipai/bundled/quality/qa-acceptance",
+      "id": "pilibalaai:bundled:quality:qa-acceptance",
+      "key": "pilibalaai/bundled/quality/qa-acceptance",
       "kind": "bundled",
       "category": "quality",
       "slug": "qa-acceptance",
@@ -376,15 +376,15 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 3861,
-          "sha256": "c631b437ab26d104af6cdb963d8f679a9341439041b3cb3ec8835f4ff551b378"
+          "sizeBytes": 3860,
+          "sha256": "88d91f71b7029a34c0cbb4b1633eb7a9681534be056767c923269940c5899675"
         }
       ],
-      "contentHash": "sha256:32372dacaf62e93454b9855968c4eec96456ba78b509f450b3dfaa48e31ef356"
+      "contentHash": "sha256:b444e23fc6ec8b21e3368d9afad89890db00ab515a3445a84ffb01fe08bfff05"
     },
     {
-      "id": "paperclipai:bundled:software-development:github-pr-workflow",
-      "key": "paperclipai/bundled/software-development/github-pr-workflow",
+      "id": "pilibalaai:bundled:software-development:github-pr-workflow",
+      "key": "pilibalaai/bundled/software-development/github-pr-workflow",
       "kind": "bundled",
       "category": "software-development",
       "slug": "github-pr-workflow",
@@ -409,15 +409,15 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 3970,
-          "sha256": "f498ec4ebb1779dea37adeb1db8a8b22316282798e35ee02e2fc5ff627d7e261"
+          "sizeBytes": 3969,
+          "sha256": "66926d5a68f00ce271bf18a09154b3cb116636635110dd86eb34399f85d04b7d"
         }
       ],
-      "contentHash": "sha256:90f278c89aa0711be150c1cd2456ca25620d02f36995b113ca9837d756a37f6c"
+      "contentHash": "sha256:3721f17f023ef89ea6b79ad11d4d0f93da0b499de228e9900f617b5a8553ca1b"
     },
     {
-      "id": "paperclipai:optional:browser:agent-browser",
-      "key": "paperclipai/optional/browser/agent-browser",
+      "id": "pilibalaai:optional:browser:agent-browser",
+      "key": "pilibalaai/optional/browser/agent-browser",
       "kind": "optional",
       "category": "browser",
       "slug": "agent-browser",
@@ -444,15 +444,15 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 5133,
-          "sha256": "362f7b9d02297782bc6f0c093f495b8a0304a75bcf4b42e5c280a42b1f757b7d"
+          "sizeBytes": 5132,
+          "sha256": "40cdd6132b2f54551952b2369b2d72e32a2210e9219c93e6f3668d6f253722f0"
         }
       ],
-      "contentHash": "sha256:eabb2c9f7b5e1a27ebb1e05a711d61433a266478154cd671a685e99e67aadea2"
+      "contentHash": "sha256:a1987821382fc4438f5bc3bd5c58e5ed7d9edc98a2409e7e94241bf8985f8498"
     },
     {
-      "id": "paperclipai:optional:content:release-announcement",
-      "key": "paperclipai/optional/content/release-announcement",
+      "id": "pilibalaai:optional:content:release-announcement",
+      "key": "pilibalaai/optional/content/release-announcement",
       "kind": "optional",
       "category": "content",
       "slug": "release-announcement",
@@ -479,15 +479,15 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 6945,
-          "sha256": "d745cca96350518fabae14f5c407d779e1df2c5d091b5b4a5c55bb888b569e5f"
+          "sizeBytes": 6932,
+          "sha256": "65120fc9446802a850c4f52064e69d310bf85af913c5d32344df9b0ccba90588"
         }
       ],
-      "contentHash": "sha256:efe8ea89b552df95222609867c9c75f1b40e16f457d34e7e4a124f54daa33efa"
+      "contentHash": "sha256:ef6c16016b53756b55c82e535924ec177dd20977a233b3b67246d52420712f3e"
     },
     {
-      "id": "paperclipai:optional:content:simplified-english",
-      "key": "paperclipai/optional/content/simplified-english",
+      "id": "pilibalaai:optional:content:simplified-english",
+      "key": "pilibalaai/optional/content/simplified-english",
       "kind": "optional",
       "category": "content",
       "slug": "simplified-english",
@@ -515,20 +515,20 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 1578,
-          "sha256": "a0f7385599873910e2fabf400346016a07dacbc7ece27c0e3616ae8fd94ebfbb"
+          "sizeBytes": 1577,
+          "sha256": "cea8af3934cfd826e2486b84f2330261bdcfaa4bc4e427b4961d7a9bd5f3fda4"
         }
       ],
-      "contentHash": "sha256:642321f40d51e0125df05c6fbace49aeb07ec30392058756909c259c9c5eac6a"
+      "contentHash": "sha256:97af1c6e751a7b9a95f4a1ad1b360d9935c4c5785cc9a0f9e17e382ea8491d5d"
     },
     {
-      "id": "paperclipai:optional:finance:ramp",
-      "key": "paperclipai/optional/finance/ramp",
+      "id": "pilibalaai:optional:finance:ramp",
+      "key": "pilibalaai/optional/finance/ramp",
       "kind": "optional",
       "category": "finance",
       "slug": "ramp",
       "name": "ramp",
-      "description": "Fetch and follow Ramp's published agent playbooks inside Paperclip, with mandatory approval gates for spend, incorporation, cards, account setup, and other financial actions.",
+      "description": "Fetch and follow Ramp's published agent playbooks inside Pilibala, with mandatory approval gates for spend, incorporation, cards, account setup, and other financial actions.",
       "path": "catalog/optional/finance/ramp",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
@@ -552,15 +552,15 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 7016,
-          "sha256": "698cd69ebf2f2481ed83c8e9477b56ae78288cc4c751d7d35f649ff2483802a3"
+          "sizeBytes": 6998,
+          "sha256": "56795d20b518af5ccd817cbfa481110ecfd10e7e6262c81cf69feec6c33fc26c"
         }
       ],
-      "contentHash": "sha256:276d85e98a4732f278204e26438aa95fde158dd2d15c1e427c4c7c7d492e769d"
+      "contentHash": "sha256:30b0a5ecb1d833b3aa2b822624e648e08f2a955d3f34595a23eeaffb5f3e7b48"
     },
     {
-      "id": "paperclipai:optional:product:design-critique",
-      "key": "paperclipai/optional/product/design-critique",
+      "id": "pilibalaai:optional:product:design-critique",
+      "key": "pilibalaai/optional/product/design-critique",
       "kind": "optional",
       "category": "product",
       "slug": "design-critique",
@@ -587,15 +587,15 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 4851,
-          "sha256": "022e619baf6cc25725946279cb8052d22af090dd6cd6dc8c20f17867f71a5d8e"
+          "sizeBytes": 4850,
+          "sha256": "07c736b77fc48b45529f542515e59295a5bd6a60ffd54e07dda54c80ba04c3f5"
         }
       ],
-      "contentHash": "sha256:429f94df398a0697042b5bbe4755b1ff1a230aa5f41d99118ad37493ac65d21c"
+      "contentHash": "sha256:22897ed8a7fd55f08567dee63dbc1760b29c6bc3c59e1c812b65b380dc0ce17b"
     },
     {
-      "id": "paperclipai:optional:research:last30days",
-      "key": "paperclipai/optional/research/last30days",
+      "id": "pilibalaai:optional:research:last30days",
+      "key": "pilibalaai/optional/research/last30days",
       "kind": "optional",
       "category": "research",
       "slug": "last30days",
@@ -1115,13 +1115,13 @@
       }
     },
     {
-      "id": "paperclipai:optional:software-development:prepare-mcp-integration",
-      "key": "paperclipai/optional/software-development/prepare-mcp-integration",
+      "id": "pilibalaai:optional:software-development:prepare-mcp-integration",
+      "key": "pilibalaai/optional/software-development/prepare-mcp-integration",
       "kind": "optional",
       "category": "software-development",
       "slug": "prepare-mcp-integration",
       "name": "prepare-mcp-integration",
-      "description": "Prepare MCP/vendor integrations through cited research, a content PR, exact-revision human approval, and one governed Paperclip connector PR per approved connection. Use for new integration research and delivery; not for ad hoc connector coding that bypasses the playbooks.",
+      "description": "Prepare MCP/vendor integrations through cited research, a content PR, exact-revision human approval, and one governed Pilibala connector PR per approved connection. Use for new integration research and delivery; not for ad hoc connector coding that bypasses the playbooks.",
       "path": "catalog/optional/software-development/prepare-mcp-integration",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
@@ -1149,17 +1149,17 @@
         {
           "path": "SKILL.md",
           "kind": "skill",
-          "sizeBytes": 12409,
-          "sha256": "5278d288a0cbfe10fdda4ef3d99cf61e6ed068f4b6c1282406b0e001c9f45253"
+          "sizeBytes": 12386,
+          "sha256": "7454d504f2ccba86b7420d88bcc7949b69b6d9562cfe9cc5f743af69225966e5"
         },
         {
           "path": "examples/notion-mcp-research-gate.md",
           "kind": "markdown",
-          "sizeBytes": 1900,
-          "sha256": "944b13ac67c06c65643eb236e856f1479106749861535648d29334f84cf1b50b"
+          "sizeBytes": 1893,
+          "sha256": "ae953a88a7151db4a2fe612aa710c4ef857509870caa43a8b178af6df565aa28"
         }
       ],
-      "contentHash": "sha256:84f2a28d7d004393719684f2b435e5ee01ddc58591e0dfeb73d72c7605db7f49"
+      "contentHash": "sha256:8ed3b53ec6cde729f817c8a47c4e3bb3d1d481e84a2ea6b400f3fb9a46c83e4a"
     }
   ]
 }

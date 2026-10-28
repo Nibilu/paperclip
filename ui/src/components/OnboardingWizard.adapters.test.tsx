@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Mocks (hoisted so vi.mock factories can close over them) ----------------
 
-const ONBOARDING_STORAGE_KEY = "paperclip-onboarding-state";
+const ONBOARDING_STORAGE_KEY = "pilibala-onboarding-state";
 
 const mockDialog = vi.hoisted(() => ({
   onboardingOpen: true,
@@ -202,14 +202,14 @@ describe("OnboardingWizard adapter selection", () => {
 
   it("recovers a saved Codex runner draft without changing its model or runner", async () => {
     mockAdapterRegistry.list = [
-      { type: "paperclip_runner" },
+      { type: "pilibala_runner" },
       { type: "codex_local" },
     ];
     window.localStorage.setItem(
       ONBOARDING_STORAGE_KEY,
       JSON.stringify({
         step: 0,
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         model: "gpt-runner-only",
         command: "runnerd",
         args: "--native",
@@ -223,7 +223,7 @@ describe("OnboardingWizard adapter selection", () => {
       window.localStorage.getItem(ONBOARDING_STORAGE_KEY) ?? "{}",
     );
     expect(saved.adapterType).toBe("codex_local");
-    expect(saved.runner).toBe("paperclip");
+    expect(saved.runner).toBe("pilibala");
     expect(saved.model).toBe("gpt-runner-only");
     expect(saved.command).toBe("");
     expect(saved.args).toBe("");
@@ -234,14 +234,14 @@ describe("OnboardingWizard adapter selection", () => {
     });
   });
 
-  it("normalizes a saved Paperclip Runner draft before adapter discovery resolves", async () => {
+  it("normalizes a saved Pilibala Runner draft before adapter discovery resolves", async () => {
     mockAdapterRegistry.loaded = false;
     mockAdapterRegistry.list = [{ type: "codex_local" }];
     window.localStorage.setItem(
       ONBOARDING_STORAGE_KEY,
       JSON.stringify({
         step: 0,
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         model: "gpt-runner-only",
         command: "runnerd",
         args: "--native",
@@ -255,7 +255,7 @@ describe("OnboardingWizard adapter selection", () => {
       window.localStorage.getItem(ONBOARDING_STORAGE_KEY) ?? "{}",
     );
     expect(saved.adapterType).toBe("codex_local");
-    expect(saved.runner).toBe("paperclip");
+    expect(saved.runner).toBe("pilibala");
     expect(saved.model).toBe("gpt-runner-only");
     expect(saved.command).toBe("");
     expect(saved.args).toBe("");

@@ -1,4 +1,4 @@
-import { SLACK_CHAT_BOT_SCOPES } from "@paperclipai/shared";
+import { SLACK_CHAT_BOT_SCOPES } from "@pilibalaai/shared";
 
 import {
   unprocessable,

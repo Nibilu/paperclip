@@ -2,8 +2,8 @@ import { notifyChatVerificationWork } from "../../../chat-work-notifications.js"
 import { createAgentAvatarPool } from "../../../agent-avatar-pool.js";
 import type { AgentAvatarRequest } from "../../../agent-avatars.js";
 import { and, eq } from "drizzle-orm";
-import { agents, chatEndpoints, chatSlackRegistrations, toolConnections, type Db } from "@paperclipai/db";
-import { slackRegistrationErrorMessage, type SlackRegistrationState, type SlackAvatarState, type SlackAccountState, isProvisionedSlackSetup } from "@paperclipai/shared";
+import { agents, chatEndpoints, chatSlackRegistrations, toolConnections, type Db } from "@pilibalaai/db";
+import { slackRegistrationErrorMessage, type SlackRegistrationState, type SlackAvatarState, type SlackAccountState, isProvisionedSlackSetup } from "@pilibalaai/shared";
 import { badRequest, conflict, forbidden, notFound, unprocessable } from "../../../../errors.js";
 import { accessService } from "../../../access.js";
 import { logActivity } from "../../../activity-log.js";
@@ -31,7 +31,7 @@ export function slackRegistrationProjection(row: Registration): SlackRegistratio
 
 import { createSlackSetupClient } from "./provider-client.js";
 export type SlackSetupOptions = {
-  managed?: { enabled: boolean; broker: import("../../../paperclip-cloud-connector.js").PaperclipCloudConnector };
+  managed?: { enabled: boolean; broker: import("../../../pilibala-cloud-connector.js").PilibalaCloudConnector };
   publicOrigin: () => string | null;
   webhookOrigin: () => string | null;
   fetch?: typeof fetch;
@@ -70,7 +70,7 @@ export function createSlackRegistrationStore(db: Db, options: SlackSetupOptions)
     return row;
   }
   function assertOrigins(row: Registration, publicId: string) {
-    if (row.callbackUri !== callbackUri()) throw conflict("The Paperclip URL changed. Restore its configured address or update the Slack app and use manual setup.");
+    if (row.callbackUri !== callbackUri()) throw conflict("The Pilibala URL changed. Restore its configured address or update the Slack app and use manual setup.");
     const expected = `${origin(options.webhookOrigin())}/api/chat-webhooks/${publicId}/slack`;
     if (object(object(row.manifest.settings).event_subscriptions).request_url !== expected)
       throw conflict("The Slack webhook address changed. Restore its configured address or update the Slack app and use manual setup.");

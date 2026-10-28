@@ -3,42 +3,42 @@ import { randomUUID } from "node:crypto";
 import { chmod, writeFile, symlink, mkdir, open } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { eq } from "drizzle-orm";
-import { agents, assets, documents, heartbeatRuns, issues, projects, routineDocuments, routines, runnerApiResponseReservations, companySkills, companyMemberships, principalPermissionGrants } from "@paperclipai/db";
+import { agents, assets, documents, heartbeatRuns, issues, projects, routineDocuments, routines, runnerApiResponseReservations, companySkills, companyMemberships, principalPermissionGrants } from "@pilibalaai/db";
 import { beforeAll, afterAll, beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { secretService } from "../secrets.js";
 import { authorizationService } from "../authorization.js";
 import { startRunnerApiTestServer } from "../../__tests__/helpers/runner-api-server.js";
-import { createRunnerdCodexTransport, defaultCapabilityRunnerdBinary } from "../../vendor/paperclip-runner/index.js";
+import { createRunnerdCodexTransport, defaultCapabilityRunnerdBinary } from "../../vendor/pilibala-runner/index.js";
 import { runnerApiCatalog } from "./runner-api-catalog.js";
 import { registerRunnerPrpAuthority } from "../../realtime/runner-prp-ws.js";
 import { createLocalAgentJwt } from "../../agent-auth-jwt.js";
 import { RUNNER_API_RESPONSE_MAX_BYTES, RUNNER_API_RESPONSE_RUN_MAX_BYTES } from "./runner-api-response-limits.js";
-import { PaperclipRunnerToolAuthority } from "./paperclip-runner-tool-authority.js";
+import { PilibalaRunnerToolAuthority } from "./pilibala-runner-tool-authority.js";
 import { prepareHeartbeatTaskContext } from "../heartbeat/task-context.js";
 
 describe("runner API against real HTTP routes", () => {
   let server: Awaited<ReturnType<typeof startRunnerApiTestServer>>;
-  const oldSecret = process.env.PAPERCLIP_AGENT_JWT_SECRET;
-  const oldMasterKeyFile = process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
+  const oldSecret = process.env.PILIBALA_AGENT_JWT_SECRET;
+  const oldMasterKeyFile = process.env.PILIBALA_SECRETS_MASTER_KEY_FILE;
   beforeEach(() => {
-    vi.stubEnv("PAPERCLIP_RUNNER_API_TOOLS_ENABLED", undefined);
-    vi.stubEnv("PAPERCLIP_RUNNER_API_TOOLS_COMPANY_IDS", undefined);
+    vi.stubEnv("PILIBALA_RUNNER_API_TOOLS_ENABLED", undefined);
+    vi.stubEnv("PILIBALA_RUNNER_API_TOOLS_COMPANY_IDS", undefined);
   });
   afterEach(() => vi.unstubAllEnvs());
   beforeAll(async () => {
-    process.env.PAPERCLIP_AGENT_JWT_SECRET = randomUUID();
+    process.env.PILIBALA_AGENT_JWT_SECRET = randomUUID();
     server = await startRunnerApiTestServer();
-    process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE = join(server.root, "master.key");
+    process.env.PILIBALA_SECRETS_MASTER_KEY_FILE = join(server.root, "master.key");
   }, 60_000);
   afterAll(async () => {
     await server?.close();
-    if (oldMasterKeyFile === undefined) delete process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
-    else process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE = oldMasterKeyFile;
-    if (oldSecret === undefined) delete process.env.PAPERCLIP_AGENT_JWT_SECRET;
-    else process.env.PAPERCLIP_AGENT_JWT_SECRET = oldSecret;
+    if (oldMasterKeyFile === undefined) delete process.env.PILIBALA_SECRETS_MASTER_KEY_FILE;
+    else process.env.PILIBALA_SECRETS_MASTER_KEY_FILE = oldMasterKeyFile;
+    if (oldSecret === undefined) delete process.env.PILIBALA_AGENT_JWT_SECRET;
+    else process.env.PILIBALA_AGENT_JWT_SECRET = oldSecret;
   });
 
-  it.skipIf(!process.env.PAPERCLIP_REQUIRE_RUNNER_API_INTEGRATION && !existsSync(defaultCapabilityRunnerdBinary())).each(["current", "legacy_http"])("runs runnerd → PRP → authority → actual authenticated HTTP (%s receipt)", async (receiptFormat) => {
+  it.skipIf(!process.env.PILIBALA_REQUIRE_RUNNER_API_INTEGRATION && !existsSync(defaultCapabilityRunnerdBinary())).each(["current", "legacy_http"])("runs runnerd → PRP → authority → actual authenticated HTTP (%s receipt)", async (receiptFormat) => {
     const fixture = await server.fixture();
     const provider = join(server.root, `scripted-api-provider-${receiptFormat}.mjs`);
     await writeFile(provider, `#!${process.execPath}
@@ -105,14 +105,14 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
 
   it("cannot opt into API tools through a binding when the operator flag is false", async () => {
     const fixture = await server.fixture({ apiToolsEnabled: true });
-    process.env.PAPERCLIP_RUNNER_API_TOOLS_ENABLED = "false";
+    process.env.PILIBALA_RUNNER_API_TOOLS_ENABLED = "false";
     try {
       const names = (await fixture.authority.definitions()).map(tool => tool.name);
       expect(names).toContain("get_task_context");
       expect(names).not.toContain("search_api");
       expect(names).not.toContain("call_api");
       await expect(fixture.authority.execute({ tool: "call_api", callId: "disabled", arguments: { operationId: "GET /api/companies/{companyId}/projects" } })).rejects.toThrow("not_advertised");
-    } finally { delete process.env.PAPERCLIP_RUNNER_API_TOOLS_ENABLED; }
+    } finally { delete process.env.PILIBALA_RUNNER_API_TOOLS_ENABLED; }
   });
 
   it("uses route permissions for lifecycle payloads instead of fallback-only denials", async () => {
@@ -186,16 +186,16 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
     } }) as any;
     expect(saved).toMatchObject({ ok: true, status: 201, artifact: { artifactId: expect.any(String) } });
     const url = `${fixture.apiUrl}/api/assets/${saved.artifact.artifactId}/content`;
-    const owner = createLocalAgentJwt(fixture.agentId, fixture.companyId, "paperclip_runner", fixture.runId);
+    const owner = createLocalAgentJwt(fixture.agentId, fixture.companyId, "pilibala_runner", fixture.runId);
     expect((await fetch(url, { headers: { Authorization: `Bearer ${owner}` } })).status).toBe(200);
-    const [peer] = await server.db.insert(agents).values({ companyId: fixture.companyId, name: "Peer snapshot reader", status: "active", role: "ceo", adapterType: "paperclip_runner" }).returning();
+    const [peer] = await server.db.insert(agents).values({ companyId: fixture.companyId, name: "Peer snapshot reader", status: "active", role: "ceo", adapterType: "pilibala_runner" }).returning();
     const [peerRun] = await server.db.insert(heartbeatRuns).values({ companyId: fixture.companyId, agentId: peer.id, status: "running", runtimeMode: "native", nativeIssueId: fixture.blockerId, contextSnapshot: { issueId: fixture.blockerId } }).returning();
     await server.db.update(issues).set({ assigneeAgentId: peer.id, status: "in_progress", executionRunId: peerRun.id,
       description: `![private](/api/assets/${saved.artifact.artifactId}/content)`,
     }).where(eq(issues.id, fixture.blockerId));
     const token = createLocalAgentJwt(peer.id, fixture.companyId, "codex_local", peerRun.id);
     expect((await fetch(url, { headers: { Authorization: `Bearer ${token}` } })).status).toBe(404);
-    const peerAuthority = new PaperclipRunnerToolAuthority(server.db, {
+    const peerAuthority = new PilibalaRunnerToolAuthority(server.db, {
       ...fixture.authority.binding, agentId: peer.id, runId: peerRun.id, issueId: fixture.blockerId,
     });
     await expect(peerAuthority.execute({ tool: "call_api", callId: "peer-snapshot-upload", arguments: {
@@ -224,7 +224,7 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
     const fixture = await server.fixture();
     if (scope === "skill_test") {
       await server.db.update(heartbeatRuns).set({ contextSnapshot: { issueId: fixture.issueId,
-        paperclipAgentJwtScope: { kind: "skill_test", issueId: fixture.issueId },
+        pilibalaAgentJwtScope: { kind: "skill_test", issueId: fixture.issueId },
       } }).where(eq(heartbeatRuns.id, fixture.runId));
     } else {
       await server.db.update(agents).set({ permissions: { trustPreset: "low_trust_review", authorizationPolicy: {
@@ -244,7 +244,7 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
       const [image] = await server.db.insert(assets).values({ companyId: fixture.companyId, ...stored, createdByAgentId: fixture.agentId }).returning();
       imageIds.push(image.id);
     }
-    const token = createLocalAgentJwt(fixture.agentId, fixture.companyId, "paperclip_runner", fixture.runId, null, keyScope);
+    const token = createLocalAgentJwt(fixture.agentId, fixture.companyId, "pilibala_runner", fixture.runId, null, keyScope);
     expect((await fetch(`${fixture.apiUrl}/api/assets/${imageIds[0]}/content`, { headers: { Authorization: `Bearer ${token}` } })).status).toBe(200);
     expect((await fetch(`${fixture.apiUrl}/api/assets/${imageIds[1]}/content`, { headers: { Authorization: `Bearer ${token}` } })).status).toBe(404);
     expect(await fixture.authority.execute({ tool: "call_api", callId: "scoped-image", arguments: {
@@ -258,7 +258,7 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
 
   it("keeps restored webhook secrets inline and encrypts their replay receipts", async () => {
     const fixture = await server.fixture({ disableWakeOnDemand: true, conversation: true });
-    vi.stubEnv("PAPERCLIP_API_URL", fixture.apiUrl);
+    vi.stubEnv("PILIBALA_API_URL", fixture.apiUrl);
     await server.db.update(issues).set({ responsibleUserId: fixture.responsibleUserId }).where(eq(issues.id, fixture.issueId));
     const call = (callId: string, args: unknown) => fixture.authority.execute({ tool: "call_api", callId, arguments: args }) as Promise<any>;
     const created = await call("webhook-routine", { operationId: "POST /api/companies/{companyId}/routines", body: {
@@ -308,8 +308,8 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
     await server.db.insert(agents).values({ id: otherAgentId, companyId: fixture.companyId, name: "Unbound peer", status: "active" });
     const [peerRun] = await server.db.insert(heartbeatRuns).values({ companyId: fixture.companyId, agentId: otherAgentId, status: "running", runtimeMode: "native", nativeIssueId: fixture.blockerId, contextSnapshot: { issueId: fixture.blockerId } }).returning();
     await server.db.update(issues).set({ assigneeAgentId: otherAgentId, status: "in_progress", executionRunId: peerRun.id }).where(eq(issues.id, fixture.blockerId));
-    const token = createLocalAgentJwt(otherAgentId, fixture.companyId, "paperclip_runner", peerRun.id);
-    expect((await fetch(`${fixture.apiUrl}/api/agents/me/secrets/${secret.key}/value`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "X-Paperclip-Run-Id": peerRun.id } })).status).toBe(403);
+    const token = createLocalAgentJwt(otherAgentId, fixture.companyId, "pilibala_runner", peerRun.id);
+    expect((await fetch(`${fixture.apiUrl}/api/agents/me/secrets/${secret.key}/value`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "X-Pilibala-Run-Id": peerRun.id } })).status).toBe(403);
   });
 
   it.each([
@@ -355,16 +355,16 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
   it("preserves the REST skill-test credential scope after a task mode edit and restart preparation", async () => {
     const fixture = await server.fixture();
     await server.db.update(heartbeatRuns).set({ contextSnapshot: { issueId: fixture.issueId,
-      paperclipAgentJwtScope: { kind: "skill_test", issueId: fixture.issueId },
+      pilibalaAgentJwtScope: { kind: "skill_test", issueId: fixture.issueId },
     } }).where(eq(heartbeatRuns.id, fixture.runId));
     await server.db.update(issues).set({ workMode: "skill_test" }).where(eq(issues.id, fixture.issueId));
     await server.db.update(issues).set({ workMode: "standard" }).where(eq(issues.id, fixture.issueId));
     await reprepareRun(fixture);
     const body = { kind: "secret", name: "parity/skill-test", value: "disposable-skill-test-value", justification: "Must remain denied" };
-    const token = createLocalAgentJwt(fixture.agentId, fixture.companyId, "paperclip_runner", fixture.runId,
+    const token = createLocalAgentJwt(fixture.agentId, fixture.companyId, "pilibala_runner", fixture.runId,
       fixture.responsibleUserId, { kind: "skill_test", issueId: fixture.issueId });
     const direct = await fetch(`${fixture.apiUrl}/api/agents/me/secret-proposals`, {
-      method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "X-Paperclip-Run-Id": fixture.runId }, body: JSON.stringify(body),
+      method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "X-Pilibala-Run-Id": fixture.runId }, body: JSON.stringify(body),
     });
     expect(direct.status).toBe(403);
     const result = await fixture.authority.execute({ tool: "call_api", callId: "skill-test-secret-denied", arguments: {
@@ -376,11 +376,11 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
   it("retains standard REST credential scope after a task becomes a skill test and restart preparation", async () => {
     const fixture = await server.fixture();
     await server.db.update(heartbeatRuns).set({ contextSnapshot: { issueId: fixture.issueId,
-      paperclipAgentJwtScope: { kind: "standard" },
+      pilibalaAgentJwtScope: { kind: "standard" },
     } }).where(eq(heartbeatRuns.id, fixture.runId));
     await server.db.update(issues).set({ workMode: "skill_test" }).where(eq(issues.id, fixture.issueId));
     await reprepareRun(fixture);
-    const token = createLocalAgentJwt(fixture.agentId, fixture.companyId, "paperclip_runner", fixture.runId, null, { kind: "standard" });
+    const token = createLocalAgentJwt(fixture.agentId, fixture.companyId, "pilibala_runner", fixture.runId, null, { kind: "standard" });
     const direct = await fetch(`${fixture.apiUrl}/api/companies/${fixture.companyId}/projects`, { headers: { Authorization: `Bearer ${token}` } });
     expect(direct.status).toBe(200);
     expect(await fixture.authority.execute({ tool: "call_api", callId: "standard-scope", arguments: {
@@ -390,8 +390,8 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
 
   it("creates and reads secret proposals while preserving redaction and board review", async () => {
     const fixture = await server.fixture();
-    const keyFile = process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
-    process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE = join(server.root, "proposal-master.key");
+    const keyFile = process.env.PILIBALA_SECRETS_MASTER_KEY_FILE;
+    process.env.PILIBALA_SECRETS_MASTER_KEY_FILE = join(server.root, "proposal-master.key");
     try {
       const args = { operationId: "POST /api/agents/me/secret-proposals", body: {
         kind: "secret", name: "parity/example", value: "disposable-parity-secret", justification: "Test existing agent REST permission",
@@ -408,8 +408,8 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
       const [run] = await server.db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, fixture.runId));
       expect(JSON.stringify(run.resultJson)).not.toContain(args.body.value);
     } finally {
-      if (keyFile === undefined) delete process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
-      else process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE = keyFile;
+      if (keyFile === undefined) delete process.env.PILIBALA_SECRETS_MASTER_KEY_FILE;
+      else process.env.PILIBALA_SECRETS_MASTER_KEY_FILE = keyFile;
     }
   });
 
@@ -434,7 +434,7 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
 
   it("matches direct agent REST authorization for formerly restricted routes", async () => {
     const fixture = await server.fixture({ disableWakeOnDemand: true });
-    const token = createLocalAgentJwt(fixture.agentId, fixture.companyId, "paperclip_runner", fixture.runId);
+    const token = createLocalAgentJwt(fixture.agentId, fixture.companyId, "pilibala_runner", fixture.runId);
     for (const [operationId, path, body] of [
       ["POST /api/agents/{id}/pause", `/api/agents/${fixture.agentId}/pause`, {}],
       ["POST /api/agents/{id}/resume", `/api/agents/${fixture.agentId}/resume`, {}],
@@ -445,7 +445,7 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
       ["POST /api/execution-workspaces/{id}/runtime-services/{action}", `/api/execution-workspaces/${randomUUID()}/runtime-services/stop`, {}],
       ["POST /api/companies/{companyId}/skills/{skillId}/test-runs", `/api/companies/${fixture.companyId}/skills/${randomUUID()}/test-runs`, { agentId: fixture.agentId, content: "Test input" }],
     ] as const) {
-      const direct = await fetch(`${fixture.apiUrl}${path}`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "X-Paperclip-Run-Id": fixture.runId, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const direct = await fetch(`${fixture.apiUrl}${path}`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "X-Pilibala-Run-Id": fixture.runId, "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const names = [...operationId.matchAll(/\{([^}]+)\}/g)].map(([, name]) => name);
       const template = operationId.slice(5).split("/");
       const actual = path.split("/");
@@ -491,7 +491,7 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
   it("revokes advertised API tools without disabling dedicated operations", async () => {
     const fixture = await server.fixture();
     expect(fixture.authority.definitions().some(tool => tool.name === "call_api")).toBe(true);
-    vi.stubEnv("PAPERCLIP_RUNNER_API_TOOLS_ENABLED", "false");
+    vi.stubEnv("PILIBALA_RUNNER_API_TOOLS_ENABLED", "false");
     try {
       expect(fixture.authority.definitions().some(tool => tool.name === "search_api")).toBe(false);
       await expect(fixture.authority.execute({ tool: "call_api", callId: "revoked", arguments: {
@@ -660,14 +660,14 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
 
   it("counts old snapshots and other-run reservations against the company quota, and reclaims deletions", async () => {
     const fixture = await server.fixture();
-    vi.stubEnv("PAPERCLIP_RUNNER_API_COMPANY_CAPTURE_MAX_BYTES", String(2 * RUNNER_API_RESPONSE_MAX_BYTES));
+    vi.stubEnv("PILIBALA_RUNNER_API_COMPANY_CAPTURE_MAX_BYTES", String(2 * RUNNER_API_RESPONSE_MAX_BYTES));
     const [oldSnapshot] = await server.db.insert(assets).values({ companyId: fixture.companyId, provider: "local_disk",
       objectKey: `${fixture.companyId}/runner-api/old-snapshot`, contentType: "text/plain", byteSize: RUNNER_API_RESPONSE_MAX_BYTES,
       sha256: "old-snapshot", createdByAgentId: fixture.agentId }).returning();
     const [reservation] = await server.db.insert(runnerApiResponseReservations).values({ companyId: fixture.companyId, runId: null, reservedBytes: RUNNER_API_RESPONSE_MAX_BYTES }).returning();
     await server.db.update(projects).set({ description: "x".repeat(32 * 1024) }).where(eq(projects.id, fixture.projectId));
     // A fresh authority instance cannot reset reservations from another run/process.
-    const authority = new PaperclipRunnerToolAuthority(server.db, fixture);
+    const authority = new PilibalaRunnerToolAuthority(server.db, fixture);
     const call = () => authority.execute({ tool: "call_api", callId: randomUUID(), arguments: {
       operationId: "GET /api/projects/{id}", pathParams: { id: fixture.projectId },
     } });
@@ -724,12 +724,12 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
 
   it("shares company admission across simultaneous runs", async () => {
     const fixture = await server.fixture();
-    vi.stubEnv("PAPERCLIP_RUNNER_API_COMPANY_CAPTURE_MAX_BYTES", String(RUNNER_API_RESPONSE_MAX_BYTES));
+    vi.stubEnv("PILIBALA_RUNNER_API_COMPANY_CAPTURE_MAX_BYTES", String(RUNNER_API_RESPONSE_MAX_BYTES));
     const otherRunId = randomUUID();
     await server.db.insert(heartbeatRuns).values({ id: otherRunId, companyId: fixture.companyId, agentId: fixture.agentId,
       status: "running", runtimeMode: "native", nativeIssueId: fixture.blockerId, contextSnapshot: { issueId: fixture.blockerId } });
     await server.db.update(issues).set({ status: "in_progress", executionRunId: otherRunId }).where(eq(issues.id, fixture.blockerId));
-    const other = new PaperclipRunnerToolAuthority(server.db, { ...fixture, issueId: fixture.blockerId, runId: otherRunId });
+    const other = new PilibalaRunnerToolAuthority(server.db, { ...fixture, issueId: fixture.blockerId, runId: otherRunId });
     await server.db.update(projects).set({ description: "x".repeat(32 * 1024) }).where(eq(projects.id, fixture.projectId));
     const arguments_ = { operationId: "GET /api/projects/{id}", pathParams: { id: fixture.projectId } };
     const results: any[] = await Promise.all([fixture.authority, other].map(authority => authority.execute({ tool: "call_api", callId: randomUUID(), arguments: arguments_ })));
@@ -803,19 +803,19 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
     try {
       const fixture = await localTrustedServer.fixture({
         disableWakeOnDemand: true,
-        contextSnapshot: { paperclipWake: { comments: [] } },
+        contextSnapshot: { pilibalaWake: { comments: [] } },
       });
       const sourceToken = createLocalAgentJwt(
         fixture.agentId,
         fixture.companyId,
-        "paperclip_runner",
+        "pilibala_runner",
         fixture.runId,
       );
       expect(sourceToken).toBeTruthy();
       const requestHeaders = (token: string) => ({
         authorization: `Bearer ${token}`,
         "content-type": "application/json",
-        "x-paperclip-run-id": fixture.runId,
+        "x-pilibala-run-id": fixture.runId,
       });
       const humanCommentResponse = await fetch(
         `${fixture.apiUrl}/api/issues/${fixture.issueId}/comments`,
@@ -866,13 +866,13 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
         nativeIssueId: fixture.issueId,
         invocationSource: "continuation",
         triggerDetail: "comment",
-        contextSnapshot: { issueId: fixture.issueId, paperclipWake: { comments: [{ id: humanComment.id }] } },
+        contextSnapshot: { issueId: fixture.issueId, pilibalaWake: { comments: [{ id: humanComment.id }] } },
       });
       await localTrustedServer.db.update(issues).set({ executionRunId: successorRunId, checkoutRunId: successorRunId }).where(eq(issues.id, fixture.issueId));
       const successorToken = createLocalAgentJwt(
         fixture.agentId,
         fixture.companyId,
-        "paperclip_runner",
+        "pilibala_runner",
         successorRunId,
       );
       expect(successorToken).toBeTruthy();
@@ -880,7 +880,7 @@ else if(m.id!==undefined) send({id:m.id,result:{}});
         `${fixture.apiUrl}/api/issues/${fixture.issueId}/interactions`,
         {
           method: "POST",
-          headers: { ...requestHeaders(successorToken!), "x-paperclip-run-id": successorRunId },
+          headers: { ...requestHeaders(successorToken!), "x-pilibala-run-id": successorRunId },
           body: JSON.stringify({ ...questionPayload, idempotencyKey: `fresh-source-question-${successorRunId}` }),
         },
       );

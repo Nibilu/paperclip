@@ -8,9 +8,9 @@ import {
   issues,
   runIdentityContexts,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { conflict, forbidden } from "../errors.js";
-import { isUuidLike } from "@paperclipai/shared";
+import { isUuidLike } from "@pilibalaai/shared";
 import { queuedCommentIdsFromRunContext, queuedCommentIdsFromWakePayload } from "./issue-queued-comment-queue.js";
 
 /** Resolve an explicit click from persisted receipts, never caller context or message authors. */

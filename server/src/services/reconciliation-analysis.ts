@@ -1,7 +1,7 @@
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { agents, heartbeatRuns, issueRecoveryActions, issues, type Db } from "@paperclipai/db";
-import { AGENT_STATUSES, isAgentStatusInvokable } from "@paperclipai/shared";
+import { agents, heartbeatRuns, issueRecoveryActions, issues, type Db } from "@pilibalaai/db";
+import { AGENT_STATUSES, isAgentStatusInvokable } from "@pilibalaai/shared";
 import { conflict, forbidden } from "../errors.js";
 import { evaluateAgentInvokabilityFromDb } from "./agent-invokability.js";
 import { classifyRunFailure } from "./recovery/error-classification.js";

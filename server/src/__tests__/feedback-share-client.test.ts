@@ -15,7 +15,7 @@ describe("feedback trace share client", () => {
     vi.unstubAllGlobals();
   });
 
-  it("defaults to telemetry.paperclip.ing when no backend url is configured", async () => {
+  it("defaults to telemetry.pilibala.ing when no backend url is configured", async () => {
     const client = createFeedbackTraceShareClientFromConfig({
       feedbackExportBackendUrl: undefined,
       feedbackExportBackendToken: undefined,
@@ -32,7 +32,7 @@ describe("feedback trace share client", () => {
       notes: [],
       envelope: {},
       surface: null,
-      paperclipRun: null,
+      pilibalaRun: null,
       rawAdapterTrace: null,
       normalizedAdapterTrace: null,
       privacy: null,
@@ -41,7 +41,7 @@ describe("feedback trace share client", () => {
     });
 
     expect(fetch).toHaveBeenCalledWith(
-      "https://telemetry.paperclip.ing/feedback-traces",
+      "https://telemetry.pilibala.ing/feedback-traces",
       expect.objectContaining({
         method: "POST",
       }),
@@ -50,7 +50,7 @@ describe("feedback trace share client", () => {
 
   it("wraps the feedback trace payload as gzip+base64 json before upload", async () => {
     const client = createFeedbackTraceShareClientFromConfig({
-      feedbackExportBackendUrl: "https://telemetry.paperclip.ing",
+      feedbackExportBackendUrl: "https://telemetry.pilibala.ing",
       feedbackExportBackendToken: "test-token",
     });
 
@@ -65,7 +65,7 @@ describe("feedback trace share client", () => {
       notes: [],
       envelope: { hello: "world" },
       surface: null,
-      paperclipRun: null,
+      pilibalaRun: null,
       rawAdapterTrace: null,
       normalizedAdapterTrace: null,
       privacy: null,
@@ -74,7 +74,7 @@ describe("feedback trace share client", () => {
     });
 
     const call = vi.mocked(fetch).mock.calls[0];
-    expect(call?.[0]).toBe("https://telemetry.paperclip.ing/feedback-traces");
+    expect(call?.[0]).toBe("https://telemetry.pilibala.ing/feedback-traces");
     expect(call?.[1]).toMatchObject({
       method: "POST",
       headers: {

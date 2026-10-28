@@ -6,7 +6,7 @@ const meta: Meta<typeof CloudAccessError> = {
   title: "Projects and execution/Recovery/App/Connection recovery",
   component: CloudAccessError,
   parameters: { layout: "fullscreen",
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "recovery/reconnect"
       ],

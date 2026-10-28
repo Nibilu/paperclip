@@ -5,9 +5,9 @@ import {
   adapterExecutionTargetEnablesSandboxDuplexBridge,
   githubOperationLauncherDirectory,
   prepareGitHubOperationLaunchers,
-  startAdapterExecutionTargetPaperclipBridge,
-} from "@paperclipai/adapter-utils/execution-target";
-import { githubBrokerEnvironment } from "@paperclipai/adapter-utils/github-launcher";
+  startAdapterExecutionTargetPilibalaBridge,
+} from "@pilibalaai/adapter-utils/execution-target";
+import { githubBrokerEnvironment } from "@pilibalaai/adapter-utils/github-launcher";
 
 type Binding = { companyId: string; agentId: string; issueId: string; runId: string };
 type LauncherInput = Parameters<typeof prepareGitHubOperationLaunchers>[0];
@@ -24,7 +24,7 @@ export async function createNativeGitHubAccess(input: {
   env: NodeJS.ProcessEnv;
   resolveCredentials: (binding: Binding) => Promise<unknown>;
   onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
-}, startBridge = startAdapterExecutionTargetPaperclipBridge) {
+}, startBridge = startAdapterExecutionTargetPilibalaBridge) {
   const duplexRequested = adapterExecutionTargetEnablesSandboxDuplexBridge(input.target);
   const token = randomBytes(32).toString("hex");
   const location = { runId: `native-session-${randomUUID()}`, target: input.target };
@@ -32,7 +32,7 @@ export async function createNativeGitHubAccess(input: {
   let stopped = false;
   let ready = true;
   let stopping: Promise<void> | undefined;
-  let bridge: Awaited<ReturnType<typeof startAdapterExecutionTargetPaperclipBridge>> = null;
+  let bridge: Awaited<ReturnType<typeof startAdapterExecutionTargetPilibalaBridge>> = null;
   const server = createServer(async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("Content-Type", "application/json");
@@ -86,7 +86,7 @@ export async function createNativeGitHubAccess(input: {
       cleanupGitHubOperationLaunchers(location),
     ]);
     if (results.some(result => result.status === "rejected")) {
-      await input.onLog?.("stderr", "[paperclip] GitHub session cleanup incomplete.\n").catch(() => undefined);
+      await input.onLog?.("stderr", "[pilibala] GitHub session cleanup incomplete.\n").catch(() => undefined);
     }
   })();
   try {
@@ -117,17 +117,17 @@ export async function createNativeGitHubAccess(input: {
       // the supervisor retries transport setup on the next run.
       ready = false;
       await new Promise<void>(resolve => server.close(() => resolve()));
-      await input.onLog?.("stderr", "[paperclip] GitHub runtime transport unavailable; continuing without managed GitHub access.\n").catch(() => undefined);
+      await input.onLog?.("stderr", "[pilibala] GitHub runtime transport unavailable; continuing without managed GitHub access.\n").catch(() => undefined);
     }
     const env = await prepareGitHubOperationLaunchers({
       ...location, cwd: input.cwd,
       env: {
         ...githubBrokerEnvironment({ PATH: input.env.PATH }, {
-          url: ready ? bridge?.env.PAPERCLIP_API_URL ?? url : "",
-          token: ready ? bridge?.env.PAPERCLIP_API_KEY ?? token : "",
+          url: ready ? bridge?.env.PILIBALA_API_URL ?? url : "",
+          token: ready ? bridge?.env.PILIBALA_API_KEY ?? token : "",
         }),
         // Never retain an old run's bridge authentication override.
-        PAPERCLIP_GITHUB_BRIDGE_TOKEN: ready ? bridge?.env.PAPERCLIP_API_KEY ?? token : "",
+        PILIBALA_GITHUB_BRIDGE_TOKEN: ready ? bridge?.env.PILIBALA_API_KEY ?? token : "",
       },
     });
     return {

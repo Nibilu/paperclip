@@ -1,8 +1,8 @@
 import { providerEffectPayload } from "../provider-effects.js";
 import { notifyChatDeliveryWork, notifyChatPublicationWork, notifyChatActionWork } from "../../chat-work-notifications.js";
 import { and, eq, inArray } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { chatActions, chatConversations, chatDeliveries, chatEndpoints, chatPublications, chatTeamsFileTransfers, issueThreadInteractions } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { chatActions, chatConversations, chatDeliveries, chatEndpoints, chatPublications, chatTeamsFileTransfers, issueThreadInteractions } from "@pilibalaai/db";
 import { conflict, notFound } from "../../../errors.js";
 import { logActivity } from "../../activity-log.js";
 import type { EndpointRecord } from "../runtime-types.js";
@@ -144,7 +144,7 @@ export function createChatPublicationResolution(db: Db, options: ResolutionOptio
     action: "mark_delivered" | "retry_anyway" | "cancel",
     userId: string,
     fileTransfer?: {
-      phase: import("@paperclipai/shared").ChatFileTransferPhase;
+      phase: import("@pilibalaai/shared").ChatFileTransferPhase;
       version: number;
     },
   ) {

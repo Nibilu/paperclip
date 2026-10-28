@@ -4,7 +4,7 @@ Date: 2026-10-12. Audit branch: `codex/test-audit-next`. Delivery branch: `codex
 
 This follow-up removes **5,027 net test lines across 27 test files** and **15 redundant registered executions**. It separately removes **11 unused application lines** from two private test-inspection exports. Most savings come from sharing repeated setup while retaining every distinct case. No wall-time improvement is inferred from line counts.
 
-The earlier merged [PR #15978](https://github.com/paperclipai/paperclip/pull/15978) removed 11,976 net test/support lines and 1,073 redundant executions. The two changes together save **17,003 test/support lines**. These counts exclude audit reports, upstream changes and the fixture portability repair.
+The earlier merged [PR #15978](https://github.com/pilibalaai/pilibala/pull/15978) removed 11,976 net test/support lines and 1,073 redundant executions. The two changes together save **17,003 test/support lines**. These counts exclude audit reports, upstream changes and the fixture portability repair.
 
 ## Savings and scope
 

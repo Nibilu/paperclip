@@ -1,10 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { agents, environmentLeases, environments, agentInstructionWorkingCopies as copies, type Db } from "@paperclipai/db";
-import { syncDirectoryToSsh, restoreWorkspaceFromSshExecution } from "@paperclipai/adapter-utils/ssh";
-import { prepareAdapterExecutionTargetRuntime, runAdapterExecutionTargetShellCommand, type AdapterExecutionTarget, type PreparedAdapterExecutionTargetRuntime } from "@paperclipai/adapter-utils/execution-target";
-import { withDirectoryMergeLock, directorySnapshotSha256, parseDirectorySnapshot, serializeDirectorySnapshot, type DirectoryMergeLockOperation } from "@paperclipai/adapter-utils/workspace-restore-merge";
+import { agents, environmentLeases, environments, agentInstructionWorkingCopies as copies, type Db } from "@pilibalaai/db";
+import { syncDirectoryToSsh, restoreWorkspaceFromSshExecution } from "@pilibalaai/adapter-utils/ssh";
+import { prepareAdapterExecutionTargetRuntime, runAdapterExecutionTargetShellCommand, type AdapterExecutionTarget, type PreparedAdapterExecutionTargetRuntime } from "@pilibalaai/adapter-utils/execution-target";
+import { withDirectoryMergeLock, directorySnapshotSha256, parseDirectorySnapshot, serializeDirectorySnapshot, type DirectoryMergeLockOperation } from "@pilibalaai/adapter-utils/workspace-restore-merge";
 import { AGENT_FILES_CONTRACT, AgentFileLimitError, agentFileStore, agentStorageWarning, inspectAgentDirectory } from "./agent-file-store.js";
 import { agentInstructionsBundleMode, deriveBundleState, resolveManagedInstructionsRoot } from "./agent-instructions.js";
 import { instructionGitExcludeProgram } from "./agent-instruction-files.js";
@@ -12,7 +12,7 @@ import { resolveInstructionActor } from "./agent-instruction-authorization.js";
 import { HttpError, conflict, notFound } from "../errors.js";
 import type { AuthorizationActor } from "./authorization.js";
 import type { EnvironmentRuntimeService } from "./environment-runtime.js";
-import type { Environment, EnvironmentLease } from "@paperclipai/shared";
+import type { Environment, EnvironmentLease } from "@pilibalaai/shared";
 import { agentDirectoryBaselineDigest, agentDirectoryProbeProgram, observeLocalAgentDirectory } from "./agent-directory-probe.js";
 import { hasRemoteTerminationReceipt } from "./remote-execution-termination.js";
 import { cachedAgentFileManifest, captureAgentFileCheckpoint, checkpointBaseline, checkpointSnapshot, type AgentFileManifest } from "./agent-file-checkpoints.js";
@@ -25,7 +25,7 @@ const transports = new Map<string, PreparedAdapterExecutionTargetRuntime>();
 const key = (row: Pick<Copy, "companyId" | "runId">) => `${row.companyId}:${row.runId}`;
 function sandboxTransferRoot(row: Copy, remoteCwd: string): string {
   const origin = typeof row.receipt?.materializationRunId === "string" ? row.receipt.materializationRunId : String(row.receipt?.directoryRunId ?? row.runId);
-  return path.posix.join(remoteCwd, ".paperclip-runtime", "paperclip-runner", "agent-file-transfers", row.agentId, origin);
+  return path.posix.join(remoteCwd, ".pilibala-runtime", "pilibala-runner", "agent-file-transfers", row.agentId, origin);
 }
 export function isAgentDirectoryCopy(row: Pick<Copy, "receipt"> | null): boolean {
   return row?.receipt?.schema === AGENT_FILES_CONTRACT;
@@ -58,11 +58,11 @@ export function agentDirectoryWorkingCopyService(db: Db, get: (companyId: string
     if (target.transport === "ssh") {
       // Reuse SSH's plain directory transfer without its task-workspace suffix
       // or Git-history discovery. The registered root is the exact writable root.
-      if (!recovering) await syncDirectoryToSsh({ spec: target.spec, localDir: row.localRoot, remoteDir: row.executionRoot, exclude: [".paperclip-runtime"] });
+      if (!recovering) await syncDirectoryToSsh({ spec: target.spec, localDir: row.localRoot, remoteDir: row.executionRoot, exclude: [".pilibala-runtime"] });
       return { target, workspaceRemoteDir: row.executionRoot, runtimeRootDir: null,
         assetDirs: {}, additionalSourceDirs: {}, additionalSourceFailures: [], workspaceSyncSnapshot: null,
         restoreWorkspace: () => restoreWorkspaceFromSshExecution({ spec: target.spec, localDir: row.localRoot,
-          remoteDir: row.executionRoot, baselineSnapshot: { ...baseline(row), exclude: [".paperclip-runtime"] }, restoreGitHistory: false }) };
+          remoteDir: row.executionRoot, baselineSnapshot: { ...baseline(row), exclude: [".pilibala-runtime"] }, restoreGitHistory: false }) };
     }
     return prepareAdapterExecutionTargetRuntime({ target, runId: row.runId, adapterKey: "agent-files",
       workspaceLocalDir: row.localRoot, workspaceRemoteDir: row.executionRoot,
@@ -72,7 +72,7 @@ export function agentDirectoryWorkingCopyService(db: Db, get: (companyId: string
       runtimeRootDir: sandboxTransferRoot(row, target.remoteCwd),
       syncWorkspace: true, workspaceInboundMode: recovering ? "adopt_remote" : undefined,
       workspaceBaseline: baseline(row), workspaceGitSnapshot: null, workspaceRepositories: [], workspaceFileMode: "all",
-      workspaceExclude: [".paperclip-runtime", ".paperclip-runtime/**"] });
+      workspaceExclude: [".pilibala-runtime", ".pilibala-runtime/**"] });
   }
   async function observe(row: Copy, target?: AdapterExecutionTarget | null) {
     if (row.location === "local") {
@@ -81,7 +81,7 @@ export function agentDirectoryWorkingCopyService(db: Db, get: (companyId: string
     }
     if (!target || target.kind !== "remote" || row.location !== `remote:${target.environmentId ?? ""}`) throw new Error("Agent directory environment changed");
     const origin = typeof row.receipt?.materializationRunId === "string" ? row.receipt.materializationRunId : row.runId;
-    if (row.executionRoot !== path.posix.join(target.remoteCwd, ".paperclip-runtime", "agent-files", row.agentId, origin)) throw new Error("Agent directory root changed");
+    if (row.executionRoot !== path.posix.join(target.remoteCwd, ".pilibala-runtime", "agent-files", row.agentId, origin)) throw new Error("Agent directory root changed");
     const quote = (value: string) => `'${value.replaceAll("'", `'"'"'`)}'`;
     const result = await runAdapterExecutionTargetShellCommand(row.runId, target,
       `node -e ${quote(agentDirectoryProbeProgram)} ${quote(row.executionRoot)}`, { cwd: target.remoteCwd, env: {}, timeoutSec: 10 });
@@ -143,7 +143,7 @@ export function agentDirectoryWorkingCopyService(db: Db, get: (companyId: string
     // excluded runtime area inside the provider's confined workspace. They are
     // synchronized independently; provider HOME is never reinterpreted.
     const executionRoot = input.target?.kind === "remote"
-      ? path.posix.join(input.target.remoteCwd, ".paperclip-runtime", "agent-files", input.agentId, origin)
+      ? path.posix.join(input.target.remoteCwd, ".pilibala-runtime", "agent-files", input.agentId, origin)
       : localRoot;
     const location = input.target?.kind === "remote" ? `remote:${input.target.environmentId ?? ""}` : "local";
     if (row && (row.localRoot !== localRoot || row.executionRoot !== executionRoot || row.agentId !== input.agentId || row.location !== location)) throw conflict("Agent directory belongs to a different execution environment");
@@ -434,7 +434,7 @@ export function agentDirectoryWorkingCopyService(db: Db, get: (companyId: string
       || Boolean(cleanupLeaseId && (!lease || cleanupTarget?.kind === "remote" && cleanupTarget.leaseId !== lease.id)));
     if (remoteUnavailable) cleanupPending = true;
     else if (!destroyed && row.processStoppedAt && completed.has(row.state) && cleanupTarget?.kind === "remote") {
-      const expected = path.posix.join(cleanupTarget.remoteCwd, ".paperclip-runtime", "agent-files", row.agentId, typeof row.receipt?.materializationRunId === "string" ? row.receipt.materializationRunId : String(row.receipt?.directoryRunId ?? row.runId));
+      const expected = path.posix.join(cleanupTarget.remoteCwd, ".pilibala-runtime", "agent-files", row.agentId, typeof row.receipt?.materializationRunId === "string" ? row.receipt.materializationRunId : String(row.receipt?.directoryRunId ?? row.runId));
       if (row.executionRoot !== expected) throw new Error("Agent directory cleanup path changed");
       const paths = cleanupTarget.transport === "sandbox" ? [expected, sandboxTransferRoot(row, cleanupTarget.remoteCwd)] : [expected];
       const quoted = paths.map(p => `'${p.replaceAll("'", `'"'"'`)}'`).join(" ");
@@ -471,7 +471,7 @@ export function agentDirectoryWorkingCopyService(db: Db, get: (companyId: string
     if (lease.environmentId !== null && row.location !== `remote:${lease.environmentId}`) return false;
     const remoteCwd = cleanup?.remoteCwd ?? lease.metadata?.remoteCwd;
     return typeof remoteCwd === "string" &&
-      row.executionRoot === path.posix.join(remoteCwd, ".paperclip-runtime", "agent-files", row.agentId, String(row.receipt?.materializationRunId ?? row.receipt?.directoryRunId ?? row.runId)) &&
+      row.executionRoot === path.posix.join(remoteCwd, ".pilibala-runtime", "agent-files", row.agentId, String(row.receipt?.materializationRunId ?? row.receipt?.directoryRunId ?? row.runId)) &&
       hasRemoteTerminationReceipt(lease) && (lease.metadata?.remoteExecutionTermination as { state?: string }).state === "destroyed";
   }
   async function recoverUnavailable(row: Copy) {
@@ -530,7 +530,7 @@ export function agentDirectoryWorkingCopyService(db: Db, get: (companyId: string
     const [environment] = await db.select().from(environments).where(eq(environments.id, lease.environmentId));
     if (!environment) return false;
     const remoteCwd = cleanup?.remoteCwd ?? lease.metadata?.remoteCwd;
-    if (typeof remoteCwd !== "string" || row.executionRoot !== path.posix.join(remoteCwd, ".paperclip-runtime", "agent-files", row.agentId, typeof row.receipt?.materializationRunId === "string" ? row.receipt.materializationRunId : String(row.receipt?.directoryRunId ?? row.runId))) return false;
+    if (typeof remoteCwd !== "string" || row.executionRoot !== path.posix.join(remoteCwd, ".pilibala-runtime", "agent-files", row.agentId, typeof row.receipt?.materializationRunId === "string" ? row.receipt.materializationRunId : String(row.receipt?.directoryRunId ?? row.runId))) return false;
     const paths = environment.driver === "sandbox" ? [row.executionRoot, sandboxTransferRoot(row, remoteCwd)] : [row.executionRoot];
     const result = await environmentRuntime.execute({ environment: environment as Environment, lease: lease as EnvironmentLease, command: "rm", args: ["-rf", "--", ...paths],
       cwd: remoteCwd, env: {}, timeoutMs: 15_000, bypassSession: true });

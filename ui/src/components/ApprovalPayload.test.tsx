@@ -85,7 +85,7 @@ describe("ApprovalPayloadRenderer", () => {
       );
     });
 
-    const bodies = container.querySelectorAll(".paperclip-markdown");
+    const bodies = container.querySelectorAll(".pilibala-markdown");
     expect(bodies.length).toBe(4);
 
     const summary = bodies[0];
@@ -131,7 +131,7 @@ describe("ApprovalPayloadRenderer", () => {
       );
     });
 
-    const bodies = container.querySelectorAll(".paperclip-markdown");
+    const bodies = container.querySelectorAll(".pilibala-markdown");
     expect(bodies.length).toBe(5);
     for (const body of bodies) {
       expect(body.querySelector("ul")).toBeNull();
@@ -174,7 +174,7 @@ describe("ApprovalPayloadRenderer", () => {
         );
       });
 
-      expect(container.querySelectorAll(".paperclip-markdown").length).toBe(2);
+      expect(container.querySelectorAll(".pilibala-markdown").length).toBe(2);
       expect(errors).toEqual([]);
     } finally {
       console.error = originalError;

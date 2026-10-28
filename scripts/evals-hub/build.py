@@ -11,8 +11,8 @@ from urllib.request import urlopen
 
 ORIGIN = "https://d1p6rlowie26tp.cloudfront.net"
 SYSTEMS = {
-    "runner": ("runner-protocol-evals", "paperclip.runner-protocol-eval.history/v1"),
-    "product": ("runner-e2e", "paperclip.runner-e2e.history/v1"),
+    "runner": ("runner-protocol-evals", "pilibala.runner-protocol-eval.history/v1"),
+    "product": ("runner-e2e", "pilibala.runner-e2e.history/v1"),
 }
 
 
@@ -84,7 +84,7 @@ def main():
                 history = json.load(response)
         values.update({f"{kind}_{k}": v for k, v in summarize(history, kind).items()})
     values["refreshed"] = display_date(datetime.now(timezone.utc).isoformat())
-    values["guide_url"] = "https://github.com/paperclipai/paperclip/blob/" + quote(args.docs_ref, safe="/") + "/doc/evals.md"
+    values["guide_url"] = "https://github.com/pilibalaai/pilibala/blob/" + quote(args.docs_ref, safe="/") + "/doc/evals.md"
     template = Template(Path(__file__).with_name("template.html").read_text())
     rendered = template.substitute(values)
     args.output.mkdir(parents=True, exist_ok=True)

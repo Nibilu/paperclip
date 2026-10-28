@@ -27,7 +27,7 @@ Open `/projects`, create a project, and enter its overview or Issues view.
 
 Open `/projects/:projectId/configuration` and its repository/workspace settings.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use a disposable project and a small repository you can access; record checkout and credential ownership.
 

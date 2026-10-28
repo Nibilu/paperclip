@@ -19,11 +19,11 @@ describe("decideQueuedCommentQueueSteering", () => {
       state: "queued",
       queueRunRuntimeMode: "native",
       activeRun: null,
-      assignedAgentAdapterType: "paperclip_runner",
+      assignedAgentAdapterType: "pilibala_runner",
       queuedCommentCount: 1,
     });
 
-    expect(decision).toEqual({ protocol: "paperclip_runner_v1", kind: "temporarily_unavailable" });
+    expect(decision).toEqual({ protocol: "pilibala_runner_v1", kind: "temporarily_unavailable" });
   });
 
   it("answers temporarily_unavailable when the queue holds no live comments", () => {
@@ -31,11 +31,11 @@ describe("decideQueuedCommentQueueSteering", () => {
       state: "deferred",
       queueRunRuntimeMode: null,
       activeRun: { id: "run-1", runtimeMode: "native" },
-      assignedAgentAdapterType: "paperclip_runner",
+      assignedAgentAdapterType: "pilibala_runner",
       queuedCommentCount: 0,
     });
 
-    expect(decision).toEqual({ protocol: "paperclip_runner_v1", kind: "temporarily_unavailable" });
+    expect(decision).toEqual({ protocol: "pilibala_runner_v1", kind: "temporarily_unavailable" });
   });
 
   it("tells the caller it may probe a running deferred turn on the native protocol", () => {
@@ -43,17 +43,17 @@ describe("decideQueuedCommentQueueSteering", () => {
       state: "deferred",
       queueRunRuntimeMode: null,
       activeRun: { id: "run-1", runtimeMode: "native" },
-      assignedAgentAdapterType: "paperclip_runner",
+      assignedAgentAdapterType: "pilibala_runner",
       queuedCommentCount: 1,
     });
 
-    expect(decision).toEqual({ protocol: "paperclip_runner_v1", kind: "probe", steeringRunId: "run-1" });
+    expect(decision).toEqual({ protocol: "pilibala_runner_v1", kind: "probe", steeringRunId: "run-1" });
   });
 
   // Acceptance-criterion fact pattern: a deferred queue whose active run
   // has not resolved a runtime mode yet, for an agent on the
-  // `paperclip_runner` adapter. The protocol resolves to
-  // `paperclip_runner_v1` through the adapter-type fallback, and the
+  // `pilibala_runner` adapter. The protocol resolves to
+  // `pilibala_runner_v1` through the adapter-type fallback, and the
   // decision hands the run to the caller to probe live — it never answers
   // the flat "unsupported" value a duplicated, unshared rule can drift to.
   it("resolves the protocol through the adapter-type fallback and asks the caller to probe", () => {
@@ -61,26 +61,26 @@ describe("decideQueuedCommentQueueSteering", () => {
       state: "deferred",
       queueRunRuntimeMode: null,
       activeRun: { id: "run-1", runtimeMode: null },
-      assignedAgentAdapterType: "paperclip_runner",
+      assignedAgentAdapterType: "pilibala_runner",
       queuedCommentCount: 1,
     });
 
-    expect(decision).toEqual({ protocol: "paperclip_runner_v1", kind: "probe", steeringRunId: "run-1" });
+    expect(decision).toEqual({ protocol: "pilibala_runner_v1", kind: "probe", steeringRunId: "run-1" });
   });
 
-  it("keeps a preparing Paperclip Runner on the steering protocol until runtime selection finishes", () => {
+  it("keeps a preparing Pilibala Runner on the steering protocol until runtime selection finishes", () => {
     expect(decideQueuedCommentQueueSteering({ state: "deferred", queueRunRuntimeMode: null,
       activeRun: { id: "preparing-run", runtimeMode: "legacy", runtimeModeResolvedAt: null,
-        runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } } },
-      assignedAgentAdapterType: "paperclip_runner", queuedCommentCount: 1,
-    })).toEqual({ protocol: "paperclip_runner_v1", kind: "temporarily_unavailable" });
+        runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } } },
+      assignedAgentAdapterType: "pilibala_runner", queuedCommentCount: 1,
+    })).toEqual({ protocol: "pilibala_runner_v1", kind: "temporarily_unavailable" });
   });
 
   it("preserves the historical adapter when mutable agent settings change", () => {
     expect(decideQueuedCommentQueueSteering({ state: "deferred", queueRunRuntimeMode: null,
       activeRun: { id: "legacy-run", runtimeMode: "legacy", runtimeModeResolvedAt: null,
         runnerProfileJson: { adapterDispatch: { adapterType: "codex_local" } } },
-      assignedAgentAdapterType: "paperclip_runner", queuedCommentCount: 1,
+      assignedAgentAdapterType: "pilibala_runner", queuedCommentCount: 1,
     })).toEqual({ protocol: "legacy", kind: "unsupported" });
   });
 });
@@ -137,13 +137,13 @@ describe("withQueuedCommentIdsInRunContext", () => {
     const result = withQueuedCommentIdsInRunContext({
       issueId: "issue-1",
       preserved: "keep",
-      paperclipWake: { comments: [{ id: "comment-1" }] },
-      paperclipWakeComment: { id: "comment-1" },
-      paperclipTaskMarkdown: "historical",
-      paperclipTaskMarkdownCompact: "historical compact",
-      paperclipTaskMarkdownAssignment: "assignment",
-      paperclipTaskMarkdownAssignmentCompact: "assignment compact",
-      paperclipTurnContext: { version: 1, events: { owner: "wake_prompt" } },
+      pilibalaWake: { comments: [{ id: "comment-1" }] },
+      pilibalaWakeComment: { id: "comment-1" },
+      pilibalaTaskMarkdown: "historical",
+      pilibalaTaskMarkdownCompact: "historical compact",
+      pilibalaTaskMarkdownAssignment: "assignment",
+      pilibalaTaskMarkdownAssignmentCompact: "assignment compact",
+      pilibalaTurnContext: { version: 1, events: { owner: "wake_prompt" } },
     }, ["comment-2"], ["source-wake"]);
 
     expect(result).toMatchObject({
@@ -154,13 +154,13 @@ describe("withQueuedCommentIdsInRunContext", () => {
       wakeCommentId: "comment-2",
       commentId: "comment-2",
     });
-    expect(result).not.toHaveProperty("paperclipWake");
-    expect(result).not.toHaveProperty("paperclipWakeComment");
-    expect(result).not.toHaveProperty("paperclipTaskMarkdown");
-    expect(result).not.toHaveProperty("paperclipTaskMarkdownCompact");
-    expect(result).not.toHaveProperty("paperclipTaskMarkdownAssignment");
-    expect(result).not.toHaveProperty("paperclipTaskMarkdownAssignmentCompact");
-    expect(result).not.toHaveProperty("paperclipTurnContext");
+    expect(result).not.toHaveProperty("pilibalaWake");
+    expect(result).not.toHaveProperty("pilibalaWakeComment");
+    expect(result).not.toHaveProperty("pilibalaTaskMarkdown");
+    expect(result).not.toHaveProperty("pilibalaTaskMarkdownCompact");
+    expect(result).not.toHaveProperty("pilibalaTaskMarkdownAssignment");
+    expect(result).not.toHaveProperty("pilibalaTaskMarkdownAssignmentCompact");
+    expect(result).not.toHaveProperty("pilibalaTurnContext");
     expect(withQueuedCommentIdsInRunContext(result, ["comment-3"]).queuedCommentSourceWakeIds).toEqual(["source-wake"]);
   });
 });

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import type { Db } from "@paperclipai/db";
-import { agents, agentWakeupRequests, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, projects } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { agents, agentWakeupRequests, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, projects } from "@pilibalaai/db";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
@@ -173,7 +173,7 @@ describe.skipIf(!support.supported)("heartbeat run-control database wiring", () 
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: Db;
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-heartbeat-run-control-module");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-heartbeat-run-control-module");
     db = createDb(database.connectionString);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
   afterAll(async () => {
@@ -204,11 +204,11 @@ describe.skipIf(!support.supported)("heartbeat run-control database wiring", () 
     const runId = randomUUID(), leaseId = randomUUID(), providerLeaseId = randomUUID();
     await db.insert(heartbeatRuns).values({ id: runId, companyId: company.id, agentId: agent.id,
       issueId: issue.id, nativeIssueId: issue.id, runtimeMode: "native", status: "cancelled", finishedAt: new Date(),
-      runnerProfileJson: { nativeWorkspaceSync: { schema: "paperclip.native-workspace-sync/v3", state: "prepared",
+      runnerProfileJson: { nativeWorkspaceSync: { schema: "pilibala.native-workspace-sync/v3", state: "prepared",
         descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
         workspaceId: randomUUID(), leaseId, providerLeaseId, remoteCwd: "/work", resourceDisposition: "destroy" } },
       resultJson: { cancelledByActorType: "user", cancelledByUserId: "operator", nativeCancellation: {
-        schema: "paperclip.native-cancellation.v1", runId, companyId: company.id, issueId: issue.id,
+        schema: "pilibala.native-cancellation.v1", runId, companyId: company.id, issueId: issue.id,
         scope: "run", reasonCode: "cancellation_run_only", dispatchState: "acknowledged", dispatched: true,
         intentAuditId: randomUUID(), acknowledgementAuditId: randomUUID(),
       } },

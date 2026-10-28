@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
 
 export const DAYTONA_IMAGE_CONTENT_SCHEMA =
-  "paperclip-daytona-runner-image-content/v5";
+  "pilibala-daytona-runner-image-content/v5";
 export const DAYTONA_IMAGE_PLATFORM = "linux/amd64";
 export const DAYTONA_IMAGE_DOCKERFILE_PATH = "docker/daytona-runner/Dockerfile";
 
@@ -24,58 +24,58 @@ export const DAYTONA_IMAGE_INPUT_PATHS = [
   "pnpm-workspace.yaml",
   "scripts/link-plugin-dev-sdk.mjs",
   "tsconfig.base.json",
-  "packages/paperclip-eval-kernel/package.json",
-  "packages/paperclip-eval-kernel/src",
-  "packages/paperclip-eval-kernel/tsconfig.json",
-  "packages/paperclip-runner/scripts/provision-grok.mjs",
-  "packages/paperclip-runner/package.json",
-  "packages/paperclip-runner/cursor-distributions.json",
-  "packages/paperclip-runner/cursor-contract.json",
-  "packages/paperclip-runner/protocol",
-  "packages/paperclip-runner/runner/Cargo.lock",
-  "packages/paperclip-runner/runner/Cargo.toml",
-  "packages/paperclip-runner/runner/crates",
-  "packages/paperclip-runner/scripts/acpx-sidecar-contract.mjs",
-  "packages/paperclip-runner/scripts/build-provider-pack.mjs",
-  "packages/paperclip-runner/scripts/provider-pack-executable-shims.mjs",
-  "packages/paperclip-runner/scripts/build-node-startup-timeout.mjs",
-  "packages/paperclip-runner/scripts/candidate-provider-pack.mjs",
-  "packages/paperclip-runner/scripts/build-copilot-distribution.mjs",
-  "packages/paperclip-runner/scripts/materialize-copilot-binary.mjs",
-  "packages/paperclip-runner/scripts/materialize-cursor-distribution.mjs",
-  "packages/paperclip-runner/scripts/cursor-runtime-patch.mjs",
-  "packages/paperclip-runner/scripts/build-verified-provider-entrypoints.mjs",
-  "packages/paperclip-runner/scripts/generate-acpx-sidecar-contract.mjs",
-  "packages/paperclip-runner/scripts/generate-protocol-schema-module.mjs",
-  "packages/paperclip-runner/scripts/materialize-pi-distribution.mjs",
-  "packages/paperclip-runner/scripts/pi-distribution",
-  "packages/paperclip-runner/scripts/cursor-native-usage.mjs",
-  "packages/paperclip-runner/scripts/cursor-native-usage-source.json",
-  "packages/paperclip-runner/scripts/provision-cursor.mjs",
-  "packages/paperclip-runner/cursor-distributions.json",
-  "packages/paperclip-runner/cursor-contract.json",
+  "packages/pilibala-eval-kernel/package.json",
+  "packages/pilibala-eval-kernel/src",
+  "packages/pilibala-eval-kernel/tsconfig.json",
+  "packages/pilibala-runner/scripts/provision-grok.mjs",
+  "packages/pilibala-runner/package.json",
+  "packages/pilibala-runner/cursor-distributions.json",
+  "packages/pilibala-runner/cursor-contract.json",
+  "packages/pilibala-runner/protocol",
+  "packages/pilibala-runner/runner/Cargo.lock",
+  "packages/pilibala-runner/runner/Cargo.toml",
+  "packages/pilibala-runner/runner/crates",
+  "packages/pilibala-runner/scripts/acpx-sidecar-contract.mjs",
+  "packages/pilibala-runner/scripts/build-provider-pack.mjs",
+  "packages/pilibala-runner/scripts/provider-pack-executable-shims.mjs",
+  "packages/pilibala-runner/scripts/build-node-startup-timeout.mjs",
+  "packages/pilibala-runner/scripts/candidate-provider-pack.mjs",
+  "packages/pilibala-runner/scripts/build-copilot-distribution.mjs",
+  "packages/pilibala-runner/scripts/materialize-copilot-binary.mjs",
+  "packages/pilibala-runner/scripts/materialize-cursor-distribution.mjs",
+  "packages/pilibala-runner/scripts/cursor-runtime-patch.mjs",
+  "packages/pilibala-runner/scripts/build-verified-provider-entrypoints.mjs",
+  "packages/pilibala-runner/scripts/generate-acpx-sidecar-contract.mjs",
+  "packages/pilibala-runner/scripts/generate-protocol-schema-module.mjs",
+  "packages/pilibala-runner/scripts/materialize-pi-distribution.mjs",
+  "packages/pilibala-runner/scripts/pi-distribution",
+  "packages/pilibala-runner/scripts/cursor-native-usage.mjs",
+  "packages/pilibala-runner/scripts/cursor-native-usage-source.json",
+  "packages/pilibala-runner/scripts/provision-cursor.mjs",
+  "packages/pilibala-runner/cursor-distributions.json",
+  "packages/pilibala-runner/cursor-contract.json",
   // Pi runtime/extension/Node/closure pins are included by the src tree below.
-  "packages/paperclip-runner/src",
-  "packages/paperclip-runner/styles.css",
-  "packages/paperclip-runner/tsconfig.json",
-  "packages/paperclip-runner/tsconfig.surfaces.json",
+  "packages/pilibala-runner/src",
+  "packages/pilibala-runner/styles.css",
+  "packages/pilibala-runner/tsconfig.json",
+  "packages/pilibala-runner/tsconfig.surfaces.json",
 ] as const;
 
 const ignoredRunnerDevelopmentDirectoryPaths = new Set([
-  "packages/paperclip-runner/devtools",
-  "packages/paperclip-runner/docs",
-  "packages/paperclip-runner/examples",
-  "packages/paperclip-runner/test",
-  "packages/paperclip-runner/test-fixtures",
-  "packages/paperclip-runner/test-support",
+  "packages/pilibala-runner/devtools",
+  "packages/pilibala-runner/docs",
+  "packages/pilibala-runner/examples",
+  "packages/pilibala-runner/test",
+  "packages/pilibala-runner/test-fixtures",
+  "packages/pilibala-runner/test-support",
 ]);
 
 const runnerDocumentationFilePattern = /\.md$/;
 const runnerTestFilePattern = /\.(?:spec|test)\.(?:[cm]?[jt]sx?)$/;
 const runnerRustIntegrationTestPathPattern =
-  /^packages\/paperclip-runner\/runner\/crates\/[^/]+\/tests(?:\/|$)/;
+  /^packages\/pilibala-runner\/runner\/crates\/[^/]+\/tests(?:\/|$)/;
 const runnerSmokeScriptPattern =
-  /^packages\/paperclip-runner\/scripts\/[^/]+-smoke\.mjs$/;
+  /^packages\/pilibala-runner\/scripts\/[^/]+-smoke\.mjs$/;
 
 export interface DaytonaImageContentOptions {
   repositoryRoot?: string;
@@ -83,7 +83,7 @@ export interface DaytonaImageContentOptions {
   platform?: string;
   baseImages?: readonly string[];
   frontendDigest?: string;
-  /** Must match the Docker PAPERCLIP_RUNNER_CANDIDATE_PROVIDERS build argument. */
+  /** Must match the Docker PILIBALA_RUNNER_CANDIDATE_PROVIDERS build argument. */
   candidateProviders?: readonly string[];
 }
 
@@ -109,7 +109,7 @@ function shouldIgnore(relativePath: string): boolean {
 }
 
 function shouldIgnoreRunnerDevelopmentInput(relativePath: string): boolean {
-  if (!relativePath.startsWith("packages/paperclip-runner/")) return false;
+  if (!relativePath.startsWith("packages/pilibala-runner/")) return false;
   if (ignoredRunnerDevelopmentDirectoryPaths.has(relativePath)) return true;
   return (
     runnerDocumentationFilePattern.test(relativePath) ||

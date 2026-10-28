@@ -12,16 +12,16 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatConversations,
   chatPublications,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   SafeChatPublicationPayload,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import { projectSafeChatPublication } from "../../chat-publication-projection.js";
 

@@ -34,7 +34,7 @@ test.describe("Onboarding wizard", () => {
     // resumable draft here so this ordinary browser condition is covered when
     // the company-list invalidation runs after the create request.
     await page.addInitScript(() => {
-      localStorage.setItem("paperclip-onboarding-state", JSON.stringify({
+      localStorage.setItem("pilibala-onboarding-state", JSON.stringify({
         step: 1,
         companyName: "",
         createdCompanyId: null,
@@ -521,7 +521,7 @@ test.describe("Onboarding wizard", () => {
       createdCompanyPrefix: company.issuePrefix,
       createdAgentId: null,
     };
-    const readDraft = () => page.evaluate(() => JSON.parse(localStorage.getItem("paperclip-onboarding-state") ?? "null"));
+    const readDraft = () => page.evaluate(() => JSON.parse(localStorage.getItem("pilibala-onboarding-state") ?? "null"));
     await expect.poll(readDraft).toMatchObject(savedSelection);
     const assertResumedLogin = async () => {
       await expect(page.getByRole("heading", { name: "Connect a model", exact: true })).toBeVisible({ timeout: 15_000 });

@@ -2,14 +2,14 @@
 
 This connection delegates website work to Browser Use's hosted agent through its
 v4 REST API. The task's Browser tab embeds the provider's interactive live viewer.
-The connection's API key stays in Paperclip's vault and is never exported to the
+The connection's API key stays in Pilibala's vault and is never exported to the
 agent, local browser tools, or the board UI.
 
 ## Connect and configure
 
 Choose **Browser Use Cloud** (`browser-use-cloud`) in Apps, select agent access, enter a project API key from
 [Browser Use settings](https://cloud.browser-use.com/settings), and review
-Permissions. No OAuth registration, callback, Paperclip ID, or external connection
+Permissions. No OAuth registration, callback, Pilibala ID, or external connection
 broker is required. Cloud and self-hosted instances use the same server-side path.
 The instance needs outbound HTTPS to `api.browser-use.com`; browsers need access
 to `live.browser-use.com`. An operator-supplied CSP must permit that viewer origin
@@ -21,7 +21,7 @@ and invocation audit remain authoritative. Browser settings on Permissions are
 per credential: the owner (or a shared connection manager) can set a maximum cost per run and explicitly allow
 existing saved profiles. No selected profiles means fresh browsers. Profiles can
 contain authenticated website sessions, so selecting one grants meaningful access.
-Paperclip does not create or import profiles.
+Pilibala does not create or import profiles.
 
 ## Reviewed actions
 
@@ -57,7 +57,7 @@ revoked access means no skill. The run-scoped bundle exposes its short descripti
 for discovery and contains the detailed `SKILL.md` for using this connection.
 Adapters that cannot isolate skill files receive the same authorized instructions
 in their run context. Nothing is added to an agent's saved skill preferences.
-Retired `paperclipai/paperclip/browser-use` selections are stripped from runtime
+Retired `pilibalaai/pilibala/browser-use` selections are stripped from runtime
 overlays; unrelated browser skills keep their own names and behavior.
 The idempotent migration updates pre-release app/connection and financial keys
 to `browser-use-cloud` without replacing credentials, grants, or browser records.
@@ -102,8 +102,8 @@ override a newer fixed selection. A resize failure pauses fitting until a size
 is explicitly selected again. Socket/server restart resets the mode to fitting.
 
 Browser Use's current viewer has a 30-pixel tab strip and 40-pixel navigation bar.
-The Paperclip token `--browser-use-viewer-chrome-height` records that measured
-70-pixel allowance; Paperclip's footer is excluded by observing the iframe itself.
+The Pilibala token `--browser-use-viewer-chrome-height` records that measured
+70-pixel allowance; Pilibala's footer is excluded by observing the iframe itself.
 The provider's published viewer bundle exposes no sizing postMessage contract.
 This keeps navigation available but requires rechecking the allowance if the
 provider changes its chrome; it is not a guaranteed cross-origin measurement.
@@ -139,7 +139,7 @@ comment, log, tool response or artifact.
 Each dispatch uses the minimum of the requested cap, configured grant cap and
 applicable remaining hard company/agent/project budgets. Unconfigured limits do
 not invent a cap. Provider run `totalCostUsd` is recorded through a locked,
-idempotent cumulative checkpoint and feeds normal Paperclip budget enforcement.
+idempotent cumulative checkpoint and feeds normal Pilibala budget enforcement.
 Each positive accounting delta also creates a linked, task-scoped `finance_events`
 row in the same transaction as its `cost_events` row. Reconciliation retries do
 not duplicate either entry. Costs remain available for reporting without appearing
@@ -177,8 +177,8 @@ The live test-drive used a fresh
 database with one company, one agent and one task; it contains no cloned inbox or
 task history. The connection was configured through the normal setup wizard and
 given a $1 per-run limit with fresh browsers. Browser Use completed a real v4 run
-that explored `paperclip.ing`, visited About and returned to the homepage. The
-recorded run cost was $0.01. The completed browser was visible in Paperclip's
+that explored `pilibala.ing`, visited About and returned to the homepage. The
+recorded run cost was $0.01. The completed browser was visible in Pilibala's
 Browser tab, and manual address-bar navigation and Back worked inside the iframe.
 Keep open renewed the idle countdown. The initial blank viewer recovered after a
 page reload; provider results alone were not treated as proof of the viewer.
@@ -231,11 +231,11 @@ Reviewed on 2026-09-29:
   copied as a sanitized local SVG; provenance is in the app brand manifest.
 
 The connector uses v4 directly. It does not mix v3 MCP task/session methods with
-v4 runs, and it does not substitute Paperclip's existing execution agent adapter.
+v4 runs, and it does not substitute Pilibala's existing execution agent adapter.
 
 ## Viewer size and Storybook coverage
 
-The iframe fills the available panel height and width without a Paperclip-imposed
+The iframe fills the available panel height and width without a Pilibala-imposed
 aspect ratio. The provider streams an existing remote viewport, so scaling its
 viewer does not make the website switch responsive breakpoints.
 
@@ -344,7 +344,7 @@ browser** if another live session exists, without starting another paid run.
 On 2026-09-29 the same provider iframe rendered successfully in Chrome, while
 Codex's embedded browser left both the provider and a plain example.com iframe
 at about:blank. After reconnecting to the updated test-drive, the embedded viewer
-also loaded and displayed paperclip.ing. The new-session selection and automatic
+also loaded and displayed pilibala.ing. The new-session selection and automatic
 presence renewal were verified there with the same hosted session; no replacement
 paid run was needed.
 
@@ -355,7 +355,7 @@ renewed the deadline automatically. Closing/reopening the tab selected and rende
 that same session. Proof was captured in the isolated test-drive.
 
 Second hands-on pass reproduced a stale closed tab and a viewer that required
-manual reconnect. A fresh composer request then opened paperclip.ing automatically
+manual reconnect. A fresh composer request then opened pilibala.ing automatically
 and stayed visible after completion, switching tabs and reloading the task. The
 original stalled-navigation cause remains unproven; the bounded automatic retry
 and closed-tab recovery cover those observed failure paths. Recovery was exercised
@@ -377,7 +377,7 @@ and [1Password integration](https://docs.browser-use.com/cloud/guides/1password)
 
 Each paid task includes an opaque invocation marker. The v4 API has no documented
 create idempotency key. If a response is lost or the process stops before saving
-provider identifiers, Paperclip never repeats the paid POST. The reconciler scans
+provider identifiers, Pilibala never repeats the paid POST. The reconciler scans
 the documented run list for that exact marker, with a durable pagination cursor.
 Once found, it cancels the run, discovers and stops its browsers, and records cost.
 A missing list entry is not proof that no work exists: cleanup remains pending

@@ -1,11 +1,11 @@
-import type { AdapterConfigSchema } from "@paperclipai/adapter-utils";
+import type { AdapterConfigSchema } from "@pilibalaai/adapter-utils";
 
 import {
   DEFAULT_ACP_ENGINE_MODE,
   DEFAULT_ACP_ENGINE_NON_INTERACTIVE_PERMISSIONS,
   DEFAULT_ACP_ENGINE_PERMISSION_MODE,
   DEFAULT_ACP_ENGINE_WARM_HANDLE_IDLE_MS,
-} from "@paperclipai/adapter-utils/acpx-engine/constants";
+} from "@pilibalaai/adapter-utils/acpx-engine/constants";
 
 import {
   DEFAULT_GRACE_SEC,
@@ -38,7 +38,7 @@ export function getConfigSchema(): AdapterConfigSchema {
           { value: "cli", label: "Hermes CLI (default)" },
           { value: "acp", label: "ACP (shared engine)" },
         ],
-        hint: "CLI shells out to `hermes chat`. ACP runs Hermes's Agent Client Protocol server through Paperclip's shared ACP engine.",
+        hint: "CLI shells out to `hermes chat`. ACP runs Hermes's Agent Client Protocol server through Pilibala's shared ACP engine.",
       },
       {
         key: "agentCommand",
@@ -75,7 +75,7 @@ export function getConfigSchema(): AdapterConfigSchema {
         key: "stateDir",
         label: "ACP state directory",
         type: "text",
-        hint: "Optional ACP session state directory. Defaults to Paperclip-managed company/agent scoped storage.",
+        hint: "Optional ACP session state directory. Defaults to Pilibala-managed company/agent scoped storage.",
         meta: acpVisible,
       },
       {
@@ -127,7 +127,7 @@ export function getConfigSchema(): AdapterConfigSchema {
         label: "Persist session",
         type: "toggle",
         default: true,
-        hint: "Resume Hermes sessions across Paperclip heartbeats.",
+        hint: "Resume Hermes sessions across Pilibala heartbeats.",
       },
       {
         key: "worktreeMode",
@@ -148,7 +148,7 @@ export function getConfigSchema(): AdapterConfigSchema {
         label: "Quiet output",
         type: "toggle",
         default: true,
-        hint: "Pass Hermes --quiet for cleaner Paperclip run transcripts.",
+        hint: "Pass Hermes --quiet for cleaner Pilibala run transcripts.",
       },
       {
         key: "verbose",
@@ -158,10 +158,10 @@ export function getConfigSchema(): AdapterConfigSchema {
         hint: "Pass Hermes --verbose.",
       },
       {
-        key: "paperclipApiUrl",
-        label: "Paperclip API URL",
+        key: "pilibalaApiUrl",
+        label: "Pilibala API URL",
         type: "text",
-        hint: "Optional API base override. Defaults to PAPERCLIP_API_URL.",
+        hint: "Optional API base override. Defaults to PILIBALA_API_URL.",
       },
       {
         key: "promptTemplate",

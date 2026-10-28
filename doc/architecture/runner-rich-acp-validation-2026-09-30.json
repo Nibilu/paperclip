@@ -1,7 +1,7 @@
 {
-  "schema": "paperclip-runner-rich-acp-validation-checkpoint/v1",
+  "schema": "pilibala-runner-rich-acp-validation-checkpoint/v1",
   "status": "rolling_checkpoint_qualification_pending",
-  "artifactBase": "private artifact set paperclip-rich-acp-production-20260929",
+  "artifactBase": "private artifact set pilibala-rich-acp-production-20260929",
   "sourceRevision": "5605c350b2a4dae75be3779f164d7e1a0e4a5a87",
   "generatedAt": "2026-09-30",
   "includedRootReconciledPaidCells": [
@@ -567,7 +567,7 @@
       "providerPackDigest": "sha256:83702fae11105f5b9ee8f9731b86dc06becb12075f68bdc98dcdfe9f9c842473",
       "providerPackManifestSha256": "bfc3ec392a6c836c5eb9fe51150b9b49fed74c8c092118d39164779118165c5c",
       "daemonSha256": "9a47150d51fa056b4c8ab932a01e480318089a71d107b383a713a9a9ae39877b",
-      "immutableImage": "ghcr.io/paperclipai/paperclip-daytona-runner@sha256:16c8be9c512c28cd9b16fe9ad5331f3fd7b58c42c382d3ebbe5897f658de0bea",
+      "immutableImage": "ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:16c8be9c512c28cd9b16fe9ad5331f3fd7b58c42c382d3ebbe5897f658de0bea",
       "imageDigest": "sha256:16c8be9c512c28cd9b16fe9ad5331f3fd7b58c42c382d3ebbe5897f658de0bea",
       "installedImageId": "sha256:16c8be9c512c28cd9b16fe9ad5331f3fd7b58c42c382d3ebbe5897f658de0bea"
     },
@@ -588,8 +588,8 @@
   "sourceLevelModePersistenceFix": {
     "sourceRevision": "5605c350b2a4dae75be3779f164d7e1a0e4a5a87",
     "testedFiles": {
-      "packages/paperclip-runner/src/drivers/codex/codex-driver-values.ts": "d1d0467ecc34b3e36f67fc9a7eb166094d120fd1a28f15650d7310dd84f71eaa",
-      "packages/paperclip-runner/src/drivers/codex/codex-app-server-driver.recovery.test.ts": "a609f0121ddbcdaf17919dfc20cf5e3937df11fbd9a06fa90483da9086e738b8"
+      "packages/pilibala-runner/src/drivers/codex/codex-driver-values.ts": "d1d0467ecc34b3e36f67fc9a7eb166094d120fd1a28f15650d7310dd84f71eaa",
+      "packages/pilibala-runner/src/drivers/codex/codex-app-server-driver.recovery.test.ts": "a609f0121ddbcdaf17919dfc20cf5e3937df11fbd9a06fa90483da9086e738b8"
     },
     "testFilesPassed": 2,
     "testsPassed": 56,

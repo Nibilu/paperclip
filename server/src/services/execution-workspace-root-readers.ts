@@ -1,5 +1,5 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { agents, heartbeatRuns, issues, projects, executionWorkspaceRepositoryAccess, type Db } from "@paperclipai/db";
+import { agents, heartbeatRuns, issues, projects, executionWorkspaceRepositoryAccess, type Db } from "@pilibalaai/db";
 import { forbidden } from "../errors.js";
 import type { AuthorizationActor } from "./authorization.js";
 import { measureRunPhase } from "./execution-preparation-timing.js";

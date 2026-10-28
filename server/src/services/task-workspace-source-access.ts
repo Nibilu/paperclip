@@ -1,5 +1,5 @@
 import { measureRunPhase } from "./execution-preparation-timing.js";
-import { executionWorkspaces, issues, type Db } from "@paperclipai/db";
+import { executionWorkspaces, issues, type Db } from "@pilibalaai/db";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { forbidden } from "../errors.js";
 import { accessService } from "./access.js";

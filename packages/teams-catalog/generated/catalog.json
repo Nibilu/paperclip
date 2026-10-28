@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "packageName": "@paperclipai/teams-catalog",
+  "packageName": "@pilibalaai/teams-catalog",
   "packageVersion": "0.1.0",
-  "generatedAt": "2026-10-08T10:35:56.448Z",
+  "generatedAt": "2026-10-28T05:26:34.925Z",
   "teams": [
     {
-      "id": "paperclipai:bundled:company-defaults:core-exec-team",
-      "key": "paperclipai/bundled/company-defaults/core-exec-team",
+      "id": "pilibalaai:bundled:company-defaults:core-exec-team",
+      "key": "pilibalaai/bundled/company-defaults/core-exec-team",
       "kind": "bundled",
       "category": "company-defaults",
       "slug": "core-exec-team",
       "name": "Core Exec Team",
-      "description": "Default leadership and engineering team for bootstrapping a Paperclip company with a CEO, CTO, QA Engineer, starter project, and a recurring CEO heartbeat review task.",
+      "description": "Default leadership and engineering team for bootstrapping a Pilibala company with a CEO, CTO, QA Engineer, starter project, and a recurring CEO heartbeat review task.",
       "path": "catalog/bundled/company-defaults/core-exec-team",
       "entrypoint": "TEAM.md",
       "schema": "agentcompanies/v1",
@@ -55,8 +55,8 @@
             "cto"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:software-development:github-pr-workflow",
-          "catalogSkillKey": "paperclipai/bundled/software-development/github-pr-workflow"
+          "catalogSkillId": "pilibalaai:bundled:software-development:github-pr-workflow",
+          "catalogSkillKey": "pilibalaai/bundled/software-development/github-pr-workflow"
         },
         {
           "type": "catalog",
@@ -65,8 +65,8 @@
             "ceo"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:paperclip-operations:issue-triage",
-          "catalogSkillKey": "paperclipai/bundled/paperclip-operations/issue-triage"
+          "catalogSkillId": "pilibalaai:bundled:pilibala-operations:issue-triage",
+          "catalogSkillKey": "pilibalaai/bundled/pilibala-operations/issue-triage"
         },
         {
           "type": "catalog",
@@ -75,8 +75,8 @@
             "qa"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:quality:qa-acceptance",
-          "catalogSkillKey": "paperclipai/bundled/quality/qa-acceptance"
+          "catalogSkillId": "pilibalaai:bundled:quality:qa-acceptance",
+          "catalogSkillKey": "pilibalaai/bundled/quality/qa-acceptance"
         },
         {
           "type": "catalog",
@@ -86,8 +86,8 @@
             "cto"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:paperclip-operations:task-planning",
-          "catalogSkillKey": "paperclipai/bundled/paperclip-operations/task-planning"
+          "catalogSkillId": "pilibalaai:bundled:pilibala-operations:task-planning",
+          "catalogSkillKey": "pilibalaai/bundled/pilibala-operations/task-planning"
         }
       ],
       "envInputs": [],
@@ -96,14 +96,14 @@
         {
           "path": "TEAM.md",
           "kind": "team",
-          "sizeBytes": 2014,
-          "sha256": "e0c38e9af1a5dd1888fb81a72feba75a9ab1be4c78d8ceb658e2e5cd621c5096"
+          "sizeBytes": 2005,
+          "sha256": "15daf56864f10c50c59e36f385615090aa2cd1316b43cbd10147367999d9990d"
         },
         {
           "path": "agents/ceo/AGENTS.md",
           "kind": "agent",
-          "sizeBytes": 263,
-          "sha256": "75848c6f794646a93e23bc73b80d31ef0eb8b83c105423eb98ea29e7685d2fd0"
+          "sizeBytes": 262,
+          "sha256": "97297d6b37d5ba4e6c89e44c6cdb5d418f067e56833b737e67a0f83758e5c08c"
         },
         {
           "path": "agents/cto/AGENTS.md",
@@ -132,11 +132,11 @@
       ],
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
-      "contentHash": "sha256:9d0416ebc0a81585dc51b73efb25decba9e1e3f3741940fc9fca74f3238f344d"
+      "contentHash": "sha256:0650b02e7999bcc56f80119372b8f0adfaab520dd09984ed6da04f93e5b00e69"
     },
     {
-      "id": "paperclipai:bundled:product:product-design",
-      "key": "paperclipai/bundled/product/product-design",
+      "id": "pilibalaai:bundled:product:product-design",
+      "key": "pilibalaai/bundled/product/product-design",
       "kind": "bundled",
       "category": "product",
       "slug": "product-design",
@@ -182,8 +182,8 @@
             "ux-designer"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:optional:product:design-critique",
-          "catalogSkillKey": "paperclipai/optional/product/design-critique"
+          "catalogSkillId": "pilibalaai:optional:product:design-critique",
+          "catalogSkillKey": "pilibalaai/optional/product/design-critique"
         },
         {
           "type": "catalog",
@@ -192,8 +192,8 @@
             "ux-designer"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:paperclip-operations:task-planning",
-          "catalogSkillKey": "paperclipai/bundled/paperclip-operations/task-planning"
+          "catalogSkillId": "pilibalaai:bundled:pilibala-operations:task-planning",
+          "catalogSkillKey": "pilibalaai/bundled/pilibala-operations/task-planning"
         },
         {
           "type": "catalog",
@@ -202,8 +202,8 @@
             "ux-designer"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:product:wireframe",
-          "catalogSkillKey": "paperclipai/bundled/product/wireframe"
+          "catalogSkillId": "pilibalaai:bundled:product:wireframe",
+          "catalogSkillKey": "pilibalaai/bundled/product/wireframe"
         }
       ],
       "envInputs": [],
@@ -212,8 +212,8 @@
         {
           "path": "TEAM.md",
           "kind": "team",
-          "sizeBytes": 2025,
-          "sha256": "f950f4f77a26afa458ca0696994b51353a6bcfac81471fdc00c05f63950fcac5"
+          "sizeBytes": 2019,
+          "sha256": "0212c16cb38fe3926777a98a9a3a648295a5235e40a208a850025f4fc1fe2a0f"
         },
         {
           "path": "agents/ux-designer/AGENTS.md",
@@ -236,11 +236,11 @@
       ],
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
-      "contentHash": "sha256:67b041c3adc20583f844fd2415e1c67859a8342b59e46ec32b038b70b7af0108"
+      "contentHash": "sha256:fe51b05b942bc4ca92d685eed15085418cdd6d606b9b9b789d5b5216b6d7caa0"
     },
     {
-      "id": "paperclipai:bundled:software-development:product-engineering",
-      "key": "paperclipai/bundled/software-development/product-engineering",
+      "id": "pilibalaai:bundled:software-development:product-engineering",
+      "key": "pilibalaai/bundled/software-development/product-engineering",
       "kind": "bundled",
       "category": "software-development",
       "slug": "product-engineering",
@@ -290,8 +290,8 @@
             "senior-coder"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:docs:doc-maintenance",
-          "catalogSkillKey": "paperclipai/bundled/docs/doc-maintenance"
+          "catalogSkillId": "pilibalaai:bundled:docs:doc-maintenance",
+          "catalogSkillKey": "pilibalaai/bundled/docs/doc-maintenance"
         },
         {
           "type": "catalog",
@@ -301,8 +301,8 @@
             "senior-coder"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:software-development:github-pr-workflow",
-          "catalogSkillKey": "paperclipai/bundled/software-development/github-pr-workflow"
+          "catalogSkillId": "pilibalaai:bundled:software-development:github-pr-workflow",
+          "catalogSkillKey": "pilibalaai/bundled/software-development/github-pr-workflow"
         },
         {
           "type": "catalog",
@@ -311,8 +311,8 @@
             "qa"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:quality:qa-acceptance",
-          "catalogSkillKey": "paperclipai/bundled/quality/qa-acceptance"
+          "catalogSkillId": "pilibalaai:bundled:quality:qa-acceptance",
+          "catalogSkillKey": "pilibalaai/bundled/quality/qa-acceptance"
         },
         {
           "type": "catalog",
@@ -321,8 +321,8 @@
             "cto"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:paperclip-operations:task-planning",
-          "catalogSkillKey": "paperclipai/bundled/paperclip-operations/task-planning"
+          "catalogSkillId": "pilibalaai:bundled:pilibala-operations:task-planning",
+          "catalogSkillKey": "pilibalaai/bundled/pilibala-operations/task-planning"
         }
       ],
       "envInputs": [],
@@ -331,14 +331,14 @@
         {
           "path": "TEAM.md",
           "kind": "team",
-          "sizeBytes": 2583,
-          "sha256": "7204eeef78a48714dd3f82b82e171a4039adc6325e91a6bdf51a442105ee33b0"
+          "sizeBytes": 2576,
+          "sha256": "50df1c9febdbf6a2ff01ebe9408f05e736b69e76d8e30dd9972e93fc3c0613ac"
         },
         {
-          "path": ".paperclip.yaml",
+          "path": ".pilibala.yaml",
           "kind": "extension",
-          "sizeBytes": 81,
-          "sha256": "54babf05ba130ec54a143abf01581d99c0ac2936fd0d929bf0e0edd00e29d861"
+          "sizeBytes": 80,
+          "sha256": "b984dba35e21c817e10c1fa1a13972ce8843b93b36e9b847e37620dcc9e6e9cc"
         },
         {
           "path": "agents/cto/AGENTS.md",
@@ -373,11 +373,11 @@
       ],
       "trustLevel": "assets",
       "compatibility": "compatible",
-      "contentHash": "sha256:b9076b17a551b704a97df2e0204cefb83edfda4d36e909889071bb02d251e5ea"
+      "contentHash": "sha256:c181a6cfe4387107320b126e8ee908a23c05baa947c62920f51e0b57620b653e"
     },
     {
-      "id": "paperclipai:optional:communications:speko-company-phone-agent",
-      "key": "paperclipai/optional/communications/speko-company-phone-agent",
+      "id": "pilibalaai:optional:communications:speko-company-phone-agent",
+      "key": "pilibalaai/optional/communications/speko-company-phone-agent",
       "kind": "optional",
       "category": "communications",
       "slug": "speko-company-phone-agent",
@@ -421,35 +421,35 @@
         {
           "path": "TEAM.md",
           "kind": "team",
-          "sizeBytes": 1097,
-          "sha256": "04c89ffaf7d8d778b1e18bae7cbea3c5740c359a61c42a139759eaad443b7f76"
+          "sizeBytes": 1094,
+          "sha256": "0bff3450d5d15483082c320f10abd81aedd2c83036fecee5dcc17d95d0ef0ae0"
         },
         {
           "path": "agents/speko-company-phone-agent/AGENTS.md",
           "kind": "agent",
-          "sizeBytes": 3199,
-          "sha256": "922d60cfae8a469876390b3434a513f0b3eff09c8263b51c3f222d388417ac1d"
+          "sizeBytes": 3195,
+          "sha256": "a88368e21fc03caec114cf3186fb5dd9f6938089dba88fe75140e72bdd7d6e19"
         },
         {
           "path": "LICENSE",
           "kind": "other",
-          "sizeBytes": 1069,
-          "sha256": "7f8a27f0979bded50e240caa8c8c29f3088ddf87032cb83e5a9732bff91d18b4"
+          "sizeBytes": 1068,
+          "sha256": "ba674cc8f3f90d8409996ce529532e87190479e9db32d01a09fbc71e797de1e2"
         },
         {
           "path": "README.md",
           "kind": "readme",
-          "sizeBytes": 1417,
-          "sha256": "445c4b7ec5a201b73123aba1ce5dbb5a52352ed488364eed62a041c30656c7d7"
+          "sizeBytes": 1412,
+          "sha256": "076a35262ac45bcaf3afd126b9c495857d579563b29f8b91157835650e5f5a26"
         }
       ],
       "trustLevel": "assets",
       "compatibility": "compatible",
-      "contentHash": "sha256:e723a036948dcb292382fbcb116c68500c2247b004d0a8d8ef818b6725f91215"
+      "contentHash": "sha256:c179abcdf704fa6e41850a8dc35023a4fc522a457c2562735fee40fabaeea830"
     },
     {
-      "id": "paperclipai:optional:content:content-machine",
-      "key": "paperclipai/optional/content/content-machine",
+      "id": "pilibalaai:optional:content:content-machine",
+      "key": "pilibalaai/optional/content/content-machine",
       "kind": "optional",
       "category": "content",
       "slug": "content-machine",
@@ -503,8 +503,8 @@
         {
           "path": "TEAM.md",
           "kind": "team",
-          "sizeBytes": 1032,
-          "sha256": "f7c272c8b0c183fc840d49eb4851b7cdd1a30a5aa8d6415d215110f3238f6f13"
+          "sizeBytes": 1031,
+          "sha256": "cea32e48e2d2023919b208d8710b36ca37e5b96813f1ce634f7c2a2e4fc4eee8"
         },
         {
           "path": "agents/content-lead/AGENTS.md",
@@ -533,7 +533,7 @@
       ],
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
-      "contentHash": "sha256:06822cec5f2b6910cb37ba0ebd5e04ed5c7e34f77225564ddddc2470779cdaa6"
+      "contentHash": "sha256:a0b01bcdce26df2e262781e7dc7adedc4d4a4b175e3ad0b285036e4781aad48e"
     }
   ]
 }

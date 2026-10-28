@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
-import { assets, agentConfigRevisions, agentTaskSessions, agentRuntimeState, type Db } from "@paperclipai/db";
-import { normalizeAgentUrlKey } from "@paperclipai/shared";
-import { normalizePaperclipRunnerAdapterConfig } from "@paperclipai/adapter-utils/server-utils";
+import { assets, agentConfigRevisions, agentTaskSessions, agentRuntimeState, type Db } from "@pilibalaai/db";
+import { normalizeAgentUrlKey } from "@pilibalaai/shared";
+import { normalizePilibalaRunnerAdapterConfig } from "@pilibalaai/adapter-utils/server-utils";
 import { conflict, notFound, unprocessable } from "../errors.js";
 import { agentRecordQueries, type UpdateAgentOptions, type AgentConfigurationPatch, type AgentConfigurationRecord, isPlainRecord, buildConfigSnapshot,
   hasConfigPatchFields, changedPendingApprovalConfigFields, diffConfigSnapshot } from "../lib/agent-records.js";
@@ -67,7 +67,7 @@ export async function prepareAgentConfiguration(db: Db, existing: AgentConfigura
       normalizedPatch.adapterConfig,
       { adapterType: (normalizedPatch.adapterType ?? existing.adapterType) as string },
     );
-    normalizedPatch.adapterConfig = normalizePaperclipRunnerAdapterConfig(
+    normalizedPatch.adapterConfig = normalizePilibalaRunnerAdapterConfig(
       (normalizedPatch.adapterType ?? existing.adapterType) as string,
       normalizedAdapterConfig,
     );
@@ -75,7 +75,7 @@ export async function prepareAgentConfiguration(db: Db, existing: AgentConfigura
     Object.prototype.hasOwnProperty.call(normalizedPatch, "adapterType")
     && isPlainRecord(existing.adapterConfig)
   ) {
-    normalizedPatch.adapterConfig = normalizePaperclipRunnerAdapterConfig(
+    normalizedPatch.adapterConfig = normalizePilibalaRunnerAdapterConfig(
       normalizedPatch.adapterType as string,
       existing.adapterConfig,
     );
@@ -96,7 +96,7 @@ export async function completeAgentConfiguration(txDb: Db, existing: AgentConfig
   const priorAdapterConfig = isPlainRecord(existing.adapterConfig) ? existing.adapterConfig : {};
   const afterConfig = isPlainRecord(updated.adapterConfig) ? updated.adapterConfig : {};
   const changedExecution = updated.adapterType !== existing.adapterType
-    || (updated.adapterType === "paperclip_runner" && ["provider", "acpxAgent", "model"].some(
+    || (updated.adapterType === "pilibala_runner" && ["provider", "acpxAgent", "model"].some(
       (key) => priorAdapterConfig[key] !== afterConfig[key],
     ));
   if (changedExecution) {

@@ -317,7 +317,7 @@ for (const selection of [
         await request.post(`/api/companies/${f.company.id}/secrets`, {
           data: {
             name: "Deterministic GitHub credential",
-            value: "paperclip-e2e-repository-fixture",
+            value: "pilibala-e2e-repository-fixture",
           },
         }),
       );

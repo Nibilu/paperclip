@@ -11,7 +11,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatActions,
@@ -21,7 +21,7 @@ import {
   chatPublications,
   issueThreadInteractions,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 
 import {
   type ChatSdkCallbackEvent,
@@ -598,7 +598,7 @@ export function createTelegramConfirmationActions(db: Db, options: TelegramConfi
           .onConflictDoNothing();
       }
       // A provider callback can lose the pending -> terminal interaction race
-      // to the Paperclip UI. In that case this transaction only retires the
+      // to the Pilibala UI. In that case this transaction only retires the
       // now-redundant provider action and must not fabricate a second external
       // resolution event attributed to the board winner.
       if (resolvedByThisProviderAction) {

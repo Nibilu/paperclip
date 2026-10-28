@@ -4,15 +4,15 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   agents, companies, createDb, environmentLeases, heartbeatRuns,
   issueComments, issueRecoveryActions, issues,
-} from "@paperclipai/db";
-import type { ExecutionReconciliation } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import type { ExecutionReconciliation } from "@pilibalaai/shared";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { getExecutionBlocker } from "./execution-blocker.js";
 import { markExecutionReconciliation, validateExecutionReconciliation } from "./execution-recovery-resolution.js";
 import { remoteTerminationReceipt } from "./remote-execution-termination.js";
 import { LEGACY_WORKSPACE_RECOVERY_SCHEMA } from "./workspace-restore-recovery-state.js";
 
-const external = process.env.PAPERCLIP_TEST_DATABASE_URL;
+const external = process.env.PILIBALA_TEST_DATABASE_URL;
 const support = external ? { supported: true } : await getEmbeddedPostgresTestSupport();
 (support.supported ? describe : describe.skip)("retained workspace repair admission", () => {
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | undefined;

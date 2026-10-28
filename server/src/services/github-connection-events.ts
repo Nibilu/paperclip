@@ -1,5 +1,5 @@
 import { dispatchGitHubBotCloudEvent } from "./chat-github-cloud-ingress.js";
-import { chatEndpoints } from "@paperclipai/db";
+import { chatEndpoints } from "@pilibalaai/db";
 import { randomUUID } from "node:crypto";
 import {
   connectionEventDeliveries,
@@ -7,7 +7,7 @@ import {
   externalObjects,
   toolConnections,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { and, eq, sql } from "drizzle-orm";
 import {
   logActivity,
@@ -15,11 +15,11 @@ import {
   type ActivityPublication,
 } from "./activity-log.js";
 import {
-  createPaperclipCloudConnector,
-  paperclipCloudConnectorConfigFromEnv,
-  type PaperclipCloudConnector,
+  createPilibalaCloudConnector,
+  pilibalaCloudConnectorConfigFromEnv,
+  type PilibalaCloudConnector,
   type SealedConnectorEvents,
-} from "./paperclip-cloud-connector.js";
+} from "./pilibala-cloud-connector.js";
 import { issueThreadInteractionService } from "./issue-thread-interactions.js";
 import { logger } from "../middleware/logger.js";
 
@@ -212,7 +212,7 @@ function githubSnapshotUpdate(payload: Record<string, unknown>) {
 export function githubConnectionEventService(
   db: Db,
   options: {
-    connector?: PaperclipCloudConnector;
+    connector?: PilibalaCloudConnector;
     env?: NodeJS.ProcessEnv;
     now?: () => Date;
     wakeup?: NonNullable<Parameters<typeof issueThreadInteractionService>[1]>["wakeup"];
@@ -469,8 +469,8 @@ export function githubConnectionEventService(
         nextPollAt = now().getTime() + 5_000;
         return { leased: 0, processed: 0, duplicate: 0, ignored: 0, failed: 0 };
       }
-      const config = options.connector ? null : paperclipCloudConnectorConfigFromEnv(options.env);
-      const connector = options.connector ?? (config ? createPaperclipCloudConnector({ config }) : null);
+      const config = options.connector ? null : pilibalaCloudConnectorConfigFromEnv(options.env);
+      const connector = options.connector ?? (config ? createPilibalaCloudConnector({ config }) : null);
       if (!connector) {
         nextPollAt = now().getTime() + 5 * 60_000;
         return { leased: 0, processed: 0, duplicate: 0, ignored: 0, failed: 0 };

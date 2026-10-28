@@ -30,8 +30,8 @@ function agentResponse() {
 describe("token commands", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    delete process.env.PAPERCLIP_API_KEY;
-    delete process.env.PAPERCLIP_API_URL;
+    delete process.env.PILIBALA_API_KEY;
+    delete process.env.PILIBALA_API_URL;
     vi.useRealTimers();
   });
 

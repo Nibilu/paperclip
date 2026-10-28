@@ -35,7 +35,7 @@ Studio test is separate.
 
 Use skill policy/agent selection in the library or an agent’s Skills tab.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use a harmless skill fixture and test agent with skill support. Record whether the source is local, bundled, project, or remote.
 
@@ -57,7 +57,7 @@ Automated: [policy service](../../server/src/__tests__/company-skill-policy-serv
 
 Manual: Enable the skill for one test agent and leave another without access. Run a small task on each, inspect the available skill context, then change the release/policy and verify the next eligible run uses the intended version.
 
-A Paperclip Runner run with no selected skills must proceed while another run
+A Pilibala Runner run with no selected skills must proceed while another run
 holds the company skill-cache lock. A saved empty selection remains empty after
 later assignments. Selected skills and the legacy operational skill retain cache
 exclusion through version pinning. The [configuration regression](../../server/src/__tests__/heartbeat-execution-configuration.test.ts)

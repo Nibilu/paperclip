@@ -10,8 +10,8 @@ export const PLAN_BUDGET_CENTS = 500;
 export const PLAN_MAX_RUNS = 8;
 export const PLAN_BASE_SHA = "72ff3a9f27e581a27acb49771e8658bbb0bbaa47";
 export const PLAN_SKILLS = [
-  { key: "paperclipai/paperclip/paperclip-converting-plans-to-tasks", current: "tests/runner-e2e/fixtures/plan-task-guidance/current-conversion.md", short: "skills/paperclip-converting-plans-to-tasks/SKILL.md" },
-  { key: "paperclipai/bundled/paperclip-operations/task-planning", current: "tests/runner-e2e/fixtures/plan-task-guidance/current-planning.md", short: "packages/skills-catalog/catalog/bundled/paperclip-operations/task-planning/SKILL.md" },
+  { key: "pilibalaai/pilibala/pilibala-converting-plans-to-tasks", current: "tests/runner-e2e/fixtures/plan-task-guidance/current-conversion.md", short: "skills/pilibala-converting-plans-to-tasks/SKILL.md" },
+  { key: "pilibalaai/bundled/pilibala-operations/task-planning", current: "tests/runner-e2e/fixtures/plan-task-guidance/current-planning.md", short: "packages/skills-catalog/catalog/bundled/pilibala-operations/task-planning/SKILL.md" },
 ] as const;
 export const planHash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 export const planDefinitionDigest = planHash([

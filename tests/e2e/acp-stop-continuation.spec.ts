@@ -12,7 +12,7 @@ async function json(response: APIResponse) {
 for (const { unfinishedWrite, stopResponse } of [{ unfinishedWrite: false, stopResponse: false }, { unfinishedWrite: true, stopResponse: false }, { unfinishedWrite: false, stopResponse: true }]) {
   test(`embedded ACP Stop: ${unfinishedWrite ? "Interrupt continues without replaying the write" : stopResponse ? "composer Stop preserves queued input and accepts a new direction" : "Interrupt delivers queued input in the same session"}`, async ({ page, request }) => {
     test.setTimeout(120_000);
-    const root = await mkdtemp(path.join(os.tmpdir(), "paperclip-stop-browser-"));
+    const root = await mkdtemp(path.join(os.tmpdir(), "pilibala-stop-browser-"));
     const company = await json(await request.post("/api/companies", { data: { name: `ACP Stop ${Date.now()}` } }));
     const originalSettings = await json(await request.get("/api/instance/settings/experimental"));
     try {
@@ -22,7 +22,7 @@ for (const { unfinishedWrite, stopResponse } of [{ unfinishedWrite: false, stopR
         adapterConfig: { engine: "acp", cwd: root, stateDir: path.join(root, "state"),
           agentCommand: `${JSON.stringify(process.execPath)} ${JSON.stringify(path.resolve("scripts/mcp-fixtures/servers/acp-stop-agent.mjs"))}`,
           // The ACP fixture has no provider login. Use a fixture key to keep setup offline.
-          env: { ANTHROPIC_API_KEY: "acp-stop-fixture-key", PAPERCLIP_STOP_FIXTURE_ROOT: root, PAPERCLIP_STOP_FIXTURE_FINISH_TASK: "1", ...(unfinishedWrite ? { PAPERCLIP_STOP_FIXTURE_TOOL: "write" } : {}) },
+          env: { ANTHROPIC_API_KEY: "acp-stop-fixture-key", PILIBALA_STOP_FIXTURE_ROOT: root, PILIBALA_STOP_FIXTURE_FINISH_TASK: "1", ...(unfinishedWrite ? { PILIBALA_STOP_FIXTURE_TOOL: "write" } : {}) },
         }, runtimeConfig: { heartbeat: { enabled: false, wakeOnDemand: true } },
       } }));
       await expect.poll(async () => (await json(await request.get(`/api/agents/${owner.id}`))).lifecycleState,

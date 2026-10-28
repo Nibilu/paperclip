@@ -1,0 +1,14 @@
+{
+  "name": "pilibala",
+  "version": "0.1.0",
+  "description": "Review your team, delegate work and retrieve durable results in Pilibala.",
+  "author": {
+    "name": "Pilibala",
+    "url": "https://pilibala.ing"
+  },
+  "homepage": "https://pilibala.ing",
+  "repository": "https://github.com/pilibalaai/pilibala",
+  "license": "MIT",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

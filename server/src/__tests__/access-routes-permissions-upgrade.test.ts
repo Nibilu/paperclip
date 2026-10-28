@@ -14,17 +14,17 @@ import {
   principalPermissionGrants,
   toolApplications,
   toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
 
 vi.hoisted(() => {
-  process.env.PAPERCLIP_HOME = "/tmp/paperclip-test-home";
-  process.env.PAPERCLIP_INSTANCE_ID = "vitest";
-  process.env.PAPERCLIP_LOG_DIR = "/tmp/paperclip-test-home/logs";
-  process.env.PAPERCLIP_IN_WORKTREE = "false";
+  process.env.PILIBALA_HOME = "/tmp/pilibala-test-home";
+  process.env.PILIBALA_INSTANCE_ID = "vitest";
+  process.env.PILIBALA_LOG_DIR = "/tmp/pilibala-test-home/logs";
+  process.env.PILIBALA_IN_WORKTREE = "false";
 });
 
 const embeddedPostgresSupport = await getEmbeddedPostgresTestSupport();
@@ -33,8 +33,8 @@ const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : 
 type Db = ReturnType<typeof createDb>;
 
 async function createApp(db: Db, companyId: string, userId: string) {
-  process.env.PAPERCLIP_LOG_DIR = "/tmp/paperclip-test-home/logs";
-  process.env.PAPERCLIP_IN_WORKTREE = "false";
+  process.env.PILIBALA_LOG_DIR = "/tmp/pilibala-test-home/logs";
+  process.env.PILIBALA_IN_WORKTREE = "false";
   const { accessRoutes } = await import("../routes/access.js");
   const app = express();
   app.use(express.json());
@@ -95,7 +95,7 @@ describeEmbeddedPostgres("access routes permissions upgrade compatibility", () =
   }, 30_000);
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-access-routes-permissions-upgrade-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-access-routes-permissions-upgrade-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 

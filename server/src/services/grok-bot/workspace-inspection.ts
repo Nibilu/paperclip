@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
-import { dotRunnerAssignments, environmentLeases, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { dotRunnerAssignments, environmentLeases, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { authorizeExternalBotOperator } from "../external-bot-authority.js";
 import { logActivity } from "../activity-log.js";
 import { McpOAuthError } from "../public-mcp/oauth.js";
@@ -15,7 +15,7 @@ export async function grokWorkspaceInspectionCandidates(db: Db, companyId: strin
     eq(heartbeatRuns.companyId, companyId), eq(heartbeatRuns.agentId, agentId),
     eq(heartbeatRuns.driverKind, "grok_bot_mcp"), isNotNull(heartbeatRuns.finishedAt),
     inArray(heartbeatRuns.status, ["cancelled", "failed", "timed_out", "interrupted"]),
-    sql`${heartbeatRuns.resultJson}->'workspaceRestoreRecovery'->>'schema' = 'paperclip.workspace-restore-recovery.v1'`,
+    sql`${heartbeatRuns.resultJson}->'workspaceRestoreRecovery'->>'schema' = 'pilibala.workspace-restore-recovery.v1'`,
   ));
   return runs.filter(run => nativeRunHasNoWorkspaceAccess(run) && hasRequiredWorkspaceRecovery(run.resultJson));
 }
@@ -64,7 +64,7 @@ export async function inspectGrokWorkspaceObligations(db: Db, companyId: string,
         or(sql`${issueRecoveryActions.evidence}->>'runId' = ${run.id}`,
           sql`${issueRecoveryActions.evidence}->>'sourceRunId' = ${run.id}`),
       )).for("update");
-      const inspection = { schema: "paperclip.grok-workspace-inspection.v1", runId: run.id,
+      const inspection = { schema: "pilibala.grok-workspace-inspection.v1", runId: run.id,
         inspectedBy: operatorId, inspectedAt: new Date().toISOString(), workspaceAccess: "none",
         remoteTerminationConfirmed: false, runnerLeaseIds: leases.map(lease => lease.id),
         previousWorkspaceRestoreFailure: run.resultJson?.workspaceRestoreFailure,

@@ -16,7 +16,7 @@ import { errorHandler } from "../../../middleware/error-handler.js";
 import { createLifecycleDriver } from "../../../services/agent-lifecycle-driver.js";
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
-import { agents, approvals, projects, issues, heartbeatRuns, nativeRunFinalizations, budgetPolicies, environmentLeases, agentApiKeys, activityLog, agentConfigRevisions, userCompanyPreferences, companies, companyMemberships, principalPermissionGrants, plugins, pluginCompanySettings, createDb, type Db } from "@paperclipai/db";
+import { agents, approvals, projects, issues, heartbeatRuns, nativeRunFinalizations, budgetPolicies, environmentLeases, agentApiKeys, activityLog, agentConfigRevisions, userCompanyPreferences, companies, companyMemberships, principalPermissionGrants, plugins, pluginCompanySettings, createDb, type Db } from "@pilibalaai/db";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../../__tests__/helpers/embedded-postgres.js";
 import { createAgentLifecycle, configureAgentLifecycle } from "../../../services/agent-lifecycle.js";
@@ -33,7 +33,7 @@ const support = await getEmbeddedPostgresTestSupport();
   let db: Db;
   let companyId: string;
   const workers: ReturnType<typeof configureAgentLifecycle>[] = [];
-  beforeAll(async () => { database = await startEmbeddedPostgresTestDatabase("paperclip-agent-lifecycle-"); db = createDb(database.connectionString); }, 90_000);
+  beforeAll(async () => { database = await startEmbeddedPostgresTestDatabase("pilibala-agent-lifecycle-"); db = createDb(database.connectionString); }, 90_000);
   afterAll(async () => { for (const worker of workers) await worker.stop(); await database?.cleanup(); });
   beforeEach(async () => {
     for (const work of workers) await work.stop();
@@ -522,8 +522,8 @@ const support = await getEmbeddedPostgresTestSupport();
       manifestJson: { agentLifecycle: true, capabilities: ["agents.lifecycle.manage"] } as never });
     let resourcesReady = false;
     let resourcesRemoved = false;
-    const requests: import("@paperclipai/shared").AgentLifecycleRequest[] = [];
-    const call = async (id: string, method: string, input: import("@paperclipai/shared").AgentLifecycleRequest) => {
+    const requests: import("@pilibalaai/shared").AgentLifecycleRequest[] = [];
+    const call = async (id: string, method: string, input: import("@pilibalaai/shared").AgentLifecycleRequest) => {
       expect(id).toBe(pluginId);
       expect(method).toBe("agentLifecycle");
       expect(input.companyId).toBe(companyId);

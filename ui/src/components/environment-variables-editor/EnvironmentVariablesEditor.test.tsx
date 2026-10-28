@@ -4,7 +4,7 @@ import { useState } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CompanySecret, EnvBinding } from "@paperclipai/shared";
+import type { CompanySecret, EnvBinding } from "@pilibalaai/shared";
 import { EnvironmentVariablesEditor } from "./index";
 import { SecretPicker } from "./SecretPicker";
 
@@ -44,7 +44,7 @@ function makeSecret(id: string, overrides: Partial<CompanySecret> = {}): Company
     name: id.toUpperCase(),
     provider: "local_encrypted",
     status: "active",
-    managedMode: "paperclip_managed",
+    managedMode: "pilibala_managed",
     externalRef: null,
     providerConfigId: null,
     providerMetadata: null,
@@ -165,7 +165,7 @@ describe("EnvironmentVariablesEditor", () => {
 
   it("keeps long secret names clear of the latest version control", () => {
     const longSecret = makeSecret("long", {
-      name: "/paperclip-cloud/prod/provider/resend/api-key-with-a-very-long-name",
+      name: "/pilibala-cloud/prod/provider/resend/api-key-with-a-very-long-name",
       latestVersion: 4,
     });
 
@@ -567,7 +567,7 @@ describe("EnvironmentVariablesEditor", () => {
   it("renders name warnings as a row spanning the name and value columns", () => {
     render(
       <EnvironmentVariablesEditor
-        value={{ PAPERCLIP_PAGE_BASE_URL: { type: "plain", value: "https://pages.paperclip.ing" } }}
+        value={{ PILIBALA_PAGE_BASE_URL: { type: "plain", value: "https://pages.pilibala.ing" } }}
         secrets={secrets}
         onChange={() => {}}
         onCreateSecret={async () => secrets[0]}
@@ -837,8 +837,8 @@ describe("EnvironmentVariablesEditor", () => {
   });
 
   it("lets slash-delimited secrets be browsed by folder and exposes full paths on hover", async () => {
-    const cloudProviderKey = "/paperclip-cloud/prod/provider/aws-access-key-id";
-    const cloudMigrationKey = "/paperclip-cloud/prod/migration/postgres-url";
+    const cloudProviderKey = "/pilibala-cloud/prod/provider/aws-access-key-id";
+    const cloudMigrationKey = "/pilibala-cloud/prod/migration/postgres-url";
     const onSelect = vi.fn();
     render(
       <SecretPicker
@@ -846,7 +846,7 @@ describe("EnvironmentVariablesEditor", () => {
         secrets={[
           makeSecret("provider-key", { name: cloudProviderKey, key: cloudProviderKey }),
           makeSecret("migration-key", { name: cloudMigrationKey, key: cloudMigrationKey }),
-          makeSecret("plain-key", { name: "paperclip-page-aws-access-key-id", key: "paperclip-page-aws-access-key-id" }),
+          makeSecret("plain-key", { name: "pilibala-page-aws-access-key-id", key: "pilibala-page-aws-access-key-id" }),
         ]}
         onSelect={onSelect}
         onCreateNew={() => {}}
@@ -864,19 +864,19 @@ describe("EnvironmentVariablesEditor", () => {
       );
     const rowTitle = (item: HTMLElement | undefined) => item?.querySelector<HTMLElement>("[title]")?.getAttribute("title");
 
-    expect(rowTitle(itemByText("paperclip-cloud"))).toBe("/paperclip-cloud");
-    expect(rowTitle(itemByText("paperclip-page-aws-access-key-id"))).toBe(
-      "paperclip-page-aws-access-key-id",
+    expect(rowTitle(itemByText("pilibala-cloud"))).toBe("/pilibala-cloud");
+    expect(rowTitle(itemByText("pilibala-page-aws-access-key-id"))).toBe(
+      "pilibala-page-aws-access-key-id",
     );
 
-    itemByText("paperclip-cloud")!.click();
+    itemByText("pilibala-cloud")!.click();
     await flush();
-    expect(rowTitle(itemByText("prod"))).toBe("/paperclip-cloud/prod");
+    expect(rowTitle(itemByText("prod"))).toBe("/pilibala-cloud/prod");
 
     itemByText("prod")!.click();
     await flush();
-    expect(rowTitle(itemByText("provider"))).toBe("/paperclip-cloud/prod/provider");
-    expect(rowTitle(itemByText("migration"))).toBe("/paperclip-cloud/prod/migration");
+    expect(rowTitle(itemByText("provider"))).toBe("/pilibala-cloud/prod/provider");
+    expect(rowTitle(itemByText("migration"))).toBe("/pilibala-cloud/prod/migration");
 
     itemByText("provider")!.click();
     await flush();
@@ -889,14 +889,14 @@ describe("EnvironmentVariablesEditor", () => {
   });
 
   it("keeps secret search global while browsing starts at slash folders", async () => {
-    const cloudMigrationKey = "/paperclip-cloud/prod/migration/postgres-url";
+    const cloudMigrationKey = "/pilibala-cloud/prod/migration/postgres-url";
     render(
       <SecretPicker
         secretId=""
         secrets={[
           makeSecret("provider-key", {
-            name: "/paperclip-cloud/prod/provider/aws-access-key-id",
-            key: "/paperclip-cloud/prod/provider/aws-access-key-id",
+            name: "/pilibala-cloud/prod/provider/aws-access-key-id",
+            key: "/pilibala-cloud/prod/provider/aws-access-key-id",
           }),
           makeSecret("migration-key", { name: cloudMigrationKey, key: cloudMigrationKey }),
         ]}
@@ -909,7 +909,7 @@ describe("EnvironmentVariablesEditor", () => {
     const combobox = container.querySelector<HTMLElement>('[role="combobox"]')!;
     combobox.focus();
     await flush();
-    expect(document.body.textContent).toContain("paperclip-cloud");
+    expect(document.body.textContent).toContain("pilibala-cloud");
     expect(document.body.textContent).not.toContain("postgres-url");
 
     const search = document.querySelector<HTMLInputElement>('input[placeholder="Search secrets…"]')!;

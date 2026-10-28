@@ -4,7 +4,7 @@ import { dismissAutomaticCompletionReviews, decisionHasRetiredAutomaticReview } 
 import { logger } from "../../middleware/logger.js";
 import { createHash, randomUUID } from "node:crypto";
 import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, lt, lte, ne, not, notInArray, or, sql, type SQL } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   completionContracts,
   agents,
@@ -18,7 +18,7 @@ import {
   statusDecisions,
   workAssessments,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   finalizeNativeRun,
   pendingNativeGovernance,

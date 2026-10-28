@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
-import { agents, companies, environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import { parseNativeExecutionInput, type NativeExecutionInput, type PersistedNativeSession } from "../../vendor/paperclip-runner/index.js";
+import { agents, companies, environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import { parseNativeExecutionInput, type NativeExecutionInput, type PersistedNativeSession } from "../../vendor/pilibala-runner/index.js";
 import { currentNativeControllerIdentity, evaluateNativeControllerTakeover } from "./native-restart-recovery.js";
 
 export type RemoteWarmSessionRecovery = {

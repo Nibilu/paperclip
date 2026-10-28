@@ -1,4 +1,4 @@
-import type { heartbeatRuns, issues } from "@paperclipai/db";
+import type { heartbeatRuns, issues } from "@pilibalaai/db";
 
 /**
  * This claim must be settled by queue-first recovery, not generic terminal-lock

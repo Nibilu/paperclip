@@ -16,17 +16,17 @@ describe("runner E2E Daytona image contract", () => {
   it("keeps the qualified native Grok binary separate from the legacy command", async () => {
     const [dockerfile, packBuilder, runnerPackage] = await Promise.all([
       readFile(path.join(repositoryRoot, "docker/daytona-runner/Dockerfile"), "utf8"),
-      readFile(path.join(repositoryRoot, "packages/paperclip-runner/scripts/build-provider-pack.mjs"), "utf8"),
-      readFile(path.join(repositoryRoot, "packages/paperclip-runner/package.json"), "utf8"),
+      readFile(path.join(repositoryRoot, "packages/pilibala-runner/scripts/build-provider-pack.mjs"), "utf8"),
+      readFile(path.join(repositoryRoot, "packages/pilibala-runner/package.json"), "utf8"),
     ]);
     expect(dockerfile).toMatch(/@xai-official\/grok@\d+\.\d+\.\d+/);
     expect(dockerfile).not.toMatch(/for cli in[^;]*\bgrok\b/);
     expect(packBuilder).not.toMatch(/writePortable\w+Shim\("grok"/);
-    expect(JSON.parse(runnerPackage).dependencies).not.toHaveProperty("@paperclipai/grok-acp");
+    expect(JSON.parse(runnerPackage).dependencies).not.toHaveProperty("@pilibalaai/grok-acp");
     expect(packBuilder).toContain('path: "dist/providers/grok/launcher.cjs"');
     expect(dockerfile).toContain("scripts/provision-grok.mjs");
-    expect(dockerfile).toContain("/opt/paperclip/providers/grok/1.0.13/grok");
-    expect(DAYTONA_IMAGE_INPUT_PATHS).toContain("packages/paperclip-runner/scripts/provision-grok.mjs");
+    expect(dockerfile).toContain("/opt/pilibala/providers/grok/1.0.13/grok");
+    expect(DAYTONA_IMAGE_INPUT_PATHS).toContain("packages/pilibala-runner/scripts/provision-grok.mjs");
     expect(DAYTONA_IMAGE_INPUT_PATHS).not.toContain("packages/grok-acp/package.json");
   });
 
@@ -48,22 +48,22 @@ describe("runner E2E Daytona image contract", () => {
     const normalizedDockerfile = dockerfile.replace(/\\\r?\n\s*/g, " ");
     const daytonaImageJob = workflow.match(/^  daytona_image:\n[\s\S]*?(?=^  \w+:)/m)?.[0];
     expect(daytonaImageJob).toBeDefined();
-    expect(dockerfile).toContain("--bin paperclip-runnerd");
+    expect(dockerfile).toContain("--bin pilibala-runnerd");
     expect(dockerfile).toContain("build-provider-pack.mjs /provider-pack");
     expect(normalizedDockerfile).not.toContain(
-      "COPY packages/paperclip-eval-kernel ./packages/paperclip-eval-kernel",
+      "COPY packages/pilibala-eval-kernel ./packages/pilibala-eval-kernel",
     );
     expect(normalizedDockerfile).not.toContain(
-      "COPY packages/paperclip-runner ./packages/paperclip-runner",
+      "COPY packages/pilibala-runner ./packages/pilibala-runner",
     );
     expect(dockerfile).toContain(
       "COPY packages ./packages",
     );
     expect(dockerfile).toContain(
-      "/opt/paperclip-runner/provider-pack/provider-pack.json",
+      "/opt/pilibala-runner/provider-pack/provider-pack.json",
     );
     expect(dockerfile).toContain(
-      "${PAPERCLIP_RUNNER_PROVIDER_PACK_ROOT}/node_modules/.bin",
+      "${PILIBALA_RUNNER_PROVIDER_PACK_ROOT}/node_modules/.bin",
     );
     for (const command of ["acpx", "claude-agent-acp", "codex-acp"]) {
       expect(dockerfile).toContain(command);
@@ -72,10 +72,10 @@ describe("runner E2E Daytona image contract", () => {
       expect(dockerfile).toContain(transport);
     }
     expect(dockerfile).toContain(
-      'metadata="$(paperclip-runnerd --build-metadata)"',
+      'metadata="$(pilibala-runnerd --build-metadata)"',
     );
     expect(dockerfile).toContain("provider-pack.json");
-    expect(dockerfile).toContain("io.paperclip.runner.content-id");
+    expect(dockerfile).toContain("io.pilibala.runner.content-id");
     expect(dockerfile).toContain("org.opencontainers.image.revision");
     expect(extractDaytonaDockerfileFrontendDigest(dockerfile)).toBe(
       "sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e",
@@ -86,27 +86,27 @@ describe("runner E2E Daytona image contract", () => {
       "daytonaio/sandbox:0.8.0@sha256:eadf88e4391072b7ad4bed27d9cadfc9fe9d8ed375d9219d34c2ccb518f213e3",
     ]);
     expect(dockerignore).toContain("**/node_modules");
-    expect(dockerignore).toContain("packages/paperclip-runner/dist");
-    expect(dockerignore).toContain("packages/paperclip-runner/runner/target");
-    expect(await readFile(path.join(repositoryRoot, ".github/docker-context-checks.Dockerfile"), "utf8")).toContain("node packages/paperclip-runner/scripts/generate-acpx-profiles.mjs --check");
+    expect(dockerignore).toContain("packages/pilibala-runner/dist");
+    expect(dockerignore).toContain("packages/pilibala-runner/runner/target");
+    expect(await readFile(path.join(repositoryRoot, ".github/docker-context-checks.Dockerfile"), "utf8")).toContain("node packages/pilibala-runner/scripts/generate-acpx-profiles.mjs --check");
     for (const declaration of [
       "test-fixtures/pi-acp/profile-v19-identity.json",
       "test/fixtures/copilot-profile-v16-identity.json",
     ]) {
-      expect(dockerignore).toContain(`!packages/paperclip-runner/${declaration}`);
-      await expect(readFile(path.join(repositoryRoot, "packages/paperclip-runner", declaration), "utf8")).resolves.toBeTruthy();
+      expect(dockerignore).toContain(`!packages/pilibala-runner/${declaration}`);
+      await expect(readFile(path.join(repositoryRoot, "packages/pilibala-runner", declaration), "utf8")).resolves.toBeTruthy();
     }
     for (const developmentOnlyInput of [
-      "packages/paperclip-runner/devtools",
-      "packages/paperclip-runner/docs",
-      "packages/paperclip-runner/examples",
-      "packages/paperclip-runner/test",
-      "packages/paperclip-runner/test-fixtures",
-      "packages/paperclip-runner/test-support",
-      "packages/paperclip-runner/**/*.md",
-      "packages/paperclip-runner/**/*.test.ts",
-      "packages/paperclip-runner/runner/crates/*/tests",
-      "packages/paperclip-runner/scripts/*-smoke.mjs",
+      "packages/pilibala-runner/devtools",
+      "packages/pilibala-runner/docs",
+      "packages/pilibala-runner/examples",
+      "packages/pilibala-runner/test",
+      "packages/pilibala-runner/test-fixtures",
+      "packages/pilibala-runner/test-support",
+      "packages/pilibala-runner/**/*.md",
+      "packages/pilibala-runner/**/*.test.ts",
+      "packages/pilibala-runner/runner/crates/*/tests",
+      "packages/pilibala-runner/scripts/*-smoke.mjs",
     ]) {
       expect(dockerignore).toContain(developmentOnlyInput);
     }
@@ -118,7 +118,7 @@ describe("runner E2E Daytona image contract", () => {
       "e2e-content-${{ needs.catalog.outputs.daytona_image_content_id }}",
     );
     expect(workflow).toContain(
-      '--build-arg "PAPERCLIP_RUNNER_CONTENT_ID=${IMAGE_CONTENT_ID}"',
+      '--build-arg "PILIBALA_RUNNER_CONTENT_ID=${IMAGE_CONTENT_ID}"',
     );
     expect(daytonaImageJob).toContain(
       "TARGET_LOCK_SHA256: ${{ needs.target_lock.outputs.lock_sha256 }}",
@@ -127,17 +127,17 @@ describe("runner E2E Daytona image contract", () => {
       '[[ "$TARGET_LOCK_SHA256" =~ ^[0-9a-f]{64}$ ]]',
     );
     expect(daytonaImageJob).toContain(
-      '--build-arg "PAPERCLIP_RUNNER_LOCK_SHA256=${TARGET_LOCK_SHA256}"',
+      '--build-arg "PILIBALA_RUNNER_LOCK_SHA256=${TARGET_LOCK_SHA256}"',
     );
     expect(
       daytonaImageJob!.indexOf('[[ "$TARGET_LOCK_SHA256" =~ ^[0-9a-f]{64}$ ]]'),
     ).toBeLessThan(
       daytonaImageJob!.indexOf(
-        '--build-arg "PAPERCLIP_RUNNER_LOCK_SHA256=${TARGET_LOCK_SHA256}"',
+        '--build-arg "PILIBALA_RUNNER_LOCK_SHA256=${TARGET_LOCK_SHA256}"',
       ),
     );
     expect(workflow).toContain(
-      "IMAGE_CACHE: ghcr.io/paperclipai/paperclip-daytona-runner:e2e-buildcache-amd64",
+      "IMAGE_CACHE: ghcr.io/pilibalaai/pilibala-daytona-runner:e2e-buildcache-amd64",
     );
     expect(workflow).toContain(
       '--cache-from "type=registry,ref=${IMAGE_CACHE}"',
@@ -162,15 +162,15 @@ describe("runner E2E Daytona image contract", () => {
     expect(workflow).toContain('.architecture == "amd64"');
     expect(workflow).toContain('.os == "linux"');
     expect(workflow).toContain('.config.User == "daytona"');
-    expect(workflow).toContain("PAPERCLIP_RUNNER_PROVIDER_PACK_ROOT=");
+    expect(workflow).toContain("PILIBALA_RUNNER_PROVIDER_PACK_ROOT=");
     expect(workflow).toContain(
-      "node packages/paperclip-runner/scripts/build-provider-pack.mjs packages/paperclip-runner/provider-pack",
+      "node packages/pilibala-runner/scripts/build-provider-pack.mjs packages/pilibala-runner/provider-pack",
     );
     expect(workflow).toContain(
-      "PAPERCLIP_RUNNER_REMOTE_PROVIDER_PACK_PATH: ${{ github.workspace }}/packages/paperclip-runner/provider-pack",
+      "PILIBALA_RUNNER_REMOTE_PROVIDER_PACK_PATH: ${{ github.workspace }}/packages/pilibala-runner/provider-pack",
     );
     expect(workflow).toContain(
-      "PAPERCLIP_RUNNER_SOURCE_REVISION: ${{ needs.daytona_image.outputs.source_revision }}",
+      "PILIBALA_RUNNER_SOURCE_REVISION: ${{ needs.daytona_image.outputs.source_revision }}",
     );
     expect(workflow.indexOf("cosign verify")).toBeLessThan(
       workflow.indexOf("docker logout ghcr.io"),
@@ -179,17 +179,17 @@ describe("runner E2E Daytona image contract", () => {
       workflow.indexOf(`--format '{{json .Image}}'`),
     );
     const providerInstall = dockerfile.indexOf(
-      "pnpm install --frozen-lockfile --filter '@paperclipai/paperclip-runner...'",
+      "pnpm install --frozen-lockfile --filter '@pilibalaai/pilibala-runner...'",
     );
     const runnerSourceCopy = dockerfile.indexOf(
       "COPY packages ./packages",
     );
     const providerRevisionArg = dockerfile.indexOf(
-      "ARG PAPERCLIP_RUNNER_SOURCE_REVISION",
+      "ARG PILIBALA_RUNNER_SOURCE_REVISION",
     );
     const cliInstall = dockerfile.indexOf("npm install -g");
     const finalMetadataArgs = dockerfile.lastIndexOf(
-      "ARG PAPERCLIP_RUNNER_CONTENT_ID",
+      "ARG PILIBALA_RUNNER_CONTENT_ID",
     );
     expect(providerInstall).toBeGreaterThan(0);
     expect(runnerSourceCopy).toBeGreaterThan(0);
@@ -205,26 +205,26 @@ describe("runner E2E Daytona image contract", () => {
       "docker/daytona-runner/Dockerfile",
       "pnpm-lock.yaml",
       "patches",
-      "packages/paperclip-eval-kernel/src",
-      "packages/paperclip-runner/package.json",
-      "packages/paperclip-runner/scripts/candidate-provider-pack.mjs",
-      "packages/paperclip-runner/scripts/build-copilot-distribution.mjs",
-      "packages/paperclip-runner/scripts/materialize-copilot-binary.mjs",
-      "packages/paperclip-runner/scripts/materialize-cursor-distribution.mjs",
-      "packages/paperclip-runner/scripts/cursor-runtime-patch.mjs",
-      "packages/paperclip-runner/cursor-distributions.json",
-      "packages/paperclip-runner/runner/crates",
-      "packages/paperclip-runner/scripts/materialize-pi-distribution.mjs",
-      "packages/paperclip-runner/scripts/pi-distribution",
-      "packages/paperclip-runner/src",
+      "packages/pilibala-eval-kernel/src",
+      "packages/pilibala-runner/package.json",
+      "packages/pilibala-runner/scripts/candidate-provider-pack.mjs",
+      "packages/pilibala-runner/scripts/build-copilot-distribution.mjs",
+      "packages/pilibala-runner/scripts/materialize-copilot-binary.mjs",
+      "packages/pilibala-runner/scripts/materialize-cursor-distribution.mjs",
+      "packages/pilibala-runner/scripts/cursor-runtime-patch.mjs",
+      "packages/pilibala-runner/cursor-distributions.json",
+      "packages/pilibala-runner/runner/crates",
+      "packages/pilibala-runner/scripts/materialize-pi-distribution.mjs",
+      "packages/pilibala-runner/scripts/pi-distribution",
+      "packages/pilibala-runner/src",
     ]) {
       expect(DAYTONA_IMAGE_INPUT_PATHS).toContain(requiredPath);
     }
     expect(DAYTONA_IMAGE_INPUT_PATHS).not.toContain(
-      "packages/paperclip-eval-kernel",
+      "packages/pilibala-eval-kernel",
     );
     expect(DAYTONA_IMAGE_INPUT_PATHS).not.toContain(
-      "packages/paperclip-runner",
+      "packages/pilibala-runner",
     );
     expect(DAYTONA_IMAGE_DOCKERFILE_PATH).toBe(
       "docker/daytona-runner/Dockerfile",
@@ -236,17 +236,17 @@ describe("runner E2E Daytona image contract", () => {
 
   it("changes for runtime source, package, lockfile, Dockerfile, frontend, base, or platform inputs", async () => {
     const root = await mkdtemp(
-      path.join(tmpdir(), "paperclip-daytona-image-id-"),
+      path.join(tmpdir(), "pilibala-daytona-image-id-"),
     );
     const inputPaths = [
       "docker/daytona-runner/Dockerfile",
       "package.json",
       "pnpm-lock.yaml",
-      "packages/paperclip-runner/package.json",
-      "packages/paperclip-runner/src",
-      "packages/paperclip-runner/runner/crates",
-      "packages/paperclip-runner/scripts/materialize-pi-distribution.mjs",
-      "packages/paperclip-runner/scripts/pi-distribution",
+      "packages/pilibala-runner/package.json",
+      "packages/pilibala-runner/src",
+      "packages/pilibala-runner/runner/crates",
+      "packages/pilibala-runner/scripts/materialize-pi-distribution.mjs",
+      "packages/pilibala-runner/scripts/pi-distribution",
     ] as const;
     const options = {
       repositoryRoot: root,
@@ -258,13 +258,13 @@ describe("runner E2E Daytona image contract", () => {
       await mkdir(path.join(root, "docker/daytona-runner"), {
         recursive: true,
       });
-      await mkdir(path.join(root, "packages/paperclip-runner/src"), {
+      await mkdir(path.join(root, "packages/pilibala-runner/src"), {
         recursive: true,
       });
       await mkdir(
         path.join(
           root,
-          "packages/paperclip-runner/runner/crates/runner-core/src",
+          "packages/pilibala-runner/runner/crates/runner-core/src",
         ),
         { recursive: true },
       );
@@ -278,25 +278,25 @@ describe("runner E2E Daytona image contract", () => {
         "lockfileVersion: 9\n",
       );
       await writeFile(
-        path.join(root, "packages/paperclip-runner/package.json"),
-        '{"name":"@paperclipai/paperclip-runner"}\n',
+        path.join(root, "packages/pilibala-runner/package.json"),
+        '{"name":"@pilibalaai/pilibala-runner"}\n',
       );
       await writeFile(
-        path.join(root, "packages/paperclip-runner/src/runner.ts"),
+        path.join(root, "packages/pilibala-runner/src/runner.ts"),
         "version one\n",
       );
       await writeFile(
         path.join(
           root,
-          "packages/paperclip-runner/runner/crates/runner-core/src/lib.rs",
+          "packages/pilibala-runner/runner/crates/runner-core/src/lib.rs",
         ),
         'pub const VERSION: &str = "one";\n',
       );
-      await mkdir(path.join(root, "packages/paperclip-runner/scripts/pi-distribution"), { recursive: true });
+      await mkdir(path.join(root, "packages/pilibala-runner/scripts/pi-distribution"), { recursive: true });
       for (const relativePath of [
-        "packages/paperclip-runner/scripts/materialize-pi-distribution.mjs",
-        "packages/paperclip-runner/scripts/pi-distribution/package.json",
-        "packages/paperclip-runner/scripts/pi-distribution/package-lock.json",
+        "packages/pilibala-runner/scripts/materialize-pi-distribution.mjs",
+        "packages/pilibala-runner/scripts/pi-distribution/package.json",
+        "packages/pilibala-runner/scripts/pi-distribution/package-lock.json",
       ]) await writeFile(path.join(root, relativePath), "version one\n");
       const baseline = await computeDaytonaImageContentId(options);
       const candidate = await computeDaytonaImageContentId({ ...options, candidateProviders: ["pi"] });
@@ -331,12 +331,12 @@ describe("runner E2E Daytona image contract", () => {
         "docker/daytona-runner/Dockerfile",
         "package.json",
         "pnpm-lock.yaml",
-        "packages/paperclip-runner/package.json",
-        "packages/paperclip-runner/src/runner.ts",
-        "packages/paperclip-runner/scripts/materialize-pi-distribution.mjs",
-        "packages/paperclip-runner/scripts/pi-distribution/package.json",
-        "packages/paperclip-runner/scripts/pi-distribution/package-lock.json",
-        "packages/paperclip-runner/runner/crates/runner-core/src/lib.rs",
+        "packages/pilibala-runner/package.json",
+        "packages/pilibala-runner/src/runner.ts",
+        "packages/pilibala-runner/scripts/materialize-pi-distribution.mjs",
+        "packages/pilibala-runner/scripts/pi-distribution/package.json",
+        "packages/pilibala-runner/scripts/pi-distribution/package-lock.json",
+        "packages/pilibala-runner/runner/crates/runner-core/src/lib.rs",
       ]) {
         const absolutePath = path.join(root, relativePath);
         const original = await readFile(absolutePath, "utf8");
@@ -356,10 +356,10 @@ describe("runner E2E Daytona image contract", () => {
   });
 
   it.each([
-    "packages/paperclip-runner/scripts/cursor-runtime-patch.mjs",
-    "packages/paperclip-runner/scripts/provider-pack-executable-shims.mjs",
+    "packages/pilibala-runner/scripts/cursor-runtime-patch.mjs",
+    "packages/pilibala-runner/scripts/provider-pack-executable-shims.mjs",
   ])("invalidates the image when %s changes", async (patchPath) => {
-    const root = await mkdtemp(path.join(tmpdir(), "paperclip-provider-image-id-"));
+    const root = await mkdtemp(path.join(tmpdir(), "pilibala-provider-image-id-"));
     expect(DAYTONA_IMAGE_INPUT_PATHS).toContain(patchPath);
     const options = {
       repositoryRoot: root,
@@ -381,16 +381,16 @@ describe("runner E2E Daytona image contract", () => {
 
   it("reuses the image for runner-only tests and documentation", async () => {
     const root = await mkdtemp(
-      path.join(tmpdir(), "paperclip-daytona-runner-development-inputs-"),
+      path.join(tmpdir(), "pilibala-daytona-runner-development-inputs-"),
     );
     const options = {
       repositoryRoot: root,
-      inputPaths: ["packages/paperclip-runner"],
+      inputPaths: ["packages/pilibala-runner"],
       baseImages: [`example.test/base:1@sha256:${"a".repeat(64)}`],
       frontendDigest: `sha256:${"c".repeat(64)}`,
     } as const;
     try {
-      const runnerRoot = path.join(root, "packages/paperclip-runner");
+      const runnerRoot = path.join(root, "packages/pilibala-runner");
       await mkdir(path.join(runnerRoot, "src/live"), { recursive: true });
       await mkdir(path.join(runnerRoot, "docs"), { recursive: true });
       await mkdir(path.join(runnerRoot, "spec"), { recursive: true });

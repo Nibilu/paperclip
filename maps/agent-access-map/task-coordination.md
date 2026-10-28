@@ -72,7 +72,7 @@ API: `present` — representative operation IDs:
 - `PATCH /api/issues/{id}`.
 - `POST /api/issues/{id}/interactions`.
 
-Agent access: `partial` — Native paperclip_finish/paperclip_block and assigned
+Agent access: `partial` — Native pilibala_finish/pilibala_block and assigned
 resolve_review; legacy agent REST disposition.
 
 Policy: Task visibility/mutation, task-assignment and ownership policy; review audience

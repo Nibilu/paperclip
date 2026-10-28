@@ -1,11 +1,11 @@
-# Invite an assistant to Paperclip with one message
+# Invite an assistant to Pilibala with one message
 
 Date: 2026-10-05
 
 ## Outcome
 
 From Butter → Connections → Assistant Connection (MCP), copy a message or URL,
-paste it into an assistant, approve the identified client in Paperclip, and use
+paste it into an assistant, approve the identified client in Pilibala, and use
 the organization's tools as the consenting human. Sharing an invitation grants
 no access. Keep the existing experimental setting and simplified consent UI.
 
@@ -29,7 +29,7 @@ no access. Keep the existing experimental setting and simplified consent UI.
 
 ## Acceptance
 
-- Cold start: no Paperclip tools/configuration initially; the invitation starts
+- Cold start: no Pilibala tools/configuration initially; the invitation starts
   setup and consent; verify the resulting account/company before work.
 - Existing configuration, unavailable host setup, denied/expired consent,
   later-conversation reconnect, and required client restart are represented.
@@ -57,7 +57,7 @@ no access. Keep the existing experimental setting and simplified consent UI.
   progress; a large-file Git streaming test timed out outside this change.
 - Mini passed all five invitation cases. Haiku and Sonnet qualification remains
   in progress; retain failed infrastructure attempts and paid billing evidence.
-- Cloud routing PR: https://github.com/paperclipai/paperclip-cloud/pull/672.
+- Cloud routing PR: https://github.com/pilibalaai/pilibala-cloud/pull/672.
   Cloud typecheck, 2,242 tests and fake-provider smoke passed; rebased focused
   gateway checks passed 218 tests. Staging routing deployment has been requested.
 - Remaining: real client qualification, final paid results, PR checks/review,

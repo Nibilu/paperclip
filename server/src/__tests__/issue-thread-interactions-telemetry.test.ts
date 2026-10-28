@@ -13,7 +13,7 @@ import {
   issueDocuments,
   issueThreadInteractions,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -38,7 +38,7 @@ describeEmbeddedPostgres("issueThreadInteractionService telemetry", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-issue-interaction-telemetry-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-issue-interaction-telemetry-");
     db = createDb(tempDb.connectionString);
     interactionsSvc = issueThreadInteractionService(db);
   }, 20_000);
@@ -75,7 +75,7 @@ describeEmbeddedPostgres("issueThreadInteractionService telemetry", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

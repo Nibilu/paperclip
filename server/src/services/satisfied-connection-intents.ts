@@ -1,6 +1,6 @@
 import { and, asc, eq, gt, inArray, isNull, or } from "drizzle-orm";
-import { approvals, companyMemberships, connectionIntentDeliveries, issueApprovals, issueThreadInteractions, issues, type Db } from "@paperclipai/db";
-import { connectionIntentPayloadSchema } from "@paperclipai/shared";
+import { approvals, companyMemberships, connectionIntentDeliveries, issueApprovals, issueThreadInteractions, issues, type Db } from "@pilibalaai/db";
+import { connectionIntentPayloadSchema } from "@pilibalaai/shared";
 import { logActivity, publishActivity, type ActivityPublication } from "./activity-log.js";
 import { connectionIntentService } from "./connection-intents.js";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "./delivery-work-notifications.js";

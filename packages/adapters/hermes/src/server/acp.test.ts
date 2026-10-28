@@ -49,7 +49,7 @@ describe("hermes engine selection", () => {
   it("keeps an unavailable ACP command as a failure, not a CLI selection", async () => {
     Object.defineProperty(process, "version", { value: "v24.11.0" });
     const result = await resolveHermesExecutionEngineForRun({
-      config: { engine: "acp", agentCommand: "/nonexistent/paperclip-test/hermes-acp" },
+      config: { engine: "acp", agentCommand: "/nonexistent/pilibala-test/hermes-acp" },
     });
     expect(result.engine).toBe("acp");
     expect(result.unavailableReason).toContain("not available");
@@ -114,7 +114,7 @@ describe("hermes session codec (dual engine)", () => {
     const params = {
       acpSessionId: "acp-1",
       configFingerprint: "fp-1",
-      sessionKey: "paperclip:c:a:t:fp-1",
+      sessionKey: "pilibala:c:a:t:fp-1",
       cwd: "/tmp/w",
     };
     const serialized = sessionCodec.serialize(params);

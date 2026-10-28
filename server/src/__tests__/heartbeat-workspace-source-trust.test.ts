@@ -2,7 +2,7 @@ import express from "express";
 import request from "supertest";
 import { fileResourceRoutes } from "../routes/file-resources.js";
 import { errorHandler } from "../middleware/index.js";
-import { EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@paperclipai/db";
+import { EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@pilibalaai/db";
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { execFileSync } from "node:child_process";
@@ -11,14 +11,14 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, authUsers, companies, companyMemberships, createDb, environments, executionWorkspaces, heartbeatRuns, issues, issueAccessGrants, principalPermissionGrants, projects, projectAccessMembers, projectWorkspaces } from "@paperclipai/db";
-import { setExpensiveWorkspaceGitExecutor } from "@paperclipai/adapter-utils/git-workspace-sync";
-import { buildProjectMentionHref } from "@paperclipai/shared";
+import { agents, authUsers, companies, companyMemberships, createDb, environments, executionWorkspaces, heartbeatRuns, issues, issueAccessGrants, principalPermissionGrants, projects, projectAccessMembers, projectWorkspaces } from "@pilibalaai/db";
+import { setExpensiveWorkspaceGitExecutor } from "@pilibalaai/adapter-utils/git-workspace-sync";
+import { buildProjectMentionHref } from "@pilibalaai/shared";
 import { createWorkspaceGitOperationScheduler, WorkspaceGitScanError } from "../services/workspace-git-operation-scheduler.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { heartbeatService } from "../services/heartbeat.ts";
 import { createHeartbeatWorkspaceResolver } from "../services/heartbeat/workspaces.js";
-import { resolveManagedProjectWorkspaceDir, resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { resolveManagedProjectWorkspaceDir, resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { issueService } from "../services/issues.js";
 import { accessService } from "../services/access.js";
 import { assertExecutionWorkspaceRootWriteAccess } from "../services/execution-workspace-repositories.js";
@@ -43,9 +43,9 @@ suite("heartbeat physical workspace source trust", () => {
   let root: string;
   let heartbeat: ReturnType<typeof heartbeatService>;
   beforeAll(async () => {
-    root = await mkdtemp(path.join(os.tmpdir(), "paperclip-project-repos-"));
-    vi.stubEnv("PAPERCLIP_HOME", path.join(root, "home"));
-    vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC", "false");
+    root = await mkdtemp(path.join(os.tmpdir(), "pilibala-project-repos-"));
+    vi.stubEnv("PILIBALA_HOME", path.join(root, "home"));
+    vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC", "false");
     database = await startEmbeddedPostgresTestDatabase("project-repositories");
     db = createDb(database.connectionString);
     await db.insert(authUsers).values({ id: "responsible-user", name: "Fixture owner", email: "owner@example.test", createdAt: new Date(), updatedAt: new Date() });
@@ -65,7 +65,7 @@ suite("heartbeat physical workspace source trust", () => {
   afterEach(async () => {
     await drainHeartbeatRunsToQuiescence(db, heartbeat);
     setExpensiveWorkspaceGitExecutor(null);
-    vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC", "false");
+    vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC", "false");
     await instanceSettingsService(db).updateExperimental({
       enableIsolatedWorkspaces: false,
       enableIsolatedWorkspacesByDefault: false,
@@ -132,7 +132,7 @@ suite("heartbeat physical workspace source trust", () => {
       expect(await driver.getRun(run!.id)).toMatchObject({ status: "succeeded", error: null });
       const calls = execute.mock.calls.filter(([input]) => input.runId === run!.id);
       expect(calls).toHaveLength(1);
-      expect(calls[0][0].context.paperclipEnvironment.driver).toBe("sandbox");
+      expect(calls[0][0].context.pilibalaEnvironment.driver).toBe("sandbox");
       await expect(readFile(path.join(cwd, "provision-ran"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
     } else {
       expect(await driver.getRun(run!.id)).toMatchObject({ status: "failed", error: expect.stringContaining("Physical workspace source trust is incompatible") });
@@ -218,7 +218,7 @@ suite("heartbeat physical workspace source trust", () => {
     expect(await readFile(path.join(cwd, "source.txt"), "utf8")).toBe("read-only source bytes");
     const calls = execute.mock.calls.filter(([input]) => input.runId === run!.id);
     expect(calls).toHaveLength(1);
-    expect(calls[0][0].context.paperclipEnvironment.driver).toBe(placement === "sandbox" ? "sandbox" : "local");
+    expect(calls[0][0].context.pilibalaEnvironment.driver).toBe(placement === "sandbox" ? "sandbox" : "local");
     if (!implicitDefault) await expect(readFile(marker, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
     else expect(await readFile(marker, "utf8")).toBe("host-script-ran");
     await rm(marker, { force: true });

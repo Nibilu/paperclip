@@ -8,7 +8,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { beforeAll, afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { agents, authUsers, companies, companyMemberships, createDb, dotAgentBindings, grokBotDispatches,
-  grokBotRoutines, mcpOauthGrants, activityLog, issues, heartbeatRuns, dotRunnerAssignments, dotRunnerOperations, dotMailboxItems, nativeRunFinalizations, environmentLeases, environments, issueRecoveryActions, issueComments } from "@paperclipai/db";
+  grokBotRoutines, mcpOauthGrants, activityLog, issues, heartbeatRuns, dotRunnerAssignments, dotRunnerOperations, dotMailboxItems, nativeRunFinalizations, environmentLeases, environments, issueRecoveryActions, issueComments } from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { accessService } from "../services/access.js";
 import { instanceSettingsService } from "../services/instance-settings.js";
@@ -29,10 +29,10 @@ import { environmentRuntimeService } from "../services/environment-runtime.js";
 let temporary: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
 let db: ReturnType<typeof createDb>;
 beforeAll(async () => {
-  temporary = await startEmbeddedPostgresTestDatabase("paperclip-grok-routine-");
+  temporary = await startEmbeddedPostgresTestDatabase("pilibala-grok-routine-");
   db = createDb(temporary.connectionString);
-  vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", "enforce");
-  vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", randomBytes(32).toString("base64"));
+  vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", "enforce");
+  vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", randomBytes(32).toString("base64"));
   await instanceSettingsService(db).updateExperimental({ enablePublicMcp: true, enableNativeRunner: true, enableGrokBot: true, enableOpenAiDot: true });
 }, 120000);
 afterAll(async () => { try { await temporary?.cleanup(); } finally { vi.unstubAllEnvs(); } });
@@ -45,12 +45,12 @@ async function fixture() {
   const [company] = await db.insert(companies).values({ name: "Grok test", issuePrefix: "GK" + randomBytes(3).toString("hex") }).returning();
   await db.insert(companyMemberships).values({ companyId: company!.id, principalType: "user", principalId: userId, membershipRole: "owner", status: "active" });
   await accessService(db).setPrincipalPermission(company!.id, "user", userId, "agents:create", true, userId);
-  const [agent] = await db.insert(agents).values({ companyId: company!.id, name: "Grok test", adapterType: "paperclip_runner", status: "active", adapterConfig: { provider: "grok_bot", allowUnmeteredProvider: true, lifecycleMode: "per_turn" } }).returning();
-  const oauth = createPublicMcpOAuth(db, { origin: "https://paperclip.example", resource: "https://paperclip.example/mcp/runner" });
+  const [agent] = await db.insert(agents).values({ companyId: company!.id, name: "Grok test", adapterType: "pilibala_runner", status: "active", adapterConfig: { provider: "grok_bot", allowUnmeteredProvider: true, lifecycleMode: "per_turn" } }).returning();
+  const oauth = createPublicMcpOAuth(db, { origin: "https://pilibala.example", resource: "https://pilibala.example/mcp/runner" });
   const client = await oauth.register({ client_name: "Synthetic Grok client", redirect_uris: ["https://client.example/callback"] }, randomUUID());
   const verifier = randomBytes(32).toString("base64url");
   const input = { client_id: client.client_id, redirect_uri: "https://client.example/callback", response_type: "code", resource: oauth.config.resource,
-    scope: "paperclip:agent offline_access", code_challenge: createHash("sha256").update(verifier).digest("base64url"), code_challenge_method: "S256" };
+    scope: "pilibala:agent offline_access", code_challenge: createHash("sha256").update(verifier).digest("base64url"), code_challenge_method: "S256" };
   const requestId = (await oauth.authorize(input)).split("/").at(-1)!;
   const pairing = await dotRunnerBroker(db).createPairing({ companyId: company!.id, agentId: agent!.id, operatorId: userId, provider: "grok_bot" });
   const consent = await oauth.consentDotPairing(requestId, pairing.pairingCode);
@@ -173,10 +173,10 @@ describe("durable Grok routine qualification", () => {
     const list = await invoke("tools/list", {});
     expect(list.status).toBe(200);
     const names = list.body.result.tools.map((tool: {name: string}) => tool.name);
-    expect(names).toContain("paperclip_grok_ack_wake");
-    expect(names).not.toContain("paperclip_dot_confirm_event");
-    expect(names).not.toContain("paperclip_call_api");
-    const reply = await invoke("tools/call", { name: "paperclip_grok_ack_wake", arguments: acknowledgement(row) });
+    expect(names).toContain("pilibala_grok_ack_wake");
+    expect(names).not.toContain("pilibala_dot_confirm_event");
+    expect(names).not.toContain("pilibala_call_api");
+    const reply = await invoke("tools/call", { name: "pilibala_grok_ack_wake", arguments: acknowledgement(row) });
     expect(reply.status).toBe(200);
     expect(reply.body.result.structuredContent).toMatchObject({ outcome: "completed", result: { status: "acknowledged" } });
     expect(await f.service.state(f.company.id, f.agent.id, row.bindingId)).toMatchObject({ verified: true });
@@ -349,7 +349,7 @@ describe("durable Grok routine qualification", () => {
       expect(await dotRunnerBroker(db).operationStatus(f.principal, work.id, requestId)).toEqual({ status: "completed", result: { recorded: true } });
       expect((await db.select().from(dotRunnerOperations).where(eq(dotRunnerOperations.requestId, requestId)))[0]?.observedAt).not.toBeNull();
     }
-    expect((await dotRunnerBroker(db).read(f.principal, work.id)).toolUsageInstructions).toContain("paperclip_grok_operation_status");
+    expect((await dotRunnerBroker(db).read(f.principal, work.id)).toolUsageInstructions).toContain("pilibala_grok_operation_status");
   });
 
   it.each(["new offer", "prepared before restart"] as const)("does not echo delayed Bot-initiated work: %s", async scenario => {
@@ -551,7 +551,7 @@ describe("Grok inspection of historical workspace-less Stop", () => {
     const { run, task, work } = await admittedWork(f, "accepted");
     const finishedAt = new Date(Date.now() - 1000);
     const fileHold = { workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery: {
-      schema: "paperclip.workspace-restore-recovery.v1", runId: run.id, leaseIds: [] as string[],
+      schema: "pilibala.workspace-restore-recovery.v1", runId: run.id, leaseIds: [] as string[],
     } };
     const [environment] = await db.insert(environments).values({ name: `Grok ${run.id}`, driver: "sandbox" }).returning();
     const [lease] = await db.insert(environmentLeases).values({ companyId: f.company.id, issueId: task.id,
@@ -562,10 +562,10 @@ describe("Grok inspection of historical workspace-less Stop", () => {
     fileHold.workspaceRestoreRecovery.leaseIds.push(lease!.id);
     await db.update(heartbeatRuns).set({ status: "cancelled", driverKind: "grok_bot_mcp", finishedAt,
       nativeIssueId: task.id, issueId: task.id, contextSnapshot: { issueId: task.id },
-      runnerProfileJson: { nativeExecutionInput: { schema: "paperclip.native-execution-input.v6",
+      runnerProfileJson: { nativeExecutionInput: { schema: "pilibala.native-execution-input.v6",
         binding: { runId: run.id, companyId: f.company.id, agentId: f.agent.id, issueId: task.id },
         provider: { kind: "grok_bot" }, workspace: { access: "none", cwd: null } } },
-      resultJson: { ...fileHold, cancellation: { source: "user", reason: "Paperclip work stopped" } },
+      resultJson: { ...fileHold, cancellation: { source: "user", reason: "Pilibala work stopped" } },
     }).where(eq(heartbeatRuns.id, run.id));
     await db.update(issues).set({ status: "blocked", executionRunId: null, checkoutRunId: null }).where(eq(issues.id, task.id));
     await db.update(nativeRunFinalizations).set({ phase: "terminal_failure", leaseOwner: null,
@@ -628,7 +628,7 @@ describe("Grok inspection of historical workspace-less Stop", () => {
       status: "running", invocationSource: "assignment", triggerDetail: "system" }).returning();
     await db.insert(dotRunnerAssignments).values({ ...f.work, id: randomUUID(), runId: other!.id,
       normalizedSessionId: randomUUID(), turnId: randomUUID(), status: "accepted" });
-    await expect(f.service.recover(f.company.id, f.agent.id, f.principal.grant.userId)).rejects.toThrow("current Paperclip work session");
+    await expect(f.service.recover(f.company.id, f.agent.id, f.principal.grant.userId)).rejects.toThrow("current Pilibala work session");
     const [run] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.run.id));
     expect(hasRequiredWorkspaceRecovery(run!.resultJson)).toBe(true);
     expect(await f.service.recoveryNeeded(f.company.id, f.agent.id)).toBe(true);
@@ -658,7 +658,7 @@ describe("Grok inspection of historical workspace-less Stop", () => {
   it.each(["cleanup_pending", "receipt_mismatch", "controller_owned", "assignment_active", "running", "operator_revoked", "foreign_company"])("does not retire an old obligation when %s", async condition => {
     const f = await historicalHold();
     if (condition === "cleanup_pending") await db.update(environmentLeases).set({ cleanupStatus: "failed" }).where(eq(environmentLeases.id, f.lease.id));
-    if (condition === "receipt_mismatch") await db.update(environmentLeases).set({ metadata: { remoteExecutionTermination: { schema: "paperclip.remote-termination.v1", runId: randomUUID() } } }).where(eq(environmentLeases.id, f.lease.id));
+    if (condition === "receipt_mismatch") await db.update(environmentLeases).set({ metadata: { remoteExecutionTermination: { schema: "pilibala.remote-termination.v1", runId: randomUUID() } } }).where(eq(environmentLeases.id, f.lease.id));
     if (condition === "controller_owned") await db.update(nativeRunFinalizations).set({ leaseOwner: "other-owner" }).where(eq(nativeRunFinalizations.runId, f.run.id));
     if (condition === "assignment_active") await db.update(dotRunnerAssignments).set({ status: "accepted" }).where(eq(dotRunnerAssignments.id, f.work.id));
     if (condition === "running") await db.update(heartbeatRuns).set({ status: "running" }).where(eq(heartbeatRuns.id, f.run.id));

@@ -1,4 +1,4 @@
-import { prepareWorkspaceRepositorySchema, selectTaskWorkspaceSchema } from "@paperclipai/shared";
+import { prepareWorkspaceRepositorySchema, selectTaskWorkspaceSchema } from "@pilibalaai/shared";
 import { badRequest } from "../errors.js";
 
 function repositoryView(repo: Record<string, unknown>) {

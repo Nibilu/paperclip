@@ -3,13 +3,13 @@ import { fileURLToPath } from "node:url";
 import type {
   AdapterSkillContext,
   AdapterSkillSnapshot,
-} from "@paperclipai/adapter-utils";
+} from "@pilibalaai/adapter-utils";
 import {
   buildRuntimeMountedSkillSnapshot,
-  readPaperclipRuntimeSkillEntries,
-  resolveLegacyPaperclipDesiredSkillNames,
-  resolvePaperclipDesiredSkillNames,
-} from "@paperclipai/adapter-utils/server-utils";
+  readPilibalaRuntimeSkillEntries,
+  resolveLegacyPilibalaDesiredSkillNames,
+  resolvePilibalaDesiredSkillNames,
+} from "@pilibalaai/adapter-utils/server-utils";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -17,10 +17,10 @@ async function buildCodexSkillSnapshot(
   config: Record<string, unknown>,
   adapterType: string,
 ): Promise<AdapterSkillSnapshot> {
-  const availableEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
-  const desiredSkills = adapterType === "paperclip_runner"
-    ? resolvePaperclipDesiredSkillNames(config, availableEntries)
-    : resolveLegacyPaperclipDesiredSkillNames(config, availableEntries);
+  const availableEntries = await readPilibalaRuntimeSkillEntries(config, __moduleDir);
+  const desiredSkills = adapterType === "pilibala_runner"
+    ? resolvePilibalaDesiredSkillNames(config, availableEntries)
+    : resolveLegacyPilibalaDesiredSkillNames(config, availableEntries);
   return buildRuntimeMountedSkillSnapshot({
     adapterType,
     availableEntries,
@@ -44,5 +44,5 @@ export function resolveCodexDesiredSkillNames(
   config: Record<string, unknown>,
   availableEntries: Array<{ key: string; required?: boolean }>,
 ) {
-  return resolveLegacyPaperclipDesiredSkillNames(config, availableEntries);
+  return resolveLegacyPilibalaDesiredSkillNames(config, availableEntries);
 }

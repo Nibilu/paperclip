@@ -2,18 +2,18 @@ import type {
   AdapterExecutionContext,
   AdapterExecutionResult,
   UsageSummary,
-} from "@paperclipai/adapter-utils";
-import type { ConnectionFailure } from "@paperclipai/adapter-utils/connection-failure";
+} from "@pilibalaai/adapter-utils";
+import type { ConnectionFailure } from "@pilibalaai/adapter-utils/connection-failure";
 import {
   asNumber,
   asString,
   parseObject,
-  readPaperclipIssueWorkModeFromContext,
-  selectPaperclipPromptSections,
-  isPaperclipRecoveryWakePayload,
-  stringifyPaperclipWakePayload,
-  paperclipWakeCommentsArePromptOwned,
-} from "@paperclipai/adapter-utils/server-utils";
+  readPilibalaIssueWorkModeFromContext,
+  selectPilibalaPromptSections,
+  isPilibalaRecoveryWakePayload,
+  stringifyPilibalaWakePayload,
+  pilibalaWakeCommentsArePromptOwned,
+} from "@pilibalaai/adapter-utils/server-utils";
 import {
   ADAPTER_TYPE,
   DEFAULT_EVENT_RECONNECT_MS,
@@ -142,8 +142,8 @@ const SENSITIVE_KEY_PATTERN =
   /(^|[_-])(auth|authorization|token|secret|password|api[_-]?key|private[_-]?key)([_-]|$)/i;
 const BEARER_TOKEN_PATTERN = /Bearer\s+\S+/gi;
 const HERMES_SESSION_KEY_HEADER_PATTERN = /(X-Hermes-Session-Key\s*[:=]\s*)([^\s,;]+)/gi;
-const PAPERCLIP_SESSION_KEY_PATTERN =
-  /\bpaperclip:(?:company:[A-Za-z0-9-]+:agent:[A-Za-z0-9-]+(?::(?:issue|run):[A-Za-z0-9-]+)?|run:[A-Za-z0-9-]+)\b/gi;
+const PILIBALA_SESSION_KEY_PATTERN =
+  /\bpilibala:(?:company:[A-Za-z0-9-]+:agent:[A-Za-z0-9-]+(?::(?:issue|run):[A-Za-z0-9-]+)?|run:[A-Za-z0-9-]+)\b/gi;
 
 const TERMINAL_STATUSES = new Set([
   "completed",
@@ -228,13 +228,13 @@ export function resolveSessionKey(input: {
 }): string | null {
   if (input.strategy === "none") return null;
   if (input.strategy === "agent") {
-    return `paperclip:company:${input.companyId}:agent:${input.agentId}`;
+    return `pilibala:company:${input.companyId}:agent:${input.agentId}`;
   }
   if (input.strategy === "run") {
-    return `paperclip:run:${input.runId}`;
+    return `pilibala:run:${input.runId}`;
   }
   const issuePart = input.issueId ? `issue:${input.issueId}` : `run:${input.runId}`;
-  return `paperclip:company:${input.companyId}:agent:${input.agentId}:${issuePart}`;
+  return `pilibala:company:${input.companyId}:agent:${input.agentId}:${issuePart}`;
 }
 
 function stringifyForLog(value: unknown, maxChars = 4_000): string {
@@ -246,7 +246,7 @@ function sanitizeSensitiveText(value: string): string {
   return value
     .replace(BEARER_TOKEN_PATTERN, "Bearer [redacted]")
     .replace(HERMES_SESSION_KEY_HEADER_PATTERN, "$1[redacted]")
-    .replace(PAPERCLIP_SESSION_KEY_PATTERN, "[redacted-session-key]");
+    .replace(PILIBALA_SESSION_KEY_PATTERN, "[redacted-session-key]");
 }
 
 function escapeRegExp(value: string): string {
@@ -334,7 +334,7 @@ function buildHeaders(input: {
   };
 }
 
-function buildInput(ctx: AdapterExecutionContext, paperclipApiUrl: string | null): string {
+function buildInput(ctx: AdapterExecutionContext, pilibalaApiUrl: string | null): string {
   // Stable session keys (issue/agent strategy) resume the same remote Hermes
   // conversation across runs; a stored session id from a prior run means that
   // conversation already received the task brief, so pick the compact
@@ -343,37 +343,37 @@ function buildInput(ctx: AdapterExecutionContext, paperclipApiUrl: string | null
   const resumedSession =
     (sessionKeyStrategy === "issue" || sessionKeyStrategy === "agent") &&
     Boolean(nonEmpty(ctx.runtime?.sessionId));
-  const { taskContextNote: taskMarkdown, wakePrompt } = selectPaperclipPromptSections(ctx.context, {
+  const { taskContextNote: taskMarkdown, wakePrompt } = selectPilibalaPromptSections(ctx.context, {
     resumedSession,
     // Hermes gateway owns the execution contract below; retain the old
     // gateway prompt shape and avoid adding a second contract on resume.
     includeExecutionContract: false,
   });
-  const wakePayloadJson = paperclipWakeCommentsArePromptOwned(ctx.context)
+  const wakePayloadJson = pilibalaWakeCommentsArePromptOwned(ctx.context)
     ? null
-    : stringifyPaperclipWakePayload(ctx.context.paperclipWake, {
+    : stringifyPilibalaWakePayload(ctx.context.pilibalaWake, {
         omitIssueDescription: Boolean(taskMarkdown),
       });
-  const sessionHandoff = nonEmpty(ctx.context.paperclipSessionHandoffMarkdown);
-  const issueWorkMode = readPaperclipIssueWorkModeFromContext(ctx.context);
+  const sessionHandoff = nonEmpty(ctx.context.pilibalaSessionHandoffMarkdown);
+  const issueWorkMode = readPilibalaIssueWorkModeFromContext(ctx.context);
   const lines = [
-    `You are ${ctx.agent.name}, an AI agent employee in a Paperclip-managed company.`,
+    `You are ${ctx.agent.name}, an AI agent employee in a Pilibala-managed company.`,
     "",
-    "Paperclip runtime identity:",
+    "Pilibala runtime identity:",
     `- Agent ID: ${ctx.agent.id}`,
     `- Company ID: ${ctx.agent.companyId}`,
     `- Run ID: ${ctx.runId}`,
-    ...(paperclipApiUrl ? [`- Paperclip API URL: ${paperclipApiUrl}`] : []),
+    ...(pilibalaApiUrl ? [`- Pilibala API URL: ${pilibalaApiUrl}`] : []),
     ...(issueWorkMode ? [`- Issue work mode: ${issueWorkMode}`] : []),
     "",
-    ...(ctx.context.conversationMode === true || isPaperclipRecoveryWakePayload(ctx.context.paperclipWake)
+    ...(ctx.context.conversationMode === true || isPilibalaRecoveryWakePayload(ctx.context.pilibalaWake)
       ? []
       : [
           "Execution contract:",
           "- Take concrete action in this run when the task is actionable.",
           "- Do not stop at a plan unless the issue asks for planning only.",
           "- Leave durable progress and update the issue to a clear final disposition.",
-          "- Use X-Paperclip-Run-Id on mutating Paperclip API requests when a Paperclip API key is available.",
+          "- Use X-Pilibala-Run-Id on mutating Pilibala API requests when a Pilibala API key is available.",
           "",
         ]),
     wakePrompt,
@@ -393,16 +393,16 @@ function buildInput(ctx: AdapterExecutionContext, paperclipApiUrl: string | null
 }
 
 function buildRunBody(ctx: AdapterExecutionContext, sessionKey: string | null): Record<string, unknown> {
-  const paperclipApiUrl = nonEmpty(ctx.config.paperclipApiUrl);
+  const pilibalaApiUrl = nonEmpty(ctx.config.pilibalaApiUrl);
   const payloadTemplate = parseObject(ctx.config.payloadTemplate);
   const configuredInput = nonEmpty(payloadTemplate.input);
   const input = configuredInput && ctx.context.conversationMode === true
-    ? `${configuredInput}\n\n${buildInput(ctx, paperclipApiUrl)}`
-    : configuredInput ?? buildInput(ctx, paperclipApiUrl);
+    ? `${configuredInput}\n\n${buildInput(ctx, pilibalaApiUrl)}`
+    : configuredInput ?? buildInput(ctx, pilibalaApiUrl);
   const instructions =
     nonEmpty(ctx.config.instructions) ??
     nonEmpty(payloadTemplate.instructions) ??
-    "Follow the Paperclip wake instructions exactly. Do not expose secrets in logs, comments, or final output.";
+    "Follow the Pilibala wake instructions exactly. Do not expose secrets in logs, comments, or final output.";
   return {
     ...payloadTemplate,
     input,
@@ -966,7 +966,7 @@ function errorResult(err: unknown, baseUrl: URL, redactText: TextRedactor = sani
   const errorMessage = code === "hermes_gateway_auth_failed"
     ? `${redactErrorMessage(err, redactText)}. Check adapterConfig.apiKey matches the Hermes API_SERVER_KEY for the running gateway.`
     : loopbackRefused
-      ? `${redactErrorMessage(err, redactText)}. The configured loopback gateway refers to the Paperclip server, not an agent sandbox or your browser's machine. Check that the Hermes API server is running there, or set adapterConfig.apiBaseUrl to its address reachable from the Paperclip server. Hermes Gateway connects to an already-running gateway; use hermes_local if Paperclip should launch the local Hermes CLI.`
+      ? `${redactErrorMessage(err, redactText)}. The configured loopback gateway refers to the Pilibala server, not an agent sandbox or your browser's machine. Check that the Hermes API server is running there, or set adapterConfig.apiBaseUrl to its address reachable from the Pilibala server. Hermes Gateway connects to an already-running gateway; use hermes_local if Pilibala should launch the local Hermes CLI.`
       : redactErrorMessage(err, redactText);
   return {
     exitCode: 1,
@@ -1116,7 +1116,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   // Report the remote run id immediately (AMB-16): the server persists it into
   // heartbeat_runs.external_run_id so stop/reconciliation can target the exact
-  // remote run even if Paperclip restarts mid-run. A reporting failure is
+  // remote run even if Pilibala restarts mid-run. A reporting failure is
   // logged and otherwise ignored — it must never fail the run itself.
   try {
     await ctx.onExternalRunCreated?.({ provider: "hermes_gateway", externalRunId: runId });

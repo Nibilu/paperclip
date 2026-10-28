@@ -1,4 +1,4 @@
-import type { ServerInfoSnapshot } from "@paperclipai/shared";
+import type { ServerInfoSnapshot } from "@pilibalaai/shared";
 import { tenantSessionRecovery } from "@/lib/tenant-session-recovery";
 import { ApiError } from "./client";
 import { ApiUnavailableError, readApiJson } from "./response";
@@ -19,7 +19,7 @@ export type DevServerHealthStatus = {
 
 export type CloudInstanceHealthStatus = {
   managed: true;
-  managedBy: "paperclip-cloud";
+  managedBy: "pilibala-cloud";
   stackSlug: string | null;
   stackDisplayName?: string;
   cloudBaseUrl: string | null;

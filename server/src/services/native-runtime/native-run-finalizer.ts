@@ -13,7 +13,7 @@ import { issueTreeControlService } from "../issue-tree-control.js";
 import { randomUUID } from "node:crypto";
 import { preserveNativeWorkspaceExportLease } from "./native-workspace-export-resume.js";
 import { and, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   approvals,
   agentWakeupRequests,
@@ -30,9 +30,9 @@ import {
   statusDecisions,
   workAssessments,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { classifyNativeEvidence } from "./evidence-classifier.js";
-import type { PrpIgnoredAttentionRequest, PrpTerminalState } from "@paperclipai/paperclip-runner";
+import type { PrpIgnoredAttentionRequest, PrpTerminalState } from "@pilibalaai/pilibala-runner";
 import {
   arbitrateNativeStatus,
   NATIVE_STATUS_ARBITER_POLICY_VERSION,
@@ -623,7 +623,7 @@ function recoveredExecutionFailureMetadata() {
   // Read the row being updated so a concurrent cleanup diagnostic is retained.
   return sql`case when ${heartbeatRuns.error} is not null or ${heartbeatRuns.errorCode} is not null
     then jsonb_build_object('recoveredExecutionFailure', jsonb_build_object(
-      'schema', 'paperclip.recovered_execution_failure.v1',
+      'schema', 'pilibala.recovered_execution_failure.v1',
       'errorCode', ${heartbeatRuns.errorCode}, 'error', ${heartbeatRuns.error},
       'observedAt', ${heartbeatRuns.updatedAt}
     )) else '{}'::jsonb end`;
@@ -948,7 +948,7 @@ export async function repairCommittedNativeChatResponse(
       if (
         !accepted ||
         !decision ||
-        result.schema !== "paperclip.run_result.v1" ||
+        result.schema !== "pilibala.run_result.v1" ||
         !(await acceptedResponseDigestMatches(tx, run, accepted))
       )
         return false;
@@ -1064,7 +1064,7 @@ export async function repairCommittedNativeChatResponse(
             {
               presentationDecision,
               nativeCommittedChatResponse: {
-                schema: "paperclip.native_committed_chat_response.v1",
+                schema: "pilibala.native_committed_chat_response.v1",
                 resultId: accepted.id,
                 canonicalSha256: accepted.canonicalSha256,
                 decisionId: decision.id,

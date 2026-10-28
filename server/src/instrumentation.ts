@@ -95,7 +95,7 @@ let tracerApiLoadFailed = false;
  * accessor never throws: a load or lookup failure logs once and returns the
  * local no-op tracer (fail open).
  */
-export function getStartupTracer(name = "paperclip.startup"): StartupTracerHandle {
+export function getStartupTracer(name = "pilibala.startup"): StartupTracerHandle {
   if (!process.env.OTEL_EXPORTER_OTLP_ENDPOINT?.trim()) return NOOP_TRACER;
   try {
     const require = createRequire(import.meta.url);
@@ -109,7 +109,7 @@ export function getStartupTracer(name = "paperclip.startup"): StartupTracerHandl
       tracerApiLoadFailed = true;
       // eslint-disable-next-line no-console
       console.warn(
-        "[paperclip] @opentelemetry/api is not available; startup tracing uses a no-op tracer.",
+        "[pilibala] @opentelemetry/api is not available; startup tracing uses a no-op tracer.",
         err,
       );
     }
@@ -151,7 +151,7 @@ let traceContextApiLoadFailed = false;
  * accessor never throws: a load or lookup failure logs once and returns the
  * local no-op trace context (fail open).
  */
-export function getStartupTraceContext(name = "paperclip.startup"): StartupTraceContextHandle {
+export function getStartupTraceContext(name = "pilibala.startup"): StartupTraceContextHandle {
   if (!process.env.OTEL_EXPORTER_OTLP_ENDPOINT?.trim()) return NOOP_TRACE_CONTEXT;
   try {
     const require = createRequire(import.meta.url);
@@ -179,7 +179,7 @@ export function getStartupTraceContext(name = "paperclip.startup"): StartupTrace
       traceContextApiLoadFailed = true;
       // eslint-disable-next-line no-console
       console.warn(
-        "[paperclip] @opentelemetry/api is not available; startup tracing uses a no-op trace context.",
+        "[pilibala] @opentelemetry/api is not available; startup tracing uses a no-op trace context.",
         err,
       );
     }
@@ -264,7 +264,7 @@ export function recordProviderPluginSpan(input: {
       isRemote: true,
     };
     const parentContext = trace.setSpanContext(context.active(), remoteSpanContext);
-    const tracer = trace.getTracer("paperclip.startup");
+    const tracer = trace.getTracer("pilibala.startup");
     // Pass the true start time as the OpenTelemetry `startTime` option, so the
     // span opens at its real wall-clock start. An epoch-millisecond number is a
     // valid OpenTelemetry `TimeInput`.
@@ -321,7 +321,7 @@ export function shutdownInstrumentation(): Promise<void> {
       await sdkShutdown();
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error("[paperclip] OpenTelemetry shutdown failed", err);
+      console.error("[pilibala] OpenTelemetry shutdown failed", err);
     }
   })();
   return shutdownPromise;
@@ -355,7 +355,7 @@ export function resolveProtocol(): {
     default:
       // eslint-disable-next-line no-console
       console.warn(
-        `[paperclip] Unknown OTEL_EXPORTER_OTLP_PROTOCOL=${raw}; falling back to grpc. ` +
+        `[pilibala] Unknown OTEL_EXPORTER_OTLP_PROTOCOL=${raw}; falling back to grpc. ` +
           `Valid values: grpc, http/protobuf, http/json.`,
       );
       return {
@@ -410,7 +410,7 @@ export function readBuildStamp(): string | null {
  *
  * The lookup runs in the directory of this module, not the directory the
  * server process started in. `import.meta.url` points at `src` in dev mode and
- * `dist` in a built server; both sit inside the Paperclip checkout. A server
+ * `dist` in a built server; both sit inside the Pilibala checkout. A server
  * launched from an unrelated directory, or from inside another repository,
  * would otherwise report a wrong commit or fall back.
  */
@@ -436,8 +436,8 @@ export function readGitCommit(): string | null {
  *   4. "unknown".
  * The build stamp wins over the environment variable, so a stale
  * `OTEL_SERVICE_VERSION` cannot mask the true built commit. `OTEL_SERVICE_VERSION`
- * is a Paperclip-specific variable, not an OpenTelemetry SDK variable, so
- * Paperclip controls this precedence.
+ * is a Pilibala-specific variable, not an OpenTelemetry SDK variable, so
+ * Pilibala controls this precedence.
  */
 export function resolveServiceVersion(
   buildStamp: string | null,
@@ -490,11 +490,11 @@ async function bootstrapOtel(endpoint: string): Promise<void> {
     );
     // Log the resolved value once so an operator can confirm the built commit.
     // eslint-disable-next-line no-console
-    console.log(`[paperclip] OpenTelemetry service.version=${serviceVersion}`);
+    console.log(`[pilibala] OpenTelemetry service.version=${serviceVersion}`);
 
     const sdk = new NodeSDK({
       resource: resourceFromAttributes({
-        [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || "paperclip",
+        [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || "pilibala",
         [ATTR_SERVICE_VERSION]: serviceVersion,
       }),
       // For the HTTP protocols OTEL_EXPORTER_OTLP_ENDPOINT is a *base* URL
@@ -527,7 +527,7 @@ async function bootstrapOtel(endpoint: string): Promise<void> {
       // rejects the SDK's handshake should not take down the server.
       // eslint-disable-next-line no-console
       console.error(
-        "[paperclip] OpenTelemetry SDK failed to start; continuing without tracing",
+        "[pilibala] OpenTelemetry SDK failed to start; continuing without tracing",
         err,
       );
       return;
@@ -560,7 +560,7 @@ async function bootstrapOtel(endpoint: string): Promise<void> {
     // single diagnostic so the opt-in path is self-documenting.
     // eslint-disable-next-line no-console
     console.warn(
-      "[paperclip] OTEL_EXPORTER_OTLP_ENDPOINT is set and the @opentelemetry/* " +
+      "[pilibala] OTEL_EXPORTER_OTLP_ENDPOINT is set and the @opentelemetry/* " +
         "packages passed the version check, but one of them failed to load. " +
         "Continuing without tracing.",
       err,

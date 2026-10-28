@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { AdapterRuntimeEvent } from "../../adapters/index.js";
-import { getActiveStepContext } from "@paperclipai/adapter-utils/acpx-engine/startup-timing";
+import { getActiveStepContext } from "@pilibalaai/adapter-utils/acpx-engine/startup-timing";
 import type { StartupTraceContextHandle } from "../../instrumentation.js";
 import {
   buildNativeHeartbeatPreparationSpans,
@@ -228,7 +228,7 @@ describe("native runner performance trace", () => {
         durationMs: 50,
         startOffsetMs: attemptStartedAtMs - 900,
       });
-      expect(recordedSpans[0]?.attributes["paperclip.task.run.wall_ms"]).toBe(
+      expect(recordedSpans[0]?.attributes["pilibala.task.run.wall_ms"]).toBe(
         attemptStartedAtMs + 100 - 900,
       );
     },
@@ -260,7 +260,7 @@ describe("native runner performance trace", () => {
       eventType: NATIVE_RUN_SPAN_EVENT_TYPE,
       stream: "system",
       payload: {
-        schema: "paperclip.run-performance-span.v1",
+        schema: "pilibala.run-performance-span.v1",
         traceSchemaVersion: NATIVE_RUN_TRACE_SCHEMA_VERSION,
         span: "runner.transport.selected",
         parentSpan: "task.provider_session",

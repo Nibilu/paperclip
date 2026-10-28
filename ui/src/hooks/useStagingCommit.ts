@@ -3,7 +3,7 @@ import { healthApi } from "@/api/health";
 import { queryKeys } from "@/lib/queryKeys";
 
 export function useStagingCommit(menuOpen: boolean) {
-  const isStaging = window.location.hostname.endsWith(".staging.paperclip.app");
+  const isStaging = window.location.hostname.endsWith(".staging.pilibala.app");
   const { data, isError } = useQuery({
     // Keep optional menu refresh failures separate from the board's access gate.
     queryKey: queryKeys.stagingCommit,

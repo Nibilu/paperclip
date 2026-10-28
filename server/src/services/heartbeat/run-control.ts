@@ -24,7 +24,7 @@ import {
   isAcknowledgedNativeStop,
   acknowledgedNativeStopExecutionHasStopped,
 } from "../acknowledged-native-stop.js";
-import { completeTerminatedRemoteNativeSessionCleanup } from "../../vendor/paperclip-runner/index.js";
+import { completeTerminatedRemoteNativeSessionCleanup } from "../../vendor/pilibala-runner/index.js";
 import {
   hasRemoteTerminationReceipt,
   remoteExecutionHasStopped,
@@ -70,10 +70,10 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   type EnvironmentLeaseStatus,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   agentWakeupRequests,
   companies,
@@ -83,7 +83,7 @@ import {
   issueRecoveryActions,
   issues,
   nativeRunFinalizations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   conflict,
   HttpError,
@@ -109,7 +109,7 @@ import {
 import { terminateLocalService } from "../local-service-supervisor.js";
 import { deriveCommentId } from "../../modules/run-dispatch/index.js";
 import { WakeQueueApplicationError } from "../../modules/wake-queue/index.js";
-import { isUuidLike } from "@paperclipai/shared";
+import { isUuidLike } from "@pilibalaai/shared";
 import {
   type ProviderResourceDisposition,
 } from "../environment-runtime.js";
@@ -568,7 +568,7 @@ export function createHeartbeatRunControl(db: Db, dependencies: HeartbeatRunCont
     }
     if (!actorId) return;
     const agent = await getAgent(wake.agentId);
-    if (!agent || agent.companyId !== companyId || (agent.adapterType === "paperclip_runner" && !response?.source.requiresFreshSession)) return;
+    if (!agent || agent.companyId !== companyId || (agent.adapterType === "pilibala_runner" && !response?.source.requiresFreshSession)) return;
     const [active] = await db.select({ id: heartbeatRuns.id }).from(heartbeatRuns).where(and(
       eq(heartbeatRuns.companyId, companyId),
       eq(heartbeatRuns.agentId, wake.agentId),
@@ -640,7 +640,7 @@ export function createHeartbeatRunControl(db: Db, dependencies: HeartbeatRunCont
     await enqueueWakeup(wake.agentId, {
       source: "on_demand", triggerDetail: "manual", reason: "issue_commented",
       payload: deliveryPayload, contextSnapshot: response
-        ? { ...parseObject(payload._paperclipWakeContext), issueId, triggeredBy: "board", actorId,
+        ? { ...parseObject(payload._pilibalaWakeContext), issueId, triggeredBy: "board", actorId,
             responsibleUserId: actorId }
         : withQueuedCommentIdsInRunContext({
             issueId, triggeredBy: "board", actorId, responsibleUserId: actorId,
@@ -966,7 +966,7 @@ export function createHeartbeatRunControl(db: Db, dependencies: HeartbeatRunCont
               'beforeNativeSelection', ${heartbeatRuns.runtimeMode} = 'legacy'
                 and ${heartbeatRuns.runtimeModeResolvedAt} is null
                 and ${heartbeatRuns.executionStage} = 'preparing'
-                and coalesce(${heartbeatRuns.runnerProfileJson}->'adapterDispatch'->>'adapterType' = 'paperclip_runner', false)
+                and coalesce(${heartbeatRuns.runnerProfileJson}->'adapterDispatch'->>'adapterType' = 'pilibala_runner', false)
             ))`,
         }).where(and(eq(heartbeatRuns.id, runId), inArray(heartbeatRuns.status,
           pendingNativeRetry ? [...CANCELLABLE_HEARTBEAT_RUN_STATUSES, "failed"] : [...CANCELLABLE_HEARTBEAT_RUN_STATUSES],

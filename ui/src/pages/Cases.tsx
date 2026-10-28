@@ -85,7 +85,7 @@ const defaultCaseViewState: CaseViewState = {
 };
 
 function getCaseViewStorageKey(companyId: string | null | undefined): string | null {
-  return companyId ? `paperclip:cases:${companyId}:view` : null;
+  return companyId ? `pilibala:cases:${companyId}:view` : null;
 }
 
 function normalizeCaseColumns(value: unknown): CaseColumn[] {
@@ -727,7 +727,7 @@ function CasesEmptyHero() {
 {slug, target_audience, publish_url} and key <release>/<slug>."`}
         </pre>
         <p className="text-xs text-muted-foreground">
-          See the paperclip skill → <code className="font-mono">references/cases.md</code> for the API.
+          See the pilibala skill → <code className="font-mono">references/cases.md</code> for the API.
         </p>
       </div>
       <p className="text-xs text-muted-foreground">

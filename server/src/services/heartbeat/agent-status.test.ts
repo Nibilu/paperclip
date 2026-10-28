@@ -3,7 +3,7 @@ import {
   activityLog, agentInstructionWorkingCopies, agents, agentWakeupRequests, companies,
   createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, environmentLeases, environments, heartbeatRuns,
   issues, nativeRunFinalizations, type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
@@ -21,7 +21,7 @@ describePostgres("heartbeat agent status", () => {
   const old = () => new Date(Date.now() - 60 * 60_000);
 
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-agent-status-");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-agent-status-");
     db = createDb(database.connectionString);
     service = createHeartbeatAgentStatus(db);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
@@ -154,7 +154,7 @@ describePostgres("heartbeat agent status", () => {
   it.each(["valid", "wrong_run", "missing_receipt", "pending_cleanup"])("requires exact failed remote cleanup proof: %s", async kind => {
     const { companyId, agentId, runId } = await seed();
     const leaseId = randomUUID();
-    const receipt = { schema: "paperclip.remote-termination.v1", companyId, runId: kind === "wrong_run" ? randomUUID() : runId,
+    const receipt = { schema: "pilibala.remote-termination.v1", companyId, runId: kind === "wrong_run" ? randomUUID() : runId,
       leaseId, provider: "daytona", providerLeaseId: "synthetic-allocation", state: "destroyed" };
     await db.insert(environmentLeases).values({ id: leaseId, companyId, heartbeatRunId: runId,
       status: "failed", leasePolicy: "ephemeral", provider: "daytona", providerLeaseId: "synthetic-allocation",

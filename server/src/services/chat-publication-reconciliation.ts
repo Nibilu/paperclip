@@ -1,4 +1,4 @@
-import type { LiveEvent } from "@paperclipai/shared";
+import type { LiveEvent } from "@pilibalaai/shared";
 import { publishLiveEvent } from "./live-events.js";
 import { isSafeNativeChatProgressEventType } from "./safe-native-chat-progress.js";
 

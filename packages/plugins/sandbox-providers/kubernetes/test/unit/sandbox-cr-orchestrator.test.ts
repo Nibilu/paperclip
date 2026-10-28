@@ -30,13 +30,13 @@ describe("createSandboxCr", () => {
     const manifest = {
       apiVersion: "agents.x-k8s.io/v1alpha1",
       kind: "Sandbox",
-      metadata: { name: "pc-abc", namespace: "paperclip-acme" },
+      metadata: { name: "pc-abc", namespace: "pilibala-acme" },
     };
-    const result = await createSandboxCr(clients as never, "paperclip-acme", manifest);
+    const result = await createSandboxCr(clients as never, "pilibala-acme", manifest);
     expect(create).toHaveBeenCalledWith({
       group: SANDBOX_GROUP,
       version: SANDBOX_VERSION,
-      namespace: "paperclip-acme",
+      namespace: "pilibala-acme",
       plural: SANDBOX_PLURAL,
       body: manifest,
     });

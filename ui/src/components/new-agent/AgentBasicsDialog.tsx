@@ -73,7 +73,7 @@ export function AgentBasicsDialog({
     (adapter) =>
       adapter.loaded &&
       !adapter.disabled &&
-      adapter.type !== "paperclip_runner" &&
+      adapter.type !== "pilibala_runner" &&
       isNewAgentAdapterAllowed(adapter.type, {
         cloud,
         nativeRunnerEnabled: experimental.data?.enableNativeRunner === true,
@@ -82,9 +82,9 @@ export function AgentBasicsDialog({
       !getAdapterDisplay(adapter.type).comingSoon,
   );
   const experimentalRunnerAvailable = experimental.data?.enableNativeRunner === true
-    && adapters?.some(adapter => adapter.type === "paperclip_runner" && adapter.loaded && !adapter.disabled);
+    && adapters?.some(adapter => adapter.type === "pilibala_runner" && adapter.loaded && !adapter.disabled);
   const validAdapter = choices.some((adapter) => adapter.type === adapterType)
-    || (experimentalRunnerAvailable && adapterType === "paperclip_runner");
+    || (experimentalRunnerAvailable && adapterType === "pilibala_runner");
   return (
     <Dialog
       open={open}
@@ -122,8 +122,8 @@ export function AgentBasicsDialog({
             if (step === "name") setStep("adapter");
             else if (validAdapter)
               onContinue({ name: name.trim(),
-                adapterType: adapterType === "openai_dot" ? "paperclip_runner" : adapterType,
-                runnerProvider: adapterType === "openai_dot" ? "openai_dot" : adapterType === "paperclip_runner" ? runnerProvider : "codex" });
+                adapterType: adapterType === "openai_dot" ? "pilibala_runner" : adapterType,
+                runnerProvider: adapterType === "openai_dot" ? "openai_dot" : adapterType === "pilibala_runner" ? runnerProvider : "codex" });
           }}
         >
           <div className="flex min-h-0 flex-col gap-7 overflow-y-auto px-6 pb-8 sm:px-10">
@@ -221,14 +221,14 @@ export function AgentBasicsDialog({
                   <div className="space-y-2">
                     <label className="text-sm text-muted-foreground">Experimental harness</label>
                     <SelectPopover aria-label="Experimental harness"
-                      value={adapterType === "paperclip_runner" ? runnerProvider : ""}
+                      value={adapterType === "pilibala_runner" ? runnerProvider : ""}
                       placeholder="Choose a native harness…"
-                      onValueChange={provider => { setRunnerProvider(provider); setAdapterType("paperclip_runner"); }}
+                      onValueChange={provider => { setRunnerProvider(provider); setAdapterType("pilibala_runner"); }}
                       options={[
-                        { value: "codex", label: "Codex (Paperclip Runner)" },
-                        { value: "claude", label: "Claude Code (Paperclip Runner)" },
-                        { value: "grok", label: "Grok Build (Paperclip Runner)" },
-                        { value: "opencode", label: "OpenCode (Paperclip Runner)" },
+                        { value: "codex", label: "Codex (Pilibala Runner)" },
+                        { value: "claude", label: "Claude Code (Pilibala Runner)" },
+                        { value: "grok", label: "Grok Build (Pilibala Runner)" },
+                        { value: "opencode", label: "OpenCode (Pilibala Runner)" },
                       ]} />
                   </div>
                 </details>}

@@ -31,7 +31,7 @@ import {
   routineRuns,
   routines,
   routineTriggers,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -100,7 +100,7 @@ describeEmbeddedPostgres("routine routes end-to-end", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-routines-e2e-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-routines-e2e-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -140,7 +140,7 @@ describeEmbeddedPostgres("routine routes end-to-end", () => {
 
   beforeEach(() => {
     vi.resetModules();
-    vi.doUnmock("@paperclipai/shared/telemetry");
+    vi.doUnmock("@pilibalaai/shared/telemetry");
     vi.doUnmock("../telemetry.js");
     vi.doUnmock("../services/access.js");
     vi.doUnmock("../services/issues.js");
@@ -202,7 +202,7 @@ describeEmbeddedPostgres("routine routes end-to-end", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -354,8 +354,8 @@ describeEmbeddedPostgres("routine routes end-to-end", () => {
   it.each(["bearer", "hmac_sha256", "github_hmac", "none"] as const)(
     "authenticates %s HTTP deliveries, persists payloads, and enforces trigger lifecycle",
     async (signingMode) => {
-      vi.stubEnv("PAPERCLIP_API_URL", "http://localhost:3100");
-      vi.stubEnv("PAPERCLIP_IN_WORKTREE", "false");
+      vi.stubEnv("PILIBALA_API_URL", "http://localhost:3100");
+      vi.stubEnv("PILIBALA_IN_WORKTREE", "false");
       const { companyId, agentId, projectId, userId } = await seedFixture();
       const board = await createApp({ type: "board", source: "local_implicit", userId, isInstanceAdmin: true });
       const created = await request(board).post(`/api/companies/${companyId}/routines`).send({
@@ -390,7 +390,7 @@ describeEmbeddedPostgres("routine routes end-to-end", () => {
         const req = request(ingress).post(path).set("Content-Type", "application/json");
         if (signingMode === "bearer") req.set("Authorization", `Bearer ${secret}`);
         if (signingMode === "hmac_sha256") {
-          req.set("X-Paperclip-Timestamp", ts).set("X-Paperclip-Signature",
+          req.set("X-Pilibala-Timestamp", ts).set("X-Pilibala-Signature",
             `sha256=${createHmac("sha256", secret).update(`${ts}.`).update(raw).digest("hex")}`);
         }
         if (signingMode === "github_hmac") req.set("X-Hub-Signature-256",
@@ -404,7 +404,7 @@ describeEmbeddedPostgres("routine routes end-to-end", () => {
       if (signingMode === "hmac_sha256") {
         expect((await delivery(undefined, raw, "1")).status).toBe(401);
         const malformed = await request(ingress).post(path).set("Content-Type", "application/json")
-          .set("X-Paperclip-Timestamp", timestamp).set("X-Paperclip-Signature", "é".repeat(64)).send(raw);
+          .set("X-Pilibala-Timestamp", timestamp).set("X-Pilibala-Signature", "é".repeat(64)).send(raw);
         expect(malformed.status).toBe(401);
       }
       expect((await request(ingress).post(path).type("text").send(raw)).status).toBe(415);
@@ -442,8 +442,8 @@ describeEmbeddedPostgres("routine routes end-to-end", () => {
   );
 
   it("keeps setup deliveries out of runs, persists test receipts, and restores removed triggers", async () => {
-    vi.stubEnv("PAPERCLIP_API_URL", "http://localhost:3100");
-    vi.stubEnv("PAPERCLIP_IN_WORKTREE", "false");
+    vi.stubEnv("PILIBALA_API_URL", "http://localhost:3100");
+    vi.stubEnv("PILIBALA_IN_WORKTREE", "false");
     const { companyId, agentId, projectId, userId } = await seedFixture();
     const board = await createApp({ type: "board", source: "local_implicit", userId, isInstanceAdmin: true });
     const created = await request(board).post(`/api/companies/${companyId}/routines`).send({
@@ -655,13 +655,13 @@ describeEmbeddedPostgres("routine routes end-to-end", () => {
 
     const runRes = await postRoutineRun(app, createRes.body.id, {
       source: "manual",
-      variables: { repo: "paperclip" },
+      variables: { repo: "pilibala" },
     });
 
     expect(runRes.status).toBe(202);
     expect(runRes.body.triggerPayload).toEqual({
       variables: {
-        repo: "paperclip",
+        repo: "pilibala",
         priority: "high",
       },
     });
@@ -671,7 +671,7 @@ describeEmbeddedPostgres("routine routes end-to-end", () => {
       .from(issues)
       .where(eq(issues.id, runRes.body.linkedIssueId));
 
-    expect(issue?.description).toBe("Review paperclip for high bugs");
+    expect(issue?.description).toBe("Review pilibala for high bugs");
   });
 
   it("defaults activity gates and rejects invalid activity gate values", async () => {

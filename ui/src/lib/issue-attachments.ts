@@ -1,5 +1,5 @@
-import type { IssueAttachment } from "@paperclipai/shared";
-import { isMarkdownAttachmentContent } from "@paperclipai/shared";
+import type { IssueAttachment } from "@pilibalaai/shared";
+import { isMarkdownAttachmentContent } from "@pilibalaai/shared";
 import { isImageLikeOutput, isVideoLikeOutput } from "./issue-output";
 import { isHtmlPreview } from "./html-preview";
 

@@ -2,10 +2,10 @@ import { inspectAgentFile, fileHash, agentFilePath, MAX_AGENT_FILE_BYTES } from 
 import fs from "node:fs/promises";
 import path from "node:path";
 import { and, eq } from "drizzle-orm";
-import { agentInstructionHeads, agents, type Db } from "@paperclipai/db";
+import { agentInstructionHeads, agents, type Db } from "@pilibalaai/db";
 import { instructionPath, assertInstructionPathSafe, instructionBytes, readInstructionBytes } from "./agent-instruction-files.js";
 import { notFound, unprocessable } from "../errors.js";
-import { resolveHomeAwarePath, resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { resolveHomeAwarePath, resolvePilibalaInstanceRoot } from "../home-paths.js";
 
 const ENTRY_FILE_DEFAULT = "AGENTS.md";
 const MODE_KEY = "instructionsBundleMode";
@@ -135,7 +135,7 @@ function resolvePathWithinRoot(rootPath: string, relativePath: string): string {
 
 export function resolveManagedInstructionsRoot(agent: AgentLike): string {
   return path.resolve(
-    resolvePaperclipInstanceRoot(),
+    resolvePilibalaInstanceRoot(),
     "companies",
     agent.companyId,
     "agents",

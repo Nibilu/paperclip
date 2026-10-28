@@ -29,13 +29,13 @@ import {
   issues,
   projects,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   githubCommitSchema,
   type GitHubAutomaticEventContext,
   type GitHubReviewEventContext,
   type GitHubReviewPolicy,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { HttpError, conflict, forbidden, notFound } from "../errors.js";
 import {
   githubBotRepositoryToken,
@@ -102,7 +102,7 @@ const hash = (value: unknown) =>
     )
     .digest("hex");
 const marker = (kind: string, key: string) =>
-  `<!-- paperclip-${kind}:${hash(key)} -->`;
+  `<!-- pilibala-${kind}:${hash(key)} -->`;
 const readSchema = z
   .object({
     section: z.enum([
@@ -1356,7 +1356,7 @@ export function githubChatReviewService(db: Db, fetchImpl = fetch) {
                 app?: { id?: number };
               }>;
             }>(
-              `/commits/${review.headSha}/check-runs?check_name=Paperclip%20Review&per_page=100`,
+              `/commits/${review.headSha}/check-runs?check_name=Pilibala%20Review&per_page=100`,
             );
             const check = checks.check_runs.find(
               (item) =>
@@ -1371,7 +1371,7 @@ export function githubChatReviewService(db: Db, fetchImpl = fetch) {
             }>(check ? `/check-runs/${check.id}` : "/check-runs", {
               method: check ? "PATCH" : "POST",
               body: {
-                name: "Paperclip Review",
+                name: "Pilibala Review",
                 head_sha: review.headSha,
                 external_id: `${source.endpoint.id}:${source.number}:${review.headSha}`,
                 ...(board ? { details_url: `${board}/issues/${source.issue.id}` } : {}),

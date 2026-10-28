@@ -1,11 +1,11 @@
 # Database
 
-Paperclip uses PostgreSQL via [Drizzle ORM](https://orm.drizzle.team/). There are three ways to run the database, from simplest to most production-ready.
+Pilibala uses PostgreSQL via [Drizzle ORM](https://orm.drizzle.team/). There are three ways to run the database, from simplest to most production-ready.
 
 ### Task query performance
 
 Run-context lookups use expression indexes for both `context_snapshot.issueId`
-and `context_snapshot.paperclipIssue.id`. Task creation provenance has its own
+and `context_snapshot.pilibalaIssue.id`. Task creation provenance has its own
 company-scoped expression index that follows the query's native issue ID and
 legacy `issueId`/`taskId`/`taskKey` precedence. Migration 0345 builds the two new
 indexes concurrently and can resume an interrupted build without blocking run
@@ -20,7 +20,7 @@ wakeup-history index.
 To compare all three queries on the same disposable local PostgreSQL fixture:
 
 ```sh
-pnpm --filter @paperclipai/server exec tsx ../scripts/benchmark-slow-queries.ts --baseline-ref=origin/master
+pnpm --filter @pilibalaai/server exec tsx ../scripts/benchmark-slow-queries.ts --baseline-ref=origin/master
 ```
 
 Use a revision before these fixes for `--baseline-ref` after they merge. The
@@ -59,7 +59,7 @@ their existing transaction and data reads.
 To measure authentication query responses on disposable synthetic data:
 
 ```sh
-pnpm --filter @paperclipai/server exec tsx ../scripts/benchmark-agent-authentication.ts --baseline-ref=06689c1b3410000bcd65ff40cb469e600209c4db
+pnpm --filter @pilibalaai/server exec tsx ../scripts/benchmark-agent-authentication.ts --baseline-ref=06689c1b3410000bcd65ff40cb469e600209c4db
 ```
 
 This compares the current query with the original query in that revision. It
@@ -70,7 +70,7 @@ or fleet-wide savings.
 To compare the real summary and full history queries with an earlier revision:
 
 ```sh
-pnpm --filter @paperclipai/server exec tsx ../scripts/benchmark-run-history.ts --baseline-ref=1e731520bb
+pnpm --filter @pilibalaai/server exec tsx ../scripts/benchmark-run-history.ts --baseline-ref=1e731520bb
 ```
 
 The fixture has 1,400 synthetic runs with 192 KiB contexts. Both queries return
@@ -93,7 +93,7 @@ suite checks both plans and verifies the attached and retained source results.
 To compare this query on a disposable fixture with 13,429 tasks:
 
 ```sh
-pnpm --filter @paperclipai/server exec tsx ../scripts/benchmark-workspace-authorization.ts --baseline-ref=5c7a025032
+pnpm --filter @pilibalaai/server exec tsx ../scripts/benchmark-workspace-authorization.ts --baseline-ref=5c7a025032
 ```
 
 The benchmark loads the baseline authorization module with current dependencies,
@@ -110,12 +110,12 @@ pnpm dev
 
 That's it. On first start the server:
 
-1. Creates a `~/.paperclip/instances/default/db/` directory for storage
-2. Ensures the `paperclip` database exists
+1. Creates a `~/.pilibala/instances/default/db/` directory for storage
+2. Ensures the `pilibala` database exists
 3. Runs migrations automatically for empty databases
 4. Starts serving requests
 
-Data persists across restarts in `~/.paperclip/instances/default/db/`. To reset local dev data, delete that directory.
+Data persists across restarts in `~/.pilibala/instances/default/db/`. To reset local dev data, delete that directory.
 
 Subscription reporting adds `ai_subscriptions` (company-scoped account identity),
 `ai_subscription_prices` (immutable price revisions), and
@@ -134,7 +134,7 @@ If you need to apply pending migrations manually, run:
 pnpm db:migrate
 ```
 
-When `DATABASE_URL` is unset, this command targets the current embedded PostgreSQL instance for your active Paperclip config/instance.
+When `DATABASE_URL` is unset, this command targets the current embedded PostgreSQL instance for your active Pilibala config/instance.
 
 Issue reference mentions follow the normal migration path: the schema migration creates the tracking table, but it does not backfill historical issue titles, descriptions, comments, or documents automatically.
 
@@ -150,7 +150,7 @@ Future issue, comment, and document writes sync references automatically without
 
 This mode is ideal for local development and one-command installs.
 
-Docker note: the Docker quickstart image also uses embedded PostgreSQL by default. Persist `/paperclip` to keep DB state across container restarts (see `doc/DOCKER.md`).
+Docker note: the Docker quickstart image also uses embedded PostgreSQL by default. Persist `/pilibala` to keep DB state across container restarts (see `doc/DOCKER.md`).
 
 ## 2. Local PostgreSQL (Docker)
 
@@ -165,13 +165,13 @@ This starts PostgreSQL 17 on `localhost:5432`. Then set the connection string:
 ```sh
 cp .env.example .env
 # .env already contains:
-# DATABASE_URL=postgres://paperclip:paperclip@localhost:5432/paperclip
+# DATABASE_URL=postgres://pilibala:pilibala@localhost:5432/pilibala
 ```
 
 Run migrations:
 
 ```sh
-DATABASE_URL=postgres://paperclip:paperclip@localhost:5432/paperclip \
+DATABASE_URL=postgres://pilibala:pilibala@localhost:5432/pilibala \
   pnpm db:migrate
 ```
 
@@ -215,7 +215,7 @@ For the application runtime, use a direct PostgreSQL connection unless the datab
 DATABASE_URL=postgres://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres
 ```
 
-If you later run the app with a pooled runtime URL, set `DATABASE_MIGRATION_URL` to the direct connection URL. Paperclip uses it for startup schema checks/migrations and plugin namespace migrations, while the app continues to use `DATABASE_URL` for runtime queries:
+If you later run the app with a pooled runtime URL, set `DATABASE_MIGRATION_URL` to the direct connection URL. Pilibala uses it for startup schema checks/migrations and plugin namespace migrations, while the app continues to use `DATABASE_URL` for runtime queries:
 
 ```sh
 DATABASE_URL=postgres://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
@@ -234,7 +234,7 @@ DATABASE_POOL_MAX=25                 # connection pool size; default: 10
 DATABASE_IDLE_TIMEOUT_SECONDS=60     # close idle pooled connections; default: 60 (0 = keep open)
 DATABASE_CONNECT_TIMEOUT_SECONDS=10  # default: 30
 DATABASE_MAX_LIFETIME_SECONDS=1800   # recycle a pooled connection after this long; default: 30-60 min (random)
-DATABASE_APPLICATION_NAME=paperclip  # application_name in pg_stat_activity; default: paperclip
+DATABASE_APPLICATION_NAME=pilibala  # application_name in pg_stat_activity; default: pilibala
 ```
 
 ### Push the schema
@@ -267,7 +267,7 @@ pool. Callers may retry only when the complete operation is idempotent or has
 a durable receipt that prevents duplicate effects. Some transient statement
 failures therefore reach the caller instead of being retried automatically.
 
-When a database connection closes, its transaction fails. Paperclip does not
+When a database connection closes, its transaction fails. Pilibala does not
 replay that transaction. New requests can use a fresh connection from the pool.
 Queries from the failed transaction must keep failing, even after the pool
 reconnects.
@@ -328,7 +328,7 @@ The database mode is controlled by `DATABASE_URL`:
 
 | `DATABASE_URL` | Mode |
 |---|---|
-| Not set | Embedded PostgreSQL (`~/.paperclip/instances/default/db/`) |
+| Not set | Embedded PostgreSQL (`~/.pilibala/instances/default/db/`) |
 | `postgres://...localhost...` | Local Docker PostgreSQL |
 | `postgres://...supabase.com...` | Hosted Supabase |
 
@@ -348,7 +348,7 @@ When authoring migrations or one-time backfills:
 - Treat the `check:migrations` CI gate as the enforcement backstop for these rules. If it flags a migration, rewrite the migration or add a suppression comment with the indexed predicate, batch bound, and reason the remaining scan is safe.
 
 Private-task migrations `0313` and `0314` are explicitly allowlisted in the
-Paperclip executor to run outside a file-wide transaction. Their idempotent
+Pilibala executor to run outside a file-wide transaction. Their idempotent
 keyset batches commit every 1,000 rows, and migration history is recorded only
 when all batches finish. The executor repairs invalid concurrent indexes on
 retry. A reserved connection holds a session advisory lock across all batch
@@ -362,7 +362,7 @@ connection, before enabling the new server and UI.
 
 `drizzle-kit generate` diffs `packages/db/src/schema/` against the newest snapshot in `packages/db/src/migrations/meta/`. That snapshot must describe the schema that every migration produces when they run in order. A snapshot that drifts from the schema makes the *next* migration wrong, because `generate` folds the drift into it. The drift can add a column that an earlier migration already created, which makes that migration fail on a fresh database. It can also drop a column that the schema still uses.
 
-- Create every migration with `pnpm --filter @paperclipai/db generate`. Do not hand-write a snapshot.
+- Create every migration with `pnpm --filter @pilibalaai/db generate`. Do not hand-write a snapshot.
 - Do not hand-edit a snapshot to resolve a merge conflict. Renumber your migration and run `generate` again, as `packages/db/.gitattributes` describes.
 - The repo keeps only the newest 5 snapshots. `generate` runs `prune:snapshots` afterwards to delete older ones. Drizzle only reads the newest snapshot, and each snapshot is a full copy of the schema (over 1 MB each). Older snapshots are still in git history.
 - `packages/db/src/migration-snapshot-drift.test.ts` is the enforcement backstop. It repeats the diff that `generate` performs and fails when the newest snapshot no longer matches `packages/db/src/schema/`.
@@ -381,7 +381,7 @@ constructing URL-dependent runtime services on every boot.
 
 ### Unclaimed Cloud warm standby
 
-`PAPERCLIP_CLOUD_WARM_STANDBY=1` is an opt-in control-plane marker for an
+`PILIBALA_CLOUD_WARM_STANDBY=1` is an opt-in control-plane marker for an
 unclaimed warm application. It requires Cloud configuration, a stack identity,
 and runtime identity verification keys. After restoring the durable identity,
 startup checks once for company data. Existing companies or a persisted claim
@@ -421,7 +421,7 @@ feedback sharing and retry behavior.
 
 ## Resource membership tables
 
-Paperclip stores current-user sidebar membership state in:
+Pilibala stores current-user sidebar membership state in:
 
 - `project_memberships`
 - `agent_memberships`
@@ -516,7 +516,7 @@ endpoint has no additional instructions.
 
 `chat_telegram_draft_ids` is a content-free, instance-wide PostgreSQL sequence,
 not a company-owned record. Telegram's native Stop callback carries a draft ID
-but no actor or Paperclip generation. IDs therefore must not be recycled when
+but no actor or Pilibala generation. IDs therefore must not be recycled when
 a transaction rolls back or an endpoint/company is deleted and its bot is
 connected again. The sequence allocates positive 31-bit IDs without cycling;
 exhaustion refuses new draft allocation rather than wrapping or falling back to
@@ -565,10 +565,10 @@ The plugin runtime tracks plugin-owned database namespaces and migrations in `pl
 
 ## Backups
 
-Paperclip supports automatic and manual logical database backups. These dumps include
+Pilibala supports automatic and manual logical database backups. These dumps include
 non-system database schemas such as `public`, the Drizzle migration journal, and
 plugin-owned database schemas. See `doc/DEVELOPING.md` for the current
-`paperclipai db:backup` / `pnpm db:backup` commands and backup retention
+`pilibalaai db:backup` / `pnpm db:backup` commands and backup retention
 configuration.
 
 Database backups do not include non-database instance files such as local-disk
@@ -577,7 +577,7 @@ up separately when you need full instance disaster recovery.
 
 ## Secret storage
 
-Paperclip stores secret metadata and versions in:
+Pilibala stores secret metadata and versions in:
 
 - `user_secret_definitions`
 - `user_secret_declarations`
@@ -599,8 +599,8 @@ Secret-aware env bindings are supported by agents, projects, and routines. Routi
 For local/default installs, the active provider is `local_encrypted`:
 
 - Secret material is encrypted at rest with a local master key.
-- Default key file: `~/.paperclip/instances/default/secrets/master.key` (auto-created if missing).
-- CLI config location: `~/.paperclip/instances/default/config.json` under `secrets.localEncrypted.keyFilePath`.
+- Default key file: `~/.pilibala/instances/default/secrets/master.key` (auto-created if missing).
+- CLI config location: `~/.pilibala/instances/default/config.json` under `secrets.localEncrypted.keyFilePath`.
 - Backup/restore requires both the database metadata and the local master key file; either artifact alone is insufficient.
 - The server best-effort enforces `0600` key file permissions and provider health reports permission warnings.
 - User-scoped values use the same local encrypted provider path. Database
@@ -610,25 +610,25 @@ For local/default installs, the active provider is `local_encrypted`:
 
 Optional overrides:
 
-- `PAPERCLIP_SECRETS_MASTER_KEY` (32-byte key as base64, hex, or raw 32-char string)
-- `PAPERCLIP_SECRETS_MASTER_KEY_FILE` (custom key file path)
+- `PILIBALA_SECRETS_MASTER_KEY` (32-byte key as base64, hex, or raw 32-char string)
+- `PILIBALA_SECRETS_MASTER_KEY_FILE` (custom key file path)
 
 Strict mode to block new inline sensitive env values:
 
 ```sh
-PAPERCLIP_SECRETS_STRICT_MODE=true
+PILIBALA_SECRETS_STRICT_MODE=true
 ```
 
 You can set strict mode and provider defaults via:
 
 ```sh
-pnpm paperclipai configure --section secrets
+pnpm pilibalaai configure --section secrets
 ```
 
 Inline secret migration command:
 
 ```sh
-npx paperclipai secrets migrate-inline-env --company-id <company-id> --apply
+npx pilibalaai secrets migrate-inline-env --company-id <company-id> --apply
 
 # direct database maintenance fallback
 pnpm secrets:migrate-inline-env --apply
@@ -726,7 +726,7 @@ instance storage as other workspaces. `agent_instruction_revisions` and
 `agent_instruction_heads` are retained as read-only upgrade input. Their heads
 are adopted once into the managed directory; new saves never append revisions.
 `agent_instruction_working_copies` holds per-run baseline hashes, state, and
-capture receipts. New receipts identify `paperclip.agent-files.v1`; historical
+capture receipts. New receipts identify `pilibala.agent-files.v1`; historical
 rows retain the instruction-only format. Completed directory runs discard their
 baseline and private copies. See [Persistent agent files](agent-files.md).
 
@@ -793,7 +793,7 @@ bound before icon upload; an interrupted upload never triggers another app
 creation. This JSON state stores no token, image URL, or provider error payload.
 
 `chat_endpoints.setup.slackAccount` stores the OAuth installer’s Slack ID, the
-initiating Paperclip user ID, pending/linked status, durable welcome-DM and
+initiating Pilibala user ID, pending/linked status, durable welcome-DM and
 optional verification-DM status, and the returned DM channel ID. It stores no
 user OAuth token or provider payload.
 The account uses the existing company-scoped `chat_identity_links` table; it
@@ -807,7 +807,7 @@ in setup state, and the fingerprint is excluded from endpoint responses.
 For automatically registered apps, `webhookVerifiedAt` also records successful
 delivery of an authenticated message/app-mention event to the current callback
 URL. The current signing secret, saved app/workspace/bot binding, active connection,
-and runtime generation are checked before recording it. This is Paperclip's
+and runtime generation are checked before recording it. This is Pilibala's
 connection evidence, not Slack's settings-page URL-verification flag. Activity
 identifies this evidence as `authenticated_event`; no message body is recorded.
 
@@ -822,7 +822,7 @@ credential-mutation lease used by configuration.
 ### Slack manager workspace grants
 
 `chat_slack_manager_grants` stores a personal workspace authorization, scoped by
-company, Paperclip user, Slack user, workspace and manager app. Access/refresh
+company, Pilibala user, Slack user, workspace and manager app. Access/refresh
 credentials are references to user-scoped vault entries, never plaintext columns.
 Revision fencing protects reauthorization from concurrent revocation. Per-method
 rate-limit deadlines retain Slack's Retry-After across setup retries.
@@ -987,7 +987,7 @@ indexes can filter candidates before reading large contexts. Native bindings
 continue to override legacy context IDs. No new index or migration is needed.
 
 ```sh
-pnpm --filter @paperclipai/server exec tsx ../scripts/benchmark-recovery-queries.ts --baseline-ref=1e731520bb
+pnpm --filter @pilibalaai/server exec tsx ../scripts/benchmark-recovery-queries.ts --baseline-ref=1e731520bb
 ```
 
 This disposable fixture compares the real ownership, recovery-action and status
@@ -1001,7 +1001,7 @@ Migration 0347 adds the opt-in `agent_runtime` resource stream. Database trigger
 record content-free configuration invalidations and managed file audit events in
 `resource_lifecycle_events`. They share the mutation transaction and fail the
 mutation if journal insertion fails. An INSERT trigger sends an empty PostgreSQL
-notification on `paperclip_plugin_lifecycle` after commit. The host subscribes
+notification on `pilibala_plugin_lifecycle` after commit. The host subscribes
 only when a ready runtime subscriber is installed. This feature requires a
 session-compatible database connection; do not enable it through a transaction
 pooler. Reconnection scans the durable journal. Existing process-local work

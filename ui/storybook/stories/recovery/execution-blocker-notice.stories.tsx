@@ -9,7 +9,7 @@ const meta = {
   id: "task-chat-recovery-notice",
   title: "Projects and execution/Recovery/Task chat/Recovery notice",
   component: ExecutionBlockerNotice,
-  parameters: { docs: { story: { inline: false } }, paperclip: {
+  parameters: { docs: { story: { inline: false } }, pilibala: {
     capabilities: ["recovery/diagnosis"], implementation: "production", boundary: "fixtures",
     notes: "Production task notice with source-bound recovery reads. Automatic recovery stays quiet; unresolved holds expose inspection without infrastructure certification. Fixture APIs do not prove live provider recovery.",
   } },

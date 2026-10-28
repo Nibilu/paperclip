@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import {
   DEPLOYMENT_MODES,
-  findPaperclipConfigKeyWarnings,
-  paperclipConfigSchema,
-  type PaperclipConfig,
+  findPilibalaConfigKeyWarnings,
+  pilibalaConfigSchema,
+  type PilibalaConfig,
   type DeploymentMode,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { ZodError } from "zod";
-import { resolvePaperclipConfigPath } from "./paths.js";
+import { resolvePilibalaConfigPath } from "./paths.js";
 
 function formatConfigValidationError(error: ZodError): string {
   return error.issues
@@ -18,8 +18,8 @@ function formatConfigValidationError(error: ZodError): string {
     .join("; ");
 }
 
-export function readConfigFile(): PaperclipConfig | null {
-  const configPath = resolvePaperclipConfigPath();
+export function readConfigFile(): PilibalaConfig | null {
+  const configPath = resolvePilibalaConfigPath();
 
   if (!fs.existsSync(configPath)) return null;
 
@@ -28,12 +28,12 @@ export function readConfigFile(): PaperclipConfig | null {
     raw = JSON.parse(fs.readFileSync(configPath, "utf-8"));
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    throw new Error(`Invalid Paperclip config at ${configPath}: failed to read or parse JSON: ${reason}`);
+    throw new Error(`Invalid Pilibala config at ${configPath}: failed to read or parse JSON: ${reason}`);
   }
 
   try {
-    const config = paperclipConfigSchema.parse(raw);
-    for (const warning of findPaperclipConfigKeyWarnings(config)) {
+    const config = pilibalaConfigSchema.parse(raw);
+    for (const warning of findPilibalaConfigKeyWarnings(config)) {
       console.warn(
         `Unknown config key ${warning.path}; did you mean ${warning.suggestion}? It will be preserved.`,
       );
@@ -41,7 +41,7 @@ export function readConfigFile(): PaperclipConfig | null {
     return config;
   } catch (error) {
     if (error instanceof ZodError) {
-      throw new Error(`Invalid Paperclip config at ${configPath}: ${formatConfigValidationError(error)}`);
+      throw new Error(`Invalid Pilibala config at ${configPath}: ${formatConfigValidationError(error)}`);
     }
 
     throw error;
@@ -50,7 +50,7 @@ export function readConfigFile(): PaperclipConfig | null {
 
 /** Resolve the same deployment mode without loading config.ts's dotenv/startup side effects. */
 export function resolveDeploymentMode(fileConfig = readConfigFile()): DeploymentMode {
-  const fromEnv = process.env.PAPERCLIP_DEPLOYMENT_MODE;
+  const fromEnv = process.env.PILIBALA_DEPLOYMENT_MODE;
   return fromEnv && DEPLOYMENT_MODES.includes(fromEnv as DeploymentMode)
     ? fromEnv as DeploymentMode
     : fileConfig?.server.deploymentMode ?? "local_trusted";

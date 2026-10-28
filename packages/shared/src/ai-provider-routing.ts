@@ -80,7 +80,7 @@ export function aiRoutingHarness(
   provider?: unknown,
   acpxAgent?: unknown,
 ): string {
-  if (adapter !== "paperclip_runner") return adapter;
+  if (adapter !== "pilibala_runner") return adapter;
   const runner =
     provider === "acpx" && (acpxAgent === "claude" || acpxAgent === "grok")
       ? acpxAgent
@@ -128,7 +128,7 @@ export function aiRoutingModel(
   model: string,
 ): string {
   if (!model || harness !== "opencode_local") return model;
-  const prefix = route.kind === "openrouter" ? "openrouter" : "paperclip";
+  const prefix = route.kind === "openrouter" ? "openrouter" : "pilibala";
   return model.startsWith(`${prefix}/`) ? model : `${prefix}/${model}`;
 }
 

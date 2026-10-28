@@ -1,13 +1,13 @@
 import { and, desc, eq } from "drizzle-orm";
-import { agents, plugins, pluginCompanySettings, resourceLifecycleEvents, type Db } from "@paperclipai/db";
-import type { PluginAgentRuntimeState } from "@paperclipai/plugin-sdk";
+import { agents, plugins, pluginCompanySettings, resourceLifecycleEvents, type Db } from "@pilibalaai/db";
+import type { PluginAgentRuntimeState } from "@pilibalaai/plugin-sdk";
 import { agentRecordQueries } from "../lib/agent-records.js";
 import { conflict, forbidden } from "../errors.js";
 import { agentInstructionsService } from "./agent-instructions.js";
 import { pluginAgentConnectionAssignments } from "./plugin-agent-connections.js";
 import { companySkillService } from "./company-skills.js";
 import { withSkillActor } from "./skill-access.js";
-import { readPaperclipSkillSyncPreference } from "@paperclipai/adapter-utils/server-utils";
+import { readPilibalaSkillSyncPreference } from "@pilibalaai/adapter-utils/server-utils";
 import { skillVersionSelectionMap } from "./runtime-skill-selections.js";
 import { instanceSettingsService } from "./instance-settings.js";
 import { agentInstanceSecretService } from "./agent-instance-secrets.js";
@@ -42,11 +42,11 @@ export async function pluginAgentRuntimeState(db: Db, pluginId: string, companyI
   for (let attempt = 0; attempt < 3; attempt++) {
     const state = await readState(db, pluginId, companyId, agentId);
     if (!state) return null;
-    const preference = readPaperclipSkillSyncPreference(state.agent.adapterConfig);
+    const preference = readPilibalaSkillSyncPreference(state.agent.adapterConfig);
     const settings = await instanceSettingsService(db).getExperimental();
     const skills = await withSkillActor({ type: "agent", agentId, companyId, source: "agent_key" }, () =>
       companySkillService(db).listRuntimeSkillEntries(companyId, {
-        selectionConfig: state.agent.adapterConfig, includeLegacy: state.agent.adapterType !== "paperclip_runner", snapshotLatest: true,
+        selectionConfig: state.agent.adapterConfig, includeLegacy: state.agent.adapterType !== "pilibala_runner", snapshotLatest: true,
         versionSelections: skillVersionSelectionMap(preference.desiredSkillEntries, { versionPinsEnabled: settings.enableBetaSkills }),
       }));
     const connectionAssignments = await pluginAgentConnectionAssignments(db, companyId, agentId, { publicMcp: settings.enablePublicMcp, chatConnectors: settings.enableChatConnectors });

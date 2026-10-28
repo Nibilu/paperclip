@@ -1,5 +1,5 @@
-import { WORKSPACE_RESTORE_LOCK_TIMEOUT_CODE } from "@paperclipai/adapter-utils/workspace-restore-merge";
-import { withAccountHomeSecretMutationLock } from "@paperclipai/adapter-codex-local/server";
+import { WORKSPACE_RESTORE_LOCK_TIMEOUT_CODE } from "@pilibalaai/adapter-utils/workspace-restore-merge";
+import { withAccountHomeSecretMutationLock } from "@pilibalaai/adapter-codex-local/server";
 import { syncConnectionCredentialBindings } from "./connection-credential-bindings.js";
 import { createHash, randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
@@ -20,7 +20,7 @@ import {
   toolApplications,
   toolConnections,
   toolConnectionInstalls,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   AI_CONNECTION_CAPABILITIES,
   decisionProviderForConnection,
@@ -37,7 +37,7 @@ import {
   type AiConnectionUsage,
   type CreateAiConnection,
   type AiConnectionLoginIntent,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { forbidden, notFound, unprocessable } from "../errors.js";
 import { aiConnectionConfigurationFailure, aiConnectionCredentialNotSharedFailure } from "./ai-connection-configuration-failure.js";
 import { quotaCredentialRecovery, quotaCredentialHash } from "./quota-credential-recovery.js";

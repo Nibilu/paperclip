@@ -9,11 +9,11 @@ import {
   externalObjects,
   toolApplications,
   toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
 import { githubConnectionEventService } from "../services/github-connection-events.js";
 import { subscribeCompanyLiveEvents } from "../services/live-events.js";
-import type { PaperclipCloudConnector } from "../services/paperclip-cloud-connector.js";
+import type { PilibalaCloudConnector } from "../services/pilibala-cloud-connector.js";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -27,7 +27,7 @@ describeEmbeddedPostgres("GitHub connection event delivery", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-github-events-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-github-events-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -51,7 +51,7 @@ describeEmbeddedPostgres("GitHub connection event delivery", () => {
     const applicationId = randomUUID();
     const connectionId = randomUUID();
     const grantId = randomUUID();
-    await db.insert(companies).values({ id: companyId, name: "Paperclip", issuePrefix: "GHE" });
+    await db.insert(companies).values({ id: companyId, name: "Pilibala", issuePrefix: "GHE" });
     await db.insert(toolApplications).values({
       id: applicationId,
       companyId,
@@ -83,7 +83,7 @@ describeEmbeddedPostgres("GitHub connection event delivery", () => {
       status: "active",
       isDefault: false,
       providerTenant: {
-        oauth: { strategy: "paperclip_cloud_connector", accessTokenExpiresAt: null },
+        oauth: { strategy: "pilibala_cloud_connector", accessTokenExpiresAt: null },
         github: {
           userId: "42",
           login: "octocat",
@@ -91,8 +91,8 @@ describeEmbeddedPostgres("GitHub connection event delivery", () => {
           repositoryCount: 3,
           repositorySelection: "selected",
           installationIds: ["101"],
-          installationOwnerLogins: ["paperclipai"],
-          repositories: [{ id: "203", fullName: "paperclipai/removed", installationId: "101" }],
+          installationOwnerLogins: ["pilibalaai"],
+          repositories: [{ id: "203", fullName: "pilibalaai/removed", installationId: "101" }],
           webhookHealth: "pending",
         },
       },
@@ -103,7 +103,7 @@ describeEmbeddedPostgres("GitHub connection event delivery", () => {
       companyId,
       providerKey: "github",
       objectType: "pull_request",
-      externalId: "paperclipai/paperclip#pull/123",
+      externalId: "pilibalaai/pilibala#pull/123",
       statusCategory: "open",
       statusTone: "info",
       data: { provider: "github", marker: "preserved" },
@@ -119,13 +119,13 @@ describeEmbeddedPostgres("GitHub connection event delivery", () => {
       createdAt: "2026-09-04T12:00:00.000Z",
       bindingIds: [`${grantId}_101`],
       payload: {
-        repository: "paperclipai/paperclip",
+        repository: "pilibalaai/pilibala",
         number: 123,
         state: "closed",
         merged: true,
         mergedAt: "2026-09-04T11:59:00.000Z",
         updatedAt: "2026-09-04T11:59:01.000Z",
-        url: "https://github.com/paperclipai/paperclip/pull/123",
+        url: "https://github.com/pilibalaai/pilibala/pull/123",
         headRef: "feature",
         headSha: "a".repeat(40),
         baseRef: "master",
@@ -146,7 +146,7 @@ describeEmbeddedPostgres("GitHub connection event delivery", () => {
       setWebhookBinding: vi.fn(async () => undefined),
       leaseEvents: vi.fn(async () => ({ leaseId: `lease-${++poll}`, events: [leasedEvent] })),
       acknowledgeEvents: vi.fn(async () => 1),
-    } as unknown as PaperclipCloudConnector;
+    } as unknown as PilibalaCloudConnector;
     let currentTime = new Date("2026-09-04T12:00:05.000Z");
     const service = githubConnectionEventService(db, { connector, now: () => currentTime });
 
@@ -172,13 +172,13 @@ describeEmbeddedPostgres("GitHub connection event delivery", () => {
       attempts: 1,
       provider: "github",
       normalizedPayload: {
-        repository: "paperclipai/paperclip",
+        repository: "pilibalaai/pilibala",
         number: 123,
         state: "closed",
         merged: true,
         mergedAt: "2026-09-04T11:59:00.000Z",
         updatedAt: "2026-09-04T11:59:01.000Z",
-        url: "https://github.com/paperclipai/paperclip/pull/123",
+        url: "https://github.com/pilibalaai/pilibala/pull/123",
         headRef: "feature",
         headSha: "a".repeat(40),
         baseRef: "master",
@@ -212,7 +212,7 @@ describeEmbeddedPostgres("GitHub connection event delivery", () => {
     const applicationId = randomUUID();
     const connectionId = randomUUID();
     const grantId = randomUUID();
-    await db.insert(companies).values({ id: companyId, name: "Paperclip", issuePrefix: "GHI" });
+    await db.insert(companies).values({ id: companyId, name: "Pilibala", issuePrefix: "GHI" });
     await db.insert(toolApplications).values({
       id: applicationId,
       companyId,
@@ -244,7 +244,7 @@ describeEmbeddedPostgres("GitHub connection event delivery", () => {
       status: "active",
       isDefault: false,
       providerTenant: {
-        oauth: { strategy: "paperclip_cloud_connector", accessTokenExpiresAt: null },
+        oauth: { strategy: "pilibala_cloud_connector", accessTokenExpiresAt: null },
         github: {
           userId: "42",
           login: "octocat",
@@ -252,8 +252,8 @@ describeEmbeddedPostgres("GitHub connection event delivery", () => {
           repositoryCount: 3,
           repositorySelection: "selected",
           installationIds: ["101"],
-          installationOwnerLogins: ["paperclipai"],
-          repositories: [{ id: "203", fullName: "paperclipai/removed", installationId: "101" }],
+          installationOwnerLogins: ["pilibalaai"],
+          repositories: [{ id: "203", fullName: "pilibalaai/removed", installationId: "101" }],
           webhookHealth: "pending",
         },
       },
@@ -293,7 +293,7 @@ describeEmbeddedPostgres("GitHub connection event delivery", () => {
         return ({ leaseId: `lease-${++poll}`, events: [leasedEvent] });
       }),
       acknowledgeEvents: vi.fn(async () => 1),
-    } as unknown as PaperclipCloudConnector;
+    } as unknown as PilibalaCloudConnector;
     let currentTime = new Date("2026-09-04T12:00:05.000Z");
     const service = githubConnectionEventService(db, { connector, now: () => currentTime });
 

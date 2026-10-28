@@ -5,7 +5,7 @@ import type {
   SmokeRun,
   SmokeRunStep,
   UpdateSmokeRun,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { api } from "./client";
 
 /**

@@ -3,8 +3,8 @@ import { budgetService } from "./budgets.js";
 import { notifyHireApproved } from "./hire-hook.js";
 
 import { and, asc, eq, inArray, sql, type SQL } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { approvalComments, approvals } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { approvalComments, approvals } from "@pilibalaai/db";
 import { unprocessable } from "../errors.js";
 import { redactCurrentUserText } from "../log-redaction.js";
 import { createAgentLifecycle } from "./agent-lifecycle.js";

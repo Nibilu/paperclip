@@ -13,11 +13,11 @@ import type {
   IssueQueuedCommentQueue,
   IssueThreadInteraction,
   TaskBrowser,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { heartbeatsApi } from "@/api/heartbeats";
 import { nativeRunEventsToTranscript } from "./transcript/native-run-events";
 import { pendingConnectionIntentInteraction } from "@/fixtures/issueThreadInteractionFixtures";
-import type { HeartbeatRunEvent } from "@paperclipai/shared";
+import type { HeartbeatRunEvent } from "@pilibalaai/shared";
 
 const transcriptState = vi.hoisted(() => ({
   transcriptByRun: new Map(),
@@ -156,7 +156,7 @@ function render(ui: ReactElement) {
 describe.each(["legacy", "native"] as const)("historical %s system status", (runtimeMode) => {
   const run = (id: string, status: string, minute: number) => ({
     runId: id, status, runtimeMode, agentId: "agent", agentName: "Assistant",
-    adapterType: runtimeMode === "native" ? "paperclip_runner" : "claude_local",
+    adapterType: runtimeMode === "native" ? "pilibala_runner" : "claude_local",
     createdAt: `2025-01-01T10:0${minute}:00Z`, startedAt: `2025-01-01T10:0${minute}:01Z`,
     finishedAt: `2025-01-01T10:0${minute}:30Z`,
   });
@@ -386,7 +386,7 @@ describe.each(["legacy", "native"] as const)("%s task history readiness", (runti
     runtimeMode,
     status: "scheduled_retry",
     agentId: "agent-1",
-    adapterType: runtimeMode === "native" ? "paperclip_runner" : "codex_local",
+    adapterType: runtimeMode === "native" ? "pilibala_runner" : "codex_local",
     createdAt: "2026-08-25T18:00:00.000Z",
     startedAt: null,
   };
@@ -730,7 +730,7 @@ function nativeRunningRun() {
     createdAt: "2026-08-25T18:00:00.000Z",
     agentId: "agent-1",
     agentName: "Runner",
-    adapterType: "paperclip_runner",
+    adapterType: "pilibala_runner",
   };
 }
 
@@ -745,7 +745,7 @@ function nativePlanRun(id: string): NonNullable<ComponentProps<typeof TaskChatTh
     createdAt: "2026-08-25T18:00:00.000Z",
     agentId: "agent-1",
     agentName: "Runner",
-    adapterType: "paperclip_runner",
+    adapterType: "pilibala_runner",
     runtimeMode: "native",
   };
 }
@@ -859,7 +859,7 @@ describe("TaskChatThread runtime transcript selection", () => {
     const props = {
       issueId: "native-live", comments: [], onAdd: async () => {},
       linkedRuns: [{ runId: "native-run", runtimeMode: "native" as const,
-        status, agentId: "agent-1", adapterType: "paperclip_runner",
+        status, agentId: "agent-1", adapterType: "pilibala_runner",
         createdAt: "2026-08-25T18:00:00.000Z", startedAt: "2026-08-25T18:00:00.000Z" }],
     };
     render(<TaskChatThread {...props} />);
@@ -873,7 +873,7 @@ describe("TaskChatThread runtime transcript selection", () => {
     const props = {
       issueId: "native-history", comments: [], onAdd: async () => {},
       linkedRuns: [{ runId: "native-run", runtimeMode: "native" as const,
-        status: "succeeded", agentId: "agent-1", adapterType: "paperclip_runner",
+        status: "succeeded", agentId: "agent-1", adapterType: "pilibala_runner",
         createdAt: "2026-08-25T18:00:00.000Z", startedAt: "2026-08-25T18:00:00.000Z" }],
     };
     nativeTranscriptState.hydratedRunIds = new Set();
@@ -907,7 +907,7 @@ describe("TaskChatThread runtime transcript selection", () => {
             runtimeMode: "native",
             status: "succeeded",
             agentId: "agent-1",
-            adapterType: "paperclip_runner",
+            adapterType: "pilibala_runner",
             createdAt: "2026-08-25T18:00:00.000Z",
             startedAt: "2026-08-25T18:00:00.000Z",
           },
@@ -936,7 +936,7 @@ describe("TaskChatThread runtime transcript selection", () => {
     expect(nativeRuns.map((run) => run.id)).toEqual(["native-run"]);
   });
 
-  it("uses runner-only controls only for an actual native Paperclip Runner run", () => {
+  it("uses runner-only controls only for an actual native Pilibala Runner run", () => {
     nativeTranscriptState.transcriptByRun.set("native-run", [
       assistantEntry("2026-08-25T18:00:01.000Z", "Checking the task.", "progress"),
       assistantEntry("2026-08-25T18:00:02.000Z", "The task is ready.", "final"),
@@ -994,7 +994,7 @@ describe("TaskChatThread runtime transcript selection", () => {
         runId: "restore-run", runtimeMode: "legacy", status: "failed", errorCode: "workspace_restore_failed",
         agentId: "agent-1", agentName: "Runner", adapterType: "grok_local",
         createdAt: "2026-08-25T18:00:00.000Z", startedAt: "2026-08-25T18:00:00.000Z", finishedAt: "2026-08-25T18:00:02.000Z",
-        resultJson: { workspaceRestoreFailure: "restore_unsafe_archive", workspaceRestorePath: ".claude/skills/paperclip", finalResponseRecorded: false,
+        resultJson: { workspaceRestoreFailure: "restore_unsafe_archive", workspaceRestorePath: ".claude/skills/pilibala", finalResponseRecorded: false,
           ...(evidence === "document_only" ? { savedPlanRevisionId: "revision-3" } : {}),
         },
       }],
@@ -1004,7 +1004,7 @@ describe("TaskChatThread runtime transcript selection", () => {
     flushSync(() => marker!.querySelector<HTMLButtonElement>('button[aria-expanded]')!.click());
     expect(marker?.textContent).toContain("Workspace files need recovery");
     expect(marker?.textContent).toContain("No final response was recorded");
-    expect(marker?.textContent).toContain(".claude/skills/paperclip");
+    expect(marker?.textContent).toContain(".claude/skills/pilibala");
     expect(marker?.querySelector('a[href*="/runs/restore-run"]')).not.toBeNull();
     expect(marker?.textContent.includes("after the plan was saved")).toBe(evidence === "matching" || evidence === "document_only");
     expect(Boolean(marker?.querySelector('a[href*="document-plan"]'))).toBe(evidence === "matching" || evidence === "document_only");
@@ -1047,7 +1047,7 @@ describe("TaskChatThread runtime transcript selection", () => {
   it.each(["legacy", "native"] as const)("keeps a %s credential denial expanded and replaces it after a successful attempt", (runtimeMode) => {
     const denied = {
       runId: "credential-run", runtimeMode, status: "failed", errorCode: "configuration_incomplete",
-      agentId: "agent-1", agentName: "Codie", adapterType: runtimeMode === "native" ? "paperclip_runner" : "codex_local",
+      agentId: "agent-1", agentName: "Codie", adapterType: runtimeMode === "native" ? "pilibala_runner" : "codex_local",
       responsibleUserId: "nicky", createdAt: "2026-08-25T18:00:00Z", startedAt: null, finishedAt: "2026-08-25T18:00:02Z",
       resultJson: { configurationIncomplete: { selectionFailure: "ai_connection_credential_not_shared", credentialAccess: { connectionName: "Dotta’s API Key" } } },
     };
@@ -1134,7 +1134,7 @@ describe("TaskChatThread runtime transcript selection", () => {
 
   it.each([
     { name: "write_document", anchored: true },
-    { name: "mcp__paperclip__write_document", anchored: false },
+    { name: "mcp__pilibala__write_document", anchored: false },
   ])("anchors a settled ACP Plan only at the normalized display name $name", ({ name, anchored }) => {
     const runId = "acpx-plan";
     planState.data = planDocument({ updatedAt: new Date("2026-08-25T18:00:02.000Z") });
@@ -1152,7 +1152,7 @@ describe("TaskChatThread runtime transcript selection", () => {
       createdAt: new Date(`2026-08-25T18:00:0${index + 1}.000Z`),
       payload: {
         prpEvent: {
-          schema: "paperclip.prp.event.v1",
+          schema: "pilibala.prp.event.v1",
           schemaVersion: 1,
           runId,
           eventType: `tool.execution.${phase}`,
@@ -1163,10 +1163,10 @@ describe("TaskChatThread runtime transcript selection", () => {
           normalizedSessionId: "session-1",
           emittedAt: `2026-08-25T18:00:0${index + 1}.000Z`,
           payload: {
-            schema: "paperclip.tool.execution.v1",
+            schema: "pilibala.tool.execution.v1",
             executionId: "write-plan",
             transport: anchored ? "mcp" : "builtin",
-            namespace: anchored ? "paperclip" : null,
+            namespace: anchored ? "pilibala" : null,
             name,
             operation: "execute",
             readOnly: false,
@@ -1192,7 +1192,7 @@ describe("TaskChatThread runtime transcript selection", () => {
         status: "succeeded",
         agentId: "agent-1",
         agentName: "Runner",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         createdAt: "2026-08-25T18:00:00.000Z",
         startedAt: "2026-08-25T18:00:00.000Z",
         finishedAt: "2026-08-25T18:00:03.000Z",
@@ -1385,7 +1385,7 @@ describe("TaskChatThread runtime transcript selection", () => {
       outputTokens: 5,
       cachedTokens: 0,
       costUsd: 0,
-      subtype: "paperclip_runner_usage",
+      subtype: "pilibala_runner_usage",
       isError: false,
       errors: [],
     });
@@ -1437,7 +1437,7 @@ describe("TaskChatThread runtime transcript selection", () => {
           errorCode: "provider_transport_failed",
           agentId: "agent-1",
           agentName: "Runner",
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           createdAt: "2026-08-25T18:00:00.000Z",
           startedAt: "2026-08-25T18:00:00.000Z",
           finishedAt: "2026-08-25T18:00:02.000Z",
@@ -1469,7 +1469,7 @@ describe("TaskChatThread runtime transcript selection", () => {
       linkedRuns: [
         {
           runId: "old-native", runtimeMode: "native", status: "failed", errorCode: "adapter_failed",
-          agentId: "agent-1", agentName: "Runner", adapterType: "paperclip_runner",
+          agentId: "agent-1", agentName: "Runner", adapterType: "pilibala_runner",
           createdAt: "2026-08-25T18:00:00.000Z", startedAt: "2026-08-25T18:00:00.000Z",
           finishedAt: "2026-08-25T18:00:02.000Z",
           execution: {
@@ -1481,7 +1481,7 @@ describe("TaskChatThread runtime transcript selection", () => {
         },
         {
           runId: "failed-bootstrap", runtimeMode: "legacy", status: "failed", errorCode: "setup_failed",
-          agentId: "agent-1", agentName: "Runner", adapterType: "paperclip_runner",
+          agentId: "agent-1", agentName: "Runner", adapterType: "pilibala_runner",
           createdAt: "2026-08-25T18:01:00.000Z", startedAt: "2026-08-25T18:01:00.000Z",
           finishedAt: "2026-08-25T18:01:02.000Z",
         },
@@ -1506,7 +1506,7 @@ describe("TaskChatThread runtime transcript selection", () => {
       onRetryFailedRun: vi.fn(),
       linkedRuns: [{
         runId: "quarantined", runtimeMode: "native", status: "failed", errorCode: "native_session_cleanup_quarantined",
-        agentId: "agent-1", agentName: "Runner", adapterType: "paperclip_runner",
+        agentId: "agent-1", agentName: "Runner", adapterType: "pilibala_runner",
         createdAt: "2026-08-25T18:00:00.000Z", startedAt: "2026-08-25T18:00:00.000Z", finishedAt: "2026-08-25T18:00:02.000Z",
         ...(continued ? { execution: { phase: "completed" as const, label: "Continued in another run", cause: "native_session_cleanup_quarantined",
           lastConfirmedActivityAt: null, retryAt: null, attempt: 2, maxAttempts: 3, recoveryOwner: null, nextAction: null,
@@ -1532,7 +1532,7 @@ describe("TaskChatThread runtime transcript selection", () => {
           errorCode: "native_provider_usage_limit",
           agentId: "agent-1",
           agentName: "Runner",
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           createdAt: "2026-08-25T18:00:00.000Z",
           startedAt: "2026-08-25T18:00:00.000Z",
           finishedAt: "2026-08-25T18:00:02.000Z",
@@ -1586,7 +1586,7 @@ describe("TaskChatThread runtime transcript selection", () => {
   it.each(["legacy", "native"] as const)("groups repeated %s pre-start holds without hiding executed work", (runtimeMode) => {
     const heldRun = (id: string, recoveryActionId: string, startedAt: string | null = null) => ({
       runId: id, runtimeMode, status: "cancelled", errorCode: "execution_reconciliation_required",
-      agentId: "agent-1", adapterType: runtimeMode === "native" ? "paperclip_runner" : "claude_local",
+      agentId: "agent-1", adapterType: runtimeMode === "native" ? "pilibala_runner" : "claude_local",
       createdAt: "2026-09-10T18:00:00.000Z", finishedAt: "2026-09-10T18:00:01.000Z", startedAt,
       resultJson: { executionWait: { recoveryActionId } },
     });
@@ -1620,7 +1620,7 @@ describe("TaskChatThread runtime transcript selection", () => {
           status: "cancelled",
           agentId: "agent-1",
           agentName: "Runner",
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           createdAt: "2026-08-25T18:00:00.000Z",
           startedAt: "2026-08-25T18:00:00.000Z",
           finishedAt: "2026-08-25T18:00:02.000Z",
@@ -1668,7 +1668,7 @@ describe("TaskChatThread runtime transcript selection", () => {
               errorCode: `native_${status}`,
               agentId: "agent-1",
               agentName: "Runner",
-              adapterType: "paperclip_runner",
+              adapterType: "pilibala_runner",
               createdAt: "2026-08-25T18:00:00.000Z",
               startedAt: "2026-08-25T18:00:00.000Z",
               finishedAt: "2026-08-25T18:00:02.000Z",
@@ -1712,7 +1712,7 @@ describe("TaskChatThread runtime transcript selection", () => {
       linkedRuns: [{
         runId: "approval-required", runtimeMode: "native", status: "failed",
         errorCode: "native_provider_approval_required",
-        agentId: "agent-1", agentName: "Runner", adapterType: "paperclip_runner",
+        agentId: "agent-1", agentName: "Runner", adapterType: "pilibala_runner",
         startedAt: "2026-09-14T15:00:00.000Z", createdAt: "2026-09-14T15:00:00.000Z",
         finishedAt: "2026-09-14T15:00:02.000Z",
       }],
@@ -1741,7 +1741,7 @@ describe("TaskChatThread runtime transcript selection", () => {
         runId: "model-rejected", runtimeMode: "native", status: "failed",
         errorCode: "native_provider_model_rejected",
         error,
-        agentId: "agent-1", agentName: "Runner", adapterType: "paperclip_runner",
+        agentId: "agent-1", agentName: "Runner", adapterType: "pilibala_runner",
         createdAt: "2026-08-25T18:00:00.000Z", startedAt: "2026-08-25T18:00:00.000Z",
         finishedAt: "2026-08-25T18:00:02.000Z",
       }],
@@ -1760,7 +1760,7 @@ describe("TaskChatThread runtime transcript selection", () => {
       onAdd: async () => {},
       linkedRuns: [{
         runId: "workspace-wait", runtimeMode: "native", status: "cancelled", errorCode: "workspace_busy",
-        agentId: "agent-1", agentName: "Runner", adapterType: "paperclip_runner", startedAt: null,
+        agentId: "agent-1", agentName: "Runner", adapterType: "pilibala_runner", startedAt: null,
         createdAt: "2026-09-12T18:00:00.000Z", finishedAt: "2026-09-12T18:00:01.000Z",
       }],
     });
@@ -1803,7 +1803,7 @@ describe("TaskChatThread runtime transcript selection", () => {
             startedAt: null,
             agentId: "agent-1",
             agentName: "Runner",
-            adapterType: "paperclip_runner",
+            adapterType: "pilibala_runner",
             createdAt: "2026-09-07T18:00:00.000Z",
             finishedAt: "2026-09-07T18:00:01.000Z",
           },
@@ -1833,7 +1833,7 @@ describe("TaskChatThread runtime transcript selection", () => {
             errorCode: "issue_terminal_status",
             agentId: "agent-1",
             agentName: "Runner",
-            adapterType: "paperclip_runner",
+            adapterType: "pilibala_runner",
             createdAt: "2026-09-07T18:00:00.000Z",
             startedAt: "2026-09-07T18:00:00.500Z",
             finishedAt: "2026-09-07T18:00:01.000Z",
@@ -1877,13 +1877,13 @@ describe("TaskChatThread runtime transcript selection", () => {
           errorCode: "provider_transport_failed",
           agentId: "agent-1",
           agentName: "Runner",
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           createdAt: "2026-08-25T18:00:00.000Z",
           startedAt: "2026-08-25T18:00:00.000Z",
           finishedAt: "2026-08-25T18:00:02.000Z",
           resultJson: {
             presentationDecision: {
-              schema: "paperclip.run_presentation_decision.v1",
+              schema: "pilibala.run_presentation_decision.v1",
               chosenSource: "none",
               commentId: null,
             },
@@ -1942,13 +1942,13 @@ describe("TaskChatThread runtime transcript selection", () => {
           status: "succeeded",
           agentId: "agent-1",
           agentName: "Runner",
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           createdAt: "2026-08-25T18:00:00.000Z",
           startedAt: "2026-08-25T18:00:00.000Z",
           finishedAt: "2026-08-25T18:00:03.000Z",
           resultJson: {
             presentationDecision: {
-              schema: "paperclip.run_presentation_decision.v1",
+              schema: "pilibala.run_presentation_decision.v1",
               chosenSource: "final_agent_message",
               commentId: "native-repeated-final-comment",
             },
@@ -2022,13 +2022,13 @@ describe("TaskChatThread runtime transcript selection", () => {
           status: "succeeded",
           agentId: "agent-1",
           agentName: "Runner",
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           createdAt: "2026-08-25T18:00:00.000Z",
           startedAt: "2026-08-25T18:00:00.000Z",
           finishedAt: "2026-08-25T18:00:05.000Z",
           resultJson: {
             presentationDecision: {
-              schema: "paperclip.run_presentation_decision.v1",
+              schema: "pilibala.run_presentation_decision.v1",
               chosenSource: "final_agent_message",
               commentId: "native-steered-repetition-final",
             },
@@ -2084,7 +2084,7 @@ describe("TaskChatThread runtime transcript selection", () => {
       activeRun: {
         id: runId, runtimeMode: "native", status: "running", invocationSource: "issue", triggerDetail: null,
         startedAt: "2026-08-25T18:00:00.000Z", finishedAt: null, createdAt: "2026-08-25T18:00:00.000Z",
-        agentId: "agent-1", agentName: "Runner", adapterType: "paperclip_runner",
+        agentId: "agent-1", agentName: "Runner", adapterType: "pilibala_runner",
       },
     });
     const deny = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).filter(button => button.textContent === "Deny");
@@ -2135,7 +2135,7 @@ describe("TaskChatThread runtime transcript selection", () => {
         createdAt: "2026-08-25T18:00:00.000Z",
         agentId: "agent-1",
         agentName: "Runner",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
       },
     });
 
@@ -2168,7 +2168,7 @@ describe("TaskChatThread runtime transcript selection", () => {
     const summary =
       "**Before release**\n- Test and rehearse rollback.\n\n**During release**\n- Deploy incrementally and watch errors.\n\n**After release**\n- Verify workflows and record follow-ups.";
     const result = {
-      schema: "paperclip.run_result.v1",
+      schema: "pilibala.run_result.v1",
       reportedWorkDisposition: "yielded",
       summary,
       completionClaim: { objectiveSatisfied: true, remainingWork: [] },
@@ -2210,7 +2210,7 @@ describe("TaskChatThread runtime transcript selection", () => {
         createdAt: new Date("2026-08-25T18:00:00Z"),
         payload: {
           prpEvent: {
-            schema: "paperclip.prp.event.v1",
+            schema: "pilibala.prp.event.v1",
             schemaVersion: 1,
             runId,
             eventType,
@@ -2246,7 +2246,7 @@ describe("TaskChatThread runtime transcript selection", () => {
           ? []
           : [event(3, "run.result.accepted", { result })]),
         event(4, "run.terminal", {
-          schema: "paperclip.prp.terminal.v1",
+          schema: "pilibala.prp.terminal.v1",
           turnTerminalState: "completed",
           runTerminalState: "succeeded",
           reportedWorkDisposition: "yielded",
@@ -2308,7 +2308,7 @@ describe("TaskChatThread runtime transcript selection", () => {
           triggerDetail: null,
           agentId: "agent-1",
           agentName: "Runner",
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           createdAt: "2026-08-25T18:00:00Z",
           startedAt: "2026-08-25T18:00:00Z",
           finishedAt: null,
@@ -2326,7 +2326,7 @@ describe("TaskChatThread runtime transcript selection", () => {
                 : "succeeded",
           agentId: "agent-1",
           agentName: "Runner",
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           createdAt: "2026-08-25T18:00:00Z",
           startedAt: "2026-08-25T18:00:00Z",
           finishedAt: mode === "live" ? null : "2026-08-25T18:00:30Z",
@@ -2337,7 +2337,7 @@ describe("TaskChatThread runtime transcript selection", () => {
                 ...(mode === "persisted_response_comment"
                   ? {
                       presentationDecision: {
-                        schema: "paperclip.run_presentation_decision.v1",
+                        schema: "pilibala.run_presentation_decision.v1",
                         chosenSource: "existing_issue_comment",
                         commentId: "private-board-response",
                       },
@@ -2410,18 +2410,18 @@ describe("TaskChatThread runtime transcript selection", () => {
           status: "succeeded",
           agentId: "agent-1",
           agentName: "Runner",
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           createdAt: "2026-08-25T18:00:00.000Z",
           startedAt: "2026-08-25T18:00:00.000Z",
           finishedAt: "2026-08-25T18:00:03.000Z",
           resultJson: {
             nativeResult: {
-              schema: "paperclip.run_result.v1",
+              schema: "pilibala.run_result.v1",
               reportedWorkDisposition: "yielded",
               summary: "Waiting for Choose the verification word.",
             },
             presentationDecision: {
-              schema: "paperclip.run_presentation_decision.v1",
+              schema: "pilibala.run_presentation_decision.v1",
               chosenSource: "none",
               commentId: null,
             },
@@ -2433,18 +2433,18 @@ describe("TaskChatThread runtime transcript selection", () => {
           status: "succeeded",
           agentId: "agent-1",
           agentName: "Runner",
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           createdAt: "2026-08-25T18:01:00.000Z",
           startedAt: "2026-08-25T18:01:00.000Z",
           finishedAt: "2026-08-25T18:01:02.000Z",
           resultJson: {
             nativeResult: {
-              schema: "paperclip.run_result.v1",
+              schema: "pilibala.run_result.v1",
               reportedWorkDisposition: "done",
               summary: "Cobalt was selected and the task is complete.",
             },
             presentationDecision: {
-              schema: "paperclip.run_presentation_decision.v1",
+              schema: "pilibala.run_presentation_decision.v1",
               chosenSource: "none",
               commentId: null,
             },
@@ -2600,7 +2600,7 @@ describe("TaskChatThread runtime transcript selection", () => {
         status: "queued",
         agentId: "external-agent",
         agentName: provider,
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         createdAt: "2026-08-25T18:01:00.000Z",
         startedAt: null,
         finishedAt: null,
@@ -2712,7 +2712,7 @@ describe("TaskChatThread runtime transcript selection", () => {
       "pi_local", "grok_local", "kimi_local", "hermes_local"].flatMap((adapterType) =>
       ["failed", "timed_out"].map((status) => ({ adapterType, status, runtimeMode: "legacy" as const,
         cause: "legacy_execution_requires_reconciliation", canRetry: true }))),
-    { adapterType: "paperclip_runner", status: "failed", runtimeMode: "native" as const,
+    { adapterType: "pilibala_runner", status: "failed", runtimeMode: "native" as const,
       cause: "legacy_execution_requires_reconciliation", canRetry: false },
     { adapterType: "process", status: "failed", runtimeMode: "legacy" as const,
       cause: "legacy_execution_requires_reconciliation", canRetry: false },
@@ -3076,7 +3076,7 @@ describe.each([true, false])("Unanswered question history (conversationMode=%s)"
   it("preserves a question dismissal saved by another tab", async () => {
     render(<TaskChatThread {...props} comments={[]} interactions={[old]} />);
     // The other tab saves after this thread has loaded its dismissal state.
-    localStorage.setItem("paperclip:task-question-dismissals:user-board:issue-1", JSON.stringify([newer.id]));
+    localStorage.setItem("pilibala:task-question-dismissals:user-board:issue-1", JSON.stringify([newer.id]));
     await dismiss();
     flushSync(() => root!.unmount());
     root = createRoot(container);
@@ -3121,7 +3121,7 @@ describe("TaskChatThread composer alignment", () => {
     const dock = container.querySelector(
       '[data-testid="task-chat-composer-dock"]',
     );
-    const composer = container.querySelector(".paperclip-task-chat-composer");
+    const composer = container.querySelector(".pilibala-task-chat-composer");
     const send = container.querySelector(
       '[data-testid="task-chat-composer-send"]',
     );
@@ -3146,7 +3146,7 @@ describe("TaskChatThread no-live-execution-path recovery", () => {
     authorType: "system" as const,
     authorAgentId: null,
     authorUserId: null,
-    body: "Paperclip retried continuation, but it still has no live execution path.",
+    body: "Pilibala retried continuation, but it still has no live execution path.",
     presentation: {
       kind: "system_notice" as const,
       tone: "danger" as const,
@@ -3649,7 +3649,7 @@ describe("TaskChatThread queued message actions", () => {
   });
 });
 
-describe("TaskChatThread Paperclip Runner queue", () => {
+describe("TaskChatThread Pilibala Runner queue", () => {
   const queuedComment = {
     id: "queued-prp-1",
     companyId: "company-1",
@@ -3669,7 +3669,7 @@ describe("TaskChatThread Paperclip Runner queue", () => {
     state: "deferred",
     targetRunId: "run-1",
     revision: "revision-1",
-    protocol: "paperclip_runner_v1",
+    protocol: "pilibala_runner_v1",
     steeringDisposition: "available",
     entries: [
       { comment: queuedComment, position: 0, canEdit: true, canDiscard: true },
@@ -3939,7 +3939,7 @@ describe("TaskChatThread live transcript", () => {
       createdAt: "2026-08-24T12:00:00.000Z",
       agentId: "agent-1",
       agentName: "Codex",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       runtimeMode: "native" as const,
     };
 
@@ -4027,7 +4027,7 @@ describe("TaskChatThread live transcript", () => {
         createdAt: "2026-08-21T15:44:00.000Z",
         agentId: "agent-1",
         agentName: "Runner",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         runtimeMode: "native",
       },
     });
@@ -4198,7 +4198,7 @@ describe("TaskChatThread live transcript", () => {
         choices: [],
         fields: [],
         questionSet: {
-          schema: "paperclip.question_set.v1",
+          schema: "pilibala.question_set.v1",
           questions: [
             {
               id: "goal",
@@ -4242,7 +4242,7 @@ describe("TaskChatThread live transcript", () => {
           agentId: "agent-1",
           agentName: "Runner",
           // Reproduces the lag that caused DOT-202: the transcript already has
-          // a Paperclip request while the linked-run adapter classification is
+          // a Pilibala request while the linked-run adapter classification is
           // still stale.
           adapterType: "codex_local",
         }}
@@ -4269,7 +4269,7 @@ describe("TaskChatThread live transcript", () => {
       resolution: {
         action: "submit",
         response: {
-          schema: "paperclip.question_response.v1",
+          schema: "pilibala.question_response.v1",
           answers: { goal: { selectedOptionIds: ["api"] } },
         },
       },
@@ -4323,7 +4323,7 @@ describe("TaskChatThread live transcript", () => {
         finishedAt: null,
         agentId: "agent-1",
         agentName: "Runner",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
       };
       const linkedRun = {
         ...activeRun,
@@ -4332,12 +4332,12 @@ describe("TaskChatThread live transcript", () => {
         finishedAt: "2026-08-07T00:00:05Z",
         resultJson: {
           nativeResult: {
-            schema: "paperclip.run_result.v1",
+            schema: "pilibala.run_result.v1",
             reportedWorkDisposition: disposition,
             summary,
           },
           presentationDecision: {
-            schema: "paperclip.run_presentation_decision.v1",
+            schema: "pilibala.run_presentation_decision.v1",
             chosenSource: "existing_issue_comment",
             commentId: "delayed-comment",
           },
@@ -4455,7 +4455,7 @@ describe("TaskChatThread live transcript", () => {
 });
 
 describe("TaskChatThread composer execution controls", () => {
-  it.each(["process", "paperclip_runner"])("passes the task's stop action through for %s execution", async (adapterType) => {
+  it.each(["process", "pilibala_runner"])("passes the task's stop action through for %s execution", async (adapterType) => {
     const onStop = vi.fn(async () => {});
     const run = {
       id: "task-run", status: "running", runtimeMode: adapterType === "process" ? "legacy" as const : "native" as const,
@@ -4482,13 +4482,13 @@ it("explains a missing provider runtime with an installation repair", () => {
     onAdd: async () => {},
     linkedRuns: [{
       runId: "missing-runtime", runtimeMode: "native", status: "failed", errorCode: "native_provider_runtime_missing",
-      agentId: "agent-1", agentName: "Content Strategist", adapterType: "paperclip_runner",
+      agentId: "agent-1", agentName: "Content Strategist", adapterType: "pilibala_runner",
       createdAt: "2026-10-11T11:19:08Z", startedAt: "2026-10-11T11:19:08Z", finishedAt: "2026-10-11T11:19:14Z",
     }],
   });
   expect(container.textContent).toContain("Runtime missing");
   const toggle = container.querySelector<HTMLButtonElement>('[data-testid="task-chat-collapsible-marker"] button[aria-expanded]')!;
   flushSync(() => toggle.click());
-  expect(container.textContent).toContain("Reinstall or rebuild Paperclip");
+  expect(container.textContent).toContain("Reinstall or rebuild Pilibala");
   expect(container.textContent).toContain("test the agent's runtime");
 });

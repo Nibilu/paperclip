@@ -5,7 +5,7 @@ Branch: `codex/test-audit-next`
 Discovery baseline: `b4aee6ea18905690686fb318fa9cc6d4cc71a7e1`
 Integration base: `1e0cfcb4fc4ed78d10f46cd60990935af4ac9973` (merged master)
 Verified code commit: `4261a7fc1b964e54059c68246a0a4b7ea74bdcea`
-Parent cleanup: [PR #15978](https://github.com/paperclipai/paperclip/pull/15978)
+Parent cleanup: [PR #15978](https://github.com/pilibalaai/pilibala/pull/15978)
 
 This follow-up removes **2,041 net test lines across five files**. Every
 registered case and assertion remains. It changes no application source.
@@ -99,7 +99,7 @@ earlier parent PR's mutation proof is recorded in its report.
 - Complete baseline: seven files, 990 passed, zero failed/skipped.
 - Complete candidate: the same seven files, 990 passed, zero failed/skipped.
 - Rebased candidate: the same seven files, 990 passed, zero failed/skipped.
-- `pnpm --filter @paperclipai/ui typecheck`: pass before integration.
+- `pnpm --filter @pilibalaai/ui typecheck`: pass before integration.
 - `pnpm -r typecheck`: pass before integration and at the verified code commit.
 - `pnpm build`: pass at the verified code commit.
 - Token gates, palette synchronization and character synchronization: pass.

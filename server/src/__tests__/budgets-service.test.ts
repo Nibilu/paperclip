@@ -10,7 +10,7 @@ import {
   costEvents,
   createDb,
   projects,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { budgetService } from "../services/budgets.ts";
 import {
   getEmbeddedPostgresTestSupport,
@@ -34,7 +34,7 @@ describeEmbeddedPostgres("budgetService release gate enforcement", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-budgets-service-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-budgets-service-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -60,7 +60,7 @@ describeEmbeddedPostgres("budgetService release gate enforcement", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `B${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

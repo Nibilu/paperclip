@@ -1,6 +1,6 @@
 import type {
   AskUserQuestionsQuestion,
-  PaperclipQuestionSetPayload,
+  PilibalaQuestionSetPayload,
   ConnectionSearchResultItem,
 } from "./types/index.js";
 import {
@@ -340,9 +340,9 @@ export function aggregatorProviderQuestion(
 }
 
 /** Native question form, preserving the exact saved-answer authorization contract. */
-export function aggregatorProviderQuestionSet(question: AskUserQuestionsQuestion): PaperclipQuestionSetPayload {
+export function aggregatorProviderQuestionSet(question: AskUserQuestionsQuestion): PilibalaQuestionSetPayload {
   return {
-    schema: "paperclip.question_set.v1",
+    schema: "pilibala.question_set.v1",
     questions: [{
       id: question.id,
       prompt: question.prompt,

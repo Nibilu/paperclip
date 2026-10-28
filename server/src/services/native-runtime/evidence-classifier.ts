@@ -1,5 +1,5 @@
 import { and, eq, or } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   approvals,
   agents,
@@ -8,13 +8,13 @@ import {
   issueAttachments,
   issueThreadInteractions,
   issueWorkProducts,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   normalizePrpResultSignals,
   type PrpIgnoredAttentionRequest,
   type PrpNormalizedAttentionRequest,
   type PrpVerificationReasonCode,
-} from "../../vendor/paperclip-runner/index.js";
+} from "../../vendor/pilibala-runner/index.js";
 
 export type NativeEvidenceOutcome = "accepted" | "missing" | "rejected" | "unverifiable";
 

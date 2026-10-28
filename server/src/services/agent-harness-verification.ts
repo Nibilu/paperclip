@@ -1,8 +1,8 @@
 import { and, eq } from "drizzle-orm";
-import { agents, companies, type Db } from "@paperclipai/db";
-import type { AdapterEnvironmentTestResult } from "@paperclipai/adapter-utils";
-import { ADAPTER_AUTH_MISSING_CHECK_CODE, aiRuntimeConnectionBindingSchema } from "@paperclipai/shared";
-import { isForbiddenConfigEnvKey, parseObject } from "@paperclipai/adapter-utils/server-utils";
+import { agents, companies, type Db } from "@pilibalaai/db";
+import type { AdapterEnvironmentTestResult } from "@pilibalaai/adapter-utils";
+import { ADAPTER_AUTH_MISSING_CHECK_CODE, aiRuntimeConnectionBindingSchema } from "@pilibalaai/shared";
+import { isForbiddenConfigEnvKey, parseObject } from "@pilibalaai/adapter-utils/server-utils";
 import { requireServerAdapter } from "../adapters/index.js";
 import { agentEnvironmentTestService } from "./agent-environment-test.js";
 import { aiConnectionRouterService } from "./ai-connection-router.js";
@@ -40,11 +40,11 @@ export function agentHarnessVerificationService(db: Db, manager: PluginWorkerMan
   async function verify(snapshot: LifecycleAgent): Promise<"complete" | "pending"> {
     const [agent] = await db.select().from(agents).where(and(eq(agents.id, snapshot.id), eq(agents.lifecycleVersion, snapshot.lifecycleVersion)));
     if (!agent) return "pending";
-    if (agent.adapterType === "paperclip_runner" && ["openai_dot", "grok_bot"].includes(String(agent.adapterConfig.provider))) {
+    if (agent.adapterType === "pilibala_runner" && ["openai_dot", "grok_bot"].includes(String(agent.adapterConfig.provider))) {
       const binding = await dotRunnerBroker(db).bindingForAgent(agent.companyId, agent.id);
       return binding?.status === "ready" && binding.wakeVerified && binding.id === agent.adapterConfig[agent.adapterConfig.provider === "grok_bot" ? "externalBindingId" : "dotBindingId"] ? "complete" : "pending";
     }
-    if (agent.adapterType === "paperclip_runner" && agent.adapterConfig.provider === "muse") {
+    if (agent.adapterType === "pilibala_runner" && agent.adapterConfig.provider === "muse") {
       const binding = await museRunnerBroker(db).bindingForAgent(agent.companyId,agent.id);
       return binding?.status === "ready" && binding.paired && binding.receiverDetected && binding.backgroundReplyVerified && binding.id === agent.adapterConfig.museBindingId ? "complete" : "pending";
     }

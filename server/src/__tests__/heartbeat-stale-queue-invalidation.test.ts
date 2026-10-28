@@ -17,8 +17,8 @@ import {
   issueDocuments,
   issueThreadInteractions,
   issues,
-} from "@paperclipai/db";
-import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY } from "@pilibalaai/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -145,10 +145,10 @@ describeEmbeddedPostgres("heartbeat stale queued-run invalidation", () => {
     mockAdapterExecute.mock.calls.filter(([context]) => context?.runId === runId).length;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-heartbeat-stale-queue-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-heartbeat-stale-queue-");
     db = createDb(tempDb.connectionString);
     heartbeat = heartbeatService(db, {
-      runtimeEnv: { ...process.env, PAPERCLIP_IN_WORKTREE: "false" },
+      runtimeEnv: { ...process.env, PILIBALA_IN_WORKTREE: "false" },
       beforeResolvedInteractionContinuationDispatchCheck: async (input) => {
         await beforeContinuationDispatchCheck?.(input);
       },
@@ -191,7 +191,7 @@ describeEmbeddedPostgres("heartbeat stale queued-run invalidation", () => {
     const agentId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       defaultResponsibleUserId: "responsible-user",
       requireBoardApprovalForNewAgents: false,
@@ -231,7 +231,7 @@ describeEmbeddedPostgres("heartbeat stale queued-run invalidation", () => {
     }).returning();
     const [wake] = await db.insert(agentWakeupRequests).values({ companyId, agentId: recipient.id, source: "automation",
       reason: "issue_execution_deferred", status: "deferred_issue_execution", requestedByActorType: "agent", requestedByActorId: agentId,
-      payload: withQueuedCommentIdsInWakePayload({ issueId: issue.id, _paperclipWakeContext: {
+      payload: withQueuedCommentIdsInWakePayload({ issueId: issue.id, _pilibalaWakeContext: {
         issueId: issue.id, wakeReason: "issue_comment_mentioned", wakeSource: "automation",
       } }, [comment.id]),
     }).returning();
@@ -260,7 +260,7 @@ describeEmbeddedPostgres("heartbeat stale queued-run invalidation", () => {
     expect((await heartbeat.reconcileStrandedAssignedIssues()).escalated).toBe(0);
     expect((await db.select().from(issues).where(eq(issues.id, issue.id)))[0]).toMatchObject({ status: "todo", assigneeAgentId: agentId });
     await db.update(agents).set({ status: "idle", lifecycleState: "ready" }).where(eq(agents.id, agentId));
-    const recovered = heartbeatService(db, { runtimeEnv: { ...process.env, PAPERCLIP_IN_WORKTREE: "false" } });
+    const recovered = heartbeatService(db, { runtimeEnv: { ...process.env, PILIBALA_IN_WORKTREE: "false" } });
     await recovered.resumeQueuedRuns();
     expect(await waitForCondition(async () => countExecuteCallsForRun(run!.id) === 1)).toBe(true);
     await recovered.waitForRunExecutionDrain(run!.id);
@@ -1306,9 +1306,9 @@ describeEmbeddedPostgres("heartbeat stale queued-run invalidation", () => {
     const [context] = mockAdapterExecute.mock.calls.find(([context]) => context?.runId === run!.id)!;
     expect(context.runtime.sessionId).toBe(rotate ? null : sessionId);
     if (rotate) {
-      expect(context.context.paperclipSessionRotationReason).toContain((inputTokens + (rawInputIncludesCached === false ? cachedInputTokens : 0)).toLocaleString("en-US"));
-      expect(context.context.paperclipSessionHandoffMarkdown).toContain("Continue from this completed turn");
-    } else expect(context.context.paperclipSessionRotationReason).toBeUndefined();
+      expect(context.context.pilibalaSessionRotationReason).toContain((inputTokens + (rawInputIncludesCached === false ? cachedInputTokens : 0)).toLocaleString("en-US"));
+      expect(context.context.pilibalaSessionHandoffMarkdown).toContain("Continue from this completed turn");
+    } else expect(context.context.pilibalaSessionRotationReason).toBeUndefined();
     await heartbeat.drainActiveRunExecutions();
     const [finished] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, run!.id));
     expect(finished.usageJson).toMatchObject({ rawInputTokens: 1, rawCachedInputTokens: 2, rawInputIncludesCached: false });
@@ -1638,7 +1638,7 @@ describeEmbeddedPostgres("heartbeat stale queued-run invalidation", () => {
       reason: "issue_execution_deferred",
       payload: {
         issueId,
-        _paperclipWakeContext: {
+        _pilibalaWakeContext: {
           issueId,
           wakeReason: "issue_mention",
         },

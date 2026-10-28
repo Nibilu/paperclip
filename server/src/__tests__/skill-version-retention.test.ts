@@ -12,7 +12,7 @@ import {
   companySkillVersions,
   createDb,
   heartbeatRuns,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -49,17 +49,17 @@ async function makeWritable(target: string): Promise<void> {
 describeEmbeddedPostgres("skill version snapshot retention", () => {
   let db!: ReturnType<typeof createDb>;
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
-  let oldPaperclipHome: string | undefined;
-  let oldPaperclipInstanceId: string | undefined;
-  let paperclipHome: string | null = null;
+  let oldPilibalaHome: string | undefined;
+  let oldPilibalaInstanceId: string | undefined;
+  let pilibalaHome: string | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-skill-version-retention-");
-    oldPaperclipHome = process.env.PAPERCLIP_HOME;
-    oldPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
-    paperclipHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-version-retention-home-"));
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "default";
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-skill-version-retention-");
+    oldPilibalaHome = process.env.PILIBALA_HOME;
+    oldPilibalaInstanceId = process.env.PILIBALA_INSTANCE_ID;
+    pilibalaHome = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-version-retention-home-"));
+    process.env.PILIBALA_HOME = pilibalaHome;
+    process.env.PILIBALA_INSTANCE_ID = "default";
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -69,19 +69,19 @@ describeEmbeddedPostgres("skill version snapshot retention", () => {
     await db.delete(agents);
     await db.delete(companySkills);
     await db.delete(companies);
-    if (paperclipHome) {
-      const skillsRoot = path.join(paperclipHome, "instances", "default", "skills");
+    if (pilibalaHome) {
+      const skillsRoot = path.join(pilibalaHome, "instances", "default", "skills");
       await makeWritable(skillsRoot);
       await fs.rm(skillsRoot, { recursive: true, force: true });
     }
   });
 
   afterAll(async () => {
-    if (oldPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-    else process.env.PAPERCLIP_HOME = oldPaperclipHome;
-    if (oldPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-    else process.env.PAPERCLIP_INSTANCE_ID = oldPaperclipInstanceId;
-    if (paperclipHome) await fs.rm(paperclipHome, { recursive: true, force: true });
+    if (oldPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+    else process.env.PILIBALA_HOME = oldPilibalaHome;
+    if (oldPilibalaInstanceId === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+    else process.env.PILIBALA_INSTANCE_ID = oldPilibalaInstanceId;
+    if (pilibalaHome) await fs.rm(pilibalaHome, { recursive: true, force: true });
     await tempDb?.cleanup();
   });
 
@@ -136,7 +136,7 @@ describeEmbeddedPostgres("skill version snapshot retention", () => {
     const { skillId, key, versionIds: v } = await createSkill(companyId, 7);
     const [agent] = await db.insert(agents).values({
       companyId, name: "Pinned agent",
-      adapterConfig: { paperclipSkillSync: { desiredSkills: [{ key, versionId: v[0] }] } },
+      adapterConfig: { pilibalaSkillSync: { desiredSkills: [{ key, versionId: v[0] }] } },
     }).returning({ id: agents.id });
     await db.insert(heartbeatRuns).values([
       { companyId, agentId: agent!.id, status: "running", contextSnapshot: { skillVersions: { [key]: v[1] } } },
@@ -257,7 +257,7 @@ describeEmbeddedPostgres("skill version snapshot retention", () => {
     const { skillId, versionIds } = await createSkill(companyId, 3);
     const other = await createSkill(otherCompanyId, 3);
     const otherDirs = await Promise.all(other.versionIds.map(id => writeSnapshot(otherCompanyId, other.skillId, id)));
-    const outside = await fs.mkdtemp(path.join(paperclipHome!, "outside-"));
+    const outside = await fs.mkdtemp(path.join(pilibalaHome!, "outside-"));
     await fs.writeFile(path.join(outside, "keep.txt"), "keep");
     const root = resolveCompanySkillVersionsRoot(companyId);
     const victim = await writeSnapshot(companyId, skillId, versionIds[0]!);

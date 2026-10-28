@@ -225,7 +225,7 @@ function createDeleteBlastRadius(overrides: Partial<{
 let server: Server | null = null;
 let currentActor: Record<string, unknown> = localBoardActor();
 const routeOptions: Record<string, unknown> = {};
-const originalSecretsProviderEnv = process.env.PAPERCLIP_SECRETS_PROVIDER;
+const originalSecretsProviderEnv = process.env.PILIBALA_SECRETS_PROVIDER;
 
 // The routes open a transaction around environment writes and their binding
 // syncs. Service calls are mocked, so the executor never runs a real query —
@@ -291,7 +291,7 @@ function createSecretBackedSshEnvironment() {
       host: "ssh.example.test",
       port: 22,
       username: "ssh-user",
-      remoteWorkspacePath: "/srv/paperclip/workspace",
+      remoteWorkspacePath: "/srv/pilibala/workspace",
       privateKey: null,
       privateKeySecretRef: {
         type: "secret_ref",
@@ -309,7 +309,7 @@ function createSshConfig() {
     host: "ssh.example.test",
     port: 22,
     username: "ssh-user",
-    remoteWorkspacePath: "/srv/paperclip/workspace",
+    remoteWorkspacePath: "/srv/pilibala/workspace",
     privateKey: null,
     privateKeySecretRef: null,
     knownHosts: null,
@@ -320,9 +320,9 @@ function createSshConfig() {
 describe("environment routes", () => {
   afterAll(async () => {
     if (originalSecretsProviderEnv === undefined) {
-      delete process.env.PAPERCLIP_SECRETS_PROVIDER;
+      delete process.env.PILIBALA_SECRETS_PROVIDER;
     } else {
-      process.env.PAPERCLIP_SECRETS_PROVIDER = originalSecretsProviderEnv;
+      process.env.PILIBALA_SECRETS_PROVIDER = originalSecretsProviderEnv;
     }
     if (!server) return;
     await new Promise<void>((resolve, reject) => {
@@ -405,7 +405,7 @@ describe("environment routes", () => {
     mockSecretService.replaceSecretRefsForInstanceTarget.mockResolvedValue([]);
     mockSecretService.remove.mockResolvedValue(null);
     mockSecretService.resolveSecretValueForEphemeralAccess.mockResolvedValue("resolved-provider-key");
-    delete process.env.PAPERCLIP_SECRETS_PROVIDER;
+    delete process.env.PILIBALA_SECRETS_PROVIDER;
     mockValidatePluginEnvironmentDriverConfig.mockReset();
     mockValidatePluginEnvironmentDriverConfig.mockImplementation(async ({ config }) => config);
     mockValidatePluginSandboxProviderConfig.mockReset();
@@ -519,7 +519,7 @@ describe("environment routes", () => {
           apiKey: "config-credential-must-never-echo",
         },
         envVars: { MY_AGENT_TOOL_SETTING: "tenant-env-value" },
-        metadata: { managedByPaperclip: true, managedSandboxProvider: "daytona" },
+        metadata: { managedByPilibala: true, managedSandboxProvider: "daytona" },
         createdAt: now,
         updatedAt: now,
       };
@@ -546,10 +546,10 @@ describe("environment routes", () => {
     });
 
     beforeEach(() => {
-      process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
+      process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
     });
     afterEach(() => {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
     });
 
     it("never echoes credential-shaped config keys, while tenant env vars round-trip", async () => {
@@ -567,7 +567,7 @@ describe("environment routes", () => {
         image: "custom-image:latest",
         target: "us",
       });
-      expect(res.body.metadata).toMatchObject({ managedByPaperclip: true });
+      expect(res.body.metadata).toMatchObject({ managedByPilibala: true });
       expect(JSON.stringify(res.body)).not.toContain("config-credential-must-never-echo");
     });
 
@@ -577,7 +577,7 @@ describe("environment routes", () => {
       mockEnvironmentService.getById.mockResolvedValue({
         ...createPlatformSandboxEnvironment(),
         metadata: {
-          managedByPaperclip: true,
+          managedByPilibala: true,
           managedSandboxProvider: "kubernetes",
           managedKubernetesSandbox: true,
         },
@@ -612,7 +612,7 @@ describe("environment routes", () => {
       // Tenant env vars can carry pasted credentials, so restricted readers
       // get the same blank envVars posture as on every other environment.
       expect(res.body[0].envVars).toEqual({});
-      expect(res.body[0].metadata).toMatchObject({ managedByPaperclip: true });
+      expect(res.body[0].metadata).toMatchObject({ managedByPilibala: true });
     });
 
     it("rejects updates to platform-provisioned rows, including for instance admins", async () => {
@@ -742,7 +742,7 @@ describe("environment routes", () => {
       mockEnvironmentService.getById.mockResolvedValue({
         ...createPlatformSandboxEnvironment(),
         metadata: {
-          managedByPaperclip: true,
+          managedByPilibala: true,
           managedSandboxProvider: "kubernetes",
           managedKubernetesSandbox: true,
         },
@@ -769,7 +769,7 @@ describe("environment routes", () => {
         driver: "local",
         config: {},
         envVars: {},
-        metadata: { managedByPaperclip: true, defaultForInstance: true },
+        metadata: { managedByPilibala: true, defaultForInstance: true },
       };
       mockEnvironmentService.list.mockResolvedValue([localRow, createPlatformSandboxEnvironment()]);
       const app = createApp(ownerAdminActor);
@@ -791,7 +791,7 @@ describe("environment routes", () => {
         driver: "local",
         config: {},
         envVars: {},
-        metadata: { managedByPaperclip: true },
+        metadata: { managedByPilibala: true },
       };
       mockEnvironmentService.list.mockResolvedValue([localRow]);
       const app = createApp(ownerAdminActor);
@@ -804,7 +804,7 @@ describe("environment routes", () => {
     it("allows a marker-clear-only patch to unblock a row with a stale legacy kubernetes marker", async () => {
       // A sandbox row carrying only the legacy wrapper marker does not hold
       // the managed sandbox slot (`environments_managed_sandbox_idx` keys on
-      // `managedByPaperclip`), and with the persisted execution mode not
+      // `managedByPilibala`), and with the persisted execution mode not
       // forcing kubernetes nothing selects rows by that marker either — so
       // the marker is a stale leftover, not live platform state.
       const staleRow = {
@@ -829,7 +829,7 @@ describe("environment routes", () => {
         ...createPlatformSandboxEnvironment(),
         id: "env-stale-ssh-1",
         driver: "ssh",
-        metadata: { managedByPaperclip: true },
+        metadata: { managedByPilibala: true },
       };
       mockEnvironmentService.getById.mockResolvedValue(staleRow);
       mockEnvironmentService.update.mockResolvedValue({ ...staleRow, metadata: {} });
@@ -837,7 +837,7 @@ describe("environment routes", () => {
 
       const res = await request(app)
         .patch("/api/environments/env-stale-ssh-1")
-        .send({ metadata: { managedByPaperclip: false, managedKubernetesSandbox: false } });
+        .send({ metadata: { managedByPilibala: false, managedKubernetesSandbox: false } });
 
       expect(res.status).toBe(200);
       expect(mockEnvironmentService.update).toHaveBeenCalled();
@@ -845,43 +845,43 @@ describe("environment routes", () => {
 
     it("refuses the marker-clear patch on the sandbox slot row while managed provisioning is configured", async () => {
       // With a managed-config `environments` entry, driver=sandbox +
-      // managedByPaperclip is THE provisioner-owned slot row, adopted and
+      // managedByPilibala is THE provisioner-owned slot row, adopted and
       // refreshed on every boot — clearing its markers would reclassify it
       // tenant-managed and let the next PATCH/DELETE bypass the write floor.
-      process.env.PAPERCLIP_MANAGED_CONFIG = MANAGED_CONFIG_WITH_SANDBOX_ENTRY;
+      process.env.PILIBALA_MANAGED_CONFIG = MANAGED_CONFIG_WITH_SANDBOX_ENTRY;
       try {
         mockEnvironmentService.getById.mockResolvedValue(createPlatformSandboxEnvironment());
         const app = createApp(ownerAdminActor);
 
         const res = await request(app)
           .patch("/api/environments/env-managed-1")
-          .send({ metadata: { managedByPaperclip: false, managedKubernetesSandbox: false } });
+          .send({ metadata: { managedByPilibala: false, managedKubernetesSandbox: false } });
 
         expect(res.status).toBe(403);
         expect(res.body.details).toMatchObject({ code: "environment_platform_managed" });
         expect(mockEnvironmentService.update).not.toHaveBeenCalled();
       } finally {
-        delete process.env.PAPERCLIP_MANAGED_CONFIG;
+        delete process.env.PILIBALA_MANAGED_CONFIG;
       }
     });
 
     it("refuses the marker-clear patch on the sandbox slot row under the forced kubernetes execution mode", async () => {
-      // PAPERCLIP_EXECUTION_MODE=kubernetes is the other bootstrap path that
+      // PILIBALA_EXECUTION_MODE=kubernetes is the other bootstrap path that
       // owns (adopts and refreshes) the single marked sandbox row.
-      process.env.PAPERCLIP_EXECUTION_MODE = "kubernetes";
+      process.env.PILIBALA_EXECUTION_MODE = "kubernetes";
       try {
         mockEnvironmentService.getById.mockResolvedValue(createPlatformSandboxEnvironment());
         const app = createApp(ownerAdminActor);
 
         const res = await request(app)
           .patch("/api/environments/env-managed-1")
-          .send({ metadata: { managedByPaperclip: false, managedKubernetesSandbox: false } });
+          .send({ metadata: { managedByPilibala: false, managedKubernetesSandbox: false } });
 
         expect(res.status).toBe(403);
         expect(res.body.details).toMatchObject({ code: "environment_platform_managed" });
         expect(mockEnvironmentService.update).not.toHaveBeenCalled();
       } finally {
-        delete process.env.PAPERCLIP_EXECUTION_MODE;
+        delete process.env.PILIBALA_EXECUTION_MODE;
       }
     });
 
@@ -916,7 +916,7 @@ describe("environment routes", () => {
       mockEnvironmentService.getById.mockResolvedValue({
         ...createPlatformSandboxEnvironment(),
         metadata: {
-          managedByPaperclip: true,
+          managedByPilibala: true,
           managedSandboxProvider: "kubernetes",
           managedKubernetesSandbox: true,
         },
@@ -925,7 +925,7 @@ describe("environment routes", () => {
 
       const res = await request(app)
         .patch("/api/environments/env-managed-1")
-        .send({ metadata: { managedByPaperclip: false, managedKubernetesSandbox: false } });
+        .send({ metadata: { managedByPilibala: false, managedKubernetesSandbox: false } });
 
       expect(res.status).toBe(403);
       expect(res.body.details).toMatchObject({ code: "environment_platform_managed" });
@@ -945,7 +945,7 @@ describe("environment routes", () => {
 
       const res = await request(app)
         .patch("/api/environments/env-managed-1")
-        .send({ metadata: { managedByPaperclip: false, managedKubernetesSandbox: false } });
+        .send({ metadata: { managedByPilibala: false, managedKubernetesSandbox: false } });
 
       expect(res.status).toBe(200);
       expect(mockEnvironmentService.update).toHaveBeenCalled();
@@ -959,13 +959,13 @@ describe("environment routes", () => {
         ...createPlatformSandboxEnvironment(),
         id: "env-local-1",
         driver: "local",
-        metadata: { managedByPaperclip: true, defaultForInstance: true },
+        metadata: { managedByPilibala: true, defaultForInstance: true },
       });
       const app = createApp(ownerAdminActor);
 
       const res = await request(app)
         .patch("/api/environments/env-local-1")
-        .send({ metadata: { managedByPaperclip: false } });
+        .send({ metadata: { managedByPilibala: false } });
 
       expect(res.status).toBe(403);
       expect(res.body.details).toMatchObject({ code: "environment_platform_managed" });
@@ -978,7 +978,7 @@ describe("environment routes", () => {
 
       const res = await request(app)
         .patch("/api/environments/env-managed-1")
-        .send({ name: "Renamed", metadata: { managedByPaperclip: false } });
+        .send({ name: "Renamed", metadata: { managedByPilibala: false } });
 
       expect(res.status).toBe(403);
       expect(res.body.details).toMatchObject({ code: "environment_platform_managed" });
@@ -1006,7 +1006,7 @@ describe("environment routes", () => {
           name: "Fake managed",
           driver: "sandbox",
           config: { provider: "daytona" },
-          metadata: { managedByPaperclip: true },
+          metadata: { managedByPilibala: true },
         });
 
       expect(res.status).toBe(422);
@@ -1033,7 +1033,7 @@ describe("environment routes", () => {
     });
 
     it("accepts platform markers in client payloads on self-hosted instances", async () => {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
       const existing = {
         ...createPlatformSandboxEnvironment(),
         id: "env-tenant-1",
@@ -1042,7 +1042,7 @@ describe("environment routes", () => {
       mockEnvironmentService.getById.mockResolvedValue(existing);
       mockEnvironmentService.update.mockResolvedValue({
         ...existing,
-        metadata: { source: "manual", managedByPaperclip: true },
+        metadata: { source: "manual", managedByPilibala: true },
       });
       const app = createApp({
         type: "board",
@@ -1053,7 +1053,7 @@ describe("environment routes", () => {
 
       const res = await request(app)
         .patch("/api/environments/env-tenant-1")
-        .send({ metadata: { source: "manual", managedByPaperclip: true } });
+        .send({ metadata: { source: "manual", managedByPilibala: true } });
 
       expect(res.status).toBe(200);
       expect(mockEnvironmentService.update).toHaveBeenCalled();
@@ -1077,7 +1077,7 @@ describe("environment routes", () => {
     });
 
     it("does not floor writes to platform-marked rows on self-hosted instances", async () => {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
       const existing = createPlatformSandboxEnvironment();
       mockEnvironmentService.getById.mockResolvedValue(existing);
       mockEnvironmentService.update.mockResolvedValue({ ...existing, name: "Renamed" });
@@ -1111,7 +1111,7 @@ describe("environment routes", () => {
     });
 
     it("does not floor platform-marked rows on self-hosted instances", async () => {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
       mockEnvironmentService.getById.mockResolvedValue(createPlatformSandboxEnvironment());
       const app = createApp({
         type: "board",
@@ -1612,7 +1612,7 @@ describe("environment routes", () => {
 
     expect(res.status).toBe(409);
     expect(res.body.error).toBe(
-      "Cannot delete this environment while it has a reusable sandbox lease. Remove the associated execution workspace or issue so Paperclip can destroy the sandbox, then retry.",
+      "Cannot delete this environment while it has a reusable sandbox lease. Remove the associated execution workspace or issue so Pilibala can destroy the sandbox, then retry.",
     );
     expect(res.body.details).toEqual({ deleteBlockedReasons: ["reusable_sandbox_lease"] });
     expect(mockEnvironmentService.removeIfDeletable).not.toHaveBeenCalled();
@@ -1717,7 +1717,7 @@ describe("environment routes", () => {
           host: "changed.example.test",
           port: 22,
           username: "ssh-user",
-          remoteWorkspacePath: "/srv/paperclip/workspace",
+          remoteWorkspacePath: "/srv/pilibala/workspace",
         },
       });
 
@@ -1893,7 +1893,7 @@ describe("environment routes", () => {
         config: {
           host: "ssh.example.test",
           username: "ssh-user",
-          remoteWorkspacePath: "/srv/paperclip/workspace",
+          remoteWorkspacePath: "/srv/pilibala/workspace",
           privateKey: "  super-secret-key  ",
         },
       });
@@ -1922,7 +1922,7 @@ describe("environment routes", () => {
   });
 
   it("uses the configured provider for SSH private key secret materialization", async () => {
-    process.env.PAPERCLIP_SECRETS_PROVIDER = "aws_secrets_manager";
+    process.env.PILIBALA_SECRETS_PROVIDER = "aws_secrets_manager";
     const environment = createSecretBackedSshEnvironment();
     mockEnvironmentService.create.mockResolvedValue(environment);
     const app = createApp(localBoardActor());
@@ -1935,7 +1935,7 @@ describe("environment routes", () => {
         config: {
           host: "ssh.example.test",
           username: "ssh-user",
-          remoteWorkspacePath: "/srv/paperclip/workspace",
+          remoteWorkspacePath: "/srv/pilibala/workspace",
           privateKey: "super-secret-key",
         },
       });
@@ -2237,7 +2237,7 @@ describe("environment routes", () => {
   });
 
   it("uses the configured provider for schema-driven sandbox secret fields", async () => {
-    process.env.PAPERCLIP_SECRETS_PROVIDER = "aws_secrets_manager";
+    process.env.PILIBALA_SECRETS_PROVIDER = "aws_secrets_manager";
     const environment = {
       ...createEnvironment(),
       id: "env-sandbox-secure-plugin",
@@ -2500,7 +2500,7 @@ describe("environment routes", () => {
         host: "ssh.example.test",
         port: 22,
         username: "ssh-user",
-        remoteWorkspacePath: "/srv/paperclip/workspace",
+        remoteWorkspacePath: "/srv/pilibala/workspace",
         privateKey: "super-secret-key",
         knownHosts: "known-host",
         strictHostKeyChecking: true,
@@ -2681,7 +2681,7 @@ describe("environment routes", () => {
         host: "ssh.example.test",
         port: 22,
         username: "ssh-user",
-        remoteWorkspacePath: "/srv/paperclip/workspace",
+        remoteWorkspacePath: "/srv/pilibala/workspace",
         privateKey: null,
         knownHosts: null,
         strictHostKeyChecking: true,
@@ -2740,7 +2740,7 @@ describe("environment routes", () => {
         host: "ssh.example.test",
         port: 22,
         username: "ssh-user",
-        remoteWorkspacePath: "/srv/paperclip/workspace",
+        remoteWorkspacePath: "/srv/pilibala/workspace",
         privateKey: null,
         privateKeySecretRef: {
           type: "secret_ref",

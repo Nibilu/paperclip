@@ -2,16 +2,16 @@
 
 ## Scope and baseline
 
-- Base: `418eb4623ae767b5c9ce28c1c3e9fcb98f63702e`, the head of [PR #16173](https://github.com/paperclipai/paperclip/pull/16173).
+- Base: `418eb4623ae767b5c9ce28c1c3e9fcb98f63702e`, the head of [PR #16173](https://github.com/pilibalaai/pilibala/pull/16173).
 - Branch: `codex/test-audit-r19-adapter-utils-upload-case`, stacked on `codex/test-audit-r18-worktree-config`.
 - Production owner: `createCommandManagedRuntimeClient().writeFile` in `packages/adapter-utils/src/command-managed-runtime.ts`. `prepareCommandManagedRuntime` constructs this client for command-backed adapter staging and fallback sync operations.
 - Owner file: `packages/adapter-utils/src/command-managed-runtime.test.ts`.
 - Method: [OpenClaw test-audit](https://github.com/openclaw/openclaw/blob/main/.agents/skills/test-audit/SKILL.md), its audit workflow, owning-boundary guide, and proof policy.
-- Required repository guidance, contributor rules, roadmap, and PR template were consulted. GitHub searches for the exact case and upload-test consolidation found no duplicate retirement. Related adapter audit: [PR #16115](https://github.com/paperclipai/paperclip/pull/16115).
+- Required repository guidance, contributor rules, roadmap, and PR template were consulted. GitHub searches for the exact case and upload-test consolidation found no duplicate retirement. Related adapter audit: [PR #16115](https://github.com/pilibalaai/pilibala/pull/16115).
 
 ## Retirement and retained proof
 
-Retire only `test_single_stream_writeFile_collapses_roundtrips_under_96MiB`, originally at line 921. It was added in `030dd9d15c` ([PR #10340](https://github.com/paperclipai/paperclip/pull/10340)) as Research A1 proof for the single-stream round-trip reduction. Its two real-shell uploads duplicate the existing transport owner cases.
+Retire only `test_single_stream_writeFile_collapses_roundtrips_under_96MiB`, originally at line 921. It was added in `030dd9d15c` ([PR #10340](https://github.com/pilibalaai/pilibala/pull/10340)) as Research A1 proof for the single-stream round-trip reduction. Its two real-shell uploads duplicate the existing transport owner cases.
 
 Before removal, strengthen the existing single-stream case at line 462 from 3 MiB to 9 MiB. This preserves the retired case's exact size witness. Its payload still contains every byte value, and it still checks exact file bytes, two total shell calls, cleanup, stdin transport, monotonic progress, and final progress. Change the existing base64 guard to allow exactly a 9 MiB source buffer. The guard checks decoded buffer length, not the resulting string length.
 
@@ -34,7 +34,7 @@ The 10 MiB partial-final-chunk case, omitted-capability case, cleanup-failure ca
 ## Validation
 
 - `pnpm exec vitest run packages/adapter-utils/src/command-managed-runtime.test.ts --maxWorkers=1 --reporter=json --outputFile=/private/tmp/test-audit-r19-command-managed-runtime-candidate.json`: **27/27 passed**. Recorded command wall time: 7.421 s, including collection and startup.
-- `pnpm --filter @paperclipai/adapter-utils typecheck`: passed.
+- `pnpm --filter @pilibalaai/adapter-utils typecheck`: passed.
 - `git diff --check`: passed.
 - Exact diff inspection confirmed the encoded threshold semantics and fixed overhead in the chunk count. A declaration comparison confirmed exactly one removed case, exactly two changed keepers, and all other 25 cases byte-for-byte unchanged.
 - No production mutation experiments ran. No production code, dependencies, contracts, UI, or CI routing changed.

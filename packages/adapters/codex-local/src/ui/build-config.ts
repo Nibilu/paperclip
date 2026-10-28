@@ -1,15 +1,15 @@
 import {
   buildAdapterEnvConfig,
-  isPaperclipRunnerProvider,
+  isPilibalaRunnerProvider,
   normalizeLegacyRunnerProvider,
-  resolvePaperclipRunnerModel,
-  resolvePaperclipRunnerIdleTimeoutMs,
-  resolvePaperclipRunnerPermissionMode,
-  resolvePaperclipRunnerCursorMode,
-  resolvePaperclipRunnerPiThinkingLevel,
-  PAPERCLIP_RUNNER_ACPX_PROFILES,
+  resolvePilibalaRunnerModel,
+  resolvePilibalaRunnerIdleTimeoutMs,
+  resolvePilibalaRunnerPermissionMode,
+  resolvePilibalaRunnerCursorMode,
+  resolvePilibalaRunnerPiThinkingLevel,
+  PILIBALA_RUNNER_ACPX_PROFILES,
   type CreateConfigValues,
-} from "@paperclipai/adapter-utils";
+} from "@pilibalaai/adapter-utils";
 import { DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX } from "../index.js";
 
 function parseCommaArgs(value: string): string[] {
@@ -73,7 +73,7 @@ export function buildCodexLocalConfig(v: CreateConfigValues): Record<string, unk
 }
 
 /** Build a provider profile accepted by the experimental Rust runner. */
-export function buildPaperclipRunnerConfig(v: CreateConfigValues): Record<string, unknown> {
+export function buildPilibalaRunnerConfig(v: CreateConfigValues): Record<string, unknown> {
   const config = buildCodexLocalConfig(v);
   const schemaValues = normalizeLegacyRunnerProvider({ ...(v.adapterSchemaValues ?? {}) });
   const codexReasoningEffort = config.modelReasoningEffort ?? schemaValues.modelReasoningEffort ?? schemaValues.reasoningEffort;
@@ -96,7 +96,7 @@ export function buildPaperclipRunnerConfig(v: CreateConfigValues): Record<string
     delete schemaValues[unsupportedKey];
   }
   const providerCandidate = schemaValues.provider;
-  const provider = isPaperclipRunnerProvider(providerCandidate)
+  const provider = isPilibalaRunnerProvider(providerCandidate)
     ? providerCandidate
     : "codex";
   if (provider === "muse") {
@@ -107,13 +107,13 @@ export function buildPaperclipRunnerConfig(v: CreateConfigValues): Record<string
     return { provider, lifecycleMode: "per_turn", allowUnmeteredProvider: schemaValues.allowUnmeteredProvider === true, dotWorkspaceAccess: schemaValues.dotWorkspaceAccess === true, dotAttachmentAccess: schemaValues.dotAttachmentAccess === true,
       ...(typeof schemaValues.dotBindingId === "string" ? { dotBindingId: schemaValues.dotBindingId } : {}) };
   }
-  const selectedAcpxProfile = PAPERCLIP_RUNNER_ACPX_PROFILES.find(profile => profile.value === schemaValues.acpxAgent);
+  const selectedAcpxProfile = PILIBALA_RUNNER_ACPX_PROFILES.find(profile => profile.value === schemaValues.acpxAgent);
   if (provider === "acpx" && selectedAcpxProfile && !selectedAcpxProfile.qualified) {
     throw new Error(`${selectedAcpxProfile.label} is not enabled for production`);
   }
   const acpxAgent = selectedAcpxProfile?.value ?? "claude";
-  const cursorMode = resolvePaperclipRunnerCursorMode(provider, acpxAgent, schemaValues.acpxSessionMode);
-  const piThinkingLevel = resolvePaperclipRunnerPiThinkingLevel(provider, acpxAgent, schemaValues.piThinkingLevel);
+  const cursorMode = resolvePilibalaRunnerCursorMode(provider, acpxAgent, schemaValues.acpxSessionMode);
+  const piThinkingLevel = resolvePilibalaRunnerPiThinkingLevel(provider, acpxAgent, schemaValues.piThinkingLevel);
 
   const schemaModel = typeof schemaValues.model === "string"
     ? schemaValues.model.trim()
@@ -173,11 +173,11 @@ export function buildPaperclipRunnerConfig(v: CreateConfigValues): Record<string
     300,
     "AWS AgentCore timeoutSeconds",
   );
-  const lifecycleCandidate = v.paperclipRunnerLifecycleMode ?? schemaValues.lifecycleMode;
+  const lifecycleCandidate = v.pilibalaRunnerLifecycleMode ?? schemaValues.lifecycleMode;
   const lifecycleMode = lifecycleCandidate === "warm" ? "warm" : "per_turn";
   const configuredIdleTimeoutMs =
-    v.paperclipRunnerIdleTimeoutMs ?? schemaValues.idleTimeoutMs;
-  const idleTimeoutMs = resolvePaperclipRunnerIdleTimeoutMs(
+    v.pilibalaRunnerIdleTimeoutMs ?? schemaValues.idleTimeoutMs;
+  const idleTimeoutMs = resolvePilibalaRunnerIdleTimeoutMs(
     configuredIdleTimeoutMs,
   );
   const configuredCodexPermissionMode =
@@ -188,7 +188,7 @@ export function buildPaperclipRunnerConfig(v: CreateConfigValues): Record<string
     && configuredCodexPermissionMode !== "never"
   ) {
     throw new Error(
-      "Paperclip Runner currently supports Codex only with codexPermissionMode set to never. Select Full auto (never ask) before saving.",
+      "Pilibala Runner currently supports Codex only with codexPermissionMode set to never. Select Full auto (never ask) before saving.",
     );
   }
   for (const normalizedKey of [
@@ -237,15 +237,15 @@ export function buildPaperclipRunnerConfig(v: CreateConfigValues): Record<string
     ...schemaValues,
     provider,
     ...(provider === "codex"
-      ? { model: resolvePaperclipRunnerModel("codex", config.model),
+      ? { model: resolvePilibalaRunnerModel("codex", config.model),
           ...(codexReasoningEffort !== undefined ? { modelReasoningEffort: codexReasoningEffort } : {}) }
       : {}),
     codexPermissionMode: "never",
-    opencodePermissionMode: resolvePaperclipRunnerPermissionMode(
+    opencodePermissionMode: resolvePilibalaRunnerPermissionMode(
       "opencode",
       v.adapterSchemaValues?.opencodePermissionMode,
     ),
-    acpxPermissionMode: resolvePaperclipRunnerPermissionMode(
+    acpxPermissionMode: resolvePilibalaRunnerPermissionMode(
       "acpx",
       v.adapterSchemaValues?.acpxPermissionMode,
     ),
@@ -261,7 +261,7 @@ export function buildPaperclipRunnerConfig(v: CreateConfigValues): Record<string
           acpxAgent,
           ...(cursorMode === undefined ? {} : { acpxSessionMode: cursorMode }),
           ...(piThinkingLevel === undefined ? {} : { piThinkingLevel }),
-          model: configuredModel || schemaModel || (acpxAgent === "grok" ? "grok-4.7" : resolvePaperclipRunnerModel("acpx", undefined)),
+          model: configuredModel || schemaModel || (acpxAgent === "grok" ? "grok-4.7" : resolvePilibalaRunnerModel("acpx", undefined)),
         }
       : {}),
     ...(provider === "claude_managed"

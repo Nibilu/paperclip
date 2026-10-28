@@ -1,22 +1,22 @@
 ---
 name: create-issue-interaction-ui
 description: >
-  Add a new Paperclip issue-thread interaction kind end-to-end. Use when repo
+  Add a new Pilibala issue-thread interaction kind end-to-end. Use when repo
   work introduces or extends interaction cards like request_confirmation,
   checkbox confirmations, ask_user_questions, or suggest_tasks.
 ---
 
 # Create a new issue-thread interaction UI (Developer/maintainer skill)
 
-Developer/maintainer skill. Do NOT install this on production Paperclip agents.
+Developer/maintainer skill. Do NOT install this on production Pilibala agents.
 
-This skill walks a Paperclip contributor through introducing a new issue-thread
+This skill walks a Pilibala contributor through introducing a new issue-thread
 interaction kind from shared contract to issue-detail wiring, helpers, and
 docs. It is intentionally a developer/maintainer skill: the audience is a
-human or coding agent making code changes inside `paperclipai/paperclip`, not
-the operational agents that run inside a deployed Paperclip company.
+human or coding agent making code changes inside `pilibalaai/pilibala`, not
+the operational agents that run inside a deployed Pilibala company.
 
-Do NOT install this on production Paperclip agents. This guide is for repository contributors changing Paperclip itself.
+Do NOT install this on production Pilibala agents. This guide is for repository contributors changing Pilibala itself.
 
 ## When to use
 
@@ -32,7 +32,7 @@ Do NOT install this on production Paperclip agents. This guide is for repository
 
 - Adding fields to an existing interaction kind that does not need a new
   payload schema. Patch the existing validators/UI in place instead.
-- Changing how Paperclip agents *call* interactions. Update `skills/paperclip`
+- Changing how Pilibala agents *call* interactions. Update `skills/pilibala`
   or `references/api-reference.md`; that is agent guidance, not card work.
 - Building a non-thread UI (issue detail sidebar, project board widget, etc.).
   Those have their own component conventions.
@@ -46,7 +46,7 @@ Every issue-thread interaction has four moving parts:
 | Shared       | Kind constant, payload/result interfaces, Zod validators, exported types, shared-test coverage.    |
 | Server       | Service create/accept/reject/respond, staleness, supersede, idempotency, activity log, wake send. |
 | UI           | Card pending/resolved/stale states, fixtures, Storybook, issue-thread/IssueDetail wiring.         |
-| Helpers/Docs | CLI command, MCP tool, plugin SDK type+host+testing path, `skills/paperclip` guidance.            |
+| Helpers/Docs | CLI command, MCP tool, plugin SDK type+host+testing path, `skills/pilibala` guidance.            |
 
 The four existing kinds are the canonical prior art. Pick the closest one and
 copy its plumbing rather than inventing parallel mechanics:
@@ -72,7 +72,7 @@ git show --stat 4d5322c82
 
 The plan it implemented is preserved as an issue document on
 [PAP-10415](/PAP/issues/PAP-10415#document-plan). Use it as the template for
-your own plan document if you are running this work through Paperclip itself.
+your own plan document if you are running this work through Pilibala itself.
 
 ## Order of operations
 
@@ -207,9 +207,9 @@ hand-writing JSON. Touch:
 
 Touch:
 
-- `skills/paperclip/SKILL.md` — add a row to the interaction-kinds table:
+- `skills/pilibala/SKILL.md` — add a row to the interaction-kinds table:
   *when to use*, *when not to use*, plus a copyable payload example.
-- `skills/paperclip/references/api-reference.md` — full payload and result
+- `skills/pilibala/references/api-reference.md` — full payload and result
   schemas, validation limits, create/respond bodies, error codes.
 
 The skills text is read by the runtime agents. Keep it concise — differentiate
@@ -253,7 +253,7 @@ If UI vitest fails with `act is not a function`, the shell is running with
 - [ ] Fixtures and Storybook entries exist for the new kind.
 - [ ] CLI, MCP, and plugin SDK helpers all accept the new payload shape and
       have test coverage.
-- [ ] `skills/paperclip/SKILL.md` and `references/api-reference.md` updated.
+- [ ] `skills/pilibala/SKILL.md` and `references/api-reference.md` updated.
 - [ ] Focused test set above is green; CI gates pass.
 
 ## Anti-patterns observed in review

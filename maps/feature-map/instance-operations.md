@@ -4,7 +4,7 @@ navigation: {"section":"Oversight and operation","sectionOrder":70,"order":40}
 
 # Instance operations
 
-An operator can install and run Paperclip, diagnose the instance, configure supported deployment settings, manage its service, and produce a recoverable database backup.
+An operator can install and run Pilibala, diagnose the instance, configure supported deployment settings, manage its service, and produce a recoverable database backup.
 
 Implementation: [CLI entry point](../../cli/src/index.ts), [instance settings](../../ui/src/pages/InstanceExperimentalSettings.tsx), [backup command](../../cli/src/commands/db-backup.ts).
 
@@ -22,13 +22,13 @@ Agent access: [companion](../agent-access-map/instance-operations.md).
 
 ### `operator-cli`
 
-Use `paperclipai install`, `run`, `service`, `doctor`, `configure`, `channels`, or `update --help` for the intended operation.
+Use `pilibalaai install`, `run`, `service`, `doctor`, `configure`, `channels`, or `update --help` for the intended operation.
 
 ### `settings-backup`
 
-Use currently visible instance settings for experiments/access and `paperclipai db:backup --help` for one-off backup. Some legacy general-settings URLs redirect.
+Use currently visible instance settings for experiments/access and `pilibalaai db:backup --help` for one-off backup. Some legacy general-settings URLs redirect.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use a disposable data directory/service identity. Do not update, restart, or restore over an unrelated live instance as a documentation test.
 

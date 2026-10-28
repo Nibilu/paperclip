@@ -1,17 +1,17 @@
 import { skillAccessRequestContext } from "../services/skill-access.js";
 import { createHash } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
-import { activityLog } from "@paperclipai/db";
+import { activityLog } from "@pilibalaai/db";
 import { projectToolContext } from "../services/project-tool-context.js";
 import { museExternalAgents, withExternalExecutionAdmission } from "../modules/external-agents/index.js";
-import { parseNativeExecutionInput } from "../vendor/paperclip-runner/index.js";
+import { parseNativeExecutionInput } from "../vendor/pilibala-runner/index.js";
 import { persistActivity, publishActivity } from "../services/activity-log.js";
 import { z } from "zod";
 import { normalizeProjectRepositoryUrl, resolveProjectRepositorySelection } from "../services/project-repositories.js";
 import { toolAccessService } from "../services/tool-access.js";
 import { Router, type Request, type Response } from "express";
-import type { Db } from "@paperclipai/db";
-import { agents, authUsers, companyMemberships, instanceUserRoles, projectAccessMembers } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { agents, authUsers, companyMemberships, instanceUserRoles, projectAccessMembers } from "@pilibalaai/db";
 import { inArray } from "drizzle-orm";
 import {
   addProjectAccessMemberSchema,
@@ -27,9 +27,9 @@ import {
   updateProjectSchema,
   updateProjectWorkspaceSchema,
   workspaceRuntimeControlTargetSchema,
-} from "@paperclipai/shared";
-import type { WorkspaceRuntimeDesiredState, WorkspaceRuntimeServiceStateMap } from "@paperclipai/shared";
-import { trackProjectCreated } from "@paperclipai/shared/telemetry";
+} from "@pilibalaai/shared";
+import type { WorkspaceRuntimeDesiredState, WorkspaceRuntimeServiceStateMap } from "@pilibalaai/shared";
+import { trackProjectCreated } from "@pilibalaai/shared/telemetry";
 import { validate } from "../middleware/validate.js";
 import { accessService, projectService, logActivity, workspaceOperationService } from "../services/index.js";
 import { conflict, forbidden, unprocessable } from "../errors.js";
@@ -71,7 +71,7 @@ export function projectRoutes(db: Db) {
     return context;
   }
 
-  async function selectedRepositories(req: Request, companyId: string, ids: string[], existing: import("@paperclipai/shared").ProjectWorkspace[] = []) {
+  async function selectedRepositories(req: Request, companyId: string, ids: string[], existing: import("@pilibalaai/shared").ProjectWorkspace[] = []) {
     const viewer = await repositoryViewer(req);
     if (!ids.length) return [];
     const available = await toolAccessService(db).listProjectRepositories(companyId, viewer.userId, viewer.localTrusted);
@@ -84,7 +84,7 @@ export function projectRoutes(db: Db) {
   const externalObjectsSvc = externalObjectService(db, {
     enabled: async () => (await instanceSettings.getExperimental()).enableExternalObjects === true,
   });
-  const strictSecretsMode = process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true";
+  const strictSecretsMode = process.env.PILIBALA_SECRETS_STRICT_MODE === "true";
   const environmentsSvc = environmentService(db);
 
   /**
@@ -410,7 +410,7 @@ export function projectRoutes(db: Db) {
           try {
             const execution = parseNativeExecutionInput(current.run.runnerProfileJson?.nativeExecutionInput);
             const broker = museExternalAgents(db);
-            if (current.run.runtimeMode !== "native" || execution.schema !== "paperclip.native-execution-input.v8"
+            if (current.run.runtimeMode !== "native" || execution.schema !== "pilibala.native-execution-input.v8"
               || execution.binding.companyId !== actorCompanyId || execution.binding.agentId !== agentId
               || execution.binding.runId !== runId || execution.binding.issueId !== current.issue.id
               || await broker.authorizingUserIdForBinding(execution.provider.binding) !== authorizingUserId) {
@@ -754,7 +754,7 @@ export function projectRoutes(db: Db) {
 
     const workspaceCwd = workspace.cwd;
     if (!workspaceCwd) {
-      res.status(422).json({ error: "Project workspace needs a local path before Paperclip can run workspace commands" });
+      res.status(422).json({ error: "Project workspace needs a local path before Pilibala can run workspace commands" });
       return;
     }
 

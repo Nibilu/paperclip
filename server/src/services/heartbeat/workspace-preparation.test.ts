@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
-import { captureDirectorySnapshot, directorySnapshotSha256, serializeDirectorySnapshot } from "@paperclipai/adapter-utils/workspace-restore-merge";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import { agents, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, environmentLeases, executionWorkspaces, executionWorkspaceRepositoryAccess, heartbeatRuns, issues, issueAccessGrants, projects, projectWorkspaces, type Db } from "@paperclipai/db";
+import { captureDirectorySnapshot, directorySnapshotSha256, serializeDirectorySnapshot } from "@pilibalaai/adapter-utils/workspace-restore-merge";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import { agents, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, environmentLeases, executionWorkspaces, executionWorkspaceRepositoryAccess, heartbeatRuns, issues, issueAccessGrants, projects, projectWorkspaces, type Db } from "@pilibalaai/db";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
@@ -37,9 +37,9 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
   let home: string;
 
   beforeAll(async () => {
-    home = await mkdtemp(join(tmpdir(), "paperclip-workspace-preparation-"));
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    database = await startEmbeddedPostgresTestDatabase("paperclip-workspace-preparation");
+    home = await mkdtemp(join(tmpdir(), "pilibala-workspace-preparation-"));
+    vi.stubEnv("PILIBALA_HOME", home);
+    database = await startEmbeddedPostgresTestDatabase("pilibala-workspace-preparation");
     db = createDb(database.connectionString);
     await db.execute(sql`set client_min_messages = warning`);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
@@ -109,7 +109,7 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
 
   it.each(["muse", "openai_dot", "grok_bot"] as const)("uses private %s controller storage without rebinding task files or preparing repositories", async provider => {
     const { input, issue } = await fixture();
-    input.agent.adapterType = "paperclip_runner";
+    input.agent.adapterType = "pilibala_runner";
     input.config.mergedConfig = { provider, cwd: "/task/source/must-not-be-read", workspaceStrategy: { type: "git_worktree" } };
     input.reuse.isDotRun = true;
     const resolve = vi.spyOn(input.services, "resolveWorkspaceForRun").mockRejectedValue(new Error("Task files must not be adopted"));
@@ -131,7 +131,7 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
         issue: { id: issue.id, identifier: null, title: issue.title, description: null, workMode: "standard" },
         taskPrompt: "Preserve the admitted controller", normalizedSessionId: input.run.id,
         workspace: { id: input.run.id, cwd: result.executionWorkspace.cwd, repoUrl: null, repoRef: null, branchName: null },
-        completionContract: { id: input.run.id, sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "paperclip.run-result.v1",
+        completionContract: { id: input.run.id, sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "pilibala.run-result.v1",
           contract: { revision: "1", objective: "Preserve the controller", criteria: [{ id: "objective", requirement: "Preserve the original checkpoint path" }] } },
         runtimeContext: nativeRuntimeContextFixture(),
       });
@@ -196,7 +196,7 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
         "heartbeat.prepare.workspace_project_repositories",
       ]));
       for (const span of spans) {
-        expect(Object.keys(span.attributes)).toEqual(["paperclip.task.run.run_id"]);
+        expect(Object.keys(span.attributes)).toEqual(["pilibala.task.run.run_id"]);
         expect(JSON.stringify(span.attributes)).not.toContain(source);
       }
     } finally {
@@ -394,7 +394,7 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
       .mockRejectedValue(new Error("Physical root reader cannot access this source"));
     const acquire = vi.spyOn(input.services.envOrchestrator, "acquireForRun");
     await expect(prepareHeartbeatWorkspace(db, input)).rejects.toThrow("Physical root reader cannot access this source");
-    await expect(access(join(source, ".paperclip-repositories"))).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(access(join(source, ".pilibala-repositories"))).rejects.toMatchObject({ code: "ENOENT" });
     expect(acquire).not.toHaveBeenCalled();
   });
 
@@ -402,7 +402,7 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
     const { input, source, issue } = await fixture();
     await db.insert(projectWorkspaces).values({ companyId: issue.companyId, projectId: issue.projectId!,
       name: "Sibling repository", repoUrl: pathToFileURL(source).href });
-    const namespace = join(source, ".paperclip-repositories");
+    const namespace = join(source, ".pilibala-repositories");
     const guard = vi.spyOn(input.services.executionWorkspacesSvc, "guardTaskRepositoryRootForPublication")
       .mockImplementation(async () => {
         const candidates = await readdir(namespace);
@@ -418,8 +418,8 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
   });
 
   it("retains sibling privacy before copying when its source disappears before publication", async () => {
-    const previousPrivacyMode = process.env.PAPERCLIP_ISSUE_PRIVACY_MODE;
-    vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", "enforce");
+    const previousPrivacyMode = process.env.PILIBALA_ISSUE_PRIVACY_MODE;
+    vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", "enforce");
     try {
       const { input, source, issue } = await fixture();
       const sibling = source + "-private-sibling";
@@ -433,7 +433,7 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
       await db.insert(issueAccessGrants).values({ issueId: privateIssue.id, subjectType: "agent", subjectId: input.agent.id, source: "explicit" });
       const [configured] = await db.insert(projectWorkspaces).values({ companyId: issue.companyId, projectId: issue.projectId!,
         name: "Private sibling", cwd: sibling, repoUrl: pathToFileURL(sibling).href }).returning();
-      const namespace = join(source, ".paperclip-repositories");
+      const namespace = join(source, ".pilibala-repositories");
       const originalPrepare = input.services.executionWorkspacesSvc.prepareConfiguredRepositorySource;
       const prepare = vi.spyOn(input.services.executionWorkspacesSvc, "prepareConfiguredRepositorySource").mockImplementation(async args => {
         const recheck = await originalPrepare(args);
@@ -457,7 +457,7 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
       await expect(assertExecutionWorkspaceRootReadAccess(db, { companyId: issue.companyId, cwd: source,
         actor: { type: "agent", source: "agent_jwt", companyId: issue.companyId, agentId: input.agent.id } })).rejects.toThrow();
     } finally {
-      vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", previousPrivacyMode);
+      vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", previousPrivacyMode);
     }
   });
 
@@ -467,7 +467,7 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
     await expect(prepareProjectRepositoryWorkspaces({ cwd: source, anchorRepoUrl: null,
       workspaces: [{ id: issue.projectWorkspaceId!, repoUrl, repoRef: null, cwd: null }], prepareLocalSource })).rejects.toThrow();
     expect(prepareLocalSource).not.toHaveBeenCalled();
-    expect(await readdir(join(source, ".paperclip-repositories"))).toEqual([]);
+    expect(await readdir(join(source, ".pilibala-repositories"))).toEqual([]);
   });
 
   it("persists and reuses task-owned files without adopting the organizational project as their source", async () => {
@@ -544,7 +544,7 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
     await mkdir(admittedRoot);
     const remoteCwd = "/remote/admitted-task";
     input.reuse.persistedNativeExecutionInput = {
-      schema: "paperclip.native-execution-input.v1",
+      schema: "pilibala.native-execution-input.v1",
       binding: { companyId: issue.companyId, runId: input.run.id, issueId: issue.id,
         agentId: input.agent.id, executionWorkspaceId: first.persistedExecutionWorkspace!.id },
       task: { identifier: "WSP-1", title: issue.title, description: null, prompt: "Continue admitted work", workMode: "standard" },
@@ -552,7 +552,7 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
       session: { normalizedSessionId: null, driverKind: "codex_app_server", protocolVersion: 1,
         lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null } },
       provider: { kind: "codex", model: null },
-      completionContract: { id: "contract", sha256: "abc123", schemaVersion: "paperclip.completion-contract.v1",
+      completionContract: { id: "contract", sha256: "abc123", schemaVersion: "pilibala.completion-contract.v1",
         contract: { revision: "1", objective: "Continue admitted work", criteria: [{ id: "objective", requirement: "Finish" }] } },
       interactionResponses: [], credentialBindings: [],
     };
@@ -568,7 +568,7 @@ describe.skipIf(!support.supported)("heartbeat workspace preparation boundary", 
     if (descriptor !== "absent") {
       const baseline = await captureDirectorySnapshot(admittedRoot);
       const reference = await nativeWorkspaceSyncInternals.writeDescriptor({
-        schema: "paperclip.native-workspace-sync/v1", state: "prepared",
+        schema: "pilibala.native-workspace-sync/v1", state: "prepared",
         binding: { companyId: issue.companyId, runId: input.run.id, workspaceId: first.persistedExecutionWorkspace!.id,
           leaseId: "admitted-lease", providerLeaseId: "admitted-provider", localCwd: admittedRoot, remoteCwd },
         baseline: serializeDirectorySnapshot(baseline), baselineSha256: directorySnapshotSha256(baseline),

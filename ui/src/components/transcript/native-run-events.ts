@@ -1,4 +1,4 @@
-import type { HeartbeatRunEvent } from "@paperclipai/shared";
+import type { HeartbeatRunEvent } from "@pilibalaai/shared";
 import type { TranscriptEntry } from "@/adapters";
 import { isRunLogOnlyProviderEvent } from "./run-log-only-events";
 
@@ -87,9 +87,9 @@ function isItemIdentityEvent(eventType: string): boolean {
     || eventType === "item.completed";
 }
 
-const TOOL_EXECUTION_SCHEMA = "paperclip.tool.execution.v1";
-const RUN_RESULT_SCHEMA = "paperclip.run_result.v1";
-const RUN_TERMINAL_SCHEMA = "paperclip.prp.terminal.v1";
+const TOOL_EXECUTION_SCHEMA = "pilibala.tool.execution.v1";
+const RUN_RESULT_SCHEMA = "pilibala.run_result.v1";
+const RUN_TERMINAL_SCHEMA = "pilibala.prp.terminal.v1";
 
 function canonicalQuestionSet(
   value: unknown,
@@ -97,7 +97,7 @@ function canonicalQuestionSet(
   const candidate = record(value);
   if (
     !candidate
-    || candidate.schema !== "paperclip.question_set.v1"
+    || candidate.schema !== "pilibala.question_set.v1"
     || !Array.isArray(candidate.questions)
     || candidate.questions.length === 0
   ) return null;
@@ -127,7 +127,7 @@ function canonicalQuestionResponse(
 ): Extract<TranscriptEntry, { kind: "runtime_request" }>["response"] {
   const candidate = record(value);
   return candidate
-    && candidate.schema === "paperclip.question_response.v1"
+    && candidate.schema === "pilibala.question_response.v1"
     && record(candidate.answers)
     ? structuredClone(candidate) as unknown as NonNullable<
         Extract<TranscriptEntry, { kind: "runtime_request" }>["response"]
@@ -315,133 +315,133 @@ function runTerminalEntry(
 
 const PROVIDER_ACTIVITY_PRESENTATIONS = {
   "plan.updated": {
-    schema: "paperclip.plan.updated.v1",
+    schema: "pilibala.plan.updated.v1",
     idKey: "planId",
     name: "plan",
     summaryKeys: ["explanation"],
   },
   "research.started": {
-    schema: "paperclip.research.v1",
+    schema: "pilibala.research.v1",
     idKey: "researchId",
     name: "research",
     summaryKeys: ["query", "pattern", "url"],
   },
   "research.progressed": {
-    schema: "paperclip.research.v1",
+    schema: "pilibala.research.v1",
     idKey: "researchId",
     name: "research",
     summaryKeys: ["query", "pattern", "url"],
   },
   "research.completed": {
-    schema: "paperclip.research.v1",
+    schema: "pilibala.research.v1",
     idKey: "researchId",
     name: "research",
     summaryKeys: ["query", "pattern", "url"],
   },
   "delegation.started": {
-    schema: "paperclip.delegation.v1",
+    schema: "pilibala.delegation.v1",
     idKey: "delegationId",
     name: "delegation",
     summaryKeys: ["action"],
   },
   "delegation.updated": {
-    schema: "paperclip.delegation.v1",
+    schema: "pilibala.delegation.v1",
     idKey: "delegationId",
     name: "delegation",
     summaryKeys: ["action"],
   },
   "delegation.completed": {
-    schema: "paperclip.delegation.v1",
+    schema: "pilibala.delegation.v1",
     idKey: "delegationId",
     name: "delegation",
     summaryKeys: ["action"],
   },
   "model.route.changed": {
-    schema: "paperclip.model.route_changed.v1",
+    schema: "pilibala.model.route_changed.v1",
     idKey: "routeId",
     name: "model",
     summaryKeys: ["reason", "effectiveModel"],
   },
   "model.verification.updated": {
-    schema: "paperclip.model.verification.v1",
+    schema: "pilibala.model.verification.v1",
     idKey: "verificationId",
     name: "model",
     summaryKeys: ["summary"],
   },
   "context.compacted": {
-    schema: "paperclip.context.compacted.v1",
+    schema: "pilibala.context.compacted.v1",
     idKey: "compactionId",
     name: "context",
     summaryKeys: ["reason"],
   },
   "artifact.viewed": {
-    schema: "paperclip.artifact.viewed.v1",
+    schema: "pilibala.artifact.viewed.v1",
     idKey: "artifactId",
     name: "artifact",
     summaryKeys: ["title", "reference"],
   },
   "artifact.generated": {
-    schema: "paperclip.artifact.generated.v1",
+    schema: "pilibala.artifact.generated.v1",
     idKey: "artifactId",
     name: "artifact",
     summaryKeys: ["failure", "reference"],
   },
   "review.mode.changed": {
-    schema: "paperclip.review.mode_changed.v1",
+    schema: "pilibala.review.mode_changed.v1",
     idKey: "reviewId",
     name: "review",
     summaryKeys: ["scope", "state"],
   },
   "hook.started": {
-    schema: "paperclip.hook.v1",
+    schema: "pilibala.hook.v1",
     idKey: "hookId",
     name: "hook",
     summaryKeys: ["summary", "event"],
   },
   "hook.completed": {
-    schema: "paperclip.hook.v1",
+    schema: "pilibala.hook.v1",
     idKey: "hookId",
     name: "hook",
     summaryKeys: ["summary", "event"],
   },
   "memory.citation.referenced": {
-    schema: "paperclip.memory.citation.v1",
+    schema: "pilibala.memory.citation.v1",
     idKey: "citationId",
     name: "memory",
     summaryKeys: ["label"],
   },
   "safety.review.started": {
-    schema: "paperclip.safety.review.v1",
+    schema: "pilibala.safety.review.v1",
     idKey: "reviewId",
     name: "safety",
     summaryKeys: ["summary", "decision"],
   },
   "safety.review.completed": {
-    schema: "paperclip.safety.review.v1",
+    schema: "pilibala.safety.review.v1",
     idKey: "reviewId",
     name: "safety",
     summaryKeys: ["summary", "decision"],
   },
   "terminal.input.sent": {
-    schema: "paperclip.terminal.input_sent.v1",
+    schema: "pilibala.terminal.input_sent.v1",
     idKey: "executionId",
     name: "terminal",
     summaryKeys: ["inputClass"],
   },
   "wait.started": {
-    schema: "paperclip.wait.v1",
+    schema: "pilibala.wait.v1",
     idKey: "waitId",
     name: "wait",
     summaryKeys: ["reason"],
   },
   "wait.completed": {
-    schema: "paperclip.wait.v1",
+    schema: "pilibala.wait.v1",
     idKey: "waitId",
     name: "wait",
     summaryKeys: ["reason"],
   },
   "provider.notice.recorded": {
-    schema: "paperclip.provider.notice.v1",
+    schema: "pilibala.provider.notice.v1",
     idKey: "noticeId",
     name: "Provider notice",
     summaryKeys: ["summary"],
@@ -666,7 +666,7 @@ export function nativeRunEventsToTranscript(events: readonly HeartbeatRunEvent[]
     const envelope = record(event.payload?.prpEvent);
     if (
       !envelope
-      || envelope.schema !== "paperclip.prp.event.v1"
+      || envelope.schema !== "pilibala.prp.event.v1"
       || envelope.schemaVersion !== 1
       || envelope.runId !== event.runId
       || envelope.eventType !== event.eventType
@@ -714,7 +714,7 @@ export function nativeRunEventsToTranscript(events: readonly HeartbeatRunEvent[]
     const envelope = record(event.payload?.prpEvent);
     if (
       !envelope
-      || envelope.schema !== "paperclip.prp.event.v1"
+      || envelope.schema !== "pilibala.prp.event.v1"
       || envelope.schemaVersion !== 1
     ) continue;
     if (envelope.runId !== event.runId || envelope.eventType !== event.eventType) continue;
@@ -828,7 +828,7 @@ export function nativeRunEventsToTranscript(events: readonly HeartbeatRunEvent[]
 
     // Notices are provider diagnostics, not tool calls. Preserve their message
     // and category for the shared notice row instead of serializing an input blob.
-    if (event.eventType === "provider.notice.recorded" && payload.schema === "paperclip.provider.notice.v1") {
+    if (event.eventType === "provider.notice.recorded" && payload.schema === "pilibala.provider.notice.v1") {
       if (isRunLogOnlyProviderEvent(event.eventType, payload)) continue;
       entries.push({
         kind: "provider_activity",
@@ -1074,7 +1074,7 @@ export function nativeRunEventsToTranscript(events: readonly HeartbeatRunEvent[]
       kind: "result",
       ...usageSummary,
       text: "",
-      subtype: "paperclip_runner_usage",
+      subtype: "pilibala_runner_usage",
       isError: false,
       errors: [],
     });
@@ -1083,7 +1083,7 @@ export function nativeRunEventsToTranscript(events: readonly HeartbeatRunEvent[]
       kind: "result",
       ...cumulativeUsageSummary,
       text: "Provider-reported session-cumulative usage; a per-run delta was unavailable.",
-      subtype: "paperclip_runner_session_usage",
+      subtype: "pilibala_runner_session_usage",
       isError: false,
       errors: [],
     });

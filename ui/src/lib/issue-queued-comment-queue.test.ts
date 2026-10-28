@@ -36,7 +36,7 @@ describe("normalizeIssueQueuedCommentQueue", () => {
         state: "deferred",
         targetRunId: "run-1",
         revision: "rev-1",
-        protocol: "paperclip_runner_v1",
+        protocol: "pilibala_runner_v1",
         steeringDisposition: "available",
         executionWait: { reason: "remote_cleanup", message: "Waiting for the previous environment to stop." },
         entries: [
@@ -69,7 +69,7 @@ describe("normalizeIssueQueuedCommentQueue", () => {
       "second",
     ]);
     expect(queue.entries.map((entry) => entry.position)).toEqual([0, 1]);
-    expect(queue.protocol).toBe("paperclip_runner_v1");
+    expect(queue.protocol).toBe("pilibala_runner_v1");
     expect(queue.queueId).toBe("wake-1");
     expect(queue.state).toBe("deferred");
     expect(queue.steeringDisposition).toBe("available");
@@ -99,14 +99,14 @@ describe("normalizeIssueQueuedCommentQueue", () => {
       issueId: "issue-1",
       authoritativeQueue: null,
       pendingComments: [{ comment: pending, targetRunId: "run-1" }],
-      fallbackProtocol: "paperclip_runner_v1",
+      fallbackProtocol: "pilibala_runner_v1",
     });
 
     expect(queue).toMatchObject({
       queueId: null,
       state: "deferred",
       targetRunId: "run-1",
-      protocol: "paperclip_runner_v1",
+      protocol: "pilibala_runner_v1",
       steeringDisposition: "temporarily_unavailable",
       entries: [
         {
@@ -126,9 +126,9 @@ describe("normalizeIssueQueuedCommentQueue", () => {
     const queue = mergePendingIssueQueuedComments({
       issueId: "issue-1", authoritativeQueue,
       pendingComments: [{ comment: comment("optimistic-1", "Use the new model next turn"), targetRunId: "run-native" }],
-      fallbackProtocol: "paperclip_runner_v1",
+      fallbackProtocol: "pilibala_runner_v1",
     });
-    expect(queue).toMatchObject({ protocol: "paperclip_runner_v1", steeringDisposition: "temporarily_unavailable" });
+    expect(queue).toMatchObject({ protocol: "pilibala_runner_v1", steeringDisposition: "temporarily_unavailable" });
   });
 
   it("deduplicates acknowledged entries and restores the authoritative queue identity", () => {
@@ -140,7 +140,7 @@ describe("normalizeIssueQueuedCommentQueue", () => {
         state: "deferred",
         targetRunId: "run-1",
         revision: "rev-1",
-        protocol: "paperclip_runner_v1",
+        protocol: "pilibala_runner_v1",
         steeringDisposition: "available",
         executionWait: { reason: "remote_cleanup", message: "Waiting for the previous environment to stop." },
         entries: [

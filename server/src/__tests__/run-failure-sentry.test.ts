@@ -71,7 +71,7 @@ async function importFreshSentryWithGateOpen() {
 }
 
 beforeEach(() => {
-  vi.stubEnv("PAPERCLIP_SENTRY_RUN_FAILURES", "unexpected");
+  vi.stubEnv("PILIBALA_SENTRY_RUN_FAILURES", "unexpected");
   delete process.env[DSN_ENV];
   delete process.env[FRONTEND_DSN_ENV];
   delete process.env[BACKEND_DSN_ENV];
@@ -93,8 +93,8 @@ afterEach(() => {
 describe("captureRunFailure", () => {
   it.each([undefined, "off", "true", "invalid"])("keeps ordinary server errors enabled while run reporting is disabled: %s", async mode => {
     const { sentryModule, captureException } = await importFreshSentryWithGateOpen();
-    vi.stubEnv("PAPERCLIP_SENTRY_RUN_FAILURES", mode);
-    if (mode === undefined) delete process.env.PAPERCLIP_SENTRY_RUN_FAILURES;
+    vi.stubEnv("PILIBALA_SENTRY_RUN_FAILURES", mode);
+    if (mode === undefined) delete process.env.PILIBALA_SENTRY_RUN_FAILURES;
     sentryModule.captureRunFailure(baseEvent());
     const error = new Error("ordinary server failure");
     sentryModule.captureException(error);
@@ -103,7 +103,7 @@ describe("captureRunFailure", () => {
 
   it("provides authenticated run references and groups repeated causes without leaking scope", async () => {
     const { sentryModule, captureException } = await importFreshSentryWithGateOpen();
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://paperclip.example.com");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://pilibala.example.com");
     const event = baseEvent({ companyId: "company", agentId: "agent", taskId: null,
       diagnostics: { execution: { failurePhase: "setup", originalFailureCode: "tool_name_collision" }, adapter: {}, provider: {}, exceptions: [], truncatedFields: [] } });
     sentryModule.captureRunFailure(event);
@@ -112,10 +112,10 @@ describe("captureRunFailure", () => {
     const first = captureException.mock.calls[0]![1]!;
     expect(first.tags).toMatchObject({ event_kind: "run_failure", company_id: "company", agent_id: "agent", root_error_code: "tool_name_collision" });
     expect(first.tags).not.toHaveProperty("task_id");
-    expect(first.contexts.paperclip).toEqual({ schemaVersion: 1, companyId: "company", agentId: "agent",
+    expect(first.contexts.pilibala).toEqual({ schemaVersion: 1, companyId: "company", agentId: "agent",
       runPath: `/api/heartbeat-runs/${event.runId}`, eventsPath: `/api/heartbeat-runs/${event.runId}/events`, logPath: `/api/heartbeat-runs/${event.runId}/log`,
-      runUrl: `https://paperclip.example.com/api/heartbeat-runs/${event.runId}`, eventsUrl: `https://paperclip.example.com/api/heartbeat-runs/${event.runId}/events`,
-      logUrl: `https://paperclip.example.com/api/heartbeat-runs/${event.runId}/log` });
+      runUrl: `https://pilibala.example.com/api/heartbeat-runs/${event.runId}`, eventsUrl: `https://pilibala.example.com/api/heartbeat-runs/${event.runId}/events`,
+      logUrl: `https://pilibala.example.com/api/heartbeat-runs/${event.runId}/log` });
     expect(first.fingerprint).toEqual(["process_lost", "claude-code", "setup", "tool_name_collision"]);
     expect(captureException.mock.calls[1]![1]?.fingerprint).toEqual(first.fingerprint);
     expect(captureException.mock.calls[2]![1]).toBeUndefined();
@@ -123,9 +123,9 @@ describe("captureRunFailure", () => {
 
   it.each([undefined, "invalid", "ftp://example.com", "https://user:password@example.com", "https://example.com?token=private", "https://example.com/#private", "https://example.com/private"])("omits unsafe or absent instance URLs: %s", async value => {
     const { sentryModule, captureException } = await importFreshSentryWithGateOpen();
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", value);
+    vi.stubEnv("PILIBALA_PUBLIC_URL", value);
     sentryModule.captureRunFailure(baseEvent({ companyId: "company", agentId: "agent" }));
-    const context = captureException.mock.calls[0]![1]!.contexts.paperclip;
+    const context = captureException.mock.calls[0]![1]!.contexts.pilibala;
     expect(context).toHaveProperty("runPath");
     expect(context).not.toHaveProperty("runUrl");
     expect(JSON.stringify(context)).not.toMatch(/password|private/);

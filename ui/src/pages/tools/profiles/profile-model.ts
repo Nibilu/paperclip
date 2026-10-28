@@ -3,7 +3,7 @@ import type {
   ToolProfileDefaultAction,
   ToolProfileEntry,
   ToolRiskLevel,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import type { ToolProfileEntryInput } from "@/api/tools";
 
 /**

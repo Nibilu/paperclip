@@ -1,9 +1,9 @@
-import { createProviderStoppedBoundary } from "@paperclipai/adapter-utils/provider-stopped-boundary";
+import { createProviderStoppedBoundary } from "@pilibalaai/adapter-utils/provider-stopped-boundary";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { AdapterExecutionContext, AdapterExecutionResult } from "@paperclipai/adapter-utils";
+import type { AdapterExecutionContext, AdapterExecutionResult } from "@pilibalaai/adapter-utils";
 import {
   adapterExecutionTargetIsRemote,
   adapterExecutionTargetRemoteCwd,
@@ -11,7 +11,7 @@ import {
   adapterExecutionTargetSessionIdentity,
   adapterExecutionTargetSessionMatches,
   adapterExecutionTargetUsesManagedHome,
-  adapterExecutionTargetUsesPaperclipBridge,
+  adapterExecutionTargetUsesPilibalaBridge,
   describeAdapterExecutionTarget,
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetRuntimeCommandInstalled,
@@ -20,32 +20,32 @@ import {
   resolveAdapterExecutionTargetTimeoutSec,
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
-  startAdapterExecutionTargetPaperclipBridge,
-} from "@paperclipai/adapter-utils/execution-target";
+  startAdapterExecutionTargetPilibalaBridge,
+} from "@pilibalaai/adapter-utils/execution-target";
 import {
   asNumber,
   asString,
   asStringArray,
-  buildPaperclipEnv,
+  buildPilibalaEnv,
   buildRuntimeToolsEnv,
   buildInvocationEnvForLogs,
   ensureAbsoluteDirectory,
   joinPromptSections,
   ensurePathInEnv,
-  refreshPaperclipWorkspaceEnvForExecution,
-  isPaperclipSkillSourceMissing,
-  readPaperclipRuntimeSkillEntries,
-  readPaperclipIssueWorkModeFromContext,
-  resolveLegacyPaperclipDesiredSkillNames,
+  refreshPilibalaWorkspaceEnvForExecution,
+  isPilibalaSkillSourceMissing,
+  readPilibalaRuntimeSkillEntries,
+  readPilibalaIssueWorkModeFromContext,
+  resolveLegacyPilibalaDesiredSkillNames,
   parseObject,
   renderTemplate,
   hydrateFreshSessionHandoff,
-  selectPaperclipPromptSections,
+  selectPilibalaPromptSections,
   selectInitialCommunicationGuidance,
-  isPaperclipRecoveryWakePayload,
-  DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
-  DEFAULT_PAPERCLIP_CONVERSATION_PROMPT_TEMPLATE,
-} from "@paperclipai/adapter-utils/server-utils";
+  isPilibalaRecoveryWakePayload,
+  DEFAULT_PILIBALA_AGENT_PROMPT_TEMPLATE,
+  DEFAULT_PILIBALA_CONVERSATION_PROMPT_TEMPLATE,
+} from "@pilibalaai/adapter-utils/server-utils";
 import {
   SANDBOX_INSTALL_COMMAND,
   modelSupportsEffort,
@@ -145,14 +145,14 @@ function buildKimiRuntimeEnv(env: Record<string, string>): Record<string, string
   );
 }
 
-function renderPaperclipEnvNote(env: Record<string, string>): string {
-  const paperclipKeys = Object.keys(env)
-    .filter((key) => key.startsWith("PAPERCLIP_"))
+function renderPilibalaEnvNote(env: Record<string, string>): string {
+  const pilibalaKeys = Object.keys(env)
+    .filter((key) => key.startsWith("PILIBALA_"))
     .sort();
-  if (paperclipKeys.length === 0) return "";
+  if (pilibalaKeys.length === 0) return "";
   return [
-    "Paperclip runtime note:",
-    `The following PAPERCLIP_* environment variables are available in this run: ${paperclipKeys.join(", ")}`,
+    "Pilibala runtime note:",
+    `The following PILIBALA_* environment variables are available in this run: ${pilibalaKeys.join(", ")}`,
     "Do not assume these variables are missing without checking your shell environment.",
     "",
     "",
@@ -160,11 +160,11 @@ function renderPaperclipEnvNote(env: Record<string, string>): string {
 }
 
 function renderApiAccessNote(env: Record<string, string>): string {
-  if (!hasNonEmptyEnvValue(env, "PAPERCLIP_API_URL") || !hasNonEmptyEnvValue(env, "PAPERCLIP_API_KEY")) return "";
+  if (!hasNonEmptyEnvValue(env, "PILIBALA_API_URL") || !hasNonEmptyEnvValue(env, "PILIBALA_API_KEY")) return "";
   return [
-    "Paperclip API access note:",
-    "Use shell commands with curl to make Paperclip API requests when needed.",
-    "Include X-Paperclip-Run-Id on mutating requests.",
+    "Pilibala API access note:",
+    "Use shell commands with curl to make Pilibala API requests when needed.",
+    "Include X-Pilibala-Run-Id on mutating requests.",
     "",
     "",
   ].join("\n");
@@ -173,14 +173,14 @@ function renderApiAccessNote(env: Record<string, string>): string {
 async function buildKimiSkillsDir(
   config: Record<string, unknown>,
 ): Promise<string> {
-  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-kimi-skills-"));
+  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-kimi-skills-"));
   const target = path.join(tmp, "skills");
   await fs.mkdir(target, { recursive: true });
-  const availableEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
-  const desiredNames = new Set(resolveLegacyPaperclipDesiredSkillNames(config, availableEntries));
+  const availableEntries = await readPilibalaRuntimeSkillEntries(config, __moduleDir);
+  const desiredNames = new Set(resolveLegacyPilibalaDesiredSkillNames(config, availableEntries));
   for (const entry of availableEntries) {
     if (!desiredNames.has(entry.key)) continue;
-    if (isPaperclipSkillSourceMissing(entry)) continue;
+    if (isPilibalaSkillSourceMissing(entry)) continue;
     await fs.symlink(entry.source, path.join(target, entry.runtimeName));
   }
   return target;
@@ -215,21 +215,21 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const promptTemplate = asString(
     config.promptTemplate,
     context.conversationMode === true
-      ? DEFAULT_PAPERCLIP_CONVERSATION_PROMPT_TEMPLATE
-      : DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
+      ? DEFAULT_PILIBALA_CONVERSATION_PROMPT_TEMPLATE
+      : DEFAULT_PILIBALA_AGENT_PROMPT_TEMPLATE,
   );
   const command = asString(config.command, "kimi");
   const model = asString(config.model, "").trim();
 
-  const workspaceContext = parseObject(context.paperclipWorkspace);
+  const workspaceContext = parseObject(context.pilibalaWorkspace);
   const workspaceCwd = asString(workspaceContext.cwd, "");
   const workspaceSource = asString(workspaceContext.source, "");
   const workspaceId = asString(workspaceContext.workspaceId, "");
   const workspaceRepoUrl = asString(workspaceContext.repoUrl, "");
   const workspaceRepoRef = asString(workspaceContext.repoRef, "");
   const agentHome = asString(workspaceContext.agentHome, "");
-  const workspaceHints = Array.isArray(context.paperclipWorkspaces)
-    ? context.paperclipWorkspaces.filter(
+  const workspaceHints = Array.isArray(context.pilibalaWorkspaces)
+    ? context.pilibalaWorkspaces.filter(
       (value): value is Record<string, unknown> => typeof value === "object" && value !== null,
     )
     : [];
@@ -239,17 +239,17 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const cwd = effectiveWorkspaceCwd || configuredCwd || process.cwd();
   let effectiveExecutionCwd = adapterExecutionTargetRemoteCwd(executionTarget, cwd);
   await ensureAbsoluteDirectory(cwd, { createIfMissing: true });
-  const kimiSkillEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
-  const desiredKimiSkillNames = resolveLegacyPaperclipDesiredSkillNames(config, kimiSkillEntries);
+  const kimiSkillEntries = await readPilibalaRuntimeSkillEntries(config, __moduleDir);
+  const desiredKimiSkillNames = resolveLegacyPilibalaDesiredSkillNames(config, kimiSkillEntries);
   const envConfig = parseObject(config.env);
 
   const hasExplicitApiKey =
-    typeof envConfig.PAPERCLIP_API_KEY === "string" && envConfig.PAPERCLIP_API_KEY.trim().length > 0;
+    typeof envConfig.PILIBALA_API_KEY === "string" && envConfig.PILIBALA_API_KEY.trim().length > 0;
   const env: Record<string, string> = {
-    ...buildPaperclipEnv(agent, ctx.agentIdentity),
+    ...buildPilibalaEnv(agent, ctx.agentIdentity),
     ...buildRuntimeToolsEnv(ctx.runtimeTools),
   };
-  env.PAPERCLIP_RUN_ID = runId;
+  env.PILIBALA_RUN_ID = runId;
   const wakeTaskId =
     (typeof context.taskId === "string" && context.taskId.trim().length > 0 && context.taskId.trim()) ||
     (typeof context.issueId === "string" && context.issueId.trim().length > 0 && context.issueId.trim()) ||
@@ -273,15 +273,15 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const linkedIssueIds = Array.isArray(context.issueIds)
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
-  const issueWorkMode = readPaperclipIssueWorkModeFromContext(context);
-  if (wakeTaskId) env.PAPERCLIP_TASK_ID = wakeTaskId;
-  if (issueWorkMode) env.PAPERCLIP_ISSUE_WORK_MODE = issueWorkMode;
-  if (wakeReason) env.PAPERCLIP_WAKE_REASON = wakeReason;
-  if (wakeCommentId) env.PAPERCLIP_WAKE_COMMENT_ID = wakeCommentId;
-  if (approvalId) env.PAPERCLIP_APPROVAL_ID = approvalId;
-  if (approvalStatus) env.PAPERCLIP_APPROVAL_STATUS = approvalStatus;
-  if (linkedIssueIds.length > 0) env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
-  refreshPaperclipWorkspaceEnvForExecution({
+  const issueWorkMode = readPilibalaIssueWorkModeFromContext(context);
+  if (wakeTaskId) env.PILIBALA_TASK_ID = wakeTaskId;
+  if (issueWorkMode) env.PILIBALA_ISSUE_WORK_MODE = issueWorkMode;
+  if (wakeReason) env.PILIBALA_WAKE_REASON = wakeReason;
+  if (wakeCommentId) env.PILIBALA_WAKE_COMMENT_ID = wakeCommentId;
+  if (approvalId) env.PILIBALA_APPROVAL_ID = approvalId;
+  if (approvalStatus) env.PILIBALA_APPROVAL_STATUS = approvalStatus;
+  if (linkedIssueIds.length > 0) env.PILIBALA_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
+  refreshPilibalaWorkspaceEnvForExecution({
     env,
     envConfig,
     workspaceCwd: effectiveWorkspaceCwd,
@@ -295,7 +295,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     executionCwd: effectiveExecutionCwd,
   });
   if (!hasExplicitApiKey && authToken) {
-    env.PAPERCLIP_API_KEY = authToken;
+    env.PILIBALA_API_KEY = authToken;
   }
   // Forward configured thinking effort as KIMI_MODEL_THINKING_EFFORT. Kimi has
   // no per-invocation effort flag; this env var is an operational override that
@@ -338,14 +338,14 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   let localSkillsDir: string | null = null;
   let remoteSkillsDir: string | null = null;
   let remoteRuntimeRootDir: string | null = null;
-  let paperclipBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetPaperclipBridge>> = null;
+  let pilibalaBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetPilibalaBridge>> = null;
 
   if (executionTargetIsRemote) {
     try {
       localSkillsDir = await buildKimiSkillsDir(config);
       await onLog(
         "stdout",
-        `[paperclip] Syncing workspace and Kimi runtime assets to ${describeAdapterExecutionTarget(executionTarget)}.\n`,
+        `[pilibala] Syncing workspace and Kimi runtime assets to ${describeAdapterExecutionTarget(executionTarget)}.\n`,
       );
       const preparedExecutionTargetRuntime = await prepareAdapterExecutionTargetRuntime({
         runId,
@@ -366,7 +366,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       restoreRemoteWorkspace = () =>
         preparedExecutionTargetRuntime.restoreWorkspace((line) => onLog("stdout", line));
       effectiveExecutionCwd = preparedExecutionTargetRuntime.workspaceRemoteDir ?? effectiveExecutionCwd;
-      refreshPaperclipWorkspaceEnvForExecution({
+      refreshPilibalaWorkspaceEnvForExecution({
         env,
         envConfig,
         workspaceCwd: effectiveWorkspaceCwd,
@@ -392,7 +392,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       // from its isolated per-run location instead of copying it over the
       // shared $KIMI_CODE_HOME/skills home. Overwriting the shared home would
       // delete Kimi skills installed by the operator or other agents that
-      // Paperclip does not own.
+      // Pilibala does not own.
       if (desiredKimiSkillNames.length > 0 && preparedExecutionTargetRuntime.assetDirs.skills) {
         remoteSkillsDir = preparedExecutionTargetRuntime.assetDirs.skills;
       }
@@ -405,18 +405,18 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     }
   }
   const runtimeExecutionTarget = overrideAdapterExecutionTargetRemoteCwd(executionTarget, effectiveExecutionCwd);
-  if (executionTargetIsRemote && adapterExecutionTargetUsesPaperclipBridge(executionTarget)) {
-    paperclipBridge = await startAdapterExecutionTargetPaperclipBridge({
+  if (executionTargetIsRemote && adapterExecutionTargetUsesPilibalaBridge(executionTarget)) {
+    pilibalaBridge = await startAdapterExecutionTargetPilibalaBridge({
       runId,
       target: runtimeExecutionTarget,
       runtimeRootDir: remoteRuntimeRootDir,
       adapterKey: "kimi",
       timeoutSec,
-      hostApiToken: env.PAPERCLIP_API_KEY,
+      hostApiToken: env.PILIBALA_API_KEY,
       onLog,
     });
-    if (paperclipBridge) {
-      Object.assign(env, paperclipBridge.env);
+    if (pilibalaBridge) {
+      Object.assign(env, pilibalaBridge.env);
     }
   }
 
@@ -429,7 +429,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     localSkillsDir = await buildKimiSkillsDir(config);
     await onLog(
       "stderr",
-      `[paperclip] Prepared ${desiredKimiSkillNames.length} Kimi skill(s) for --skills-dir delivery.\n`,
+      `[pilibala] Prepared ${desiredKimiSkillNames.length} Kimi skill(s) for --skills-dir delivery.\n`,
     );
   }
 
@@ -445,12 +445,12 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   if (executionTargetIsRemote && runtimeSessionId && !canResumeSession) {
     await onLog(
       "stdout",
-      `[paperclip] Kimi session "${runtimeSessionId}" does not match the current remote execution identity and will not be resumed in "${effectiveExecutionCwd}". Starting a fresh remote session.\n`,
+      `[pilibala] Kimi session "${runtimeSessionId}" does not match the current remote execution identity and will not be resumed in "${effectiveExecutionCwd}". Starting a fresh remote session.\n`,
     );
   } else if (runtimeSessionId && !canResumeSession) {
     await onLog(
       "stdout",
-      `[paperclip] Kimi session "${runtimeSessionId}" was saved for cwd "${runtimeSessionCwd}" and will not be resumed in "${effectiveExecutionCwd}".\n`,
+      `[pilibala] Kimi session "${runtimeSessionId}" was saved for cwd "${runtimeSessionCwd}" and will not be resumed in "${effectiveExecutionCwd}".\n`,
     );
   }
 
@@ -470,7 +470,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       const reason = err instanceof Error ? err.message : String(err);
       await onLog(
         "stdout",
-        `[paperclip] Warning: could not read agent instructions file "${instructionsFilePath}": ${reason}\n`,
+        `[pilibala] Warning: could not read agent instructions file "${instructionsFilePath}": ${reason}\n`,
       );
     }
   }
@@ -512,8 +512,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     run: { id: runId, source: "on_demand" },
     context,
   };
-  const sessionHandoffNote = asString(context.paperclipSessionHandoffMarkdown, "").trim();
-  const paperclipEnvNote = renderPaperclipEnvNote(env);
+  const sessionHandoffNote = asString(context.pilibalaSessionHandoffMarkdown, "").trim();
+  const pilibalaEnvNote = renderPilibalaEnvNote(env);
   const apiAccessNote = renderApiAccessNote(env);
 
   const buildArgs = (resumeSessionId: string | null, prompt: string) => {
@@ -527,7 +527,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     if (!executionTargetIsRemote && instructionsFilePath) {
       args.push("--add-dir", path.dirname(instructionsFilePath));
     }
-    // Load desired Paperclip skills from the dedicated per-run directory
+    // Load desired Pilibala skills from the dedicated per-run directory
     // (local snapshot, or the synced remote snapshot) instead of the shared
     // skills home. Only passed when skills are desired so unconfigured agents
     // keep Kimi's default skill discovery.
@@ -542,7 +542,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   const runAttempt = async (resumeSessionId: string | null) => {
     await hydrateFreshSessionHandoff(ctx, { resumedSession: Boolean(resumeSessionId) });
-    const attemptSections = selectPaperclipPromptSections(context, {
+    const attemptSections = selectPilibalaPromptSections(context, {
       resumedSession: Boolean(resumeSessionId),
       includeCommunicationGuidance: false,
     });
@@ -551,7 +551,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       : "";
     const attemptWakePrompt = attemptSections.wakePrompt;
     const attemptRenderedPrompt = Boolean(resumeSessionId) && attemptWakePrompt.length > 0
-      || isPaperclipRecoveryWakePayload(context.paperclipWake)
+      || isPilibalaRecoveryWakePayload(context.pilibalaWake)
       ? ""
       : renderTemplate(promptTemplate, templateData);
     const attemptBasePrompt = joinPromptSections([
@@ -560,7 +560,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       attemptWakePrompt,
       attemptSections.taskContextNote,
       sessionHandoffNote,
-      paperclipEnvNote,
+      pilibalaEnvNote,
       apiAccessNote,
       attemptRenderedPrompt,
     ]);
@@ -575,7 +575,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       wakePromptChars: attemptWakePrompt.length,
       taskContextChars: attemptSections.taskContextNote.length,
       sessionHandoffChars: sessionHandoffNote.length,
-      runtimeNoteChars: paperclipEnvNote.length + apiAccessNote.length,
+      runtimeNoteChars: pilibalaEnvNote.length + apiAccessNote.length,
       heartbeatPromptChars: attemptRenderedPrompt.length,
     };
     const args = buildArgs(resumeSessionId, prompt);
@@ -612,8 +612,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       onSpawn,
       onRuntimeProgress: ctx.onRuntimeProgress,
       onLog: eventForwarder.log,
-      runLogTail: paperclipBridge?.runLogTail,
-      settleRunDisposition: paperclipBridge?.settleRunDisposition,
+      runLogTail: pilibalaBridge?.runLogTail,
+      settleRunDisposition: pilibalaBridge?.settleRunDisposition,
     });
     await eventForwarder.flush();
     return {
@@ -751,7 +751,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     ) {
       await onLog(
         "stdout",
-        `[paperclip] Kimi resume session "${sessionId}" is unavailable; retrying with a fresh session.\n`,
+        `[pilibala] Kimi resume session "${sessionId}" is unavailable; retrying with a fresh session.\n`,
       );
       const retry = await runAttempt(null);
       return toResult(retry, true, true);
@@ -763,7 +763,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       await providerStop.collectBeforeRestore();
     } finally {
       await Promise.all([
-        paperclipBridge?.stop(),
+        pilibalaBridge?.stop(),
         restoreRemoteWorkspace?.(),
         localSkillsDir ? fs.rm(path.dirname(localSkillsDir), { recursive: true, force: true }).catch(() => undefined) : Promise.resolve(),
       ]);

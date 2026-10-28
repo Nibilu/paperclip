@@ -1,7 +1,7 @@
 import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { activityLog, agents, heartbeatRuns, issues } from "@paperclipai/db";
-import { isUuidLike } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { activityLog, agents, heartbeatRuns, issues } from "@pilibalaai/db";
+import { isUuidLike } from "@pilibalaai/shared";
 
 type IssueRow = typeof issues.$inferSelect;
 type HeartbeatRunRow = typeof heartbeatRuns.$inferSelect;
@@ -27,15 +27,15 @@ export function runBoundIssueReference(run: Pick<HeartbeatRunRow, "nativeIssueId
   const context = run.contextSnapshot && typeof run.contextSnapshot === "object"
     ? (run.contextSnapshot as Record<string, unknown>)
     : null;
-  const paperclipIssue = context?.paperclipIssue && typeof context.paperclipIssue === "object"
-    ? (context.paperclipIssue as Record<string, unknown>)
+  const pilibalaIssue = context?.pilibalaIssue && typeof context.pilibalaIssue === "object"
+    ? (context.pilibalaIssue as Record<string, unknown>)
     : null;
   return (
     run.nativeIssueId ??
     run.issueId ??
     readNonEmptyString(context?.issueId) ??
     readNonEmptyString(context?.taskId) ??
-    readNonEmptyString(paperclipIssue?.id) ??
+    readNonEmptyString(pilibalaIssue?.id) ??
     readNonEmptyString(context?.taskKey)
   );
 }

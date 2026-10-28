@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readConfigFile } from "../config-file.js";
 
-const ORIGINAL_PAPERCLIP_CONFIG = process.env.PAPERCLIP_CONFIG;
+const ORIGINAL_PILIBALA_CONFIG = process.env.PILIBALA_CONFIG;
 
 function writeConfig(configPath: string, value: unknown): void {
   fs.writeFileSync(configPath, `${JSON.stringify(value, null, 2)}\n`);
@@ -36,17 +36,17 @@ describe("readConfigFile", () => {
   let configPath: string;
 
   beforeEach(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-config-file-test-"));
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "pilibala-config-file-test-"));
     configPath = path.join(tempDir, "config.json");
-    process.env.PAPERCLIP_CONFIG = configPath;
+    process.env.PILIBALA_CONFIG = configPath;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    if (ORIGINAL_PAPERCLIP_CONFIG === undefined) {
-      delete process.env.PAPERCLIP_CONFIG;
+    if (ORIGINAL_PILIBALA_CONFIG === undefined) {
+      delete process.env.PILIBALA_CONFIG;
     } else {
-      process.env.PAPERCLIP_CONFIG = ORIGINAL_PAPERCLIP_CONFIG;
+      process.env.PILIBALA_CONFIG = ORIGINAL_PILIBALA_CONFIG;
     }
 
     fs.rmSync(tempDir, { recursive: true, force: true });
@@ -60,7 +60,7 @@ describe("readConfigFile", () => {
     fs.writeFileSync(configPath, "{");
 
     expect(() => readConfigFile()).toThrow(
-      new RegExp(`Invalid Paperclip config at ${escapeRegExp(configPath)}: failed to read or parse JSON`),
+      new RegExp(`Invalid Pilibala config at ${escapeRegExp(configPath)}: failed to read or parse JSON`),
     );
   });
 
@@ -72,7 +72,7 @@ describe("readConfigFile", () => {
 
     writeConfig(configPath, config);
 
-    expect(() => readConfigFile()).toThrow(/Invalid Paperclip config .* \$meta\.source:/);
+    expect(() => readConfigFile()).toThrow(/Invalid Pilibala config .* \$meta\.source:/);
   });
 
   it("parses a valid config file", () => {

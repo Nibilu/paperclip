@@ -35,7 +35,7 @@ import {
   joinRequests,
   projects,
   projectWorkspaces,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -61,7 +61,7 @@ describeEmbeddedPostgres("attention service", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-attention-service-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-attention-service-");
     db = createDb(tempDb.connectionString);
   }, 30_000);
 
@@ -429,7 +429,7 @@ describeEmbeddedPostgres("attention service", () => {
       requestType: "human",
       status: "pending_approval",
       requestIp: "127.0.0.1",
-      requestEmailSnapshot: "new@paperclip.test",
+      requestEmailSnapshot: "new@pilibala.test",
       createdAt: new Date("2026-07-09T12:04:00.000Z"),
       updatedAt: new Date("2026-07-09T12:04:00.000Z"),
     });

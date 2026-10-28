@@ -8,8 +8,8 @@ gated on its exact head. This report separates real outcomes from test fixtures.
 
 ## Environment and artifacts
 
-Implementation checkout: `~/.codex/worktrees/4631/paperclip`, branch
-`codex/project-repository-skills`, PR [#16066](https://github.com/paperclipai/paperclip/pull/16066).
+Implementation checkout: `~/.codex/worktrees/4631/pilibala`, branch
+`codex/project-repository-skills`, PR [#16066](https://github.com/pilibalaai/pilibala/pull/16066).
 The isolated instance uses embedded PostgreSQL and a retained disposable data
 directory outside the checkout. Doctor verified the served source revision and
 loopback port ownership before the live journeys. No production company data was
@@ -22,7 +22,7 @@ contains the original four captures and a final post-reconciliation capture and 
 [version receipt](../../ui/storybook/public/project-skills-evidence/versions.json).
 It is included in the existing Storybook build artifact and branch publication.
 Credential files, full provider logs, human authentication keys, and connection
-secrets are excluded. This direct Codex task has no driving Paperclip issue or
+secrets are excluded. This direct Codex task has no driving Pilibala issue or
 injected artifact-upload context; the PR and Storybook artifact provide the
 review access path.
 
@@ -212,7 +212,7 @@ The existing Storybook deployment workflow published commit 5869973 in run
 38394544972, including the sixth real execution receipt and final task capture.
 Subsequent fallback changes affect server code; shipped UI and story sources remain
 identical to this published build:
-[review guide](https://github.com/paperclipai/paperclip/blob/586997352198b2dbf025445706762e27d38e6764/ui/storybook/stories/skills/project-repository-skills/README.md),
+[review guide](https://github.com/pilibalaai/pilibala/blob/586997352198b2dbf025445706762e27d38e6764/ui/storybook/stories/skills/project-repository-skills/README.md),
 [project creation](https://d1p6rlowie26tp.cloudfront.net/storybook/branches/codex-project-repository-skills-8ad0b8be51ae75bc/builds/38394544972-1/?path=/story/skills-project-repository-skills-02-journeys--create-project),
 [repair retry](https://d1p6rlowie26tp.cloudfront.net/storybook/branches/codex-project-repository-skills-8ad0b8be51ae75bc/builds/38394544972-1/?path=/story/skills-project-repository-skills-02-journeys--repair-conflict).
 Published deployment metadata and story IDs were verified over HTTP. The in-app

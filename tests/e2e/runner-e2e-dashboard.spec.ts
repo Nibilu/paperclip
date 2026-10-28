@@ -19,7 +19,7 @@ function resultFor(
   status: RunnerE2EResult["status"],
 ): RunnerDashboardEntry {
   const result: RunnerE2EResult = {
-    schema: "paperclip.runner-e2e.result/v1",
+    schema: "pilibala.runner-e2e.result/v1",
     executionId: execution.id,
     suiteId: execution.suite.id,
     attempt: 1,
@@ -41,7 +41,7 @@ function resultFor(
     },
     matcherResults: [
       {
-        matcher: { kind: "message_contains", expected: "PAPERCLIP_E2E_OK" },
+        matcher: { kind: "message_contains", expected: "PILIBALA_E2E_OK" },
         passed: status === "passed",
         detail: status === "passed" ? "matched" : "marker missing",
       },

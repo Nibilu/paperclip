@@ -1,4 +1,4 @@
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { createGitHubExternalObjectProvider } from "./github-external-object-provider.js";
 
 export type GitHubPullRequestReference = {

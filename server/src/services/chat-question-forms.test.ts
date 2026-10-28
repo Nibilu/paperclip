@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AskUserQuestionsInteraction } from "@paperclipai/shared";
+import type { AskUserQuestionsInteraction } from "@pilibalaai/shared";
 import { modalToAdaptiveCard } from "@chat-adapter/teams/modals";
 import { modalToDiscordPayload } from "@chat-adapter/discord";
 import {
@@ -61,7 +61,7 @@ function interaction(
           allowOther: true,
           options: [
             {
-              id: "__paperclip_text__",
+              id: "__pilibala_text__",
               label: "Type an answer",
               freeText: true,
             },
@@ -69,7 +69,7 @@ function interaction(
         },
       ],
       questionSet: {
-        schema: "paperclip.question_set.v1",
+        schema: "pilibala.question_set.v1",
         title: "Deployment details",
         submitLabel: "Continue",
         questions: [
@@ -687,7 +687,7 @@ describe("chat question forms", () => {
       action: "errors",
       errors: {
         [payload.fields[0]!.fieldId]:
-          "This form is no longer authorized. Close it and open the linked Paperclip task.",
+          "This form is no longer authorized. Close it and open the linked Pilibala task.",
       },
     });
     expect(chatQuestionFormDenialResponse()).toEqual({ action: "clear" });

@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
-import { issues, type Db } from "@paperclipai/db";
+import { issues, type Db } from "@pilibalaai/db";
 import { Router, type Request } from "express";
-import { prepareWorkspaceRepositorySchema, selectTaskWorkspaceSchema } from "@paperclipai/shared";
+import { prepareWorkspaceRepositorySchema, selectTaskWorkspaceSchema } from "@pilibalaai/shared";
 import { accessService } from "../services/access.js";
 import { executionWorkspaceService } from "../services/execution-workspaces.js";
 import { canActorReadExecutionWorkspace, issueReadSqlCondition } from "../services/authorization.js";

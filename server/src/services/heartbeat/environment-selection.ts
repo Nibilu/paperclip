@@ -1,9 +1,9 @@
 import { heartbeatExternalProvider, nativeExecutionUsesTaskWorkspace } from "./external-provider.js";
-import { heartbeatRuns, issues, type Db, type agents } from "@paperclipai/db";
-import type { ExecutionWorkspace, IssueExecutionWorkspaceSettings, ProjectExecutionWorkspacePolicy } from "@paperclipai/shared";
+import { heartbeatRuns, issues, type Db, type agents } from "@pilibalaai/db";
+import type { ExecutionWorkspace, IssueExecutionWorkspaceSettings, ProjectExecutionWorkspacePolicy } from "@pilibalaai/shared";
 import { parseObject } from "../../adapters/utils.js";
 import { logger } from "../../middleware/logger.js";
-import { parseNativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+import { parseNativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 import { isExecutionForcedToKubernetes } from "../execution-allowlist.js";
 import { parseExecutionPolicyBootstrapEnv } from "../execution-policy-bootstrap.js";
 import {
@@ -200,10 +200,10 @@ export async function selectHeartbeatEnvironment(db: Db, input: HeartbeatEnviron
         bootstrap = parseExecutionPolicyBootstrapEnv(process.env);
         if (!bootstrap) {
           bootstrapSkipReason =
-            'PAPERCLIP_EXECUTION_MODE bootstrap env is not kubernetes-forced (absent or "any")';
+            'PILIBALA_EXECUTION_MODE bootstrap env is not kubernetes-forced (absent or "any")';
         }
       } catch (err) {
-        bootstrapSkipReason = `PAPERCLIP_EXECUTION_MODE bootstrap env failed to parse: ${
+        bootstrapSkipReason = `PILIBALA_EXECUTION_MODE bootstrap env failed to parse: ${
           err instanceof Error ? err.message : String(err)
         }`;
       }
@@ -230,7 +230,7 @@ export async function selectHeartbeatEnvironment(db: Db, input: HeartbeatEnviron
       throw new Error(
         "Instance execution policy requires the Kubernetes sandbox provider " +
           "(executionMode=kubernetes) but no managed Kubernetes environment is " +
-          "configured for this company. Configure one (PAPERCLIP_K8S_* env on the " +
+          "configured for this company. Configure one (PILIBALA_K8S_* env on the " +
           "cloud instance) before running agents; refusing to fall back to local execution.",
       );
     }
@@ -399,22 +399,22 @@ export async function selectHeartbeatEnvironment(db: Db, input: HeartbeatEnviron
           ? `${existing}\n${concurrentWorkspaceNote}`
           : concurrentWorkspaceNote;
       };
-      context.paperclipTaskMarkdown = appendConcurrentWorkspaceNote(
-        context.paperclipTaskMarkdown,
+      context.pilibalaTaskMarkdown = appendConcurrentWorkspaceNote(
+        context.pilibalaTaskMarkdown,
       );
-      context.paperclipTaskMarkdownAssignment = appendConcurrentWorkspaceNote(
-        context.paperclipTaskMarkdownAssignment,
+      context.pilibalaTaskMarkdownAssignment = appendConcurrentWorkspaceNote(
+        context.pilibalaTaskMarkdownAssignment,
       );
-      if (typeof context.paperclipTaskMarkdownCompact === "string") {
-        context.paperclipTaskMarkdownCompact =
+      if (typeof context.pilibalaTaskMarkdownCompact === "string") {
+        context.pilibalaTaskMarkdownCompact =
           appendConcurrentWorkspaceNote(
-            context.paperclipTaskMarkdownCompact,
+            context.pilibalaTaskMarkdownCompact,
           );
       }
-      if (typeof context.paperclipTaskMarkdownAssignmentCompact === "string") {
-        context.paperclipTaskMarkdownAssignmentCompact =
+      if (typeof context.pilibalaTaskMarkdownAssignmentCompact === "string") {
+        context.pilibalaTaskMarkdownAssignmentCompact =
           appendConcurrentWorkspaceNote(
-            context.paperclipTaskMarkdownAssignmentCompact,
+            context.pilibalaTaskMarkdownAssignmentCompact,
           );
       }
       logger.info(

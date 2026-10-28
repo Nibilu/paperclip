@@ -31,7 +31,7 @@ import {
   workspaceOperations,
   workAssessments,
   statusDecisions,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { resumeNativeWorkspaceFinalization } from "./native-workspace-finalizer.js";
 import { reconcileNativeFinalizations } from "./native-finalization-reconciler.js";
@@ -70,7 +70,7 @@ describe("native workspace finalization recovery", () => {
       companyId,
       issueId,
       revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1",
+      schemaVersion: "pilibala.completion-contract.v1",
       policyVersion: "native-workspace-finalizer-test-v1",
       risk: "standard",
       completionAuthority: "server_arbiter",
@@ -117,7 +117,7 @@ describe("native workspace finalization recovery", () => {
 
   beforeAll(async () => {
     workspaceRoot = await fs.mkdtemp(
-      path.join(os.tmpdir(), "paperclip-native-workspace-finalizer-"),
+      path.join(os.tmpdir(), "pilibala-native-workspace-finalizer-"),
     );
     priorLogRoot = process.env.WORKSPACE_OPERATION_LOG_BASE_PATH;
     process.env.WORKSPACE_OPERATION_LOG_BASE_PATH = path.join(
@@ -125,7 +125,7 @@ describe("native workspace finalization recovery", () => {
       "operation-logs",
     );
     temporary = await startEmbeddedPostgresTestDatabase(
-      "paperclip-native-workspace-finalizer-",
+      "pilibala-native-workspace-finalizer-",
     );
     db = createDb(temporary.connectionString);
 
@@ -141,7 +141,7 @@ describe("native workspace finalization recovery", () => {
       id: agentId,
       companyId,
       name: "Native workspace agent",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       status: "running",
     });
     await db.insert(projects).values([
@@ -249,7 +249,7 @@ describe("native workspace finalization recovery", () => {
     const seed = await seedAbandonedCopyback();
     const reviewerId = randomUUID(), sourceRunId = randomUUID(), sourceResultId = randomUUID(), assessmentId = randomUUID();
     const decisionId = randomUUID(), interactionId = randomUUID();
-    await db.insert(agents).values({ id: reviewerId, companyId, name: "Review agent", adapterType: "paperclip_runner", status: "running" });
+    await db.insert(agents).values({ id: reviewerId, companyId, name: "Review agent", adapterType: "pilibala_runner", status: "running" });
     const [actingRun] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, seed.runId));
     await db.insert(heartbeatRuns).values({ id: sourceRunId, companyId, agentId, nativeIssueId: seed.issueId, runtimeMode: "native", status: "succeeded", completionContractId: actingRun.completionContractId, createdAt: new Date(actingRun.createdAt.getTime() - 60_000) });
     await db.insert(nativeRunResults).values({ id: sourceResultId, companyId, issueId: seed.issueId, runId: sourceRunId, completionContractId: actingRun.completionContractId!, serverFingerprint: sourceResultId, schemaStatus: "accepted", resultJson: {}, canonicalSha256: sourceResultId });
@@ -297,14 +297,14 @@ describe("native workspace finalization recovery", () => {
         issueId: seed.issueId, key: "plan", revisionId: randomUUID() } },
     });
     const resultJson = {
-      result: { schema: "paperclip.run_result.v1", reportedWorkDisposition: "yielded",
+      result: { schema: "pilibala.run_result.v1", reportedWorkDisposition: "yielded",
         summary: "Wait for the existing continuation.",
         completionClaim: { contractRevision: "test", objectiveSatisfied: false, criteria: [],
           remainingWork: [{ description: "Wait for the check or plan confirmation.", blocksCompletion: true }] },
         continuation: { kind: wait === "monitor" ? "monitor" : "response_wake",
           summary: "Wait for the existing continuation.", idempotencyKey: "saved-wait" },
         evidence: [], verification: [], attentionRequests: [], artifacts: [] },
-      terminal: { schema: "paperclip.prp.terminal.v1", turnTerminalState: "completed",
+      terminal: { schema: "pilibala.prp.terminal.v1", turnTerminalState: "completed",
         runTerminalState: "succeeded", reportedWorkDisposition: "yielded" },
     };
     await db.update(nativeRunResults).set({ resultJson }).where(eq(nativeRunResults.runId, seed.runId));
@@ -322,7 +322,7 @@ describe("native workspace finalization recovery", () => {
       const worker = { provider: "railway" as const, projectId: "p", environmentId: "e", serviceId: "s", deploymentId: "d" };
       const [run] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, seed.runId));
       await db.update(heartbeatRuns).set({ runnerProfileJson: { ...run.runnerProfileJson, nativeWorkspaceFinalizationOwner: { ...seed.owner, worker } } }).where(eq(heartbeatRuns.id, seed.runId));
-      const probe = vi.spyOn(platformProof, "requestWorkspaceWorkerStopProof").mockResolvedValue({ v: 1, iss: "paperclip-cloud", aud: "paperclip-workspace-worker-stop/v1", sub: "stack", runId: seed.runId, ownerToken: seed.owner.token, worker, stopped: true, iat: 1, exp: 61 });
+      const probe = vi.spyOn(platformProof, "requestWorkspaceWorkerStopProof").mockResolvedValue({ v: 1, iss: "pilibala-cloud", aud: "pilibala-workspace-worker-stop/v1", sub: "stack", runId: seed.runId, ownerToken: seed.owner.token, worker, stopped: true, iat: 1, exp: 61 });
       try { await reconcileNativeFinalizations(db, [seed.runId]); } finally { probe.mockRestore(); }
     }
 
@@ -548,7 +548,7 @@ describe("native workspace finalization recovery", () => {
     await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeWorkspaceFinalizationOwner: owner, preserved: "workspace descriptor" } }).where(eq(heartbeatRuns.id, seed.runId));
     await db.update(issueRecoveryActions).set({ fingerprint: nativeSha256({ runId: seed.runId, owner }), evidence: { runId: seed.runId, owner, preserved: "recovery evidence" } }).where(eq(issueRecoveryActions.id, seed.actionId));
     const [before] = await db.select().from(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, seed.runId));
-    const proof = { v: 1 as const, iss: "paperclip-cloud" as const, aud: "paperclip-workspace-worker-stop/v1" as const, sub: "stack", runId: seed.runId, ownerToken: owner.token, worker, stopped: true as const, iat: 1, exp: 61 };
+    const proof = { v: 1 as const, iss: "pilibala-cloud" as const, aud: "pilibala-workspace-worker-stop/v1" as const, sub: "stack", runId: seed.runId, ownerToken: owner.token, worker, stopped: true as const, iat: 1, exp: 61 };
     const probe = vi.spyOn(platformProof, "requestWorkspaceWorkerStopProof").mockResolvedValue(proof);
     try {
       const work = vi.fn(async () => {
@@ -584,7 +584,7 @@ describe("native workspace finalization recovery", () => {
       const replacement = { ...owner, token: randomUUID() };
       probe.mockImplementation(async () => {
         await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeWorkspaceFinalizationOwner: replacement } }).where(eq(heartbeatRuns.id, seed.runId));
-        return { v: 1, iss: "paperclip-cloud", aud: "paperclip-workspace-worker-stop/v1", sub: "stack", runId: seed.runId, ownerToken: owner.token, worker, stopped: true, iat: 1, exp: 61 };
+        return { v: 1, iss: "pilibala-cloud", aud: "pilibala-workspace-worker-stop/v1", sub: "stack", runId: seed.runId, ownerToken: owner.token, worker, stopped: true, iat: 1, exp: 61 };
       });
       expect(await withNativeWorkspaceFinalizationOwnership(seed, work)).toEqual({ acquired: false });
       expect(work).not.toHaveBeenCalled();
@@ -620,7 +620,7 @@ describe("native workspace finalization recovery", () => {
           createdAt: new Date(run.createdAt.getTime() + (changed === "newer run" ? 60_000 : -60_000)),
         });
       }
-      return { v: 1, iss: "paperclip-cloud", aud: "paperclip-workspace-worker-stop/v1", sub: "stack", runId: seed.runId, ownerToken: owner.token, worker, stopped: true, iat: 1, exp: 61 };
+      return { v: 1, iss: "pilibala-cloud", aud: "pilibala-workspace-worker-stop/v1", sub: "stack", runId: seed.runId, ownerToken: owner.token, worker, stopped: true, iat: 1, exp: 61 };
     });
     const copyback = vi.fn(async () => fs.writeFile(file, "old sandbox work"));
     try {
@@ -638,7 +638,7 @@ describe("native workspace finalization recovery", () => {
     const worker = { provider: "railway" as const, projectId: "p", environmentId: "e", serviceId: "s", deploymentId: "d" };
     const owner = { ...seed.owner, worker };
     await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeWorkspaceFinalizationOwner: owner } }).where(eq(heartbeatRuns.id, seed.runId));
-    const probe = vi.spyOn(platformProof, "requestWorkspaceWorkerStopProof").mockResolvedValue({ v: 1, iss: "paperclip-cloud", aud: "paperclip-workspace-worker-stop/v1", sub: "stack", runId: seed.runId, ownerToken: owner.token, worker, stopped: true, iat: 1, exp: 61 });
+    const probe = vi.spyOn(platformProof, "requestWorkspaceWorkerStopProof").mockResolvedValue({ v: 1, iss: "pilibala-cloud", aud: "pilibala-workspace-worker-stop/v1", sub: "stack", runId: seed.runId, ownerToken: owner.token, worker, stopped: true, iat: 1, exp: 61 });
     const write = vi.fn();
     try {
       await expect(withNativeWorkspaceFinalizationOwnership(seed, async ownership => {
@@ -662,7 +662,7 @@ describe("native workspace finalization recovery", () => {
       ...(changed === "closed" ? { status: "done" } : { executionRunId: null }),
     }).where(eq(issues.id, seed.issueId));
     await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeWorkspaceFinalizationOwner: owner } }).where(eq(heartbeatRuns.id, seed.runId));
-    const probe = vi.spyOn(platformProof, "requestWorkspaceWorkerStopProof").mockResolvedValue({ v: 1, iss: "paperclip-cloud", aud: "paperclip-workspace-worker-stop/v1", sub: "stack", runId: seed.runId, ownerToken: owner.token, worker, stopped: true, iat: 1, exp: 61 });
+    const probe = vi.spyOn(platformProof, "requestWorkspaceWorkerStopProof").mockResolvedValue({ v: 1, iss: "pilibala-cloud", aud: "pilibala-workspace-worker-stop/v1", sub: "stack", runId: seed.runId, ownerToken: owner.token, worker, stopped: true, iat: 1, exp: 61 });
     try {
       await reconcileNativeFinalizations(db, [seed.runId]);
       expect(probe).toHaveBeenCalledOnce();

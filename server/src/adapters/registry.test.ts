@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { assertValidAdapterLoginCapability } from "@paperclipai/adapter-utils";
+import { assertValidAdapterLoginCapability } from "@pilibalaai/adapter-utils";
 import { listServerAdapters, requireServerAdapter } from "./registry.js";
-import * as executionTarget from "@paperclipai/adapter-utils/execution-target";
+import * as executionTarget from "@pilibalaai/adapter-utils/execution-target";
 import { BUILTIN_ADAPTER_TYPES } from "./builtin-adapter-types.js";
 
 const { probeInstallation, probeGrokInstallation, probePiInstallation } = vi.hoisted(() => ({
@@ -9,7 +9,7 @@ const { probeInstallation, probeGrokInstallation, probePiInstallation } = vi.hoi
   probeGrokInstallation: vi.fn(),
   probePiInstallation: vi.fn(),
 }));
-vi.mock("../vendor/paperclip-runner/live/index.js", () => ({
+vi.mock("../vendor/pilibala-runner/live/index.js", () => ({
   probeAcpxClaudeInstallation: probeInstallation,
   probeAcpxGrokInstallation: probeGrokInstallation,
   probeAcpxPiInstallation: probePiInstallation,
@@ -74,7 +74,7 @@ describe("built-in runtime connection tool delivery", () => {
     ["kimi_local", "environment"],
     ["openclaw_gateway", "invocation_context"],
     ["opencode_local", "environment"],
-    ["paperclip_runner", "environment"],
+    ["pilibala_runner", "environment"],
     ["pi_local", "environment"],
     ["process", "environment"],
     ["http", "invocation_context"],
@@ -104,13 +104,13 @@ describe("native ACPX environment checks", () => {
 
   const context = {
     companyId: "company-test",
-    adapterType: "paperclip_runner",
+    adapterType: "pilibala_runner",
     config: { provider: "acpx", acpxAgent: "claude", model: "claude-sonnet-5" },
   };
 
   it("reports unsupported local platforms before a successful CLI login can mask them", async () => {
     probeInstallation.mockRejectedValue(new Error("ACPX Claude requires a supported runtime platform"));
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!(context);
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!(context);
     expect(result.status).toBe("fail");
     expect(result.checks).toEqual([expect.objectContaining({
       code: "acpx_runtime_unavailable",
@@ -119,21 +119,21 @@ describe("native ACPX environment checks", () => {
   });
 
   it("identifies an incomplete installation and gives the operator a repair", async () => {
-    probeInstallation.mockRejectedValue(Object.assign(new Error("The Claude ACP runtime package is missing. Reinstall or rebuild Paperclip."), { code: "ACPX_RUNTIME_PACKAGE_MISSING" }));
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!(context);
+    probeInstallation.mockRejectedValue(Object.assign(new Error("The Claude ACP runtime package is missing. Reinstall or rebuild Pilibala."), { code: "ACPX_RUNTIME_PACKAGE_MISSING" }));
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!(context);
     expect(result.status).toBe("fail");
     expect(result.checks[0]).toMatchObject({ code: "acpx_runtime_package_missing", message: expect.stringContaining("Reinstall or rebuild") });
   });
 
   it("requires a successful installed runtime probe", async () => {
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!(context);
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!(context);
     expect(result.status).toBe("pass");
     expect(probeInstallation).toHaveBeenCalledWith(context.config.model);
   });
 
   it.each([true, false])("checks Grok's own installation readiness (%s)", async (ready) => {
     if (!ready) probeGrokInstallation.mockRejectedValueOnce(new Error("Grok executable digest mismatch"));
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({
       ...context,
       config: { provider: "acpx", acpxAgent: "grok", model: "grok-4.7" },
     });
@@ -145,7 +145,7 @@ describe("native ACPX environment checks", () => {
   it.each([true, false])("checks qualified Pi's own installation readiness (%s)", async (ready) => {
     if (!ready) probePiInstallation.mockRejectedValueOnce(new Error("Pi installation integrity mismatch"));
     const model = "openrouter/deepseek/deepseek-v4-flash-0731";
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({
       ...context,
       config: { provider: "acpx", acpxAgent: "pi", model },
     });
@@ -157,7 +157,7 @@ describe("native ACPX environment checks", () => {
 
   it("does not use the host platform to reject a remote environment", async () => {
     vi.spyOn(process, "platform", "get").mockReturnValue("darwin");
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({
       ...context,
       executionTarget: {
         kind: "remote", transport: "sandbox", remoteCwd: "/workspace", providerKey: "test",
@@ -189,7 +189,7 @@ describe("native ACPX environment checks", () => {
     const probe = vi.spyOn(executionTarget, "runAdapterExecutionTargetShellCommand").mockResolvedValue({
       exitCode: 0, timedOut: false, stdout, stderr: "", signal: null, pid: null, startedAt: new Date(0).toISOString(),
     });
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context, executionTarget: sshTarget });
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context, executionTarget: sshTarget });
     expect(result.status).toBe(status);
     expect(probe).toHaveBeenCalledWith(expect.any(String), sshTarget, "uname -s && uname -m", {
       cwd: "/workspace", env: {}, timeoutSec: 15,
@@ -203,7 +203,7 @@ describe("native ACPX environment checks", () => {
       exitCode: failure === "exit" ? 1 : 0, timedOut: failure === "timeout",
       stdout: "Linux\nx86_64\n", stderr: "", signal: null, pid: null, startedAt: new Date(0).toISOString(),
     });
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context, executionTarget: sshTarget });
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context, executionTarget: sshTarget });
     expect(result.status).toBe("fail");
     expect(result.checks[0].code).toBe("acpx_runtime_unavailable");
   });

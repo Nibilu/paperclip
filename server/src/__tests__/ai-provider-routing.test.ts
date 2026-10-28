@@ -3,7 +3,7 @@ import {
   aiProviderRoutingSchema,
   createAiConnectionSchema,
   isAiConnectionCompatible,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { managedProviderRouting } from "../services/ai-provider-routing.js";
 
 describe("provider routing", () => {
@@ -78,7 +78,7 @@ describe("provider routing", () => {
     expect(
       isAiConnectionCompatible(
         { provider: "openai", method: "api_key", routing },
-        "paperclip_runner",
+        "pilibala_runner",
         "model",
         "aws_agentcore",
       ),
@@ -88,7 +88,7 @@ describe("provider routing", () => {
     const route = aiProviderRoutingSchema.parse({ kind, protocol: "chat", auth: "bearer", ...(kind === "gateway" ? { baseUrl: "https://gateway.example/v1" } : {}) });
     const projected = managedProviderRouting(route, "hermes_local", "selected-key", "fixture-model");
     expect(projected.env.OPENAI_API_KEY).toBe("selected-key");
-    expect(projected.env.PAPERCLIP_AI_PROVIDER_KEY).toBeUndefined();
+    expect(projected.env.PILIBALA_AI_PROVIDER_KEY).toBeUndefined();
     expect(projected.hermesConfig).toContain('api_key: "${OPENAI_API_KEY}"');
     expect(projected.hermesConfig).not.toContain("selected-key");
     expect(Object.entries(projected.env).filter(([, value]) => value === "selected-key").map(([name]) => name)).toEqual(kind === "openrouter" ? ["OPENAI_API_KEY", "OPENROUTER_API_KEY"] : ["OPENAI_API_KEY"]);

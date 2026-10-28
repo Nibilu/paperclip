@@ -19,12 +19,12 @@ import {
   issueComments,
   issueRelations,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { attentionService } from "../services/attention.js";
 import { decisionService } from "../services/decisions.js";
 import { hashAttentionArchiveManifest } from "../services/decision-retention.js";
-import type { AttentionArchiveManifestEntry, AttentionArchiveTargetSnapshot } from "@paperclipai/shared";
+import type { AttentionArchiveManifestEntry, AttentionArchiveTargetSnapshot } from "@pilibalaai/shared";
 
 const support = await getEmbeddedPostgresTestSupport();
 const describePg = support.supported ? describe : describe.skip;
@@ -42,12 +42,12 @@ describePg("decisionService", () => {
   let wakes: Array<Record<string, unknown>>;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-decisions-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-decisions-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
   beforeEach(async () => {
-    process.env.PAPERCLIP_DECISION_SIGNING_SECRET = "0123456789abcdef0123456789abcdef";
+    process.env.PILIBALA_DECISION_SIGNING_SECRET = "0123456789abcdef0123456789abcdef";
     companyId = randomUUID(); agentId = randomUUID(); originIssueId = randomUUID(); targetIssueId = randomUUID(); runId = randomUUID();
     originResponsibleUserId = `origin-${randomUUID()}`; decidedByUserId = `decider-${randomUUID()}`; wakes = [];
     const now = new Date();
@@ -69,9 +69,9 @@ describePg("decisionService", () => {
   });
 
   afterEach(async () => {
-    delete process.env.PAPERCLIP_DECISIONS_SWEEP_BATCH_SIZE;
-    delete process.env.PAPERCLIP_DECISIONS_RECOVERY_GRACE_MS;
-    delete process.env.PAPERCLIP_AGENT_JWT_SECRET;
+    delete process.env.PILIBALA_DECISIONS_SWEEP_BATCH_SIZE;
+    delete process.env.PILIBALA_DECISIONS_RECOVERY_GRACE_MS;
+    delete process.env.PILIBALA_AGENT_JWT_SECRET;
     await db.delete(decisionEffectExecutions); await db.delete(decisionTargetIssues); await db.delete(decisions); await db.delete(decisionRetention); await db.delete(activityLog);
     await db.delete(issueComments); await db.delete(issueRelations); await db.delete(heartbeatRuns); await db.delete(issues); await db.delete(agents); await db.delete(companyMemberships); await db.delete(authUsers); await db.delete(companies);
   });
@@ -359,34 +359,34 @@ describePg("decisionService", () => {
 
   it("fails closed when the configured signing secret is removed after proposal", async () => {
     const created = await createCommentDecision();
-    const originalHome = process.env.PAPERCLIP_HOME;
-    const tempHome = mkdtempSync(path.join(tmpdir(), "paperclip-decision-rotate-"));
-    process.env.PAPERCLIP_HOME = tempHome;
-    delete process.env.PAPERCLIP_DECISION_SIGNING_SECRET;
-    process.env.PAPERCLIP_AGENT_JWT_SECRET = "agent-jwt-secret-must-not-sign-decisions";
+    const originalHome = process.env.PILIBALA_HOME;
+    const tempHome = mkdtempSync(path.join(tmpdir(), "pilibala-decision-rotate-"));
+    process.env.PILIBALA_HOME = tempHome;
+    delete process.env.PILIBALA_DECISION_SIGNING_SECRET;
+    process.env.PILIBALA_AGENT_JWT_SECRET = "agent-jwt-secret-must-not-sign-decisions";
     try {
       await expect(service().decide({ id: created.id, optionId: "yes", decidedByUserId, userActor: boardActor() }))
         .rejects.toThrow("Decision signature verification failed");
       expect(await db.select().from(issueComments).where(eq(issueComments.issueId, targetIssueId))).toHaveLength(0);
     } finally {
-      if (originalHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = originalHome;
+      if (originalHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = originalHome;
       rmSync(tempHome, { recursive: true, force: true });
     }
   });
 
   it("signs and verifies with an auto-generated key when no secret is configured", async () => {
-    const originalHome = process.env.PAPERCLIP_HOME;
-    const tempHome = mkdtempSync(path.join(tmpdir(), "paperclip-decision-generated-"));
-    process.env.PAPERCLIP_HOME = tempHome;
-    delete process.env.PAPERCLIP_DECISION_SIGNING_SECRET;
+    const originalHome = process.env.PILIBALA_HOME;
+    const tempHome = mkdtempSync(path.join(tmpdir(), "pilibala-decision-generated-"));
+    process.env.PILIBALA_HOME = tempHome;
+    delete process.env.PILIBALA_DECISION_SIGNING_SECRET;
     try {
       const created = await createCommentDecision();
       const result = await service().decide({ id: created.id, optionId: "yes", decidedByUserId, userActor: boardActor() });
       expect(result.executionStatus).toBe("succeeded");
     } finally {
-      if (originalHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = originalHome;
+      if (originalHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = originalHome;
       rmSync(tempHome, { recursive: true, force: true });
     }
   });
@@ -419,7 +419,7 @@ describePg("decisionService", () => {
   });
 
   it("recovers stale running decisions from the bounded server sweep", async () => {
-    process.env.PAPERCLIP_DECISIONS_RECOVERY_GRACE_MS = "0";
+    process.env.PILIBALA_DECISIONS_RECOVERY_GRACE_MS = "0";
     const created = await createCommentDecision();
     await db.update(decisions).set({ status: "decided", executionStatus: "running", chosenOptionId: "yes", decidedByUserId,
       inputValues: {}, updatedAt: new Date(Date.now() - 1_000) }).where(eq(decisions.id, created.id));
@@ -514,7 +514,7 @@ describePg("decisionService", () => {
   });
 
   it("bounds expiration work to the configured batch size", async () => {
-    process.env.PAPERCLIP_DECISIONS_SWEEP_BATCH_SIZE = "1";
+    process.env.PILIBALA_DECISIONS_SWEEP_BATCH_SIZE = "1";
     const first = await createCommentDecision("lenient", { idempotencyKey: "batch-1", expiresAt: nearFutureExpiry() });
     const second = await createCommentDecision("lenient", { idempotencyKey: "batch-2", expiresAt: nearFutureExpiry() });
     await expireDecisionNow(first.id);
@@ -524,7 +524,7 @@ describePg("decisionService", () => {
   });
 
   it("falls back to the default sweep batch size for invalid configuration", async () => {
-    process.env.PAPERCLIP_DECISIONS_SWEEP_BATCH_SIZE = "not-a-number";
+    process.env.PILIBALA_DECISIONS_SWEEP_BATCH_SIZE = "not-a-number";
     const first = await createCommentDecision("lenient", { idempotencyKey: "invalid-batch-1", expiresAt: nearFutureExpiry() });
     const second = await createCommentDecision("lenient", { idempotencyKey: "invalid-batch-2", expiresAt: nearFutureExpiry() });
     await expireDecisionNow(first.id);

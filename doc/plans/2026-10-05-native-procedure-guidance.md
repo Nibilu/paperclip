@@ -79,8 +79,8 @@ The remaining issues need separate bounded investigation:
 Candidate `aba7ec219b588de02cf323b4ebca559a105e6d01` and baseline
 `ce31f5efd0d416205c3994c55dd02b645f8b8423` use common master
 `a65ca0950834a85bb93bcc4b4042ecacdebfef53`. Candidate
-[campaign 37348723829](https://github.com/paperclipai/paperclip/actions/runs/37348723829)
-and baseline [campaign 37348764875](https://github.com/paperclipai/paperclip/actions/runs/37348764875)
+[campaign 37348723829](https://github.com/pilibalaai/pilibala/actions/runs/37348723829)
+and baseline [campaign 37348764875](https://github.com/pilibalaai/pilibala/actions/runs/37348764875)
 use trusted workflow `59015846ae02f935411afc620e0867ce812378fb`, distinct
 from both measured trees. Eleven result/API/ledger sets and 99 evidence hashes
 are retained. Their final ledgers contain 56 started runs, in addition to the
@@ -194,8 +194,8 @@ baseline `64cd2194a1d058356679b653c181f16404aefc80`, using trusted master workfl
 `a386a599983519eb1d399f8b770bfccdb2a74762`. Source identity remains distinct from
 workflow identity and the later measurement-only correction.
 
-- [Original candidate campaign](https://github.com/paperclipai/paperclip/actions/runs/37325777217)
-- [Original baseline campaign](https://github.com/paperclipai/paperclip/actions/runs/37325870695)
+- [Original candidate campaign](https://github.com/pilibalaai/pilibala/actions/runs/37325777217)
+- [Original baseline campaign](https://github.com/pilibalaai/pilibala/actions/runs/37325870695)
 
 | Profile | Hire/reuse baseline → candidate | Delegate/feedback baseline → candidate |
 |---|---|---|
@@ -212,7 +212,7 @@ and unmetered host runtime prevent any claim about actual cost savings.
 The candidate Claude hire created Morgan and a child task, then ended with a
 waiting message without recording dependencies or using a terminal tool. The
 lead failed with `native_finalization_missing`. The corrected v7 prompt keeps
-explicit `set_dependencies` and `paperclip_block` discovery. This is a concrete
+explicit `set_dependencies` and `pilibala_block` discovery. This is a concrete
 missing behavior; a single trial does not establish causation.
 
 The candidate Codex delegate failed in Riley's worker turn with the provider
@@ -235,9 +235,9 @@ qualify that baseline outcome.
 
 ## Corrected comparison
 
-- [Candidate ffe847f](https://github.com/paperclipai/paperclip/actions/runs/37331580879)
-- [Baseline aecfa3b](https://github.com/paperclipai/paperclip/actions/runs/37331642168)
-- [Candidate recovery for two interrupted cells, same ffe847f source](https://github.com/paperclipai/paperclip/actions/runs/37334061104)
+- [Candidate ffe847f](https://github.com/pilibalaai/pilibala/actions/runs/37331580879)
+- [Baseline aecfa3b](https://github.com/pilibalaai/pilibala/actions/runs/37331642168)
+- [Candidate recovery for two interrupted cells, same ffe847f source](https://github.com/pilibalaai/pilibala/actions/runs/37334061104)
 
 These use the same corrected fixtures, original requests and artifact graders,
 with one attempt per campaign cell. The original campaign is preserved and is
@@ -353,12 +353,12 @@ The integrated baseline passed six measurement tests. The older full local
 suite was stopped after source revisions changed during its run. Its failures
 remain retained; it is not reported as green.
 
-[Integrated CI server shard 5](https://github.com/paperclipai/paperclip/actions/runs/37335450901/job/111849219339)
+[Integrated CI server shard 5](https://github.com/pilibalaai/pilibala/actions/runs/37335450901/job/111849219339)
 failed `workspace-git-snapshot-streaming.test.ts`: the four Git filename lanes
 over 32 MiB exceeded the 180-second timeout (707 tests passed, two skipped,
 one failed in that shard). The aggregate verify job therefore failed. The cause
 has not been established; this is not reclassified as an infrastructure pass.
-The [review summary](https://github.com/paperclipai/paperclip/pull/15218#issuecomment-5996723170)
+The [review summary](https://github.com/pilibalaai/pilibala/pull/15218#issuecomment-5996723170)
 gave integrated `ee096aa23` 5/5 but noted project-discovery authorization work
 for actors with sparse visibility. Both inline measurement findings are
 resolved; the summary's separate concern is not erased by that count.

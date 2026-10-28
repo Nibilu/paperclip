@@ -24,7 +24,7 @@ describe("TaskChatSystemNotice (PAP-443)", () => {
   });
 
   const recoveryBody =
-    "Paperclip stopped before dispatching the adapter because required secret/env bindings are missing. " +
+    "Pilibala stopped before dispatching the adapter because required secret/env bindings are missing. " +
     "Latest retry failure: `configuration_incomplete`. Moving it to `blocked` with a source-scoped recovery action.";
 
   function renderNotice(
@@ -178,14 +178,14 @@ describe("TaskChatSystemNotice (PAP-443)", () => {
     expect(details?.textContent?.match(/git_worktree/g)).toHaveLength(1);
     expect(details?.textContent?.match(/fix\/workspace-ready-notice/g)).toHaveLength(1);
     expect(details?.textContent).toContain("/worktrees/workspace-ready-notice");
-    expect(details?.querySelector(".paperclip-markdown")).toBeNull();
+    expect(details?.querySelector(".pilibala-markdown")).toBeNull();
   });
 
   it("shows Try again while folded and invokes it without expanding the notice", async () => {
     const onTryAgain = vi.fn();
     renderNotice(
       {
-        text: "Paperclip retried continuation, but it still has no live execution path.",
+        text: "Pilibala retried continuation, but it still has no live execution path.",
         presentation: {
           kind: "system_notice",
           tone: "danger",
@@ -215,7 +215,7 @@ describe("TaskChatSystemNotice (PAP-443)", () => {
   it("moves Try again into the expanded notice footer", () => {
     renderNotice(
       {
-        text: "Paperclip retried continuation, but it still has no live execution path.",
+        text: "Pilibala retried continuation, but it still has no live execution path.",
         presentation: {
           kind: "system_notice",
           tone: "danger",
@@ -242,7 +242,7 @@ describe("TaskChatSystemNotice (PAP-443)", () => {
   it("shows the pending state and omits Try again from unrelated notices", () => {
     renderNotice(
       {
-        text: "Paperclip retried continuation, but it still has no live execution path.",
+        text: "Pilibala retried continuation, but it still has no live execution path.",
         presentation: {
           kind: "system_notice",
           tone: "danger",
@@ -281,7 +281,7 @@ describe("TaskChatSystemNotice (PAP-443)", () => {
 
   it("keeps workspace-ready events as a compact expandable notice", () => {
     renderNotice({
-      text: "Workspace ready. The isolated worktree is available at `/tmp/paperclip/worktrees/PAP-91`.",
+      text: "Workspace ready. The isolated worktree is available at `/tmp/pilibala/worktrees/PAP-91`.",
       metadata: null,
     });
 
@@ -290,10 +290,10 @@ describe("TaskChatSystemNotice (PAP-443)", () => {
     expect(button.textContent).toContain("System update");
     expect(button.textContent).toContain("Workspace ready.");
     expect(button.querySelector("code")).toBeNull();
-    expect(container.textContent).not.toContain("/tmp/paperclip/worktrees/PAP-91");
+    expect(container.textContent).not.toContain("/tmp/pilibala/worktrees/PAP-91");
 
     flushSync(() => button.click());
-    expect(container.textContent).toContain("/tmp/paperclip/worktrees/PAP-91");
+    expect(container.textContent).toContain("/tmp/pilibala/worktrees/PAP-91");
   });
 
   it("ignores malformed metadata while preserving expandable raw detail", () => {

@@ -7,7 +7,7 @@ import {
   type LucideIcon,
   UserPlus,
 } from "lucide-react";
-import { hidesCompanyPage, type DeploymentMode } from "@paperclipai/shared";
+import { hidesCompanyPage, type DeploymentMode } from "@pilibalaai/shared";
 import { Link } from "@/lib/router";
 import { authApi } from "@/api/auth";
 import { queryKeys } from "@/lib/queryKeys";
@@ -27,8 +27,8 @@ import { ThemeToggle } from "./ThemeToggle";
 import { SidebarServerInfo } from "./SidebarServerInfo";
 
 const INVITES_PATH = "/company/settings/members?tab=invites";
-const DOCS_URL = "https://docs.paperclip.ing/";
-const FEEDBACK_URL = "https://paperclip.ing/feedback";
+const DOCS_URL = "https://docs.pilibala.ing/";
+const FEEDBACK_URL = "https://pilibala.ing/feedback";
 
 interface SidebarAccountMenuProps {
   deploymentMode?: DeploymentMode;
@@ -217,7 +217,7 @@ export function SidebarAccountMenu({
                 {stagingCommit ? (
                   <a
                     className="pointer-events-auto block truncate font-mono text-(length:--text-micro) leading-(--profile-popover-meta-line-height) text-muted-foreground hover:underline focus-visible:underline"
-                    href={`https://github.com/paperclipai/paperclip/commit/${stagingCommit}`}
+                    href={`https://github.com/pilibalaai/pilibala/commit/${stagingCommit}`}
                     target="_blank"
                     rel="noreferrer"
                     aria-label={`View commit ${stagingCommit} on GitHub`}
@@ -242,7 +242,7 @@ export function SidebarAccountMenu({
               ) : null}
               <MenuAction
                 label="Documentation"
-                description="Open Paperclip docs in a new tab."
+                description="Open Pilibala docs in a new tab."
                 icon={BookOpen}
                 href={DOCS_URL}
                 external

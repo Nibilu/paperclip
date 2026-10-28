@@ -30,7 +30,7 @@ function readTrustedPrWorkflow() {
   const caller = readFileSync(prCallerWorkflow, "utf8");
   assert.match(
     caller,
-    /^\s+uses: paperclipai\/paperclip\/\.github\/workflows\/pr-trusted\.yml@master\s*$/m,
+    /^\s+uses: pilibalaai\/pilibala\/\.github\/workflows\/pr-trusted\.yml@master\s*$/m,
     "pr.yml must call the trusted workflow from CODEOWNERS-protected master",
   );
   // Validate proposed workflow changes locally; CI executes the merged master version.
@@ -64,7 +64,7 @@ function runStackScope(stack, prBaseRef) {
     .split("\n")
     .map((line) => line.replace(/^ {10}/, ""))
     .join("\n");
-  const scratch = mkdtempSync(path.join(tmpdir(), "paperclip-stack-scope-"));
+  const scratch = mkdtempSync(path.join(tmpdir(), "pilibala-stack-scope-"));
   const output = path.join(scratch, "github-output");
 
   try {
@@ -212,7 +212,7 @@ test("runner selection has reserved AWS capacity and executes metadata checks on
   const workflow = readFileSync(routingWorkflow, "utf8");
   const jobs = readWorkflowJobs(workflow.split(/^jobs:\n/m)[1]);
   assert.deepEqual([...jobs.keys()], ["gate"]);
-  assert.match(jobs.get("gate"), /^ {4}runs-on: \$\{\{ vars\.AWS_CI_ENABLED[\s\S]*paperclip-ci-routing-x64/m);
+  assert.match(jobs.get("gate"), /^ {4}runs-on: \$\{\{ vars\.AWS_CI_ENABLED[\s\S]*pilibala-ci-routing-x64/m);
   assert.doesNotMatch(jobs.get("gate"), /uses:|actions\/checkout|secrets\./);
   assert.match(workflow, /^ {6}runner:\n {8}value: \$\{\{ jobs\.gate\.outputs\.runner \}\}$/m);
   assert.match(workflow, /^ {6}full_ci:\n {8}value: \$\{\{ jobs\.gate\.outputs\.full_ci \}\}$/m);
@@ -222,7 +222,7 @@ test("runner selection has reserved AWS capacity and executes metadata checks on
 test("the trusted PR workflow limits full CI to merge-relevant stack layers", () => {
   const workflow = readFileSync(trustedPrWorkflow, "utf8");
   const jobs = readWorkflowJobs(workflow);
-  assert.match(jobs.get("gate"), /uses: paperclipai\/paperclip\/\.github\/workflows\/ci-routing\.yml@master/);
+  assert.match(jobs.get("gate"), /uses: pilibalaai\/pilibala\/\.github\/workflows\/ci-routing\.yml@master/);
   const gate = readWorkflowJobs(readFileSync(routingWorkflow, "utf8")).get("gate");
 
   assert.match(gate, /^ {6}full_ci: \$\{\{ steps\.scope\.outputs\.full_ci \}\}$/m);
@@ -233,7 +233,7 @@ test("the trusted PR workflow limits full CI to merge-relevant stack layers", ()
   for (const jobId of [
     "typecheck_release_registry",
     "general_tests",
-    "verify_paperclip_runner",
+    "verify_pilibala_runner",
     "build",
     "verify_serialized_server",
     "canary_dry_run",
@@ -255,14 +255,14 @@ test("the trusted PR workflow limits full CI to merge-relevant stack layers", ()
   const verify = jobs.get("verify");
   assert.match(
     verify,
-    /^ {4}needs: \[gate, policy, typecheck_release_registry, general_tests, verify_paperclip_runner, build, docker_context_integrity\]$/m,
+    /^ {4}needs: \[gate, policy, typecheck_release_registry, general_tests, verify_pilibala_runner, build, docker_context_integrity\]$/m,
   );
   assert.match(verify, /POLICY_RESULT: \$\{\{ needs\.policy\.result \}\}/);
   assert.match(verify, /test "\$TYPECHECK_RELEASE_REGISTRY_RESULT" = "skipped"/);
   assert.match(verify, /test "\$GENERAL_TESTS_RESULT" = "skipped"/);
   // Runner verification must participate in the legacy aggregate required
   // check, or a runner regression could be merged while `verify` succeeds.
-  assert.match(verify, /RUNNER_VERIFICATION_RESULT: \$\{\{ needs\.verify_paperclip_runner\.result \}\}/);
+  assert.match(verify, /RUNNER_VERIFICATION_RESULT: \$\{\{ needs\.verify_pilibala_runner\.result \}\}/);
   assert.match(verify, /test "\$RUNNER_VERIFICATION_RESULT" = "success"/);
   assert.match(verify, /test "\$RUNNER_VERIFICATION_RESULT" = "skipped"/);
   assert.match(verify, /test "\$BUILD_RESULT" = "skipped"/);

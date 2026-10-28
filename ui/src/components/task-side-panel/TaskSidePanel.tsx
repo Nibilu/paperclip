@@ -16,7 +16,7 @@ import {
   isArtifactReviewDocumentKey,
   type Issue,
   type IssueDocument,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   Globe,
   Box,

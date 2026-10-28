@@ -7,7 +7,7 @@ import { nativeSha256 } from "../../native-runtime/canonical.js";
 import { projectSafeChatPublicationText } from "../../chat-publication-projection.js";
 import { PhotonAnswerValidationError, nativePhotonInteraction, photonResponseCommand, parsePhotonQuestionAnswer, type PhotonPromptReceipt, type PhotonInteractionBinding, type PhotonDraft } from "../../photon/interactions.js";
 import { validateNativeQuestionResponseInput } from "../../native-runtime/native-question-bridge.js";
-import type { AskUserQuestionsAnswer, AskUserQuestionsInteraction, IssueThreadInteraction } from "@paperclipai/shared";
+import type { AskUserQuestionsAnswer, AskUserQuestionsInteraction, IssueThreadInteraction } from "@pilibalaai/shared";
 import { PhotonError, photonFailure } from "../../photon/cloud.js";
 import { PhotonChatAdapter, photonThreadId } from "../../photon/adapter.js";
 
@@ -21,7 +21,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatActions,
@@ -32,7 +32,7 @@ import {
   chatPublications,
   issues,
   toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 
 import {
   HttpError,

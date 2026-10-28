@@ -7,12 +7,12 @@ import {
   createDb,
   heartbeatRunEvents,
   heartbeatRuns,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 
 describe("P6-18 / MIG-01..04 native finalization migration", () => {
   it("repairs only later duplicates and preserves legacy event bytes and cursors", async () => {
-    const temporary = await startEmbeddedPostgresTestDatabase("paperclip-native-migration-");
+    const temporary = await startEmbeddedPostgresTestDatabase("pilibala-native-migration-");
     const migration = await readFile(
       new URL("../../../packages/db/src/migrations/0227_modern_pandemic.sql", import.meta.url),
       "utf8",
@@ -35,8 +35,8 @@ describe("P6-18 / MIG-01..04 native finalization migration", () => {
       await rawDb.execute(sql.raw(`
         DROP TABLE IF EXISTS status_decision_effects, status_decisions, work_assessments,
           native_run_finalizations, native_run_results, completion_contracts CASCADE;
-        DROP TRIGGER IF EXISTS paperclip_issue_status_version_trigger ON issues;
-        DROP FUNCTION IF EXISTS paperclip_bump_issue_status_version();
+        DROP TRIGGER IF EXISTS pilibala_issue_status_version_trigger ON issues;
+        DROP FUNCTION IF EXISTS pilibala_bump_issue_status_version();
         DROP INDEX IF EXISTS heartbeat_run_events_run_seq_uq;
         CREATE INDEX IF NOT EXISTS heartbeat_run_events_run_seq_idx
           ON heartbeat_run_events (run_id, seq);

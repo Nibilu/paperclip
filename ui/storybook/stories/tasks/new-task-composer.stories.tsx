@@ -10,7 +10,7 @@ import {
   buildRoutineMentionHref,
   buildSkillMentionHref,
   buildUserMentionHref,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { MarkdownBody } from "@/components/MarkdownBody";
 import { NewIssueDialog } from "@/components/NewIssueDialog";
 import { useCompany } from "@/context/CompanyContext";
@@ -25,7 +25,7 @@ import {
   storybookExecutionWorkspaces,
   storybookProjects,
   storybookIssues,
-} from "../../fixtures/paperclipData";
+} from "../../fixtures/pilibalaData";
 
 const COMPANY_ID = "company-storybook";
 const NEW_TASK_AGENTS = [...storybookAgents, { ...storybookAgents[2]!, id: "agent-ceo", name: "CEO", role: "ceo" }].map((agent) =>
@@ -123,12 +123,12 @@ function NewTaskStory({
     }
     if (opened.current) return;
     opened.current = true;
-    localStorage.removeItem("paperclip:issue-draft");
-    localStorage.removeItem("paperclip:recent-assignees");
-    localStorage.removeItem(`paperclip:recent-assignees:${COMPANY_ID}`);
-    localStorage.removeItem("paperclip:recent-projects");
-    localStorage.removeItem(`paperclip:recent-projects:${COMPANY_ID}`);
-    localStorage.removeItem(`paperclip:composer-effort:${COMPANY_ID}`);
+    localStorage.removeItem("pilibala:issue-draft");
+    localStorage.removeItem("pilibala:recent-assignees");
+    localStorage.removeItem(`pilibala:recent-assignees:${COMPANY_ID}`);
+    localStorage.removeItem("pilibala:recent-projects");
+    localStorage.removeItem(`pilibala:recent-projects:${COMPANY_ID}`);
+    localStorage.removeItem(`pilibala:composer-effort:${COMPANY_ID}`);
     if (rememberedAssignee === "agent") trackRecentAssignee("agent-codex", COMPANY_ID);
     if (rememberedAssignee === "human") trackRecentAssigneeUser(storybookAuthSession.user.id, COMPANY_ID);
     if (rememberedProject) trackRecentProject("project-board-ui", COMPANY_ID);
@@ -217,7 +217,7 @@ const meta = {
           "The production new-task dialog renders TaskChatComposer. An inset bar shared with queued messages holds the colored project picker and, for projects with isolation enabled, Worktrees. Choose a new worktree or reuse a project worktree. The shared editor supports agent, person, project, and task mentions plus skill and routine slash-command chips. Agent mentions show the agent's current avatar. The editor, add menu, work modes, assignee/model/effort picker, and send button are shared with task chat. Creation is mocked locally; no agents run.",
       },
     },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "tasks/create",
         "workspaces/binding"
@@ -490,7 +490,7 @@ export const RichChips: Story = {
       await waitFor(() => expect(composer.querySelector(`[data-mention-kind="${kind}"]`)).toBeVisible());
     }
     const agentChip = composer.querySelector('[data-mention-kind="agent"]')!;
-    await expect(agentChip).toHaveAttribute("style", expect.stringContaining("--paperclip-mention-avatar-image"));
+    await expect(agentChip).toHaveAttribute("style", expect.stringContaining("--pilibala-mention-avatar-image"));
     await expect(canvasElement.ownerDocument.defaultView!.getComputedStyle(agentChip, "::before").backgroundImage)
       .toContain(new URL("./agent-avatar-images/", canvasElement.ownerDocument.baseURI).href);
   },

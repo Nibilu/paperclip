@@ -10,7 +10,7 @@
     },
     {
       "path": "rules/pull-request-review.mdc",
-      "description": "Existing Paperclip review guidance for PR descriptions, UI evidence, and growth of large source files."
+      "description": "Existing Pilibala review guidance for PR descriptions, UI evidence, and growth of large source files."
     },
     {
       "path": "rules/product-harness-responsibility.mdc",
@@ -23,8 +23,8 @@
         "server/src/**",
         "packages/adapter-utils/src/**",
         "packages/adapters/*/src/**",
-        "packages/paperclip-runner/src/**",
-        "packages/paperclip-runner/runner/**"
+        "packages/pilibala-runner/src/**",
+        "packages/pilibala-runner/runner/**"
       ]
     },
     {

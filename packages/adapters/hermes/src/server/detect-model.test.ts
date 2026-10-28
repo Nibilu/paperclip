@@ -49,7 +49,7 @@ test("parseModelFromConfig tracks api_key presence without exposing the raw secr
 });
 
 test("resolveProvider defers to Hermes natively when no provider is explicit (config detection retired)", () => {
-  // Paperclip no longer parses ~/.hermes/config.yaml as model truth: the
+  // Pilibala no longer parses ~/.hermes/config.yaml as model truth: the
   // effective state lives in Hermes's session DB / auth.json, and a vendor
   // prefix does not identify a serving provider. No explicit provider → auto.
   expect(resolveProvider({
@@ -98,7 +98,7 @@ async function withHermesHomeConfig(
   configLines: string[],
   fn: () => Promise<void>,
 ) {
-  const tempHome = await mkdtemp(join(tmpdir(), "hermes-paperclip-adapter-"));
+  const tempHome = await mkdtemp(join(tmpdir(), "hermes-pilibala-adapter-"));
   const hermesDir = join(tempHome, ".hermes");
   const configPath = join(hermesDir, "config.yaml");
 

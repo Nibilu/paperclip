@@ -1,11 +1,11 @@
 import { measureRunTransaction } from "./execution-transaction-timing.js";
 import { measureRunPhase } from "./execution-preparation-timing.js";
 import { automaticReadRecoveryCleanupCondition, touchedByUserCondition } from "./issue-participation.js";
-import { HUMAN_TASK_ORIGIN_KINDS } from "@paperclipai/shared";
+import { HUMAN_TASK_ORIGIN_KINDS } from "@pilibalaai/shared";
 import { resolveProjectDefaultWorkspaceId } from "./project-default-workspace.js";
 import { type AuthorizationActor, executionWorkspaceReadSqlCondition, projectReadSqlCondition } from "./authorization.js";
 import { assertTaskWorkspaceAccess, assertTaskWorkspaceSourceProjectAccess } from "./task-workspace-source-access.js";
-import { type TaskWorkspaceSelection, type TaskWorkspaceIntent } from "@paperclipai/shared";
+import { type TaskWorkspaceSelection, type TaskWorkspaceIntent } from "@pilibalaai/shared";
 import { executionWorkspaceService } from "./execution-workspaces.js";
 import { notifyChatPublicationWork } from "./chat-work-notifications.js";
 import { notifyTerminalWorkspaceWork } from "./terminal-workspace-work.js";
@@ -20,7 +20,7 @@ import { documentService } from "./documents.js";
 import { parseTaskSearch, taskSearchCtes, taskSearchScore } from "./task-search.js";
 import { createdFromIssueCondition } from "./issue-creation-origin.js";
 import { executionProjectionsForRuns } from "./execution-projection.js";
-import type { ExecutionProjection } from "@paperclipai/shared";
+import type { ExecutionProjection } from "@pilibalaai/shared";
 import { Buffer } from "node:buffer";
 import { isDeepStrictEqual } from "node:util";
 import { createHash, randomUUID } from "node:crypto";
@@ -47,7 +47,7 @@ import {
   sql,
   type SQL,
 } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   activityLog,
   chatActions,
@@ -94,7 +94,7 @@ import {
   projects,
   toolConnections,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   AcceptedPlanDecomposition,
   IssueComment,
@@ -111,7 +111,7 @@ import type {
   IssueWatchdogSummary,
   LowTrustBoundary,
   SuccessfulRunHandoffState,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   clampIssueRequestDepth,
   extractAgentMentionIds,
@@ -121,7 +121,7 @@ import {
   issueCommentPresentationSchema,
   isUuidLike,
   normalizeIssueIdentifier as normalizeIssueReferenceIdentifier,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { conflict, HttpError, notFound, unprocessable } from "../errors.js";
 import { isForeignKeyViolation } from "../db-errors.js";
 import { logger } from "../middleware/logger.js";
@@ -308,8 +308,8 @@ function wakeRequestTargetsIssue(issueId: string) {
   return sql`(
     ${agentWakeupRequests.payload} ->> 'issueId' = ${issueId}
     or ${agentWakeupRequests.payload} ->> 'taskId' = ${issueId}
-    or ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'issueId' = ${issueId}
-    or ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'taskId' = ${issueId}
+    or ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'issueId' = ${issueId}
+    or ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'taskId' = ${issueId}
   )`;
 }
 
@@ -1126,7 +1126,7 @@ async function freshChatSourceAfterPublishedControl(
   } catch (error) {
     if (
       error instanceof Error &&
-      /^paperclip_runner_chat_attachment_(binding|destination|principal)_denied$/.test(
+      /^pilibala_runner_chat_attachment_(binding|destination|principal)_denied$/.test(
         error.message,
       )
     )
@@ -1636,7 +1636,7 @@ export function isExplicitExternalAgentComment(
   metadata: IssueCommentMetadata | null | undefined,
 ): boolean {
   const reason = metadata?.authorizationReason?.trim() ?? "";
-  return reason === "paperclip_runner_protocol" || reason.startsWith("allow_");
+  return reason === "pilibala_runner_protocol" || reason.startsWith("allow_");
 }
 
 type SelectedChatPresentationAttachment = {
@@ -1682,7 +1682,7 @@ async function listSelectedChatPresentationAttachments(
         eq(issueComments.authorAgentId, input.agentId),
         isNull(issueComments.deletedAt),
         sql<boolean>`(
-          coalesce(${issueComments.metadata}->>'authorizationReason', '') = 'paperclip_runner_protocol'
+          coalesce(${issueComments.metadata}->>'authorizationReason', '') = 'pilibala_runner_protocol'
           or left(coalesce(${issueComments.metadata}->>'authorizationReason', ''), 6) = 'allow_'
         )`,
       ),
@@ -2984,9 +2984,9 @@ function inboxVisibleForUserCondition(companyId: string, userId: string) {
 }
 
 const LEGACY_PLUGIN_OPERATION_ORIGIN_KINDS = [
-  "plugin:paperclipai.content-machine:case",
-  "plugin:paperclipai.content-machine:evaluation",
-  "plugin:paperclipai.content-machine:source-sync",
+  "plugin:pilibalaai.content-machine:case",
+  "plugin:pilibalaai.content-machine:evaluation",
+  "plugin:pilibalaai.content-machine:source-sync",
 ] as const;
 
 function nonPluginOperationIssueCondition() {
@@ -4546,8 +4546,8 @@ async function listIssueReviewAttentionMap(
         issueId: sql<string | null>`coalesce(
           ${agentWakeupRequests.payload} ->> 'issueId',
           ${agentWakeupRequests.payload} ->> 'taskId',
-          ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'issueId',
-          ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'taskId'
+          ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'issueId',
+          ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'taskId'
         )`,
         agentId: agentWakeupRequests.agentId,
         status: agentWakeupRequests.status,
@@ -4567,8 +4567,8 @@ async function listIssueReviewAttentionMap(
             sql<string>`coalesce(
           ${agentWakeupRequests.payload} ->> 'issueId',
           ${agentWakeupRequests.payload} ->> 'taskId',
-          ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'issueId',
-          ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'taskId'
+          ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'issueId',
+          ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'taskId'
         )`,
             reviewIds,
           ),
@@ -5649,8 +5649,8 @@ async function listIssueBlockedInboxAttentionMap(
             issueId: sql<string | null>`coalesce(
               ${agentWakeupRequests.payload} ->> 'issueId',
               ${agentWakeupRequests.payload} ->> 'taskId',
-              ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'issueId',
-              ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'taskId'
+              ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'issueId',
+              ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'taskId'
             )`,
             agentId: agentWakeupRequests.agentId,
             status: agentWakeupRequests.status,
@@ -5666,8 +5666,8 @@ async function listIssueBlockedInboxAttentionMap(
                 sql<string>`coalesce(
               ${agentWakeupRequests.payload} ->> 'issueId',
               ${agentWakeupRequests.payload} ->> 'taskId',
-              ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'issueId',
-              ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'taskId'
+              ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'issueId',
+              ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'taskId'
             )`,
                 graphIssueIds,
               ),
@@ -9020,8 +9020,8 @@ export function issueService(db: Db) {
           coalesce(
             wake.payload ->> 'issueId',
             wake.payload ->> 'taskId',
-            wake.payload -> '_paperclipWakeContext' ->> 'issueId',
-            wake.payload -> '_paperclipWakeContext' ->> 'taskId'
+            wake.payload -> '_pilibalaWakeContext' ->> 'issueId',
+            wake.payload -> '_pilibalaWakeContext' ->> 'taskId'
           )
         `;
         const rawWakeRows = Array.from(
@@ -10058,8 +10058,8 @@ export function issueService(db: Db) {
             issueData.projectId = workspaceSource.projectId;
           }
           // Workspace linkage is only inheritable inside the source project. A
-          // cross-project child (for example, a Paperclip ID issue created from
-          // a Paperclip App parent) must fall through to its own project's
+          // cross-project child (for example, a Pilibala ID issue created from
+          // a Pilibala App parent) must fall through to its own project's
           // default workspaces, otherwise the inherited ids fail the
           // project-match assertions below and the create is impossible without
           // the caller naming the target workspaces explicitly.
@@ -11190,8 +11190,8 @@ export function issueService(db: Db) {
             .where(and(eq(agentWakeupRequests.companyId, receiptExisting.companyId),
               eq(agentWakeupRequests.requestedByActorType, "user"),
               sql`coalesce(${agentWakeupRequests.payload}->>'issueId', ${agentWakeupRequests.payload}->>'taskId',
-                ${agentWakeupRequests.payload}->'_paperclipWakeContext'->>'issueId',
-                ${agentWakeupRequests.payload}->'_paperclipWakeContext'->>'taskId') = ${id}`));
+                ${agentWakeupRequests.payload}->'_pilibalaWakeContext'->>'issueId',
+                ${agentWakeupRequests.payload}->'_pilibalaWakeContext'->>'taskId') = ${id}`));
         }
         // Reasserting Blocked or changing its blockers is a fresh decision even
         // when the status string stays the same. Invalidate recovery's prior
@@ -12441,7 +12441,7 @@ export function issueService(db: Db) {
         sourceTrust?: typeof issueComments.$inferInsert.sourceTrust;
         createdAt?: Date | string | null;
         clientRequestId?: string;
-        /** Server-only: authenticated Paperclip messages also belong in the Slack thread. */
+        /** Server-only: authenticated Pilibala messages also belong in the Slack thread. */
         mirrorToSlack?: boolean;
       },
       dbOrTx: any = db,
@@ -12956,9 +12956,9 @@ export function issueService(db: Db) {
       // Only an explicitly authored comment from the run causally woken by an
       // inbound chat message is automatically publishable. Presentation,
       // recovery, automation, and ordinary internal agent comments stay in
-      // Paperclip even while a bound conversation is active.
+      // Pilibala even while a bound conversation is active.
       if (authorType === "agent" && isExplicitExternalAgentComment(metadata)) {
-        // An external-chat run may perform ordinary Paperclip lifecycle or
+        // An external-chat run may perform ordinary Pilibala lifecycle or
         // bookkeeping writes before its adapter result is finalized. Those
         // writes remain internal: only heartbeat's selected final presentation
         // may consume this provider response slot. Explicit board "Send to
@@ -13247,7 +13247,7 @@ export function issueService(db: Db) {
                 companyId: issue.companyId,
                 issueId: issue.id,
                 type: "artifact",
-                provider: "paperclip",
+                provider: "pilibala",
                 externalId: attachment.id,
                 title: asset.originalFilename ?? "Attachment",
                 status: "active",

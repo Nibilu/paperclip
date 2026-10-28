@@ -2,7 +2,7 @@ import { usePrimaryAgentPresentation } from "./primary-agent/PrimaryAgentPresent
 import { useWorkspaceIsolationControls } from "@/hooks/useWorkspaceIsolationControls";
 import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties, type DragEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { AgentEnvConfig, EnvBinding, IssueWorkMode } from "@paperclipai/shared";
+import type { AgentEnvConfig, EnvBinding, IssueWorkMode } from "@pilibalaai/shared";
 import { useDialog } from "../context/DialogContext";
 import { useCompany } from "../context/CompanyContext";
 import { executionWorkspacesApi } from "../api/execution-workspaces";
@@ -34,7 +34,7 @@ import { useToastActions } from "../context/ToastContext";
 import { assigneeValueFromSelection, currentUserAssigneeOption, parseAssigneeValue } from "../lib/assignees";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Paperclip, FileText, Flag, PauseCircle, ListTree, X, ShieldAlert, Folder, ChevronDown, Lock } from "lucide-react";
+import { Paperclip as Pilibala, FileText, Flag, PauseCircle, ListTree, X, ShieldAlert, Folder, ChevronDown, Lock } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { MentionOption } from "./MarkdownEditor";
 import { TaskChatComposer } from "./task-chat/TaskChatComposer";
@@ -46,7 +46,7 @@ import { InlineBanner } from "./InlineBanner";
 import { InlineEntitySelector, type InlineEntityOption } from "./InlineEntitySelector";
 import { getTrustPreset } from "../lib/trust-policy-ui";
 
-const DRAFT_KEY = "paperclip:issue-draft";
+const DRAFT_KEY = "pilibala:issue-draft";
 const DEBOUNCE_MS = 800;
 
 type VisualViewportLayout = {
@@ -1132,7 +1132,7 @@ export function NewIssueDialog() {
           const target = event.detail.originalEvent.target as HTMLElement | null;
           if (
             createIssue.isPending ||
-            target?.closest("[data-radix-popper-content-wrapper], [data-paperclip-floating-ui]")
+            target?.closest("[data-radix-popper-content-wrapper], [data-pilibala-floating-ui]")
           ) {
             event.preventDefault();
           }
@@ -1303,7 +1303,7 @@ export function NewIssueDialog() {
                                 >
                                   <div className="min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                      <Pilibala className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                                       <span className="truncate text-sm">{file.file.name}</span>
                                     </div>
                                     <div className="mt-1 text-(length:--text-micro) text-muted-foreground">

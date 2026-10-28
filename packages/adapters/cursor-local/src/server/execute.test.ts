@@ -2,11 +2,11 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import { runChildProcess } from "@paperclipai/adapter-utils/server-utils";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import { runChildProcess } from "@pilibalaai/adapter-utils/server-utils";
 import { SANDBOX_INSTALL_COMMAND } from "../index.js";
 import { execute } from "./execute.js";
-import { createPromptContextFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
+import { createPromptContextFixture } from "@pilibalaai/adapter-utils/test-fixtures/prompt-context";
 
 type PrepareCursorSandboxCommandInput = {
   runId: string;
@@ -36,13 +36,13 @@ const {
   return { setPrepareCursorSandboxCommand };
 });
 
-vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/execution-target")>(
-    "@paperclipai/adapter-utils/execution-target",
+vi.mock("@pilibalaai/adapter-utils/execution-target", async () => {
+  const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/execution-target")>(
+    "@pilibalaai/adapter-utils/execution-target",
   );
   return {
     ...actual,
-    startAdapterExecutionTargetPaperclipBridge: async () => null,
+    startAdapterExecutionTargetPilibalaBridge: async () => null,
   };
 });
 
@@ -144,7 +144,7 @@ describe("cursor execute", () => {
       command: input.command, env: input.env, remoteSystemHomeDir: null,
       addedPathEntry: null, preferredCommandPath: null,
     }));
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cursor-legacy-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-cursor-legacy-"));
     const command = path.join(root, "agent.sh");
     await fs.writeFile(command, `#!/bin/sh
 cat >/dev/null
@@ -178,7 +178,7 @@ exit ${exitCode}
       command: input.command, env: input.env, remoteSystemHomeDir: null,
       addedPathEntry: null, preferredCommandPath: null,
     }));
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cursor-diagnostic-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-cursor-diagnostic-"));
     const command = path.join(root, "agent.sh");
     const trace = "cursor-retrieval: tracing to '/tmp/fixture-cursor-retrieval.log'";
     // Values are fixed test fixtures, passed through env rather than shell code.
@@ -212,7 +212,7 @@ exit 7
       return actual.prepareCursorSandboxCommand(input);
     });
 
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cursor-fresh-lease-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-cursor-fresh-lease-"));
     const homeDir = path.join(root, "home");
     const workspace = path.join(root, "workspace");
     const remoteWorkspace = path.join(root, "remote-workspace");
@@ -256,7 +256,7 @@ exit 7
         config: {
           command: "agent",
           cwd: workspace,
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: createPromptContextFixture(),
         authToken: "run-jwt-token",
@@ -272,7 +272,7 @@ exit 7
       const prompt = await fs.readFile(path.join(captureDir, "prompt.txt"), "utf8");
       expect(command).toBe(agentPath);
       expect(runtimePath.split(path.delimiter)).toContain(path.join(homeDir, ".local", "bin"));
-      expect(prompt).toContain("Follow the paperclip heartbeat.");
+      expect(prompt).toContain("Follow the pilibala heartbeat.");
       expect(prompt).toContain("## Owned assignment");
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
@@ -286,7 +286,7 @@ exit 7
     const prepareInputs: PrepareCursorSandboxCommandInput[] = [];
     let finalPreparedCommand: string | null = null;
 
-    const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cursor-fresh-lease-managed-"));
+    const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-cursor-fresh-lease-managed-"));
     const workspaceDir = path.join(rootDir, "workspace");
     const remoteWorkspace = path.join(rootDir, "remote-workspace");
     const systemHomeDir = path.join(rootDir, "system-home");
@@ -450,7 +450,7 @@ printf '%s\\n' '{"type":"result","subtype":"success","session_id":"cursor-sessio
       addedPathEntry: null,
       preferredCommandPath: null,
     }));
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cursor-resume-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-cursor-resume-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "agent.sh");
     const capturePath = path.join(root, "prompts.txt");
@@ -476,7 +476,7 @@ printf '%s\\n' '{"type":"result","subtype":"success","session_id":"cursor-sessio
         runId: "run-cursor-resume-fallback",
         agent: { id: "agent-1", companyId: "company-1", name: "Cursor Coder", adapterType: "cursor", adapterConfig: {} },
         runtime: { sessionId: "cursor-session-old", sessionParams: null, sessionDisplayId: null, taskKey: null },
-        config: { command: commandPath, cwd: workspace, promptTemplate: "Follow the paperclip heartbeat." },
+        config: { command: commandPath, cwd: workspace, promptTemplate: "Follow the pilibala heartbeat." },
         context: createPromptContextFixture(),
         authToken: "run-jwt-token",
         onLog: async () => {},

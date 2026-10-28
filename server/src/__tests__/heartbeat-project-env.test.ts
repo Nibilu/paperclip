@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildSkillMentionHref } from "@paperclipai/shared";
+import { buildSkillMentionHref } from "@pilibalaai/shared";
 import {
   LOW_TRUST_REVIEW_PRESET,
   applyRunScopedMentionedSkillKeys,
@@ -32,11 +32,11 @@ describe("resolveExecutionRunAdapterConfig", () => {
   });
 
   it("captures scoped resolved task values and rejects configured markers", async () => {
-    const key = "PAPERCLIP_CONFIGURED_ENV_KEYS";
+    const key = "PILIBALA_CONFIGURED_ENV_KEYS";
     const secret = { type: "secret_ref", secretId: "pages-secret" };
     const result = await resolveExecutionRunAdapterConfig({
       companyId: "company-1", agentId: "agent-1", environmentId: "environment-1", projectId: "project-1", routineId: "routine-1",
-      executionRunConfig: { env: { PAPERCLIP_PAGE_AWS_SECRET_ACCESS_KEY: secret, SHARED: "agent", [key]: '["HOST_SECRET"]' } },
+      executionRunConfig: { env: { PILIBALA_PAGE_AWS_SECRET_ACCESS_KEY: secret, SHARED: "agent", [key]: '["HOST_SECRET"]' } },
       environmentEnv: { SHARED: "environment", [key]: '["HOST_SECRET"]' },
       projectEnv: { SHARED: "project", [key]: '["HOST_SECRET"]' },
       routineEnv: { SHARED: "routine", [key]: '["HOST_SECRET"]' },
@@ -44,7 +44,7 @@ describe("resolveExecutionRunAdapterConfig", () => {
         resolveAdapterConfigForRuntime: vi.fn(async (companyId, config) => {
           expect(companyId).toBe("company-1");
           expect(config.env[key]).toBeUndefined();
-          return { config: { ...config, env: { ...config.env, PAPERCLIP_PAGE_AWS_SECRET_ACCESS_KEY: "resolved-task-secret" } }, secretKeys: new Set(["PAPERCLIP_PAGE_AWS_SECRET_ACCESS_KEY"]), manifest: [] };
+          return { config: { ...config, env: { ...config.env, PILIBALA_PAGE_AWS_SECRET_ACCESS_KEY: "resolved-task-secret" } }, secretKeys: new Set(["PILIBALA_PAGE_AWS_SECRET_ACCESS_KEY"]), manifest: [] };
         }),
         resolveEnvBindings: vi.fn(async (companyId, env) => {
           expect(companyId).toBe("company-1");
@@ -54,7 +54,7 @@ describe("resolveExecutionRunAdapterConfig", () => {
       } as any,
     });
     expect(result.configuredTaskEnvironment).toEqual({
-      PAPERCLIP_PAGE_AWS_SECRET_ACCESS_KEY: "resolved-task-secret", SHARED: "routine",
+      PILIBALA_PAGE_AWS_SECRET_ACCESS_KEY: "resolved-task-secret", SHARED: "routine",
     });
     expect(result.resolvedConfig.env).not.toHaveProperty(key);
     expect(result.configuredTaskEnvironment).not.toHaveProperty(key);
@@ -62,7 +62,7 @@ describe("resolveExecutionRunAdapterConfig", () => {
 
   it("does not preflight or resolve legacy GitHub token bindings for managed executions", async () => {
     const assertNoGitHubBinding = (env: Record<string, unknown>) => {
-      for (const key of Object.keys(env)) if (/^(GH_TOKEN|GITHUB_TOKEN|GH_ENTERPRISE_TOKEN|GITHUB_ENTERPRISE_TOKEN|PAPERCLIP_GIT_TOKEN)$/.test(key)) {
+      for (const key of Object.keys(env)) if (/^(GH_TOKEN|GITHUB_TOKEN|GH_ENTERPRISE_TOKEN|GITHUB_ENTERPRISE_TOKEN|PILIBALA_GIT_TOKEN)$/.test(key)) {
         throw new Error("Unavailable legacy GitHub secret must not be resolved at startup");
       }
     };
@@ -73,7 +73,7 @@ describe("resolveExecutionRunAdapterConfig", () => {
       executionRunConfig: { env: { GH_TOKEN: missing, AGENT_VALUE: "ok" } },
       environmentEnv: { GITHUB_TOKEN: missing, ENVIRONMENT_VALUE: "ok" },
       projectEnv: { GH_ENTERPRISE_TOKEN: missing, PROJECT_VALUE: "ok" },
-      routineEnv: { GITHUB_ENTERPRISE_TOKEN: missing, PAPERCLIP_GIT_TOKEN: missing, ROUTINE_VALUE: "ok" },
+      routineEnv: { GITHUB_ENTERPRISE_TOKEN: missing, PILIBALA_GIT_TOKEN: missing, ROUTINE_VALUE: "ok" },
       secretsSvc: {
         collectMissingRuntimeBindings: vi.fn(async (_companyId, env) => { assertNoGitHubBinding(env); return []; }),
         resolveAdapterConfigForRuntime: vi.fn(async (_companyId, config) => {
@@ -210,7 +210,7 @@ describe("resolveExecutionRunAdapterConfig", () => {
     });
   });
 
-  it("drops PAPERCLIP_API_KEY bindings but forwards other PAPERCLIP_-named env to resolution", async () => {
+  it("drops PILIBALA_API_KEY bindings but forwards other PILIBALA_-named env to resolution", async () => {
     const resolveAdapterConfigForRuntime = vi.fn(async (_companyId, config: Record<string, unknown>) => ({
       config: {
         ...config,
@@ -232,26 +232,26 @@ describe("resolveExecutionRunAdapterConfig", () => {
       agentId: "agent-1",
       environmentId: "environment-1",
       environmentEnv: {
-        PAPERCLIP_API_KEY: "environment-api-key",
-        PAPERCLIP_RUNNER_NETWORK_ACCESS: "enabled",
-        PAPERCLIP_CLOUD_PROVIDER_TOKEN_ENV: "environment-cloud",
+        PILIBALA_API_KEY: "environment-api-key",
+        PILIBALA_RUNNER_NETWORK_ACCESS: "enabled",
+        PILIBALA_CLOUD_PROVIDER_TOKEN_ENV: "environment-cloud",
         ENV_ONLY: "environment-only",
       },
       executionRunConfig: {
         env: {
-          PAPERCLIP_API_KEY: { type: "secret_ref", secretId: "secret-api-key", version: "latest" },
-          PAPERCLIP_CLOUD_PROVIDER_TOKEN_AGENT: "agent-cloud",
+          PILIBALA_API_KEY: { type: "secret_ref", secretId: "secret-api-key", version: "latest" },
+          PILIBALA_CLOUD_PROVIDER_TOKEN_AGENT: "agent-cloud",
           AGENT_ONLY: "agent-only",
         },
       },
       projectEnv: {
-        PAPERCLIP_API_KEY: "project-api-key",
-        PAPERCLIP_CLOUD_PROVIDER_TOKEN_PROJECT: "project-cloud",
+        PILIBALA_API_KEY: "project-api-key",
+        PILIBALA_CLOUD_PROVIDER_TOKEN_PROJECT: "project-cloud",
         PROJECT_ONLY: "project-only",
       },
       routineEnv: {
-        PAPERCLIP_API_KEY: "routine-api-key",
-        PAPERCLIP_CLOUD_PROVIDER_TOKEN_ROUTINE: "routine-cloud",
+        PILIBALA_API_KEY: "routine-api-key",
+        PILIBALA_CLOUD_PROVIDER_TOKEN_ROUTINE: "routine-cloud",
         ROUTINE_ONLY: "routine-only",
       },
       routineId: "routine-1",
@@ -262,35 +262,35 @@ describe("resolveExecutionRunAdapterConfig", () => {
     });
 
     expect(resolveEnvBindings.mock.calls[0]?.[1]).toEqual({
-      PAPERCLIP_CLOUD_PROVIDER_TOKEN_ENV: "environment-cloud",
+      PILIBALA_CLOUD_PROVIDER_TOKEN_ENV: "environment-cloud",
       ENV_ONLY: "environment-only",
     });
     expect(resolveAdapterConfigForRuntime.mock.calls[0]?.[1]).toEqual({
       env: {
-        PAPERCLIP_CLOUD_PROVIDER_TOKEN_AGENT: "agent-cloud",
+        PILIBALA_CLOUD_PROVIDER_TOKEN_AGENT: "agent-cloud",
         AGENT_ONLY: "agent-only",
       },
     });
     expect(resolveEnvBindings.mock.calls[1]?.[1]).toEqual({
-      PAPERCLIP_CLOUD_PROVIDER_TOKEN_PROJECT: "project-cloud",
+      PILIBALA_CLOUD_PROVIDER_TOKEN_PROJECT: "project-cloud",
       PROJECT_ONLY: "project-only",
     });
     expect(resolveEnvBindings.mock.calls[2]?.[1]).toEqual({
-      PAPERCLIP_CLOUD_PROVIDER_TOKEN_ROUTINE: "routine-cloud",
+      PILIBALA_CLOUD_PROVIDER_TOKEN_ROUTINE: "routine-cloud",
       ROUTINE_ONLY: "routine-only",
     });
     expect(result.resolvedConfig.env).toEqual({
-      PAPERCLIP_CLOUD_PROVIDER_TOKEN_ENV: "environment-cloud",
+      PILIBALA_CLOUD_PROVIDER_TOKEN_ENV: "environment-cloud",
       ENV_ONLY: "environment-only",
-      PAPERCLIP_CLOUD_PROVIDER_TOKEN_AGENT: "agent-cloud",
+      PILIBALA_CLOUD_PROVIDER_TOKEN_AGENT: "agent-cloud",
       AGENT_ONLY: "agent-only",
-      PAPERCLIP_CLOUD_PROVIDER_TOKEN_PROJECT: "project-cloud",
+      PILIBALA_CLOUD_PROVIDER_TOKEN_PROJECT: "project-cloud",
       PROJECT_ONLY: "project-only",
-      PAPERCLIP_CLOUD_PROVIDER_TOKEN_ROUTINE: "routine-cloud",
+      PILIBALA_CLOUD_PROVIDER_TOKEN_ROUTINE: "routine-cloud",
       ROUTINE_ONLY: "routine-only",
     });
-    expect(JSON.stringify(result.resolvedConfig.env)).not.toContain("PAPERCLIP_API_KEY");
-    expect(JSON.stringify(result.resolvedConfig.env)).not.toContain("PAPERCLIP_RUNNER_NETWORK_ACCESS");
+    expect(JSON.stringify(result.resolvedConfig.env)).not.toContain("PILIBALA_API_KEY");
+    expect(JSON.stringify(result.resolvedConfig.env)).not.toContain("PILIBALA_RUNNER_NETWORK_ACCESS");
   });
 
   it("skips project env resolution when the project has no bindings", async () => {
@@ -633,9 +633,9 @@ describe("resolveExecutionRunAdapterConfig codex_local credential pre-dispatch g
   });
 
   async function stubManagedCodexEnv(options: { seedSharedAuth: boolean }) {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-gate-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-gate-"));
     cleanupDirs.push(root);
-    const paperclipHome = path.join(root, "paperclip-home");
+    const pilibalaHome = path.join(root, "pilibala-home");
     const sharedCodexHome = path.join(root, "shared-codex-home");
     await fs.mkdir(sharedCodexHome, { recursive: true });
     if (options.seedSharedAuth) {
@@ -645,11 +645,11 @@ describe("resolveExecutionRunAdapterConfig codex_local credential pre-dispatch g
         "utf8",
       );
     }
-    vi.stubEnv("PAPERCLIP_HOME", paperclipHome);
-    vi.stubEnv("PAPERCLIP_INSTANCE_ID", "default");
+    vi.stubEnv("PILIBALA_HOME", pilibalaHome);
+    vi.stubEnv("PILIBALA_INSTANCE_ID", "default");
     vi.stubEnv("CODEX_HOME", sharedCodexHome);
     const managedAgentHome = path.join(
-      paperclipHome,
+      pilibalaHome,
       "instances",
       "default",
       "companies",
@@ -848,30 +848,30 @@ describe("applyRunScopedMentionedSkillKeys", () => {
   it("adds mentioned skills without mutating the original config", () => {
     const originalConfig = {
       command: "codex",
-      paperclipSkillSync: {
-        desiredSkills: ["paperclipai/paperclip/paperclip"],
+      pilibalaSkillSync: {
+        desiredSkills: ["pilibalaai/pilibala/pilibala"],
       },
     };
 
     const updatedConfig = applyRunScopedMentionedSkillKeys(originalConfig, [
       "company/company-1/release-changelog",
-      "paperclipai/paperclip/paperclip",
+      "pilibalaai/pilibala/pilibala",
       "company/company-1/release-changelog",
     ]);
 
     expect(updatedConfig).toEqual({
       command: "codex",
-      paperclipSkillSync: {
+      pilibalaSkillSync: {
         desiredSkills: [
-          "paperclipai/paperclip/paperclip",
+          "pilibalaai/pilibala/pilibala",
           "company/company-1/release-changelog",
         ],
       },
     });
     expect(originalConfig).toEqual({
       command: "codex",
-      paperclipSkillSync: {
-        desiredSkills: ["paperclipai/paperclip/paperclip"],
+      pilibalaSkillSync: {
+        desiredSkills: ["pilibalaai/pilibala/pilibala"],
       },
     });
   });
@@ -879,7 +879,7 @@ describe("applyRunScopedMentionedSkillKeys", () => {
   it("preserves existing version pins when adding mentioned skills", () => {
     const originalConfig = {
       command: "codex",
-      paperclipSkillSync: {
+      pilibalaSkillSync: {
         desiredSkills: [
           { key: "company/company-1/release-changelog", versionId: "version-1" },
         ],
@@ -892,7 +892,7 @@ describe("applyRunScopedMentionedSkillKeys", () => {
 
     expect(updatedConfig).toEqual({
       command: "codex",
-      paperclipSkillSync: {
+      pilibalaSkillSync: {
         desiredSkills: [
           { key: "company/company-1/release-changelog", versionId: "version-1" },
           { key: "company/company-1/security-review", versionId: null },

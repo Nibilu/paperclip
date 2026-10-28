@@ -169,7 +169,7 @@ beforeEach(() => {
     "codex_local",
     "opencode_local",
     "pi_local",
-    "paperclip_runner", "cursor_cloud", "cursor", "gemini_local", "kimi_local", "grok_local", "hermes_local", "hermes_gateway",
+    "pilibala_runner", "cursor_cloud", "cursor", "gemini_local", "kimi_local", "grok_local", "hermes_local", "hermes_gateway",
   ].map((type) => ({ type, loaded: true, disabled: false }));
   api.adapterModels.mockResolvedValue([]);
   api.list.mockResolvedValue([{ id: "ceo", role: "ceo", status: "idle" }]);
@@ -207,7 +207,7 @@ describe("New agent setup", () => {
       { id: "linux-ssh", name: "Linux", driver: "ssh", status: "active", config: {} },
     ]);
     adapterApi.list.mockImplementation(async (context?: { environmentId?: string | null }) => state.adapters.map((adapter: any) =>
-      adapter.type === "codex_local" ? { ...adapter, supportedRunners: context?.environmentId === "linux-ssh" ? ["paperclip", "legacy"] : ["legacy"], defaultRunner: context?.environmentId === "linux-ssh" ? "paperclip" : "legacy" } : adapter));
+      adapter.type === "codex_local" ? { ...adapter, supportedRunners: context?.environmentId === "linux-ssh" ? ["pilibala", "legacy"] : ["legacy"], defaultRunner: context?.environmentId === "linux-ssh" ? "pilibala" : "legacy" } : adapter));
     await render("codex_local");
     await act(async () => (container.querySelector("summary") as HTMLElement).click());
     const runner = container.querySelector<HTMLButtonElement>('[aria-label="Runner"]')!;
@@ -229,14 +229,14 @@ describe("New agent setup", () => {
     settings.getExperimental.mockResolvedValue({ enableNativeRunner: false });
     adapterApi.list.mockImplementation(async () => state.adapters.map((adapter: any) => adapter.type === "codex_local" ? { ...adapter, supportedRunners: ["legacy"], defaultRunner: "legacy" } : adapter));
     api.testEnvironment.mockImplementation(async (_company, adapterType, payload) => {
-      if (adapterType === "codex_local" && payload.runner === "paperclip") throw new Error("This target is not qualified for a new native default.");
-      return { ...pass, adapterType, checks: [{ code: "paperclip_runner_codex_hello_probe_passed", level: "info", message: "Native runtime replied" }] };
+      if (adapterType === "codex_local" && payload.runner === "pilibala") throw new Error("This target is not qualified for a new native default.");
+      return { ...pass, adapterType, checks: [{ code: "pilibala_runner_codex_hello_probe_passed", level: "info", message: "Native runtime replied" }] };
     });
-    await render("paperclip_runner", "codex");
+    await render("pilibala_runner", "codex");
     await connect("OpenAI");
     await click("Finish setup");
-    expect(api.testEnvironment).toHaveBeenCalledWith("company-1", "paperclip_runner", expect.objectContaining({ runner: "paperclip", adapterConfig: expect.objectContaining({ provider: "codex" }) }));
-    expect(api.hire.mock.calls[0][1]).toMatchObject({ adapterType: "paperclip_runner", runner: "paperclip", adapterConfig: { provider: "codex" } });
+    expect(api.testEnvironment).toHaveBeenCalledWith("company-1", "pilibala_runner", expect.objectContaining({ runner: "pilibala", adapterConfig: expect.objectContaining({ provider: "codex" }) }));
+    expect(api.hire.mock.calls[0][1]).toMatchObject({ adapterType: "pilibala_runner", runner: "pilibala", adapterConfig: { provider: "codex" } });
   });
 
   it("discovers the runner for the selected target and rechecks after changing environments", async () => {
@@ -246,10 +246,10 @@ describe("New agent setup", () => {
       { id: "linux-ssh", name: "Linux", driver: "ssh", status: "active", config: {} },
     ]);
     adapterApi.list.mockImplementation(async (context?: { companyId: string; environmentId?: string | null }) => state.adapters.map((adapter: any) =>
-      adapter.type === "codex_local" ? { ...adapter, supportedRunners: ["paperclip", "legacy"], defaultRunner: context?.environmentId === "linux-ssh" ? "paperclip" : "legacy" } : adapter));
+      adapter.type === "codex_local" ? { ...adapter, supportedRunners: ["pilibala", "legacy"], defaultRunner: context?.environmentId === "linux-ssh" ? "pilibala" : "legacy" } : adapter));
     await render("codex_local");
     await act(async () => (container.querySelector("summary") as HTMLElement).click());
-    expect(container.querySelector('[aria-label="Runner"]')?.textContent).toBe("Paperclip Runner (default)");
+    expect(container.querySelector('[aria-label="Runner"]')?.textContent).toBe("Pilibala Runner (default)");
     expect(adapterApi.list).toHaveBeenCalledWith({ companyId: "company-1", environmentId: "linux-ssh" });
     await connect("OpenAI");
     expect(api.testEnvironment.mock.calls[0][2].environmentId).toBe("linux-ssh");
@@ -290,10 +290,10 @@ describe("New agent setup", () => {
   it.each(["Linux x64", "Mac arm64", "Mac x64"])("uses automatic Codex resolution through setup and hire without the experimental gate (%s)", async name => {
     settings.getExperimental.mockResolvedValue({ enableNativeRunner: false });
     envApi.list.mockResolvedValue([{ id: "local-1", name, driver: "local", status: "active", config: {} }]);
-    state.adapters = (state.adapters as any[]).map(adapter => adapter.type === "codex_local" ? { ...adapter, supportedRunners: ["paperclip", "legacy"], defaultRunner: "paperclip" } : adapter);
+    state.adapters = (state.adapters as any[]).map(adapter => adapter.type === "codex_local" ? { ...adapter, supportedRunners: ["pilibala", "legacy"], defaultRunner: "pilibala" } : adapter);
     await render("codex_local");
     await act(async () => (container.querySelector("summary") as HTMLElement).click());
-    expect(container.querySelector('[aria-label="Runner"]')?.textContent).toBe("Paperclip Runner (default)");
+    expect(container.querySelector('[aria-label="Runner"]')?.textContent).toBe("Pilibala Runner (default)");
     await connect("OpenAI");
     await click("Finish setup");
     expect(api.hire.mock.calls[0][1].adapterType).toBe("codex_local");
@@ -304,7 +304,7 @@ describe("New agent setup", () => {
   });
 
   it("allows the explicit legacy override before authentication and rechecks it after a runner change", async () => {
-    state.adapters = (state.adapters as any[]).map(adapter => adapter.type === "codex_local" ? { ...adapter, supportedRunners: ["paperclip", "legacy"], defaultRunner: "paperclip" } : adapter);
+    state.adapters = (state.adapters as any[]).map(adapter => adapter.type === "codex_local" ? { ...adapter, supportedRunners: ["pilibala", "legacy"], defaultRunner: "pilibala" } : adapter);
     await render("codex_local");
     await act(async () => (container.querySelector("summary") as HTMLElement).click());
     await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Runner"]')!.click());
@@ -313,14 +313,14 @@ describe("New agent setup", () => {
     expect(api.testEnvironment.mock.calls[0][2].runner).toBe("legacy");
     await act(async () => (container.querySelector("summary") as HTMLElement).click());
     await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Runner"]')!.click());
-    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('[role="option"]')].find(option => option.textContent === "Paperclip Runner (default)")!.click());
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('[role="option"]')].find(option => option.textContent === "Pilibala Runner (default)")!.click());
     await click("Finish setup");
-    expect(api.testEnvironment).toHaveBeenLastCalledWith("company-1", "codex_local", expect.objectContaining({ runner: "paperclip" }));
-    expect(api.hire.mock.calls[0][1]).toMatchObject({ adapterType: "codex_local", runner: "paperclip" });
+    expect(api.testEnvironment).toHaveBeenLastCalledWith("company-1", "codex_local", expect.objectContaining({ runner: "pilibala" }));
+    expect(api.hire.mock.calls[0][1]).toMatchObject({ adapterType: "codex_local", runner: "pilibala" });
   });
   it("creates Dot through its independent choice without CLI or model setup, then routes to pairing", async () => {
     settings.getExperimental.mockResolvedValue({ enableNativeRunner: false, enableOpenAiDot: true, enablePublicMcp: true });
-    await render("paperclip_runner", "openai_dot");
+    await render("pilibala_runner", "openai_dot");
     expect(container.textContent).toContain("OpenAI Dot");
     expect(container.querySelector('[aria-label="Model"]')).toBeNull();
     expect(container.textContent).not.toContain("Connect a model");
@@ -331,7 +331,7 @@ describe("New agent setup", () => {
     expect(container.textContent).toContain("Acknowledge external provider billing");
     await act(async () => container.querySelector<HTMLButtonElement>('[role="switch"]')!.click());
     await click("Finish setup");
-    expect(api.hire).toHaveBeenCalledWith("company-1", expect.objectContaining({ adapterType: "paperclip_runner", adapterConfig: {
+    expect(api.hire).toHaveBeenCalledWith("company-1", expect.objectContaining({ adapterType: "pilibala_runner", adapterConfig: {
       provider: "openai_dot", lifecycleMode: "per_turn", allowUnmeteredProvider: true, dotWorkspaceAccess: false, dotAttachmentAccess: false,
     } }));
     expect(container.textContent).toContain("Your Dot agent has been created");
@@ -392,7 +392,7 @@ describe("New agent setup", () => {
       definition: { id: "grok-key", companyId: "company-1", key: "XAI_API_KEY", name: "Grok key", status: "active" },
       secret: { companyId: "company-1", status: "active" },
     }]);
-    await render("paperclip_runner", "grok");
+    await render("pilibala_runner", "grok");
     expect(container.querySelector('select[aria-label="Environment"]')).toBeNull();
     await click("GrokAPI key");
     await click("Use saved API key");
@@ -408,14 +408,14 @@ describe("New agent setup", () => {
       await click("GrokAPI key");
       await click("Use saved API key");
     }
-    expect(api.testEnvironment).toHaveBeenCalledWith("company-1", "paperclip_runner", expect.objectContaining({ environmentId: "grok-sandbox" }));
+    expect(api.testEnvironment).toHaveBeenCalledWith("company-1", "pilibala_runner", expect.objectContaining({ environmentId: "grok-sandbox" }));
     await click("Finish setup");
     expect(api.hire.mock.calls[0][1].defaultEnvironmentId).toBe("grok-sandbox");
   });
   it.each([false, true])("keeps non-Codex runner setup links gated when the experiment is disabled (cloud=%s)", async (cloud) => {
     cache.setQueryData(queryKeys.health, { status: "ok", cloud: { managed: cloud } });
     settings.getExperimental.mockResolvedValue({ enableNativeRunner: false });
-    await render("paperclip_runner", "claude");
+    await render("pilibala_runner", "claude");
     expect(container.textContent).toContain("This adapter is unavailable");
     expect(api.hire).not.toHaveBeenCalled();
   });
@@ -430,14 +430,14 @@ describe("New agent setup", () => {
   });
   it.each([
     ["grok_local", "subscription"], ["grok_local", "api_key"],
-    ["paperclip_runner", "subscription"], ["paperclip_runner", "api_key"],
+    ["pilibala_runner", "subscription"], ["pilibala_runner", "api_key"],
   ])("configures %s Grok on Cloud with an xAI %s connection", async (adapterType, method) => {
     cache.setQueryData(queryKeys.health, {
       status: "ok",
       cloud: { managed: true },
     });
     envApi.list.mockResolvedValue([
-      { id: "sandbox-1", name: "Paperclip Cloud", driver: "sandbox", config: { provider: "daytona" } },
+      { id: "sandbox-1", name: "Pilibala Cloud", driver: "sandbox", config: { provider: "daytona" } },
     ]);
     envApi.capabilities.mockResolvedValue({
       sandboxProviders: { daytona: { supportsLoginPty: true } },
@@ -460,13 +460,13 @@ describe("New agent setup", () => {
         provider: "xai", method: "api_key", apiKey: "example-test-secret",
       }));
     }
-    const model = adapterType === "paperclip_runner" ? "grok-4.7" : "grok-code-fast-1";
+    const model = adapterType === "pilibala_runner" ? "grok-4.7" : "grok-code-fast-1";
     await fill("Model", model);
     await click("Run test");
     const binding = { provider: "xai", method, mode: "responsible_user" };
     expect(api.testEnvironment).toHaveBeenLastCalledWith("company-1", adapterType, expect.objectContaining({
       environmentId: "sandbox-1",
-      adapterConfig: expect.objectContaining({ model, ...(adapterType === "paperclip_runner" ? { provider: "acpx", acpxAgent: "grok", acpxPermissionMode: "approve-all" } : {}) }),
+      adapterConfig: expect.objectContaining({ model, ...(adapterType === "pilibala_runner" ? { provider: "acpx", acpxAgent: "grok", acpxPermissionMode: "approve-all" } : {}) }),
       aiConnection: binding,
       testCredentials: {},
     }));
@@ -475,7 +475,7 @@ describe("New agent setup", () => {
     expect(api.hire.mock.calls[0][1]).toMatchObject({
       adapterType,
       defaultEnvironmentId: "sandbox-1",
-      adapterConfig: { model, ...(adapterType === "paperclip_runner" ? { provider: "acpx", acpxAgent: "grok", acpxPermissionMode: "approve-all" } : {}) },
+      adapterConfig: { model, ...(adapterType === "pilibala_runner" ? { provider: "acpx", acpxAgent: "grok", acpxPermissionMode: "approve-all" } : {}) },
       runtimeConfig: { aiConnection: binding, heartbeat: { enabled: false } },
     });
     expect(JSON.stringify(api.testEnvironment.mock.calls)).not.toContain("example-test-secret");
@@ -486,18 +486,18 @@ describe("New agent setup", () => {
     await render("cursor_cloud");
     expect(container.querySelector('[aria-label="Model"]')).toBeNull();
     expect(container.querySelector('[aria-label="Thinking effort"]')).toBeNull();
-    await fill("GitHub repository", "https://github.com/paperclipai/paperclip");
+    await fill("GitHub repository", "https://github.com/pilibalaai/pilibala");
     await fill("Branch", "master");
     await fill("CURSOR_API_KEY", "cursor-test-key");
     await click("Run test");
     expect(api.testEnvironment.mock.calls[0][2]).toMatchObject({
-      adapterConfig: { repoUrl: "https://github.com/paperclipai/paperclip", repoStartingRef: "master" },
+      adapterConfig: { repoUrl: "https://github.com/pilibalaai/pilibala", repoStartingRef: "master" },
       testCredentials: { CURSOR_API_KEY: "cursor-test-key" },
     });
     expect(secrets.create).not.toHaveBeenCalled();
     await click("Finish setup");
     const config = api.hire.mock.calls[0][1].adapterConfig;
-    expect(config).toMatchObject({ repoUrl: "https://github.com/paperclipai/paperclip", repoStartingRef: "master", env: {
+    expect(config).toMatchObject({ repoUrl: "https://github.com/pilibalaai/pilibala", repoStartingRef: "master", env: {
       CURSOR_API_KEY: { type: "secret_ref", secretId: "org-secret-1", version: "latest" },
     } });
     expect(config).not.toHaveProperty("repository");
@@ -647,8 +647,8 @@ describe("New agent setup", () => {
   it.each([
     ["claude_local", "claude", "Claude", "ANTHROPIC_API_KEY"],
     ["codex_local", "codex", "OpenAI", "OPENAI_API_KEY"],
-    ["paperclip_runner", "claude", "Claude", "ANTHROPIC_API_KEY"],
-    ["paperclip_runner", "codex", "OpenAI", "OPENAI_API_KEY"],
+    ["pilibala_runner", "claude", "Claude", "ANTHROPIC_API_KEY"],
+    ["pilibala_runner", "codex", "OpenAI", "OPENAI_API_KEY"],
   ])("stores %s %s as a reusable connection before hiring", async (adapter, runner, provider, key) => {
     await render(adapter, runner);
     await click(provider + "API key");
@@ -669,8 +669,8 @@ describe("New agent setup", () => {
   it.each([
     ["claude_local", "claude", "Claude", "ANTHROPIC_API_KEY"],
     ["codex_local", "codex", "OpenAI", "OPENAI_API_KEY"],
-    ["paperclip_runner", "claude", "Claude", "ANTHROPIC_API_KEY"],
-    ["paperclip_runner", "codex", "OpenAI", "OPENAI_API_KEY"],
+    ["pilibala_runner", "claude", "Claude", "ANTHROPIC_API_KEY"],
+    ["pilibala_runner", "codex", "OpenAI", "OPENAI_API_KEY"],
   ])("defaults %s %s to a saved key and preserves its reference through hire", async (adapter, runner, provider, key) => {
     secrets.listMyUserSecrets.mockResolvedValue([{
       definition: { id: "existing-key", companyId: "company-1", key, name: "Existing key", status: "active" },
@@ -689,7 +689,7 @@ describe("New agent setup", () => {
     expect(secrets.createMyUserSecret).not.toHaveBeenCalled();
     expect(secrets.rotateMyUserSecret).not.toHaveBeenCalled();
   });
-  it.each(["codex_local", "paperclip_runner"])("keeps a saved connection chosen in Connect when hiring %s", async (adapter) => {
+  it.each(["codex_local", "pilibala_runner"])("keeps a saved connection chosen in Connect when hiring %s", async (adapter) => {
     await render(adapter, "codex");
     managedApi.list.mockResolvedValue({
       currentUserId: "user-1",
@@ -837,15 +837,15 @@ describe("New agent setup", () => {
   it.each(["codex", "claude", "opencode"])(
     "uses the correct native %s runner",
     async (runner) => {
-      await render("paperclip_runner", runner);
+      await render("pilibala_runner", runner);
       if (runner !== "opencode")
         await connect(runner === "claude" ? "Claude" : "OpenAI");
       else await fill("Model", "openrouter/anthropic/claude-sonnet-4.6");
       await click("Finish setup");
       const config = api.hire.mock.calls[0][1].adapterConfig;
       if (runner === "codex") {
-        expect(api.hire.mock.calls[0][1]).toMatchObject({ adapterType: "paperclip_runner", runner: "paperclip" });
-        expect(api.testEnvironment).toHaveBeenCalledWith("company-1", "paperclip_runner", expect.objectContaining({ runner: "paperclip" }));
+        expect(api.hire.mock.calls[0][1]).toMatchObject({ adapterType: "pilibala_runner", runner: "pilibala" });
+        expect(api.testEnvironment).toHaveBeenCalledWith("company-1", "pilibala_runner", expect.objectContaining({ runner: "pilibala" }));
       } else expect(config.provider).toBe(runner === "claude" ? "acpx" : runner);
       if (runner === "claude") {
         expect(config.acpxAgent).toBe("claude");
@@ -915,9 +915,9 @@ describe("New agent setup", () => {
   it("blocks a disabled runner even when opened through a URL", async () => {
     state.adapters = [
       { type: "codex_local", loaded: true, disabled: false },
-      { type: "paperclip_runner", loaded: true, disabled: true },
+      { type: "pilibala_runner", loaded: true, disabled: true },
     ];
-    await render("paperclip_runner");
+    await render("pilibala_runner");
     expect(container.textContent).toContain("This adapter is unavailable");
     expect(api.testEnvironment).not.toHaveBeenCalled();
     expect(api.hire).not.toHaveBeenCalled();

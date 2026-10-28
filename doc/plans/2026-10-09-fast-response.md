@@ -14,7 +14,7 @@ Optional company-wide acknowledgements use existing API connections, preserve th
 
 ## Evidence collected
 
-Isolated checkout `codex/fast-response`, app at `http://127.0.0.1:3109`, cloned database under `/private/tmp/paperclip-fast-response-home`.
+Isolated checkout `codex/fast-response`, app at `http://127.0.0.1:3109`, cloned database under `/private/tmp/pilibala-fast-response-home`.
 
 - Live OpenRouter `openai/gpt-oss-120b` settings test: UI 0.95 seconds, 212 input / 31 output tokens, reported cost 0.00504 cents.
 - Live task `DOT-302`: initial acknowledgement admitted in 1.013 seconds, 261 input / 38 output tokens, reported cost 0.006195 cents. Subsequent human turns also received receipts.
@@ -35,7 +35,7 @@ Isolated checkout `codex/fast-response`, app at `http://127.0.0.1:3109`, cloned 
 ## Verification still required
 
 - Live Slack bot creation and conversation; browser login completed. A narrow callback relay is prepared. Cloudflare tunneling was rejected by automatic approval review; explicit user authorization is pending.
-- Live GitHub test journey in `paperclipai/paperclip-permissions-smoke-20260926-pap57-fee7428e`.
+- Live GitHub test journey in `pilibalaai/pilibala-permissions-smoke-20260926-pap57-fee7428e`.
 - Latest-head CI and automated review. CI identified additional startup/route fixtures and exact guidance/wiring expectations that need to include fast responses; the corrected focused runs passed (12 closed-workspace routes, 5 native answer continuations, 36 startup tests, and 14 publication/reconciliation tests). Native continuation verification explicitly disables the ambient worktree suppression flag only in the test process. Copied historical run recovery failed during live testing; execution in the cloned workspace is now disarmed, and the app health endpoint reports startup ready.
 
 No credentials or prompt bodies belong in this record.

@@ -29,14 +29,14 @@ time.sleep(2)
 command = [
     "/home/amber/.nvm/versions/node/v24.19.0/bin/node",
     "--require",
-    "/home/amber/paperclip/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/preflight.cjs",
+    "/home/amber/pilibala/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/preflight.cjs",
     "--import",
-    "file:///home/amber/paperclip/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/loader.mjs",
+    "file:///home/amber/pilibala/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/loader.mjs",
     "src/index.ts",
 ]
 process = subprocess.Popen(
     command,
-    cwd="/home/amber/paperclip/server",
+    cwd="/home/amber/pilibala/server",
     env=env,
     stdout=subprocess.DEVNULL,
     stderr=subprocess.DEVNULL,

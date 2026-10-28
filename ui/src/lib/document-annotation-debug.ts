@@ -1,4 +1,4 @@
-export const SELECTION_DEBUG_STORAGE_KEY = "paperclipDebugSelection";
+export const SELECTION_DEBUG_STORAGE_KEY = "pilibalaDebugSelection";
 
 type SelectionDebugEvent = {
   at: number;
@@ -26,7 +26,7 @@ type SelectionDebugState = {
 
 declare global {
   interface Window {
-    __paperclipSelectionDebug?: SelectionDebugState;
+    __pilibalaSelectionDebug?: SelectionDebugState;
   }
 }
 
@@ -97,11 +97,11 @@ export function isSelectionDebugEnabled(): boolean {
 }
 
 export function initializeSelectionDebug(): SelectionDebugState {
-  if (!window.__paperclipSelectionDebug) {
-    window.__paperclipSelectionDebug = createState();
-    console.info(`[paperclip selection debug] enabled; set localStorage.${SELECTION_DEBUG_STORAGE_KEY} = "0" and reload to disable`);
+  if (!window.__pilibalaSelectionDebug) {
+    window.__pilibalaSelectionDebug = createState();
+    console.info(`[pilibala selection debug] enabled; set localStorage.${SELECTION_DEBUG_STORAGE_KEY} = "0" and reload to disable`);
   }
-  return window.__paperclipSelectionDebug;
+  return window.__pilibalaSelectionDebug;
 }
 
 function record(type: string, details: SelectionDebugEvent["details"]): void {
@@ -109,7 +109,7 @@ function record(type: string, details: SelectionDebugEvent["details"]): void {
   const event = { at: now(), type, details };
   state.events.push(event);
   if (state.events.length > MAX_DEBUG_EVENTS) state.events.shift();
-  console.debug("[paperclip selection debug]", event);
+  console.debug("[pilibala selection debug]", event);
 }
 
 export function recordSelectionChange(active: boolean): void {

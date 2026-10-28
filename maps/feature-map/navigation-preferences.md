@@ -28,7 +28,7 @@ Use starred/recent/sidebar links and direct company-prefixed URLs.
 
 Use Settings → Profile, `/u/:userSlug`, and the announcement well when a publication is available.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use two test users and companies; record the selected UI shell and any client-local preference storage.
 

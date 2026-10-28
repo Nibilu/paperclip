@@ -14,8 +14,8 @@ import {
   folders,
   projects,
   projectWorkspaces,
-} from "@paperclipai/db";
-import { parseFrontmatterMarkdown } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { parseFrontmatterMarkdown } from "@pilibalaai/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -37,14 +37,14 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   let db!: ReturnType<typeof createDb>;
   let svc!: ReturnType<typeof companySkillService>;
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
-  let oldPaperclipHome: string | undefined;
-  let oldPaperclipInstanceId: string | undefined;
-  let paperclipHome: string | null = null;
+  let oldPilibalaHome: string | undefined;
+  let oldPilibalaInstanceId: string | undefined;
+  let pilibalaHome: string | null = null;
   const cleanupDirs = new Set<string>();
 
   async function createManagedSkillDir(companyId: string, prefix: string) {
-    if (!paperclipHome) throw new Error("Expected Paperclip test home");
-    const managedRoot = path.join(paperclipHome, "instances", "default", "skills", companyId);
+    if (!pilibalaHome) throw new Error("Expected Pilibala test home");
+    const managedRoot = path.join(pilibalaHome, "instances", "default", "skills", companyId);
     await fs.mkdir(managedRoot, { recursive: true });
     const skillDir = await fs.mkdtemp(path.join(managedRoot, prefix));
     cleanupDirs.add(skillDir);
@@ -52,19 +52,19 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   }
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-company-skills-service-");
-    oldPaperclipHome = process.env.PAPERCLIP_HOME;
-    oldPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
-    paperclipHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-company-skills-home-"));
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "default";
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-company-skills-service-");
+    oldPilibalaHome = process.env.PILIBALA_HOME;
+    oldPilibalaInstanceId = process.env.PILIBALA_INSTANCE_ID;
+    pilibalaHome = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-company-skills-home-"));
+    process.env.PILIBALA_HOME = pilibalaHome;
+    process.env.PILIBALA_INSTANCE_ID = "default";
     db = createDb(tempDb.connectionString);
     svc = companySkillService(db);
   }, 20_000);
 
   afterEach(async () => {
     for (const skill of await db.select().from(companySkills)) {
-      await removeRuntimeSkillCache(path.join(paperclipHome!, "instances", "default", "skills", skill.companyId), skill.id);
+      await removeRuntimeSkillCache(path.join(pilibalaHome!, "instances", "default", "skills", skill.companyId), skill.id);
     }
     await db.delete(agents);
     await db.delete(companySkills);
@@ -78,12 +78,12 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   });
 
   afterAll(async () => {
-    if (oldPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-    else process.env.PAPERCLIP_HOME = oldPaperclipHome;
-    if (oldPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-    else process.env.PAPERCLIP_INSTANCE_ID = oldPaperclipInstanceId;
-    if (paperclipHome) {
-      await fs.rm(paperclipHome, { recursive: true, force: true });
+    if (oldPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+    else process.env.PILIBALA_HOME = oldPilibalaHome;
+    if (oldPilibalaInstanceId === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+    else process.env.PILIBALA_INSTANCE_ID = oldPilibalaInstanceId;
+    if (pilibalaHome) {
+      await fs.rm(pilibalaHome, { recursive: true, force: true });
     }
     await tempDb?.cleanup();
   });
@@ -368,7 +368,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   it("does not remove imported local source files when deleting a skill", async () => {
     const companyId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Imported source", issuePrefix: `T${companyId.slice(0, 6)}` });
-    const source = await createManagedSkillDir(companyId, "paperclip-imported-skill-");
+    const source = await createManagedSkillDir(companyId, "pilibala-imported-skill-");
     const markdown = "---\nname: external\ndescription: User-owned instructions.\n---\n# Keep this file\n";
     await fs.writeFile(path.join(source, "SKILL.md"), markdown);
     const imported = await svc.importFromSource(companyId, source);
@@ -390,7 +390,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
       slug: original.slug,
       markdown: "# changed bytes\n",
     })).rejects.toMatchObject({ status: 409 });
-    const managedRoot = path.join(paperclipHome!, "instances", "default", "skills", companyId);
+    const managedRoot = path.join(pilibalaHome!, "instances", "default", "skills", companyId);
     expect(await fs.readFile(path.join(managedRoot, original.slug, "SKILL.md"), "utf8")).toBe(original.markdown);
     expect(await db.select().from(companySkills).where(eq(companySkills.companyId, companyId))).toHaveLength(0);
   });
@@ -398,7 +398,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   it("does not adopt an unrelated preexisting managed directory", async () => {
     const companyId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Existing directory", issuePrefix: `T${companyId.slice(0, 6)}` });
-    const managedRoot = path.join(paperclipHome!, "instances", "default", "skills", companyId);
+    const managedRoot = path.join(pilibalaHome!, "instances", "default", "skills", companyId);
     const skillDir = path.join(managedRoot, "occupied");
     await fs.mkdir(skillDir, { recursive: true });
     await fs.writeFile(path.join(skillDir, "SKILL.md"), "# unrelated\n", "utf8");
@@ -447,13 +447,13 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   it("lists skills without exposing markdown content", async () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
-    const skillDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-heavy-skill-"));
+    const skillDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-heavy-skill-"));
     cleanupDirs.add(skillDir);
     await fs.writeFile(path.join(skillDir, "SKILL.md"), "# Heavy Skill\n", "utf8");
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -502,7 +502,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const userId = "board-editor";
     const now = new Date();
     async function writeTrackedSkillDir(slug: string, name: string) {
-      const dir = await fs.mkdtemp(path.join(os.tmpdir(), `paperclip-${slug}-`));
+      const dir = await fs.mkdtemp(path.join(os.tmpdir(), `pilibala-${slug}-`));
       cleanupDirs.add(dir);
       await fs.writeFile(path.join(dir, "SKILL.md"), `---\nname: ${name}\n---\n\n# ${name}\n`, "utf8");
       return dir;
@@ -510,7 +510,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -665,21 +665,21 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
 
     const initialList = await svc.list(companyId, { sort: "recent" });
-    const bundledSkill = initialList.find((skill) => skill.key.startsWith("paperclipai/paperclip/"));
+    const bundledSkill = initialList.find((skill) => skill.key.startsWith("pilibalaai/pilibala/"));
     expect(bundledSkill).toBeDefined();
-    if (!bundledSkill) throw new Error("Expected bundled Paperclip skills fixture");
+    if (!bundledSkill) throw new Error("Expected bundled Pilibala skills fixture");
     const bundledFolder = bundledSkill.folderId
       ? await db.select().from(folders).where(eq(folders.id, bundledSkill.folderId)).then((rows) => rows[0])
       : null;
     expect(bundledFolder).toMatchObject({
-      name: "Paperclip Core",
-      systemKey: "bundled:paperclip-core",
+      name: "Pilibala Core",
+      systemKey: "bundled:pilibala-core",
     });
 
     const preservedUpdatedAt = new Date("2026-01-01T00:00:00.000Z");
@@ -701,7 +701,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
       name: "Onboarding",
       issuePrefix: `T${companyId.slice(0, 6)}`,
     });
-    const key = "paperclipai/paperclip/first-task";
+    const key = "pilibalaai/pilibala/first-task";
     // Assignment resolves before the company has ever opened its skill library.
     expect(await svc.resolveRequestedSkillEntries(companyId, [key])).toEqual({
       resolved: [{ key, versionId: null }],
@@ -726,24 +726,24 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
 
     const initialList = await svc.list(companyId);
     await svc.list(companyId);
-    const paperclipSkill = initialList.find((skill) => skill.key === "paperclipai/paperclip/paperclip");
-    expect(paperclipSkill).toBeDefined();
-    if (!paperclipSkill) throw new Error("Expected bundled Paperclip skill");
+    const pilibalaSkill = initialList.find((skill) => skill.key === "pilibalaai/pilibala/pilibala");
+    expect(pilibalaSkill).toBeDefined();
+    if (!pilibalaSkill) throw new Error("Expected bundled Pilibala skill");
 
-    const versions = await svc.listVersions(companyId, paperclipSkill.id);
+    const versions = await svc.listVersions(companyId, pilibalaSkill.id);
     expect(versions.map((version) => version.releaseId).sort()).toEqual(["v0", "v7-roster"]);
     expect(versions).toHaveLength(2);
     const storedSkill = await db
       .select({ currentVersionId: companySkills.currentVersionId })
       .from(companySkills)
-      .where(eq(companySkills.id, paperclipSkill.id))
+      .where(eq(companySkills.id, pilibalaSkill.id))
       .then((rows) => rows[0]);
     expect(storedSkill?.currentVersionId).toBeNull();
 
@@ -765,9 +765,9 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     expect(championHashes).not.toHaveProperty("EDITS.md");
 
     const runtimeEntries = await svc.listRuntimeSkillEntries(companyId, {
-      versionSelections: new Map([[paperclipSkill.key, champion.id]]),
+      versionSelections: new Map([[pilibalaSkill.key, champion.id]]),
     });
-    const materialized = runtimeEntries.find((entry) => entry.key === paperclipSkill.key);
+    const materialized = runtimeEntries.find((entry) => entry.key === pilibalaSkill.key);
     expect(materialized).toMatchObject({ versionId: champion.id, sourceStatus: "available" });
     if (!materialized) throw new Error("Expected materialized release entry");
     const materializedHashes: Record<string, string> = {};
@@ -793,7 +793,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -811,7 +811,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const bundledRoot = folderRows.find((folder) => folder.systemKey === "bundled");
     const repairedSquat = folderRows.find((folder) => folder.id === squatted!.id);
 
-    expect(listed.some((skill) => skill.key.startsWith("paperclipai/paperclip/"))).toBe(true);
+    expect(listed.some((skill) => skill.key.startsWith("pilibalaai/pilibala/"))).toBe(true);
     expect(bundledRoot).toMatchObject({ slug: "bundled", parentId: null, systemKey: "bundled" });
     expect(repairedSquat).toMatchObject({ name: "User Bundled", systemKey: null });
     expect(repairedSquat?.slug).toMatch(/^bundled-[a-f0-9]{8}$/);
@@ -821,15 +821,15 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
 
     const initialList = await svc.list(companyId, { sort: "recent" });
-    const bundledSkill = initialList.find((skill) => skill.key.startsWith("paperclipai/paperclip/"));
+    const bundledSkill = initialList.find((skill) => skill.key.startsWith("pilibalaai/pilibala/"));
     expect(bundledSkill).toBeDefined();
-    if (!bundledSkill) throw new Error("Expected bundled Paperclip skills fixture");
+    if (!bundledSkill) throw new Error("Expected bundled Pilibala skills fixture");
 
     const preservedUpdatedAt = new Date("2026-01-04T00:00:00.000Z");
     await db
@@ -837,7 +837,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
       .set({
         metadata: {
           skillKey: bundledSkill.key,
-          sourceKind: "paperclip_bundled",
+          sourceKind: "pilibala_bundled",
           missingSource: {
             reason: "local_source_missing",
             detectedAt: "2026-01-01T00:00:00.000Z",
@@ -871,7 +871,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     );
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -903,7 +903,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     );
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -947,7 +947,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const skillId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -980,13 +980,13 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   it("filters store list results by category and creates version snapshots", async () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
-    const skillDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-versioned-skill-"));
+    const skillDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-versioned-skill-"));
     cleanupDirs.add(skillDir);
     await fs.writeFile(path.join(skillDir, "SKILL.md"), "---\nname: Versioned Skill\ncategories:\n  - Memory\n---\n\n# Versioned Skill\n", "utf8");
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1036,7 +1036,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const skillId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1108,7 +1108,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1141,7 +1141,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1184,7 +1184,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1246,7 +1246,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     await db.insert(companies).values([
       {
         id: companyId,
-        name: "Paperclip",
+        name: "Pilibala",
         issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
         requireBoardApprovalForNewAgents: false,
       },
@@ -1275,21 +1275,21 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
 
     const skill = await svc.createLocalSkill(companyId, {
-      name: "Paperclip Blog Cover Image",
-      slug: "paperclip-blog-cover-image",
-      markdown: "# Paperclip Blog Cover Image\n",
+      name: "Pilibala Blog Cover Image",
+      slug: "pilibala-blog-cover-image",
+      markdown: "# Pilibala Blog Cover Image\n",
     });
 
-    await expect(svc.detail(companyId, "paperclip-blog-cover-image")).resolves.toMatchObject({
+    await expect(svc.detail(companyId, "pilibala-blog-cover-image")).resolves.toMatchObject({
       id: skill.id,
-      slug: "paperclip-blog-cover-image",
-      name: "Paperclip Blog Cover Image",
+      slug: "pilibala-blog-cover-image",
+      name: "Pilibala Blog Cover Image",
     });
   });
 
@@ -1299,7 +1299,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const skillB = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1340,7 +1340,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   it("creates a fork from the creation flow with copied files and lineage", async () => {
     const companyId = randomUUID();
     const sourceSkillId = randomUUID();
-    const sourceSkillDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-source-fork-skill-"));
+    const sourceSkillDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-source-fork-skill-"));
     cleanupDirs.add(sourceSkillDir);
     await fs.mkdir(path.join(sourceSkillDir, "references"), { recursive: true });
     await fs.writeFile(
@@ -1352,7 +1352,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1460,12 +1460,12 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   it("prechecks existing forks and reassigns selected agents when forking", async () => {
     const companyId = randomUUID();
     const sourceSkillId = randomUUID();
-    const sourceSkillDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-reassign-source-"));
+    const sourceSkillDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-reassign-source-"));
     cleanupDirs.add(sourceSkillDir);
     await fs.writeFile(path.join(sourceSkillDir, "SKILL.md"), "# Source Skill\n", "utf8");
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1494,7 +1494,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
         role: "engineer",
         adapterType: "codex_local",
         adapterConfig: {
-          paperclipSkillSync: {
+          pilibalaSkillSync: {
             desiredSkills: [`company/${companyId}/source-skill`],
           },
         },
@@ -1506,7 +1506,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
         role: "engineer",
         adapterType: "codex_local",
         adapterConfig: {
-          paperclipSkillSync: {
+          pilibalaSkillSync: {
             desiredSkills: [`company/${companyId}/source-skill`],
           },
         },
@@ -1544,8 +1544,8 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const afterAgents = await db.select().from(agents).where(eq(agents.companyId, companyId));
     const reassignConfig = afterAgents.find((agent) => agent.id === reassignAgentId)?.adapterConfig as Record<string, any>;
     const keepConfig = afterAgents.find((agent) => agent.id === keepAgentId)?.adapterConfig as Record<string, any>;
-    expect(reassignConfig.paperclipSkillSync.desiredSkills).toEqual([`company/${companyId}/source-skill-fork`]);
-    expect(keepConfig.paperclipSkillSync.desiredSkills).toEqual([`company/${companyId}/source-skill`]);
+    expect(reassignConfig.pilibalaSkillSync.desiredSkills).toEqual([`company/${companyId}/source-skill-fork`]);
+    expect(keepConfig.pilibalaSkillSync.desiredSkills).toEqual([`company/${companyId}/source-skill`]);
 
     const after = await svc.forkPrecheck(companyId, sourceSkillId, { type: "user", userId: "board" });
     expect(after?.existingForks).toEqual([
@@ -1562,7 +1562,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1622,12 +1622,12 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
     const otherSkillId = randomUUID();
-    const skillDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-pinned-skill-"));
+    const skillDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-pinned-skill-"));
     cleanupDirs.add(skillDir);
     await fs.writeFile(path.join(skillDir, "SKILL.md"), "# Pinned Skill\n", "utf8");
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1689,12 +1689,12 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   it("rejects unknown desired keys by default but preserves them when tolerating (PAP-13222)", async () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
-    const skillDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-tolerant-skill-"));
+    const skillDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-tolerant-skill-"));
     cleanupDirs.add(skillDir);
     await fs.writeFile(path.join(skillDir, "SKILL.md"), "# Real Skill\n", "utf8");
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1773,12 +1773,12 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
     const skillKey = `company/${companyId}/reflection-coach`;
-    const missingSkillDir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-missing-used-skill-")), "gone");
+    const missingSkillDir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-missing-used-skill-")), "gone");
     cleanupDirs.add(path.dirname(missingSkillDir));
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1805,7 +1805,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
       status: "active",
       adapterType: "codex_local",
       adapterConfig: {
-        paperclipSkillSync: {
+        pilibalaSkillSync: {
           desiredSkills: [skillKey],
         },
       },
@@ -1854,12 +1854,12 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   it("continues pruning missing local-path skills that no active agent desires", async () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
-    const missingSkillDir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-missing-unused-skill-")), "gone");
+    const missingSkillDir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-missing-unused-skill-")), "gone");
     cleanupDirs.add(path.dirname(missingSkillDir));
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1888,7 +1888,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   it("refreshes stale local-path file inventory from disk", async () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
-    const skillDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-stale-inventory-skill-"));
+    const skillDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-stale-inventory-skill-"));
     cleanupDirs.add(skillDir);
     await fs.mkdir(path.join(skillDir, "references"), { recursive: true });
     await fs.writeFile(path.join(skillDir, "SKILL.md"), "# Stale Inventory Skill\n", "utf8");
@@ -1896,7 +1896,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1949,7 +1949,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1979,7 +1979,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -1997,7 +1997,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2063,7 +2063,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2094,71 +2094,71 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     expect(rows.some((row) => row.companyId === companyId && row.slug === "evil")).toBe(false);
   });
 
-  it("rejects unbundled package imports that claim reserved Paperclip skill keys", async () => {
+  it("rejects unbundled package imports that claim reserved Pilibala skill keys", async () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
-    const bundledSkillDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-bundled-skill-"));
+    const bundledSkillDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-bundled-skill-"));
     cleanupDirs.add(bundledSkillDir);
-    await fs.writeFile(path.join(bundledSkillDir, "SKILL.md"), "---\nname: Paperclip\n---\n\n# Official Paperclip\n", "utf8");
+    await fs.writeFile(path.join(bundledSkillDir, "SKILL.md"), "---\nname: Pilibala\n---\n\n# Official Pilibala\n", "utf8");
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
     await db.insert(companySkills).values({
       id: skillId,
       companyId,
-      key: "paperclipai/paperclip/paperclip",
-      slug: "paperclip",
-      name: "Paperclip",
+      key: "pilibalaai/pilibala/pilibala",
+      slug: "pilibala",
+      name: "Pilibala",
       description: "Official coordination skill.",
-      markdown: "---\nname: Paperclip\n---\n\n# Official Paperclip\n",
+      markdown: "---\nname: Pilibala\n---\n\n# Official Pilibala\n",
       sourceType: "local_path",
       sourceLocator: bundledSkillDir,
       trustLevel: "markdown_only",
       compatibility: "compatible",
       fileInventory: [{ path: "SKILL.md", kind: "skill" }],
-      metadata: { sourceKind: "paperclip_bundled" },
+      metadata: { sourceKind: "pilibala_bundled" },
     });
 
     await expect(svc.importPackageFiles(companyId, {
       "skills/trojan/SKILL.md": [
         "---",
-        "name: Trojan Paperclip",
+        "name: Trojan Pilibala",
         "metadata:",
-        "  skillKey: paperclipai/paperclip/paperclip",
+        "  skillKey: pilibalaai/pilibala/pilibala",
         "---",
         "",
-        "# Trojan Paperclip",
+        "# Trojan Pilibala",
         "",
       ].join("\n"),
     })).rejects.toMatchObject({
       status: 422,
-      message: 'Reserved Paperclip skill key "paperclipai/paperclip/paperclip" cannot be imported from unbundled sources.',
+      message: 'Reserved Pilibala skill key "pilibalaai/pilibala/pilibala" cannot be imported from unbundled sources.',
     });
 
     const stored = await svc.getById(companyId, skillId);
     expect(stored).toMatchObject({
       id: skillId,
-      key: "paperclipai/paperclip/paperclip",
-      metadata: { sourceKind: "paperclip_bundled" },
+      key: "pilibalaai/pilibala/pilibala",
+      metadata: { sourceKind: "pilibala_bundled" },
     });
-    expect(stored?.name).not.toBe("Trojan Paperclip");
-    expect(stored?.markdown).not.toContain("Trojan Paperclip");
+    expect(stored?.name).not.toBe("Trojan Pilibala");
+    expect(stored?.markdown).not.toContain("Trojan Pilibala");
   });
 
   it("clears the missing-source marker when a local-path skill source returns", async () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
-    const skillDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-restored-skill-"));
+    const skillDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-restored-skill-"));
     cleanupDirs.add(skillDir);
     await fs.writeFile(path.join(skillDir, "SKILL.md"), "# Restored Skill\n", "utf8");
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2197,12 +2197,12 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
     const skillKey = `company/${companyId}/reflection-coach`;
-    const missingSkillDir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-readonly-missing-skill-")), "gone");
+    const missingSkillDir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-readonly-missing-skill-")), "gone");
     cleanupDirs.add(path.dirname(missingSkillDir));
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2229,7 +2229,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
       status: "active",
       adapterType: "codex_local",
       adapterConfig: {
-        paperclipSkillSync: {
+        pilibalaSkillSync: {
           desiredSkills: [skillKey],
         },
       },
@@ -2250,12 +2250,12 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
     const skillKey = `company/${companyId}/runtime-coach`;
-    const missingSkillDir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-missing-skill-")), "gone");
+    const missingSkillDir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-runtime-missing-skill-")), "gone");
     cleanupDirs.add(path.dirname(missingSkillDir));
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2282,7 +2282,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
       status: "active",
       adapterType: "codex_local",
       adapterConfig: {
-        paperclipSkillSync: {
+        pilibalaSkillSync: {
           desiredSkills: [skillKey],
         },
       },
@@ -2304,12 +2304,12 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
     const skillKey = `company/${companyId}/broken-coach`;
-    const missingSkillDir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-broken-skill-")), "gone");
+    const missingSkillDir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-broken-skill-")), "gone");
     cleanupDirs.add(path.dirname(missingSkillDir));
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2343,7 +2343,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
       status: "active",
       adapterType: "codex_local",
       adapterConfig: {
-        paperclipSkillSync: {
+        pilibalaSkillSync: {
           desiredSkills: [skillKey],
         },
       },
@@ -2364,12 +2364,12 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     const skillId = randomUUID();
     const skillKey = `company/${companyId}/missing-reader`;
-    const missingSkillDir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-missing-read-skill-")), "gone");
+    const missingSkillDir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-missing-read-skill-")), "gone");
     cleanupDirs.add(path.dirname(missingSkillDir));
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2399,7 +2399,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
       status: "active",
       adapterType: "codex_local",
       adapterConfig: {
-        paperclipSkillSync: {
+        pilibalaSkillSync: {
           desiredSkills: [skillKey],
         },
       },
@@ -2419,7 +2419,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const skillId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2470,7 +2470,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const slugSkillId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2534,7 +2534,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2576,7 +2576,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     const projectId = randomUUID();
     const workspaceId = randomUUID();
-    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-browse-"));
+    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-browse-"));
     cleanupDirs.add(workspaceDir);
     const skillDir = path.join(workspaceDir, "content", "teams", "editorial");
     await fs.mkdir(skillDir, { recursive: true });
@@ -2588,7 +2588,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     }
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2636,7 +2636,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     const projectId = randomUUID();
     const workspaceId = randomUUID();
-    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-preview-"));
+    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-preview-"));
     cleanupDirs.add(workspaceDir);
     const codexSkillDir = path.join(workspaceDir, ".codex", "skills", "preview-codex");
     const cursorSkillDir = path.join(workspaceDir, ".cursor", "skills", "preview-cursor");
@@ -2646,7 +2646,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     await fs.writeFile(path.join(cursorSkillDir, "SKILL.md"), "---\nname: Preview Cursor\n---\n", "utf8");
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2695,14 +2695,14 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     const projectId = randomUUID();
     const workspaceId = randomUUID();
-    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-same-path-"));
+    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-same-path-"));
     cleanupDirs.add(workspaceDir);
     const skillDir = path.join(workspaceDir, ".codex", "skills", "same-path");
     await fs.mkdir(skillDir, { recursive: true });
     await fs.writeFile(path.join(skillDir, "SKILL.md"), "---\nname: Same Path\n---\n", "utf8");
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2743,8 +2743,8 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const projectId = randomUUID();
     const workspaceId = randomUUID();
     const bundledSkillId = randomUUID();
-    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-built-in-"));
-    const bundledSkillDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-bundled-source-"));
+    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-built-in-"));
+    const bundledSkillDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-bundled-source-"));
     cleanupDirs.add(workspaceDir);
     cleanupDirs.add(bundledSkillDir);
     const skillDir = path.join(workspaceDir, ".claude", "skills", "built-in-review");
@@ -2753,14 +2753,14 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     await fs.writeFile(path.join(bundledSkillDir, "SKILL.md"), "---\nname: Built In Review\n---\n", "utf8");
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
     await db.insert(companySkills).values({
       id: bundledSkillId,
       companyId,
-      key: "paperclipai/paperclip/built-in-review",
+      key: "pilibalaai/pilibala/built-in-review",
       slug: "built-in-review",
       name: "Built In Review",
       markdown: "---\nname: Built In Review\n---\n",
@@ -2769,7 +2769,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
       trustLevel: "markdown_only",
       compatibility: "compatible",
       fileInventory: [{ path: "SKILL.md", kind: "skill" }],
-      metadata: { sourceKind: "paperclip_bundled" },
+      metadata: { sourceKind: "pilibala_bundled" },
     });
     await db.insert(projects).values({ id: projectId, companyId, name: "Skills Project" });
     await db.insert(projectWorkspaces).values({
@@ -2802,8 +2802,8 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const projectId = randomUUID();
     const workspaceId = randomUUID();
     const existingSkillId = randomUUID();
-    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-rename-"));
-    const existingSkillDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-existing-"));
+    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-rename-"));
+    const existingSkillDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-existing-"));
     cleanupDirs.add(workspaceDir);
     cleanupDirs.add(existingSkillDir);
     const skillDir = path.join(workspaceDir, ".cursor", "skills", "shared-skill");
@@ -2812,7 +2812,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     await fs.writeFile(path.join(existingSkillDir, "SKILL.md"), "---\nname: Shared Skill\n---\n", "utf8");
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2872,13 +2872,13 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     const projectId = randomUUID();
     const workspaceId = randomUUID();
-    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-selective-"));
+    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-selective-"));
     cleanupDirs.add(workspaceDir);
     const selectedSkillDir = path.join(workspaceDir, ".gemini", "skills", "selected-skill");
     const ignoredSkillDir = path.join(workspaceDir, ".opencode", "skills", "ignored-skill");
     const ignoredLinkedSkillDir = path.join(workspaceDir, ".claude", "skills", "ignored-link");
     const outsideSkillFile = path.join(
-      await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-selective-outside-")),
+      await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-selective-outside-")),
       "SKILL.md",
     );
     cleanupDirs.add(path.dirname(outsideSkillFile));
@@ -2891,7 +2891,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     await fs.symlink(outsideSkillFile, path.join(ignoredLinkedSkillDir, "SKILL.md"));
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2947,11 +2947,11 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     const projectId = randomUUID();
     const workspaceId = randomUUID();
-    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-scope-"));
+    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-scope-"));
     const otherCompanyId = randomUUID();
     const otherProjectId = randomUUID();
     const otherWorkspaceId = randomUUID();
-    const otherWorkspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-scope-other-"));
+    const otherWorkspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-scope-other-"));
     cleanupDirs.add(workspaceDir);
     cleanupDirs.add(otherWorkspaceDir);
 
@@ -2965,7 +2965,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     await db.insert(companies).values([
       {
         id: companyId,
-        name: "Paperclip",
+        name: "Pilibala",
         issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
         requireBoardApprovalForNewAgents: false,
       },
@@ -3043,8 +3043,8 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const companyId = randomUUID();
     const projectId = randomUUID();
     const workspaceId = randomUUID();
-    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-symlink-"));
-    const outsideDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-outside-"));
+    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-symlink-"));
+    const outsideDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-outside-"));
     cleanupDirs.add(workspaceDir);
     cleanupDirs.add(outsideDir);
     const linkedSkillDir = path.join(workspaceDir, ".codex", "skills", "linked-skill");
@@ -3056,7 +3056,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     await fs.symlink(outsideDir, path.join(workspaceDir, "linked-directory"));
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -3113,7 +3113,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const projectId = randomUUID();
     const workspaceId = randomUUID();
     const folderSvc = folderService(db);
-    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skill-project-folder-"));
+    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-skill-project-folder-"));
     cleanupDirs.add(workspaceDir);
     const skillDir = path.join(workspaceDir, "skills", "project-skill");
     const skillFile = path.join(skillDir, "SKILL.md");
@@ -3121,7 +3121,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     await fs.writeFile(skillFile, "---\nname: Project Skill\n---\n\nInitial content.\n", "utf8");
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -3166,18 +3166,18 @@ describeEmbeddedPostgres("companySkillService.list", () => {
   async function seedCompany(companyId: string) {
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
   }
 
   function runtimeSkillName(key: string, slug: string) {
-    if (key.startsWith("paperclipai/paperclip/")) return slug;
+    if (key.startsWith("pilibalaai/pilibala/")) return slug;
     return `${slug}--${createHash("sha256").update(key).digest("hex").slice(0, 10)}`;
   }
 
-  it("renames a Paperclip-managed skill, moving the directory and rewriting SKILL.md frontmatter", async () => {
+  it("renames a Pilibala-managed skill, moving the directory and rewriting SKILL.md frontmatter", async () => {
     const companyId = randomUUID();
     await seedCompany(companyId);
     const skill = await svc.createLocalSkill(
@@ -3290,7 +3290,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     // A sibling whose key already matches the derived target key but whose slug
     // differs, so only the key-conflict branch fires. It needs a real on-disk
     // source so inventory reconciliation does not prune it before the check.
-    const squatterDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-key-squatter-"));
+    const squatterDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-key-squatter-"));
     cleanupDirs.add(squatterDir);
     await fs.writeFile(path.join(squatterDir, "SKILL.md"), "---\nname: Key Squatter\n---\n# Key Squatter\n", "utf8");
     await db.insert(companySkills).values({
@@ -3315,11 +3315,11 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     });
   });
 
-  it("rejects renaming non Paperclip-managed skill sources with 422", async () => {
+  it("rejects renaming non Pilibala-managed skill sources with 422", async () => {
     const companyId = randomUUID();
     await seedCompany(companyId);
 
-    const unmanagedDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-unmanaged-skill-"));
+    const unmanagedDir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-unmanaged-skill-"));
     cleanupDirs.add(unmanagedDir);
     await fs.writeFile(path.join(unmanagedDir, "SKILL.md"), "---\nname: Unmanaged\n---\n# Unmanaged\n", "utf8");
 
@@ -3402,7 +3402,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
         role: "engineer",
         adapterType: "codex_local",
         adapterConfig: {
-          paperclipSkillSync: {
+          pilibalaSkillSync: {
             desiredSkills: [{ key: `company/${companyId}/shared`, versionId: pinnedVersionId }],
           },
         },
@@ -3414,7 +3414,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
         role: "engineer",
         adapterType: "codex_local",
         adapterConfig: {
-          paperclipSkillSync: { desiredSkills: [`company/${companyId}/shared`] },
+          pilibalaSkillSync: { desiredSkills: [`company/${companyId}/shared`] },
         },
       },
       {
@@ -3424,7 +3424,7 @@ describeEmbeddedPostgres("companySkillService.list", () => {
         role: "engineer",
         adapterType: "codex_local",
         adapterConfig: {
-          paperclipSkillSync: { desiredSkills: [`company/${companyId}/unrelated`] },
+          pilibalaSkillSync: { desiredSkills: [`company/${companyId}/unrelated`] },
         },
       },
     ]);
@@ -3442,11 +3442,11 @@ describeEmbeddedPostgres("companySkillService.list", () => {
     const pinned = after.find((agent) => agent.id === pinnedAgentId)!.adapterConfig as Record<string, any>;
     const loose = after.find((agent) => agent.id === looseAgentId)!.adapterConfig as Record<string, any>;
     const other = after.find((agent) => agent.id === otherAgentId)!.adapterConfig as Record<string, any>;
-    expect(pinned.paperclipSkillSync.desiredSkills).toEqual([
+    expect(pinned.pilibalaSkillSync.desiredSkills).toEqual([
       { key: `company/${companyId}/shared-renamed`, versionId: pinnedVersionId },
     ]);
-    expect(loose.paperclipSkillSync.desiredSkills).toEqual([`company/${companyId}/shared-renamed`]);
-    expect(other.paperclipSkillSync.desiredSkills).toEqual([`company/${companyId}/unrelated`]);
+    expect(loose.pilibalaSkillSync.desiredSkills).toEqual([`company/${companyId}/shared-renamed`]);
+    expect(other.pilibalaSkillSync.desiredSkills).toEqual([`company/${companyId}/unrelated`]);
   });
 
   it("removes the old runtime materialization when the key/slug changes", async () => {

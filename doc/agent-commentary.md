@@ -7,11 +7,11 @@ Both are free-form, internally attributed records, not anonymous feedback.
 ## Agent entry points
 
 Skill-capable legacy adapters automatically receive `complain` and
-`suggestion-box` alongside the `paperclip` operational skill, including existing
+`suggestion-box` alongside the `pilibala` operational skill, including existing
 agents with empty optional-skill selections. The shared helper lives in that
 operational skill at `scripts/submit-agent-commentary.mjs`. It reads the body
-from stdin and uses the existing `PAPERCLIP_API_URL`, `PAPERCLIP_API_KEY`,
-`PAPERCLIP_COMPANY_ID`, and `PAPERCLIP_RUN_ID`. The helper uses the existing
+from stdin and uses the existing `PILIBALA_API_URL`, `PILIBALA_API_KEY`,
+`PILIBALA_COMPANY_ID`, and `PILIBALA_RUN_ID`. The helper uses the existing
 Node.js runtime with no additional dependencies; custom runtimes can call HTTP
 directly. Sandboxed runs use the callback bridge.
 
@@ -24,7 +24,7 @@ Submit before finishing the run.
 Instructions closely adapt Warp's
 [complain](https://github.com/warpdotdev/common-skills/blob/main/.agents/skills/complain/SKILL.md)
 and [suggestion-box](https://github.com/warpdotdev/common-skills/blob/main/.agents/skills/suggestion-box/SKILL.md)
-skills, with their MIT notices included. Paperclip changes the transport,
+skills, with their MIT notices included. Pilibala changes the transport,
 attribution, suggestion form, and size limit. Agents submit proactively when
 warranted, without routine previews or announcements, then continue working.
 Answer truthfully if a user asks about feedback or submitted content. Operators
@@ -35,7 +35,7 @@ Do not report the same incident through both paths or retry failed submissions.
 ## HTTP contract
 
 `POST /api/companies/:companyId/agent-commentary` accepts an authenticated agent
-and its active run (`Authorization: Bearer …`, `X-Paperclip-Run-Id: …`):
+and its active run (`Authorization: Bearer …`, `X-Pilibala-Run-Id: …`):
 
 ```json
 {"kind":"suggestion","body":"The tool returned before persistence completed. Wait for the write before returning success.","idempotencyKey":"write-completion-1"}
@@ -107,15 +107,15 @@ and specify a Linux amd64 runner built from this checkout:
 
 ```sh
 pnpm --dir packages/plugins/sandbox-providers/daytona install --frozen-lockfile
-PAPERCLIP_LIVE_ENVIRONMENT=daytona \
-PAPERCLIP_LIVE_DAYTONA_ENV_FILE=/path/to/private.env \
-PAPERCLIP_LIVE_LINUX_RUNNER=/path/to/linux-amd64/paperclip-runnerd \
-PAPERCLIP_LIVE_EVIDENCE_PATH=/tmp/commentary-evidence.json \
+PILIBALA_LIVE_ENVIRONMENT=daytona \
+PILIBALA_LIVE_DAYTONA_ENV_FILE=/path/to/private.env \
+PILIBALA_LIVE_LINUX_RUNNER=/path/to/linux-amd64/pilibala-runnerd \
+PILIBALA_LIVE_EVIDENCE_PATH=/tmp/commentary-evidence.json \
 node cli/node_modules/tsx/dist/cli.mjs server/scripts/verify-agent-commentary-live.ts
 ```
 
 The private env file needs only `DAYTONA_API_KEY` and
-`PAPERCLIP_E2E_DAYTONA_IMAGE` (`...@sha256:...`). Alternatively, export those
+`PILIBALA_E2E_DAYTONA_IMAGE` (`...@sha256:...`). Alternatively, export those
 variables directly. A positional `legacy` or `native` argument selects one path.
 For a current Linux runner, add an export stage to a temporary copy of the root
 Dockerfile and build it with `--platform linux/amd64 --target commentary-runner-export
@@ -123,7 +123,7 @@ Dockerfile and build it with `--platform linux/amd64 --target commentary-runner-
 
 ```dockerfile
 FROM scratch AS commentary-runner-export
-COPY --from=runner-build /app/packages/paperclip-runner/runner/target/release/paperclip-runnerd /paperclip-runnerd
+COPY --from=runner-build /app/packages/pilibala-runner/runner/target/release/pilibala-runnerd /pilibala-runnerd
 ```
 
 The smoke calls the production Daytona provider hooks for creation, execution,
@@ -143,7 +143,7 @@ its temporary data, credentials, and remote sandboxes. Remote reports are emitte
 only after confirmed sandbox deletion.
 
 The Daytona verification used base image
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:b81a86d5242088f9d832666a411f09da7438d92e99f9962ccf88ebe439cd3b32`
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:b81a86d5242088f9d832666a411f09da7438d92e99f9962ccf88ebe439cd3b32`
 and the Linux runner built from `abf47b5953d14aa7a8dbf2941460b5df8a4d66c3`
 (binary SHA-256 `c794141152ae2e2986da0df14b01a54e4448949e06ec4031c83bad8a9fff8bac`).
 

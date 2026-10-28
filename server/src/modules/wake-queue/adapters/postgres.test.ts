@@ -2,7 +2,7 @@ import { instanceSettingsService } from "../../../services/instance-settings.js"
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   activityLog,
   agentWakeupRequests,
@@ -16,7 +16,7 @@ import {
   issueRecoveryActions,
   issues,
   nativeRunFinalizations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -55,7 +55,7 @@ describeEmbeddedPostgres("wake-queue postgres adapter", () => {
   };
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-wake-queue-postgres-adapter-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-wake-queue-postgres-adapter-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -83,7 +83,7 @@ describeEmbeddedPostgres("wake-queue postgres adapter", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -188,7 +188,7 @@ describeEmbeddedPostgres("wake-queue postgres adapter", () => {
     const [comment] = await db.insert(issueComments).values({ companyId, issueId, authorType: "user",
       authorUserId: "responsible-user", body: "Accepted input must survive an agent pause" }).returning();
     const wakeId = await seedDeferredWake({ companyId, agentId: recipientId, issueId, requestedByActorId: "responsible-user",
-      payload: { _paperclipWakeContext: { issueId, wakeReason: kind === "mentioned" ? "issue_comment_mentioned" : "issue_commented",
+      payload: { _pilibalaWakeContext: { issueId, wakeReason: kind === "mentioned" ? "issue_comment_mentioned" : "issue_commented",
         wakeCommentIds: [comment.id] } },
     });
     const [accepted] = await db.select().from(agentWakeupRequests).where(eq(agentWakeupRequests.id, wakeId));
@@ -275,10 +275,10 @@ describeEmbeddedPostgres("wake-queue postgres adapter", () => {
     const [message] = await db.insert(issueComments).values({ companyId, issueId, authorType: "user", authorUserId: "responsible-user", body: "Saved task input" }).returning();
     const [mention] = await db.insert(issueComments).values({ companyId, issueId, authorAgentId: ownerId, createdByRunId: runId, body: "Accepted feedback" }).returning();
     const handoffId = await seedDeferredWake({ companyId, agentId: formerOwnerId, issueId,
-      payload: { _paperclipWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [message.id] } },
+      payload: { _pilibalaWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [message.id] } },
     });
     const mentionId = await seedDeferredWake({ companyId, agentId: formerOwnerId, issueId,
-      payload: { _paperclipWakeContext: { issueId, wakeReason: "issue_comment_mentioned", wakeCommentIds: [mention.id] } },
+      payload: { _pilibalaWakeContext: { issueId, wakeReason: "issue_comment_mentioned", wakeCommentIds: [mention.id] } },
     });
     const release = createReleaseIssueExecution({ issueLock: createPostgresWakeQueueAdapter(db, stubDeps),
       recovery: { escalateStrandedAssignedIssue: async () => undefined, escalateStrandedRecoveryIssueInPlace: async () => undefined },
@@ -336,7 +336,7 @@ describeEmbeddedPostgres("wake-queue postgres adapter", () => {
       }).returning();
       const [comment] = await db.insert(issueComments).values({ companyId, issueId, authorType: "user", authorUserId: "responsible-user", body: "Saved input after cleanup" }).returning();
       const wakeId = await seedDeferredWake({ companyId, agentId, issueId, requestedByActorId: "responsible-user",
-        payload: { _paperclipWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [comment.id] } },
+        payload: { _pilibalaWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [comment.id] } },
       });
       const release = createReleaseIssueExecution({ issueLock: createPostgresWakeQueueAdapter(db, stubDeps),
         recovery: { escalateStrandedAssignedIssue: async () => undefined, escalateStrandedRecoveryIssueInPlace: async () => undefined },
@@ -381,7 +381,7 @@ describeEmbeddedPostgres("wake-queue postgres adapter", () => {
     }
     const [comment] = await db.insert(issueComments).values({ companyId, issueId, authorType: "user", authorUserId: "responsible-user", body: "Saved input for the next turn" }).returning();
     await seedDeferredWake({ companyId, agentId, issueId, requestedByActorId: "responsible-user",
-      payload: { _paperclipWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [comment.id] } },
+      payload: { _pilibalaWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [comment.id] } },
     });
     const release = createReleaseIssueExecution({ issueLock: createPostgresWakeQueueAdapter(db, stubDeps),
       recovery: { escalateStrandedAssignedIssue: async () => undefined, escalateStrandedRecoveryIssueInPlace: async () => undefined },
@@ -516,7 +516,7 @@ describeEmbeddedPostgres("wake-queue postgres adapter", () => {
       companyId, issueId, authorUserId: "responsible-user", body: "Pending input",
     }).returning();
     const wakeId = await seedDeferredWake({ companyId, agentId, issueId, requestedByActorId: "responsible-user",
-      payload: { commentId: comment.id, _paperclipWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [comment.id] } },
+      payload: { commentId: comment.id, _pilibalaWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [comment.id] } },
     });
     await db.update(heartbeatRuns).set({ runtimeMode: "legacy", resultJson: {
       queuedCommentInterruptQueueId: wakeId, executionCancellation: { state: "acknowledged" },
@@ -589,7 +589,7 @@ describeEmbeddedPostgres("wake-queue postgres adapter", () => {
     const runId = await seedRun({ companyId, agentId, status: "cancelled", contextSnapshot: { issueId } });
     await db.update(heartbeatRuns).set({ runtimeMode: "native", nativeIssueId: issueId, resultJson: {
       reassignmentStopRequested: true,
-      nativeCancellation: { schema: "paperclip.native-cancellation.v1", runId, companyId, issueId,
+      nativeCancellation: { schema: "pilibala.native-cancellation.v1", runId, companyId, issueId,
         scope: "run", reasonCode: "cancellation_run_only", dispatchState: "acknowledged", dispatched: true,
         intentAuditId: randomUUID(), acknowledgementAuditId: randomUUID() },
     } }).where(eq(heartbeatRuns.id, runId));
@@ -695,7 +695,7 @@ describeEmbeddedPostgres("wake-queue postgres adapter", () => {
     const [comment] = await db.insert(issueComments).values({ companyId, issueId, authorType: "user",
       authorUserId: "responsible-user", body: "Continue with this new message." }).returning();
     const wakeId = await seedDeferredWake({ companyId, agentId, issueId, requestedByActorId: "responsible-user",
-      payload: { commentId: comment.id, _paperclipWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [comment.id] } } });
+      payload: { commentId: comment.id, _pilibalaWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [comment.id] } } });
     const release = createReleaseIssueExecution({ issueLock: createPostgresWakeQueueAdapter(db, stubDeps),
       recovery: { escalateStrandedAssignedIssue: async () => {}, escalateStrandedRecoveryIssueInPlace: async () => {} } });
     const result = await release({ companyId, runId, now: new Date() });

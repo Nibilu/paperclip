@@ -32,7 +32,7 @@ Open `/issues` or a project’s Issues view; legacy `/tasks` links redirect.
 
 Open `/issues/:issueId` from a row, mention, or direct link.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use a
 disposable project. Persistence checks can assign work to Me or leave it

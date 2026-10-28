@@ -12,7 +12,7 @@ function entry(overrides: Partial<WorkspaceServiceControlEntry> = {}): Workspace
     name: "dev",
     state: "running",
     healthStatus: "healthy",
-    url: "http://paperclip-dev:45439",
+    url: "http://pilibala-dev:45439",
     port: 45439,
     canStart: true,
     ...overrides,
@@ -25,7 +25,7 @@ const meta: Meta<typeof WorkspaceServiceControlBar> = {
   component: WorkspaceServiceControlBar,
   parameters: {
     layout: "padded",
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "workspaces/services"
       ],
@@ -93,7 +93,7 @@ export const LongUrl: Story = {
   args: {
     services: [
       entry({
-        url: "https://pap-14233-execution-workspace-service-start-stop.preview.paperclip.ing/deeply/nested/path",
+        url: "https://pap-14233-execution-workspace-service-start-stop.preview.pilibala.ing/deeply/nested/path",
       }),
     ],
   },

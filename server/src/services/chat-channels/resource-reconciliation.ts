@@ -4,9 +4,9 @@ import { baseTeamsConversationId } from "./microsoft-teams/resources.js";
 import { slackResourceLabelIsFallback } from "./slack/resources.js";
 import { telegramResourceLabelIsFallback, prepareTelegramResourceMigration, migrateTelegramResourceConversations } from "./telegram/resources.js";
 import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
-import { chatConversations, chatDeliveries, chatEndpointResources, chatEndpoints, toolConnections, type Db } from "@paperclipai/db";
+import { chatConversations, chatDeliveries, chatEndpointResources, chatEndpoints, toolConnections, type Db } from "@pilibalaai/db";
 import { assertChatExecutionDefaultsAccess } from "../chat-execution-defaults.js";
-import type { ChatExecutionDefaults, ChatEndpointSetupState } from "@paperclipai/shared";
+import type { ChatExecutionDefaults, ChatEndpointSetupState } from "@pilibalaai/shared";
 import { badRequest, conflict, notFound, unprocessable } from "../../errors.js";
 import { redactSensitiveText } from "../../redaction.js";
 import { notifyChatDeliveryWork, notifyChatEndpointWork } from "../chat-work-notifications.js";
@@ -94,7 +94,7 @@ export function createChatResourceReconciliation(db: Db, options: ResourceReconc
       for (const item of inventory.resources) {
         const resource = await upsertProviderResourceRow(tx, endpoint, item);
         if (resource) {
-          // Resource recovery reopens only bindings that Paperclip marked
+          // Resource recovery reopens only bindings that Pilibala marked
           // unavailable. Completed historical tasks stay completed.
           await tx
             .update(chatConversations)

@@ -1,0 +1,54 @@
+{
+  "name": "@pilibalaai/create-pilibala-plugin",
+  "version": "0.1.0",
+  "license": "MIT",
+  "homepage": "https://github.com/pilibalaai/pilibala",
+  "bugs": {
+    "url": "https://github.com/pilibalaai/pilibala/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pilibalaai/pilibala",
+    "directory": "packages/plugins/create-pilibala-plugin"
+  },
+  "type": "module",
+  "bin": {
+    "create-pilibala-plugin": "./dist/bin.js"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "bin": {
+      "create-pilibala-plugin": "./dist/bin.js"
+    },
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "pnpm -w exec vitest run --root packages/plugins/create-pilibala-plugin --config vitest.config.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pilibalaai/plugin-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=24.11.0"
+  }
+}

@@ -9,13 +9,13 @@ import {
   eq,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatActions,
   chatDeliveries,
   issueComments,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 
 import {
   formatAttachmentSize,
@@ -68,7 +68,7 @@ export function createTelegramAttachmentFailure(db: Db, options: TelegramAttachm
     const diagnostic =
       attachmentOmissionDetail(input.attachmentResult) ??
       "The Telegram attachment could not be imported";
-    const visibleFailure = `Paperclip could not safely import the attached Telegram file. Please resend it as a supported file under ${formatAttachmentSize(MAX_ATTACHMENT_BYTES)} or include text describing the request.`;
+    const visibleFailure = `Pilibala could not safely import the attached Telegram file. Please resend it as a supported file under ${formatAttachmentSize(MAX_ATTACHMENT_BYTES)} or include text describing the request.`;
     const effectContext =
       input.runtimeContext ??
       runtimeContextForRecord(
@@ -79,7 +79,7 @@ export function createTelegramAttachmentFailure(db: Db, options: TelegramAttachm
       );
     const effect = await db.transaction(async (tx) => {
       // Replace the optimistic attachment placeholder with an explicit safe
-      // Paperclip-visible failure. The message link stays authoritative for
+      // Pilibala-visible failure. The message link stays authoritative for
       // exact provider redelivery, while no agent wakeup is enqueued for an
       // empty turn that contains no usable bytes.
       await tx

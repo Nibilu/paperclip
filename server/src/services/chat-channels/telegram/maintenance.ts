@@ -16,17 +16,17 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatActions,
   chatEndpoints,
   toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   ChatEndpointSetupState,
   ToolCredentialSecretRef,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import {
   telegramStopSubscriptionPlan,
@@ -47,8 +47,8 @@ import { classifyChatPublicationError } from "../../chat-publication-errors.js";
 import type { EndpointRecord } from "../runtime-types.js";
 
 export const TELEGRAM_COMMANDS = [
-  { command: "task", description: "Start or continue a Paperclip task" },
-  { command: "status", description: "Show the active Paperclip task" },
+  { command: "task", description: "Start or continue a Pilibala task" },
+  { command: "status", description: "Show the active Pilibala task" },
   { command: "new", description: "Start a new task after the current one" },
   { command: "close", description: "Close the active chat conversation" },
 ] as const;

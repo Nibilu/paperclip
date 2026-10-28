@@ -3,8 +3,8 @@ name: Release Smoke
 on:
   workflow_dispatch:
     inputs:
-      paperclip_version:
-        description: Published Paperclip dist-tag to test
+      pilibala_version:
+        description: Published Pilibala dist-tag to test
         required: true
         default: canary
         type: choice
@@ -30,7 +30,7 @@ on:
         type: string
   workflow_call:
     inputs:
-      paperclip_version:
+      pilibala_version:
         required: true
         type: string
       host_port:
@@ -89,7 +89,7 @@ jobs:
 
       - name: Onboard with the background service
         env:
-          PAPERCLIPAI_VERSION: ${{ inputs.paperclip_version }}
+          PILIBALAAI_VERSION: ${{ inputs.pilibala_version }}
           DATA_DIR: ${{ runner.temp }}/service-smoke-data
           SMOKE_CLEANUP: "false"
         run: ./scripts/service-onboard-smoke.sh
@@ -98,16 +98,16 @@ jobs:
         if: always()
         run: |
           {
-            systemctl --user --no-pager status paperclipai.service || true
-            journalctl --user -u paperclipai.service --no-pager || true
-          } > "$RUNNER_TEMP/paperclipai-service.log" 2>&1
+            systemctl --user --no-pager status pilibalaai.service || true
+            journalctl --user -u pilibalaai.service --no-pager || true
+          } > "$RUNNER_TEMP/pilibalaai-service.log" 2>&1
 
       - name: Upload service diagnostics
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.artifact_name }}-service
-          path: ${{ runner.temp }}/paperclipai-service.log
+          path: ${{ runner.temp }}/pilibalaai-service.log
           retention-days: 14
 
   smoke:
@@ -149,7 +149,7 @@ jobs:
         run: |
           HOST_PORT="${{ inputs.host_port }}" \
           DATA_DIR="$RUNNER_TEMP/release-smoke-data" \
-          PAPERCLIPAI_VERSION="${{ inputs.paperclip_version }}" \
+          PILIBALAAI_VERSION="${{ inputs.pilibala_version }}" \
           SMOKE_READY_TIMEOUT_SECONDS=420 \
           SMOKE_DETACH=true \
           SMOKE_METADATA_FILE="${{ runner.temp }}/release-smoke.env" \
@@ -164,15 +164,15 @@ jobs:
             echo "SMOKE_ADMIN_PASSWORD=$SMOKE_ADMIN_PASSWORD"
             echo "SMOKE_DATA_DIR=$SMOKE_DATA_DIR"
             echo "SMOKE_IMAGE_NAME=$SMOKE_IMAGE_NAME"
-            echo "SMOKE_PAPERCLIPAI_VERSION=$SMOKE_PAPERCLIPAI_VERSION"
+            echo "SMOKE_PILIBALAAI_VERSION=$SMOKE_PILIBALAAI_VERSION"
           } >> "$GITHUB_ENV"
 
       - name: Run release smoke Playwright suite
         env:
-          PAPERCLIP_RELEASE_SMOKE_BASE_URL: ${{ env.SMOKE_BASE_URL }}
-          PAPERCLIP_RELEASE_SMOKE_EMAIL: ${{ env.SMOKE_ADMIN_EMAIL }}
-          PAPERCLIP_RELEASE_SMOKE_PASSWORD: ${{ env.SMOKE_ADMIN_PASSWORD }}
-          PAPERCLIP_PLAYWRIGHT_CHANNEL: "chrome"
+          PILIBALA_RELEASE_SMOKE_BASE_URL: ${{ env.SMOKE_BASE_URL }}
+          PILIBALA_RELEASE_SMOKE_EMAIL: ${{ env.SMOKE_ADMIN_EMAIL }}
+          PILIBALA_RELEASE_SMOKE_PASSWORD: ${{ env.SMOKE_ADMIN_PASSWORD }}
+          PILIBALA_PLAYWRIGHT_CHANNEL: "chrome"
         run: pnpm run test:release-smoke
 
       - name: Capture Docker logs
@@ -259,12 +259,12 @@ jobs:
         env:
           SOURCE_SHA: ${{ inputs.qualification_source_sha }}
         run: |
-          node packages/paperclip-runner/scripts/stage-release-runner-binaries.mjs \
+          node packages/pilibala-runner/scripts/stage-release-runner-binaries.mjs \
             assemble-daemons "$RUNNER_TEMP/release-runner-inputs" "$SOURCE_SHA"
-          cp -R packages/paperclip-runner/dist/bin/. server/dist/vendor/paperclip-runner/bin/
+          cp -R packages/pilibala-runner/dist/bin/. server/dist/vendor/pilibala-runner/bin/
       - name: Verify clean public installation and retain the same package bytes
         env:
-          PAPERCLIP_RUNNER_PUBLIC_PACKS_DIR: ${{ runner.temp }}/public-runner-packs
+          PILIBALA_RUNNER_PUBLIC_PACKS_DIR: ${{ runner.temp }}/public-runner-packs
         run: node scripts/verify-grok-npm-install.mjs
       - name: Locate completed package assembly
         id: pack_identity
@@ -337,7 +337,7 @@ jobs:
           import { createHash } from 'node:crypto';
           import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
           import { join } from 'node:path';
-          const directory = join(process.env.RUNNER_TEMP, 'paperclip-arm-bwrap-prerequisite');
+          const directory = join(process.env.RUNNER_TEMP, 'pilibala-arm-bwrap-prerequisite');
           mkdirSync(directory, { recursive: true });
           const helper = '.qualification-tooling/scripts/prepare-linux-arm64-qualification.sh';
           writeFileSync(join(directory, 'qualification-identity.json'), JSON.stringify({
@@ -368,6 +368,6 @@ jobs:
           name: ${{ inputs.artifact_name }}-${{ matrix.target }}
           path: |
             ${{ runner.temp }}/native-public-install.json
-            ${{ runner.temp }}/paperclip-arm-bwrap-prerequisite/
+            ${{ runner.temp }}/pilibala-arm-bwrap-prerequisite/
           if-no-files-found: warn
           retention-days: 14

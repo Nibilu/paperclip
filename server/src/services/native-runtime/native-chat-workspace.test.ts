@@ -18,10 +18,10 @@ import {
   createDb,
   heartbeatRuns,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
-import { PaperclipRunnerToolAuthority } from "./paperclip-runner-tool-authority.js";
+import { PilibalaRunnerToolAuthority } from "./pilibala-runner-tool-authority.js";
 import { stageNativeRunnerAttachmentBytes } from "./native-runner-file-handoff.js";
 import {
   findNativeChatWorkspaceScope,
@@ -42,7 +42,7 @@ describe("native external chat workspace boundary", () => {
   const boardIssue = "01000000-0000-4000-8000-000000000005";
   const runB = "01000000-0000-4000-8000-000000000006";
   const scopeInput = (issueId: string) => ({
-    adapterType: "paperclip_runner",
+    adapterType: "pilibala_runner",
     environmentDriver: "local",
     companyId,
     agentId,
@@ -70,7 +70,7 @@ describe("native external chat workspace boundary", () => {
       id: agentId,
       companyId,
       name: "Native agent",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       status: "active",
     });
     await db.insert(issues).values(
@@ -188,7 +188,7 @@ describe("native external chat workspace boundary", () => {
         readFile(path.join(rootB, stages[0]!.workspaceRelativePath)),
       ).rejects.toMatchObject({ code: "ENOENT" });
       await writeFile(path.join(rootA, "private-output.txt"), body);
-      const authority = new PaperclipRunnerToolAuthority(db, {
+      const authority = new PilibalaRunnerToolAuthority(db, {
         companyId,
         agentId,
         issueId: issueB,
@@ -213,7 +213,7 @@ describe("native external chat workspace boundary", () => {
             title: "Foreign output",
           },
         }),
-      ).rejects.toThrow("paperclip_runner_file_handoff_path_denied");
+      ).rejects.toThrow("pilibala_runner_file_handoff_path_denied");
     } finally {
       await Promise.all(stages.map((stage) => stage.cleanup()));
     }

@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 
 // The tenant UI and task database are real. Cloud is an external dependency:
 // simulate its entry endpoint and independent session states at the HTTP edge.
-for (const cloudOrigin of ["https://my.paperclip.app", "https://my-staging.paperclip.app"]) {
+for (const cloudOrigin of ["https://my.pilibala.app", "https://my-staging.pilibala.app"]) {
   for (const entry of ["auth", "task"] as const) {
     test(`Cloud recovery preserves the task (${cloudOrigin}, ${entry})`, async ({ page, request, baseURL }, testInfo) => {
       const companyResponse = await request.post("/api/companies", { data: { name: `Cloud auth ${randomUUID()}` } });
@@ -30,7 +30,7 @@ for (const cloudOrigin of ["https://my.paperclip.app", "https://my-staging.paper
         const response = await route.fetch();
         await route.fulfill({ response, json: {
           ...await response.json(), deploymentMode: "authenticated", bootstrapStatus: "ready",
-          cloud: { managed: true, managedBy: "paperclip-cloud", cloudBaseUrl: cloudOrigin, stackSlug: "test-workspace" },
+          cloud: { managed: true, managedBy: "pilibala-cloud", cloudBaseUrl: cloudOrigin, stackSlug: "test-workspace" },
         } });
       });
       await page.route("**/api/auth/get-session", (route) => route.fulfill(authenticated ? {
@@ -59,6 +59,6 @@ for (const cloudOrigin of ["https://my.paperclip.app", "https://my-staging.paper
 test("self-hosted auth still shows the instance sign-in form", async ({ page }) => {
   await page.route("**/api/auth/get-session", (route) => route.fulfill({ status: 401, json: { error: "Board authentication required" } }));
   await page.goto("/auth");
-  await expect(page.getByRole("heading", { name: "Sign in to Paperclip", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to Pilibala", exact: true })).toBeVisible();
   await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
 });

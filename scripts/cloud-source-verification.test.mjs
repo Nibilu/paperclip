@@ -6,7 +6,7 @@ const sha = "a".repeat(40);
 const workflow = { id: 123, path: ".github/workflows/cloud-readiness.yml" };
 const baseRun = {
   id: 456, workflow_id: workflow.id, path: workflow.path, run_attempt: 2,
-  repository: { full_name: "paperclipai/paperclip" }, head_repository: { full_name: "paperclipai/paperclip" },
+  repository: { full_name: "pilibalaai/pilibala" }, head_repository: { full_name: "pilibalaai/pilibala" },
   head_sha: sha, head_branch: "master", event: "push", status: "in_progress", conclusion: null,
 };
 const baseJob = { id: 789, name: sourceVerificationJob, run_id: 456, run_attempt: 2, head_sha: sha, status: "completed", conclusion: "success" };
@@ -41,7 +41,7 @@ test("source proof passes while image work is still running, or has failed", asy
 test("only the expected workflow, repository, master push, and full SHA can supply proof", async () => {
   for (const overrides of [
     { workflow_id: 999 }, { path: ".github/workflows/pr.yml" },
-    { repository: { full_name: "other/paperclip" } }, { head_repository: { full_name: "fork/paperclip" } },
+    { repository: { full_name: "other/pilibala" } }, { head_repository: { full_name: "fork/pilibala" } },
     { head_sha: "b".repeat(40) }, { head_branch: "feature" }, { event: "workflow_dispatch" },
     { run_attempt: undefined }, { run_attempt: 0 },
   ]) {

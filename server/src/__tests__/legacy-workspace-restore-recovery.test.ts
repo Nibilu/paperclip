@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { agents, companies, createDb, environmentLeases, environments, executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, projects } from "@paperclipai/db";
+import { agents, companies, createDb, environmentLeases, environments, executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, projects } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { recordLegacyWorkspaceRestoreFailure, legacyExecutionNeedsReconciliationWithEvidence, terminalizeLegacyExecution } from "../services/legacy-execution-recovery.js";
 import { hasConversationContinuationPolicy, conversationRecoveryActionPredicate } from "../services/conversation-continuation.js";
@@ -10,7 +10,7 @@ import { hasConfirmedSandboxStopAndRetain, prepareSandboxStopAndRetain, settleSt
 import { environmentService } from "../services/environments.js";
 import { hasRequiredWorkspaceRecovery } from "../services/workspace-restore-recovery-state.js";
 
-const externalTestDatabaseUrl = process.env.PAPERCLIP_TEST_DATABASE_URL?.trim();
+const externalTestDatabaseUrl = process.env.PILIBALA_TEST_DATABASE_URL?.trim();
 const support = externalTestDatabaseUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 (support.supported ? describe : describe.skip)("legacy remote workspace recovery", () => {
   let db: ReturnType<typeof createDb>;
@@ -78,7 +78,7 @@ const support = externalTestDatabaseUrl ? { supported: true } : await getEmbedde
     expect(await db.select().from(issueRecoveryActions).where(and(eq(issueRecoveryActions.id, action.id), conversationRecoveryActionPredicate()))).toEqual([]);
     // A new controller uses the durable stop-only intent. It cannot turn a
     // successful stop into proof that the workspace files were restored.
-    const receipt = { schema: "paperclip.remote-termination.v1", runId: f.runId, companyId: f.companyId,
+    const receipt = { schema: "pilibala.remote-termination.v1", runId: f.runId, companyId: f.companyId,
       leaseId: lease.id, provider: lease.provider, providerLeaseId: lease.providerLeaseId, state: "stopped", confirmedAt: new Date().toISOString() };
     await settleStopOnlyCleanup(db, lease, { attemptId: String(lease.metadata?.pendingCleanupAttemptId), receipt });
     expect(await readLease(lease.id)).toMatchObject({ status: "released", leasePolicy: "retain_on_failure", metadata: { remoteExecutionTermination: { state: "stopped" } } });
@@ -403,7 +403,7 @@ const support = externalTestDatabaseUrl ? { supported: true } : await getEmbedde
     const f = await seed();
     await recordLegacyWorkspaceRestoreFailure(db, f.run, patch.resultJson);
     const [run] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId));
-    const projection = { workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1" }, presentationDecision: "updated" };
+    const projection = { workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1" }, presentationDecision: "updated" };
     const [updated] = await db.update(heartbeatRuns).set({ resultJson: preserveWorkspaceRestoreRecoveryMetadataSql(projection, mergeCurrent) })
       .where(eq(heartbeatRuns.id, f.runId)).returning();
     expect(updated.resultJson).toMatchObject({ presentationDecision: "updated", workspaceRestoreRecovery: run.resultJson!.workspaceRestoreRecovery });

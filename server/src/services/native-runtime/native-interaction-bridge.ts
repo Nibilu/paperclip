@@ -1,5 +1,5 @@
-import type { Db } from "@paperclipai/db";
-import type { NativeInteractionResponseEnvelope } from "../../vendor/paperclip-runner/index.js";
+import type { Db } from "@pilibalaai/db";
+import type { NativeInteractionResponseEnvelope } from "../../vendor/pilibala-runner/index.js";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import {
   agents,
@@ -12,8 +12,8 @@ import {
   nativeRunResults,
   statusDecisions,
   workAssessments,
-} from "@paperclipai/db";
-import { getAgentWorkEligibility } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { getAgentWorkEligibility } from "@pilibalaai/shared";
 import { issueThreadInteractionService } from "../issue-thread-interactions.js";
 import { commitNativeStatusDecision } from "./status-decision-committer.js";
 import { nativeSha256 } from "./canonical.js";

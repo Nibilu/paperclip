@@ -1,17 +1,17 @@
 import express from "express";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { activityLog, agentCommentary, documents, issueDocuments } from "@paperclipai/db";
+import { activityLog, agentCommentary, documents, issueDocuments } from "@pilibalaai/db";
 import request from "supertest";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, agentWakeupRequests, authUsers, companies, companyMemberships, createDb, closeRegisteredClients, applyPendingMigrations, externalAgentHolds, heartbeatRuns, issueAccessGrants, issueComments, issues, projects, principalPermissionGrants, mcpOauthGrants, mcpOauthRequests, mcpOauthTokens, dotAgentBindings, dotRunnerAssignments, dotRunnerOperations, museIdleReceipts, museAgentBindings as bindings, museCredentials, museInputDeliveries, museReceiverContactBuckets, museMailboxItems as mailbox, museRunnerAssignments as assignments, museRunnerOperations as operations, nativeRunFinalizations } from "@paperclipai/db";
+import { agents, agentWakeupRequests, authUsers, companies, companyMemberships, createDb, closeRegisteredClients, applyPendingMigrations, externalAgentHolds, heartbeatRuns, issueAccessGrants, issueComments, issues, projects, principalPermissionGrants, mcpOauthGrants, mcpOauthRequests, mcpOauthTokens, dotAgentBindings, dotRunnerAssignments, dotRunnerOperations, museIdleReceipts, museAgentBindings as bindings, museCredentials, museInputDeliveries, museReceiverContactBuckets, museMailboxItems as mailbox, museRunnerAssignments as assignments, museRunnerOperations as operations, nativeRunFinalizations } from "@pilibalaai/db";
 import { heartbeatService } from "../services/heartbeat.js";
 import { startAgentLifecycle } from "../services/agent-lifecycle.js";
 import { agentHarnessVerificationService } from "../services/agent-harness-verification.js";
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
-import { MUSE_PUBLIC_ROUTES, MUSE_CLIENT_VERSION, type MuseCredentials } from "@paperclipai/shared";
+import { MUSE_PUBLIC_ROUTES, MUSE_CLIENT_VERSION, type MuseCredentials } from "@pilibalaai/shared";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { museOAuth } from "../services/muse-oauth.js";
 import { createPublicMcpOAuth, hashMcpSecret } from "../services/public-mcp/oauth.js";
@@ -32,10 +32,10 @@ import { boardAuthService } from "../services/board-auth.js";
 import { ensureHumanRoleDefaultGrants } from "../services/principal-access-compatibility.js";
 import { subscribeCompanyLiveEvents } from "../services/live-events.js";
 import { LOW_TRUST_QUARANTINED_BODY, buildLowTrustSourceTrust, buildPromotedSourceTrust, sanitizeQuarantinedCommentForHigherTrust } from "../services/source-trust.js";
-import { PaperclipRunnerToolAuthority } from "../services/native-runtime/paperclip-runner-tool-authority.js";
+import { PilibalaRunnerToolAuthority } from "../services/native-runtime/pilibala-runner-tool-authority.js";
 import { documentService } from "../services/documents.js";
 import { assertNoExternalOverlap, withExternalAdmissionGuard } from "../modules/external-agents/index.js";
-import { digestPaperclipSemanticContent, externalOperationDigest, parseNativeExecutionInput, canonicalNativeRuntimeContextDigest, nativeRuntimePromptDigest, NATIVE_RUNTIME_ASSET_SCHEMA, PAPERCLIP_EXECUTION_PROMPT, PAPERCLIP_EXECUTION_PROMPT_REVISION, type ExternalProviderOperation } from "../vendor/paperclip-runner/index.js";
+import { digestPilibalaSemanticContent, externalOperationDigest, parseNativeExecutionInput, canonicalNativeRuntimeContextDigest, nativeRuntimePromptDigest, NATIVE_RUNTIME_ASSET_SCHEMA, PILIBALA_EXECUTION_PROMPT, PILIBALA_EXECUTION_PROMPT_REVISION, type ExternalProviderOperation } from "../vendor/pilibala-runner/index.js";
 import { actorMiddleware } from "../middleware/auth.js";
 import { createLocalAgentJwt } from "../agent-auth-jwt.js";
 
@@ -44,7 +44,7 @@ import { createLocalAgentJwt } from "../agent-auth-jwt.js";
 describe("personal Muse control plane",()=>{
   let temporary:Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>|undefined,db:ReturnType<typeof createDb>,externalDatabaseUrl:string|undefined;
   beforeAll(async()=>{
-    externalDatabaseUrl=process.env.PAPERCLIP_MUSE_CONTROL_TEST_DATABASE_URL?.trim();
+    externalDatabaseUrl=process.env.PILIBALA_MUSE_CONTROL_TEST_DATABASE_URL?.trim();
     if(externalDatabaseUrl){await applyPendingMigrations(externalDatabaseUrl);db=createDb(externalDatabaseUrl);}
     else {temporary=await startEmbeddedPostgresTestDatabase("muse-control-");db=createDb(temporary.connectionString);}
     await instanceSettingsService(db).updateExperimental({enableNativeRunner:true,enableMuse:true});
@@ -53,23 +53,23 @@ describe("personal Muse control plane",()=>{
   async function fixture(ready=true) {
     const operatorId=randomUUID();await db.insert(authUsers).values({id:operatorId,name:"Muse authorizer",email:operatorId+"@example.test",createdAt:new Date(),updatedAt:new Date()});
     const [company]=await db.insert(companies).values({name:"Muse control",issuePrefix:"MU"+randomBytes(3).toString("hex")}).returning();
-    const [agent]=await db.insert(agents).values({companyId:company.id,name:"Muse",role:"engineer",status:"active",adapterType:"paperclip_runner",adapterConfig:{provider:"muse",allowUnmeteredProvider:true,lifecycle:"per_turn"},permissions:{canCreateTasks:true}}).returning();
+    const [agent]=await db.insert(agents).values({companyId:company.id,name:"Muse",role:"engineer",status:"active",adapterType:"pilibala_runner",adapterConfig:{provider:"muse",allowUnmeteredProvider:true,lifecycle:"per_turn"},permissions:{canCreateTasks:true}}).returning();
     await db.insert(companyMemberships).values([{companyId:company.id,principalType:"user",principalId:operatorId,membershipRole:"owner",status:"active"},{companyId:company.id,principalType:"agent",principalId:agent.id,membershipRole:"member",status:"active"}]);
     const ticket=randomBytes(32).toString("base64url");const [binding]=await db.insert(bindings).values({companyId:company.id,agentId:agent.id,operatorId,ticketHash:museCredentialHash(ticket),ticketExpiresAt:new Date(Date.now()+600000)}).returning();
     await db.update(agents).set({adapterConfig:{...agent.adapterConfig,museBindingId:binding.id}}).where(eq(agents.id,agent.id));
-    const identity=museIdentity(db),credentials=await identity.pair(ticket,"2"),broker=museRunnerBroker(db,{publicOrigin:"https://paperclip.example",heartbeat:{wakeup:vi.fn().mockResolvedValue(null),cancelRun:vi.fn()}});
+    const identity=museIdentity(db),credentials=await identity.pair(ticket,"2"),broker=museRunnerBroker(db,{publicOrigin:"https://pilibala.example",heartbeat:{wakeup:vi.fn().mockResolvedValue(null),cancelRun:vi.fn()}});
     if(ready)await db.update(bindings).set({status:"ready",receiverContactAt:new Date(),verifiedReplyAt:new Date()}).where(eq(bindings.id,binding.id));
     return {company,agent,operatorId,binding,ticket,identity,credentials,broker,subject:await identity.authenticate(credentials.accessToken)};
   }
-  function transport(allowLegacyCredentials=false) { const app=express();app.use(museTransportRoutes(db,"https://paperclip.example",{allowLegacyCredentials}));app.use(errorHandler);return app; }
-  const oauthOrigin="https://paperclip.example",oauthResource=oauthOrigin+"/api/muse/v1",oauthCallback="https://authd.example/callback";
+  function transport(allowLegacyCredentials=false) { const app=express();app.use(museTransportRoutes(db,"https://pilibala.example",{allowLegacyCredentials}));app.use(errorHandler);return app; }
+  const oauthOrigin="https://pilibala.example",oauthResource=oauthOrigin+"/api/muse/v1",oauthCallback="https://authd.example/callback";
   async function oauthFixture(ready=false,authorize=true) {
     const f=await fixture(false),ticket=randomBytes(32).toString("base64url");
     // This fixture starts the production OAuth journey from an unredeemed binding.
     await db.delete(museCredentials).where(eq(museCredentials.bindingId,f.binding.id));
     await db.update(bindings).set({status:"pairing",pairedAt:null,workerActivityAt:null,ticketHash:museCredentialHash(ticket),ticketExpiresAt:new Date(Date.now()+600000)}).where(eq(bindings.id,f.binding.id));
     const oauth=museOAuth(db,oauthOrigin),client=await oauth.register({client_name:"Muse authd",redirect_uris:[oauthCallback],token_endpoint_auth_method:"none",grant_types:["authorization_code","refresh_token"]},randomUUID());
-    const verifier=randomBytes(32).toString("base64url"),input={client_id:client.client_id,redirect_uri:oauthCallback,response_type:"code",scope:"paperclip:agent offline_access",state:"opaque-state+/☂",code_challenge:createHash("sha256").update(verifier).digest("base64url"),code_challenge_method:"S256",pairing_ticket:ticket};
+    const verifier=randomBytes(32).toString("base64url"),input={client_id:client.client_id,redirect_uri:oauthCallback,response_type:"code",scope:"pilibala:agent offline_access",state:"opaque-state+/☂",code_challenge:createHash("sha256").update(verifier).digest("base64url"),code_challenge_method:"S256",pairing_ticket:ticket};
     const authorizationUrl=authorize?await oauth.authorize(input):undefined;
     const tokenInput=()=>({grant_type:"authorization_code",client_id:client.client_id,redirect_uri:oauthCallback,code:new URL(authorizationUrl!).searchParams.get("code")!,code_verifier:verifier});
     const tokens=ready?await oauth.token(tokenInput()):undefined;
@@ -95,22 +95,22 @@ describe("personal Muse control plane",()=>{
   function projectWriteExecution(f: Awaited<ReturnType<typeof active>>) {
     const digest="0".repeat(64),now=Date.now();
     const context={
-      prompt:{revision:PAPERCLIP_EXECUTION_PROMPT_REVISION,text:PAPERCLIP_EXECUTION_PROMPT,digest:nativeRuntimePromptDigest()},
+      prompt:{revision:PILIBALA_EXECUTION_PROMPT_REVISION,text:PILIBALA_EXECUTION_PROMPT,digest:nativeRuntimePromptDigest()},
       instructions:{entryPath:"AGENTS.md",bundle:{schema:NATIVE_RUNTIME_ASSET_SCHEMA,digest,manifestDigest:digest,rootPath:"/synthetic/muse-jwt-instructions",fileCount:1,totalBytes:4}},
       skills:[],mcp:{assignmentSetId:"none",digest,bindingId:null},
     };
     const execution=parseNativeExecutionInput({
-      schema:"paperclip.native-execution-input.v8",
+      schema:"pilibala.native-execution-input.v8",
       binding:{companyId:f.company.id,agentId:f.agent.id,runId:f.runId,issueId:f.issue.id,executionWorkspaceId:randomUUID()},
       task:{identifier:f.issue.identifier??"MUSE-JWT",title:f.issue.title,description:null,prompt:"Read the current actor.",workMode:"standard"},
       provider:{kind:"muse",model:null,bridgeRevision:"muse-v1",binding:{companyId:f.company.id,agentId:f.agent.id,bindingId:f.binding.id,bindingGeneration:f.binding.generation,acceptByUnixMs:now+600000,expiresAtUnixMs:now+3600000}},
       workspace:{access:"none",cwd:null,repoUrl:null,repoRef:null,branchName:null},
       session:{normalizedSessionId:f.ref.normalizedSessionId,driverKind:"muse_external",protocolVersion:1,lifecyclePolicy:{mode:"per_turn",idleTimeoutMs:null}},
       executionMode:"default",planningContext:null,
-      completionContract:{id:randomUUID(),sha256:"sha256:"+digest,schemaVersion:"paperclip.completion-contract.v1",contract:{revision:"1",objective:"Read the actor",criteria:[{id:"actor",requirement:"Read the actor"}]}},
+      completionContract:{id:randomUUID(),sha256:"sha256:"+digest,schemaVersion:"pilibala.completion-contract.v1",contract:{revision:"1",objective:"Read the actor",criteria:[{id:"actor",requirement:"Read the actor"}]}},
       runtimeContext:{...context,aggregateDigest:canonicalNativeRuntimeContextDigest(context)},interactionResponses:[],credentialBindings:[],
     });
-    if(execution.schema!=="paperclip.native-execution-input.v8")throw new Error("Muse JWT fixture is not V8");
+    if(execution.schema!=="pilibala.native-execution-input.v8")throw new Error("Muse JWT fixture is not V8");
     return execution;
   }
   it.each([
@@ -122,8 +122,8 @@ describe("personal Muse control plane",()=>{
     { wait: "receipt", fault: "unchanged", replay: true },
   ] as const)("rechecks Muse project-write authority after a real $wait lock wait ($fault, replay=$replay)", async ({ wait, fault, replay }) => {
     const f = await active(await oauthFixture(true));
-    const previousSecret = process.env.PAPERCLIP_AGENT_JWT_SECRET;
-    process.env.PAPERCLIP_AGENT_JWT_SECRET = randomBytes(32).toString("hex");
+    const previousSecret = process.env.PILIBALA_AGENT_JWT_SECRET;
+    process.env.PILIBALA_AGENT_JWT_SECRET = randomBytes(32).toString("hex");
     let releaseAfterAuth = () => {}, releaseHolder = () => {};
     let holder: Promise<void> | undefined;
     let operation: Promise<{ response?: { status: number; body: Record<string, unknown> }; error?: unknown }> | undefined;
@@ -135,7 +135,7 @@ describe("personal Muse control plane",()=>{
       const execution = projectWriteExecution(f);
       await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeExecutionInput: execution } }).where(eq(heartbeatRuns.id, f.runId));
       await expect(f.broker.assertRunAuthority(execution)).resolves.toBeUndefined();
-      const token = createLocalAgentJwt(f.agent.id, f.company.id, "paperclip_runner", f.runId, f.operatorId, undefined, f.operatorId);
+      const token = createLocalAgentJwt(f.agent.id, f.company.id, "pilibala_runner", f.runId, f.operatorId, undefined, f.operatorId);
       expect(typeof token).toBe("string");
       let armed = false, authenticated = () => {};
       let observedActor: unknown;
@@ -155,7 +155,7 @@ describe("personal Muse control plane",()=>{
       const input = { name: "Muse project authority canary", description: "A bounded project result", idempotencyKey: randomUUID() };
       const receiptKey = `project:${f.company.id}:${f.agent.id}:${f.issue.id}:${input.idempotencyKey}`;
       const send = (body = input) => request(app).post(`/api/companies/${f.company.id}/projects`)
-        .set("Authorization", "Bearer " + token).set("X-Paperclip-Run-Id", f.runId).send(body);
+        .set("Authorization", "Bearer " + token).set("X-Pilibala-Run-Id", f.runId).send(body);
       let priorId: string | undefined;
       if (replay) {
         const first = await send();
@@ -250,14 +250,14 @@ describe("personal Muse control plane",()=>{
       releaseAfterAuth();
       releaseHolder();
       await Promise.allSettled([holder, operation].filter(value => value !== undefined));
-      if (previousSecret === undefined) delete process.env.PAPERCLIP_AGENT_JWT_SECRET;
-      else process.env.PAPERCLIP_AGENT_JWT_SECRET = previousSecret;
+      if (previousSecret === undefined) delete process.env.PILIBALA_AGENT_JWT_SECRET;
+      else process.env.PILIBALA_AGENT_JWT_SECRET = previousSecret;
       await f.detach();
     }
   }, 15000);
   it("authenticates current Muse V8 JWT actors and denies changed native bindings and grants",async()=>{
-    const f=await active(await oauthFixture(true)),previousSecret=process.env.PAPERCLIP_AGENT_JWT_SECRET;
-    process.env.PAPERCLIP_AGENT_JWT_SECRET=randomBytes(32).toString("hex");
+    const f=await active(await oauthFixture(true)),previousSecret=process.env.PILIBALA_AGENT_JWT_SECRET;
+    process.env.PILIBALA_AGENT_JWT_SECRET=randomBytes(32).toString("hex");
     try {
       await ensureHumanRoleDefaultGrants(db,{companyId:f.company.id,principalId:f.operatorId,membershipRole:"owner",grantedByUserId:f.operatorId});
       expect((await f.broker.act(f.subject,{version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()})).status).toBe("accepted");
@@ -265,30 +265,30 @@ describe("personal Muse control plane",()=>{
       // scheduler admission, or runtime-asset qualification is claimed here.
       const digest="0".repeat(64),now=Date.now();
       const context={
-        prompt:{revision:PAPERCLIP_EXECUTION_PROMPT_REVISION,text:PAPERCLIP_EXECUTION_PROMPT,digest:nativeRuntimePromptDigest()},
+        prompt:{revision:PILIBALA_EXECUTION_PROMPT_REVISION,text:PILIBALA_EXECUTION_PROMPT,digest:nativeRuntimePromptDigest()},
         instructions:{entryPath:"AGENTS.md",bundle:{schema:NATIVE_RUNTIME_ASSET_SCHEMA,digest,manifestDigest:digest,rootPath:"/synthetic/muse-jwt-instructions",fileCount:1,totalBytes:4}},
         skills:[],mcp:{assignmentSetId:"none",digest,bindingId:null},
       };
       const execution=parseNativeExecutionInput({
-        schema:"paperclip.native-execution-input.v8",
+        schema:"pilibala.native-execution-input.v8",
         binding:{companyId:f.company.id,agentId:f.agent.id,runId:f.runId,issueId:f.issue.id,executionWorkspaceId:randomUUID()},
         task:{identifier:f.issue.identifier??"MUSE-JWT",title:f.issue.title,description:null,prompt:"Read the current actor.",workMode:"standard"},
         provider:{kind:"muse",model:null,bridgeRevision:"muse-v1",binding:{companyId:f.company.id,agentId:f.agent.id,bindingId:f.binding.id,bindingGeneration:f.binding.generation,acceptByUnixMs:now+600000,expiresAtUnixMs:now+3600000}},
         workspace:{access:"none",cwd:null,repoUrl:null,repoRef:null,branchName:null},
         session:{normalizedSessionId:f.ref.normalizedSessionId,driverKind:"muse_external",protocolVersion:1,lifecyclePolicy:{mode:"per_turn",idleTimeoutMs:null}},
         executionMode:"default",planningContext:null,
-        completionContract:{id:randomUUID(),sha256:"sha256:"+digest,schemaVersion:"paperclip.completion-contract.v1",contract:{revision:"1",objective:"Read the actor",criteria:[{id:"actor",requirement:"Read the actor"}]}},
+        completionContract:{id:randomUUID(),sha256:"sha256:"+digest,schemaVersion:"pilibala.completion-contract.v1",contract:{revision:"1",objective:"Read the actor",criteria:[{id:"actor",requirement:"Read the actor"}]}},
         runtimeContext:{...context,aggregateDigest:canonicalNativeRuntimeContextDigest(context)},interactionResponses:[],credentialBindings:[],
       });
-      if(execution.schema!=="paperclip.native-execution-input.v8")throw new Error("Muse JWT fixture is not V8");
+      if(execution.schema!=="pilibala.native-execution-input.v8")throw new Error("Muse JWT fixture is not V8");
       const profile={nativeExecutionInput:execution};
       await db.update(heartbeatRuns).set({runnerProfileJson:profile}).where(eq(heartbeatRuns.id,f.runId));
       await expect(f.broker.assertRunAuthority(execution)).resolves.toBeUndefined();
-      const token=createLocalAgentJwt(f.agent.id,f.company.id,"paperclip_runner",f.runId,f.operatorId,undefined,f.operatorId);
+      const token=createLocalAgentJwt(f.agent.id,f.company.id,"pilibala_runner",f.runId,f.operatorId,undefined,f.operatorId);
       expect(typeof token).toBe("string");
       const app=express();app.use(actorMiddleware(db,{deploymentMode:"authenticated",resolveSession:async()=>null}));
       app.get("/actor",(req,res)=>res.json(req.actor));app.use(errorHandler);
-      const read=()=>request(app).get("/actor").set("Authorization","Bearer "+token).set("X-Paperclip-Run-Id",f.runId);
+      const read=()=>request(app).get("/actor").set("Authorization","Bearer "+token).set("X-Pilibala-Run-Id",f.runId);
       const positive=await read();
       expect(positive.status).toBe(200);expect(positive.body).toMatchObject({type:"agent",source:"agent_jwt",companyId:f.company.id,agentId:f.agent.id,runId:f.runId,authorizingUserId:f.operatorId,onBehalfOfUserId:f.operatorId});
       const beforeHolds=await db.select().from(externalAgentHolds).where(eq(externalAgentHolds.assignmentId,f.assignment.id));
@@ -300,14 +300,14 @@ describe("personal Muse control plane",()=>{
       expect((await read()).status).toBe(200);
       // This remains a valid V8 shape, but names a different current run.
       const otherRun={...execution,binding:{...execution.binding,runId:randomUUID()}};
-      expect(parseNativeExecutionInput(otherRun).schema).toBe("paperclip.native-execution-input.v8");
+      expect(parseNativeExecutionInput(otherRun).schema).toBe("pilibala.native-execution-input.v8");
       await db.update(heartbeatRuns).set({runnerProfileJson:{nativeExecutionInput:otherRun}}).where(eq(heartbeatRuns.id,f.runId));
       const wrongRun=await read();expect(wrongRun.status).toBe(403);expect(wrongRun.body).toEqual({error:"Muse native tool authority is unavailable"});
       await db.update(heartbeatRuns).set({runnerProfileJson:profile}).where(eq(heartbeatRuns.id,f.runId));
       expect((await read()).status).toBe(200);
-      const otherAuthorizer=createLocalAgentJwt(f.agent.id,f.company.id,"paperclip_runner",f.runId,f.operatorId,undefined,randomUUID());
+      const otherAuthorizer=createLocalAgentJwt(f.agent.id,f.company.id,"pilibala_runner",f.runId,f.operatorId,undefined,randomUUID());
       expect(typeof otherAuthorizer).toBe("string");
-      const wrongAuthorizer=await request(app).get("/actor").set("Authorization","Bearer "+otherAuthorizer).set("X-Paperclip-Run-Id",f.runId);
+      const wrongAuthorizer=await request(app).get("/actor").set("Authorization","Bearer "+otherAuthorizer).set("X-Pilibala-Run-Id",f.runId);
       expect(wrongAuthorizer.status).toBe(403);expect(wrongAuthorizer.body).toEqual({error:"Muse native tool authority is unavailable"});
       // A synthetic current-DB grant revocation must affect the same signed JWT.
       await db.update(mcpOauthGrants).set({revokedAt:new Date()}).where(eq(mcpOauthGrants.id,f.binding.grantId!));
@@ -317,7 +317,7 @@ describe("personal Muse control plane",()=>{
       expect(await db.select().from(activityLog).where(eq(activityLog.companyId,f.company.id)).orderBy(activityLog.id)).toEqual(beforeActivity);
       expect((await db.select({status:heartbeatRuns.status,runtimeMode:heartbeatRuns.runtimeMode,runnerProfileJson:heartbeatRuns.runnerProfileJson,resultJson:heartbeatRuns.resultJson}).from(heartbeatRuns).where(eq(heartbeatRuns.id,f.runId)))[0]).toMatchObject({status:"running",runtimeMode:"native",runnerProfileJson:profile,resultJson:null});
     }finally{
-      if(previousSecret===undefined)delete process.env.PAPERCLIP_AGENT_JWT_SECRET;else process.env.PAPERCLIP_AGENT_JWT_SECRET=previousSecret;
+      if(previousSecret===undefined)delete process.env.PILIBALA_AGENT_JWT_SECRET;else process.env.PILIBALA_AGENT_JWT_SECRET=previousSecret;
       await f.detach();
     }
   });
@@ -330,7 +330,7 @@ describe("personal Muse control plane",()=>{
       const writerContext={issueId:f.issue.id,...(lowTrust?{executionPolicy}:{})};
       await db.update(heartbeatRuns).set({contextSnapshot:writerContext}).where(eq(heartbeatRuns.id,f.runId));
       const execution={binding:{companyId:f.company.id,agentId:f.agent.id,runId:f.runId},provider:{binding:f.ref}};
-      const checks:string[]=[],authority=new PaperclipRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
+      const checks:string[]=[],authority=new PilibalaRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
         museRuntime:true,externalAuthorizingUserId:f.operatorId,assertBridgeAuthority:async(database=db)=>{
           await f.broker.assertRunAuthority(execution,database);checks.push(database===db?"discovery":"transaction");
         }});
@@ -358,7 +358,7 @@ describe("personal Muse control plane",()=>{
       });
       expect(await authority.execute({...call,callId:randomUUID()})).toEqual(first);
       expect(await snapshot()).toEqual(committed);
-      await expect(authority.execute({...call,callId:randomUUID(),arguments:{...call.arguments,body:body+" changed"}})).rejects.toThrow("paperclip_runner_tool_idempotency_conflict");
+      await expect(authority.execute({...call,callId:randomUUID(),arguments:{...call.arguments,body:body+" changed"}})).rejects.toThrow("pilibala_runner_tool_idempotency_conflict");
       expect(await snapshot()).toEqual(committed);
       const history=await authority.execute({tool:"get_task_history",callId:randomUUID(),arguments:{limit:50}}) as {comments:Array<{id:string,body:string,sourceTrust:unknown}>};
       expect(history.comments).toHaveLength(1);
@@ -372,12 +372,12 @@ describe("personal Muse control plane",()=>{
         ]);
         // Construct a distinct, genuinely standard read context. This is a DB
         // read fixture, not scheduler admission, a handoff, or worker release.
-        const [reader]=await db.insert(agents).values({companyId:f.company.id,name:"Standard history reader",role:"engineer",status:"active",adapterType:"paperclip_runner",adapterConfig:{provider:"codex"}}).returning();
+        const [reader]=await db.insert(agents).values({companyId:f.company.id,name:"Standard history reader",role:"engineer",status:"active",adapterType:"pilibala_runner",adapterConfig:{provider:"codex"}}).returning();
         await db.insert(companyMemberships).values({companyId:f.company.id,principalType:"agent",principalId:reader.id,membershipRole:"member",status:"active"});
         const readerRunId=randomUUID();
         await db.insert(heartbeatRuns).values({id:readerRunId,companyId:f.company.id,agentId:reader.id,status:"running",runtimeMode:"native",nativeIssueId:f.issue.id,responsibleUserId:f.operatorId,contextSnapshot:{issueId:f.issue.id}});
         await db.update(issues).set({assigneeAgentId:reader.id,executionRunId:readerRunId,checkoutRunId:readerRunId}).where(eq(issues.id,f.issue.id));
-        const readerAuthority=new PaperclipRunnerToolAuthority(db,{companyId:f.company.id,agentId:reader.id,issueId:f.issue.id,runId:readerRunId});
+        const readerAuthority=new PilibalaRunnerToolAuthority(db,{companyId:f.company.id,agentId:reader.id,issueId:f.issue.id,runId:readerRunId});
         const stored=await db.select().from(issueComments).where(eq(issueComments.issueId,f.issue.id)).orderBy(issueComments.id);
         const read=await readerAuthority.execute({tool:"get_task_history",callId:randomUUID(),arguments:{limit:50}}) as {comments:Array<{id:string,body:string,sourceTrust:unknown}>};
         expect(read.comments.find(row=>row.id===comment.id)).toMatchObject({body:LOW_TRUST_QUARANTINED_BODY,sourceTrust:expectedTrust});
@@ -399,7 +399,7 @@ describe("personal Muse control plane",()=>{
     try {
       expect((await f.broker.act(f.subject,{version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()})).status).toBe("accepted");
       const execution={binding:{companyId:f.company.id,agentId:f.agent.id,runId:f.runId},provider:{binding:f.ref}};
-      const checks:string[]=[],authority=new PaperclipRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
+      const checks:string[]=[],authority=new PilibalaRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
         museRuntime:true,externalAuthorizingUserId:f.operatorId,assertBridgeAuthority:async(database=db)=>{
           await museRunnerBroker(database,{publicOrigin:oauthOrigin}).assertRunAuthority(execution);
           checks.push(database===db?"discovery":"transaction");
@@ -462,7 +462,7 @@ describe("personal Muse control plane",()=>{
     try {
       expect((await f.broker.act(f.subject,{version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()})).status).toBe("accepted");
       const execution={binding:{companyId:f.company.id,agentId:f.agent.id,runId:f.runId},provider:{binding:f.ref}};
-      const checks:string[]=[],authority=new PaperclipRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
+      const checks:string[]=[],authority=new PilibalaRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
         museRuntime:true,externalAuthorizingUserId:f.operatorId,assertBridgeAuthority:async(database=db)=>{
           checks.push(database===db?"discovery":"transaction");await f.broker.assertRunAuthority(execution,database);
         }});
@@ -532,7 +532,7 @@ describe("personal Muse control plane",()=>{
       await db.update(agents).set({adapterConfig:{provider:"codex"}}).where(eq(agents.id,f.agent.id));
       await db.update(heartbeatRuns).set({driverKind:"codex_app_server"}).where(eq(heartbeatRuns.id,f.runId));
       const assertBridgeAuthority=vi.fn(async()=>{throw new Error("Muse authority must not guard this ordinary native binding");});
-      const authority=new PaperclipRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,assertBridgeAuthority});
+      const authority=new PilibalaRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,assertBridgeAuthority});
       const call={tool:"write_document",callId:randomUUID(),arguments:{key:"report",title:"Report",body:"Ordinary native document",baseRevisionId:null,idempotencyKey:randomUUID()}};
       const result=await authority.execute(call);expect(result).toMatchObject({disposition:"applied",document:{body:call.arguments.body}});
       expect(await authority.execute({...call,callId:randomUUID()})).toEqual(result);
@@ -560,7 +560,7 @@ describe("personal Muse control plane",()=>{
       const execution={binding:{companyId:f.company.id,agentId:f.agent.id,runId:f.runId},provider:{binding:f.ref}};
       let armed=false,txChecks=0,nativePid=0,idlePid=0,ready=()=>{};
       const entered=new Promise<void>(resolve=>{ready=resolve;}),gate=new Promise<void>(resolve=>{release=resolve;});
-      const authority=new PaperclipRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
+      const authority=new PilibalaRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
         museRuntime:true,externalAuthorizingUserId:f.operatorId,stopTaskForReassignment,enqueueWakeup,
         assertBridgeAuthority:async(database=db)=>{
           await f.broker.assertRunAuthority(execution,database);
@@ -589,7 +589,7 @@ describe("personal Muse control plane",()=>{
       armed=true;native=authority.execute({...call,callId:randomUUID()}).then(result=>({result}),error=>({error}));
       await expect.poll(()=>nativePid,{timeout:5000,interval:25}).toBeGreaterThan(0);
       await entered;
-      const admissionKey=`paperclip:external-admission:${f.company.id}:${f.agent.id}`;
+      const admissionKey=`pilibala:external-admission:${f.company.id}:${f.agent.id}`;
       const nativeAdmission=await db.execute<{pid:number}>(sql`select pid from pg_locks where pid=${nativePid} and locktype='advisory' and granted and objsubid=1
         and classid=((hashtextextended(${admissionKey},0)>>32)&4294967295)::oid and objid=(hashtextextended(${admissionKey},0)&4294967295)::oid`);
       expect(nativeAdmission).toHaveLength(1);
@@ -608,7 +608,7 @@ describe("personal Muse control plane",()=>{
       release();
       const [nativeOutcome,idleOutcome]=await Promise.all([native,idle]);
       const observed=JSON.stringify({phase,nativePid,idlePid,nativeCode:(nativeOutcome.error as {cause?:{code?:string};code?:string}|undefined)?.cause?.code??(nativeOutcome.error as {code?:string}|undefined)?.code,idleCode:(idleOutcome.error as {cause?:{code?:string};code?:string}|undefined)?.cause?.code??(idleOutcome.error as {code?:string}|undefined)?.code});
-      expect(nativeOutcome.error,observed).toMatchObject({status:409,message:"paperclip_runner_reassignment_conflict: target is busy; retry after current work settles"});
+      expect(nativeOutcome.error,observed).toMatchObject({status:409,message:"pilibala_runner_reassignment_conflict: target is busy; retry after current work settles"});
       expect(idleOutcome.error,observed).toBeUndefined();expect(idleOutcome.result).toMatchObject({status:"commented",issueId:target.id});
       expect(await readTarget()).toEqual(beforeTarget);expect(await readReassignments()).toEqual(beforeReassignments);
       const [afterRun]=await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id,f.runId));
@@ -652,7 +652,7 @@ describe("personal Muse control plane",()=>{
       });
       await locked;
       const assertBridgeAuthority=vi.fn(async()=>{throw new Error("Muse authority must not guard ordinary reassignment");});
-      const authority=new PaperclipRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,assertBridgeAuthority,stopTaskForReassignment:vi.fn(async()=>{})});
+      const authority=new PilibalaRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,assertBridgeAuthority,stopTaskForReassignment:vi.fn(async()=>{})});
       const call={tool:"reassign_task",callId:randomUUID(),arguments:{taskId:target.id,assigneeActorId:null,assigneeUserId:f.operatorId,expectedAssigneeActorId:f.agent.id,expectedStatusVersion:0,reason:"Ordinary handoff",idempotencyKey:randomUUID()}};
       native=authority.execute(call).then(result=>({result}),error=>({error}));
       await expect.poll(async()=>{
@@ -675,7 +675,7 @@ describe("personal Muse control plane",()=>{
     try {
       expect((await f.broker.act(f.subject,{version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()})).status).toBe("accepted");
       const execution={binding:{companyId:f.company.id,agentId:f.agent.id,runId:f.runId},provider:{binding:f.ref}};
-      const authority=new PaperclipRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
+      const authority=new PilibalaRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
         museRuntime:true,externalAuthorizingUserId:f.operatorId,assertBridgeAuthority:(database=db)=>f.broker.assertRunAuthority(execution,database)});
       const call={tool:"create_task",callId:randomUUID(),arguments:{title:"Native child",idempotencyKey:randomUUID()}};
       const command={version:1 as const,command:"task.create" as const,requestId:randomUUID(),title:"Idle child",parentId:f.issue.id};
@@ -746,7 +746,7 @@ describe("personal Muse control plane",()=>{
     try {
       expect((await f.broker.act(f.subject,{version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()})).status).toBe("accepted");
       const execution={binding:{companyId:f.company.id,agentId:f.agent.id,runId:f.runId},provider:{binding:f.ref}};
-      const authority=new PaperclipRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
+      const authority=new PilibalaRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
         museRuntime:true,externalAuthorizingUserId:f.operatorId,assertBridgeAuthority:(database=db)=>f.broker.assertRunAuthority(execution,database)});
       let ready=()=>{};const locked=new Promise<void>(resolve=>{ready=resolve;}),gate=new Promise<void>(resolve=>{release=resolve;});
       holder=db.transaction(async tx=>{
@@ -772,7 +772,7 @@ describe("personal Muse control plane",()=>{
     try {
       expect((await f.broker.act(f.subject,{version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()})).status).toBe("accepted");
       const execution={binding:{companyId:f.company.id,agentId:f.agent.id,runId:f.runId},provider:{binding:f.ref}};
-      const checks:string[]=[],authority=new PaperclipRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
+      const checks:string[]=[],authority=new PilibalaRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
         museRuntime:true,externalAuthorizingUserId:f.operatorId,assertBridgeAuthority:async(database=db)=>{
           await f.broker.assertRunAuthority(execution,database);checks.push(database===db?"discovery":"transaction");
         }});
@@ -836,7 +836,7 @@ describe("personal Muse control plane",()=>{
     try {
       expect((await f.broker.act(f.subject,{version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()})).status).toBe("accepted");
       const execution={binding:{companyId:f.company.id,agentId:f.agent.id,runId:f.runId},provider:{binding:f.ref}};
-      const checks:string[]=[],authority=new PaperclipRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
+      const checks:string[]=[],authority=new PilibalaRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:f.issue.id,runId:f.runId,
         museRuntime:true,externalAuthorizingUserId:f.operatorId,assertBridgeAuthority:async(database=db)=>{
           await f.broker.assertRunAuthority(execution,database);checks.push(database===db?"discovery":"transaction");
         }});
@@ -876,8 +876,8 @@ describe("personal Muse control plane",()=>{
     await db.update(bindings).set({qualificationId,qualificationStartedAt:new Date(expiresAt.getTime()-86_400_000),qualificationExpiresAt:expiresAt}).where(eq(bindings.id,f.binding.id));
     await f.broker.endQualification({companyId:f.company.id,agentId:f.agent.id,bindingId:f.binding.id,qualificationId,operatorId:f.operatorId});
     const [binding]=await db.select().from(bindings).where(eq(bindings.id,f.binding.id));
-    const input={bindingId:binding.id,generation:binding.generation,expectedRevision:binding.revision,qualificationId,hookScript:`~/hooks/scripts/paperclip-muse-${binding.id}.sh`,detectorRemoved:true as const,
-      observation:{method:"hooks.list" as const,includeDisabled:true as const,hookId:"paperclip-synthetic-hook",outcome:"exact_hook_absent" as const,observedAt:new Date().toISOString(),sha256:"d".repeat(64)}};
+    const input={bindingId:binding.id,generation:binding.generation,expectedRevision:binding.revision,qualificationId,hookScript:`~/hooks/scripts/pilibala-muse-${binding.id}.sh`,detectorRemoved:true as const,
+      observation:{method:"hooks.list" as const,includeDisabled:true as const,hookId:"pilibala-synthetic-hook",outcome:"exact_hook_absent" as const,observedAt:new Date().toISOString(),sha256:"d".repeat(64)}};
     const app=express();app.use(express.json());app.use(async(req,_res,next)=>{
       const access=await boardAuthService(db).resolveBoardAccess(f.operatorId);
       Object.assign(req,{actor:{type:"board",source:"session",userId:access.user?.id,userName:access.user?.name??null,userEmail:access.user?.email??null,companyIds:access.companyIds,memberships:access.memberships,isInstanceAdmin:access.isInstanceAdmin}});next();
@@ -1094,7 +1094,7 @@ describe("personal Muse control plane",()=>{
     expect((await db.select().from(bindings).where(eq(bindings.id,f.binding.id)))[0].workerCursor).toBe(batch.nextCursor);
   });
   it("filters current idle task visibility even with global privacy disabled",async()=>{
-    vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE","off");const f=await fixture();
+    vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE","off");const f=await fixture();
     const other=randomUUID();await db.insert(authUsers).values({id:other,name:"other",email:other+"@example.test",createdAt:new Date(),updatedAt:new Date()});
     const [issue]=await db.insert(issues).values({companyId:f.company.id,title:"secret",visibility:"private",responsibleUserId:other,assigneeAgentId:f.agent.id}).returning();
     expect((await f.broker.inspect(f.subject,{version:1,query:"task.list"}) as {tasks:unknown[]}).tasks).toEqual([]);
@@ -1165,7 +1165,7 @@ describe("personal Muse control plane",()=>{
       await db.update(agents).set({permissions:{trustPreset:"low_trust_review",authorizationPolicy:{trustBoundary:{mode:"low_trust_review",companyId:f.company.id,projectIds:[project.id]}}}}).where(eq(agents.id,f.agent.id));
       await db.update(issues).set({visibility:"private"}).where(eq(issues.id,f.issue.id));
       await db.update(heartbeatRuns).set({contextSnapshot:{issueId:f.issue.id}}).where(eq(heartbeatRuns.id,f.runId));
-      const [wake]=await db.insert(agentWakeupRequests).values({companyId:f.company.id,agentId:f.agent.id,runId:f.runId,source:"assignment",status:"claimed",requestedByActorType:"user",requestedByActorId:f.operatorId,payload:{issueId:f.issue.id,_paperclipWakeContext:{source:"issue.update"}}}).returning();
+      const [wake]=await db.insert(agentWakeupRequests).values({companyId:f.company.id,agentId:f.agent.id,runId:f.runId,source:"assignment",status:"claimed",requestedByActorType:"user",requestedByActorId:f.operatorId,payload:{issueId:f.issue.id,_pilibalaWakeContext:{source:"issue.update"}}}).returning();
       const idleRequest={version:1 as const,query:"task.read" as const,issueId:f.issue.id,runId:f.runId};
       await expect(f.broker.inspect(f.subject,idleRequest)).rejects.toThrow("unavailable");
       expect(await f.broker.inspect(f.subject,{version:1,query:"assignment.read",assignmentId:f.assignment.id})).toMatchObject({assignmentId:f.assignment.id,status:"offered"});
@@ -1228,7 +1228,7 @@ describe("personal Muse control plane",()=>{
     const runId=randomUUID();
     await db.insert(heartbeatRuns).values({id:runId,companyId:f.company.id,agentId:f.agent.id,nativeIssueId:coordination.id,responsibleUserId:f.operatorId,status:"running",runtimeMode:"native",invocationSource:"assignment"});
     await db.update(issues).set({executionRunId:runId}).where(eq(issues.id,coordination.id));
-    const authority=new PaperclipRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:coordination.id,runId,museRuntime:true,externalAuthorizingUserId:f.operatorId,assertBridgeAuthority:async()=>{}});
+    const authority=new PilibalaRunnerToolAuthority(db,{companyId:f.company.id,agentId:f.agent.id,issueId:coordination.id,runId,museRuntime:true,externalAuthorizingUserId:f.operatorId,assertBridgeAuthority:async()=>{}});
     const before=await authority.execute({tool:"get_task_history",callId:"restricted-history",arguments:{limit:50}}) as {comments:Array<{id:string,body:string}>};
     expect(before.comments.find(comment=>comment.id===comments[0].id)?.body).toBe(commentCommand.body);
     await db.update(agents).set({permissions:{canCreateTasks:true}}).where(eq(agents.id,f.agent.id));
@@ -1501,7 +1501,7 @@ describe("personal Muse control plane",()=>{
   it.each([false,true])("excludes fenced historical answers from pending health while retaining stop barriers:effects=%s",async(nativeEffectsUnknown)=>{
     const f=await active();try {
       await f.broker.act(f.subject,{version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()});
-      const requestId="cancelled_question",response={schema:"paperclip.question_response.v1",answers:[]},inputDigest=digestPaperclipSemanticContent({requestId,turnId:f.ref.turnId,response});
+      const requestId="cancelled_question",response={schema:"pilibala.question_response.v1",answers:[]},inputDigest=digestPilibalaSemanticContent({requestId,turnId:f.ref.turnId,response});
       await f.port.inputAvailable({sourceEventId:randomUUID(),payload:{binding:f.ref,requestId,turnId:f.ref.turnId,inputDigest,response}});
       const [answer]=await db.select().from(museInputDeliveries).where(eq(museInputDeliveries.assignmentId,f.assignment.id));
       expect((await f.broker.bindingForAgent(f.company.id,f.agent.id))!.pendingInputs).toBe(1);
@@ -1526,7 +1526,7 @@ describe("personal Muse control plane",()=>{
   it("persists canonical input before ACK and separates client proof from exact native input",async()=>{
     const f=await active();try {
       await f.broker.act(f.subject,{version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()});
-      const requestId="native_question",response={schema:"paperclip.question_response.v1",answers:[]},inputDigest=digestPaperclipSemanticContent({requestId,turnId:f.ref.turnId,response});
+      const requestId="native_question",response={schema:"pilibala.question_response.v1",answers:[]},inputDigest=digestPilibalaSemanticContent({requestId,turnId:f.ref.turnId,response});
       await f.port.inputAvailable({sourceEventId:randomUUID(),payload:{binding:f.ref,requestId,turnId:f.ref.turnId,inputDigest,response}});
       expect(await db.select().from(museInputDeliveries).where(eq(museInputDeliveries.assignmentId,f.assignment.id))).toHaveLength(1);
       await expect(f.broker.act(f.subject,{version:1,command:"finish",assignmentId:f.assignment.id,requestId:randomUUID(),result:{}})).rejects.toThrow("input");
@@ -1625,7 +1625,7 @@ describe("personal Muse control plane",()=>{
       const [after]=await db.select().from(externalAgentHolds).where(eq(externalAgentHolds.assignmentId,f.assignment.id));
       expect(after.workerReportedAt).toBeInstanceOf(Date);expect(after.workerUnknown).toBe(true);
       expect(after.nativeEffectsUnknown).toBe(true);expect(after.releasedAt).toBeNull();
-      await expect(f.broker.act(subject,{version:1,command:"tool",assignmentId:f.assignment.id,requestId:randomUUID(),name:"paperclip_task_read",arguments:{}})).rejects.toThrow();
+      await expect(f.broker.act(subject,{version:1,command:"tool",assignmentId:f.assignment.id,requestId:randomUUID(),name:"pilibala_task_read",arguments:{}})).rejects.toThrow();
     }finally{await f.detach();}
   });
 
@@ -1875,7 +1875,7 @@ describe("personal Muse control plane",()=>{
   it.each(["prior_window","overlapping_window","unreleased_effect_hold"] as const)("retains historical pending-input qualification periods without blocking later proven idle:%s",async(kind)=>{
     const f=await active();try {
       await f.broker.act(f.subject,{version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()});
-      const requestId="historical_question",response={schema:"paperclip.question_response.v1",answers:[]},inputDigest=digestPaperclipSemanticContent({requestId,turnId:f.ref.turnId,response});
+      const requestId="historical_question",response={schema:"pilibala.question_response.v1",answers:[]},inputDigest=digestPilibalaSemanticContent({requestId,turnId:f.ref.turnId,response});
       await f.port.inputAvailable({sourceEventId:randomUUID(),payload:{binding:f.ref,requestId,turnId:f.ref.turnId,inputDigest,response}});
       if(kind==="unreleased_effect_hold")await db.insert(operations).values({companyId:f.company.id,assignmentId:f.assignment.id,requestId:randomUUID(),digest:"pending",command:{action:"tool"},status:"pending"});
       await f.port.dispatch({sourceEventId:randomUUID(),payload:{kind:"authority_revoked",binding:f.ref}});
@@ -2362,27 +2362,27 @@ describe("personal Muse control plane",()=>{
 
   it("serves opaque public wake digests while worker and cleanup APIs still require private bearer authority",async()=>{
     const f=await active();try {
-      const app=transport(),reply=await request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id);
+      const app=transport(),reply=await request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id);
       expect(reply.status).toBe(200);expect(Object.keys(reply.body)).toEqual(["version","signal"]);expect(Object.keys(reply.body.signal)).toEqual(["reference"]);
       const [item]=await db.select().from(mailbox).where(eq(mailbox.assignmentId,f.assignment.id));
       expect(reply.body.signal.reference).toBe("sha256:"+createHash("sha256").update(`${f.binding.id}:1:${item.sourceEventId}:${item.signalAttempt}`).digest("hex"));
       expect(JSON.stringify(reply.body)).not.toContain(f.assignment.id);expect(JSON.stringify(reply.body)).not.toContain(f.issue.title);
-      expect((await request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id)).body).toEqual(reply.body);
+      expect((await request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id)).body).toEqual(reply.body);
       expect((await request(app).get("/api/muse/v1/signal")).status).toBe(400);
-      expect((await request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding","invalid")).status).toBe(400);
-      expect((await request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",randomUUID())).status).toBe(410);
+      expect((await request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding","invalid")).status).toBe(400);
+      expect((await request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",randomUUID())).status).toBe(410);
       expect((await request(app).get("/api/muse/v1/signal?binding="+f.binding.id)).status).toBe(404);
-      expect((await request(app).post("/api/muse/v1/commands").set("X-Paperclip-Muse-Binding",f.binding.id).send({version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()})).status).toBe(401);
-      expect((await request(app).post("/api/muse/v1/detector-cleanup").set("X-Paperclip-Muse-Binding",f.binding.id).send({version:1,bindingId:f.binding.id,generation:1,requestId:randomUUID(),detectorRemoved:true})).status).toBe(401);
-      expect((await request(app).post("/api/muse/v1/queries").set("X-Paperclip-Muse-Binding",f.binding.id).send({version:1,query:"identify"})).status).toBe(401);
-      expect((await request(app).post("/api/muse/v1/cleanup").set("X-Paperclip-Muse-Binding",f.binding.id).send({version:1,command:"control.inspect"})).status).toBe(401);
+      expect((await request(app).post("/api/muse/v1/commands").set("X-Pilibala-Muse-Binding",f.binding.id).send({version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()})).status).toBe(401);
+      expect((await request(app).post("/api/muse/v1/detector-cleanup").set("X-Pilibala-Muse-Binding",f.binding.id).send({version:1,bindingId:f.binding.id,generation:1,requestId:randomUUID(),detectorRemoved:true})).status).toBe(401);
+      expect((await request(app).post("/api/muse/v1/queries").set("X-Pilibala-Muse-Binding",f.binding.id).send({version:1,query:"identify"})).status).toBe(401);
+      expect((await request(app).post("/api/muse/v1/cleanup").set("X-Pilibala-Muse-Binding",f.binding.id).send({version:1,command:"control.inspect"})).status).toBe(401);
     }finally{await f.detach();}
   });
   it.each(["input", "challenge"] as const)("signals pending stop control while paused and keeps ordinary %s quiet",async(kind)=>{
     const oauth=await oauthFixture(true),f=await active(oauth);try {
       await f.broker.act(f.subject,{version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()});
       if(kind==="input") {
-        const requestId="paused_question",response={schema:"paperclip.question_response.v1",answers:[]},inputDigest=digestPaperclipSemanticContent({requestId,turnId:f.ref.turnId,response});
+        const requestId="paused_question",response={schema:"pilibala.question_response.v1",answers:[]},inputDigest=digestPilibalaSemanticContent({requestId,turnId:f.ref.turnId,response});
         await f.port.inputAvailable({sourceEventId:randomUUID(),payload:{binding:f.ref,requestId,turnId:f.ref.turnId,inputDigest,response}});
       } else {
         const state=(await f.broker.bindingForAgent(f.company.id,f.agent.id))!;
@@ -2390,7 +2390,7 @@ describe("personal Muse control plane",()=>{
       }
       await f.port.dispatch({sourceEventId:randomUUID(),payload:{kind:"authority_revoked",binding:f.ref}});
       await db.update(agents).set({status:"paused"}).where(eq(agents.id,f.agent.id));
-      const app=transport(),poll=()=>request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id);
+      const app=transport(),poll=()=>request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id);
       const first=await poll();expect(first.status).toBe(200);expect(first.body.signal?.reference).toMatch(/^sha256:/);
       const [stop]=await db.select().from(mailbox).where(and(eq(mailbox.bindingId,f.binding.id),eq(mailbox.kind,"authority_revoked")));
       expect(stop.signalAttempt).toBe(1);expect(stop.signalNotifiedAt).toBeInstanceOf(Date);
@@ -2411,8 +2411,8 @@ describe("personal Muse control plane",()=>{
       await f.broker.act(f.subject,{version:1,command:"accept",assignmentId:f.assignment.id,requestId:randomUUID()});
       const state=(await f.broker.bindingForAgent(f.company.id,f.agent.id))!;
       await f.broker.verify(f.company.id,f.agent.id,{bindingId:f.binding.id,generation:1,expectedRevision:state.revision});
-      const nativeRequestId="disabled_question",response={schema:"paperclip.question_response.v1",answers:{answer:{text:"PRIVATE pending input canary"}}};
-      const inputDigest=digestPaperclipSemanticContent({requestId:nativeRequestId,turnId:f.ref.turnId,response});
+      const nativeRequestId="disabled_question",response={schema:"pilibala.question_response.v1",answers:{answer:{text:"PRIVATE pending input canary"}}};
+      const inputDigest=digestPilibalaSemanticContent({requestId:nativeRequestId,turnId:f.ref.turnId,response});
       await f.port.inputAvailable({sourceEventId:randomUUID(),payload:{binding:f.ref,requestId:nativeRequestId,turnId:f.ref.turnId,inputDigest,response}});
       await db.insert(operations).values({companyId:f.company.id,assignmentId:f.assignment.id,requestId:randomUUID(),digest:"pending",command:{action:"tool"},status:"pending"});
       await instanceSettingsService(db).updateExperimental({[flag]:false});
@@ -2423,7 +2423,7 @@ describe("personal Muse control plane",()=>{
       const [hold]=await db.select().from(externalAgentHolds).where(eq(externalAgentHolds.assignmentId,f.assignment.id));
       const [stop]=await db.select().from(mailbox).where(and(eq(mailbox.bindingId,f.binding.id),eq(mailbox.kind,"authority_revoked")));
       const authorization="Bearer "+oauth.tokens!.access_token;
-      const poll=()=>request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id);
+      const poll=()=>request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id);
       const [signal,inbox,inspection]=await Promise.all([
         poll(),request(app).post("/api/muse/v1/queries").set("Authorization",authorization).send({version:1,query:"mailbox",after:0}),
         request(app).post("/api/muse/v1/cleanup").set("Authorization",authorization).send({version:1,command:"control.inspect"}),
@@ -2439,8 +2439,8 @@ describe("personal Muse control plane",()=>{
         {query:"task.document.read",issueId:f.issue.id,key:"memo"},{query:"operation.receipt",assignmentId:f.assignment.id,requestId:f.sent[0].requestId}];
       for(const query of workQueries)expect((await request(app).post("/api/muse/v1/queries").set("Authorization",authorization).send({version:1,...query})).status).toBe(503);
       const workCommands=[{command:"accept",assignmentId:f.assignment.id},{command:"progress",assignmentId:f.assignment.id,text:"no new effect"},
-        {command:"tool",assignmentId:f.assignment.id,name:"read_task",input:{}},{command:"finish",assignmentId:f.assignment.id,result:{schema:"paperclip.run_result.v1"}},
-        {command:"request_user_input",assignmentId:f.assignment.id,nativeRequestId:"new_question",questionSet:{schema:"paperclip.question_set.v1",questions:[{id:"answer",prompt:"No new question",required:true,answerMode:"text"}]}},
+        {command:"tool",assignmentId:f.assignment.id,name:"read_task",input:{}},{command:"finish",assignmentId:f.assignment.id,result:{schema:"pilibala.run_result.v1"}},
+        {command:"request_user_input",assignmentId:f.assignment.id,nativeRequestId:"new_question",questionSet:{schema:"pilibala.question_set.v1",questions:[{id:"answer",prompt:"No new question",required:true,answerMode:"text"}]}},
         {command:"consume_input",assignmentId:f.assignment.id,nativeRequestId,inputDigest,continuationReceiptId:randomUUID(),continuationPersisted:true},
         {command:"challenge.confirm",nonce:"unchanged-private-challenge"},{command:"work.request",issueId:f.issue.id},
         {command:"task.comment",issueId:f.issue.id,body:"No idle effect"},{command:"task.create",title:"No idle task"}];
@@ -2481,7 +2481,7 @@ describe("personal Muse control plane",()=>{
       for(const command of [{command:"control.inspect"},{command:"worker.quiescent",boundary:hold.stopBoundary,requestId:randomUUID()}])expect((await request(app).post("/api/muse/v1/cleanup").set("Authorization",authorization).send({version:1,...command})).status).toBe(expected);
       expect((await request(app).post("/api/muse/v1/queries").set("Authorization",authorization).send({version:1,query:"mailbox",after:0})).status).toBe(expected);
       const [saved]=await db.select().from(externalAgentHolds).where(eq(externalAgentHolds.id,hold.id));expect(saved.workerReportedAt).toBeNull();expect(saved.stopBoundary).toEqual(hold.stopBoundary);expect(f.sent).toHaveLength(1);
-      const signal=await request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id);
+      const signal=await request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id);
       if(["grant_revoked","connection_revoked","refresh_expired","membership_lost","resource_changed"].includes(fault))expect(signal.status).toBe(410);
       else expect(signal.body).toEqual({version:1,signal:null});
     }finally{await instanceSettingsService(db).updateExperimental({enableMuse:true,enableNativeRunner:true});await f.detach();}
@@ -2517,7 +2517,7 @@ describe("personal Muse control plane",()=>{
   it.each(["enableMuse","enableNativeRunner"] as const)("disabled stop control requires a durable fence before using %s current credentials",async flag=>{
     const f=await oauthFixture(true),app=transport();try {
       await instanceSettingsService(db).updateExperimental({[flag]:false});
-      expect((await request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id)).body).toEqual({version:1,signal:null});
+      expect((await request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id)).body).toEqual({version:1,signal:null});
       expect((await request(app).post("/api/muse/v1/queries").set("Authorization","Bearer "+f.tokens!.access_token).send({version:1,query:"mailbox",after:0})).status).toBe(403);
       expect((await request(app).post("/api/muse/v1/cleanup").set("Authorization","Bearer "+f.tokens!.access_token).send({version:1,command:"control.inspect"})).status).toBe(403);
     }finally{await instanceSettingsService(db).updateExperimental({enableMuse:true,enableNativeRunner:true});}
@@ -2542,7 +2542,7 @@ describe("personal Muse control plane",()=>{
     await f.broker.verify(f.company.id,f.agent.id,{bindingId:f.binding.id,generation:1,expectedRevision:state.revision});
     const [challenge]=await db.select().from(mailbox).where(and(eq(mailbox.bindingId,f.binding.id),eq(mailbox.kind,"readiness_challenge")));
     await db.update(bindings).set({challengeExpiresAt:new Date(Date.now()-1)}).where(eq(bindings.id,f.binding.id));
-    const poll=()=>request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id);
+    const poll=()=>request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id);
     expect((await poll()).body).toEqual({version:1,signal:null});
     const ack=await request(app).post("/api/muse/v1/queries").set("Authorization","Bearer "+f.tokens!.access_token).send({version:1,query:"mailbox",after:challenge.id});
     expect(ack.status).toBe(200);
@@ -2558,7 +2558,7 @@ describe("personal Muse control plane",()=>{
     expect(challenges).toHaveLength(2);
     const current=(await db.select().from(bindings).where(eq(bindings.id,f.binding.id)))[0];
     expect(museCredentialHash(String(challenges[1].references.nonce))).toBe(current.challengeHash);
-    const poll=()=>request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id);
+    const poll=()=>request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id);
     const first=await poll(),second=await poll();expect(first.status).toBe(200);expect(first.body.signal?.reference).toMatch(/^sha256:/);expect(second.body).toEqual(first.body);
     const saved=await db.select().from(mailbox).where(and(eq(mailbox.bindingId,f.binding.id),eq(mailbox.kind,"readiness_challenge"))).orderBy(mailbox.id);
     expect(saved.map(item=>item.signalAttempt)).toEqual([0,1]);
@@ -2569,7 +2569,7 @@ describe("personal Muse control plane",()=>{
 
   it("keeps paused and feature-disabled public receivers idle, resumes them, and fences lost current authority",async()=>{
     const f=await active();try {
-      const app=transport(),poll=()=>request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id);
+      const app=transport(),poll=()=>request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id);
       await db.update(agents).set({status:"paused"}).where(eq(agents.id,f.agent.id));expect((await poll()).body).toEqual({version:1,signal:null});
       await db.update(agents).set({status:"active"}).where(eq(agents.id,f.agent.id));expect((await poll()).body.signal.reference).toMatch(/^sha256:/);
       await instanceSettingsService(db).updateExperimental({enableMuse:false});expect((await poll()).body).toEqual({version:1,signal:null});
@@ -2580,16 +2580,16 @@ describe("personal Muse control plane",()=>{
   it("returns410 for expired refresh authority and thirty days of authenticated inactivity",async()=>{
     const expired=await fixture(false),inactive=await fixture(false),app=transport();
     await db.update(museCredentials).set({expiresAt:new Date(Date.now()-1)}).where(and(eq(museCredentials.bindingId,expired.binding.id),eq(museCredentials.kind,"refresh")));
-    expect((await request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",expired.binding.id)).status).toBe(410);
+    expect((await request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",expired.binding.id)).status).toBe(410);
     await db.update(bindings).set({workerActivityAt:new Date(Date.now()-30*86400000)}).where(eq(bindings.id,inactive.binding.id));
-    expect((await request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",inactive.binding.id)).status).toBe(410);
+    expect((await request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",inactive.binding.id)).status).toBe(410);
   });
   it("keeps transient authority-check failures retryable and records no failed public contact",async()=>{
     const f=await fixture(false),app=transport(),check=vi.spyOn(museIdentityModule,"assertMuseReceiverAuthority").mockRejectedValueOnce(new Error("Synthetic database transport failure"));
     try {
-      expect((await request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id)).status).toBe(500);
+      expect((await request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id)).status).toBe(500);
       await museReceiver(db).flush();expect((await db.select().from(bindings).where(eq(bindings.id,f.binding.id)))[0].receiverContactAt).toBeNull();
-      expect((await request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id)).status).toBe(200);
+      expect((await request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id)).status).toBe(200);
     }finally{check.mockRestore();}
   });
   it("retains immutable asset1 through asset8 bytes and advertises finite asset9 routes",async()=>{
@@ -2617,15 +2617,15 @@ describe("personal Muse control plane",()=>{
     expect(pairing.setupInstruction).toContain(JSON.stringify({companyId:f.company.id,companyName:f.company.name,agentId:f.agent.id,agentName:f.agent.name,bindingId:pairing.bindingId}));
     expect(pairing.setupInstruction).toContain("standing authorization");expect(pairing.setupInstruction).toContain("autonomously accept");expect(pairing.setupInstruction).toContain("native accepted lease before any task effect");
     expect(pairing.setupInstruction).toContain(`--company-id '${f.company.id}' --company-name '${f.company.name}' --agent-id '${f.agent.id}' --agent-name '${f.agent.name}'`);
-    expect(pairing.setupInstruction).toContain(`/paperclip-muse-${pairing.bindingId}/SKILL.md`);
+    expect(pairing.setupInstruction).toContain(`/pilibala-muse-${pairing.bindingId}/SKILL.md`);
   });
 
   it("redeems Muse PKCE ticket into its exact agent/operator grant and keeps pre-token polling pending",async()=>{
     const f=await oauthFixture(),redirect=new URL(f.authorizationUrl!);expect(redirect.origin+redirect.pathname).toBe(oauthCallback);expect(redirect.searchParams.get("state")).toBe(f.input.state);expect(redirect.searchParams.get("iss")).toBe(oauthOrigin+"/api/muse/v1/oauth");
-    const [grant]=await db.select().from(mcpOauthGrants).where(eq(mcpOauthGrants.id,f.binding.grantId!));expect(grant).toMatchObject({companyId:f.company.id,agentId:f.agent.id,userId:f.operatorId,purpose:"agent",resource:oauthResource,scopes:["paperclip:agent","offline_access"]});
+    const [grant]=await db.select().from(mcpOauthGrants).where(eq(mcpOauthGrants.id,f.binding.grantId!));expect(grant).toMatchObject({companyId:f.company.id,agentId:f.agent.id,userId:f.operatorId,purpose:"agent",resource:oauthResource,scopes:["pilibala:agent","offline_access"]});
     expect(f.binding.ticketHash).toBeNull();expect(f.binding.pairedAt).toBeInstanceOf(Date);expect(await db.select().from(museCredentials).where(eq(museCredentials.bindingId,f.binding.id))).toHaveLength(0);
     expect(await inspectMuseConnectionCredential(db,f.binding,oauthResource)).toEqual({state:"pending",refreshExpiresAt:null});
-    expect((await request(transport()).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id)).body).toEqual({version:1,signal:null});
+    expect((await request(transport()).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id)).body).toEqual({version:1,signal:null});
     const tokens=await f.oauth.token(f.tokenInput()),subject=await f.identity.authenticateOAuthAccess(tokens.access_token,oauthOrigin);
     expect(subject).toMatchObject({credentialSource:"oauth",grantId:grant.id,provider:"muse",agentId:f.agent.id,authorizingUserId:f.operatorId});
     const [stored]=await db.select().from(mcpOauthTokens).where(eq(mcpOauthTokens.tokenHash,hashMcpSecret(tokens.access_token)));expect(subject.credentialId).toBe(stored.id);
@@ -2841,7 +2841,7 @@ describe("personal Muse control plane",()=>{
   });
   it("enforces registered redirects,S256,current authority and ticket expiry before Muse redemption",async()=>{
     const f=await oauthFixture(false,false);
-    for(const extra of [{redirect_uri:"https://attacker.example/callback"},{code_challenge_method:"plain"},{resource:oauthOrigin+"/mcp/paperclip"},{scope:"paperclip:agent"},{company_id:randomUUID()}])await expect(f.oauth.authorize({...f.input,...extra})).rejects.toThrow();
+    for(const extra of [{redirect_uri:"https://attacker.example/callback"},{code_challenge_method:"plain"},{resource:oauthOrigin+"/mcp/pilibala"},{scope:"pilibala:agent"},{company_id:randomUUID()}])await expect(f.oauth.authorize({...f.input,...extra})).rejects.toThrow();
     expect((await db.select().from(bindings).where(eq(bindings.id,f.binding.id)))[0].ticketHash).not.toBeNull();
     await db.update(companyMemberships).set({status:"inactive"}).where(and(eq(companyMemberships.companyId,f.company.id),eq(companyMemberships.principalId,f.operatorId)));await expect(f.oauth.authorize(f.input)).rejects.toThrow();
     await db.update(companyMemberships).set({status:"active"}).where(and(eq(companyMemberships.companyId,f.company.id),eq(companyMemberships.principalId,f.operatorId)));
@@ -2851,7 +2851,7 @@ describe("personal Muse control plane",()=>{
     const f=await oauthFixture(false,false),results=await Promise.allSettled([f.oauth.authorize(f.input),f.oauth.authorize(f.input)]);expect(results.filter(r=>r.status==="fulfilled")).toHaveLength(1);
     const [binding]=await db.select().from(bindings).where(eq(bindings.id,f.binding.id));expect(await db.select().from(mcpOauthGrants).where(eq(mcpOauthGrants.agentId,f.agent.id))).toHaveLength(1);
     await db.update(mcpOauthRequests).set({expiresAt:new Date(Date.now()-1)}).where(eq(mcpOauthRequests.grantId,binding.grantId!));
-    expect((await request(transport()).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id)).status).toBe(410);
+    expect((await request(transport()).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id)).status).toBe(410);
   });
   it("rotates finite Muse OAuth refresh,defaults absent resource only here,and fences replay without cleanup exception",async()=>{
     const f=await oauthFixture(true),original=f.tokens!;
@@ -2867,10 +2867,10 @@ describe("personal Muse control plane",()=>{
     await museReceiver(db).signal(f.binding.id,oauthResource);await museReceiver(db).flush();expect((await db.select().from(mcpOauthTokens).where(eq(mcpOauthTokens.id,refresh.id)))[0].expiresAt).toEqual(refresh.expiresAt);
     await db.update(mcpOauthGrants).set({resource:"https://another.example/api/muse/v1"}).where(eq(mcpOauthGrants.id,f.binding.grantId!));
     expect((await inspectMuseConnectionCredential(db,f.binding,oauthResource)).state).toBe("revoked");await expect(assertMuseSubjectCredential(db,f.subject,oauthResource)).rejects.toThrow();
-    await db.update(mcpOauthGrants).set({resource:oauthResource,scopes:["paperclip:agent"]}).where(eq(mcpOauthGrants.id,f.binding.grantId!));expect((await inspectMuseConnectionCredential(db,f.binding,oauthResource)).state).toBe("revoked");
-    await db.update(mcpOauthGrants).set({scopes:["paperclip:agent","offline_access"]}).where(eq(mcpOauthGrants.id,f.binding.grantId!));
+    await db.update(mcpOauthGrants).set({resource:oauthResource,scopes:["pilibala:agent"]}).where(eq(mcpOauthGrants.id,f.binding.grantId!));expect((await inspectMuseConnectionCredential(db,f.binding,oauthResource)).state).toBe("revoked");
+    await db.update(mcpOauthGrants).set({scopes:["pilibala:agent","offline_access"]}).where(eq(mcpOauthGrants.id,f.binding.grantId!));
     await db.update(mcpOauthTokens).set({expiresAt:new Date(Date.now()-1)}).where(eq(mcpOauthTokens.id,refresh.id));expect((await inspectMuseConnectionCredential(db,f.binding,oauthResource)).state).toBe("expired");
-    expect((await request(transport()).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id)).status).toBe(410);
+    expect((await request(transport()).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id)).status).toBe(410);
   });
   it("serves PKCE OAuth ingress and disables raw HTTPlegacy pairing by default",async()=>{
     const f=await oauthFixture(false,false),app=transport();
@@ -2881,7 +2881,7 @@ describe("personal Muse control plane",()=>{
     const code=new URL(reply.headers.location).searchParams.get("code")!;
     const exchange=await request(app).post("/api/muse/v1/oauth/token").type("form").send({grant_type:"authorization_code",client_id:f.client.client_id,redirect_uri:oauthCallback,code,code_verifier:f.verifier});expect(exchange.status).toBe(200);expect(exchange.body.token_type).toBe("Bearer");
     expect((await request(app).post("/api/muse/v1/oauth/revoke").type("form").send({client_id:f.client.client_id,token:exchange.body.access_token})).status).toBe(200);
-    expect((await request(app).get("/api/muse/v1/signal").set("X-Paperclip-Muse-Binding",f.binding.id)).status).toBe(410);
+    expect((await request(app).get("/api/muse/v1/signal").set("X-Pilibala-Muse-Binding",f.binding.id)).status).toBe(410);
   });
   it.each(["access_expired","grant_revoked"])("rechecks idle OAuth authority after waiting for its transaction lock:%s",async(reason)=>{
     const f=await oauthFixture(true),requestId=randomUUID(),title="Must not create "+randomUUID();let outcome:Promise<{value?:unknown;error?:unknown}>|undefined;
@@ -2917,7 +2917,7 @@ describe("personal Muse control plane",()=>{
     }finally{await f.detach();}
   });
   it("revokes a persisted Muse grant through generic connection management after a public-origin change",async()=>{
-    const f=await oauthFixture(true),otherOrigin="https://new.paperclip.example",management=createPublicMcpOAuth(db,{origin:otherOrigin,resource:otherOrigin+"/mcp/paperclip"});
+    const f=await oauthFixture(true),otherOrigin="https://new.pilibala.example",management=createPublicMcpOAuth(db,{origin:otherOrigin,resource:otherOrigin+"/mcp/pilibala"});
     await instanceSettingsService(db).updateExperimental({enablePublicMcp:true});
     await management.revokeConnection(f.binding.grantId!,f.operatorId);
     expect((await db.select().from(mcpOauthGrants).where(eq(mcpOauthGrants.id,f.binding.grantId!)))[0].revokedAt).toBeInstanceOf(Date);
@@ -2941,14 +2941,14 @@ describe("personal Muse control plane",()=>{
   });
   it("preserves personal and Dot default OAuth resources and their deployed refresh policy",async()=>{
     await instanceSettingsService(db).updateExperimental({enablePublicMcp:true,enableOpenAiDot:true});const f=await fixture();
-    const personal=createPublicMcpOAuth(db,{origin:oauthOrigin,resource:oauthOrigin+"/mcp/paperclip"}),client=await personal.register({client_name:"Personal",redirect_uris:[oauthCallback]},randomUUID()),verifier=randomBytes(32).toString("base64url"),challenge=createHash("sha256").update(verifier).digest("base64url");
+    const personal=createPublicMcpOAuth(db,{origin:oauthOrigin,resource:oauthOrigin+"/mcp/pilibala"}),client=await personal.register({client_name:"Personal",redirect_uris:[oauthCallback]},randomUUID()),verifier=randomBytes(32).toString("base64url"),challenge=createHash("sha256").update(verifier).digest("base64url");
     await expect(personal.authorize({client_id:client.client_id,redirect_uri:oauthCallback,response_type:"code",code_challenge:challenge,code_challenge_method:"S256"})).rejects.toThrow();
-    const personalId=(await personal.authorize({client_id:client.client_id,redirect_uri:oauthCallback,response_type:"code",resource:personal.config.resource,scope:"paperclip:read offline_access",code_challenge:challenge,code_challenge_method:"S256"})).split("/").at(-1)!;
+    const personalId=(await personal.authorize({client_id:client.client_id,redirect_uri:oauthCallback,response_type:"code",resource:personal.config.resource,scope:"pilibala:read offline_access",code_challenge:challenge,code_challenge_method:"S256"})).split("/").at(-1)!;
     const consent=await personal.consent(personalId,{type:"board",source:"session",userId:f.operatorId},{decision:"approve",companyId:f.company.id,allowWrites:false}),tokens=await personal.token({grant_type:"authorization_code",client_id:client.client_id,redirect_uri:oauthCallback,resource:personal.config.resource,code:new URL(consent.redirectUrl).searchParams.get("code")!,code_verifier:verifier});
     expect((await personal.authenticate(tokens.access_token)).actor).toMatchObject({type:"board",userId:f.operatorId,isInstanceAdmin:false});
     const [personalRefresh]=await db.select().from(mcpOauthTokens).where(eq(mcpOauthTokens.tokenHash,hashMcpSecret(tokens.refresh_token!)));expect(personalRefresh.expiresAt).toBeInstanceOf(Date);
-    const [agent]=await db.insert(agents).values({companyId:f.company.id,name:"Dot",status:"active",adapterType:"paperclip_runner",adapterConfig:{provider:"openai_dot"}}).returning();const dot=createPublicMcpOAuth(db,{origin:oauthOrigin,resource:oauthOrigin+"/mcp/runner"}),dotClient=await dot.register({client_name:"Dot",redirect_uris:[oauthCallback]},randomUUID()),pairing=await dotRunnerBroker(db).createPairing({companyId:f.company.id,agentId:agent.id,operatorId:f.operatorId});
-    const dotId=(await dot.authorize({client_id:dotClient.client_id,redirect_uri:oauthCallback,response_type:"code",resource:dot.config.resource,scope:"paperclip:agent offline_access",code_challenge:challenge,code_challenge_method:"S256"})).split("/").at(-1)!;
+    const [agent]=await db.insert(agents).values({companyId:f.company.id,name:"Dot",status:"active",adapterType:"pilibala_runner",adapterConfig:{provider:"openai_dot"}}).returning();const dot=createPublicMcpOAuth(db,{origin:oauthOrigin,resource:oauthOrigin+"/mcp/runner"}),dotClient=await dot.register({client_name:"Dot",redirect_uris:[oauthCallback]},randomUUID()),pairing=await dotRunnerBroker(db).createPairing({companyId:f.company.id,agentId:agent.id,operatorId:f.operatorId});
+    const dotId=(await dot.authorize({client_id:dotClient.client_id,redirect_uri:oauthCallback,response_type:"code",resource:dot.config.resource,scope:"pilibala:agent offline_access",code_challenge:challenge,code_challenge_method:"S256"})).split("/").at(-1)!;
     const linked=await dot.consentDotPairing(dotId,pairing.pairingCode),dotTokens=await dot.token({grant_type:"authorization_code",client_id:dotClient.client_id,redirect_uri:oauthCallback,resource:dot.config.resource,code:new URL(linked.redirectUrl).searchParams.get("code")!,code_verifier:verifier});
     expect((await dot.authenticate(dotTokens.access_token)).actor).toMatchObject({type:"agent",agentId:agent.id});const [dotRefresh]=await db.select().from(mcpOauthTokens).where(eq(mcpOauthTokens.tokenHash,hashMcpSecret(dotTokens.refresh_token!)));expect(dotRefresh.expiresAt).toBeNull();
   });

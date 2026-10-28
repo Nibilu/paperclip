@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { authUsers } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { authUsers } from "@pilibalaai/db";
 import {
   authSessionSchema,
   currentUserProfileSchema,
   updateCurrentUserProfileSchema,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { unauthorized } from "../errors.js";
 import { validate } from "../middleware/validate.js";
 import { resolveSentryDsns } from "../sentry-dsn.js";
@@ -46,7 +46,7 @@ export function authRoutes(db: Db) {
     const user = await loadCurrentUserProfile(db, req.actor.userId);
     res.json(authSessionSchema.parse({
       session: {
-        id: `paperclip:${req.actor.source ?? "none"}:${req.actor.userId}`,
+        id: `pilibala:${req.actor.source ?? "none"}:${req.actor.userId}`,
         userId: req.actor.userId,
       },
       user,

@@ -27,7 +27,7 @@ Use Activity → Costs/Budgets in the streamlined shell, `/costs` in the product
 
 Open the governing budget configuration and any resulting budget incident card.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use synthetic low-cost events and small disposable budgets. Do not buy model usage merely to hit a threshold.
 
@@ -48,7 +48,7 @@ Manual: Create a small fixture budget, cross its threshold with synthetic record
 
 ## Gotchas
 
-- Paperclip cost accounting is not a provider invoice or a promise about externally billed spend.
+- Pilibala cost accounting is not a provider invoice or a promise about externally billed spend.
 - Company, project, and agent gates can overlap; fixing one may leave another active.
 - A successful retry must not bypass an unresolved budget hold.
 

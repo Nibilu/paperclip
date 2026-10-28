@@ -20,7 +20,7 @@ vi.mock("../sentry.js", () => ({ captureException: captureExceptionMock }));
 vi.mock("../telemetry.js", () => ({
   getTelemetryClient: () => telemetryMocks.client,
 }));
-vi.mock("@paperclipai/shared/telemetry", () => ({
+vi.mock("@pilibalaai/shared/telemetry", () => ({
   trackErrorHandlerCrash: telemetryMocks.trackErrorHandlerCrash,
 }));
 
@@ -93,7 +93,7 @@ describe("errorHandler", () => {
   }
 
   it("answers 503 without reporting a query that outlived the database shutdown", () => {
-    const req = { ...makeReq(), app: { locals: { paperclipDatabaseClosing: true } } } as unknown as Request;
+    const req = { ...makeReq(), app: { locals: { pilibalaDatabaseClosing: true } } } as unknown as Request;
     const res = makeRes() as any;
     const next = vi.fn() as unknown as NextFunction;
 
@@ -107,7 +107,7 @@ describe("errorHandler", () => {
   });
 
   it("only ends the response when headers were already sent during database shutdown", () => {
-    const req = { ...makeReq(), app: { locals: { paperclipDatabaseClosing: true } } } as unknown as Request;
+    const req = { ...makeReq(), app: { locals: { pilibalaDatabaseClosing: true } } } as unknown as Request;
     const res = { ...makeRes(), end: vi.fn(), headersSent: true } as any;
     const next = vi.fn() as unknown as NextFunction;
 
@@ -131,7 +131,7 @@ describe("errorHandler", () => {
   });
 
   it("still reports other connection failures during database shutdown", () => {
-    const req = { ...makeReq(), app: { locals: { paperclipDatabaseClosing: true } } } as unknown as Request;
+    const req = { ...makeReq(), app: { locals: { pilibalaDatabaseClosing: true } } } as unknown as Request;
     const res = makeRes() as any;
     const next = vi.fn() as unknown as NextFunction;
     const err = new Error("Failed query", {
@@ -350,7 +350,7 @@ describe("errorHandler", () => {
     const db = { marker: "db" };
     const req = {
       ...makeReq(),
-      app: { locals: { paperclipDb: db } },
+      app: { locals: { pilibalaDb: db } },
       actor: {
         type: "agent",
         agentId: "agent-1",

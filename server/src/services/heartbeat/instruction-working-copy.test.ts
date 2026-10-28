@@ -28,7 +28,7 @@ function fixture(executionTarget: Input["workspace"]["executionTarget"] = null) 
     reportRetirementUnconfirmed: vi.fn().mockResolvedValue(null),
   };
   const appendRunEvent = vi.fn().mockResolvedValue(undefined);
-  const context = { paperclipWorkspace: { agentHome: "/canonical" } } as Record<string, unknown>;
+  const context = { pilibalaWorkspace: { agentHome: "/canonical" } } as Record<string, unknown>;
   const controller = createHeartbeatInstructionWorkingCopy({
     db: {} as Input["db"], instructionCopies: copies as unknown as Input["instructionCopies"],
     readRun: () => run,
@@ -119,6 +119,6 @@ describe("instruction working-copy extraction boundary", () => {
     expect(await f.controller.nativeInstructionWorkingCopy()?.checkpointWarm?.()).toBe(true);
     expect(f.controller.getInstructionSave()).toMatchObject({ state: "unchanged" });
     expect(f.appendRunEvent.mock.calls.at(-1)?.[0]).toBe(running);
-    expect(f.context.paperclipWorkspace).toMatchObject({ agentHome: f.copy.executionRoot, agentHomeForPermissions: "/canonical" });
+    expect(f.context.pilibalaWorkspace).toMatchObject({ agentHome: f.copy.executionRoot, agentHomeForPermissions: "/canonical" });
   });
 });

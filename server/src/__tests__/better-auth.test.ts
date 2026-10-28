@@ -10,48 +10,48 @@ import {
   shouldDisableSecureAuthCookies,
 } from "../auth/better-auth.js";
 
-const ORIGINAL_INSTANCE_ID = process.env.PAPERCLIP_INSTANCE_ID;
-const ORIGINAL_PUBLIC_URL = process.env.PAPERCLIP_PUBLIC_URL;
-const ORIGINAL_INSECURE_HTTP_HOSTS = process.env.PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS;
+const ORIGINAL_INSTANCE_ID = process.env.PILIBALA_INSTANCE_ID;
+const ORIGINAL_PUBLIC_URL = process.env.PILIBALA_PUBLIC_URL;
+const ORIGINAL_INSECURE_HTTP_HOSTS = process.env.PILIBALA_INSECURE_AUTH_HTTP_HOSTS;
 
 afterEach(() => {
-  if (ORIGINAL_INSTANCE_ID === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-  else process.env.PAPERCLIP_INSTANCE_ID = ORIGINAL_INSTANCE_ID;
-  if (ORIGINAL_PUBLIC_URL === undefined) delete process.env.PAPERCLIP_PUBLIC_URL;
-  else process.env.PAPERCLIP_PUBLIC_URL = ORIGINAL_PUBLIC_URL;
-  if (ORIGINAL_INSECURE_HTTP_HOSTS === undefined) delete process.env.PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS;
-  else process.env.PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS = ORIGINAL_INSECURE_HTTP_HOSTS;
+  if (ORIGINAL_INSTANCE_ID === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+  else process.env.PILIBALA_INSTANCE_ID = ORIGINAL_INSTANCE_ID;
+  if (ORIGINAL_PUBLIC_URL === undefined) delete process.env.PILIBALA_PUBLIC_URL;
+  else process.env.PILIBALA_PUBLIC_URL = ORIGINAL_PUBLIC_URL;
+  if (ORIGINAL_INSECURE_HTTP_HOSTS === undefined) delete process.env.PILIBALA_INSECURE_AUTH_HTTP_HOSTS;
+  else process.env.PILIBALA_INSECURE_AUTH_HTTP_HOSTS = ORIGINAL_INSECURE_HTTP_HOSTS;
 });
 
 describe("Better Auth cookie scoping", () => {
   it("derives an instance-scoped cookie prefix", () => {
-    expect(deriveAuthCookiePrefix("default")).toBe("paperclip-default");
-    expect(deriveAuthCookiePrefix("PAP-1601-worktree")).toBe("paperclip-PAP-1601-worktree");
+    expect(deriveAuthCookiePrefix("default")).toBe("pilibala-default");
+    expect(deriveAuthCookiePrefix("PAP-1601-worktree")).toBe("pilibala-PAP-1601-worktree");
   });
 
-  it("uses PAPERCLIP_INSTANCE_ID for the Better Auth cookie prefix", () => {
-    process.env.PAPERCLIP_INSTANCE_ID = "sat-worktree";
+  it("uses PILIBALA_INSTANCE_ID for the Better Auth cookie prefix", () => {
+    process.env.PILIBALA_INSTANCE_ID = "sat-worktree";
 
     const advanced = buildBetterAuthAdvancedOptions({ disableSecureCookies: false });
 
     expect(advanced).toEqual({
-      cookiePrefix: "paperclip-sat-worktree",
+      cookiePrefix: "pilibala-sat-worktree",
     });
     expect(getCookies({ advanced } as BetterAuthOptions).sessionToken.name).toMatch(
-      /paperclip-sat-worktree\.session_token$/,
+      /pilibala-sat-worktree\.session_token$/,
     );
   });
 
   it("keeps local http auth cookies non-secure while preserving the scoped prefix", () => {
-    process.env.PAPERCLIP_INSTANCE_ID = "pap-worktree";
+    process.env.PILIBALA_INSTANCE_ID = "pap-worktree";
 
     expect(buildBetterAuthAdvancedOptions({ disableSecureCookies: true })).toEqual({
-      cookiePrefix: "paperclip-pap-worktree",
+      cookiePrefix: "pilibala-pap-worktree",
       useSecureCookies: false,
     });
     expect(getCookies({
       advanced: buildBetterAuthAdvancedOptions({ disableSecureCookies: true }),
-    } as BetterAuthOptions).sessionToken.name).toBe("paperclip-pap-worktree.session_token");
+    } as BetterAuthOptions).sessionToken.name).toBe("pilibala-pap-worktree.session_token");
   });
 
   it("enables Better Auth rate limiting for authenticated private instances by default", () => {
@@ -108,20 +108,20 @@ describe("Better Auth cookie scoping", () => {
       deploymentExposure: "private",
       authBaseUrlMode: "auto",
       authPublicBaseUrl: undefined,
-      publicUrl: "https://paperclip.example.test",
+      publicUrl: "https://pilibala.example.test",
     })).toBe(false);
 
     expect(shouldDisableSecureAuthCookies({
       deploymentMode: "authenticated",
       deploymentExposure: "public",
       authBaseUrlMode: "explicit",
-      authPublicBaseUrl: "http://paperclip.local.test:3100",
+      authPublicBaseUrl: "http://pilibala.local.test:3100",
       publicUrl: undefined,
     })).toBe(true);
   });
 
   it("disables secure cookies when no canonical public auth URL is configured", () => {
-    delete process.env.PAPERCLIP_PUBLIC_URL;
+    delete process.env.PILIBALA_PUBLIC_URL;
 
     expect(shouldDisableSecureAuthCookies({
       deploymentMode: "authenticated",
@@ -131,28 +131,28 @@ describe("Better Auth cookie scoping", () => {
   });
 
   it("derives secure cookie behavior from the configured public auth URL", () => {
-    delete process.env.PAPERCLIP_PUBLIC_URL;
+    delete process.env.PILIBALA_PUBLIC_URL;
 
     expect(shouldDisableSecureAuthCookies({
       deploymentMode: "authenticated",
       authBaseUrlMode: "explicit",
-      authPublicBaseUrl: "http://paperclip-dev:46259",
+      authPublicBaseUrl: "http://pilibala-dev:46259",
     } as Parameters<typeof shouldDisableSecureAuthCookies>[0])).toBe(true);
     expect(shouldDisableSecureAuthCookies({
       deploymentMode: "authenticated",
       authBaseUrlMode: "explicit",
-      authPublicBaseUrl: "https://paperclip.example.test",
+      authPublicBaseUrl: "https://pilibala.example.test",
     } as Parameters<typeof shouldDisableSecureAuthCookies>[0])).toBe(false);
   });
 
   it("uses the caller-resolved public URL for cookie security", () => {
-    process.env.PAPERCLIP_PUBLIC_URL = "https://ignored.example.test";
+    process.env.PILIBALA_PUBLIC_URL = "https://ignored.example.test";
 
     expect(shouldDisableSecureAuthCookies({
       deploymentMode: "authenticated",
       authBaseUrlMode: "explicit",
-      authPublicBaseUrl: "https://paperclip.example.test",
-      publicUrl: "http://paperclip-dev:46259",
+      authPublicBaseUrl: "https://pilibala.example.test",
+      publicUrl: "http://pilibala-dev:46259",
     } as Parameters<typeof shouldDisableSecureAuthCookies>[0])).toBe(true);
   });
 
@@ -175,7 +175,7 @@ describe("Better Auth cookie scoping", () => {
   });
 
   it("allows explicitly configured LAN HTTP auth origins to use non-secure cookies", () => {
-    process.env.PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS = "192.168.31.16";
+    process.env.PILIBALA_INSECURE_AUTH_HTTP_HOSTS = "192.168.31.16";
 
     expect(shouldDisableSecureAuthCookies({
       deploymentMode: "authenticated",
@@ -197,7 +197,7 @@ describe("Better Auth cookie scoping", () => {
   });
 
   it("treats configured LAN HTTP hosts as HTTP when no proxy protocol is present", () => {
-    process.env.PAPERCLIP_INSECURE_AUTH_HTTP_HOSTS = "192.168.31.16";
+    process.env.PILIBALA_INSECURE_AUTH_HTTP_HOSTS = "192.168.31.16";
 
     expect(requestUrlFromHeaders(new Headers({ host: "192.168.31.16:3104" }))).toBe(
       "http://192.168.31.16:3104",

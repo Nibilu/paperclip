@@ -1,4 +1,4 @@
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { githubResponseCommentService } from "../../chat-github-response-comments.js";
 import { githubReviewCheckService } from "../../chat-github-checks.js";
 

@@ -165,6 +165,6 @@ export function resolveProvider(options: {
   }
 
   // 2. Let Hermes auto-detect from its own effective state (session DB /
-  //    auth.json / host config) — never from Paperclip-side static guesses.
+  //    auth.json / host config) — never from Pilibala-side static guesses.
   return { provider: "auto", resolvedFrom: "auto" };
 }

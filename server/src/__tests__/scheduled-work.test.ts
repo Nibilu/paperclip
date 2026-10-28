@@ -1,5 +1,5 @@
 import { PgDialect } from "drizzle-orm/pg-core";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { installDatabaseWorkSignals } from "../../../packages/db/src/work-signals.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createDeliveryWorkCoordinator } from "../services/delivery-work-coordinator.js";

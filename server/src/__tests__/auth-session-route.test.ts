@@ -1,7 +1,7 @@
 import express from "express";
 import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { activityLog, companies, companyMemberships, instanceUserRoles } from "@paperclipai/db";
+import { activityLog, companies, companyMemberships, instanceUserRoles } from "@pilibalaai/db";
 import {
   actorMiddleware,
   humanizeCloudStackSlug,
@@ -32,11 +32,11 @@ function createDb() {
 }
 
 describe("actorMiddleware authenticated session profile", () => {
-  const originalCloudTenantToken = process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+  const originalCloudTenantToken = process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
 
   afterEach(() => {
-    if (originalCloudTenantToken === undefined) delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
-    else process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = originalCloudTenantToken;
+    if (originalCloudTenantToken === undefined) delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
+    else process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN = originalCloudTenantToken;
   });
 
   it("preserves the signed-in user name and email on the board actor", async () => {
@@ -74,7 +74,7 @@ describe("actorMiddleware authenticated session profile", () => {
   });
 
   it("trusts Cloud tenant identity headers and seeds board access", async () => {
-    process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "tenant-token";
+    process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN = "tenant-token";
     const inserts: Array<{ values: Record<string, unknown> }> = [];
     const db = {
       insert: vi.fn(() => {
@@ -115,14 +115,14 @@ describe("actorMiddleware authenticated session profile", () => {
 
     const res = await request(app)
       .get("/actor")
-      .set("x-paperclip-cloud-tenant-token", "tenant-token")
-      .set("x-paperclip-cloud-user-id", "global-user-1")
-      .set("x-paperclip-cloud-user-email", "owner@example.com")
-      .set("x-paperclip-cloud-user-name", "Stack Owner")
-      .set("x-paperclip-cloud-stack-id", "stack-alpha")
-      .set("x-paperclip-cloud-paperclip-company-id", "paperclip-stack-alpha")
-      .set("x-paperclip-cloud-paperclip-company-name", "Purple Rain")
-      .set("x-paperclip-cloud-stack-role", "owner");
+      .set("x-pilibala-cloud-tenant-token", "tenant-token")
+      .set("x-pilibala-cloud-user-id", "global-user-1")
+      .set("x-pilibala-cloud-user-email", "owner@example.com")
+      .set("x-pilibala-cloud-user-name", "Stack Owner")
+      .set("x-pilibala-cloud-stack-id", "stack-alpha")
+      .set("x-pilibala-cloud-pilibala-company-id", "pilibala-stack-alpha")
+      .set("x-pilibala-cloud-pilibala-company-name", "Purple Rain")
+      .set("x-pilibala-cloud-stack-role", "owner");
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
@@ -149,7 +149,7 @@ describe("actorMiddleware authenticated session profile", () => {
   });
 
   it("lets the cloud tenant actor through assertCompanyAccess for a company it holds a membership row in", async () => {
-    process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "tenant-token";
+    process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN = "tenant-token";
     // A company created on the instance after provisioning (e.g. by a company
     // import) — the user has a real membership row, but it is not the stack's
     // seeded primary company.
@@ -204,11 +204,11 @@ describe("actorMiddleware authenticated session profile", () => {
     app.use(errorHandler);
 
     const cloudHeaders = {
-      "x-paperclip-cloud-tenant-token": "tenant-token",
-      "x-paperclip-cloud-user-id": "global-user-1",
-      "x-paperclip-cloud-user-email": "owner@example.com",
-      "x-paperclip-cloud-stack-id": "stack-alpha",
-      "x-paperclip-cloud-stack-role": "member",
+      "x-pilibala-cloud-tenant-token": "tenant-token",
+      "x-pilibala-cloud-user-id": "global-user-1",
+      "x-pilibala-cloud-user-email": "owner@example.com",
+      "x-pilibala-cloud-stack-id": "stack-alpha",
+      "x-pilibala-cloud-stack-role": "member",
     };
 
     // Reads and writes both reach the imported company through the real
@@ -226,7 +226,7 @@ describe("actorMiddleware authenticated session profile", () => {
   });
 
   it("repairs a legacy machine company name from the trusted human-name header", async () => {
-    process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "tenant-token";
+    process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN = "tenant-token";
     const updates: Array<Record<string, unknown>> = [];
     const activities: Array<Record<string, unknown>> = [];
     const insertChain = {
@@ -254,7 +254,7 @@ describe("actorMiddleware authenticated session profile", () => {
           where: () =>
             Promise.resolve(
               table === companies
-                ? [{ name: "paperclip-stack-purple-rain" }]
+                ? [{ name: "pilibala-stack-purple-rain" }]
                 : [],
             ),
         }),
@@ -292,16 +292,16 @@ describe("actorMiddleware authenticated session profile", () => {
 
     const res = await request(app)
       .get("/actor")
-      .set("x-paperclip-cloud-tenant-token", "tenant-token")
-      .set("x-paperclip-cloud-user-id", "global-user-1")
-      .set("x-paperclip-cloud-user-email", "owner@example.com")
-      .set("x-paperclip-cloud-stack-id", "stack-purple-rain")
+      .set("x-pilibala-cloud-tenant-token", "tenant-token")
+      .set("x-pilibala-cloud-user-id", "global-user-1")
+      .set("x-pilibala-cloud-user-email", "owner@example.com")
+      .set("x-pilibala-cloud-stack-id", "stack-purple-rain")
       .set(
-        "x-paperclip-cloud-paperclip-company-id",
-        "paperclip-stack-purple-rain",
+        "x-pilibala-cloud-pilibala-company-id",
+        "pilibala-stack-purple-rain",
       )
-      .set("x-paperclip-cloud-paperclip-company-name", "Purple Rain")
-      .set("x-paperclip-cloud-stack-role", "owner");
+      .set("x-pilibala-cloud-pilibala-company-name", "Purple Rain")
+      .set("x-pilibala-cloud-stack-role", "owner");
 
     expect(res.status).toBe(200);
     expect(updates).toHaveLength(1);
@@ -315,7 +315,7 @@ describe("actorMiddleware authenticated session profile", () => {
         entityType: "company",
         details: expect.objectContaining({
           reason: "legacy_machine_name_repair",
-          previousName: "paperclip-stack-purple-rain",
+          previousName: "pilibala-stack-purple-rain",
           name: "Purple Rain",
         }),
       }),
@@ -323,7 +323,7 @@ describe("actorMiddleware authenticated session profile", () => {
   });
 
   it("purges a stale instance_admin row so the session path stops elevating the cloud-tenant user", async () => {
-    process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "tenant-token";
+    process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN = "tenant-token";
     // Simulates a deployment that previously ran the pre-hardening cloud_tenant
     // path: instance_user_roles still holds an instance_admin row for the
     // tenant user, who can also resolve a BetterAuth session for the same id.
@@ -383,11 +383,11 @@ describe("actorMiddleware authenticated session profile", () => {
     // One trusted-header authentication purges the stale grant.
     const cloud = await request(app)
       .get("/actor")
-      .set("x-paperclip-cloud-tenant-token", "tenant-token")
-      .set("x-paperclip-cloud-user-id", "global-user-1")
-      .set("x-paperclip-cloud-user-email", "owner@example.com")
-      .set("x-paperclip-cloud-stack-id", "stack-alpha")
-      .set("x-paperclip-cloud-stack-role", "owner");
+      .set("x-pilibala-cloud-tenant-token", "tenant-token")
+      .set("x-pilibala-cloud-user-id", "global-user-1")
+      .set("x-pilibala-cloud-user-email", "owner@example.com")
+      .set("x-pilibala-cloud-stack-id", "stack-alpha")
+      .set("x-pilibala-cloud-stack-role", "owner");
     expect(cloud.body).toMatchObject({ source: "cloud_tenant", isInstanceAdmin: false });
     expect(state.staleInstanceAdminRow).toBe(false);
 
@@ -404,12 +404,12 @@ describe("actorMiddleware authenticated session profile", () => {
 describe("Cloud tenant company naming", () => {
   const ids = {
     companyId: "11111111-1111-4111-8111-111111111111",
-    paperclipCompanyId: "paperclip-stack-purple-rain",
+    pilibalaCompanyId: "pilibala-stack-purple-rain",
   };
 
   it.each([
-    "paperclip-stack-purple-rain",
-    "stack-purple-rain Paperclip",
+    "pilibala-stack-purple-rain",
+    "stack-purple-rain Pilibala",
     ids.companyId,
   ])("repairs the known-bad machine name %s", (name) => {
     expect(isKnownBadCloudCompanyName(name, ids)).toBe(true);
@@ -417,15 +417,15 @@ describe("Cloud tenant company naming", () => {
 
   it.each([
     "Purple Rain",
-    "Paperclip Stack Purple Rain",
-    "The Purple Rain Paperclip",
+    "Pilibala Stack Purple Rain",
+    "The Purple Rain Pilibala",
   ])("preserves the genuine company name %s", (name) => {
     expect(isKnownBadCloudCompanyName(name, ids)).toBe(false);
   });
 
   it("humanizes the stack slug for old harnesses without a name header", () => {
     expect(humanizeCloudStackSlug("stack-purple-rain")).toBe("Purple Rain");
-    expect(humanizeCloudStackSlug("paperclip-stack-purple-rain")).toBe(
+    expect(humanizeCloudStackSlug("pilibala-stack-purple-rain")).toBe(
       "Purple Rain",
     );
   });

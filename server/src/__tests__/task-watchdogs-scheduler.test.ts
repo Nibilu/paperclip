@@ -17,11 +17,11 @@ import {
   issueWorkProducts,
   issues,
   issueWatchdogs,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
-  normalizePaperclipWakePayload,
-  renderPaperclipWakePrompt,
-} from "@paperclipai/adapter-utils/server-utils";
+  normalizePilibalaWakePayload,
+  renderPilibalaWakePrompt,
+} from "@pilibalaai/adapter-utils/server-utils";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -42,7 +42,7 @@ describeEmbeddedPostgres("task watchdog scheduler", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-task-watchdogs-scheduler-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-task-watchdogs-scheduler-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -261,10 +261,10 @@ describeEmbeddedPostgres("task watchdog scheduler", () => {
     expect(snapshot).toMatchObject({ taskWatchdog: { customInstructions: boardInstructions } });
 
     // End-to-end: the text the agent actually receives.
-    const normalized = normalizePaperclipWakePayload(snapshot);
+    const normalized = normalizePilibalaWakePayload(snapshot);
     expect(normalized?.taskWatchdog?.customInstructions).toBe(boardInstructions);
 
-    const prompt = renderPaperclipWakePrompt(normalized);
+    const prompt = renderPilibalaWakePrompt(normalized);
     expect(prompt).toContain("## Task Watchdog Mandate");
     expect(prompt).toContain(boardInstructions);
     expect(prompt).not.toContain("No board-supplied watchdog instructions");

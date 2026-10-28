@@ -18,12 +18,12 @@ import {
   type SetupTokenSessionScope,
   type SetupTokenSessionState,
 } from "./setup-token-session.js";
-import type { LoginPtySessionOpener } from "@paperclipai/adapter-utils/login-pty-transport";
+import type { LoginPtySessionOpener } from "@pilibalaai/adapter-utils/login-pty-transport";
 import {
   CLAUDE_SETUP_TOKEN_COMMAND,
   SETUP_TOKEN_AFTER_ANCHOR,
   SETUP_TOKEN_BEFORE_ANCHOR,
-} from "@paperclipai/adapter-claude-local/server";
+} from "@pilibalaai/adapter-claude-local/server";
 
 // The owner scope for one login session. The per-owner session cap is one, so one
 // scope holds one live session.
@@ -591,7 +591,7 @@ describe("worker-bound live pseudo-terminal opener", () => {
     );
     const getLeaseById = vi.fn(async () => ({
       providerLeaseId: "provider-lease-9",
-      metadata: { pluginId: "paperclip.daytona", provider: "daytona" },
+      metadata: { pluginId: "pilibala.daytona", provider: "daytona" },
     }));
 
     const openLivePtySession = createWorkerBoundLoginPtyOpener({
@@ -615,7 +615,7 @@ describe("worker-bound live pseudo-terminal opener", () => {
     // route id, so the opener passes none. The open carries no command string.
     expect(openLoginPtySession).toHaveBeenCalledTimes(1);
     const [pluginId, openInput] = openLoginPtySession.mock.calls[0];
-    expect(pluginId).toBe("paperclip.daytona");
+    expect(pluginId).toBe("pilibala.daytona");
     expect(openInput).toMatchObject({
       driverKey: "daytona",
       companyId: "company-1",
@@ -626,7 +626,7 @@ describe("worker-bound live pseudo-terminal opener", () => {
     expect(openInput).not.toHaveProperty("command");
     // The session home is the fixed root, one slash, and one UUID.
     expect(openInput.sessionHome).toMatch(
-      /^\/tmp\/paperclip-adapter-login\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+      /^\/tmp\/pilibala-adapter-login\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );
     expect(opened).toBe(session);
   });
@@ -644,7 +644,7 @@ describe("worker-bound live pseudo-terminal opener", () => {
       environments: {
         getLeaseById: async () => ({
           providerLeaseId: "provider-lease-9",
-          metadata: { pluginId: "paperclip.daytona", provider: "daytona" },
+          metadata: { pluginId: "pilibala.daytona", provider: "daytona" },
         }),
       },
     });
@@ -695,19 +695,19 @@ describe("worker-bound live pseudo-terminal opener", () => {
 // application binding forwards each line verbatim, so a captured line must be a
 // member of this set.
 const DIAGNOSTIC_ALLOWLIST = new Set<string>([
-  "[paperclip] Setup-token login: the process stop step errored.",
-  "[paperclip] Setup-token login: the driver dispose step errored.",
-  "[paperclip] Setup-token login: the code input step errored.",
-  "[paperclip] Setup-token login: sent the browser code to the prompt.",
-  "[paperclip] Setup-token login: delivered the credential to the sink.",
-  "[paperclip] Setup-token login: the credential delivery step errored.",
-  "[paperclip] Setup-token login cancelled before start.",
-  "[paperclip] Setup-token login timed out; stopping the process.",
-  "[paperclip] Setup-token login cancelled; stopping the process.",
-  "[paperclip] Setup-token login command ended with a non-zero exit code.",
-  "[paperclip] Setup-token login: the credential did not land; treating the run as a failure.",
-  "[paperclip] Setup-token login: surfaced the sign-in prompt.",
-  "[paperclip] Setup-token login command ended successfully.",
+  "[pilibala] Setup-token login: the process stop step errored.",
+  "[pilibala] Setup-token login: the driver dispose step errored.",
+  "[pilibala] Setup-token login: the code input step errored.",
+  "[pilibala] Setup-token login: sent the browser code to the prompt.",
+  "[pilibala] Setup-token login: delivered the credential to the sink.",
+  "[pilibala] Setup-token login: the credential delivery step errored.",
+  "[pilibala] Setup-token login cancelled before start.",
+  "[pilibala] Setup-token login timed out; stopping the process.",
+  "[pilibala] Setup-token login cancelled; stopping the process.",
+  "[pilibala] Setup-token login command ended with a non-zero exit code.",
+  "[pilibala] Setup-token login: the credential did not land; treating the run as a failure.",
+  "[pilibala] Setup-token login: surfaced the sign-in prompt.",
+  "[pilibala] Setup-token login command ended successfully.",
 ]);
 
 // Synthetic sentinels. No real secret is present. The tests assert that no
@@ -875,14 +875,14 @@ describe("setup-token production transport binding diagnostics", () => {
     });
 
     // The run reached the success lines, so the capture is not empty.
-    expect(captured).toContain("[paperclip] Setup-token login: surfaced the sign-in prompt.");
+    expect(captured).toContain("[pilibala] Setup-token login: surfaced the sign-in prompt.");
     expect(captured).toContain(
-      "[paperclip] Setup-token login: delivered the credential to the sink.",
+      "[pilibala] Setup-token login: delivered the credential to the sink.",
     );
-    expect(captured).toContain("[paperclip] Setup-token login command ended successfully.");
+    expect(captured).toContain("[pilibala] Setup-token login command ended successfully.");
     // The runner sent the browser code, so the code-input path ran. The code
     // still never reaches a log line.
-    expect(captured).toContain("[paperclip] Setup-token login: sent the browser code to the prompt.");
+    expect(captured).toContain("[pilibala] Setup-token login: sent the browser code to the prompt.");
     expectSafeDiagnostics(captured);
   });
 
@@ -894,7 +894,7 @@ describe("setup-token production transport binding diagnostics", () => {
     });
 
     expect(captured).toContain(
-      "[paperclip] Setup-token login command ended with a non-zero exit code.",
+      "[pilibala] Setup-token login command ended with a non-zero exit code.",
     );
     expectSafeDiagnostics(captured);
   });

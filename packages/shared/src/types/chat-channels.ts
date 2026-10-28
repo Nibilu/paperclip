@@ -5,7 +5,7 @@ export interface ChatExecutionDefaults {
   workspace?: TaskWorkspaceSelection | null;
 }
 
-/** Provider-neutral contracts for Paperclip's native external chat subsystem. */
+/** Provider-neutral contracts for Pilibala's native external chat subsystem. */
 export const CHAT_PROVIDERS = [
   "slack",
   "github",
@@ -339,9 +339,9 @@ export interface ChatIdentityLink {
   lastConnectAt?: string | null;
   externalLabel: string;
   externalDetail?: string | null;
-  paperclipUserId?: string | null;
-  paperclipUserLabel?: string | null;
-  paperclipUserImage?: string | null;
+  pilibalaUserId?: string | null;
+  pilibalaUserLabel?: string | null;
+  pilibalaUserImage?: string | null;
   status: ChatIdentityLinkStatus;
   expiresAt?: string | null;
   confirmedAt?: string | null;
@@ -404,7 +404,7 @@ export type SafeExternalChatCardAction =
     };
 
 export interface SafeExternalChatCard {
-  schema: "paperclip.chat.card.v1";
+  schema: "pilibala.chat.card.v1";
   kind: SafeExternalChatCardKind;
   title: string;
   body?: string;

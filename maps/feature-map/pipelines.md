@@ -27,7 +27,7 @@ Open `/pipelines`, `/pipelines/:pipelineId`, and its Settings route.
 
 Open `/pipelines/:pipelineId/items/:caseId`, `/review-queue`, or `/learnings`.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Enable pipelines and prepare a disposable pipeline with at least two stages and a fixture agent. Record any associated case type.
 

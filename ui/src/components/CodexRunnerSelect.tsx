@@ -1,4 +1,4 @@
-import type { AgentRunner, AgentRunnerChoice } from "@paperclipai/shared";
+import type { AgentRunner, AgentRunnerChoice } from "@pilibalaai/shared";
 import { Field } from "./agent-config-primitives";
 import { SelectPopover } from "./ui/select";
 import { Button } from "./ui/button";
@@ -28,10 +28,10 @@ export function CodexRunnerSelect({
         aria-label="Runner"
         disabled={disabled}
         value={value}
-        displayValue={value === "auto" ? (defaultRunner ? `${defaultRunner === "paperclip" ? "Paperclip Runner" : "Legacy runner"} (default)` : pending ? "Checking runner availability…" : "Automatic selection unavailable") : undefined}
+        displayValue={value === "auto" ? (defaultRunner ? `${defaultRunner === "pilibala" ? "Pilibala Runner" : "Legacy runner"} (default)` : pending ? "Checking runner availability…" : "Automatic selection unavailable") : undefined}
         onValueChange={next => onChange(next as AgentRunnerChoice)}
         options={[
-          { value: "paperclip", label: `Paperclip Runner${defaultRunner === "paperclip" ? " (default)" : ""}`, disabled: !supportedRunners.includes("paperclip") && value !== "paperclip" },
+          { value: "pilibala", label: `Pilibala Runner${defaultRunner === "pilibala" ? " (default)" : ""}`, disabled: !supportedRunners.includes("pilibala") && value !== "pilibala" },
           { value: "legacy", label: `Legacy runner${defaultRunner === "legacy" ? " (default)" : ""}`, disabled: !supportedRunners.includes("legacy") && value !== "legacy" },
         ]}
       />

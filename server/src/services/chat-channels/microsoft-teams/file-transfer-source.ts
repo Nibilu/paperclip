@@ -1,6 +1,6 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
-import { assets, chatConversations, chatEndpoints, chatPublications, chatTeamsFileTransfers, issueAttachments, issueComments, type Db } from "@paperclipai/db";
-import { isUuidLike, type ChatProvider } from "@paperclipai/shared";
+import { assets, chatConversations, chatEndpoints, chatPublications, chatTeamsFileTransfers, issueAttachments, issueComments, type Db } from "@pilibalaai/db";
+import { isUuidLike, type ChatProvider } from "@pilibalaai/shared";
 
 type DbOrTransaction = Db | Parameters<Parameters<Db["transaction"]>[0]>[0];
 

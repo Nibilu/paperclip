@@ -1,10 +1,10 @@
 import type { EndpointRow, DbTransaction, RuntimeContext, InboundRuntimeContext } from "../runtime-types.js";
 import { randomUUID } from "node:crypto";
 import { and, eq, lte } from "drizzle-orm";
-import { chatEndpointLeases } from "@paperclipai/db";
+import { chatEndpointLeases } from "@pilibalaai/db";
 import { conflict } from "../../../errors.js";
 import { logger } from "../../../middleware/logger.js";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import type { ChatRuntime } from "../../chat-runtime.js";
 import type { createChatMessageLifecycle } from "../inbound/lifecycle.js";
 import type { DiscordGatewayOwnership } from "../runtime-types.js";
@@ -30,7 +30,7 @@ export function createChatReceiverOwnership(db: Db, options: OwnershipOptions) {
   const { runtime, runtimeVersions, runtimeCallbackEndpoint, redactError, leasedChatProvider, discordGatewayOwnerships, discordGatewayStopTasks } = options;
   function discordGatewayNotOwnedError() {
     return conflict(
-      "Another Paperclip server owns this Discord Gateway connection; retry shortly",
+      "Another Pilibala server owns this Discord Gateway connection; retry shortly",
       { code: "chat_discord_gateway_not_owned" },
     );
   }

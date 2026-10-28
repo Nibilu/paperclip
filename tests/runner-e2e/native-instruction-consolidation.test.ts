@@ -33,7 +33,7 @@ describe("native instruction comparison admission", () => {
       fixtureGit(temporary, ["clone", "--quiet", "--depth=1", "--branch=fixture", pathToFileURL(source).href, checkout]);
       const run = (...args: string[]) => fixtureGit(checkout, ["--no-replace-objects", ...args.map(value =>
         value === NATIVE_INSTRUCTION_BASE_SHA ? base
-          : value === "https://github.com/paperclipai/paperclip.git" ? pathToFileURL(source).href : value)]);
+          : value === "https://github.com/pilibalaai/pilibala.git" ? pathToFileURL(source).href : value)]);
       expect(() => run("merge-base", "--is-ancestor", NATIVE_INSTRUCTION_BASE_SHA, head)).toThrow();
       expect(() => assertNativeInstructionLineage(head, run, true)).not.toThrow();
       expect(run("rev-parse", "HEAD")).toBe(head);
@@ -62,7 +62,7 @@ describe("native instruction comparison admission", () => {
       const fetches = calls.filter(args => args.includes("fetch"));
       const depths = ["local", "not-shallow"].includes(scenario) ? [] : scenario === "no-base" ? [8, 32, 128] : [8];
       expect(fetches).toEqual(depths.map(depth => ["-c", "credential.helper=", "-c", "core.hooksPath=/dev/null",
-        "fetch", "--no-tags", `--depth=${depth}`, "https://github.com/paperclipai/paperclip.git", head]));
+        "fetch", "--no-tags", `--depth=${depth}`, "https://github.com/pilibalaai/pilibala.git", head]));
     }
   });
   it("accepts each complete source variant and rejects a mixed variant", () => {
@@ -98,7 +98,7 @@ describe("native instruction comparison admission", () => {
   });
 
   it("uses the new common production default without qualifying old default evidence", () => {
-    const receipt = { schema: "paperclip.native-completion-default.v1" as const, companyId: "company", agentId: "agent", entryFile: "AGENTS.md",
+    const receipt = { schema: "pilibala.native-completion-default.v1" as const, companyId: "company", agentId: "agent", entryFile: "AGENTS.md",
       files: [{ path: "AGENTS.md", sha256: NATIVE_INSTRUCTION_DEFAULT_SHA256, bytes: 40 }], budgets: { company: 1000, agent: 1000 } };
     expect(gradeNativeDefault(receipt, NATIVE_INSTRUCTION_DEFAULT_SHA256).passed).toBe(true);
     expect(gradeNativeDefault(receipt).passed).toBe(false);
@@ -111,8 +111,8 @@ describe("native instruction comparison admission", () => {
 
   it("rejects duplicate or incomplete capture, dirty or paid source, and stale fixture evidence", () => {
     const measurement = {
-      schema: "paperclip.native-instruction-measurement.v2", sourceSha: "frozen", sourceDirty: false, providerCalls: 0,
-      fixtureSha256: createHash("sha256").update(readFileSync(new URL("../../packages/paperclip-runner/src/backends/native-instruction-measurement.test.ts", import.meta.url))).digest("hex"),
+      schema: "pilibala.native-instruction-measurement.v2", sourceSha: "frozen", sourceDirty: false, providerCalls: 0,
+      fixtureSha256: createHash("sha256").update(readFileSync(new URL("../../packages/pilibala-runner/src/backends/native-instruction-measurement.test.ts", import.meta.url))).digest("hex"),
       sourceHashes: Object.fromEntries(Object.entries(NATIVE_INSTRUCTION_VARIANTS.baseline).map(([file, digest]) => [file.split('/').at(-1)!, digest])),
       directOpenCodeReceipts: ["v4", "v5"].flatMap(schema => ["start", "resume", "continuation"].map(phase => ({ provider: "opencode", schema, phase }))),
       receipts: ['codex', 'acpx', 'opencode'].flatMap(provider => ['v4', 'v5'].flatMap(schema => ['start', 'resume', 'continuation'].map(phase => ({ provider, schema, phase })))),

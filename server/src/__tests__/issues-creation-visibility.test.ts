@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { expect, it } from "vitest";
-import { activityLog, issueComments, issueReadStates, issues } from "@paperclipai/db";
-import { isAgentCreatedIssue } from "@paperclipai/shared";
+import { activityLog, issueComments, issueReadStates, issues } from "@pilibalaai/db";
+import { isAgentCreatedIssue } from "@pilibalaai/shared";
 import { issueRoutes } from "../routes/issues.js";
 import { issueService } from "../services/issues.js";
 import { describeEmbeddedPostgres, resetCompanyIssueFixtures, routeApp, seedCompanyWithBoardAccess, useEmbeddedPostgres } from "./helpers/route-test-harness.js";
 
 describeEmbeddedPostgres("issue creation visibility", () => {
-  const ctx = useEmbeddedPostgres("paperclip-creation-visibility-", {
+  const ctx = useEmbeddedPostgres("pilibala-creation-visibility-", {
     resetEach: async (db) => {
       await db.delete(activityLog);
       await resetCompanyIssueFixtures(db);

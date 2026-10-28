@@ -230,7 +230,7 @@ async function createApp(transaction: (callback: (tx: Record<string, never>) => 
       userId: "local-board",
       companyIds: ["company-1"],
       source: "local_implicit",
-      runId: req.header("x-paperclip-run-id") ?? null,
+      runId: req.header("x-pilibala-run-id") ?? null,
       isInstanceAdmin: false,
     };
     next();
@@ -705,8 +705,8 @@ describe("issue update comment wakeups", () => {
     const updated = makeIssue({ status: "todo", assigneeAgentId: ASSIGNEE_AGENT_ID });
     mockIssueService.getById.mockResolvedValue(existing);
     mockIssueService.update.mockResolvedValue(updated);
-    mockIssueService.addComment.mockResolvedValue({ id: "comment-reopen-slack", issueId: existing.id, companyId: existing.companyId, body: "Continue from Paperclip" });
-    const res = await request(await createApp()).post(`/api/issues/${existing.id}/comments`).send({ body: "Continue from Paperclip", reopen: true });
+    mockIssueService.addComment.mockResolvedValue({ id: "comment-reopen-slack", issueId: existing.id, companyId: existing.companyId, body: "Continue from Pilibala" });
+    const res = await request(await createApp()).post(`/api/issues/${existing.id}/comments`).send({ body: "Continue from Pilibala", reopen: true });
     expect(res.status).toBe(201);
     await vi.waitFor(() => expect(mockHeartbeatService.wakeup).toHaveBeenCalledTimes(1));
     expect(mockHeartbeatService.wakeup).toHaveBeenCalledWith(ASSIGNEE_AGENT_ID, expect.objectContaining({
@@ -752,7 +752,7 @@ describe("issue update comment wakeups", () => {
     const req = method === "post"
       ? request(app).post(`/api/issues/${existing.id}/comments`)
       : request(app).patch(`/api/issues/${existing.id}`);
-    if (selfComment) req.set("X-Paperclip-Run-Id", SOURCE_RUN_ID);
+    if (selfComment) req.set("X-Pilibala-Run-Id", SOURCE_RUN_ID);
     const res = await req.send(method === "post" ? { body } : { comment: body, ...(scenario === "closing_comment" ? { status: "done" } : {}) });
     expect(res.status).toBe(method === "post" ? 201 : 200);
     // Wake scheduling runs after sending the response. Drain its resolved
@@ -792,7 +792,7 @@ describe("issue update comment wakeups", () => {
 
     const res = await request(await createApp())
       .post(`/api/issues/${existing.id}/comments`)
-      .set("X-Paperclip-Run-Id", SOURCE_RUN_ID)
+      .set("X-Pilibala-Run-Id", SOURCE_RUN_ID)
       .send({ body: "Resume intentionally.", resume: true });
 
     expect(res.status).toBe(201);

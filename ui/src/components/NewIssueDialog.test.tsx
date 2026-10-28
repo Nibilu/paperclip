@@ -32,7 +32,7 @@ const companyState = vi.hoisted(() => ({
   companies: [
     {
       id: "company-1",
-      name: "Paperclip",
+      name: "Pilibala",
       status: "active",
       issuePrefix: "PAP",
     },
@@ -40,7 +40,7 @@ const companyState = vi.hoisted(() => ({
   selectedCompanyId: "company-1",
   selectedCompany: {
     id: "company-1",
-    name: "Paperclip",
+    name: "Pilibala",
     status: "active",
     issuePrefix: "PAP",
   },
@@ -523,7 +523,7 @@ describe("NewIssueDialog", () => {
     primaryState.primaryAgentId = primary;
     if (recent) trackRecentAssignee(recent, "company-1");
     if (explicit) dialogState.newIssueDefaults = { assigneeAgentId: explicit };
-    if (draft) localStorage.setItem("paperclip:issue-draft", JSON.stringify({ title: "Saved request", description: "", assigneeValue: `agent:${draft}`, projectId: "" }));
+    if (draft) localStorage.setItem("pilibala:issue-draft", JSON.stringify({ title: "Saved request", description: "", assigneeValue: `agent:${draft}`, projectId: "" }));
     const { root } = renderDialog(container);
     await waitForAssertion(() => expect(container.querySelector('[data-testid="task-chat-composer-assignee-label"]')?.textContent).toBe(expected));
     act(() => root.unmount());
@@ -558,7 +558,7 @@ describe("NewIssueDialog", () => {
     act(() => container.querySelector<HTMLButtonElement>('[aria-label="Select assignee"]')!.click());
     const me = [...container.querySelectorAll<HTMLButtonElement>('[role="option"]')].find((button) => button.textContent?.includes("Me"))!;
     act(() => me.click());
-    expect(localStorage.getItem("paperclip:recent-assignees:company-1")).toContain("user:user-1");
+    expect(localStorage.getItem("pilibala:recent-assignees:company-1")).toContain("user:user-1");
     expect(container.querySelector('[data-testid="task-chat-composer-model-label"]')).toBeNull();
     expect(container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Describe a task…"]')?.value).toBe("");
     act(() => root.unmount());
@@ -625,7 +625,7 @@ describe("NewIssueDialog", () => {
     mockAgentsApi.list.mockResolvedValue([{ id: "agent-1", name: "Coder", status: "active", adapterType: "codex_local", adapterConfig: {}, runtimeConfig: {}, permissions: {} }]);
     const { root } = renderDialog(container);
     await flush();
-    const composer = container.querySelector(".paperclip-task-chat-composer");
+    const composer = container.querySelector(".pilibala-task-chat-composer");
     expect(composer).not.toBeNull();
     expect(composer?.querySelector('[data-testid="task-chat-composer-input"]')).not.toBeNull();
     expect(composer?.querySelector('[aria-label="Create task"]')).not.toBeNull();
@@ -720,7 +720,7 @@ describe("NewIssueDialog", () => {
   });
 
   it("restores private visibility from a saved draft without a project", async () => {
-    localStorage.setItem("paperclip:issue-draft", JSON.stringify({ title: "Private draft", description: "", status: "todo", priority: "", projectId: "", isPrivate: true }));
+    localStorage.setItem("pilibala:issue-draft", JSON.stringify({ title: "Private draft", description: "", status: "todo", priority: "", projectId: "", isPrivate: true }));
     const { root } = renderDialog(container);
     await flush();
     const toggle = container.querySelector<HTMLButtonElement>('button[data-testid="composer-private-chip"]')!;
@@ -780,7 +780,7 @@ describe("NewIssueDialog", () => {
     // Saving this form must retain only the explicit toggle choice. A later
     // standalone draft must not acquire a sticky private flag from its parent.
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 850)); });
-    expect(JSON.parse(localStorage.getItem("paperclip:issue-draft")!).isPrivate).toBe(false);
+    expect(JSON.parse(localStorage.getItem("pilibala:issue-draft")!).isPrivate).toBe(false);
     const submit = Array.from(container.querySelectorAll("button")).find(button => button.getAttribute("aria-label") === "Create sub-task")!;
     await act(async () => submit.click());
     await flush();
@@ -1029,7 +1029,7 @@ describe("NewIssueDialog", () => {
       id: "project-1", name: "Alpha", workspaces: [{ id: "source-default", isPrimary: true }],
       executionWorkspacePolicy: { enabled: true, defaultMode: "isolated_workspace" },
     }]);
-    localStorage.setItem("paperclip:issue-draft", JSON.stringify({
+    localStorage.setItem("pilibala:issue-draft", JSON.stringify({
       title: "Draft task", description: "", status: "todo", priority: "medium", assigneeValue: "",
       reviewerValue: "", approverValue: "", projectId: "project-1",
       projectWorkspaceId: "stale-source", selectedExecutionWorkspaceId: "stale-workspace", executionWorkspaceMode: "reuse_existing",
@@ -1300,7 +1300,7 @@ describe("NewIssueDialog", () => {
 
 
   it("restores a description-only draft", async () => {
-    localStorage.setItem("paperclip:issue-draft", JSON.stringify({
+    localStorage.setItem("pilibala:issue-draft", JSON.stringify({
       title: "", description: "Keep the request without a title", status: "todo", priority: "medium",
       assigneeValue: "", reviewerValue: "", approverValue: "", projectId: "",
       assigneeModelOverride: "", assigneeThinkingEffort: "", assigneeChrome: false,
@@ -1663,7 +1663,7 @@ describe("NewIssueDialog", () => {
     expect(modeChip()).toBeNull();
 
     await act(async () => {
-      container.querySelector(".paperclip-task-chat-composer")?.dispatchEvent(new KeyboardEvent("keydown", {
+      container.querySelector(".pilibala-task-chat-composer")?.dispatchEvent(new KeyboardEvent("keydown", {
         bubbles: true,
         code: "",
         key: ".",
@@ -1674,7 +1674,7 @@ describe("NewIssueDialog", () => {
     expect(modeChip()?.textContent).toContain("Plan mode");
 
     await act(async () => {
-      container.querySelector(".paperclip-task-chat-composer")?.dispatchEvent(new KeyboardEvent("keydown", {
+      container.querySelector(".pilibala-task-chat-composer")?.dispatchEvent(new KeyboardEvent("keydown", {
         bubbles: true,
         code: "Period",
         key: ".",
@@ -1685,7 +1685,7 @@ describe("NewIssueDialog", () => {
     expect(modeChip()?.textContent).toContain("Ask mode");
 
     await act(async () => {
-      container.querySelector(".paperclip-task-chat-composer")?.dispatchEvent(new KeyboardEvent("keydown", {
+      container.querySelector(".pilibala-task-chat-composer")?.dispatchEvent(new KeyboardEvent("keydown", {
         bubbles: true,
         code: "Period",
         key: ".",
@@ -1755,7 +1755,7 @@ describe("NewIssueDialog", () => {
     expect(modeChip()).toBeNull();
 
     await act(async () => {
-      container.querySelector(".paperclip-task-chat-composer")?.dispatchEvent(new KeyboardEvent("keydown", {
+      container.querySelector(".pilibala-task-chat-composer")?.dispatchEvent(new KeyboardEvent("keydown", {
         bubbles: true,
         code: "Period",
         key: ".",
@@ -1985,7 +1985,7 @@ describe("NewIssueDialog", () => {
     await flush();
 
     const menu = document.createElement("div");
-    menu.setAttribute("data-paperclip-floating-ui", "");
+    menu.setAttribute("data-pilibala-floating-ui", "");
     const option = document.createElement("button");
     menu.appendChild(option);
     document.body.appendChild(menu);
@@ -2008,7 +2008,7 @@ describe("NewIssueDialog", () => {
       enableIsolatedWorkspaces: false,
     });
     localStorage.setItem(
-      "paperclip:issue-draft",
+      "pilibala:issue-draft",
       JSON.stringify({
         title: "Watched task",
         description: "",
@@ -2072,7 +2072,7 @@ describe("NewIssueDialog", () => {
 
   it("restores shared model, effort, and fast settings into the created task", async () => {
     mockAgentsApi.list.mockResolvedValue([{ id: "agent-1", name: "Coder", status: "active", adapterType: "codex_local", adapterConfig: {}, runtimeConfig: {}, permissions: {} }]);
-    localStorage.setItem("paperclip:issue-draft", JSON.stringify({
+    localStorage.setItem("pilibala:issue-draft", JSON.stringify({
       title: "", description: "Use the saved run settings", status: "todo", priority: "medium",
       assigneeValue: "agent:agent-1", projectId: "", workMode: "planning",
       composerSettings: { model: "gpt-6-astra", effort: "ultra", fast: true },

@@ -9,7 +9,7 @@ import {
   goals,
   issueThreadInteractions,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   extractGitHubPullRequestReferences,
   getMergeConfirmationPullRequestReferences,
@@ -38,18 +38,18 @@ describe("merged pull-request confirmation extraction", () => {
 
   it("extracts and deduplicates full GitHub URLs and owner/repo#N shorthand", () => {
     expect(extractGitHubPullRequestReferences([
-      "Merge https://github.com/PaperclipAI/paperclip/pull/39.",
-      "Also paperclipai/paperclip#40 and PAPERCLIPAI/paperclip#40.",
+      "Merge https://github.com/PilibalaAI/pilibala/pull/39.",
+      "Also pilibalaai/pilibala#40 and PILIBALAAI/pilibala#40.",
     ])).toEqual([
-      { host: "github.com", owner: "PaperclipAI", repo: "paperclip", number: 39 },
-      { host: "github.com", owner: "paperclipai", repo: "paperclip", number: 40 },
+      { host: "github.com", owner: "PilibalaAI", repo: "pilibala", number: 39 },
+      { host: "github.com", owner: "pilibalaai", repo: "pilibala", number: 40 },
     ]);
   });
 
   it("requires merge intent and excludes document and tool-action confirmations", () => {
     const base = {
       kind: "request_confirmation",
-      title: "Merge PaperclipAI/paperclip#39?",
+      title: "Merge PilibalaAI/pilibala#39?",
       summary: null,
       payload: { version: 1, prompt: "Merge the pull request?" },
     } as const;
@@ -76,16 +76,16 @@ describe("merged pull-request confirmation extraction", () => {
       payload: {
         version: 1,
         prompt: "Merge the linked pull request?",
-        detailsMarkdown: "Primary: paperclipai/paperclip#39",
+        detailsMarkdown: "Primary: pilibalaai/pilibala#39",
         target: {
           type: "custom",
           key: "github-pr-40",
-          href: "https://github.com/paperclipai/paperclip/pull/40",
+          href: "https://github.com/pilibalaai/pilibala/pull/40",
         },
       },
     })).toEqual([
-      { host: "github.com", owner: "paperclipai", repo: "paperclip", number: 39 },
-      { host: "github.com", owner: "paperclipai", repo: "paperclip", number: 40 },
+      { host: "github.com", owner: "pilibalaai", repo: "pilibala", number: 39 },
+      { host: "github.com", owner: "pilibalaai", repo: "pilibala", number: 40 },
     ]);
   });
 
@@ -100,7 +100,7 @@ describe("merged pull-request confirmation extraction", () => {
       payload: {
         version: 1,
         prompt: "Merge the linked pull request?",
-        detailsMarkdown: "Deploy to production after paperclipai/paperclip#39 merges.",
+        detailsMarkdown: "Deploy to production after pilibalaai/pilibala#39 merges.",
       },
     })).toEqual([]);
     expect(getMergeConfirmationPullRequestReferences({
@@ -111,7 +111,7 @@ describe("merged pull-request confirmation extraction", () => {
         target: {
           type: "custom",
           label: "Release to production",
-          href: "https://github.com/paperclipai/paperclip/pull/39",
+          href: "https://github.com/pilibalaai/pilibala/pull/39",
         },
       },
     })).toEqual([]);
@@ -124,8 +124,8 @@ describe("merged pull-request confirmation extraction", () => {
       summary: null,
       payload: {
         version: 1,
-        prompt: "Merge paperclipai/paperclip#39?",
-        detailsMarkdown: "Erase all customer records after paperclipai/paperclip#39 merges.",
+        prompt: "Merge pilibalaai/pilibala#39?",
+        detailsMarkdown: "Erase all customer records after pilibalaai/pilibala#39 merges.",
       },
     })).toEqual([]);
   });
@@ -139,7 +139,7 @@ describeEmbeddedPostgres("merged pull-request confirmation sweep", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-merged-pr-confirmations-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-merged-pr-confirmations-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -163,7 +163,7 @@ describeEmbeddedPostgres("merged pull-request confirmation sweep", () => {
     const agentId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: "MPR",
       requireBoardApprovalForNewAgents: false,
     });
@@ -216,13 +216,13 @@ describeEmbeddedPostgres("merged pull-request confirmation sweep", () => {
       {
         ...common,
         id: interactionIds.merged,
-        title: "Merge https://github.com/paperclipai/paperclip/pull/39?",
+        title: "Merge https://github.com/pilibalaai/pilibala/pull/39?",
         payload: { version: 1, prompt: "Merge the PR?" },
       },
       {
         ...common,
         id: interactionIds.boardOrAgents,
-        title: "Merge paperclipai/paperclip#39?",
+        title: "Merge pilibalaai/pilibala#39?",
         requestedResolverPolicy: "board_or_agents",
         effectiveResolverPolicy: "board_or_agents",
         payload: { version: 1, prompt: "Merge the PR?" },
@@ -230,7 +230,7 @@ describeEmbeddedPostgres("merged pull-request confirmation sweep", () => {
       {
         ...common,
         id: interactionIds.someOpen,
-        title: "Ready to merge paperclipai/paperclip#39 and paperclipai/paperclip#41?",
+        title: "Ready to merge pilibalaai/pilibala#39 and pilibalaai/pilibala#41?",
         payload: { version: 1, prompt: "Ready to merge both PRs?" },
       },
       {
@@ -242,7 +242,7 @@ describeEmbeddedPostgres("merged pull-request confirmation sweep", () => {
       {
         ...common,
         id: interactionIds.toolAction,
-        title: "Merge paperclipai/paperclip#42?",
+        title: "Merge pilibalaai/pilibala#42?",
         payload: {
           version: 1,
           prompt: "Merge the PR?",
@@ -255,8 +255,8 @@ describeEmbeddedPostgres("merged pull-request confirmation sweep", () => {
         title: "Merge the linked PR?",
         payload: {
           version: 1,
-          prompt: "Merge paperclipai/paperclip#39?",
-          detailsMarkdown: "Erase all customer records after paperclipai/paperclip#39 merges.",
+          prompt: "Merge pilibalaai/pilibala#39?",
+          detailsMarkdown: "Erase all customer records after pilibalaai/pilibala#39 merges.",
         },
       },
     ]);
@@ -272,8 +272,8 @@ describeEmbeddedPostgres("merged pull-request confirmation sweep", () => {
 
     await expect(service.sweepMergedPullRequestConfirmations([{
       companyId,
-      owner: "paperclipai",
-      repo: "paperclip",
+      owner: "pilibalaai",
+      repo: "pilibala",
       number: 39,
     }])).resolves.toEqual({
       checked: 6,
@@ -318,7 +318,7 @@ describeEmbeddedPostgres("merged pull-request confirmation sweep", () => {
         details: expect.objectContaining({
           interactionId: interactionIds.merged,
           resolutionActorKind: "system",
-          pullRequests: ["paperclipai/paperclip#39"],
+          pullRequests: ["pilibalaai/pilibala#39"],
         }),
       }),
     ]));

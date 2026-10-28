@@ -55,12 +55,12 @@ describe("Codex CI sandbox trust boundary", () => {
     expect(source).not.toMatch(
       /execFileSync\(["']sudo|apparmor_parser|flags=\(unconfined\)/,
     );
-    expect(source).toMatch(/"sandbox",\s*"--permission-profile",\s*"paperclip-e2e-probe"/);
+    expect(source).toMatch(/"sandbox",\s*"--permission-profile",\s*"pilibala-e2e-probe"/);
     expect(source).toContain(
-      "permissions.paperclip-e2e-probe.network.enabled=false",
+      "permissions.pilibala-e2e-probe.network.enabled=false",
     );
     expect(source).toContain(
-      'permissions.paperclip-e2e-probe.filesystem={":root"="read"}',
+      'permissions.pilibala-e2e-probe.filesystem={":root"="read"}',
     );
     expect(source).toContain("Codex sandbox preflight failed");
     expect(source).not.toContain("...process.env");

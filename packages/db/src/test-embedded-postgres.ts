@@ -49,13 +49,13 @@ export type EmbeddedPostgresTestDatabase = {
 
 let embeddedPostgresSupportPromise: Promise<EmbeddedPostgresTestSupport> | null = null;
 
-const DEFAULT_PAPERCLIP_EMBEDDED_POSTGRES_PORT = 54329;
+const DEFAULT_PILIBALA_EMBEDDED_POSTGRES_PORT = 54329;
 
 function getReservedTestPorts(): Set<number> {
   const configuredPorts = [
-    DEFAULT_PAPERCLIP_EMBEDDED_POSTGRES_PORT,
-    Number.parseInt(process.env.PAPERCLIP_EMBEDDED_POSTGRES_PORT ?? "", 10),
-    ...String(process.env.PAPERCLIP_TEST_POSTGRES_RESERVED_PORTS ?? "")
+    DEFAULT_PILIBALA_EMBEDDED_POSTGRES_PORT,
+    Number.parseInt(process.env.PILIBALA_EMBEDDED_POSTGRES_PORT ?? "", 10),
+    ...String(process.env.PILIBALA_TEST_POSTGRES_RESERVED_PORTS ?? "")
       .split(",")
       .map((value) => Number.parseInt(value.trim(), 10)),
   ];
@@ -110,14 +110,14 @@ async function getAvailablePort(): Promise<number> {
   }
 
   throw new Error(
-    `Failed to allocate embedded Postgres test port outside reserved Paperclip ports: ${[
+    `Failed to allocate embedded Postgres test port outside reserved Pilibala ports: ${[
       ...reservedPorts,
     ].join(", ")}`,
   );
 }
 
-const EMBEDDED_POSTGRES_USER = "paperclip";
-const EMBEDDED_POSTGRES_PASSWORD = "paperclip";
+const EMBEDDED_POSTGRES_USER = "pilibala";
+const EMBEDDED_POSTGRES_PASSWORD = "pilibala";
 const EMBEDDED_POSTGRES_INITDB_FLAGS = ["--encoding=UTF8", "--locale=C", "--lc-messages=C"];
 
 async function createEmbeddedPostgresTestInstance(tempDirPrefix: string) {
@@ -155,7 +155,7 @@ function adminConnectionStringFor(port: number): string {
 }
 
 function databaseConnectionStringFor(port: number): string {
-  return `postgres://${EMBEDDED_POSTGRES_USER}:${EMBEDDED_POSTGRES_PASSWORD}@127.0.0.1:${port}/paperclip`;
+  return `postgres://${EMBEDDED_POSTGRES_USER}:${EMBEDDED_POSTGRES_PASSWORD}@127.0.0.1:${port}/pilibala`;
 }
 
 function cleanupEmbeddedPostgresTestDirs(dataDir: string) {
@@ -295,14 +295,14 @@ async function startEmbeddedPostgresWithRetry(tempDirPrefix: string): Promise<{
 // those checks reject it. Windows has no uid; its temp directory is already
 // per user, so the ownership and mode checks are skipped there.
 //
-// Set PAPERCLIP_TEST_POSTGRES_TEMPLATE=0 to bypass the cache and run the fresh
+// Set PILIBALA_TEST_POSTGRES_TEMPLATE=0 to bypass the cache and run the fresh
 // path for every suite. Any failure on the template path (root checks, build,
 // copy, start, or publish) falls back to the fresh path, so a broken cache can
 // make a suite slower but never fail it or skip it: the fresh path still
 // reports a migration that cannot apply or a cluster that cannot start.
 // ---------------------------------------------------------------------------
 
-const TEMPLATE_ROOT_DIR_NAME = "paperclip-embedded-postgres-templates";
+const TEMPLATE_ROOT_DIR_NAME = "pilibala-embedded-postgres-templates";
 // Templates whose key no longer matches are pruned once they have not been
 // used for this long. Every reuse refreshes the template's timestamp.
 const TEMPLATE_PRUNE_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -314,7 +314,7 @@ const TEMPLATE_BUILD_STOP_TIMEOUT_MS = 30_000;
 export type EmbeddedPostgresStartMode = "template" | "fresh";
 
 function isTemplateCacheDisabled(): boolean {
-  return process.env.PAPERCLIP_TEST_POSTGRES_TEMPLATE === "0";
+  return process.env.PILIBALA_TEST_POSTGRES_TEMPLATE === "0";
 }
 
 function migrationsDirectory(): string {
@@ -503,11 +503,11 @@ async function stopForTemplatePublish(instance: EmbeddedPostgresInstance): Promi
 async function buildEmbeddedPostgresTemplate(templateDir: string): Promise<boolean> {
   const rootDir = path.dirname(templateDir);
   const { port, dataDir, instance } = await startEmbeddedPostgresWithRetry(
-    "paperclip-embedded-postgres-template-build-",
+    "pilibala-embedded-postgres-template-build-",
   );
   let published = false;
   try {
-    await ensurePostgresDatabase(adminConnectionStringFor(port), "paperclip");
+    await ensurePostgresDatabase(adminConnectionStringFor(port), "pilibala");
     await applyPendingMigrations(databaseConnectionStringFor(port));
     const stopped = await stopForTemplatePublish(instance);
     if (!stopped || !isUsableTemplate(dataDir)) return false;
@@ -647,7 +647,7 @@ async function probeEmbeddedPostgresSupport(): Promise<EmbeddedPostgresTestSuppo
   let started: { dataDir: string; instance: EmbeddedPostgresInstance } | null = null;
 
   try {
-    started = await startEmbeddedPostgresWithRetry("paperclip-embedded-postgres-probe-");
+    started = await startEmbeddedPostgresWithRetry("pilibala-embedded-postgres-probe-");
     return { supported: true };
   } catch (error) {
     return {
@@ -711,7 +711,7 @@ export async function startEmbeddedPostgresTestDatabase(
   try {
     // Both calls are no-ops on a template copy and keep the returned database
     // identical to the fresh path even if the template were ever stale.
-    await ensurePostgresDatabase(adminConnectionStringFor(port), "paperclip");
+    await ensurePostgresDatabase(adminConnectionStringFor(port), "pilibala");
     const connectionString = databaseConnectionStringFor(port);
     await applyPendingMigrations(connectionString);
 

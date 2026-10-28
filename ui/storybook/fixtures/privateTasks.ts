@@ -4,7 +4,7 @@ import type {
   IssueAccessGrant,
   Project,
   ProjectAccessMember,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import type { CurrentBoardAccess } from "@/api/access";
 import {
   storybookAgents,
@@ -14,7 +14,7 @@ import {
   storybookProjects,
   storybookSidebarBadges,
   storybookDashboardSummary,
-} from "./paperclipData";
+} from "./pilibalaData";
 
 export const privacyCompanyId = "company-storybook";
 export const privacyOwnerId = "user-board";
@@ -345,11 +345,11 @@ export type PrivacyState = ReturnType<typeof createPrivacyState>;
 export function installPrivacyApi(state: PrivacyState) {
   const previous = window.fetch;
   const failed = new Set<string>();
-  const oldDraft = localStorage.getItem("paperclip:issue-draft");
-  localStorage.removeItem("paperclip:issue-draft");
+  const oldDraft = localStorage.getItem("pilibala:issue-draft");
+  localStorage.removeItem("pilibala:issue-draft");
   if (state.options.draft)
     localStorage.setItem(
-      "paperclip:issue-draft",
+      "pilibala:issue-draft",
       JSON.stringify({
         title: "Continue my private briefing",
         description: "Saved personal draft.",
@@ -770,8 +770,8 @@ export function installPrivacyApi(state: PrivacyState) {
   };
   return () => {
     window.fetch = previous;
-    if (oldDraft === null) localStorage.removeItem("paperclip:issue-draft");
-    else localStorage.setItem("paperclip:issue-draft", oldDraft);
+    if (oldDraft === null) localStorage.removeItem("pilibala:issue-draft");
+    else localStorage.setItem("pilibala:issue-draft", oldDraft);
   };
 }
 

@@ -20,7 +20,7 @@ import {
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatActions,
@@ -28,7 +28,7 @@ import {
   chatEndpoints,
   chatPublications,
   chatTeamsFileTransfers,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 
 import { logger } from "../../../middleware/logger.js";
 
@@ -191,7 +191,7 @@ export function createChatPublicationQueue(db: Db, options: PublicationQueueOpti
     const now = new Date();
     const staleBefore = new Date(now.getTime() - 60_000);
     // A process that disappears after the provider accepted a post but before
-    // Paperclip persisted its message id leaves an ambiguous delivery. Never
+    // Pilibala persisted its message id leaves an ambiguous delivery. Never
     // resend it automatically; an operator can explicitly replay after
     // checking the provider conversation.
     const quarantinedPublications = await db.transaction(async tx => {

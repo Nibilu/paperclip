@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import type { IssueWorkMode } from "@paperclipai/shared";
-import { Check, ClipboardList, MessageCircleQuestion, Lock, Paperclip, Plus, Target, X, type LucideIcon } from "lucide-react";
+import type { IssueWorkMode } from "@pilibalaai/shared";
+import { Check, ClipboardList, MessageCircleQuestion, Lock, Paperclip as Pilibala, Plus, Target, X, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMobileEntityPickerViewportStyle } from "@/hooks/useMobileEntityPickerViewportStyle";
 import { workModeMetaFor } from "@/lib/work-mode-meta";
@@ -46,7 +46,7 @@ export function ComposerAddMenu({
   const mobile = mobileProp ?? narrow;
   if (!onModeChange && !onAttachFile && !onGoal && !privacy) return null;
   const actions: Array<{ id: string; label: string; detail?: string; Icon: LucideIcon; select: () => void; disabled?: boolean; selected?: boolean }> = [
-    ...(onAttachFile ? [{ id: "composer-add-file", label: "Files and images", Icon: Paperclip, select: onAttachFile, disabled: attachDisabled }] : []),
+    ...(onAttachFile ? [{ id: "composer-add-file", label: "Files and images", Icon: Pilibala, select: onAttachFile, disabled: attachDisabled }] : []),
     ...(privacy ? [{ id: "composer-add-private", label: "Private task", detail: privacy.inherited, Icon: Lock, select: () => privacy.onChange(!privacy.private), selected: privacy.private, disabled: Boolean(privacy.inherited) }] : []),
     ...(onGoal ? [{ id: "composer-add-goal", label: "Goal", detail: "Keep pursuing", Icon: Target, select: onGoal }] : []),
     ...(onModeChange ? [

@@ -6,7 +6,7 @@ import { enqueueFastResponse } from "../services/fast-responses.js";
 import { hasRequiredWorkspaceRecovery, LEGACY_WORKSPACE_RECOVERY_SCHEMA } from "../services/workspace-restore-recovery-state.js";
 import { hasUnverifiedNativeWorkspaceFinalizationOwner } from "../services/native-runtime/native-workspace-finalization-recovery-state.js";
 import { monitorPoliciesEqual, applyActorMonitorScheduledBy, assertCanManageIssueMonitor, summarizeIssueMonitor } from "../services/issue-monitors.js";
-import type { IssuePrivacyConstraints } from "@paperclipai/shared";
+import type { IssuePrivacyConstraints } from "@pilibalaai/shared";
 import { canActorReadHeartbeatRun } from "../services/heartbeat-run-privacy.js";
 import {
   loadCreationSourceAgent,
@@ -15,19 +15,19 @@ import {
 } from "../services/issue-creation-source.js";
 import { activeIssueInteractionCondition, readTaskQuestionContext } from "../services/issue-question-context.js";
 import { setIssueTitle } from "../services/issue-title.js";
-import { setIssueTitleSchema } from "@paperclipai/shared";
+import { setIssueTitleSchema } from "@pilibalaai/shared";
 import { resolveConfirmationFromComment } from "../services/confirmation-comment-resolution.js";
 import { createIssueReadTiming } from "../services/issue-read-timing.js";
-import { isNativeWorkspaceExportRepairCause } from "@paperclipai/shared";
+import { isNativeWorkspaceExportRepairCause } from "@pilibalaai/shared";
 import { resumeNativeWorkspaceAfterOwnerStop } from "../services/native-runtime/native-workspace-owner-recovery.js";
 import { retryNativeWorkspaceExport } from "../services/native-runtime/native-workspace-export-retry.js";
 import { reconstructNativeWorkspace, unreconciledNativeExportPredicate } from "../services/native-runtime/native-workspace-reconstruction.js";
-import { reconstructWorkspaceSchema } from "@paperclipai/shared";
+import { reconstructWorkspaceSchema } from "@pilibalaai/shared";
 import { queuedInteractionId, readQueuedInteractionResponse, hasQueuedInteractionResponse } from "../services/queued-interaction-response.js";
 import { deliverConversationComments, isConversation } from "../services/agent-conversations.js";
 import { issueRecoveryActionReadModel } from "../services/issue-recovery-actions.js";
 import { getExecutionBlocker } from "../services/execution-blocker.js";
-import { EXECUTION_RECONCILIATION_CAUSES, requiresExecutionReconciliation } from "@paperclipai/shared";
+import { EXECUTION_RECONCILIATION_CAUSES, requiresExecutionReconciliation } from "@pilibalaai/shared";
 import {
   validateExecutionReconciliation,
   markExecutionReconciliation,
@@ -44,7 +44,7 @@ import { Router, type Request, type Response } from "express";
 import multer from "multer";
 import { z } from "zod";
 import { and, asc, desc, eq, inArray, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import type { ChatChannelService } from "../services/chat-channels.js";
 import {
   activityLog,
@@ -77,7 +77,7 @@ import {
   projectWorkspaces,
   projectAccessMembers,
   projects,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   addIssueCommentSchema,
   acceptIssueThreadInteractionSchema,
@@ -165,8 +165,8 @@ import {
   issueWriteDenialResponse,
   type IssueWriteDenialCode,
   type IssueWriteDenialContext,
-} from "@paperclipai/shared";
-import { trackAgentTaskCompleted } from "@paperclipai/shared/telemetry";
+} from "@pilibalaai/shared";
+import { trackAgentTaskCompleted } from "@pilibalaai/shared/telemetry";
 import { getTelemetryClient } from "../telemetry.js";
 import { isUniqueViolation } from "../db-errors.js";
 import type { StorageService } from "../storage/types.js";
@@ -644,7 +644,7 @@ function resolveAttachmentResponseContentType(input: {
   );
 }
 
-function requiresPaperclipAttachmentMetadata(
+function requiresPilibalaAttachmentMetadata(
   input: {
     type?: unknown;
     provider?: unknown;
@@ -660,7 +660,7 @@ function requiresPaperclipAttachmentMetadata(
     typeof input.provider === "string"
       ? input.provider
       : (fallback?.provider ?? null);
-  return type === "artifact" && provider === "paperclip";
+  return type === "artifact" && provider === "pilibala";
 }
 
 const attachmentArtifactMetadataInputSchema = z
@@ -2663,7 +2663,7 @@ async function queueResolvedInteractionContinuationWakeup(input: {
         ...(secretProposal ? { secretProposal } : {}),
         ...(itemVerdicts ? { itemVerdicts, newlyResolvedItemIds } : {}),
         ...(rejectionAgentMessage
-          ? { paperclipAgentMessage: rejectionAgentMessage }
+          ? { pilibalaAgentMessage: rejectionAgentMessage }
           : {}),
         ...(reviewPathContext ?? {}),
         mutation: "interaction",
@@ -2689,7 +2689,7 @@ async function queueResolvedInteractionContinuationWakeup(input: {
         ...(secretProposal ? { secretProposal } : {}),
         ...(itemVerdicts ? { itemVerdicts, newlyResolvedItemIds } : {}),
         ...(rejectionAgentMessage
-          ? { paperclipAgentMessage: rejectionAgentMessage }
+          ? { pilibalaAgentMessage: rejectionAgentMessage }
           : {}),
         ...(reviewPathContext ?? {}),
         wakeReason: "issue_commented",
@@ -3286,7 +3286,7 @@ async function coordinateIssueListGet(input: {
         identicalInFlightCount,
         windowMs: now - existing.startedAt,
         referer: safeRefererPath(input.req),
-        visibilityHint: input.req.header("x-paperclip-tab-visible") ?? null,
+        visibilityHint: input.req.header("x-pilibala-tab-visible") ?? null,
       };
       logger.warn(event, "request_storm_detected");
       input.diagnostics?.onStormDetected?.(event);
@@ -3389,7 +3389,7 @@ function logIssueListRequest(input: {
         cacheStatus: input.cacheStatus,
         etagOutcome: input.etagOutcome,
         referer: safeRefererPath(input.req),
-        visibilityHint: input.req.header("x-paperclip-tab-visible") ?? null,
+        visibilityHint: input.req.header("x-pilibala-tab-visible") ?? null,
       },
       "safe authenticated GET observed",
     );
@@ -3765,13 +3765,13 @@ export function issueRoutes(
         : null;
     if (!context || !readNonEmptyString(context.executionWorkspaceId))
       return null;
-    const paperclipIssue =
-      context.paperclipIssue && typeof context.paperclipIssue === "object"
-        ? (context.paperclipIssue as Record<string, unknown>)
+    const pilibalaIssue =
+      context.pilibalaIssue && typeof context.pilibalaIssue === "object"
+        ? (context.pilibalaIssue as Record<string, unknown>)
         : null;
     return (
       readNonEmptyString(context.issueId) ??
-      readNonEmptyString(paperclipIssue?.id)
+      readNonEmptyString(pilibalaIssue?.id)
     );
   }
 
@@ -4513,7 +4513,7 @@ export function issueRoutes(
     };
   }
 
-  async function canonicalizePaperclipArtifactMetadata(input: {
+  async function canonicalizePilibalaArtifactMetadata(input: {
     issue: { id: string; companyId: string };
     metadata: Record<string, unknown> | null | undefined;
   }) {
@@ -6698,13 +6698,13 @@ export function issueRoutes(
     if (!run) return null;
 
     const context = readObject(run.contextSnapshot);
-    const paperclipWake = readObject(context.paperclipWake);
-    const recovery = readObject(paperclipWake.recovery);
+    const pilibalaWake = readObject(context.pilibalaWake);
+    const recovery = readObject(pilibalaWake.recovery);
     const wakeReason =
       typeof context.wakeReason === "string"
         ? context.wakeReason
-        : typeof paperclipWake.reason === "string"
-          ? paperclipWake.reason
+        : typeof pilibalaWake.reason === "string"
+          ? pilibalaWake.reason
           : null;
     if (wakeReason !== "source_scoped_recovery_action") return null;
 
@@ -8601,7 +8601,7 @@ export function issueRoutes(
       },
     });
 
-    res.setHeader("X-Paperclip-Request-Cache", coordinated.cacheStatus);
+    res.setHeader("X-Pilibala-Request-Cache", coordinated.cacheStatus);
     if (!coordinated.response) {
       const body = {
         error: "Too many concurrent issue-list requests for this actor/client",
@@ -11413,14 +11413,14 @@ export function issueRoutes(
               : null),
         );
       }
-      if (requiresPaperclipAttachmentMetadata(createInput)) {
-        createInput.metadata = await canonicalizePaperclipArtifactMetadata({
+      if (requiresPilibalaAttachmentMetadata(createInput)) {
+        createInput.metadata = await canonicalizePilibalaArtifactMetadata({
           issue,
           metadata: req.body.metadata ?? null,
         });
       }
       const attachmentId =
-        createInput.type === "artifact" && createInput.provider === "paperclip"
+        createInput.type === "artifact" && createInput.provider === "pilibala"
           ? (createInput.metadata as Record<string, unknown> | null)
               ?.attachmentId
           : null;
@@ -11434,7 +11434,7 @@ export function issueRoutes(
                   eq(issueWorkProducts.companyId, issue.companyId),
                   eq(issueWorkProducts.issueId, issue.id),
                   eq(issueWorkProducts.type, "artifact"),
-                  eq(issueWorkProducts.provider, "paperclip"),
+                  eq(issueWorkProducts.provider, "pilibala"),
                   eq(issueWorkProducts.externalId, attachmentId),
                   eq(issueWorkProducts.createdByRunId, createdByRunId),
                 ),
@@ -11730,7 +11730,7 @@ export function issueRoutes(
             issueId: issue.id,
             projectId: issue.projectId ?? null,
             type: "artifact",
-            provider: "paperclip",
+            provider: "pilibala",
             externalId: req.body.sourceArtifactId,
             title: req.body.title,
             status: "approved",
@@ -11826,13 +11826,13 @@ export function issueRoutes(
       )
         return;
       if (createdByRunId !== undefined) patch.createdByRunId = createdByRunId;
-      if (requiresPaperclipAttachmentMetadata(patch, existing)) {
+      if (requiresPilibalaAttachmentMetadata(patch, existing)) {
         if (patch.metadata !== undefined) {
-          patch.metadata = await canonicalizePaperclipArtifactMetadata({
+          patch.metadata = await canonicalizePilibalaArtifactMetadata({
             issue,
             metadata: patch.metadata ?? null,
           });
-        } else if (!requiresPaperclipAttachmentMetadata(existing)) {
+        } else if (!requiresPilibalaAttachmentMetadata(existing)) {
           res
             .status(422)
             .json({ error: "Attachment-backed artifact metadata is required" });
@@ -13660,13 +13660,13 @@ export function issueRoutes(
 
   async function assertMcpTaskParticipation(query: IssueQueueDb, issue: { id: string; companyId: string; checkoutRunId?: string | null; executionRunId?: string | null; status: string; executionState?: { status?: string } | null }) {
     if (issue.status === "in_review" || issue.executionState?.status === "pending") {
-      throw forbidden("Review decisions must be made in Paperclip", { code: "MCP_REVIEW_REQUIRED" });
+      throw forbidden("Review decisions must be made in Pilibala", { code: "MCP_REVIEW_REQUIRED" });
     }
     const [active] = await query.select({ id: heartbeatRuns.id }).from(heartbeatRuns).where(and(
       eq(heartbeatRuns.companyId, issue.companyId), inArray(heartbeatRuns.status, ["queued", "running", "scheduled_retry"]),
       sql`(${heartbeatRuns.id} = ${issue.checkoutRunId ?? null}::uuid or ${heartbeatRuns.id} = ${issue.executionRunId ?? null}::uuid or ${heartbeatRuns.nativeIssueId} = ${issue.id}::uuid or ${heartbeatRuns.contextSnapshot}->>'issueId' = ${issue.id})`,
     )).limit(1);
-    if (active) throw conflict("An agent currently owns execution. Wait for it to finish, or manage execution in Paperclip.", { code: "MCP_ACTIVE_EXECUTION" });
+    if (active) throw conflict("An agent currently owns execution. Wait for it to finish, or manage execution in Pilibala.", { code: "MCP_ACTIVE_EXECUTION" });
   }
 
   router.patch(
@@ -16621,7 +16621,7 @@ export function issueRoutes(
             queueId: req.body.queueId,
             revision: req.body.revision,
           });
-          if (locked.queue.protocol !== "paperclip_runner_v1") {
+          if (locked.queue.protocol !== "pilibala_runner_v1") {
             throw conflict("This runner does not support same-turn steering", {
               code: "steering_unsupported",
             });
@@ -19581,7 +19581,7 @@ export function issueRoutes(
           details: {
             workProductId: attachment.artifactWorkProductId,
             type: "artifact",
-            provider: "paperclip",
+            provider: "pilibala",
             source: "run_attachment_upload",
           },
         });

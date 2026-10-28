@@ -1201,9 +1201,9 @@ export type {
   SuggestTasksResult,
   AskUserQuestionsQuestionOption,
   AskUserQuestionsQuestion,
-  PaperclipQuestionSetOption,
-  PaperclipQuestionSetQuestion,
-  PaperclipQuestionSetPayload,
+  PilibalaQuestionSetOption,
+  PilibalaQuestionSetQuestion,
+  PilibalaQuestionSetPayload,
   AskUserQuestionsPayload,
   AskUserQuestionsAnswer,
   AskUserQuestionsResult,
@@ -1636,7 +1636,7 @@ export type {
   PluginApiRouteDeclaration,
   PluginObjectReferenceRefreshPolicy,
   PluginObjectReferenceProviderDeclaration,
-  PaperclipPluginManifestV1,
+  PilibalaPluginManifestV1,
   PluginRecord,
   PluginDatabaseNamespaceRecord,
   PluginMigrationRecord,
@@ -1793,7 +1793,7 @@ export {
   WEEKLY_RETENTION_PRESETS,
   MONTHLY_RETENTION_PRESETS,
   DEFAULT_BACKUP_RETENTION,
-  PAPERCLIP_CLOUD_MANAGED_BY,
+  PILIBALA_CLOUD_MANAGED_BY,
 } from "./types/instance.js";
 
 export type {
@@ -2027,7 +2027,7 @@ export {
   suggestTasksResultSchema,
   askUserQuestionsQuestionOptionSchema,
   askUserQuestionsQuestionSchema,
-  paperclipQuestionSetPayloadSchema,
+  pilibalaQuestionSetPayloadSchema,
   askUserQuestionsPayloadSchema,
   askUserQuestionsAnswerSchema,
   askUserQuestionsResultSchema,
@@ -2597,7 +2597,7 @@ export {
 } from "./routine-variables.js";
 
 export {
-  paperclipConfigSchema,
+  pilibalaConfigSchema,
   configMetaSchema,
   llmConfigSchema,
   databaseBackupConfigSchema,
@@ -2612,12 +2612,12 @@ export {
   secretsLocalEncryptedConfigSchema,
   telemetryConfigSchema,
   updatesConfigSchema,
-  mergePaperclipConfig,
-  findPaperclipConfigKeyWarnings,
+  mergePilibalaConfig,
+  findPilibalaConfigKeyWarnings,
   type ConfigKeyWarning,
   type TelemetryConfig,
   type UpdatesConfig,
-  type PaperclipConfig,
+  type PilibalaConfig,
   type LlmConfig,
   type DatabaseBackupConfig,
   type DatabaseConfig,
@@ -2799,7 +2799,7 @@ export {
   isRuntimeExposureHmrPort,
   isAllowedRuntimeExposurePort,
   deriveViteHmrPort,
-  derivePaperclipViteHmrPort,
+  derivePilibalaViteHmrPort,
   buildRuntimeExposureUrl,
   buildRuntimeExposureHealthUrl,
 } from "./runtime-exposure/ports.js";
@@ -2808,7 +2808,7 @@ export {
   RUNTIME_EXPOSURE_BIND_HOST,
   commandSelectsBindMode,
   forceLoopbackBindInCommand,
-  isPaperclipDevRunnerCommand,
+  isPilibalaDevRunnerCommand,
   rewriteUrlHostToLoopback,
 } from "./runtime-exposure/loopback-bind.js";
 export { ACCOUNT_HANDLE_MAX_LENGTH, toAccountHandle } from "./account-handle.js";
@@ -2908,7 +2908,7 @@ export { updatePrimaryAgentSchema, type UpdatePrimaryAgent, type PrimaryAgentPre
 export * from "./agent-avatar-upload.js";
 
 export type { DotBinding, DotInvitation, DotConnection, DotPairing } from "./dot-invitations.js";
-export { agentHarnessType, agentRunner, paperclipRunnerProfileForHarness, paperclipRunnerSupportsPlatform, PAPERCLIP_RUNNER_MINIMUM_GLIBC_VERSION, type AgentRunnerChoice, type AgentRunner, type AgentRunnerAvailability } from "./agent-runner.js";
+export { agentHarnessType, agentRunner, pilibalaRunnerProfileForHarness, pilibalaRunnerSupportsPlatform, PILIBALA_RUNNER_MINIMUM_GLIBC_VERSION, type AgentRunnerChoice, type AgentRunner, type AgentRunnerAvailability } from "./agent-runner.js";
 export { EXTERNAL_AGENT_TOOL_GUIDANCE, DOT_AGENT_TOOL_GUIDANCE, GROK_BOT_AGENT_TOOL_GUIDANCE } from "./external-agent-guidance.js";
 
 export { AGENT_LIFECYCLE_STATES, type AgentLifecycleState, type AgentLifecycleOperation } from "./types/agent-lifecycle.js";

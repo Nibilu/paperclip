@@ -4,8 +4,8 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Issue, IssueAttachment, IssueDocument, IssueWorkProduct } from "@paperclipai/shared";
-import { artifactReviewDocumentKey } from "@paperclipai/shared";
+import type { Issue, IssueAttachment, IssueDocument, IssueWorkProduct } from "@pilibalaai/shared";
+import { artifactReviewDocumentKey } from "@pilibalaai/shared";
 import { IssuePropertiesArtifactsTab } from "./IssuePropertiesArtifactsTab";
 import { ApiError } from "@/api/client";
 import { TextAttachmentContext } from "@/context/TextAttachmentContext";
@@ -60,7 +60,7 @@ function makeMarkdownWorkProduct(overrides: Partial<IssueWorkProduct> = {}): Iss
     executionWorkspaceId: null,
     runtimeServiceId: null,
     type: "artifact",
-    provider: "paperclip",
+    provider: "pilibala",
     externalId: null,
     title: "Verification report",
     url: null,
@@ -445,9 +445,9 @@ describe("markdown work product review row", () => {
         type: "pull_request",
         provider: "github",
         title: "Artifact grouping PR",
-        url: "https://github.com/paperclipai/paperclip/pull/1",
+        url: "https://github.com/pilibalaai/pilibala/pull/1",
         createdByRunId: runOne,
-        metadata: { repo: "paperclipai/paperclip", number: 1, baseRef: "master", headRef: "artifacts" },
+        metadata: { repo: "pilibalaai/pilibala", number: 1, baseRef: "master", headRef: "artifacts" },
       }),
       makeMarkdownWorkProduct({
         id: "33333333-3333-4333-8333-333333333333",
@@ -479,7 +479,7 @@ describe("markdown work product review row", () => {
       expect(container.textContent).toContain("DesignCoder");
       expect(container.querySelectorAll("article")).toHaveLength(2);
       expect(container.querySelector(`img[src="${imagePath}"]`)).not.toBeNull();
-      expect(container.querySelector('a[href="https://github.com/paperclipai/paperclip/pull/1"]')?.textContent).toContain("Open pull request");
+      expect(container.querySelector('a[href="https://github.com/pilibalaai/pilibala/pull/1"]')?.textContent).toContain("Open pull request");
       expect(container.querySelector('button[aria-label="View image: Artifacts screenshot"]')).not.toBeNull();
     });
   });

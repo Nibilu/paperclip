@@ -15,7 +15,7 @@ import type { Plugin } from "vite";
  * from the bundle makes `sw.js` change exactly when the app does.
  */
 
-export const SERVICE_WORKER_BUILD_ID_PLACEHOLDER = "__PAPERCLIP_BUILD_ID__";
+export const SERVICE_WORKER_BUILD_ID_PLACEHOLDER = "__PILIBALA_BUILD_ID__";
 
 /**
  * Replace the build-id placeholder in a service-worker source string.
@@ -58,7 +58,7 @@ export function serviceWorkerBuildIdPlugin(
   let outDir = "dist";
 
   return {
-    name: "paperclip-sw-build-id",
+    name: "pilibala-sw-build-id",
     apply: "build",
     configResolved(config) {
       outDir = config.build.outDir;

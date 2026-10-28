@@ -2,7 +2,7 @@ import {
   CHAT_PUBLICATION_STATES,
   type ChatPublicationSummary,
   type ChatPublicationBatchStatus,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { ApiError } from "@/api/client";
 
 export type BoardSendRejection = {
@@ -72,7 +72,7 @@ export function boardSendDraftKey(
   endpointId: string,
   conversationId: string,
 ) {
-  return `paperclip:board-send:v1:${JSON.stringify([companyId, issueId, endpointId, conversationId])}`;
+  return `pilibala:board-send:v1:${JSON.stringify([companyId, issueId, endpointId, conversationId])}`;
 }
 
 export function readBoardSendDraft(key: string): RetainedBoardSend | null {

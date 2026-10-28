@@ -54,7 +54,7 @@ the current binding rather than inferring a default from the selected checkout I
 When the denial is retained, the run stops before the agent starts with a
 `configuration_incomplete` failure (reason `workspace_source_restricted`). The task
 is blocked with a notice that tells the owner to push unpublished work and select a
-new workspace, or to grant access to the restricted task, then retry. Paperclip
+new workspace, or to grant access to the restricted task, then retry. Pilibala
 does not report this owner action to Sentry as an unexpected run failure.
 Startup validation of these recorded defaults keeps the task's effective workspace
 strategy. It does not substitute the agent's shared strategy or grant project writes.

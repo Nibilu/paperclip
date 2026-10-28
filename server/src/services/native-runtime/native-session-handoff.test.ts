@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, companies, createDb, documents, heartbeatRunEvents, heartbeatRuns, issueComments, issueDocuments, issues, issueThreadInteractions } from "@paperclipai/db";
+import { agents, companies, createDb, documents, heartbeatRunEvents, heartbeatRuns, issueComments, issueDocuments, issues, issueThreadInteractions } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { buildNativeSessionHandoff, createNativeSessionHandoffLoader, NATIVE_HANDOFF_MAX_BYTES, renderNativeSessionHandoff } from "./native-session-handoff.js";
 import { buildNativeExecutionInput } from "./native-execution-input.js";
-import { buildNativeModelEnvelope } from "@paperclipai/paperclip-runner";
+import { buildNativeModelEnvelope } from "@pilibalaai/pilibala-runner";
 import { nativeRuntimeContextFixture } from "./runtime-context.test-fixture.js";
 
 describe("bounded fresh-session handoff", () => {
@@ -16,7 +16,7 @@ describe("bounded fresh-session handoff", () => {
     expect(rendered).toContain('"truncated":true');
     expect(rendered).toContain("content omitted");
     expect(rendered).toContain("get_task_history");
-    expect(rendered).toContain("Legacy adapters can use the equivalent Paperclip");
+    expect(rendered).toContain("Legacy adapters can use the equivalent Pilibala");
   });
 
   it("restores the handoff on fresh bootstrap and resume failure, without replaying it on resume", () => {
@@ -25,7 +25,7 @@ describe("bounded fresh-session handoff", () => {
       issue: { id: "task", identifier: "BOT-2", title: "Chat", description: null, workMode: "standard" },
       taskPrompt: "GitHub is connected", freshSessionHandoff: "original goal: build the PR review bot", initialCommunicationGuidance: "Lead with the answer",
       workspace: { id: "workspace", cwd: "/workspace", repoUrl: null, repoRef: null, branchName: null },
-      completionContract: { id: "contract", sha256: "a".repeat(64), schemaVersion: "paperclip.run-result.v1", contract: {
+      completionContract: { id: "contract", sha256: "a".repeat(64), schemaVersion: "pilibala.run-result.v1", contract: {
         revision: "1", objective: "Build bot", criteria: [{ id: "objective", requirement: "Build bot" }],
       } }, runtimeContext: nativeRuntimeContextFixture(),
     });
@@ -43,10 +43,10 @@ const support = await getEmbeddedPostgresTestSupport();
   let db: ReturnType<typeof createDb>;
   const companyId = randomUUID(), agentId = randomUUID(), issueId = randomUUID(), boundaryId = randomUUID(), requestId = randomUUID();
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-native-handoff-");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-native-handoff-");
     db = createDb(database.connectionString);
     await db.insert(companies).values({ id: companyId, name: "Handoff", issuePrefix: "HAND" });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Dickens", role: "general", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Dickens", role: "general", adapterType: "pilibala_runner" });
     await db.insert(issues).values({ id: issueId, companyId, title: "Chat", status: "in_progress", assigneeAgentId: agentId,
       conversationAgentId: agentId, conversationUserId: "user", conversationState: "active", conversationSessionGeneration: 2 });
     await db.insert(issueComments).values([
@@ -96,8 +96,8 @@ const support = await getEmbeddedPostgresTestSupport();
   it("preserves the original goal and prior answer while excluding reset, deleted and future history", async () => {
     const result = await buildNativeSessionHandoff({ db, companyId, issueId, agentId, before: new Date(20_000) });
     expect(result).toContain("Build a GitHub PR review bot");
-    expect(result).toContain('"author":"paperclip_receipt"');
-    expect(result).toContain("[Paperclip acknowledgement; not agent work] I’ll check the review request.");
+    expect(result).toContain('"author":"pilibala_receipt"');
+    expect(result).toContain("[Pilibala acknowledgement; not agent work] I’ll check the review request.");
     expect(result).toContain("Final constraint: require a team review");
     expect(result).toContain('"truncated":true');
     expect(Buffer.byteLength(result!)).toBeLessThanOrEqual(NATIVE_HANDOFF_MAX_BYTES);

@@ -1,4 +1,4 @@
-import type { McpConnection, McpConnectionSetup } from "@paperclipai/shared";
+import type { McpConnection, McpConnectionSetup } from "@pilibalaai/shared";
 import { api } from "./client";
 
 export const publicMcpApi = {

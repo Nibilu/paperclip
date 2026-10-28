@@ -108,7 +108,7 @@ function createEnvironment(overrides: Record<string, unknown> = {}) {
     status: "active" as const,
     config: {},
     envVars: {},
-    metadata: { managedByPaperclip: true },
+    metadata: { managedByPilibala: true },
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -133,7 +133,7 @@ describe("environment instance routes", () => {
   it.each(["post", "patch"])("rejects client-written sandbox platform evidence on %s", async method => {
     mockEnvironmentService.getById.mockResolvedValue(createEnvironment());
     const app = createApp({ type: "board", source: "local_implicit", isInstanceAdmin: true });
-    const payload = { ...(method === "post" ? { name: "Fixture", driver: "local", config: {} } : {}), metadata: { paperclipSandboxPlatformProbes: { "company-1": { v: 1 } } } };
+    const payload = { ...(method === "post" ? { name: "Fixture", driver: "local", config: {} } : {}), metadata: { pilibalaSandboxPlatformProbes: { "company-1": { v: 1 } } } };
     const res = method === "post" ? await request(app).post("/api/companies/company-1/environments").send(payload)
       : await request(app).patch("/api/environments/env-1").send(payload);
     expect(res.status).toBe(422);
@@ -141,7 +141,7 @@ describe("environment instance routes", () => {
     expect(mockEnvironmentService.create).not.toHaveBeenCalled();
   });
   it.each([null, { userNote: "replacement" }])("passes explicit user metadata replacement through without copying an old probe (%j)", async metadata => {
-    const existing = createEnvironment({ metadata: { userNote: "old", paperclipSandboxPlatformProbes: { "company-1": { v: 1, marker: "stale" } } } });
+    const existing = createEnvironment({ metadata: { userNote: "old", pilibalaSandboxPlatformProbes: { "company-1": { v: 1, marker: "stale" } } } });
     mockEnvironmentService.getById.mockResolvedValue(existing);
     mockEnvironmentService.update.mockResolvedValue({ ...existing, metadata });
     const app = createApp({ type: "board", source: "local_implicit", isInstanceAdmin: true });

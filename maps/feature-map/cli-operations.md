@@ -22,7 +22,7 @@ Agent access: [companion](../agent-access-map/cli-operations.md).
 
 ### `client-context`
 
-Use `paperclipai context show/list/use/set`, auth/connect, and the registered resource command help.
+Use `pilibalaai context show/list/use/set`, auth/connect, and the registered resource command help.
 
 ### `subresources-and-runs`
 
@@ -30,11 +30,11 @@ Use issue subresource, asset/skill, and run/heartbeat commands exposed by the CL
 
 ### `worktree-instance`
 
-Use the documented worktree/test-drive commands in an owned checkout; inspect `paperclipai worktree --help` first.
+Use the documented worktree/test-drive commands in an owned checkout; inspect `pilibalaai worktree --help` first.
 Inspect root help too: `worktree:make/list/merge-history/cleanup` are top-level
 commands rather than subcommands of `worktree`.
 
-## Driving it with the Paperclip CLI
+## Driving it with the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use `--help` from the checked-out CLI to discover exact arguments. Select a disposable company and isolated context; do not inherit an unknown API target.
 Pass the server origin to `--api-base` (without appending `/api`); the commands

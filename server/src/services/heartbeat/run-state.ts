@@ -12,11 +12,11 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   type BillingType,
   type CostStatus,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   agents,
   agentConfigRevisions,
@@ -25,7 +25,7 @@ import {
   heartbeatRunEvents,
   heartbeatRuns,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { notFound } from "../../errors.js";
 import { logger } from "../../middleware/logger.js";
 import { getServerAdapter } from "../../adapters/index.js";
@@ -48,9 +48,9 @@ import {
   hasSessionCompactionThresholds,
   resolveSessionCompactionPolicy,
   type SessionCompactionPolicy,
-} from "@paperclipai/adapter-utils";
-import { isUuidLike } from "@paperclipai/shared";
-import { HEARTBEAT_RUN_LIST_DEFAULT_LIMIT, HEARTBEAT_RUN_LIST_MAX_LIMIT } from "@paperclipai/shared";
+} from "@pilibalaai/adapter-utils";
+import { isUuidLike } from "@pilibalaai/shared";
+import { HEARTBEAT_RUN_LIST_DEFAULT_LIMIT, HEARTBEAT_RUN_LIST_MAX_LIMIT } from "@pilibalaai/shared";
 import { isUnsafeSessionWorkspaceCwd } from "../session-workspace-cwd.js";
 
 export const EXECUTION_REVIEW_PARTICIPANT_RECOVERY_WAKE_REASON =
@@ -233,8 +233,8 @@ const heartbeatRunSafeResultJsonColumn = sql<Record<string, unknown> | null>`
             'errorMessage', left(${heartbeatRuns.resultJson} #>> '{instructionSave,errorMessage}', 1024),
             'storageWarning', left(${heartbeatRuns.resultJson} #>> '{instructionSave,storageWarning}', 1024)
           )) end,
-        'workspaceRestoreRecovery', case when ${heartbeatRuns.resultJson} #>> '{workspaceRestoreRecovery,schema}' = 'paperclip.workspace-restore-recovery.v1'
-          then jsonb_build_object('schema', 'paperclip.workspace-restore-recovery.v1') end,
+        'workspaceRestoreRecovery', case when ${heartbeatRuns.resultJson} #>> '{workspaceRestoreRecovery,schema}' = 'pilibala.workspace-restore-recovery.v1'
+          then jsonb_build_object('schema', 'pilibala.workspace-restore-recovery.v1') end,
         'workspaceRestoreFailure', case when ${heartbeatRuns.resultJson} ->> 'workspaceRestoreFailure'
           in ('restore_permission_denied', 'restore_lock_timeout', 'restore_unsafe_archive', 'restore_failed')
           then ${heartbeatRuns.resultJson} -> 'workspaceRestoreFailure' end,
@@ -1371,7 +1371,7 @@ export function createHeartbeatRunState(db: Db) {
       readNonEmptyString(summarizeRunErrorForModel(latestRun.error, latestRun.terminalFailureCategory));
 
     const handoffMarkdown = [
-      "Paperclip session handoff:",
+      "Pilibala session handoff:",
       `- Previous session: ${sessionId}`,
       issueId ? `- Issue: ${issueId}` : "",
       `- Rotation reason: ${reason}`,

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { startEmbeddedPostgresTestDatabase, createDb, agents, companies, issues, agentCapabilityObservations, agentCapabilityUpgradeRequests } from "@paperclipai/db";
+import { startEmbeddedPostgresTestDatabase, createDb, agents, companies, issues, agentCapabilityObservations, agentCapabilityUpgradeRequests } from "@pilibalaai/db";
 import { capabilityUpgradeTaskService } from "./agent-capability-upgrade-task.js";
 
 // Real PostgreSQL, including the generated migration and actual unique/FK checks.

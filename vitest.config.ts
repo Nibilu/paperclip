@@ -2,7 +2,7 @@ import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    ...(process.env.PAPERCLIP_CI_PROFILE === "true"
+    ...(process.env.PILIBALA_CI_PROFILE === "true"
       ? { reporters: [...configDefaults.reporters, "./scripts/ci-profile/vitest-reporter.mjs"] }
       : {}),
     projects: [
@@ -22,7 +22,7 @@ export default defineConfig({
       "packages/adapters/opencode-local",
       "packages/adapters/pi-local",
       "packages/plugins/sdk",
-      "packages/plugins/create-paperclip-plugin",
+      "packages/plugins/create-pilibala-plugin",
       "packages/plugins/sandbox-providers/daytona",
       "server",
       "ui",

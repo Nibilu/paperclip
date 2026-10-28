@@ -48,7 +48,7 @@ vi.mock("@/lib/router", () => ({
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip" },
+    selectedCompany: { id: "company-1", name: "Pilibala" },
   }),
 }));
 
@@ -172,7 +172,7 @@ describe("Connections table (M1b / PAP-13254 door 2)", () => {
     getCloudConnectorEnrollmentMock.mockResolvedValue({
       configured: true,
       status: "active",
-      brokerBaseUrl: "https://my.paperclip.app",
+      brokerBaseUrl: "https://my.pilibala.app",
       instanceId: "instance-test",
       environment: "development",
       origins: ["http://localhost:3100"],

@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import type { Db } from "@paperclipai/db";
-import { activityLog, agentWakeupRequests, agents, companies, createDb, heartbeatRuns, issueComments, issues } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { activityLog, agentWakeupRequests, agents, companies, createDb, heartbeatRuns, issueComments, issues } from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -39,7 +39,7 @@ describeEmbeddedPostgres("queued-comment postgres adapter", () => {
   };
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-queued-comment-postgres-adapter-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-queued-comment-postgres-adapter-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -63,7 +63,7 @@ describeEmbeddedPostgres("queued-comment postgres adapter", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -129,7 +129,7 @@ describeEmbeddedPostgres("queued-comment postgres adapter", () => {
       requestedByActorType: "user",
       payload: {
         issueId: input.issueId,
-        _paperclipWakeContext: { wakeCommentIds: input.commentIds },
+        _pilibalaWakeContext: { wakeCommentIds: input.commentIds },
       },
     });
     return id;
@@ -303,9 +303,9 @@ describeEmbeddedPostgres("queued-comment postgres adapter", () => {
   // port type allows it (`runtimeMode: string | null`), so this test builds
   // the fact directly instead of through a database row, to keep this
   // branch of the shared steering rule under a regression test.
-  it("answers the steering question for a deferred paperclip_runner queue whose active run has no persisted runtime mode yet", async () => {
+  it("answers the steering question for a deferred pilibala_runner queue whose active run has no persisted runtime mode yet", async () => {
     const companyId = await seedCompany();
-    const agentId = await seedAgent({ companyId, adapterType: "paperclip_runner" });
+    const agentId = await seedAgent({ companyId, adapterType: "pilibala_runner" });
     const issueId = await seedIssue({ companyId, assigneeAgentId: agentId });
     const commentId = await seedComment({ companyId, issueId, authorUserId: "user-1" });
     const wakeId = await seedDeferredWake({ companyId, agentId, issueId, commentIds: [commentId] });
@@ -330,7 +330,7 @@ describeEmbeddedPostgres("queued-comment postgres adapter", () => {
       },
     );
 
-    expect(queue.protocol).toBe("paperclip_runner_v1");
+    expect(queue.protocol).toBe("pilibala_runner_v1");
     expect(queue.steeringDisposition).toBe("temporarily_unavailable");
   });
 });

@@ -13,7 +13,7 @@ export function createGoogleSheetsMcpServer(
   options: CreateGoogleSheetsMcpServerOptions = {},
 ) {
   const server = new McpServer({
-    name: "paperclip-google-sheets",
+    name: "pilibala-google-sheets",
     version: "0.1.0",
   });
 

@@ -49,8 +49,8 @@ import { auditSectionHref } from "./audit/audit-navigation";
 import { routineDetailHref } from "../components/RoutineContextualSidebar";
 import { usePublishSharedQueryData, useSharedPollingQuery } from "../hooks/useSharedPolling";
 import { useStreamlinedUiEnabled } from "../hooks/useStreamlinedUiEnabled";
-import type { RoutineListItem, RoutineVariable } from "@paperclipai/shared";
-import type { FolderListItem } from "@paperclipai/shared";
+import type { RoutineListItem, RoutineVariable } from "@pilibalaai/shared";
+import type { FolderListItem } from "@pilibalaai/shared";
 import { Tabs } from "@/components/ui/tabs";
 import {
   AllUnfiledBanner,
@@ -359,8 +359,8 @@ export function Routines() {
     variables: [],
   });
   const routineViewStateKey = selectedCompanyId
-    ? `paperclip:routines-view:${selectedCompanyId}`
-    : "paperclip:routines-view";
+    ? `pilibala:routines-view:${selectedCompanyId}`
+    : "pilibala:routines-view";
   const [routineViewState, setRoutineViewState] = useState<RoutineViewState>(() => getRoutineViewState(routineViewStateKey));
   const folderSelection = normalizeFolderSelection(searchParams.get("folder"));
 
@@ -479,7 +479,7 @@ export function Routines() {
         } catch (moveError) {
           pushToast({
             title: "Folder created, move failed",
-            body: moveError instanceof Error ? moveError.message : "Paperclip could not move the selected routines.",
+            body: moveError instanceof Error ? moveError.message : "Pilibala could not move the selected routines.",
             tone: "error",
           });
           return;
@@ -492,7 +492,7 @@ export function Routines() {
     onError: (mutationError) => {
       pushToast({
         title: "Failed to save folder",
-        body: mutationError instanceof Error ? mutationError.message : "Paperclip could not save the folder.",
+        body: mutationError instanceof Error ? mutationError.message : "Pilibala could not save the folder.",
         tone: "error",
       });
     },
@@ -508,7 +508,7 @@ export function Routines() {
     onError: (mutationError) => {
       pushToast({
         title: "Folder save failed",
-        body: mutationError instanceof Error ? mutationError.message : "Paperclip could not update the folder.",
+        body: mutationError instanceof Error ? mutationError.message : "Pilibala could not update the folder.",
         tone: "error",
       });
     },
@@ -527,7 +527,7 @@ export function Routines() {
     onError: (mutationError) => {
       pushToast({
         title: "Folder delete failed",
-        body: mutationError instanceof Error ? mutationError.message : "Paperclip could not delete the folder.",
+        body: mutationError instanceof Error ? mutationError.message : "Pilibala could not delete the folder.",
         tone: "error",
       });
     },
@@ -544,7 +544,7 @@ export function Routines() {
     onError: (mutationError) => {
       pushToast({
         title: "Move failed",
-        body: mutationError instanceof Error ? mutationError.message : "Paperclip could not move the routine.",
+        body: mutationError instanceof Error ? mutationError.message : "Pilibala could not move the routine.",
         tone: "error",
       });
     },
@@ -566,7 +566,7 @@ export function Routines() {
     onError: (mutationError) => {
       pushToast({
         title: "Failed to update routine",
-        body: mutationError instanceof Error ? mutationError.message : "Paperclip could not update the routine.",
+        body: mutationError instanceof Error ? mutationError.message : "Pilibala could not update the routine.",
         tone: "error",
       });
     },
@@ -601,7 +601,7 @@ export function Routines() {
     onError: (mutationError) => {
       pushToast({
         title: "Routine run failed",
-        body: mutationError instanceof Error ? mutationError.message : "Paperclip could not start the routine run.",
+        body: mutationError instanceof Error ? mutationError.message : "Pilibala could not start the routine run.",
         tone: "error",
       });
     },
@@ -756,7 +756,7 @@ export function Routines() {
     } catch (moveError) {
       pushToast({
         title: "Failed to move routines",
-        body: moveError instanceof Error ? moveError.message : "Paperclip could not move the selected routines.",
+        body: moveError instanceof Error ? moveError.message : "Pilibala could not move the selected routines.",
         tone: "error",
       });
     }
@@ -833,7 +833,7 @@ export function Routines() {
           agents={agents}
           projects={projects}
           liveIssueIds={liveIssueIds}
-          viewStateKey="paperclip:routine-recent-runs-view"
+          viewStateKey="pilibala:routine-recent-runs-view"
           issueLinkState={recentRunsIssueLinkState}
           onUpdateIssue={(id, data) => updateIssue.mutate({ id, data })}
         />
@@ -1232,7 +1232,7 @@ export function Routines() {
 
           <div className="shrink-0 flex flex-col gap-3 border-t border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-muted-foreground">
-              After creation, Paperclip takes you straight to trigger setup. Draft routines stay paused until you add a default agent.
+              After creation, Pilibala takes you straight to trigger setup. Draft routines stay paused until you add a default agent.
             </div>
             <div className="flex flex-col gap-2 sm:items-end">
               <Button
@@ -1295,7 +1295,7 @@ export function Routines() {
           ) : null}
           {routineViewState.groupBy === "folder" && !hasRoutineFolders && !foldersLoading && visibleRoutines.length > 0 ? (
             <AllUnfiledBanner
-              storageKey={`paperclip:routines-folder-nudge:${selectedCompanyId ?? "none"}`}
+              storageKey={`pilibala:routines-folder-nudge:${selectedCompanyId ?? "none"}`}
               itemLabelPlural="routines"
               onCreateFolder={() => openCreateFolder()}
             />

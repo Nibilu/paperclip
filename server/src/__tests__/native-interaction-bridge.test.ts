@@ -15,7 +15,7 @@ import {
   statusDecisionEffects,
   statusDecisions,
   workAssessments,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { and, eq } from "drizzle-orm";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import {
@@ -23,7 +23,7 @@ import {
   materializeNativeInteractionResponses,
   NativeInteractionBridgeError,
 } from "../services/native-runtime/native-interaction-bridge.js";
-import { PaperclipControlPlanePort } from "../services/native-runtime/paperclip-control-plane-port.js";
+import { PilibalaControlPlanePort } from "../services/native-runtime/pilibala-control-plane-port.js";
 import { finalizeNativeRun } from "../services/native-runtime/native-run-finalizer.js";
 
 describe("P6-19 native interaction bridge", () => {
@@ -42,7 +42,7 @@ describe("P6-19 native interaction bridge", () => {
   const itemVerdictsId = "78000000-0000-4000-8000-000000000014";
 
   beforeAll(async () => {
-    temporary = await startEmbeddedPostgresTestDatabase("paperclip-native-interaction-");
+    temporary = await startEmbeddedPostgresTestDatabase("pilibala-native-interaction-");
     db = createDb(temporary.connectionString);
     await db.insert(companies).values({ id: companyId, name: "Native interaction", issuePrefix: "NIB" });
     await db.insert(agents).values({
@@ -387,7 +387,7 @@ describe("P6-19 native interaction bridge", () => {
         companyId,
         issueId: scenario.issueId,
         revision: 1,
-        schemaVersion: "paperclip.completion-contract.v1",
+        schemaVersion: "pilibala.completion-contract.v1",
         policyVersion: "phase6-v1",
         risk: "standard",
         completionAuthority: "server_arbiter",
@@ -413,7 +413,7 @@ describe("P6-19 native interaction bridge", () => {
         completionContractSha256: contractSha,
         contextSnapshot: { issueId: scenario.issueId },
       });
-      const port = new PaperclipControlPlanePort(db, {
+      const port = new PilibalaControlPlanePort(db, {
         companyId,
         issueId: scenario.issueId,
         runId: scenario.runId,
@@ -426,7 +426,7 @@ describe("P6-19 native interaction bridge", () => {
       });
       await port.completeRun({
         result: {
-          schema: "paperclip.run_result.v1",
+          schema: "pilibala.run_result.v1",
           reportedWorkDisposition: scenario.disposition,
           summary: `Native attention ${scenario.key}`,
           completionClaim: {
@@ -448,7 +448,7 @@ describe("P6-19 native interaction bridge", () => {
           } : {}),
         },
         terminal: {
-          schema: "paperclip.prp.terminal.v1",
+          schema: "pilibala.prp.terminal.v1",
           turnTerminalState: "completed",
           runTerminalState: "succeeded",
           reportedWorkDisposition: scenario.disposition,
@@ -542,7 +542,7 @@ describe("P6-19 native interaction bridge", () => {
         companyId,
         issueId: localIssueId,
         revision: 1,
-        schemaVersion: "paperclip.completion-contract.v1",
+        schemaVersion: "pilibala.completion-contract.v1",
         policyVersion: "phase6-v1",
         risk: "standard",
         completionAuthority: "server_arbiter",
@@ -579,7 +579,7 @@ describe("P6-19 native interaction bridge", () => {
           issueId: interaction.issueId ?? localIssueId,
         })));
       }
-      const port = new PaperclipControlPlanePort(db, {
+      const port = new PilibalaControlPlanePort(db, {
         companyId,
         issueId: localIssueId,
         runId: localRunId,
@@ -592,7 +592,7 @@ describe("P6-19 native interaction bridge", () => {
       });
       await port.completeRun({
         result: {
-          schema: "paperclip.run_result.v1",
+          schema: "pilibala.run_result.v1",
           reportedWorkDisposition: "yielded",
           summary: `Audit-only native attention ${input.label}`,
           completionClaim: {
@@ -612,7 +612,7 @@ describe("P6-19 native interaction bridge", () => {
           },
         },
         terminal: {
-          schema: "paperclip.prp.terminal.v1",
+          schema: "pilibala.prp.terminal.v1",
           turnTerminalState: "completed",
           runTerminalState: "succeeded",
           reportedWorkDisposition: "yielded",

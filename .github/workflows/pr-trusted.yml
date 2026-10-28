@@ -14,7 +14,7 @@ permissions:
 # Test reporters write local artifacts only. The workflow_run exporter owns
 # the Honeycomb credential, so fork PRs cannot execute with it.
 env:
-  PAPERCLIP_CI_PROFILE_DIR: ${{ github.workspace }}/.ci-profile
+  PILIBALA_CI_PROFILE_DIR: ${{ github.workspace }}/.ci-profile
 
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   gate:
-    uses: paperclipai/paperclip/.github/workflows/ci-routing.yml@master
+    uses: pilibalaai/pilibala/.github/workflows/ci-routing.yml@master
 
   policy:
     needs: [gate]
@@ -30,8 +30,8 @@ jobs:
     timeout-minutes: 10
 
     env:
-      PAPERCLIP_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
-      PAPERCLIP_CI_PROFILE_JOB: policy
+      PILIBALA_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
+      PILIBALA_CI_PROFILE_JOB: policy
 
     steps:
       - name: Checkout repository
@@ -42,7 +42,7 @@ jobs:
 
       - name: Initialize CI profile
         continue-on-error: true
-        if: env.PAPERCLIP_CI_PROFILE == 'true'
+        if: env.PILIBALA_CI_PROFILE == 'true'
         run: node scripts/ci-profile/initialize.mjs
 
       - name: Select compatible Node test command
@@ -128,7 +128,7 @@ jobs:
       - name: Verify release package bootstrap for changed manifests
         run: |
           mapfile -t changed_paths < <(git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}")
-          PAPERCLIP_RELEASE_BOOTSTRAP_BASE_SHA="${{ github.event.pull_request.base.sha }}" \
+          PILIBALA_RELEASE_BOOTSTRAP_BASE_SHA="${{ github.event.pull_request.base.sha }}" \
             node ./scripts/check-release-package-bootstrap.mjs "${changed_paths[@]}"
 
       # Each lane resolves a stale lockfile inline; this early check still
@@ -138,7 +138,7 @@ jobs:
 
       - name: Upload CI profile timings
         continue-on-error: true
-        if: always() && env.PAPERCLIP_CI_PROFILE == 'true'
+        if: always() && env.PILIBALA_CI_PROFILE == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ci-profile-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index || 0 }}
@@ -155,8 +155,8 @@ jobs:
     timeout-minutes: 20
 
     env:
-      PAPERCLIP_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
-      PAPERCLIP_CI_PROFILE_JOB: Typecheck + Release Registry
+      PILIBALA_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
+      PILIBALA_CI_PROFILE_JOB: Typecheck + Release Registry
 
     steps:
       - name: Checkout repository
@@ -166,7 +166,7 @@ jobs:
 
       - name: Initialize CI profile
         continue-on-error: true
-        if: env.PAPERCLIP_CI_PROFILE == 'true'
+        if: env.PILIBALA_CI_PROFILE == 'true'
         run: node scripts/ci-profile/initialize.mjs
 
       - name: Setup Node.js for pnpm bootstrap
@@ -219,10 +219,10 @@ jobs:
             pnpm install --frozen-lockfile
           fi
 
-      # typecheck:build-gaps builds @paperclipai/server, whose build script
+      # typecheck:build-gaps builds @pilibalaai/server, whose build script
       # rebuilds the Runner release binary; without the shared Rust cache that
       # is a ~3m40s cold compile of all third-party crates (run 35036001734,
-      # 2026-09-15). Same restore-only contract as Verify Paperclip Runner.
+      # 2026-09-15). Same restore-only contract as Verify Pilibala Runner.
 
       # rust-cache hashes its absolute cache paths into the entry's version,
       # and GitHub only serves an entry whose key and version both match. The
@@ -239,14 +239,14 @@ jobs:
         id: runner_rust_workspace
         run: |
           set -euo pipefail
-          pinned="$HOME/paperclip-runner-rust"
+          pinned="$HOME/pilibala-runner-rust"
           # A symlink here is removed as a link, never followed into the checkout.
           rm -rf "$pinned"
-          ln -s "$GITHUB_WORKSPACE/packages/paperclip-runner/runner" "$pinned"
+          ln -s "$GITHUB_WORKSPACE/packages/pilibala-runner/runner" "$pinned"
           echo "path=$pinned" >> "$GITHUB_OUTPUT"
 
       - name: Select the pinned Runner Rust toolchain
-        working-directory: packages/paperclip-runner
+        working-directory: packages/pilibala-runner
         run: |
           set -uo pipefail
 
@@ -294,7 +294,7 @@ jobs:
       # The Runner's own crate is the one thing the entry above leaves out:
       # rust-cache drops workspace crates when it saves, and a fresh checkout
       # would invalidate cargo's mtime fingerprints for them anyway. So this
-      # job compiled paperclip-runner-core in release mode on every run,
+      # job compiled pilibala-runner-core in release mode on every run,
       # 28-49s (runs 38169436532 to 38183149920, 2026-10-11), while 221 of
       # the 239 master commits of the preceding week left its inputs alone.
       # The master Rust lane in release-verify.yml saves that crate's release
@@ -315,13 +315,13 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
-            packages/paperclip-runner/runner/target/release/.fingerprint/paperclip-runner-core-*
-            packages/paperclip-runner/runner/target/release/deps/libpaperclip_runner_core-*
-            packages/paperclip-runner/runner/target/release/deps/paperclip_runner_core-*.d
-            packages/paperclip-runner/runner/target/release/deps/paperclip_runnerd-*
-            packages/paperclip-runner/runner/target/release/paperclip-runnerd
-            packages/paperclip-runner/runner/target/release/paperclip-runnerd.d
-          key: runner-release-crate-v1-${{ steps.runner_release_crate_key.outputs.scope }}-${{ hashFiles('packages/paperclip-runner/rust-toolchain.toml', 'packages/paperclip-runner/runner/Cargo.toml', 'packages/paperclip-runner/runner/Cargo.lock', 'packages/paperclip-runner/runner/crates/**', 'packages/paperclip-runner/protocol/**', 'packages/paperclip-runner/test-fixtures/**', 'packages/paperclip-runner/test/fixtures/**', 'tests/runner-e2e/fixtures/**') }}
+            packages/pilibala-runner/runner/target/release/.fingerprint/pilibala-runner-core-*
+            packages/pilibala-runner/runner/target/release/deps/libpilibala_runner_core-*
+            packages/pilibala-runner/runner/target/release/deps/pilibala_runner_core-*.d
+            packages/pilibala-runner/runner/target/release/deps/pilibala_runnerd-*
+            packages/pilibala-runner/runner/target/release/pilibala-runnerd
+            packages/pilibala-runner/runner/target/release/pilibala-runnerd.d
+          key: runner-release-crate-v1-${{ steps.runner_release_crate_key.outputs.scope }}-${{ hashFiles('packages/pilibala-runner/rust-toolchain.toml', 'packages/pilibala-runner/runner/Cargo.toml', 'packages/pilibala-runner/runner/Cargo.lock', 'packages/pilibala-runner/runner/crates/**', 'packages/pilibala-runner/protocol/**', 'packages/pilibala-runner/test-fixtures/**', 'packages/pilibala-runner/test/fixtures/**', 'tests/runner-e2e/fixtures/**') }}
 
       - name: Mark the restored Runner release crate current
         if: ${{ steps.runner_release_crate.outputs.cache-hit == 'true' }}
@@ -335,7 +335,7 @@ jobs:
 
       - name: Upload CI profile timings
         continue-on-error: true
-        if: always() && env.PAPERCLIP_CI_PROFILE == 'true'
+        if: always() && env.PILIBALA_CI_PROFILE == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ci-profile-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index || 0 }}
@@ -419,7 +419,7 @@ jobs:
             shard_count: 3
           # workspaces-a was the slowest check in the fully-green PR run
           # 31371439296 (2026-08-10) at 319s, with the ui project's single
-          # vitest invocation accounting for ~224s and the paperclipai CLI
+          # vitest invocation accounting for ~224s and the pilibalaai CLI
           # ~37s. Two shards use Vitest's native --shard on each project's
           # file list (ui: 439 files, cli: 54), bringing each job to roughly
           # half the suite time (~130s + setup) without a duration manifest.
@@ -443,8 +443,8 @@ jobs:
             group_label: workspaces-c
 
     env:
-      PAPERCLIP_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
-      PAPERCLIP_CI_PROFILE_JOB: General tests (${{ matrix.group_label }})
+      PILIBALA_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
+      PILIBALA_CI_PROFILE_JOB: General tests (${{ matrix.group_label }})
 
     steps:
       - name: Checkout repository
@@ -454,7 +454,7 @@ jobs:
 
       - name: Initialize CI profile
         continue-on-error: true
-        if: env.PAPERCLIP_CI_PROFILE == 'true'
+        if: env.PILIBALA_CI_PROFILE == 'true'
         run: node scripts/ci-profile/initialize.mjs
 
       - name: Setup Node.js for pnpm bootstrap
@@ -518,7 +518,7 @@ jobs:
 
       - name: Upload CI profile timings
         continue-on-error: true
-        if: always() && env.PAPERCLIP_CI_PROFILE == 'true'
+        if: always() && env.PILIBALA_CI_PROFILE == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ci-profile-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index || 0 }}
@@ -535,8 +535,8 @@ jobs:
     timeout-minutes: 15
 
     env:
-      PAPERCLIP_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
-      PAPERCLIP_CI_PROFILE_JOB: Docker context integrity
+      PILIBALA_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
+      PILIBALA_CI_PROFILE_JOB: Docker context integrity
 
     steps:
       - name: Checkout repository
@@ -549,7 +549,7 @@ jobs:
       # too rather than failing before it checks anything.
       - name: Initialize CI profile
         continue-on-error: true
-        if: env.PAPERCLIP_CI_PROFILE == 'true'
+        if: env.PILIBALA_CI_PROFILE == 'true'
         run: node scripts/ci-profile/initialize.mjs
 
       - name: Set up Docker Buildx
@@ -575,7 +575,7 @@ jobs:
 
       - name: Upload CI profile timings
         continue-on-error: true
-        if: always() && env.PAPERCLIP_CI_PROFILE == 'true'
+        if: always() && env.PILIBALA_CI_PROFILE == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ci-profile-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index || 0 }}
@@ -588,7 +588,7 @@ jobs:
     # Preserve the legacy required-check name while the underlying work runs in parallel.
     name: verify
     if: ${{ always() }}
-    needs: [gate, policy, typecheck_release_registry, general_tests, verify_paperclip_runner, build, docker_context_integrity]
+    needs: [gate, policy, typecheck_release_registry, general_tests, verify_pilibala_runner, build, docker_context_integrity]
     runs-on: ${{ needs.gate.outputs.runner }}
     timeout-minutes: 5
 
@@ -599,7 +599,7 @@ jobs:
           POLICY_RESULT: ${{ needs.policy.result }}
           TYPECHECK_RELEASE_REGISTRY_RESULT: ${{ needs.typecheck_release_registry.result }}
           GENERAL_TESTS_RESULT: ${{ needs.general_tests.result }}
-          RUNNER_VERIFICATION_RESULT: ${{ needs.verify_paperclip_runner.result }}
+          RUNNER_VERIFICATION_RESULT: ${{ needs.verify_pilibala_runner.result }}
           BUILD_RESULT: ${{ needs.build.result }}
           DOCKER_CONTEXT_INTEGRITY_RESULT: ${{ needs.docker_context_integrity.result }}
         run: |
@@ -625,8 +625,8 @@ jobs:
               ;;
           esac
 
-  verify_paperclip_runner:
-    name: Verify Paperclip Runner (${{ matrix.lane_label }})
+  verify_pilibala_runner:
+    name: Verify Pilibala Runner (${{ matrix.lane_label }})
     needs: [gate]
     if: ${{ needs.gate.outputs.full_ci == 'true' }}
     runs-on: ${{ needs.gate.outputs.runner }}
@@ -658,8 +658,8 @@ jobs:
             release_crate: true
 
     env:
-      PAPERCLIP_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
-      PAPERCLIP_CI_PROFILE_JOB: Verify Paperclip Runner (${{ matrix.lane_label }})
+      PILIBALA_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
+      PILIBALA_CI_PROFILE_JOB: Verify Pilibala Runner (${{ matrix.lane_label }})
 
     steps:
       - name: Checkout repository
@@ -669,7 +669,7 @@ jobs:
 
       - name: Initialize CI profile
         continue-on-error: true
-        if: env.PAPERCLIP_CI_PROFILE == 'true'
+        if: env.PILIBALA_CI_PROFILE == 'true'
         run: node scripts/ci-profile/initialize.mjs
 
       - name: Setup Node.js for pnpm bootstrap
@@ -745,14 +745,14 @@ jobs:
         id: runner_rust_workspace
         run: |
           set -euo pipefail
-          pinned="$HOME/paperclip-runner-rust"
+          pinned="$HOME/pilibala-runner-rust"
           # A symlink here is removed as a link, never followed into the checkout.
           rm -rf "$pinned"
-          ln -s "$GITHUB_WORKSPACE/packages/paperclip-runner/runner" "$pinned"
+          ln -s "$GITHUB_WORKSPACE/packages/pilibala-runner/runner" "$pinned"
           echo "path=$pinned" >> "$GITHUB_OUTPUT"
 
       - name: Select the pinned Runner Rust toolchain
-        working-directory: packages/paperclip-runner
+        working-directory: packages/pilibala-runner
         run: |
           set -uo pipefail
 
@@ -800,7 +800,7 @@ jobs:
       # The Runner's own crate is the one thing the entry above leaves out:
       # rust-cache drops workspace crates when it saves, and a fresh checkout
       # would invalidate cargo's mtime fingerprints for them anyway. So this
-      # job compiled paperclip-runner-core in release mode on every run,
+      # job compiled pilibala-runner-core in release mode on every run,
       # 28-49s (runs 38169436532 to 38183149920, 2026-10-11), while 221 of
       # the 239 master commits of the preceding week left its inputs alone.
       # The master Rust lane in release-verify.yml saves that crate's release
@@ -828,28 +828,28 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
-            packages/paperclip-runner/runner/target/release/.fingerprint/paperclip-runner-core-*
-            packages/paperclip-runner/runner/target/release/deps/libpaperclip_runner_core-*
-            packages/paperclip-runner/runner/target/release/deps/paperclip_runner_core-*.d
-            packages/paperclip-runner/runner/target/release/deps/paperclip_runnerd-*
-            packages/paperclip-runner/runner/target/release/paperclip-runnerd
-            packages/paperclip-runner/runner/target/release/paperclip-runnerd.d
-          key: runner-release-crate-v1-${{ steps.runner_release_crate_key.outputs.scope }}-${{ hashFiles('packages/paperclip-runner/rust-toolchain.toml', 'packages/paperclip-runner/runner/Cargo.toml', 'packages/paperclip-runner/runner/Cargo.lock', 'packages/paperclip-runner/runner/crates/**', 'packages/paperclip-runner/protocol/**', 'packages/paperclip-runner/test-fixtures/**', 'packages/paperclip-runner/test/fixtures/**', 'tests/runner-e2e/fixtures/**') }}
+            packages/pilibala-runner/runner/target/release/.fingerprint/pilibala-runner-core-*
+            packages/pilibala-runner/runner/target/release/deps/libpilibala_runner_core-*
+            packages/pilibala-runner/runner/target/release/deps/pilibala_runner_core-*.d
+            packages/pilibala-runner/runner/target/release/deps/pilibala_runnerd-*
+            packages/pilibala-runner/runner/target/release/pilibala-runnerd
+            packages/pilibala-runner/runner/target/release/pilibala-runnerd.d
+          key: runner-release-crate-v1-${{ steps.runner_release_crate_key.outputs.scope }}-${{ hashFiles('packages/pilibala-runner/rust-toolchain.toml', 'packages/pilibala-runner/runner/Cargo.toml', 'packages/pilibala-runner/runner/Cargo.lock', 'packages/pilibala-runner/runner/crates/**', 'packages/pilibala-runner/protocol/**', 'packages/pilibala-runner/test-fixtures/**', 'packages/pilibala-runner/test/fixtures/**', 'tests/runner-e2e/fixtures/**') }}
 
       - name: Mark the restored Runner release crate current
         if: ${{ steps.runner_release_crate.outputs.cache-hit == 'true' }}
         run: node scripts/runner-release-crate-cache.mjs mark-current
 
-      - name: Verify Paperclip Runner
+      - name: Verify Pilibala Runner
         # pnpm appends trailing args to the end of the script's shell chain,
         # so the vitest lanes' --shard lands on `vitest run`. Do not add a
         # `--` separator: pnpm forwards it literally and vitest would then
         # read the shard flag as a test filter.
-        run: pnpm --filter @paperclipai/paperclip-runner ${{ matrix.command }}
+        run: pnpm --filter @pilibalaai/pilibala-runner ${{ matrix.command }}
 
       - name: Upload CI profile timings
         continue-on-error: true
-        if: always() && env.PAPERCLIP_CI_PROFILE == 'true'
+        if: always() && env.PILIBALA_CI_PROFILE == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ci-profile-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index || 0 }}
@@ -866,8 +866,8 @@ jobs:
     timeout-minutes: 20
 
     env:
-      PAPERCLIP_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
-      PAPERCLIP_CI_PROFILE_JOB: Build
+      PILIBALA_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
+      PILIBALA_CI_PROFILE_JOB: Build
 
     steps:
       - name: Checkout repository
@@ -877,7 +877,7 @@ jobs:
 
       - name: Initialize CI profile
         continue-on-error: true
-        if: env.PAPERCLIP_CI_PROFILE == 'true'
+        if: env.PILIBALA_CI_PROFILE == 'true'
         run: node scripts/ci-profile/initialize.mjs
 
       - name: Setup Node.js for pnpm bootstrap
@@ -945,14 +945,14 @@ jobs:
           (
             # The default `bash -e` would skip the status line on a failure.
             set +e
-            PAPERCLIP_PUBLIC_INSTALL_NPM_CACHE="$RUNNER_TEMP/public-install-npm-cache" node scripts/warm-public-install-npm-cache.mjs
+            PILIBALA_PUBLIC_INSTALL_NPM_CACHE="$RUNNER_TEMP/public-install-npm-cache" node scripts/warm-public-install-npm-cache.mjs
             echo $? > "$RUNNER_TEMP/public-install-npm-cache.status"
           ) > "$RUNNER_TEMP/public-install-npm-cache.log" 2>&1 &
 
       # pnpm build reaches the Runner package's build:binary step; without the
       # shared Rust cache that is a ~3m40s cold compile of all third-party
       # crates (run 35036001734, 2026-09-15). Same restore-only contract as
-      # Verify Paperclip Runner.
+      # Verify Pilibala Runner.
 
       # rust-cache hashes its absolute cache paths into the entry's version,
       # and GitHub only serves an entry whose key and version both match. The
@@ -969,14 +969,14 @@ jobs:
         id: runner_rust_workspace
         run: |
           set -euo pipefail
-          pinned="$HOME/paperclip-runner-rust"
+          pinned="$HOME/pilibala-runner-rust"
           # A symlink here is removed as a link, never followed into the checkout.
           rm -rf "$pinned"
-          ln -s "$GITHUB_WORKSPACE/packages/paperclip-runner/runner" "$pinned"
+          ln -s "$GITHUB_WORKSPACE/packages/pilibala-runner/runner" "$pinned"
           echo "path=$pinned" >> "$GITHUB_OUTPUT"
 
       - name: Select the pinned Runner Rust toolchain
-        working-directory: packages/paperclip-runner
+        working-directory: packages/pilibala-runner
         run: |
           set -uo pipefail
 
@@ -1024,7 +1024,7 @@ jobs:
       # The Runner's own crate is the one thing the entry above leaves out:
       # rust-cache drops workspace crates when it saves, and a fresh checkout
       # would invalidate cargo's mtime fingerprints for them anyway. So this
-      # job compiled paperclip-runner-core in release mode on every run,
+      # job compiled pilibala-runner-core in release mode on every run,
       # 28-49s (runs 38169436532 to 38183149920, 2026-10-11), while 221 of
       # the 239 master commits of the preceding week left its inputs alone.
       # The master Rust lane in release-verify.yml saves that crate's release
@@ -1045,20 +1045,20 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
-            packages/paperclip-runner/runner/target/release/.fingerprint/paperclip-runner-core-*
-            packages/paperclip-runner/runner/target/release/deps/libpaperclip_runner_core-*
-            packages/paperclip-runner/runner/target/release/deps/paperclip_runner_core-*.d
-            packages/paperclip-runner/runner/target/release/deps/paperclip_runnerd-*
-            packages/paperclip-runner/runner/target/release/paperclip-runnerd
-            packages/paperclip-runner/runner/target/release/paperclip-runnerd.d
-          key: runner-release-crate-v1-${{ steps.runner_release_crate_key.outputs.scope }}-${{ hashFiles('packages/paperclip-runner/rust-toolchain.toml', 'packages/paperclip-runner/runner/Cargo.toml', 'packages/paperclip-runner/runner/Cargo.lock', 'packages/paperclip-runner/runner/crates/**', 'packages/paperclip-runner/protocol/**', 'packages/paperclip-runner/test-fixtures/**', 'packages/paperclip-runner/test/fixtures/**', 'tests/runner-e2e/fixtures/**') }}
+            packages/pilibala-runner/runner/target/release/.fingerprint/pilibala-runner-core-*
+            packages/pilibala-runner/runner/target/release/deps/libpilibala_runner_core-*
+            packages/pilibala-runner/runner/target/release/deps/pilibala_runner_core-*.d
+            packages/pilibala-runner/runner/target/release/deps/pilibala_runnerd-*
+            packages/pilibala-runner/runner/target/release/pilibala-runnerd
+            packages/pilibala-runner/runner/target/release/pilibala-runnerd.d
+          key: runner-release-crate-v1-${{ steps.runner_release_crate_key.outputs.scope }}-${{ hashFiles('packages/pilibala-runner/rust-toolchain.toml', 'packages/pilibala-runner/runner/Cargo.toml', 'packages/pilibala-runner/runner/Cargo.lock', 'packages/pilibala-runner/runner/crates/**', 'packages/pilibala-runner/protocol/**', 'packages/pilibala-runner/test-fixtures/**', 'packages/pilibala-runner/test/fixtures/**', 'tests/runner-e2e/fixtures/**') }}
 
       - name: Mark the restored Runner release crate current
         if: ${{ steps.runner_release_crate.outputs.cache-hit == 'true' }}
         run: node scripts/runner-release-crate-cache.mjs mark-current
 
       - name: Build Runner Evalbook viewer
-        run: pnpm --filter @paperclipai/paperclip-runner build:issue-thread
+        run: pnpm --filter @pilibalaai/pilibala-runner build:issue-thread
 
       - name: Build
         run: pnpm build
@@ -1069,7 +1069,7 @@ jobs:
       # instance, and wait for /api/health to report ok.
       - name: Boot the production runtime bundle
         run: |
-          pnpm --filter @paperclipai/server build:runtime
+          pnpm --filter @pilibalaai/server build:runtime
           scripts/server-boot-smoke.sh node server/dist-runtime/index.mjs
 
       # This verification only needs `pnpm build` output (the verifier stages
@@ -1095,13 +1095,13 @@ jobs:
               echo '::notice title=Public-install npm cache::warm-up did not finish cleanly; the verifier fetches what is missing'
               tail -n 20 "$RUNNER_TEMP/public-install-npm-cache.log"
             fi
-            export PAPERCLIP_PUBLIC_INSTALL_NPM_CACHE="$RUNNER_TEMP/public-install-npm-cache"
+            export PILIBALA_PUBLIC_INSTALL_NPM_CACHE="$RUNNER_TEMP/public-install-npm-cache"
           fi
           node scripts/verify-grok-npm-install.mjs
 
       - name: Upload CI profile timings
         continue-on-error: true
-        if: always() && env.PAPERCLIP_CI_PROFILE == 'true'
+        if: always() && env.PILIBALA_CI_PROFILE == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ci-profile-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index || 0 }}
@@ -1157,8 +1157,8 @@ jobs:
             shard_label: 9/9
 
     env:
-      PAPERCLIP_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
-      PAPERCLIP_CI_PROFILE_JOB: Verify serialized server suites (${{ matrix.shard_label }})
+      PILIBALA_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
+      PILIBALA_CI_PROFILE_JOB: Verify serialized server suites (${{ matrix.shard_label }})
 
     steps:
       - name: Checkout repository
@@ -1168,7 +1168,7 @@ jobs:
 
       - name: Initialize CI profile
         continue-on-error: true
-        if: env.PAPERCLIP_CI_PROFILE == 'true'
+        if: env.PILIBALA_CI_PROFILE == 'true'
         run: node scripts/ci-profile/initialize.mjs
 
       - name: Setup Node.js for pnpm bootstrap
@@ -1226,7 +1226,7 @@ jobs:
 
       - name: Upload CI profile timings
         continue-on-error: true
-        if: always() && env.PAPERCLIP_CI_PROFILE == 'true'
+        if: always() && env.PILIBALA_CI_PROFILE == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ci-profile-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index || 0 }}
@@ -1243,8 +1243,8 @@ jobs:
     timeout-minutes: 20
 
     env:
-      PAPERCLIP_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
-      PAPERCLIP_CI_PROFILE_JOB: Canary Dry Run
+      PILIBALA_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
+      PILIBALA_CI_PROFILE_JOB: Canary Dry Run
 
     steps:
       - name: Checkout repository
@@ -1254,7 +1254,7 @@ jobs:
 
       - name: Initialize CI profile
         continue-on-error: true
-        if: env.PAPERCLIP_CI_PROFILE == 'true'
+        if: env.PILIBALA_CI_PROFILE == 'true'
         run: node scripts/ci-profile/initialize.mjs
 
       - name: Setup Node.js for pnpm bootstrap
@@ -1310,7 +1310,7 @@ jobs:
       # release.sh's Step 2/7 workspace build reaches the Runner package's
       # build:binary step; without the shared Rust cache that is a ~3m40s cold
       # compile of all third-party crates (run 35036001734, 2026-09-15). Same
-      # restore-only contract as Verify Paperclip Runner.
+      # restore-only contract as Verify Pilibala Runner.
 
       # rust-cache hashes its absolute cache paths into the entry's version,
       # and GitHub only serves an entry whose key and version both match. The
@@ -1327,14 +1327,14 @@ jobs:
         id: runner_rust_workspace
         run: |
           set -euo pipefail
-          pinned="$HOME/paperclip-runner-rust"
+          pinned="$HOME/pilibala-runner-rust"
           # A symlink here is removed as a link, never followed into the checkout.
           rm -rf "$pinned"
-          ln -s "$GITHUB_WORKSPACE/packages/paperclip-runner/runner" "$pinned"
+          ln -s "$GITHUB_WORKSPACE/packages/pilibala-runner/runner" "$pinned"
           echo "path=$pinned" >> "$GITHUB_OUTPUT"
 
       - name: Select the pinned Runner Rust toolchain
-        working-directory: packages/paperclip-runner
+        working-directory: packages/pilibala-runner
         run: |
           set -uo pipefail
 
@@ -1382,7 +1382,7 @@ jobs:
       # The Runner's own crate is the one thing the entry above leaves out:
       # rust-cache drops workspace crates when it saves, and a fresh checkout
       # would invalidate cargo's mtime fingerprints for them anyway. So this
-      # job compiled paperclip-runner-core in release mode on every run,
+      # job compiled pilibala-runner-core in release mode on every run,
       # 28-49s (runs 38169436532 to 38183149920, 2026-10-11), while 221 of
       # the 239 master commits of the preceding week left its inputs alone.
       # The master Rust lane in release-verify.yml saves that crate's release
@@ -1403,13 +1403,13 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
-            packages/paperclip-runner/runner/target/release/.fingerprint/paperclip-runner-core-*
-            packages/paperclip-runner/runner/target/release/deps/libpaperclip_runner_core-*
-            packages/paperclip-runner/runner/target/release/deps/paperclip_runner_core-*.d
-            packages/paperclip-runner/runner/target/release/deps/paperclip_runnerd-*
-            packages/paperclip-runner/runner/target/release/paperclip-runnerd
-            packages/paperclip-runner/runner/target/release/paperclip-runnerd.d
-          key: runner-release-crate-v1-${{ steps.runner_release_crate_key.outputs.scope }}-${{ hashFiles('packages/paperclip-runner/rust-toolchain.toml', 'packages/paperclip-runner/runner/Cargo.toml', 'packages/paperclip-runner/runner/Cargo.lock', 'packages/paperclip-runner/runner/crates/**', 'packages/paperclip-runner/protocol/**', 'packages/paperclip-runner/test-fixtures/**', 'packages/paperclip-runner/test/fixtures/**', 'tests/runner-e2e/fixtures/**') }}
+            packages/pilibala-runner/runner/target/release/.fingerprint/pilibala-runner-core-*
+            packages/pilibala-runner/runner/target/release/deps/libpilibala_runner_core-*
+            packages/pilibala-runner/runner/target/release/deps/pilibala_runner_core-*.d
+            packages/pilibala-runner/runner/target/release/deps/pilibala_runnerd-*
+            packages/pilibala-runner/runner/target/release/pilibala-runnerd
+            packages/pilibala-runner/runner/target/release/pilibala-runnerd.d
+          key: runner-release-crate-v1-${{ steps.runner_release_crate_key.outputs.scope }}-${{ hashFiles('packages/pilibala-runner/rust-toolchain.toml', 'packages/pilibala-runner/runner/Cargo.toml', 'packages/pilibala-runner/runner/Cargo.lock', 'packages/pilibala-runner/runner/crates/**', 'packages/pilibala-runner/protocol/**', 'packages/pilibala-runner/test-fixtures/**', 'packages/pilibala-runner/test/fixtures/**', 'tests/runner-e2e/fixtures/**') }}
 
       - name: Mark the restored Runner release crate current
         if: ${{ steps.runner_release_crate.outputs.cache-hit == 'true' }}
@@ -1429,7 +1429,7 @@ jobs:
             git checkout -- pnpm-lock.yaml
           else
             git add pnpm-lock.yaml
-            git -c user.email=ci@paperclip.local -c user.name=CI \
+            git -c user.email=ci@pilibala.local -c user.name=CI \
               commit --no-verify -m "ci(canary): stage regenerated lockfile"
           fi
           ./scripts/release.sh canary --skip-verify --dry-run
@@ -1441,7 +1441,7 @@ jobs:
 
       - name: Upload CI profile timings
         continue-on-error: true
-        if: always() && env.PAPERCLIP_CI_PROFILE == 'true'
+        if: always() && env.PILIBALA_CI_PROFILE == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ci-profile-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index || 0 }}
@@ -1497,8 +1497,8 @@ jobs:
             shard_label: 8/8
 
     env:
-      PAPERCLIP_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
-      PAPERCLIP_CI_PROFILE_JOB: e2e shard (${{ matrix.shard_label }})
+      PILIBALA_CI_PROFILE: ${{ needs.gate.outputs.profile_ci }}
+      PILIBALA_CI_PROFILE_JOB: e2e shard (${{ matrix.shard_label }})
 
     steps:
       - name: Checkout repository
@@ -1508,7 +1508,7 @@ jobs:
 
       - name: Initialize CI profile
         continue-on-error: true
-        if: env.PAPERCLIP_CI_PROFILE == 'true'
+        if: env.PILIBALA_CI_PROFILE == 'true'
         run: node scripts/ci-profile/initialize.mjs
 
       - name: Setup Node.js for pnpm bootstrap
@@ -1567,10 +1567,10 @@ jobs:
         # browser bundles inside the 30 minute job budget.
         run: google-chrome --version
 
-      - name: Generate Paperclip config
+      - name: Generate Pilibala config
         run: |
-          mkdir -p ~/.paperclip/instances/default
-          cat > ~/.paperclip/instances/default/config.json << 'CONF'
+          mkdir -p ~/.pilibala/instances/default
+          cat > ~/.pilibala/instances/default/config.json << 'CONF'
           {
             "$meta": { "version": 1, "updatedAt": "2026-01-01T00:00:00.000Z", "source": "onboard" },
             "database": { "mode": "embedded-postgres" },
@@ -1584,8 +1584,8 @@ jobs:
 
       - name: Run e2e tests
         env:
-          PAPERCLIP_E2E_SKIP_LLM: "true"
-          PAPERCLIP_PLAYWRIGHT_CHANNEL: "chrome"
+          PILIBALA_E2E_SKIP_LLM: "true"
+          PILIBALA_PLAYWRIGHT_CHANNEL: "chrome"
         run: |
           # Playwright's own --shard balances by test count, and one spec
           # (smoke-lab) is ~40% of the lane's wall clock. Partition by recorded
@@ -1609,7 +1609,7 @@ jobs:
 
       - name: Upload CI profile timings
         continue-on-error: true
-        if: always() && env.PAPERCLIP_CI_PROFILE == 'true'
+        if: always() && env.PILIBALA_CI_PROFILE == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ci-profile-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index || 0 }}

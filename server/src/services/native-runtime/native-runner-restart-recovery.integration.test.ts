@@ -23,7 +23,7 @@ import {
   issues,
   nativeRunFinalizations,
   nativeRunResults,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
@@ -31,7 +31,7 @@ import {
   createRunnerdCodexTransport,
   defaultCapabilityRunnerdBinary,
   parseNativeExecutionInput,
-} from "../../vendor/paperclip-runner/index.js";
+} from "../../vendor/pilibala-runner/index.js";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -42,7 +42,7 @@ import {
   setupRunnerPrpWebSocketServer,
 } from "../../realtime/runner-prp-ws.js";
 import { readProcessStartedAt } from "../hot-restart.js";
-import { resolvePaperclipInstanceRoot } from "../../home-paths.js";
+import { resolvePilibalaInstanceRoot } from "../../home-paths.js";
 import { prepareNativeHeartbeatRun } from "./prepare-native-run.js";
 import { buildNativeExecutionInput } from "./native-execution-input.js";
 import { nativeRuntimeContextFixture } from "./runtime-context.test-fixture.js";
@@ -50,7 +50,7 @@ import { materializeAsset } from "./runtime-context.js";
 import { createRunnerTestTlsTunnel, dockerCommandRunner } from "../../__tests__/helpers/docker-command-runner.js";
 import { createIsolatedTestHome } from "../../__tests__/helpers/isolated-test-home.js";
 import { finalizeNativeRun } from "./native-run-finalizer.js";
-import { closeIdleWarmNativeSessionsForRestart, executePaperclipNativeSession, NativeControllerDetachedForRestartError } from "./native-session-executor.js";
+import { closeIdleWarmNativeSessionsForRestart, executePilibalaNativeSession, NativeControllerDetachedForRestartError } from "./native-session-executor.js";
 
 const mockCaptureRunFailure = vi.hoisted(() => vi.fn());
 vi.mock("../../sentry.js", async () => {
@@ -68,8 +68,8 @@ import {
 
 // Exact v5 wire prompt from before the task-monitor upgrade (#15446).
 const historicalPrompt = {
-  revision: "paperclip-execution.v5",
-  text: "You are running as a Paperclip agent. Complete the assigned task in the provided execution environment. Follow the attached agent instructions and use assigned skills and tools when relevant. Use Paperclip tools for coordination. To hire or reuse a persistent teammate, use list_agents, then search_api for agent-hires and call_api if a hire is needed. Provider helper threads do not create Paperclip agents. When the user assigns work or a revision to a teammate, use create_task with that agent's ID; review their result rather than doing their assigned work yourself. When remaining work depends on a child task, use set_dependencies to add its ID while preserving existing blocker IDs. Complete independent work, then call paperclip_block with the child agent as owner and child completion as the unblock action. End the turn so the child can use the workspace. Do not sleep or poll for child results while holding the workspace. Paperclip resumes the parent when the dependency completes. When the user asks to connect a service, call connections_search before any service tool, even when that tool is already installed. Follow the returned instruction and wait for any required user choice before executing. For other tasks needing a service, use installed tools if available; otherwise use connections_search and follow its instruction. The request appears as a card in the task. Finish independent work before yielding for access; do not poll or request the same connection repeatedly. Paperclip will continue automatically with updated tools after resolution. After a decline, pursue alternatives unless the user explicitly asks to retry. Finish exactly once with `paperclip_finish` or `paperclip_block`.",
+  revision: "pilibala-execution.v5",
+  text: "You are running as a Pilibala agent. Complete the assigned task in the provided execution environment. Follow the attached agent instructions and use assigned skills and tools when relevant. Use Pilibala tools for coordination. To hire or reuse a persistent teammate, use list_agents, then search_api for agent-hires and call_api if a hire is needed. Provider helper threads do not create Pilibala agents. When the user assigns work or a revision to a teammate, use create_task with that agent's ID; review their result rather than doing their assigned work yourself. When remaining work depends on a child task, use set_dependencies to add its ID while preserving existing blocker IDs. Complete independent work, then call pilibala_block with the child agent as owner and child completion as the unblock action. End the turn so the child can use the workspace. Do not sleep or poll for child results while holding the workspace. Pilibala resumes the parent when the dependency completes. When the user asks to connect a service, call connections_search before any service tool, even when that tool is already installed. Follow the returned instruction and wait for any required user choice before executing. For other tasks needing a service, use installed tools if available; otherwise use connections_search and follow its instruction. The request appears as a card in the task. Finish independent work before yielding for access; do not poll or request the same connection repeatedly. Pilibala will continue automatically with updated tools after resolution. After a decline, pursue alternatives unless the user explicitly asks to retry. Finish exactly once with `pilibala_finish` or `pilibala_block`.",
   digest: "bec3e633d8d828103ce50b3a8b8dc9991c8ef65e07538bdab1a7663957c2ef9b",
 } as const;
 
@@ -87,7 +87,7 @@ const describeEmbeddedPostgres = embeddedPostgresSupport.supported
 
 const fakeCodexAppServer = resolve(
   import.meta.dirname,
-  "../../../../packages/paperclip-runner/runner/target/debug/fake-codex-app-server",
+  "../../../../packages/pilibala-runner/runner/target/debug/fake-codex-app-server",
 );
 const binariesAvailable =
   existsSync(defaultCapabilityRunnerdBinary()) && existsSync(fakeCodexAppServer);
@@ -145,10 +145,10 @@ async function stopOwnedProcessGroup(
 describeEmbeddedPostgres("native runner restart recovery with real processes", () => {
   let temporary: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let runtimeRoot: string;
-  let paperclipHome: string;
+  let pilibalaHome: string;
   let server: Server | null = null;
   let apiUrl: string;
-  let originalPaperclipHome: string | undefined;
+  let originalPilibalaHome: string | undefined;
   let isolatedHome: ReturnType<typeof createIsolatedTestHome>;
 
   const companyId = randomUUID();
@@ -161,9 +161,9 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
     );
     runtimeRoot = await mkdtemp(resolve(tmpdir(), "native-restart-runtime-"));
     isolatedHome = createIsolatedTestHome();
-    paperclipHome = isolatedHome.home;
-    originalPaperclipHome = process.env.PAPERCLIP_HOME;
-    process.env.PAPERCLIP_HOME = paperclipHome;
+    pilibalaHome = isolatedHome.home;
+    originalPilibalaHome = process.env.PILIBALA_HOME;
+    process.env.PILIBALA_HOME = pilibalaHome;
     const controllerStartedAt = await readProcessStartedAt(process.pid);
     successor = {
       bootId: randomUUID(),
@@ -196,7 +196,7 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
       name: "Native restart runner",
       role: "engineer",
       status: "active",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       adapterConfig: { provider: "codex" },
       runtimeConfig: {},
       permissions: {},
@@ -209,8 +209,8 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
     await temporary.cleanup();
     await rm(runtimeRoot, { recursive: true, force: true });
     isolatedHome.cleanup();
-    if (originalPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-    else process.env.PAPERCLIP_HOME = originalPaperclipHome;
+    if (originalPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+    else process.env.PILIBALA_HOME = originalPilibalaHome;
   });
 
   async function seedRun(
@@ -302,11 +302,11 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
     };
   }
 
-  it.skipIf(!process.env.PAPERCLIP_TEST_RUNNER_CONTAINER).each(["warm", "hard", "legacy", "changed"])("preserves remote warm continuity across completed turns: %s", async (scenario) => {
+  it.skipIf(!process.env.PILIBALA_TEST_RUNNER_CONTAINER).each(["warm", "hard", "legacy", "changed"])("preserves remote warm continuity across completed turns: %s", async (scenario) => {
     const hardRestart = scenario !== "warm";
-    const container = process.env.PAPERCLIP_TEST_RUNNER_CONTAINER!;
-    const tunnel = await createRunnerTestTlsTunnel({ port: Number(process.env.PAPERCLIP_TEST_RUNNER_PORT),
-      key: process.env.PAPERCLIP_TEST_RUNNER_TLS_KEY!, cert: process.env.NODE_EXTRA_CA_CERTS! });
+    const container = process.env.PILIBALA_TEST_RUNNER_CONTAINER!;
+    const tunnel = await createRunnerTestTlsTunnel({ port: Number(process.env.PILIBALA_TEST_RUNNER_PORT),
+      key: process.env.PILIBALA_TEST_RUNNER_TLS_KEY!, cert: process.env.NODE_EXTRA_CA_CERTS! });
     const runner = dockerCommandRunner(container);
     const fixture = await seedRun(`REMOTE-WARM-CONTINUITY-${scenario}`);
     const boundContract = async (runId: string) => {
@@ -334,7 +334,7 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
     await fixture.db.update(heartbeatRuns).set({ runnerProfileJson: {
       ...fixture.preparedProfile, nativeExecutionInput: execution,
     } }).where(eq(heartbeatRuns.id, fixture.runId));
-    const remoteCwd = `/tmp/paperclip-continuity-${fixture.issueId}`;
+    const remoteCwd = `/tmp/pilibala-continuity-${fixture.issueId}`;
     expect((await runner.execute({ command: "mkdir", args: ["-p", remoteCwd] })).exitCode).toBe(0);
     const target = {
       kind: "remote" as const, transport: "sandbox" as const,
@@ -360,9 +360,9 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
     const options = {
       db: fixture.db, runnerInstanceId: fixture.native.runnerInstanceId,
       useRunnerd: true, runnerIngressAuthorized: true,
-      runnerRemoteBinaryPath: process.env.PAPERCLIP_TEST_LINUX_RUNNER_BINARY!,
-      runnerRemoteCodexPath: process.env.PAPERCLIP_TEST_FAKE_CODEX_WRAPPER!,
-      runnerEnvironment: { PATH: "/usr/local/bin:/usr/bin:/bin", PAPERCLIP_CONFIGURED_ENV_KEYS: '["CONTINUITY_TEST_CONFIG"]', CONTINUITY_TEST_CONFIG: "first" },
+      runnerRemoteBinaryPath: process.env.PILIBALA_TEST_LINUX_RUNNER_BINARY!,
+      runnerRemoteCodexPath: process.env.PILIBALA_TEST_FAKE_CODEX_WRAPPER!,
+      runnerEnvironment: { PATH: "/usr/local/bin:/usr/bin:/bin", PILIBALA_CONFIGURED_ENV_KEYS: '["CONTINUITY_TEST_CONFIG"]', CONTINUITY_TEST_CONFIG: "first" },
       onLog: async (_stream: "stdout" | "stderr", text: string) => { logs.push(text); },
     };
     let controller: ReturnType<typeof spawn> | undefined;
@@ -383,16 +383,16 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
         });
         controller.send?.({ connectionString: temporary.connectionString, container, ingressUrl: `wss://127.0.0.1:${tunnel.port}`,
           options: { ...firstOptions, db: undefined, onLog: undefined, runnerExecutionTarget: { ...target, runner: undefined } } });
-      }) : await executePaperclipNativeSession(firstOptions);
+      }) : await executePilibalaNativeSession(firstOptions);
       expect(first.exitCode).toBe(0);
       await finalizeNativeRun({ db: fixture.db, runId: fixture.runId, workspaceFinalizeStatus: "succeeded", projectRunStatus: true });
-      const snapshot = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.paperclip-runtime/paperclip-runner/sessions/*/runner/runner-state.json`] });
+      const snapshot = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.pilibala-runtime/pilibala-runner/sessions/*/runner/runner-state.json`] });
       expect(snapshot.exitCode).toBe(0);
       const saved = JSON.parse(snapshot.stdout);
       expect(saved.lifecycle).toBe("ready");
-      const processBefore = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.paperclip-runtime/paperclip-runner/sessions/*/runner/runner-process.identity`] });
+      const processBefore = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.pilibala-runtime/pilibala-runner/sessions/*/runner/runner-process.identity`] });
       expect(processBefore.exitCode).toBe(0);
-      const historyBefore = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.paperclip-runtime/paperclip-runner/sessions/*/filesystem/codex-home/fake-codex-state.json`] });
+      const historyBefore = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.pilibala-runtime/pilibala-runner/sessions/*/filesystem/codex-home/fake-codex-state.json`] });
       const providerBefore = JSON.parse(historyBefore.stdout);
       const nextRunId = randomUUID();
       const nextLeaseId = randomUUID();
@@ -416,18 +416,18 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
         runnerExecutionTarget: { ...target, leaseId: nextLeaseId, sandboxLeaseAcquisition: { outcome: "resumed" as const, providerLeaseId: container } },
       };
       if (controller) {
-        await expect(executePaperclipNativeSession(nextOptions)).rejects.toThrow("prior_owner_terminal_state_indeterminate");
+        await expect(executePilibalaNativeSession(nextOptions)).rejects.toThrow("prior_owner_terminal_state_indeterminate");
         const exited = new Promise<void>(resolveExit => controller!.once("exit", () => resolveExit()));
         controller.kill("SIGKILL");
         await exited;
         controller = undefined;
-        await expect(executePaperclipNativeSession({ ...nextOptions,
+        await expect(executePilibalaNativeSession({ ...nextOptions,
           runnerExecutionTarget: { ...nextOptions.runnerExecutionTarget,
             sandboxLeaseAcquisition: { outcome: "replacement", providerLeaseId: "unrelated-sandbox" } },
         })).rejects.toThrow("prior_owner_terminal_state_indeterminate");
       }
       if (scenario === "legacy") {
-        const checkpoints = resolve(resolvePaperclipInstanceRoot(), "runtime", "paperclip-runner", "sessions");
+        const checkpoints = resolve(resolvePilibalaInstanceRoot(), "runtime", "pilibala-runner", "sessions");
         let changed = 0;
         for (const name of await readdir(checkpoints)) {
           if (!name.endsWith(".json")) continue;
@@ -443,9 +443,9 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
       const [nextPrepared] = await fixture.db.select({ profile: heartbeatRuns.runnerProfileJson }).from(heartbeatRuns).where(eq(heartbeatRuns.id, nextRunId));
       await fixture.db.update(heartbeatRuns).set({ runnerProfileJson: { ...nextPrepared.profile,
         nativeExecutionInput: nextOptions.execution } }).where(eq(heartbeatRuns.id, nextRunId));
-      const second = await executePaperclipNativeSession(nextOptions);
+      const second = await executePilibalaNativeSession(nextOptions);
       expect(second.exitCode).toBe(0);
-      const historyAfter = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.paperclip-runtime/paperclip-runner/sessions/*/filesystem/codex-home/fake-codex-state.json`] });
+      const historyAfter = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.pilibala-runtime/pilibala-runner/sessions/*/filesystem/codex-home/fake-codex-state.json`] });
       const providerAfter = JSON.parse(historyAfter.stdout);
       expect(providerAfter.threadId).toBe(providerBefore.threadId);
       expect(providerAfter.nextTurn).toBe(2);
@@ -455,7 +455,7 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
       const providerStarts = calls.stdout.split("\n").filter(line => line === "process-start").length;
       expect(providerStarts).toBeGreaterThanOrEqual(1);
       expect(providerStarts).toBeLessThanOrEqual(["legacy", "changed"].includes(scenario) ? 3 : hardRestart ? 2 : 1);
-      const processAfter = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.paperclip-runtime/paperclip-runner/sessions/*/runner/runner-process.identity`] });
+      const processAfter = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.pilibala-runtime/pilibala-runner/sessions/*/runner/runner-process.identity`] });
       expect(processAfter.exitCode).toBe(0);
       if (["legacy", "changed"].includes(scenario)) expect(processAfter.stdout).not.toBe(processBefore.stdout);
       else expect(processAfter.stdout).toBe(processBefore.stdout);
@@ -476,27 +476,27 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
         issue: { id: fixture.issueId, title: "Continue the same conversation", description: null, reviewPolicy: null },
         environmentLeaseId: thirdLeaseId });
       await fixture.db.insert(nativeRunFinalizations).values({ runId: thirdRunId, companyId, issueId: fixture.issueId, phase: "observed" });
-      const third = await executePaperclipNativeSession({ ...nextOptions, runnerInstanceId: thirdNative.runnerInstanceId,
+      const third = await executePilibalaNativeSession({ ...nextOptions, runnerInstanceId: thirdNative.runnerInstanceId,
         execution: { ...nextOptions.execution, completionContract: await boundContract(thirdRunId),
           binding: { ...execution.binding, runId: thirdRunId }, task: { ...execution.task, prompt: "Complete the third conversation turn." } },
         runnerExecutionTarget: { ...nextOptions.runnerExecutionTarget, leaseId: thirdLeaseId },
       });
       expect(third.exitCode).toBe(0);
-      const finalHistory = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.paperclip-runtime/paperclip-runner/sessions/*/filesystem/codex-home/fake-codex-state.json`] });
+      const finalHistory = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.pilibala-runtime/pilibala-runner/sessions/*/filesystem/codex-home/fake-codex-state.json`] });
       expect(JSON.parse(finalHistory.stdout)).toMatchObject({ threadId: providerBefore.threadId, nextTurn: 3 });
       const finalCalls = await runner.execute({ command: "cat", args: [`${remoteCwd}/provider-calls.log`] });
       expect(finalCalls.stdout.split("\n").filter(line => line === "turn/start")).toHaveLength(3);
       expect(finalCalls.stdout.split("\n").filter(line => line === "thread/start")).toHaveLength(1);
       expect(finalCalls.stdout.split("\n").filter(line => line === "process-start")).toHaveLength(providerStarts);
-      const finalProcess = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.paperclip-runtime/paperclip-runner/sessions/*/runner/runner-process.identity`] });
+      const finalProcess = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.pilibala-runtime/pilibala-runner/sessions/*/runner/runner-process.identity`] });
       expect(finalProcess.stdout).toBe(processAfter.stdout);
       expect(await closeIdleWarmNativeSessionsForRestart()).toEqual({ closed: 1, busy: 0, failed: 0 });
-      const suspended = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.paperclip-runtime/paperclip-runner/sessions/*/runner/runner-state.json`] });
+      const suspended = await runner.execute({ command: "sh", args: ["-c", `cat '${remoteCwd}'/.pilibala-runtime/pilibala-runner/sessions/*/runner/runner-state.json`] });
       expect(suspended.exitCode).toBe(0);
       expect(JSON.parse(suspended.stdout).lifecycle).toBe("suspended");
     } catch (error) {
       await writeFile(resolve(runtimeRoot, "remote-continuity-failure.log"), logs.join(""));
-      throw new Error(`Remote continuity regression failed: ${logs.filter(line => line.startsWith("[paperclip-runner]")).join("").slice(-4_000)}`, { cause: error });
+      throw new Error(`Remote continuity regression failed: ${logs.filter(line => line.startsWith("[pilibala-runner]")).join("").slice(-4_000)}`, { cause: error });
     } finally {
       controller?.kill("SIGKILL");
       await closeIdleWarmNativeSessionsForRestart();
@@ -604,7 +604,7 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
       processStartedAt: new Date("2020-01-01T00:00:00Z"),
       runnerProfileJson: {
         nativeWorkspaceSync: {
-          schema: "paperclip.native-workspace-sync/v1", state: "prepared",
+          schema: "pilibala.native-workspace-sync/v1", state: "prepared",
           descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64),
           workspaceId: "workspace", leaseId: "lease", providerLeaseId: "sandbox",
           remoteCwd: "/workspace",
@@ -817,7 +817,7 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
       workspace: { id: fixture.runId, cwd: tmpdir(), repoUrl: null, repoRef: null, branchName: null },
       normalizedSessionId: fixture.native.normalizedSessionId,
       provider: "codex",
-      completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "paperclip.run-result.v1", contract: { revision: "1", objective: "Recover the same turn", criteria: [{ id: "objective", requirement: "Resume without a duplicate turn" }] } },
+      completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "pilibala.run-result.v1", contract: { revision: "1", objective: "Recover the same turn", criteria: [{ id: "objective", requirement: "Resume without a duplicate turn" }] } },
       runtimeContext: context,
     }), runtimeContext };
     const stateDirectory = resolve(runtimeRoot, fixture.runId);
@@ -1065,7 +1065,7 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
       serverFingerprint: "result-before-restart",
       schemaStatus: "accepted",
       resultJson: {
-        schema: "paperclip.run_result.v1",
+        schema: "pilibala.run_result.v1",
         reportedWorkDisposition: "done",
         summary: "Durable result proposed before restart.",
       },
@@ -1312,7 +1312,7 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
       workspace: { id: randomUUID(), cwd: runtimeRoot, repoUrl: null, repoRef: null, branchName: null },
       normalizedSessionId: fixture.native.normalizedSessionId,
       runtimeContext: nativeRuntimeContextFixture(),
-      completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "paperclip.run-result.v1",
+      completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "pilibala.run-result.v1",
         contract: { revision: "1", objective: "Resume prepared work", criteria: [{ id: "result", requirement: "Complete work" }] } },
     });
     let prepared!: () => void, release!: () => void;
@@ -1320,7 +1320,7 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
     const continuePreparation = new Promise<void>(resolveContinue => { release = resolveContinue; });
     const openSession = vi.fn(async () => { throw new Error("Losing preparation must not open a provider"); });
     const descriptor = vi.fn(async () => { throw new Error("Losing preparation must not configure a provider"); });
-    const original = executePaperclipNativeSession({
+    const original = executePilibalaNativeSession({
       db: fixture.db, execution, runnerInstanceId: fixture.native.runnerInstanceId,
       backend: { descriptor, openSession },
       preparationSpans: [{ name: "heartbeat.prepare_after_environment", startedAtMs: Date.now(), endedAtMs: Date.now() }],
@@ -1355,7 +1355,7 @@ describeEmbeddedPostgres("native runner restart recovery with real processes", (
   });
 
   function remotePreparedWorkspace() {
-    return { schema: "paperclip.native-workspace-sync/v3", state: "prepared",
+    return { schema: "pilibala.native-workspace-sync/v3", state: "prepared",
       descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
       workspaceId: randomUUID(), leaseId: randomUUID(), providerLeaseId: randomUUID(),
       remoteCwd: "/workspace", resourceDisposition: "destroy" };

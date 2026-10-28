@@ -1,7 +1,7 @@
-import { ADAPTER_AGNOSTIC_KEYS, type Agent } from "@paperclipai/shared";
+import { ADAPTER_AGNOSTIC_KEYS, type Agent } from "@pilibalaai/shared";
 
 export interface AgentConfigOverlay {
-  runner?: import("@paperclipai/shared").AgentRunnerChoice;
+  runner?: import("@pilibalaai/shared").AgentRunnerChoice;
   identity: Record<string, unknown>;
   adapterType?: string;
   adapterConfig: Record<string, unknown>;

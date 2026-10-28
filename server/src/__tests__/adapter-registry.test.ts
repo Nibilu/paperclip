@@ -1,6 +1,6 @@
-import { probeAcpxClaudeInstallation, probeAcpxPiInstallation } from "../vendor/paperclip-runner/live/index.js";
+import { probeAcpxClaudeInstallation, probeAcpxPiInstallation } from "../vendor/pilibala-runner/live/index.js";
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
-import { buildSandboxNpmInstallCommand } from "@paperclipai/adapter-utils";
+import { buildSandboxNpmInstallCommand } from "@pilibalaai/adapter-utils";
 import type { ServerAdapterModule } from "../adapters/index.js";
 
 import {
@@ -23,7 +23,7 @@ vi.mock("../services/native-runtime/setup-readiness.js", () => ({
   testNativeRunnerAuthentication: nativeSetup.authenticate,
 }));
 
-vi.mock("../vendor/paperclip-runner/live/index.js", () => ({
+vi.mock("../vendor/pilibala-runner/live/index.js", () => ({
   probeAcpxClaudeInstallation: vi.fn(async () => undefined),
   probeAcpxGrokInstallation: vi.fn(async () => undefined),
   probeAcpxPiInstallation: vi.fn(async () => undefined),
@@ -254,29 +254,29 @@ describe("server adapter registry", () => {
   });
 
   it("rejects an incomplete managed runner provider before probing Codex", async () => {
-    const adapter = requireServerAdapter("paperclip_runner");
+    const adapter = requireServerAdapter("pilibala_runner");
     expect(adapter.supportsInstructionsBundle).toBe(true);
     expect(adapter.instructionsPathKey).toBe("instructionsFilePath");
     const result = await adapter.testEnvironment({
       companyId: "company-1",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       config: { provider: "claude_managed" },
     });
 
     expect(result).toMatchObject({
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       status: "fail",
       checks: [{
-        code: "paperclip_runner_claude_managed_profile_required",
+        code: "pilibala_runner_claude_managed_profile_required",
         level: "error",
       }],
     });
   });
 
   it.each(["pass", "fail"] as const)("uses the selected native Codex runtime for setup (%s)", async status => {
-    nativeSetup.authenticate.mockReset().mockResolvedValue({ adapterType: "paperclip_runner", status, testedAt: "", checks: [{ code: `codex_hello_probe_${status === "pass" ? "passed" : "auth_required"}`, level: status === "pass" ? "info" : "error", message: "Selected native account" }] });
-    const context = { companyId: "company-1", adapterType: "paperclip_runner", config: { provider: "codex", model: "gpt-5.6-sol", modelReasoningEffort: "high", env: { OPENAI_API_KEY: "selected-key" } } };
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment(context);
+    nativeSetup.authenticate.mockReset().mockResolvedValue({ adapterType: "pilibala_runner", status, testedAt: "", checks: [{ code: `codex_hello_probe_${status === "pass" ? "passed" : "auth_required"}`, level: status === "pass" ? "info" : "error", message: "Selected native account" }] });
+    const context = { companyId: "company-1", adapterType: "pilibala_runner", config: { provider: "codex", model: "gpt-5.6-sol", modelReasoningEffort: "high", env: { OPENAI_API_KEY: "selected-key" } } };
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment(context);
     expect(result.status).toBe(status);
     expect(nativeSetup.authenticate).toHaveBeenCalledWith(context, "codex", "gpt-5.6-sol");
   });
@@ -303,14 +303,14 @@ describe("server adapter registry", () => {
       agentCoreRetentionAcknowledged: true,
     }, "aws_agentcore_profile_selected"],
   ] as const)("accepts a complete %s profile selection", async (provider, config, code) => {
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment({
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment({
       companyId: "company-1",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       config: { provider, ...config },
     });
 
     expect(result).toMatchObject({
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       status: "warn",
       checks: expect.arrayContaining([expect.objectContaining({ code, level: "info" })]),
     });
@@ -319,9 +319,9 @@ describe("server adapter registry", () => {
   it.each([
     ["claude", "claude-sonnet-5"],
   ] as const)("does not claim runtime readiness from the remote ACPX %s platform alone", async (acpxAgent, model) => {
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment({
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment({
       companyId: "company-1",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       config: { provider: "acpx", acpxAgent, model },
       executionTarget: {
         kind: "remote",
@@ -333,7 +333,7 @@ describe("server adapter registry", () => {
     });
 
     expect(result).toMatchObject({
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       status: "warn",
       checks: [{ code: "acpx_remote_runtime_unverified", level: "warn" }],
     });
@@ -343,8 +343,8 @@ describe("server adapter registry", () => {
     const probe = vi.mocked(probeAcpxClaudeInstallation);
     if (ready) probe.mockResolvedValueOnce(undefined);
     else probe.mockRejectedValueOnce(new Error("Runtime package integrity verification failed"));
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment({
-      companyId: "company-1", adapterType: "paperclip_runner",
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment({
+      companyId: "company-1", adapterType: "pilibala_runner",
       config: { provider: "acpx", acpxAgent: "claude", model: "custom-claude-model" },
     });
     expect(probe).toHaveBeenLastCalledWith("custom-claude-model");
@@ -358,9 +358,9 @@ describe("server adapter registry", () => {
     const probe = vi.mocked(probeAcpxPiInstallation);
     if (ready) probe.mockResolvedValueOnce(undefined);
     else probe.mockRejectedValueOnce(new Error("Pi closure unavailable"));
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment({
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment({
       companyId: "company-1",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       config: {
         provider: "acpx",
         acpxAgent: "pi",
@@ -375,12 +375,12 @@ describe("server adapter registry", () => {
     expect(probe).toHaveBeenLastCalledWith("openrouter/deepseek/deepseek-v4-flash-0731");
   });
   it("reports qualification-only readiness for an exact host-authorized candidate", async () => {
-    const key = "PAPERCLIP_RUNNER_ACPX_QUALIFICATION";
+    const key = "PILIBALA_RUNNER_ACPX_QUALIFICATION";
     const previous = process.env[key];
     process.env[key] = JSON.stringify([{ agent: "copilot", model: "exact-model" }]);
     try {
-      const result = await requireServerAdapter("paperclip_runner").testEnvironment({
-        companyId: "company-1", adapterType: "paperclip_runner",
+      const result = await requireServerAdapter("pilibala_runner").testEnvironment({
+        companyId: "company-1", adapterType: "pilibala_runner",
         config: { provider: "acpx", acpxAgent: "copilot", model: "exact-model" },
       });
       expect(result).toMatchObject({ status: "warn", checks: [{ code: "acpx_candidate_qualification_only" }] });
@@ -417,18 +417,18 @@ describe("server adapter registry", () => {
       detectCommand: "opencode",
       installCommand: expectedOpenCodeInstall,
     });
-    expect(findActiveServerAdapter("paperclip_runner")?.getRuntimeCommandSpec?.({ provider: "codex" })).toEqual({
+    expect(findActiveServerAdapter("pilibala_runner")?.getRuntimeCommandSpec?.({ provider: "codex" })).toEqual({
       command: "codex",
       detectCommand: "codex",
       installCommand: expectedRunnerCodexInstall,
     });
-    expect(findActiveServerAdapter("paperclip_runner")?.getRuntimeCommandSpec?.({ provider: "opencode" })).toEqual({
+    expect(findActiveServerAdapter("pilibala_runner")?.getRuntimeCommandSpec?.({ provider: "opencode" })).toEqual({
       command: "opencode",
       detectCommand: "opencode",
       installCommand: expectedRunnerOpenCodeInstall,
     });
-    expect(findActiveServerAdapter("paperclip_runner")?.getRuntimeCommandSpec?.({ provider: "acpx" })).toEqual({
-      command: "paperclip-runnerd",
+    expect(findActiveServerAdapter("pilibala_runner")?.getRuntimeCommandSpec?.({ provider: "acpx" })).toEqual({
+      command: "pilibala-runnerd",
       detectCommand: null,
       installCommand: null,
     });

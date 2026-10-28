@@ -1,14 +1,14 @@
 import { museRunnerBroker } from "../muse-runner-broker.js";
 import { stageRemoteLaunchAssets } from "./remote-launch-assets.js";
 import { createRunPreparationTiming } from "../execution-preparation-timing.js";
-import { configuredEnvironment } from "../../vendor/paperclip-runner/index.js";
-import { apiKeyBillingType } from "@paperclipai/adapter-utils/api-billing-type";
-import { agents } from "@paperclipai/db";
+import { configuredEnvironment } from "../../vendor/pilibala-runner/index.js";
+import { apiKeyBillingType } from "@pilibalaai/adapter-utils/api-billing-type";
+import { agents } from "@pilibalaai/db";
 import { isCloudManagedInstance } from "../cloud-instance.js";
 import { dotRunnerBroker } from "../dot-runner-broker.js";
-import { CURSOR_DISTRIBUTION_PINS, QUALIFIED_ACPX_PROFILES, QUALIFIED_ACPX_VERSION } from "../../vendor/paperclip-runner/index.js";
-import { isProviderMode } from "../../vendor/paperclip-runner/index.js";
-import { bundledRemoteProviderPackManifestPath, bundledRemoteRunnerBinary } from "../../vendor/paperclip-runner/index.js";
+import { CURSOR_DISTRIBUTION_PINS, QUALIFIED_ACPX_PROFILES, QUALIFIED_ACPX_VERSION } from "../../vendor/pilibala-runner/index.js";
+import { isProviderMode } from "../../vendor/pilibala-runner/index.js";
+import { bundledRemoteProviderPackManifestPath, bundledRemoteRunnerBinary } from "../../vendor/pilibala-runner/index.js";
 import { nativeRetryCancellationEligible, rethrowNativeCancellationLockConflict, assertCancellationRequest, cancellationIntentId as callerCancellationIntentId, cancellationRequestId } from "./native-cancellation-request.js";
 import { readNativePlanWait } from "./native-plan-wait.js";
 import { nativeProviderLifecycle } from "./provider-lifecycle.js";
@@ -17,9 +17,9 @@ import { activeIssueInteractionCondition } from "../issue-question-context.js";
 import { resolveAcpxQualification } from "./acpx-qualification.js";
 import { readLocalAiCredentialFile } from "../local-ai-credential-file.js";
 import { prepareGrokRunnerCredentials } from "./grok-runner-credentials.js";
-import { copyBackGrokAuth } from "@paperclipai/adapter-grok-local/server";
+import { copyBackGrokAuth } from "@pilibalaai/adapter-grok-local/server";
 
-import { inferOpenAiCompatibleBiller, type AdapterUsageCheckpoint } from "@paperclipai/adapter-utils";
+import { inferOpenAiCompatibleBiller, type AdapterUsageCheckpoint } from "@pilibalaai/adapter-utils";
 import { createAgentIdentityRedactor } from "../agent-identity-redaction.js";
 import { parseCodexCliVersion } from "./codex-runtime-compatibility.js";
 import { createNativeToolTrace, type NativeToolTrace } from "./native-tool-trace.js";
@@ -29,7 +29,7 @@ import { resolveGitHubOperationCredentials } from "../github-operation-credentia
 import { bindManagedNativeCredentialTurn, completeManagedNativeCredentialTurn } from "./managed-native-credentials.js";
 import { createLocalNativeQuestionBridge } from "./local-native-question-bridge.js";
 import { readVerifiedRemoteWorkspaceFile } from "./remote-deliverable-file.js";
-import { copyBackCodexAuth } from "@paperclipai/adapter-codex-local/server";
+import { copyBackCodexAuth } from "@pilibalaai/adapter-codex-local/server";
 import { nativeCompletionFeedback } from "./native-completion-feedback.js";
 import { hasAcknowledgedNativeReassignmentStopIntent, hasAcknowledgedNativeStopIntent } from "../acknowledged-native-stop.js";
 import { stoppedCodexTurnIsTextOnly } from "./stopped-codex-turn.js";
@@ -73,18 +73,18 @@ import type {
   AdapterExecutionResult,
   AdapterRuntimeEvent,
 } from "../../adapters/index.js";
-import { usdToUnits, type NativeFinalizationResult } from "@paperclipai/shared";
+import { usdToUnits, type NativeFinalizationResult } from "@pilibalaai/shared";
 import type {
   HarnessRuntimeRequestResolution,
   NativeExecutionInput,
   NativeRuntimeContextSnapshot,
   NativeSession,
   NativeSessionBackend,
-  PaperclipQuestionSet,
+  PilibalaQuestionSet,
   PersistedNativeSession,
   PrpEvent,
   PrpStructuredRunResult,
-} from "../../vendor/paperclip-runner/index.js";
+} from "../../vendor/pilibala-runner/index.js";
 import {
   NativeProviderTerminalFailure,
   NativeSessionCleanupQuarantinedError,
@@ -98,7 +98,7 @@ import {
   applyNativeSessionGoalControl,
   inspectWarmRunTransition,
   parseNativeExecutionInput,
-  parsePaperclipQuestionSet,
+  parsePilibalaQuestionSet,
   resolveSourceCodexHome,
   readRunnerdArtifactBinding,
   retainedRunnerdMaintenanceIsIdle,
@@ -108,14 +108,14 @@ import {
   type RunnerProcessHandle,
   type RunnerProcessLaunchSpec,
   type NativeSessionGoalControl,
-} from "../../vendor/paperclip-runner/index.js";
-import { adapterExecutionTargetEnablesSandboxDuplexBridge, type AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
+} from "../../vendor/pilibala-runner/index.js";
+import { adapterExecutionTargetEnablesSandboxDuplexBridge, type AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
 import { createNativeSshCommandRunner } from "./native-ssh-command-runner.js";
 import { discoverRemoteExecutable, parseRemoteExecutableCandidate } from "./codex-model-fallback.js";
 export { parseRemoteExecutableCandidate } from "./codex-model-fallback.js";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
 import { createNativeRunnerExecutionDriver, resolveRemoteRunnerTransportMode } from "./native-runner-execution-driver.js";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   and,
   desc,
@@ -139,12 +139,12 @@ import {
   issues,
   nativeRunFinalizations,
   nativeRunResults,
-} from "@paperclipai/db";
-import { PaperclipControlPlanePort } from "./paperclip-control-plane-port.js";
+} from "@pilibalaai/db";
+import { PilibalaControlPlanePort } from "./pilibala-control-plane-port.js";
 import { appendHeartbeatRunEvent } from "../heartbeat-run-events.js";
 import { appendNativeCredentialUpdate } from "./native-credential-updates.js";
 import { nativeSha256 } from "./canonical.js";
-import { PaperclipRunnerToolAuthority } from "./paperclip-runner-tool-authority.js";
+import { PilibalaRunnerToolAuthority } from "./pilibala-runner-tool-authority.js";
 import { createAssignedMcpTools, getAssignedMcpGateway } from "./assigned-mcp-tools.js";
 import { getNativeReviewAssignment, readNativeReviewAssignmentContext } from "./native-review-participant.js";
 import { NativeChatAttachmentReadScope } from "./chat-attachment-read.js";
@@ -168,7 +168,7 @@ import { readRemoteRunnerRecoveryProbe, REMOTE_RUNNER_RECOVERY_PROBE_BUDGET_MS }
 import { inspectRemoteWarmSessionRecovery, type RemoteWarmSessionRecovery } from "./remote-warm-session-recovery.js";
 import { persistActivity, publishActivity } from "../activity-log.js";
 import { commitNativeStatusDecision } from "./status-decision-committer.js";
-import { resolvePaperclipInstanceRoot } from "../../home-paths.js";
+import { resolvePilibalaInstanceRoot } from "../../home-paths.js";
 import { documentService } from "../documents.js";
 import { issueThreadInteractionService } from "../issue-thread-interactions.js";
 import { issueService } from "../issues.js";
@@ -179,7 +179,7 @@ import {
 } from "./status-arbiter.js";
 import { conflict, HttpError } from "../../errors.js";
 import { redactSensitiveText } from "../../redaction.js";
-import { resolvePaperclipRunnerBinary, resolveRemotePaperclipRunnerBinary } from "./native-codex-runner.js";
+import { resolvePilibalaRunnerBinary, resolveRemotePilibalaRunnerBinary } from "./native-codex-runner.js";
 import {
   createNativeRunTrace,
   isNativeRunRootHistoricalSpan,
@@ -332,12 +332,12 @@ const CODEX_HOME_NON_PERSISTENT_ENTRIES = [
   "config.toml",
 ] as const;
 const RUNNERD_CONTROL_PLANE_STATE_SCHEMA =
-  "paperclip.runner.durable.control-plane-state.v1";
-const RUNNERD_STATE_SCHEMA = "paperclip.runner.durable.state.v1";
-const CODEX_PROVIDER_STATE_SCHEMA = "paperclip.runner.codex-provider-state.v1";
-const ACPX_PROVIDER_STATE_SCHEMA = "paperclip.runner.acpx-provider-state.v3";
+  "pilibala.runner.durable.control-plane-state.v1";
+const RUNNERD_STATE_SCHEMA = "pilibala.runner.durable.state.v1";
+const CODEX_PROVIDER_STATE_SCHEMA = "pilibala.runner.codex-provider-state.v1";
+const ACPX_PROVIDER_STATE_SCHEMA = "pilibala.runner.acpx-provider-state.v3";
 const MANAGED_PROVIDER_STATE_SCHEMA =
-  "paperclip.runner.managed-provider-state.v1";
+  "pilibala.runner.managed-provider-state.v1";
 const RUNNERD_STATE_LIFECYCLES = new Set([
   "connecting",
   "ready",
@@ -765,7 +765,7 @@ export function buildNativeProviderEnvironment(
   );
   const environment = { ...inherited, ...configured };
   if (assignedWorkspaceCwd?.trim()) {
-    environment.PAPERCLIP_WORKSPACE_CWD = assignedWorkspaceCwd;
+    environment.PILIBALA_WORKSPACE_CWD = assignedWorkspaceCwd;
   }
   return environment;
 }
@@ -813,7 +813,7 @@ type RuntimeQuestionFallback = {
     submitLabel?: string;
     supersedeOnUserComment: false;
     runtimeRequestId: string;
-    questionSet: PaperclipQuestionSet;
+    questionSet: PilibalaQuestionSet;
     questions: Array<{
       id: string;
       prompt: string;
@@ -847,7 +847,7 @@ export function runtimeQuestionFallbackFromEvent(
   if (
     payload.requestKind !== "runtime" ||
     payload.requestType !== "input" ||
-    request.schema !== "paperclip.runtime_request.v2" ||
+    request.schema !== "pilibala.runtime_request.v2" ||
     request.requestKind !== "runtime" ||
     request.type !== "input" ||
     typeof request.requestId !== "string" ||
@@ -856,9 +856,9 @@ export function runtimeQuestionFallbackFromEvent(
     typeof request.itemId !== "string"
   )
     return null;
-  let questionSet: PaperclipQuestionSet;
+  let questionSet: PilibalaQuestionSet;
   try {
-    questionSet = parsePaperclipQuestionSet(request.input);
+    questionSet = parsePilibalaQuestionSet(request.input);
   } catch {
     return null;
   }
@@ -875,7 +875,7 @@ export function runtimeQuestionFallbackFromEvent(
       question.answerMode === "text"
         ? [
             {
-              id: "__paperclip_text__",
+              id: "__pilibala_text__",
               label:
                 question.textValidation?.inputType === "integer"
                   ? "Enter an integer"
@@ -1173,7 +1173,7 @@ export function nativeGovernedWaitResult(input: {
     input.interaction.summary?.trim() ||
     "the requested response";
   return {
-    schema: "paperclip.run_result.v1",
+    schema: "pilibala.run_result.v1",
     reportedWorkDisposition: "yielded",
     summary: `Waiting for ${label}.`,
     completionClaim: {
@@ -1221,7 +1221,7 @@ export function nativeConversationReplyResult(input: {
       reply.normalizedSessionId !== input.terminalEvent.normalizedSessionId) return null;
   const ref = `run-event:${reply.sourceEventId}`;
   return {
-    schema: "paperclip.run_result.v1",
+    schema: "pilibala.run_result.v1",
     reportedWorkDisposition: "yielded",
     summary: text.slice(0, 12_000),
     completionClaim: {
@@ -1323,7 +1323,7 @@ export function nativeToolsRefreshWaitResult(input: {
 }): PrpStructuredRunResult {
   const ref = `wakeup:${input.wakeId}`;
   return {
-    schema: "paperclip.run_result.v1",
+    schema: "pilibala.run_result.v1",
     reportedWorkDisposition: "yielded",
     summary: "Continuing with the newly installed connection tools.",
     completionClaim: {
@@ -1529,7 +1529,7 @@ export async function synchronizeCompletedProviderPlan(input: {
         idempotencyKey: `runner-plan-approval:v1:${input.execution.binding.runId}:${planId}:${providerRevision}:${digest}`,
         sourceRunId: input.execution.binding.runId,
         title: `Review plan revision ${revision.revisionNumber}`,
-        summary: "Review the synchronized Paperclip plan.",
+        summary: "Review the synchronized Pilibala plan.",
         continuationPolicy: "wake_assignee",
         payload: {
           version: 1,
@@ -1622,10 +1622,10 @@ export async function synchronizeCompletedProviderPlan(input: {
 
 class SessionToolAuthorityEpoch {
   readonly runId: string;
-  #authority: PaperclipRunnerToolAuthority;
+  #authority: PilibalaRunnerToolAuthority;
   #revoked = false;
 
-  constructor(runId: string, authority: PaperclipRunnerToolAuthority, private readonly toolTrace?: NativeToolTrace) {
+  constructor(runId: string, authority: PilibalaRunnerToolAuthority, private readonly toolTrace?: NativeToolTrace) {
     this.runId = runId;
     this.#authority = authority;
   }
@@ -1646,7 +1646,7 @@ class SessionToolAuthorityEpoch {
     return this.#authority.definitions();
   }
 
-  async execute(call: Parameters<PaperclipRunnerToolAuthority["execute"]>[0]) {
+  async execute(call: Parameters<PilibalaRunnerToolAuthority["execute"]>[0]) {
     this.#assertCurrent();
     return this.toolTrace
       ? await this.toolTrace.execute(call, () => this.#authority.execute(call))
@@ -1660,8 +1660,8 @@ const executingRunnerdSessionScopes = new Map<string, string>();
 const executingNativeOwnerScopes = new Map<string, symbol>();
 
 async function assertExternalNativeRunAuthority(db: Db, execution: NativeExecutionInput, authorityDatabase: Db = db): Promise<void> {
-  if (execution.schema === "paperclip.native-execution-input.v6") return dotRunnerBroker(db).assertRunAuthority(execution);
-  if (execution.schema === "paperclip.native-execution-input.v8") return museRunnerBroker(db).assertRunAuthority(execution, authorityDatabase);
+  if (execution.schema === "pilibala.native-execution-input.v6") return dotRunnerBroker(db).assertRunAuthority(execution);
+  if (execution.schema === "pilibala.native-execution-input.v8") return museRunnerBroker(db).assertRunAuthority(execution, authorityDatabase);
   throw new Error("external_native_execution_required");
 }
 
@@ -1727,7 +1727,7 @@ function nativeProviderSessionScope(execution: NativeExecutionInput) {
 
 function nativeSessionScopeKey(execution: NativeExecutionInput): string {
   return canonicalJson({
-    schema: "paperclip.native-session-scope.v2",
+    schema: "pilibala.native-session-scope.v2",
     companyId: execution.binding.companyId,
     agentId: execution.binding.agentId,
     workspace: nativeSessionWorkspaceScope(execution),
@@ -1789,11 +1789,11 @@ function legacyCompanyNativeSessionScopeKey(
 
 function runnerdStateBase(): string {
   return (
-    process.env.PAPERCLIP_RUNNER_STATE_DIR ??
+    process.env.PILIBALA_RUNNER_STATE_DIR ??
     resolve(
-      resolvePaperclipInstanceRoot(),
+      resolvePilibalaInstanceRoot(),
       "runtime",
-      "paperclip-runner",
+      "pilibala-runner",
       "durable-sessions",
     )
   );
@@ -2276,7 +2276,7 @@ export function retainedNativeCleanupJournalMatches(input: {
       event.eventType === "semantic_tool.input" &&
       record(event.payload).semantic_tool &&
       record(record(event.payload).semantic_tool).operationId ===
-        "paperclip_finish",
+        "pilibala_finish",
   );
   if (submissions.length !== 1) return false;
   const event = submissions[0]!;
@@ -2287,7 +2287,7 @@ export function retainedNativeCleanupJournalMatches(input: {
     !boundRaw(event) ||
     !result.ok ||
     canonicalJson(result.result) !== canonicalJson(envelope.result) ||
-    semantic.schema !== "paperclip.prp.semantic_tool.v1" ||
+    semantic.schema !== "pilibala.prp.semantic_tool.v1" ||
     semantic.schemaVersion !== 1 ||
     semantic.phase !== "input" ||
     typeof semantic.callId !== "string" ||
@@ -2376,7 +2376,7 @@ export async function appendRetainedNativeCleanupEvent(
   }
   const event = parsed.event;
   const receipt = {
-    schema: "paperclip.native_cleanup_event.v1",
+    schema: "pilibala.native_cleanup_event.v1",
     requestId: input.requestId,
     rawSourceInstanceId: event.sourceInstanceId,
     rawSourceEventId: event.sourceEventId,
@@ -2687,9 +2687,9 @@ export async function verifyStoppedNativeSessionForContinuation(
         !Array.isArray(snapshot.control.committedEvents)) return null;
     // An incomplete provider launch can own a process that never emitted its
     // session identity. It cannot be certified from an earlier owner's receipt.
-    if (snapshot.control.schema !== "paperclip.runner.durable.control-plane-state.v1" ||
+    if (snapshot.control.schema !== "pilibala.runner.durable.control-plane-state.v1" ||
         snapshot.runner.schema !== RUNNERD_STATE_SCHEMA ||
-        snapshot.provider.schema !== (execution.provider.kind === "codex" ? "paperclip.runner.codex-provider-state.v1" : ACPX_PROVIDER_STATE_SCHEMA) ||
+        snapshot.provider.schema !== (execution.provider.kind === "codex" ? "pilibala.runner.codex-provider-state.v1" : ACPX_PROVIDER_STATE_SCHEMA) ||
         !["turn_active", "prepared", "suspended"].includes(String(snapshot.provider.lifecycle)) ||
         snapshot.provider.startupAttempt != null) return null;
     const pending = JSON.stringify([snapshot.runner.outbox, snapshot.provider.pendingEvents, snapshot.provider.queuedEvents]);
@@ -2748,7 +2748,7 @@ export async function verifyStoppedNativeSessionForContinuation(
     const unchanged = () => idle() && cleanupProcessAbsent(stopped.processPid) &&
       [...providerPids].every(cleanupProcessAbsent) && cleanupStateSnapshot(root, providerFile).fingerprint === snapshot.fingerprint;
     return {
-      evidence: { schema: "paperclip.stopped_native_conversation.v1", runId: run.id,
+      evidence: { schema: "pilibala.stopped_native_conversation.v1", runId: run.id,
         nativeSessionId: run.nativeSessionId, runnerInstanceId: run.runnerInstanceId,
         processPid: stopped.processPid, providerPids: [...providerPids], stateFingerprint: snapshot.fingerprint },
       retire: () => {
@@ -2830,7 +2830,7 @@ export async function verifyStoppedNativeSessionForReplacement(
     for (const event of events.filter(event => event.eventType === "semantic_tool.input")) {
       const semantic = record(record(event.payload).semantic_tool);
       const correlation = record(semantic.correlation);
-      if (!bound(event) || semantic.operationId !== "paperclip_finish" || semantic.phase !== "input" ||
+      if (!bound(event) || semantic.operationId !== "pilibala_finish" || semantic.phase !== "input" ||
           typeof semantic.callId !== "string" || !validatePrpStructuredRunResult(semantic.input).ok ||
           correlation.runId !== run.id || correlation.normalizedSessionId !== run.nativeSessionId ||
           correlation.turnId !== identity.turnId || correlation.itemId !== identity.itemId ||
@@ -2868,7 +2868,7 @@ export async function verifyStoppedNativeSessionForReplacement(
     const rows = bytes.toString("utf8").trimEnd().split("\n").map(line => JSON.parse(line));
     if (!stoppedCodexTurnIsTextOnly({ rows, threadId: provider.providerSessionId, turnId, cwd: execution.workspace.cwd ?? "", completedTaskControlCalls })) return null;
     const rolloutSha256 = nativeSha256(bytes.toString("utf8"));
-    const evidence = { schema: "paperclip.stopped_text_turn.v1", runId: run.id, nativeSessionId: run.nativeSessionId,
+    const evidence = { schema: "pilibala.stopped_text_turn.v1", runId: run.id, nativeSessionId: run.nativeSessionId,
       runnerInstanceId: run.runnerInstanceId, processPid: stopped.processPid, providerPid: provider.processId,
       providerSessionId: provider.providerSessionId, providerTurnId: turnId,
       stateFingerprint: snapshot.fingerprint, rolloutSha256,
@@ -3688,7 +3688,7 @@ export async function reconcileRetainedNativeSessionCleanup(
     writeFileSync(
       resolve(copy, CLEANUP_ACTIVATION_FILE),
       JSON.stringify({
-        schema: "paperclip.native_cleanup_activation.v1",
+        schema: "pilibala.native_cleanup_activation.v1",
         companyId: owned.run.companyId,
         issueId: owned.run.nativeIssueId,
         runId: owned.run.id,
@@ -3926,7 +3926,7 @@ async function assertCleanupActivationCommitted(
     ),
   );
   if (
-    marker.schema !== "paperclip.native_cleanup_activation.v1" ||
+    marker.schema !== "pilibala.native_cleanup_activation.v1" ||
     marker.companyId !== execution.binding.companyId ||
     marker.issueId !== execution.binding.issueId ||
     typeof marker.runId !== "string" ||
@@ -4233,7 +4233,7 @@ export function nativePreProviderRetryAfterCleanupStateIsSafe(input: {
         ),
       );
       if (
-        marker.schema !== "paperclip.native_cleanup_activation.v1" ||
+        marker.schema !== "pilibala.native_cleanup_activation.v1" ||
         marker.companyId !== input.companyId ||
         marker.issueId !== input.issueId ||
         marker.runId !== input.retiredRunId ||
@@ -4350,8 +4350,8 @@ function hasRetainedWarmTransitionEvidence(root: string): boolean {
       if (
         Object.prototype.hasOwnProperty.call(state, "warmTransition") ||
         state.schema ===
-          "paperclip.runner.durable.control-plane-state.warm-transition.v1" ||
-        state.schema === "paperclip.runner.durable.state.warm-transition.v1"
+          "pilibala.runner.durable.control-plane-state.warm-transition.v1" ||
+        state.schema === "pilibala.runner.durable.state.warm-transition.v1"
       )
         return true;
     } catch {
@@ -4430,7 +4430,7 @@ async function verifyWarmTransitionRestart(input: {
     return deny();
   const root = scopedRunnerdStateRoot(input.execution);
   const snapshot = readWarmTransitionSnapshot(root);
-  const artifact = readRunnerdArtifactBinding(resolvePaperclipRunnerBinary());
+  const artifact = readRunnerdArtifactBinding(resolvePilibalaRunnerBinary());
   const controller = await currentNativeControllerIdentity();
   const binding = input.execution.binding;
   let finalAuthorityCheck: (() => boolean) | undefined;
@@ -4732,7 +4732,7 @@ async function verifyWarmTransitionRestart(input: {
       )
         return false;
       const selected = readRunnerdArtifactBinding(
-        resolvePaperclipRunnerBinary(),
+        resolvePilibalaRunnerBinary(),
       );
       if (
         selected.version !== artifact.version ||
@@ -5081,7 +5081,7 @@ async function recoverQuiescentRunnerdState(input: {
           nativeSessionScopeKey(input.execution) ||
         nativeSessionConfigDigest(previous) !==
           nativeSessionConfigDigest(input.execution) ||
-        record(record(prior.contextSnapshot).paperclipEnvironment).driver !==
+        record(record(prior.contextSnapshot).pilibalaEnvironment).driver !==
           "local" ||
         checkpointIdentity.runId !== identity.runId ||
         checkpointIdentity.sessionId !== identity.normalizedSessionId ||
@@ -5201,7 +5201,7 @@ async function recoverQuiescentRunnerdState(input: {
   renameSync(temporary, statePath);
   await input.onLog?.(
     "stdout",
-    `[paperclip-runner] Automatically recovered settled session from run ${candidate.runId}; preserving the existing provider thread.\n`,
+    `[pilibala-runner] Automatically recovered settled session from run ${candidate.runId}; preserving the existing provider thread.\n`,
   );
 }
 
@@ -5474,7 +5474,7 @@ export interface NativeHarnessPersistenceProfile {
 }
 
 export interface NativeHarnessBackupManifest {
-  schema: "paperclip.native-harness-backup.v1";
+  schema: "pilibala.native-harness-backup.v1";
   normalizedSessionId: string;
   runnerInstanceId: string;
   providerKind: NativeProviderKind;
@@ -5637,7 +5637,7 @@ export function providerSessionIdentityFromDurableProviderState(input: {
         identity.permissionMode !== input.execution.provider.permissionMode ||
         !acpxRecoveryModeMatches(input.execution.provider, descriptor.mode, identity.mode) ||
         !acpxRecoveryPiThinkingMatches(input.execution.provider, descriptor.piThinkingLevel, identity.piThinkingLevel) ||
-        !["approve-all", "approve-paperclip", "approve-reads", "deny-all"].includes(
+        !["approve-all", "approve-pilibala", "approve-reads", "deny-all"].includes(
           String(identity.permissionMode),
         ) ||
         !Array.isArray(identity.providerLifetimeFenceCandidates) ||
@@ -5900,7 +5900,7 @@ function compatibleNativeHarnessBackupManifests(input: {
       continue;
     }
     if (
-      manifest.schema !== "paperclip.native-harness-backup.v1" ||
+      manifest.schema !== "pilibala.native-harness-backup.v1" ||
       manifest.normalizedSessionId !== nativeSessionKey(input.execution) ||
       manifest.runnerInstanceId !== input.runnerInstanceId ||
       manifest.providerKind !== profile.providerKind ||
@@ -5939,7 +5939,7 @@ export function buildNativeHarnessBackupManifest(input: {
     return { name: directory.name, ...digestBackupDirectory(path) };
   });
   return {
-    schema: "paperclip.native-harness-backup.v1",
+    schema: "pilibala.native-harness-backup.v1",
     normalizedSessionId: nativeSessionKey(input.execution),
     runnerInstanceId: input.runnerInstanceId,
     providerKind: profile.providerKind,
@@ -5994,9 +5994,9 @@ export function verifyNativeHarnessBackup(input: {
 
 function nativeSessionCheckpointDirectory(): string {
   const directory = resolve(
-    resolvePaperclipInstanceRoot(),
+    resolvePilibalaInstanceRoot(),
     "runtime",
-    "paperclip-runner",
+    "pilibala-runner",
     "sessions",
   );
   mkdirSync(directory, { recursive: true, mode: 0o700 });
@@ -6046,7 +6046,7 @@ function persistWarmNativeCheckpoint(
   writeFileSync(
     temporary,
     JSON.stringify({
-      schema: "paperclip.native-session-supervisor.v1",
+      schema: "pilibala.native-session-supervisor.v1",
       configDigest,
       processConfigDigest,
       updatedAt: new Date().toISOString(),
@@ -6058,13 +6058,13 @@ function persistWarmNativeCheckpoint(
   chmodSync(path, 0o600);
 }
 
-function warmNativeProcessConfigDigest(input: Parameters<typeof executePaperclipNativeSession>[0]): string | undefined {
-  if (input.managedGitHub || input.runnerEnvironment?.PAPERCLIP_GITHUB_BROKER_TOKEN || input.instructionWorkingCopy) return undefined;
+function warmNativeProcessConfigDigest(input: Parameters<typeof executePilibalaNativeSession>[0]): string | undefined {
+  if (input.managedGitHub || input.runnerEnvironment?.PILIBALA_GITHUB_BROKER_TOKEN || input.instructionWorkingCopy) return undefined;
   return nativeSha256({
     environment: configuredEnvironment(input.runnerEnvironment),
     managedAiCredentialIdentity: input.managedAiCredentialIdentity ?? null,
-    githubAuthenticationMode: input.runnerEnvironment?.PAPERCLIP_GITHUB_AUTH_MODE ?? null,
-    networkAccess: input.runnerEnvironment?.PAPERCLIP_RUNNER_NETWORK_ACCESS === "enabled",
+    githubAuthenticationMode: input.runnerEnvironment?.PILIBALA_GITHUB_AUTH_MODE ?? null,
+    networkAccess: input.runnerEnvironment?.PILIBALA_RUNNER_NETWORK_ACCESS === "enabled",
   });
 }
 
@@ -6092,7 +6092,7 @@ function loadWarmNativeCheckpoint(
     snapshot?: PersistedNativeSession;
   };
   if (
-    envelope.schema !== "paperclip.native-session-supervisor.v1" ||
+    envelope.schema !== "pilibala.native-session-supervisor.v1" ||
     !envelope.snapshot
   ) {
     throw new Error("native_session_supervisor_checkpoint_mismatch");
@@ -6400,7 +6400,7 @@ export function nativeSessionFailureSourceCode(
 }
 
 const NATIVE_CLEANUP_OPERATOR_RECOVERY_MESSAGE =
-  "Send a new message to continue after Paperclip verifies that the previous provider and its tools have stopped. If cleanup cannot be verified, inspect the run and its environment. Clearing a task session does not resolve this quarantine. Automatic retries are stopped.";
+  "Send a new message to continue after Pilibala verifies that the previous provider and its tools have stopped. If cleanup cannot be verified, inspect the run and its environment. Clearing a task session does not resolve this quarantine. Automatic retries are stopped.";
 
 const PROVIDER_DURABLE_EVENT_TYPES = new Set([
   "harness.ready",
@@ -6979,7 +6979,7 @@ export async function cancelNativeSession(
           : null;
       if (existingIntentId) {
         const matchingIntent =
-          existing.schema === "paperclip.native-cancellation.v1" &&
+          existing.schema === "pilibala.native-cancellation.v1" &&
           existing.companyId === cancellationContext.companyId &&
           existing.runId === runId &&
           existing.issueId === cancellationContext.issueId &&
@@ -7041,7 +7041,7 @@ export async function cancelNativeSession(
           resultJson: {
             ...resultJson,
             nativeCancellation: {
-              schema: "paperclip.native-cancellation.v1",
+              schema: "pilibala.native-cancellation.v1",
               intentId,
               intentAuditId,
               companyId: cancellationContext.companyId,
@@ -7242,7 +7242,7 @@ export async function cancelNativeSession(
         const resultJson = record(lockedRun.resultJson);
         const intent = record(resultJson.nativeCancellation);
         const matchingIntent =
-          intent.schema === "paperclip.native-cancellation.v1" &&
+          intent.schema === "pilibala.native-cancellation.v1" &&
           intent.intentId === cancellationIntentId &&
           intent.intentAuditId === auditId &&
           intent.companyId === cancellationContext.companyId &&
@@ -7470,7 +7470,7 @@ function startNativeSessionExecutionLeaseRenewal(input: {
   };
 }
 
-export async function executePaperclipNativeSession(input: {
+export async function executePilibalaNativeSession(input: {
   getFreshSessionHandoff?: () => Promise<string | null>;
   /** Retire a retained transport so recovery can replace provider tool declarations. */
   refreshTools?: boolean;
@@ -7491,7 +7491,7 @@ export async function executePaperclipNativeSession(input: {
   /** Test seam at the provider boundary; production uses a qualified package backend. */
   backend?: NativeSessionBackend;
   useRunnerd?: boolean;
-  /** Paperclip adapter identity used to scope the durable goal projection. */
+  /** Pilibala adapter identity used to scope the durable goal projection. */
   adapterType?: string;
   /** Internal, run-owned file inspection lifetime; never supplied by tool arguments. */
   chatAttachmentReadScope?: NativeChatAttachmentReadScope;
@@ -7540,7 +7540,7 @@ export async function executePaperclipNativeSession(input: {
     },
   ) => Promise<unknown>;
 }): Promise<AdapterExecutionResult> {
-  const agentKeyId = input.runnerEnvironment?.PAPERCLIP_AGENT_KEY_ID;
+  const agentKeyId = input.runnerEnvironment?.PILIBALA_AGENT_KEY_ID;
   if (agentKeyId) {
     // Recovered pre-upgrade inputs also need the current public identity marker
     // before deciding whether an already-running provider can be reused.
@@ -7583,13 +7583,13 @@ export async function executePaperclipNativeSession(input: {
     await retireSupersededWarmNativeSessions(
       ownerScope, nativeSessionScopeKey(input.execution),
     );
-    if ((input.execution.schema === "paperclip.native-execution-input.v6" || input.execution.schema === "paperclip.native-execution-input.v8") && isCloudManagedInstance()
+    if ((input.execution.schema === "pilibala.native-execution-input.v6" || input.execution.schema === "pilibala.native-execution-input.v8") && isCloudManagedInstance()
         && (!input.useRunnerd || input.runnerExecutionTarget?.kind !== "remote"
           || input.runnerExecutionTarget.transport !== "sandbox")) {
       throw new Error(input.execution.provider.kind === "muse" ? "muse_cloud_requires_managed_runner" : "dot_cloud_requires_managed_runner");
     }
     if (!input.useRunnerd) {
-      return await executePaperclipNativeSessionWithinScope(input);
+      return await executePilibalaNativeSessionWithinScope(input);
     }
     // The session scope is unaffected by appending server-staged attachment
     // descriptors. Claim it before any workspace scrub/write so a duplicate
@@ -7608,8 +7608,8 @@ export async function executePaperclipNativeSession(input: {
     // a later sweep from closing an owner this turn is about to acquire.
     await closingWarmNativeSessions.get(sessionScopeId);
 
-    if (input.execution.schema === "paperclip.native-execution-input.v6" || input.execution.schema === "paperclip.native-execution-input.v8") {
-      return await executePaperclipNativeSessionWithinScope(input);
+    if (input.execution.schema === "pilibala.native-execution-input.v6" || input.execution.schema === "pilibala.native-execution-input.v8") {
+      return await executePilibalaNativeSessionWithinScope(input);
     }
     const workspaceRoot = input.execution.workspace.cwd;
     if (workspaceRoot === null) throw new Error("native_workspace_required");
@@ -7639,7 +7639,7 @@ export async function executePaperclipNativeSession(input: {
         attachmentStage.cleanup(),
       ]);
       if (cleanupResults.some((result) => result.status === "rejected")) {
-        throw new Error("paperclip_runner_attachment_staging_cleanup_failed");
+        throw new Error("pilibala_runner_attachment_staging_cleanup_failed");
       }
     };
     const stagedPrompt = renderNativeRunnerStagedAttachmentPrompt(
@@ -7657,7 +7657,7 @@ export async function executePaperclipNativeSession(input: {
         }),
       };
     }
-    return await executePaperclipNativeSessionWithinScope(preparedInput);
+    return await executePilibalaNativeSessionWithinScope(preparedInput);
   } catch (error) {
     executionFailure = error;
     const remoteRunnerRecovery = readRemoteRunnerRecoveryError(error);
@@ -7711,10 +7711,10 @@ export async function executePaperclipNativeSession(input: {
   }
 }
 
-async function executePaperclipNativeSessionWithinScope(
-  input: Parameters<typeof executePaperclipNativeSession>[0],
+async function executePilibalaNativeSessionWithinScope(
+  input: Parameters<typeof executePilibalaNativeSession>[0],
 ): Promise<AdapterExecutionResult> {
-  const identityRedactor = createAgentIdentityRedactor(input.runnerEnvironment?.PAPERCLIP_AGENT_PRIVATE_KEY);
+  const identityRedactor = createAgentIdentityRedactor(input.runnerEnvironment?.PILIBALA_AGENT_PRIVATE_KEY);
   const redactIdentityText = (text: string) => redactSensitiveText(
     identityRedactor.chunk("diagnostic", text) + identityRedactor.finish("diagnostic"),
   );
@@ -7724,10 +7724,10 @@ async function executePaperclipNativeSessionWithinScope(
     input.execution.provider.kind !== "claude_managed" &&
     input.execution.provider.kind !== "aws_agentcore" &&
     input.execution.provider.kind !== "acpx" &&
-    input.execution.schema !== "paperclip.native-execution-input.v6" &&
-    input.execution.schema !== "paperclip.native-execution-input.v8"
+    input.execution.schema !== "pilibala.native-execution-input.v6" &&
+    input.execution.schema !== "pilibala.native-execution-input.v8"
   ) {
-    throw new Error("paperclip_runner_provider_unsupported");
+    throw new Error("pilibala_runner_provider_unsupported");
   }
   if (
     input.execution.provider.kind === "acpx" &&
@@ -7735,7 +7735,7 @@ async function executePaperclipNativeSessionWithinScope(
     !resolveAcpxQualification(input.execution.provider, process.env)
   ) {
     throw new Error(
-      "paperclip_runner_provider_unsupported: ACPX candidate requires exact host qualification authorization",
+      "pilibala_runner_provider_unsupported: ACPX candidate requires exact host qualification authorization",
     );
   }
   const timeController = createRunPreparationTiming(input.execution.binding.runId, "native.controller");
@@ -7930,7 +7930,7 @@ async function executePaperclipNativeSessionWithinScope(
           ) {
             const intentMatchesBinding =
               cancellationIntent.schema ===
-                "paperclip.native-cancellation.v1" &&
+                "pilibala.native-cancellation.v1" &&
               cancellationIntent.companyId ===
                 input.execution.binding.companyId &&
               cancellationIntent.runId === input.execution.binding.runId &&
@@ -8101,7 +8101,7 @@ async function executePaperclipNativeSessionWithinScope(
     if (input.onLog)
       await input.onLog(
         "stdout",
-        `${JSON.stringify({ type: "paperclip.plan.synchronization", synchronization })}\n`,
+        `${JSON.stringify({ type: "pilibala.plan.synchronization", synchronization })}\n`,
       );
   };
   let nativeSessionExecuteStartedAtMs = Date.now();
@@ -8128,7 +8128,7 @@ async function executePaperclipNativeSessionWithinScope(
         agentId: input.execution.binding.agentId,
         adapterType:
           input.adapterType ??
-          (input.useRunnerd ? "paperclip_runner" : "codex_local"),
+          (input.useRunnerd ? "pilibala_runner" : "codex_local"),
       },
       {
         eventType: event.eventType,
@@ -8219,7 +8219,7 @@ async function executePaperclipNativeSessionWithinScope(
       throw new NativeControllerDetachedForRestartError();
     }
   };
-  const controlPlane = new PaperclipControlPlanePort(
+  const controlPlane = new PilibalaControlPlanePort(
     input.db,
     {
       companyId: input.execution.binding.companyId,
@@ -8233,7 +8233,7 @@ async function executePaperclipNativeSessionWithinScope(
       controlPlaneSourceInstanceId: controlPlaneInstanceId,
     },
     {
-      privateKeyPem: input.runnerEnvironment?.PAPERCLIP_AGENT_PRIVATE_KEY,
+      privateKeyPem: input.runnerEnvironment?.PILIBALA_AGENT_PRIVATE_KEY,
       assertControllerActive,
       onCommittedEvent: async (event) => {
         await observeAccountingEvent(event);
@@ -8367,7 +8367,7 @@ async function executePaperclipNativeSessionWithinScope(
         if (input.onLog)
           await input.onLog(
             "stdout",
-            `${JSON.stringify({ type: "paperclip.prp.event", event })}\n`,
+            `${JSON.stringify({ type: "pilibala.prp.event", event })}\n`,
           );
         if (
           input.onEvent &&
@@ -8399,7 +8399,7 @@ async function executePaperclipNativeSessionWithinScope(
           await input.onLog(
             "stdout",
             `${JSON.stringify({
-              type: "paperclip.runtime_input.metric",
+              type: "pilibala.runtime_input.metric",
               ...inputMetric,
             })}\n`,
           );
@@ -8415,7 +8415,7 @@ async function executePaperclipNativeSessionWithinScope(
             await input.onLog(
               "stdout",
               `${JSON.stringify({
-                type: "paperclip.runtime_input.metric",
+                type: "pilibala.runtime_input.metric",
                 outcome:
                   record(event.payload).reason === "durable_handoff"
                     ? "durable_handoff_materialized"
@@ -8521,7 +8521,7 @@ async function executePaperclipNativeSessionWithinScope(
       // Old run-scoped environments still require process replacement. A
       // session-owned broker can change run authority without replacing it.
       const hasBrokerCapability = Boolean(
-        !input.managedGitHub && input.runnerEnvironment?.PAPERCLIP_GITHUB_BROKER_TOKEN,
+        !input.managedGitHub && input.runnerEnvironment?.PILIBALA_GITHUB_BROKER_TOKEN,
       );
       const credentialRunChanged =
         Boolean(entry.credentialRunId) !== hasBrokerCapability ||
@@ -8539,9 +8539,9 @@ async function executePaperclipNativeSessionWithinScope(
         entry.githubAccess?.ready === false ||
         (entry.githubAccess !== undefined && entry.githubAccess.duplexRequested !== adapterExecutionTargetEnablesSandboxDuplexBridge(input.runnerExecutionTarget)) ||
         entry.githubAuthenticationMode !==
-          input.runnerEnvironment?.PAPERCLIP_GITHUB_AUTH_MODE ||
+          input.runnerEnvironment?.PILIBALA_GITHUB_AUTH_MODE ||
         entry.networkAccess !==
-          (input.runnerEnvironment?.PAPERCLIP_RUNNER_NETWORK_ACCESS ===
+          (input.runnerEnvironment?.PILIBALA_RUNNER_NETWORK_ACCESS ===
             "enabled")
       ) {
         const preparedCopy = entry.instructionPreparationRunId === input.execution.binding.runId;
@@ -8629,7 +8629,7 @@ async function executePaperclipNativeSessionWithinScope(
           activeIssueInteractionCondition({ runId: input.execution.binding.runId }),
           // Live provider questions resume their current turn; only durable
           // wake-based cards park it. A timeout creates a separate fallback.
-          sql`not (${issueThreadInteractions.kind} = 'ask_user_questions' and ${issueThreadInteractions.continuationPolicy} = 'none' and coalesce(${issueThreadInteractions.idempotencyKey}, '') like 'paperclip-runner-question:%')`,
+          sql`not (${issueThreadInteractions.kind} = 'ask_user_questions' and ${issueThreadInteractions.continuationPolicy} = 'none' and coalesce(${issueThreadInteractions.idempotencyKey}, '') like 'pilibala-runner-question:%')`,
         ),
       )
       .orderBy(
@@ -8676,7 +8676,7 @@ async function executePaperclipNativeSessionWithinScope(
       : null;
   }
   const runnerExecution: NativeExecutionInput =
-    input.execution.schema !== "paperclip.native-execution-input.v6" && input.execution.schema !== "paperclip.native-execution-input.v8" && input.useRunnerd && input.runnerExecutionTarget?.kind === "remote"
+    input.execution.schema !== "pilibala.native-execution-input.v6" && input.execution.schema !== "pilibala.native-execution-input.v8" && input.useRunnerd && input.runnerExecutionTarget?.kind === "remote"
       ? {
           ...input.execution,
           workspace: {
@@ -8696,7 +8696,7 @@ async function executePaperclipNativeSessionWithinScope(
   });
   try {
     const prepareRunnerEnvironment = async () => {
-      if (input.managedGitHub && input.execution.schema !== "paperclip.native-execution-input.v6" && input.execution.schema !== "paperclip.native-execution-input.v8") {
+      if (input.managedGitHub && input.execution.schema !== "pilibala.native-execution-input.v6" && input.execution.schema !== "pilibala.native-execution-input.v8") {
         if (!input.execution.workspace.cwd) throw new Error("native_workspace_required");
         githubAccess ??= await timeController("github_access", () => createNativeGitHubAccess({
           scope: input.execution.binding,
@@ -8713,8 +8713,8 @@ async function executePaperclipNativeSessionWithinScope(
     };
     const overlapGitHubPreparation = input.managedGitHub && input.useRunnerd && input.backend === undefined
       && input.runnerExecutionTarget?.kind === "remote" && input.execution.provider.kind === "codex"
-      && input.execution.schema !== "paperclip.native-execution-input.v6"
-      && input.execution.schema !== "paperclip.native-execution-input.v8";
+      && input.execution.schema !== "pilibala.native-execution-input.v6"
+      && input.execution.schema !== "pilibala.native-execution-input.v8";
     if (!overlapGitHubPreparation) await prepareRunnerEnvironment();
     const expectedCurrentWakeComments = await timeController("wake_binding", () => resolveCurrentWakeCommentsBinding(
       input.db,
@@ -8805,15 +8805,15 @@ async function executePaperclipNativeSessionWithinScope(
                 opencodeEnvironment: resolveNativeProviderEnvironment(input.execution.provider, input.runnerEnvironment),
                 acpxEnvironment: resolveNativeProviderEnvironment(input.execution.provider, input.runnerEnvironment),
                 opencodeRuntimeDirectory: resolve(
-                  resolvePaperclipInstanceRoot(),
+                  resolvePilibalaInstanceRoot(),
                   "runtime",
-                  "paperclip-runner",
+                  "pilibala-runner",
                   "opencode",
                 ),
                 acpxRuntimeDirectory: resolve(
-                  resolvePaperclipInstanceRoot(),
+                  resolvePilibalaInstanceRoot(),
                   "runtime",
-                  "paperclip-runner",
+                  "pilibala-runner",
                   "acpx",
                 ),
               }),
@@ -8892,13 +8892,13 @@ async function executePaperclipNativeSessionWithinScope(
               ).slice(-4_096);
               await input.onLog?.(
                 "stderr",
-                `[paperclip-runner] post-completion ${stage} enrichment failed: ${detail}\n`,
+                `[pilibala-runner] post-completion ${stage} enrichment failed: ${detail}\n`,
               );
             },
             onSessionQuarantined: async (reason) => {
               await input.onLog?.(
                 "stderr",
-                `[paperclip-runner] warm native session quarantined: ${redactIdentityText(reason).slice(-1_000)}\n`,
+                `[pilibala-runner] warm native session quarantined: ${redactIdentityText(reason).slice(-1_000)}\n`,
               );
             },
             onContinuityBreak: async (continuity) => {
@@ -8922,7 +8922,7 @@ async function executePaperclipNativeSessionWithinScope(
               });
               await input.onLog?.(
                 "stderr",
-                `[paperclip-runner] provider session continuity break: exact resume failed (${continuity.reason}); old driver session=${continuity.previousDriverSessionId}, old provider session=${continuity.previousProviderSessionId ?? "unavailable"}, replacement driver session=${continuity.replacementDriverSessionId}, replacement provider session=${continuity.replacementProviderSessionId ?? "unavailable"}\n`,
+                `[pilibala-runner] provider session continuity break: exact resume failed (${continuity.reason}); old driver session=${continuity.previousDriverSessionId}, old provider session=${continuity.previousProviderSessionId ?? "unavailable"}, replacement driver session=${continuity.replacementDriverSessionId}, replacement provider session=${continuity.replacementProviderSessionId ?? "unavailable"}\n`,
               );
             },
             onSession: async (session) => {
@@ -8967,13 +8967,13 @@ async function executePaperclipNativeSessionWithinScope(
                     agentId: input.execution.binding.agentId,
                     managedAiCredentialIdentity: input.managedAiCredentialIdentity,
                     githubAuthenticationMode:
-                      input.runnerEnvironment?.PAPERCLIP_GITHUB_AUTH_MODE,
+                      input.runnerEnvironment?.PILIBALA_GITHUB_AUTH_MODE,
                     networkAccess:
                       input.runnerEnvironment
-                        ?.PAPERCLIP_RUNNER_NETWORK_ACCESS === "enabled",
+                        ?.PILIBALA_RUNNER_NETWORK_ACCESS === "enabled",
                     githubAccess,
                     credentialRunId: !input.managedGitHub && input.runnerEnvironment
-                      ?.PAPERCLIP_GITHUB_BROKER_TOKEN
+                      ?.PILIBALA_GITHUB_BROKER_TOKEN
                       ? input.execution.binding.runId
                       : undefined,
                     session,
@@ -9092,7 +9092,7 @@ async function executePaperclipNativeSessionWithinScope(
       if (warmSessionId !== null && lifecyclePolicy.mode === "warm") {
         await timeController("warm_release", () => releaseWarmNativeSession(warmSessionId, warmSessionOwnerToken, lifecyclePolicy.idleTimeoutMs, true));
       }
-      await input.onLog?.("stderr", "[paperclip-runner] managed credential refresh failed; provider session retired.\n");
+      await input.onLog?.("stderr", "[pilibala-runner] managed credential refresh failed; provider session retired.\n");
     }
     if (native.terminal.runTerminalState === "succeeded") {
       // A truncated, verified external-chat wake cannot settle from the
@@ -9179,7 +9179,7 @@ async function executePaperclipNativeSessionWithinScope(
       activeNativeSessions.delete(input.execution.binding.runId);
       clearSteeringDeliveries(input.execution.binding.runId);
       clearNativeRuntimeRequestResolutions(input.execution.binding.runId);
-      // Stop before paperclip_finish is normal. Bounded provider teardown has
+      // Stop before pilibala_finish is normal. Bounded provider teardown has
       // finished; a missing result must not overwrite cancellation or trigger
       // another turn to perform completion bookkeeping.
       const stoppedBeforeFirstTurn = error instanceof Error && error.message === "native_session_cancelled";
@@ -9196,7 +9196,7 @@ async function executePaperclipNativeSessionWithinScope(
         // recording its acknowledgement. Preserve that audited, exactly bound
         // cancellation instead of racing it with a generic provider failure.
         const pendingStartupStop = stoppedBeforeFirstTurn &&
-          stopIntent.schema === "paperclip.native-cancellation.v1" &&
+          stopIntent.schema === "pilibala.native-cancellation.v1" &&
           stopIntent.companyId === input.execution.binding.companyId &&
           stopIntent.runId === input.execution.binding.runId &&
           stopIntent.issueId === input.execution.binding.issueId &&
@@ -9554,7 +9554,7 @@ async function executePaperclipNativeSessionWithinScope(
         await attemptFailureStep(() =>
           input.onLog?.(
             "stderr",
-            `[paperclip-runner] native session execution failed: ${executionFailureMessage}\n`,
+            `[pilibala-runner] native session execution failed: ${executionFailureMessage}\n`,
           ),
         );
         if (runnerSessionStartupScope) {
@@ -9621,7 +9621,7 @@ async function executePaperclipNativeSessionWithinScope(
         ...(native.turnId ? { turnId: native.turnId } : {}),
         eventType: "plan.updated",
         payload: {
-          schema: "paperclip.plan.updated.v1",
+          schema: "pilibala.plan.updated.v1",
           planId: `semantic:${native.turnId ?? input.execution.binding.runId}`,
           revision: 1,
           complete: true,
@@ -9661,7 +9661,7 @@ async function executePaperclipNativeSessionWithinScope(
     .then((rows) => rows[0] ?? null));
   if (!released) throw new Error("native_session_lease_lost");
   const finalization: NativeFinalizationResult = {
-    schema: "paperclip.native-finalization.v1",
+    schema: "pilibala.native-finalization.v1",
     runtimeMode: "native",
     runId: input.execution.binding.runId,
     issueId: input.execution.binding.issueId,
@@ -9729,7 +9729,7 @@ async function executePaperclipNativeSessionWithinScope(
     resultJson: {
       nativeResult: native.result as unknown as Record<string, unknown>,
       nativeTerminal: native.terminal as unknown as Record<string, unknown>,
-      ...((input.execution.schema === "paperclip.native-execution-input.v6" || input.execution.schema === "paperclip.native-execution-input.v8") ? { providerAccounting: { usage: null, cost: null, externallyBilled: true }, externalStopConfirmed: false } : {}),
+      ...((input.execution.schema === "pilibala.native-execution-input.v6" || input.execution.schema === "pilibala.native-execution-input.v8") ? { providerAccounting: { usage: null, cost: null, externallyBilled: true }, externalStopConfirmed: false } : {}),
       ...(providerFailure ? { nativeProviderFailure: providerFailure.diagnostic } : {}),
       ...(unclassifiedTurnFailure ? { nativeTurnFailure: unclassifiedTurnFailure } : {}),
       ...(native.goalRolloverRequired ? { goalRolloverRequired: true } : {}),
@@ -9741,7 +9741,7 @@ async function executePaperclipNativeSessionWithinScope(
     ...resolveNativeBilling(input.execution.provider, input.runnerEnvironment, input.billingIdentity),
     model: input.execution.provider.model,
     usage: normalizeNativeUsage(native.usage, { inputIncludesCacheReads: input.execution.provider.kind === "codex" }),
-    costUsd: input.execution.schema !== "paperclip.native-execution-input.v6" && input.execution.schema !== "paperclip.native-execution-input.v8" && normalizeNativeUsage(native.usage, { inputIncludesCacheReads: input.execution.provider.kind === "codex" })
+    costUsd: input.execution.schema !== "pilibala.native-execution-input.v6" && input.execution.schema !== "pilibala.native-execution-input.v8" && normalizeNativeUsage(native.usage, { inputIncludesCacheReads: input.execution.provider.kind === "codex" })
       ? nativeUsageCostUsd(native.usage, input.execution.provider) ?? null : null,
     costUsdExact: typeof native.usage?.accountingCostUsdExact === "string" ? native.usage.accountingCostUsdExact : undefined,
     costStatus: nativeAccountingComplete && native.usage?.accountingCostIncomplete !== true
@@ -9992,11 +9992,11 @@ export function buildRemoteCodexLauncherCommand(
   return (
     `umask 077; mkdir -p ${quote(posix.dirname(targetPath))} && ` +
     `[ ! -d ${quote(targetPath)} ] && ` +
-    `paperclip_codex_launcher_tmp=$(mktemp ${quote(targetPath + ".tmp.XXXXXX")}) && ` +
-    `trap 'rm -f "$paperclip_codex_launcher_tmp"' 0 && ` +
-    `printf '%s' ${quote(launcher)} > "$paperclip_codex_launcher_tmp" && ` +
-    `chmod 700 "$paperclip_codex_launcher_tmp" && ` +
-    `mv -f "$paperclip_codex_launcher_tmp" ${quote(targetPath)}`
+    `pilibala_codex_launcher_tmp=$(mktemp ${quote(targetPath + ".tmp.XXXXXX")}) && ` +
+    `trap 'rm -f "$pilibala_codex_launcher_tmp"' 0 && ` +
+    `printf '%s' ${quote(launcher)} > "$pilibala_codex_launcher_tmp" && ` +
+    `chmod 700 "$pilibala_codex_launcher_tmp" && ` +
+    `mv -f "$pilibala_codex_launcher_tmp" ${quote(targetPath)}`
   );
 }
 
@@ -10007,10 +10007,10 @@ export function mayUsePreinstalledRunnerArtifact(
 }
 
 const RUNNERD_BUILD_METADATA_SCHEMA =
-  "paperclip-runner/runnerd-build-metadata/v1";
+  "pilibala-runner/runnerd-build-metadata/v1";
 const RUNNERD_BINARY_CONTRACT_VERSION = 2;
 
-const REMOTE_PROVIDER_PACK_SCHEMA = "paperclip-runner/remote-provider-pack/v1";
+const REMOTE_PROVIDER_PACK_SCHEMA = "pilibala-runner/remote-provider-pack/v1";
 const REMOTE_PROVIDER_PACK_PINS = {
   nodeMinimum: "24.11.0",
   codex: QUALIFIED_ACPX_PROFILES.codex.agentRuntimeVersion,
@@ -10288,8 +10288,8 @@ export function assertRemoteRunnerBuildMetadata(
   const metadata = value as Record<string, unknown>;
   if (
     metadata.schema !== RUNNERD_BUILD_METADATA_SCHEMA ||
-    metadata.binaryName !== "paperclip-runnerd" ||
-    metadata.packageName !== "@paperclipai/paperclip-runner" ||
+    metadata.binaryName !== "pilibala-runnerd" ||
+    metadata.packageName !== "@pilibalaai/pilibala-runner" ||
     metadata.binaryContractVersion !== RUNNERD_BINARY_CONTRACT_VERSION
   ) {
     throw new Error("runner_remote_artifact_contract_incompatible");
@@ -10299,7 +10299,7 @@ export function assertRemoteRunnerBuildMetadata(
   // Reject them before launch so preparation stages the bundled runner instead.
   if (requiredExternalProvider && (!Array.isArray(metadata.externalProviderCapabilities)
       || !metadata.externalProviderCapabilities.includes(requiredExternalProvider))) {
-    throw new Error(requiredExternalProvider === "muse_external_v1" ? "runner_remote_muse_capability_missing: install the current Paperclip Runner artifact" : "runner_remote_dot_capability_missing: install the current Paperclip Runner artifact");
+    throw new Error(requiredExternalProvider === "muse_external_v1" ? "runner_remote_muse_capability_missing: install the current Pilibala Runner artifact" : "runner_remote_dot_capability_missing: install the current Pilibala Runner artifact");
   }
   const sessionCapabilities = Array.isArray(metadata.durableSessionCapabilities)
     ? metadata.durableSessionCapabilities
@@ -10394,7 +10394,7 @@ export async function stageRemoteRunnerDirectory(input: {
     let sourcePath = input.sourcePath;
     try {
       if (excludeArgs.length > 0) {
-        stagingRoot = mkdtempSync(join(tmpdir(), "paperclip-runner-restore-"));
+        stagingRoot = mkdtempSync(join(tmpdir(), "pilibala-runner-restore-"));
         const archive = execFileSync(
           "tar",
           [...excludeArgs, "-czf", "-", "-C", input.sourcePath, "."],
@@ -10589,7 +10589,7 @@ export async function syncRemoteRunnerDirectoryOut(input: {
       const checkpointId = randomUUID();
       snapshotPath = posix.join(
         posix.dirname(input.sourcePath),
-        `.paperclip-checkpoint-${checkpointId}`,
+        `.pilibala-checkpoint-${checkpointId}`,
       );
       const archivePath = `${snapshotPath}.tar`;
       const escapedSource = input.sourcePath.replaceAll("'", "'\\''");
@@ -10654,11 +10654,11 @@ export async function syncRemoteRunnerDirectoryOut(input: {
   const archive = Buffer.from(result.stdout.replace(/\s+/g, ""), "base64");
   assertSafeRemoteCheckpointArchive(archive);
   const parent = resolve(input.targetPath, "..");
-  const stagingRoot = mkdtempSync(join(parent, ".paperclip-checkpoint-"));
+  const stagingRoot = mkdtempSync(join(parent, ".pilibala-checkpoint-"));
   const stagedTarget = join(stagingRoot, "payload");
   const previousTarget = join(
     parent,
-    `.paperclip-checkpoint-previous-${randomUUID()}`,
+    `.pilibala-checkpoint-previous-${randomUUID()}`,
   );
   let previousMoved = false;
   let replacementInstalled = false;
@@ -10844,8 +10844,8 @@ export async function verifyRemoteRunnerReattachment(input: {
   const probeDeadline = Date.now() + REMOTE_RUNNER_RECOVERY_PROBE_BUDGET_MS;
   const stateDirectory = posix.join(
     target.remoteCwd,
-    ".paperclip-runtime",
-    "paperclip-runner",
+    ".pilibala-runtime",
+    "pilibala-runner",
     "sessions",
     createHash("sha256").update(input.normalizedSessionId).digest("hex"),
     "runner",
@@ -10879,7 +10879,7 @@ export async function verifyRemoteRunnerReattachment(input: {
       args: [
         "-c",
         REMOTE_RECOVERY_MARKER_READ_SCRIPT,
-        "paperclip-runner-recovery-identity",
+        "pilibala-runner-recovery-identity",
         identityPath,
       ],
       bypassSession: true,
@@ -10910,7 +10910,7 @@ export async function verifyRemoteRunnerReattachment(input: {
           "-c",
           `${REMOTE_RECOVERY_PROCESS_CHECK_SCRIPT}; if ${REMOTE_RUNNER_PROCESS_FINGERPRINT_SCRIPT}; then :; else exit 46; fi; test "$process_fingerprint" = "$5" || exit 47` +
             (signal ? '; kill -"$6" "$pid"' : ""),
-          "paperclip-runner-recovery-check",
+          "pilibala-runner-recovery-check",
           identityPath,
           nonce,
           runnerInstanceId,
@@ -10951,7 +10951,7 @@ async function waitForRemoteRunnerProcessIdentity(input: {
         args: [
           "-c",
           'test -f "$1" && test ! -L "$1" && cat -- "$1"',
-          "paperclip-runner-process-identity",
+          "pilibala-runner-process-identity",
           input.identityPath,
         ],
         bypassSession: true,
@@ -10980,7 +10980,7 @@ async function cleanupRemoteRunnerAfterIdentityFailure(input: {
       args: [
         "-c",
         REMOTE_RUNNER_FAILED_IDENTITY_CLEANUP_SCRIPT,
-        "paperclip-runner-identity-failure-cleanup",
+        "pilibala-runner-identity-failure-cleanup",
         input.identityPath,
         input.nonce,
         input.runnerInstanceId,
@@ -11040,7 +11040,7 @@ export function createRemoteRunnerProcessLauncher(input: {
           args: [
             "-c",
             `${REMOTE_RUNNER_IDENTITY_CHECK_SCRIPT}; kill -${signal} "$expected_pid"`,
-            "paperclip-runner-signal",
+            "pilibala-runner-signal",
             input.processIdentityPath,
             identity.nonce,
             input.runnerInstanceId,
@@ -11099,7 +11099,7 @@ export function createRemoteRunnerProcessLauncher(input: {
       }
       // Do not keep runnerd as the foreground command of a provider RPC. Some
       // sandbox command/session transports impose a provider-side lifetime on
-      // that RPC even when Paperclip requests a longer timeout. Detach runnerd
+      // that RPC even when Pilibala requests a longer timeout. Detach runnerd
       // into its own session instead; its own bounded diagnostics directory and
       // durable PRP state remain the authorities, and the controller monitors
       // the exact persisted process identity below.
@@ -11107,8 +11107,8 @@ export function createRemoteRunnerProcessLauncher(input: {
         command: "sh",
         args: [
           "-c",
-          'set -eu; identity_path=$1; identity_nonce=$2; runner_instance_id=$3; child_script=$4; shift 4; umask 077; identity_dir=$(dirname -- "$identity_path"); mkdir -p -- "$identity_dir"; if command -v setsid >/dev/null 2>&1; then nohup setsid sh -c "$child_script" paperclip-runner-child "$identity_path" "$identity_nonce" "$runner_instance_id" "$@" </dev/null >/dev/null 2>&1 & else nohup sh -c "$child_script" paperclip-runner-child "$identity_path" "$identity_nonce" "$runner_instance_id" "$@" </dev/null >/dev/null 2>&1 & fi',
-          "paperclip-runner-launch",
+          'set -eu; identity_path=$1; identity_nonce=$2; runner_instance_id=$3; child_script=$4; shift 4; umask 077; identity_dir=$(dirname -- "$identity_path"); mkdir -p -- "$identity_dir"; if command -v setsid >/dev/null 2>&1; then nohup setsid sh -c "$child_script" pilibala-runner-child "$identity_path" "$identity_nonce" "$runner_instance_id" "$@" </dev/null >/dev/null 2>&1 & else nohup sh -c "$child_script" pilibala-runner-child "$identity_path" "$identity_nonce" "$runner_instance_id" "$@" </dev/null >/dev/null 2>&1 & fi',
+          "pilibala-runner-launch",
           input.processIdentityPath,
           identityNonce,
           input.runnerInstanceId,
@@ -11182,7 +11182,7 @@ export function createRemoteRunnerProcessLauncher(input: {
           args: [
             "-c",
             REMOTE_RUNNER_IDENTITY_CHECK_SCRIPT,
-            "paperclip-runner-monitor",
+            "pilibala-runner-monitor",
             input.processIdentityPath,
             identityNonce,
             input.runnerInstanceId,
@@ -11205,7 +11205,7 @@ export function createRemoteRunnerProcessLauncher(input: {
             args: [
               "-c",
               'set -eu; directory=$1; file="$directory/runnerd.stderr.log"; test -d "$directory" && test ! -L "$directory" && test -f "$file" && test ! -L "$file"; tail -c 65536 -- "$file"',
-              "paperclip-runner-diagnostics",
+              "pilibala-runner-diagnostics",
               input.diagnosticsDirectory,
             ],
             bypassSession: true,
@@ -11326,7 +11326,7 @@ export async function createRunnerdBackend(input: {
   initializingSessionToolAuthorities.add(sessionScopeId);
   try {
     let retainedTransition: VerifiedWarmTransitionBinding | undefined;
-    // executePaperclipNativeSession holds the full session-scope claim and
+    // executePilibalaNativeSession holds the full session-scope claim and
     // verifies/migrates the durable root before it acquires the coordinator
     // lease. Avoid reclassifying the same root after that path has marked its
     // retained warm owner busy for this run. Direct backend construction still
@@ -11368,10 +11368,10 @@ async function prepareRemoteExternalRunner({ input, target, runner, root, identi
 }) {
   const muse = input.execution.provider.kind === "muse";
   const checkpointFile = muse ? "muse-provider-state.json" : "dot-provider-state.json";
-  const checkpointSchema = muse ? "paperclip.runner.muse-provider-state.v1" : "paperclip.runner.dot-provider-state.v1";
-  const runnerBinary = input.runnerRemoteBinaryPath?.trim() || resolvePaperclipRunnerBinary();
-  const remoteRoot = posix.join(target.remoteCwd, ".paperclip-runtime", "paperclip-runner");
-  const remoteBinary = posix.join(remoteRoot, "bin", "paperclip-runnerd");
+  const checkpointSchema = muse ? "pilibala.runner.muse-provider-state.v1" : "pilibala.runner.dot-provider-state.v1";
+  const runnerBinary = input.runnerRemoteBinaryPath?.trim() || resolvePilibalaRunnerBinary();
+  const remoteRoot = posix.join(target.remoteCwd, ".pilibala-runtime", "pilibala-runner");
+  const remoteBinary = posix.join(remoteRoot, "bin", "pilibala-runnerd");
   const runnerStateDirectory = posix.join(remoteRoot, "sessions",
     createHash("sha256").update(identity.normalizedSessionId).digest("hex"), "runner");
   const requiredMode = resolveRemoteRunnerTransportMode({ target, runnerIngressAuthorized: input.runnerIngressAuthorized === true });
@@ -11383,7 +11383,7 @@ async function prepareRemoteExternalRunner({ input, target, runner, root, identi
         const [os, arch] = platform.stdout.trim().split(/\r?\n/);
         if (platform.exitCode !== 0 || platform.timedOut || os !== (process.platform === "darwin" ? "Darwin" : "Linux")
           || ![process.arch === "x64" ? "x86_64" : "aarch64", process.arch].includes(arch)) {
-          throw new Error("runner_remote_artifact_platform_mismatch: configure PAPERCLIP_RUNNER_REMOTE_BINARY_PATH for the sandbox platform");
+          throw new Error("runner_remote_artifact_platform_mismatch: configure PILIBALA_RUNNER_REMOTE_BINARY_PATH for the sandbox platform");
         }
       }
       await stageRemoteRunnerFile({ target, runner, sourcePath: runnerBinary, targetPath: remoteBinary, mode: 0o700 });
@@ -11392,7 +11392,7 @@ async function prepareRemoteExternalRunner({ input, target, runner, root, identi
     if (metadata.exitCode !== 0 || metadata.timedOut) throw new Error("runner_remote_artifact_verification_failed");
     assertRemoteRunnerBuildMetadata(JSON.parse(metadata.stdout), requiredMode, muse ? "muse_external_v1" : input.execution.provider.kind === "grok_bot" ? "grok_bot_mcp" : "openai_dot_mcp");
     const checksum = await runner.execute({ command: "sh", args: ["-c",
-      'if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi', "paperclip-dot-artifact", remoteBinary],
+      'if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi', "pilibala-dot-artifact", remoteBinary],
       bypassSession: true, timeoutMs: 10000 });
     if (checksum.exitCode !== 0 || checksum.timedOut || `sha256:${checksum.stdout.trim().split(/\s+/)[0]}` !== artifact.digest) {
       throw new Error("runner_remote_artifact_verification_failed");
@@ -11401,7 +11401,7 @@ async function prepareRemoteExternalRunner({ input, target, runner, root, identi
   const readProviderState = async () => {
     const result = await runner.execute({ command: "sh", args: ["-c",
       'set -eu; if test ! -e "$1" && test ! -L "$1"; then exit 3; fi; test -f "$1" && test ! -L "$1"; test "$(wc -c < "$1")" -le 33554432; base64 < "$1"',
-      "paperclip-dot-checkpoint", posix.join(runnerStateDirectory, checkpointFile)], bypassSession: true, timeoutMs: 10000 });
+      "pilibala-dot-checkpoint", posix.join(runnerStateDirectory, checkpointFile)], bypassSession: true, timeoutMs: 10000 });
     if (result.exitCode === 3 && !result.timedOut) return null;
     if (result.exitCode !== 0 || result.timedOut) throw new Error("dot_provider_checkpoint_unavailable");
     const state = record(JSON.parse(Buffer.from(result.stdout.replace(/\s+/g, ""), "base64").toString("utf8")));
@@ -11498,10 +11498,10 @@ async function createRunnerdBackendWithinSessionClaim(
   // Remote Codex already sends dynamic tool calls over authenticated PRP. Keep
   // the assigned gateway on the control plane instead of asking the sandbox to
   // reach the host's HTTP origin (which may be private or loopback-only).
-  const relayAssignedMcp = (remoteTarget !== null && input.execution.provider.kind === "codex") || input.execution.schema === "paperclip.native-execution-input.v6";
-  const assignedMcpUrl = input.runnerEnvironment?.PAPERCLIP_NATIVE_MCP_URL;
-  const assignedMcpToken = input.runnerEnvironment?.PAPERCLIP_NATIVE_MCP_TOKEN;
-  const assignedMcpName = input.runnerEnvironment?.PAPERCLIP_NATIVE_MCP_NAME;
+  const relayAssignedMcp = (remoteTarget !== null && input.execution.provider.kind === "codex") || input.execution.schema === "pilibala.native-execution-input.v6";
+  const assignedMcpUrl = input.runnerEnvironment?.PILIBALA_NATIVE_MCP_URL;
+  const assignedMcpToken = input.runnerEnvironment?.PILIBALA_NATIVE_MCP_TOKEN;
+  const assignedMcpName = input.runnerEnvironment?.PILIBALA_NATIVE_MCP_NAME;
   const hasAssignedMcp = Boolean(assignedMcpName || assignedMcpUrl || assignedMcpToken);
   if (relayAssignedMcp && hasAssignedMcp && (!assignedMcpName?.trim() || !assignedMcpUrl?.trim() || !assignedMcpToken?.trim())) {
     throw new Error("assigned native MCP launch binding is incomplete");
@@ -11527,11 +11527,11 @@ async function createRunnerdBackendWithinSessionClaim(
   if (preparedAssignedMcp.status === "rejected") throw preparedAssignedMcp.reason;
   const runnerEnvironment = preparedEnvironment.value;
   const assignedMcpTools = preparedAssignedMcp.value;
-  const dotAttachmentActor = input.execution.schema === "paperclip.native-execution-input.v6"
+  const dotAttachmentActor = input.execution.schema === "pilibala.native-execution-input.v6"
     ? await input.db.select({ config: agents.adapterConfig }).from(agents).where(and(
         eq(agents.id, input.execution.binding.agentId), eq(agents.companyId, input.execution.binding.companyId),
       )).limit(1).then(rows => rows[0]) : undefined;
-  const authority = new PaperclipRunnerToolAuthority(input.db, {
+  const authority = new PilibalaRunnerToolAuthority(input.db, {
     ...(nativeReview ? { nativeReview } : {}),
     connectorAssignments,
     assignedMcpTools,
@@ -11546,14 +11546,14 @@ async function createRunnerdBackendWithinSessionClaim(
         : undefined,
     workMode: input.execution.task.workMode,
     runtimeContext: "runtimeContext" in input.execution ? input.execution.runtimeContext : undefined,
-    workspaceBridge: input.execution.schema === "paperclip.native-execution-input.v6" && !!input.dotWorkspaceRoot,
+    workspaceBridge: input.execution.schema === "pilibala.native-execution-input.v6" && !!input.dotWorkspaceRoot,
     taskAttachmentRead: dotAttachmentActor?.config.dotAttachmentAccess === true,
-    dotRuntime: input.execution.schema === "paperclip.native-execution-input.v6",
+    dotRuntime: input.execution.schema === "pilibala.native-execution-input.v6",
     firstPartyOnly: input.execution.provider.kind === "grok_bot",
     museRuntime: input.execution.provider.kind === "muse",
     externalAuthorizingUserId: input.execution.provider.kind === "muse"
       ? await museRunnerBroker(input.db).authorizingUserIdForBinding(input.execution.provider.binding) : undefined,
-    assertBridgeAuthority: input.execution.schema === "paperclip.native-execution-input.v6" || input.execution.schema === "paperclip.native-execution-input.v8" ? (database = input.db) => assertExternalNativeRunAuthority(input.db, input.execution, database) : undefined,
+    assertBridgeAuthority: input.execution.schema === "pilibala.native-execution-input.v6" || input.execution.schema === "pilibala.native-execution-input.v8" ? (database = input.db) => assertExternalNativeRunAuthority(input.db, input.execution, database) : undefined,
     workspaceRoot: input.dotWorkspaceRoot ?? remoteTarget?.remoteCwd ?? input.execution.workspace.cwd ?? undefined,
     executionTargetKind: target.kind,
     readRemoteWorkspaceFile: remoteTarget && remoteCommandRunner
@@ -11593,7 +11593,7 @@ async function createRunnerdBackendWithinSessionClaim(
     input.durableEnvironmentLeaseId ??
     input.execution.binding.executionWorkspaceId;
   mkdirSync(root, { recursive: true, mode: 0o700 });
-  if (input.execution.schema === "paperclip.native-execution-input.v6" || input.execution.schema === "paperclip.native-execution-input.v8") {
+  if (input.execution.schema === "pilibala.native-execution-input.v6" || input.execution.schema === "pilibala.native-execution-input.v8") {
     if (target.kind === "remote" && input.dotWorkspaceRoot) throw new Error("dot_remote_workspace_access_unavailable");
     const remoteDot = target.kind === "remote"
       ? await prepareRemoteExternalRunner({ input, target, runner: remoteCommandRunner!, root,
@@ -11604,7 +11604,7 @@ async function createRunnerdBackendWithinSessionClaim(
     const recoveredProcess = input.restartRecovery?.kind === "reattach_existing_runner" ? input.restartRecovery.process : null;
     const externalExecution = input.execution;
     const externalOptions = {
-        stateDirectory: root, runnerBinary: remoteDot?.runnerBinary ?? resolvePaperclipRunnerBinary(),
+        stateDirectory: root, runnerBinary: remoteDot?.runnerBinary ?? resolvePilibalaRunnerBinary(),
         ...(remoteDot ?? {}),
         identity: { runnerInstanceId: effectiveRunnerInstanceId, environmentLeaseId: effectiveEnvironmentLeaseId,
           runId: input.execution.binding.runId, normalizedSessionId: nativeSessionKey(input.execution),
@@ -11626,7 +11626,7 @@ async function createRunnerdBackendWithinSessionClaim(
         return nativeCompletionFeedback(input.db, externalExecution.binding.runId, result);
       },
     };
-    const backend = externalExecution.schema === "paperclip.native-execution-input.v8"
+    const backend = externalExecution.schema === "pilibala.native-execution-input.v8"
       ? createNativeSessionBackend(externalExecution, { ...backendOptions, museRunnerOptions: { ...externalOptions, port: museRunnerBroker(input.db).port(externalExecution) } })
       : createNativeSessionBackend(externalExecution, { ...backendOptions, dotRunnerOptions: { ...externalOptions, port: dotRunnerBroker(input.db).port(externalExecution) } });
     const prior = sessionToolAuthorityEpochs.get(sessionScopeId); if (prior) prior.revoke();
@@ -11637,8 +11637,8 @@ async function createRunnerdBackendWithinSessionClaim(
   const remoteRuntimeRoot = remoteTarget
     ? posix.join(
         remoteTarget.remoteCwd,
-        ".paperclip-runtime",
-        "paperclip-runner",
+        ".pilibala-runtime",
+        "pilibala-runner",
       )
     : null;
   const requiresRemoteProviderPack =
@@ -11668,7 +11668,7 @@ async function createRunnerdBackendWithinSessionClaim(
       !lstatSync(configuredProviderPackRoot).isDirectory()
     ) {
       throw new Error(
-        "runner_remote_provider_artifact_incompatible: configure PAPERCLIP_RUNNER_REMOTE_PROVIDER_PACK_PATH with the build-owned provider pack",
+        "runner_remote_provider_artifact_incompatible: configure PILIBALA_RUNNER_REMOTE_PROVIDER_PACK_PATH with the build-owned provider pack",
       );
     }
     expectedProviderPackManifest = readRemoteProviderPackManifest(
@@ -11680,7 +11680,7 @@ async function createRunnerdBackendWithinSessionClaim(
     : null;
   let activeRemoteProviderPackRoot: string | null = null;
   const remoteBinary = remoteRuntimeRoot
-    ? posix.join(remoteRuntimeRoot, "bin", "paperclip-runnerd")
+    ? posix.join(remoteRuntimeRoot, "bin", "pilibala-runnerd")
     : null;
   // The transport hashes runnerBinary on the controller before an external
   // launcher starts runnerd. Keep that artifact identity in the controller's
@@ -11689,10 +11689,10 @@ async function createRunnerdBackendWithinSessionClaim(
   // these exact bytes at remoteBinary before launch.
   const targetMatchedCodexArtifact = remoteTarget !== null && input.execution.provider.kind === "codex";
   const controllerRunnerBinary = targetMatchedCodexArtifact
-    ? await timeController("runner_binary", () => resolveRemotePaperclipRunnerBinary({ runner: remoteCommandRunner!, remoteCwd: remoteTarget.remoteCwd, configuredPath: input.runnerRemoteBinaryPath }))
+    ? await timeController("runner_binary", () => resolveRemotePilibalaRunnerBinary({ runner: remoteCommandRunner!, remoteCwd: remoteTarget.remoteCwd, configuredPath: input.runnerRemoteBinaryPath }))
     : remoteTarget
-    ? input.runnerRemoteBinaryPath?.trim() || remotePiCompanion?.runnerBinary || (useBundledRemoteImageAssets ? bundledRemoteRunnerBinary() : resolvePaperclipRunnerBinary())
-    : resolvePaperclipRunnerBinary();
+    ? input.runnerRemoteBinaryPath?.trim() || remotePiCompanion?.runnerBinary || (useBundledRemoteImageAssets ? bundledRemoteRunnerBinary() : resolvePilibalaRunnerBinary())
+    : resolvePilibalaRunnerBinary();
   const explicitRemoteCodex = input.runnerRemoteCodexPath?.trim() || null;
   const remoteCodexNpmSpec = input.runnerRemoteCodexNpmSpec?.trim() || null;
   if (explicitRemoteCodex && remoteCodexNpmSpec) {
@@ -11848,7 +11848,7 @@ async function createRunnerdBackendWithinSessionClaim(
       command: "sh",
       args: [
         "-c",
-        'for candidate in /opt/paperclip-runner/provider-pack "$HOME/.local/share/paperclip-runner/provider-pack"; do if [ -f "$candidate/provider-pack.json" ]; then printf \'%s\\n\' "$candidate"; break; fi; done',
+        'for candidate in /opt/pilibala-runner/provider-pack "$HOME/.local/share/pilibala-runner/provider-pack"; do if [ -f "$candidate/provider-pack.json" ]; then printf \'%s\\n\' "$candidate"; break; fi; done',
       ],
       cwd: remoteTarget.remoteCwd,
       bypassSession: true,
@@ -11944,7 +11944,7 @@ async function createRunnerdBackendWithinSessionClaim(
               activeRemoteProviderPackRoot = stagedRemoteProviderPackRoot;
               await input.onLog?.(
                 "stderr",
-                "[paperclip-runner] using manifest-matched provider pack from the sandbox image\n",
+                "[pilibala-runner] using manifest-matched provider pack from the sandbox image\n",
               );
             } catch {
               preinstalledProviderPack = null;
@@ -11954,7 +11954,7 @@ async function createRunnerdBackendWithinSessionClaim(
         },
         stageAndVerify: async () => {
           if (!configuredProviderPackRoot) {
-            throw new Error("runner_remote_provider_artifact_incompatible: install the matching Paperclip package and Daytona image; the image provider pack did not match the bundled release identity");
+            throw new Error("runner_remote_provider_artifact_incompatible: install the matching Pilibala package and Daytona image; the image provider pack did not match the bundled release identity");
           }
           if (!remoteCommandRunner.syncIn) {
             throw new Error(
@@ -11994,7 +11994,7 @@ async function createRunnerdBackendWithinSessionClaim(
       if (packSource === "staged") {
         await input.onLog?.(
           "stderr",
-          "[paperclip-runner] reusing manifest-matched provider pack from the workspace\n",
+          "[pilibala-runner] reusing manifest-matched provider pack from the workspace\n",
         );
       }
     }
@@ -12127,7 +12127,7 @@ async function createRunnerdBackendWithinSessionClaim(
       command: "sh",
       args: ["-c",
         'set -eu; umask 077; test -d "$1" && test ! -L "$1" && test -r "$1" && test -x "$1" || exit 1; if test ! -e "$2" && test ! -L "$2"; then mkdir -- "$2"; fi; test -d "$2" && test ! -L "$2" && test -r "$2" && test -x "$2" || exit 1; mkdir -- "$3"',
-        "paperclip-runner-claim-unstarted-session", remoteRuntimeRoot,
+        "pilibala-runner-claim-unstarted-session", remoteRuntimeRoot,
         posix.dirname(remoteSessionRoot), remoteSessionRoot],
       bypassSession: true,
       timeoutMs: 10_000,
@@ -12531,7 +12531,7 @@ async function createRunnerdBackendWithinSessionClaim(
       );
       await input.onLog?.(
         "stderr",
-        `[paperclip-runner] remote checkpoint ${incompleteFailure ? "failed" : "skipped"}: exact suspended harness state unavailable (process=${settlement} reason=${checkpointable.incompleteReason})\n`,
+        `[pilibala-runner] remote checkpoint ${incompleteFailure ? "failed" : "skipped"}: exact suspended harness state unavailable (process=${settlement} reason=${checkpointable.incompleteReason})\n`,
       );
       if (incompleteFailure) throw incompleteFailure;
       return;
@@ -12665,7 +12665,7 @@ async function createRunnerdBackendWithinSessionClaim(
         .slice(0, 512);
       await input.onLog?.(
         "stderr",
-        `[paperclip-runner] remote checkpoint failed: ${detail || "unknown failure"}\n`,
+        `[pilibala-runner] remote checkpoint failed: ${detail || "unknown failure"}\n`,
       );
       throw error;
     }
@@ -12705,7 +12705,7 @@ async function createRunnerdBackendWithinSessionClaim(
             args: [
               "-c",
               'set -eu; if test -L "$2" || { test -e "$2" && test ! -d "$2"; }; then exit 1; fi; if test -f "$1" && test ! -L "$1" && test ! -e "$3" && test ! -L "$3"; then umask 077; install -d -m 0700 "$2"; mv -- "$1" "$3"; elif test ! -e "$1" && test ! -L "$1" && test -f "$3" && test ! -L "$3"; then :; else exit 1; fi; base64 < "$3"',
-              "paperclip-runner-authority-archive",
+              "pilibala-runner-authority-archive",
               sourcePath,
               archiveDirectory,
               archivedStatePath,
@@ -12775,15 +12775,15 @@ async function createRunnerdBackendWithinSessionClaim(
   if (relayAssignedMcp) {
     // The server-held tool authority owns this credential. Do not deliver a
     // duplicate HTTP MCP server or its bearer token to the remote provider.
-    delete effectiveRunnerEnvironmentBase.PAPERCLIP_NATIVE_MCP_NAME;
-    delete effectiveRunnerEnvironmentBase.PAPERCLIP_NATIVE_MCP_URL;
-    delete effectiveRunnerEnvironmentBase.PAPERCLIP_NATIVE_MCP_TOKEN;
+    delete effectiveRunnerEnvironmentBase.PILIBALA_NATIVE_MCP_NAME;
+    delete effectiveRunnerEnvironmentBase.PILIBALA_NATIVE_MCP_URL;
+    delete effectiveRunnerEnvironmentBase.PILIBALA_NATIVE_MCP_TOKEN;
   }
   // This authority bit is derived only from the selected execution target.
   // Never let an agent, environment binding, or host variable disable the
   // Codex sandbox for a local runner by supplying the same key.
-  delete effectiveRunnerEnvironmentBase.PAPERCLIP_RUNNER_EXTERNAL_SANDBOX;
-  delete effectiveRunnerEnvironmentBase.PAPERCLIP_RUNNER_HOME_MODE;
+  delete effectiveRunnerEnvironmentBase.PILIBALA_RUNNER_EXTERNAL_SANDBOX;
+  delete effectiveRunnerEnvironmentBase.PILIBALA_RUNNER_HOME_MODE;
   if (preconfiguredHome) {
     if (remoteCommandRunner) {
       const discovered = await remoteCommandRunner.execute({
@@ -12798,9 +12798,9 @@ async function createRunnerdBackendWithinSessionClaim(
       const hostPathKeys = new Set(["CODEX_HOME", "CLAUDE_CONFIG_DIR", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME"]);
       const configured = configuredEnvironment(effectiveRunnerEnvironmentBase);
       for (const key of hostPathKeys) delete effectiveRunnerEnvironmentBase[key];
-      if (configured.PAPERCLIP_CONFIGURED_ENV_KEYS !== undefined) {
-        effectiveRunnerEnvironmentBase.PAPERCLIP_CONFIGURED_ENV_KEYS = JSON.stringify(
-          Object.keys(configured).filter(key => key !== "PAPERCLIP_CONFIGURED_ENV_KEYS" && !hostPathKeys.has(key)),
+      if (configured.PILIBALA_CONFIGURED_ENV_KEYS !== undefined) {
+        effectiveRunnerEnvironmentBase.PILIBALA_CONFIGURED_ENV_KEYS = JSON.stringify(
+          Object.keys(configured).filter(key => key !== "PILIBALA_CONFIGURED_ENV_KEYS" && !hostPathKeys.has(key)),
         );
       }
       effectiveRunnerEnvironmentBase.HOME = home;
@@ -12808,7 +12808,7 @@ async function createRunnerdBackendWithinSessionClaim(
       effectiveRunnerEnvironmentBase.HOME ??= userInfo().homedir;
     }
   }
-  if (preconfiguredHome) effectiveRunnerEnvironmentBase.PAPERCLIP_RUNNER_HOME_MODE = "preconfigured";
+  if (preconfiguredHome) effectiveRunnerEnvironmentBase.PILIBALA_RUNNER_HOME_MODE = "preconfigured";
   const effectiveRunnerEnvironment: NodeJS.ProcessEnv = remoteRuntimeRoot
     ? {
         ...effectiveRunnerEnvironmentBase,
@@ -12820,14 +12820,14 @@ async function createRunnerdBackendWithinSessionClaim(
           HOME: posix.join(remoteRunnerFilesystemRoot!, "codex-home"),
           CODEX_HOME: posix.join(remoteRunnerFilesystemRoot!, "codex-home"),
         }),
-        PAPERCLIP_WORKSPACE_CWD: remoteTarget!.remoteCwd,
+        PILIBALA_WORKSPACE_CWD: remoteTarget!.remoteCwd,
         ...(remoteTarget!.transport === "sandbox"
-          ? { PAPERCLIP_RUNNER_EXTERNAL_SANDBOX: "1" }
+          ? { PILIBALA_RUNNER_EXTERNAL_SANDBOX: "1" }
           : {}),
       }
     : {
         ...effectiveRunnerEnvironmentBase,
-        PAPERCLIP_WORKSPACE_CWD: input.execution.workspace.cwd,
+        PILIBALA_WORKSPACE_CWD: input.execution.workspace.cwd,
       };
   const archiveContinuityState = async () => {
     if (hasRetainedWarmTransitionEvidence(root)) {
@@ -12929,15 +12929,15 @@ async function createRunnerdBackendWithinSessionClaim(
     dynamicToolHandler: executeCurrentToolAuthority,
     acpxDynamicToolHandler: executeCurrentToolAuthority,
     opencodeRuntimeDirectory: resolve(
-      resolvePaperclipInstanceRoot(),
+      resolvePilibalaInstanceRoot(),
       "runtime",
-      "paperclip-runner",
+      "pilibala-runner",
       "opencode",
     ),
     acpxRuntimeDirectory: resolve(
-      resolvePaperclipInstanceRoot(),
+      resolvePilibalaInstanceRoot(),
       "runtime",
-      "paperclip-runner",
+      "pilibala-runner",
       "acpx",
     ),
     codexTransportFactory: (recoveryContext) =>
@@ -12974,15 +12974,15 @@ async function createRunnerdBackendWithinSessionClaim(
               acpxMode: input.execution.provider.mode,
               piThinkingLevel: input.execution.provider.piThinkingLevel,
               acpxPermissionModePinned:
-                input.execution.schema === "paperclip.native-execution-input.v4" ||
-                input.execution.schema === "paperclip.native-execution-input.v5" ||
-                input.execution.schema === "paperclip.native-execution-input.v7",
+                input.execution.schema === "pilibala.native-execution-input.v4" ||
+                input.execution.schema === "pilibala.native-execution-input.v5" ||
+                input.execution.schema === "pilibala.native-execution-input.v7",
               acpxRuntimeDirectory: remoteRunnerFilesystemRoot
                 ? posix.join(remoteRunnerFilesystemRoot, "acpx")
                 : resolve(
-                    resolvePaperclipInstanceRoot(),
+                    resolvePilibalaInstanceRoot(),
                     "runtime",
-                    "paperclip-runner",
+                    "pilibala-runner",
                     "acpx",
                   ),
             }
@@ -13064,7 +13064,7 @@ async function createRunnerdBackendWithinSessionClaim(
         onDiagnostic: (message) => {
           void input.onLog?.(
             "stderr",
-            `[paperclip-runner] runnerd diagnostic: ${redactSensitiveText(message).slice(-4_096)}\n`,
+            `[pilibala-runner] runnerd diagnostic: ${redactSensitiveText(message).slice(-4_096)}\n`,
           );
         },
         lifecyclePolicy: input.execution.session.lifecyclePolicy,
@@ -13202,7 +13202,7 @@ async function createRunnerdBackendWithinSessionClaim(
       // The launch runtime directory already ends in "acpx"; ACPX adds its
       // own namespace beneath it in resolveAcpxRuntimeRoot.
       const relativeHome = `acpx/acpx/${acpxRuntimeSessionDirectoryName(nativeSessionKey(input.execution))}/grok-home`;
-      const localHome = resolve(resolvePaperclipInstanceRoot(), "runtime", "paperclip-runner", relativeHome);
+      const localHome = resolve(resolvePilibalaInstanceRoot(), "runtime", "pilibala-runner", relativeHome);
       const remoteHome = remoteRunnerFilesystemRoot ? posix.join(remoteRunnerFilesystemRoot, relativeHome) : null;
       const readAuth = async (name: string): Promise<Buffer> => {
         if (!remoteHome || !remoteCommandRunner) return Buffer.from(await readLocalAiCredentialFile(join(localHome, name)));
@@ -13347,13 +13347,13 @@ export function createRemoteNativeArtifactPreparation(input: {
       reportedCodexVersions.add(version);
       await input.onLog?.(
         "stderr",
-        `[paperclip-runner] using installed Codex ${version ?? "unrecognized version"} (image install pin ${REMOTE_PROVIDER_PACK_PINS.codex}); compatibility is checked by the native app-server\n`,
+        `[pilibala-runner] using installed Codex ${version ?? "unrecognized version"} (image install pin ${REMOTE_PROVIDER_PACK_PINS.codex}); compatibility is checked by the native app-server\n`,
       );
     }
   };
 
   const discoverPreinstalledExecutable = async (
-    name: "paperclip-runnerd" | "codex",
+    name: "pilibala-runnerd" | "codex",
   ) => {
     if (!remoteTarget || !remoteCommandRunner) return null;
     return discoverRemoteExecutable(remoteCommandRunner, remoteTarget.remoteCwd, name);
@@ -13396,7 +13396,7 @@ export function createRemoteNativeArtifactPreparation(input: {
           args: [
             "-c",
             'test -x "$1" || exit 1; if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi',
-            "paperclip-runner-artifact",
+            "pilibala-runner-artifact",
             executable,
           ],
           cwd: remoteTarget.remoteCwd,
@@ -13427,7 +13427,7 @@ export function createRemoteNativeArtifactPreparation(input: {
         const preinstalledRunner = await measureNativeRunnerSpan(
           input.trace,
           "runner.artifact.discover",
-          () => discoverPreinstalledExecutable("paperclip-runnerd"),
+          () => discoverPreinstalledExecutable("pilibala-runnerd"),
         );
         if (preinstalledRunner) {
           try {
@@ -13448,7 +13448,7 @@ export function createRemoteNativeArtifactPreparation(input: {
             runnerArtifactPrepared = true;
             await input.onLog?.(
               "stderr",
-              "[paperclip-runner] using preinstalled runnerd from the sandbox image\n",
+              "[pilibala-runner] using preinstalled runnerd from the sandbox image\n",
             );
           } catch {
             runnerArtifactPrepared = false;
@@ -13493,7 +13493,7 @@ export function createRemoteNativeArtifactPreparation(input: {
             !archMatches
           ) {
             throw new Error(
-              "runner_remote_artifact_platform_mismatch: configure PAPERCLIP_RUNNER_REMOTE_BINARY_PATH for the remote OS and architecture",
+              "runner_remote_artifact_platform_mismatch: configure PILIBALA_RUNNER_REMOTE_BINARY_PATH for the remote OS and architecture",
             );
           }
         }
@@ -13546,7 +13546,7 @@ export function createRemoteNativeArtifactPreparation(input: {
             usedPreinstalledCodex = true;
             await input.onLog?.(
               "stderr",
-              "[paperclip-runner] using preinstalled Codex from the sandbox image\n",
+              "[pilibala-runner] using preinstalled Codex from the sandbox image\n",
             );
           } catch {
             usedPreinstalledCodex = false;
@@ -13590,7 +13590,7 @@ export function createRemoteNativeArtifactPreparation(input: {
         );
         if (!preinstalledCodex) {
           throw new Error(
-            "runner_remote_codex_artifact_unavailable: install codex in the sandbox image or configure PAPERCLIP_RUNNER_REMOTE_CODEX_NPM_SPEC",
+            "runner_remote_codex_artifact_unavailable: install codex in the sandbox image or configure PILIBALA_RUNNER_REMOTE_CODEX_NPM_SPEC",
           );
         }
         await measureNativeRunnerSpan(
@@ -13608,7 +13608,7 @@ export function createRemoteNativeArtifactPreparation(input: {
         );
         await input.onLog?.(
           "stderr",
-          "[paperclip-runner] using preinstalled Codex from the sandbox image\n",
+          "[pilibala-runner] using preinstalled Codex from the sandbox image\n",
         );
       }
     };

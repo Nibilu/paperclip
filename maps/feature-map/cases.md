@@ -27,7 +27,7 @@ Open `/cases` and switch between available grouped/tree views.
 
 Open `/cases/:caseIdentifier` or a task’s linked case.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Enable cases and prepare related records with different types/statuses plus an associated task.
 

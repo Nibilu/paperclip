@@ -6,8 +6,8 @@ import {
   emailEndpointSetupSchema,
   emailSendSchema,
   isUuidLike,
-} from "@paperclipai/shared";
-import type { Db } from "@paperclipai/db";
+} from "@pilibalaai/shared";
+import type { Db } from "@pilibalaai/db";
 import { validate } from "../middleware/validate.js";
 import { assertBoard, assertCompanyAccess, hasCompanyAccess } from "./authz.js";
 import { emailConnectionService } from "../services/email-connections.js";
@@ -29,7 +29,7 @@ function actor(req: Request): EmailActor {
       };
 }
 
-// Provider rejections describe setup/account problems, not Paperclip crashes.
+// Provider rejections describe setup/account problems, not Pilibala crashes.
 // Only local messages and operation names reach the UI; never forward a body.
 const agentmailErrorHandler: ErrorRequestHandler = (error, _req, res, next) => {
   if (!(error instanceof AgentmailApiError)) return next(error);
@@ -59,7 +59,7 @@ const agentmailErrorHandler: ErrorRequestHandler = (error, _req, res, next) => {
   } else if (error.status === 401) {
     message = "AgentMail rejected the API key. Check that it is correct and has not been revoked, then reconnect.";
   } else if (error.status === 403) {
-    message = `AgentMail did not allow Paperclip to ${action}. Check your API key permissions and AgentMail account limits, then try again.`;
+    message = `AgentMail did not allow Pilibala to ${action}. Check your API key permissions and AgentMail account limits, then try again.`;
   } else if (error.status === 429) {
     status = 429;
     res.set("Retry-After", String(Math.ceil(error.retryAfterMs / 1000)));

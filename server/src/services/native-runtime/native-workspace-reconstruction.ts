@@ -1,6 +1,6 @@
 import { and, eq, gt, inArray, ne, notInArray, or, sql } from "drizzle-orm";
-import { agentWakeupRequests, assets, environmentLeases, heartbeatRuns, issueAttachments, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, type Db } from "@paperclipai/db";
-import { reconstructWorkspaceSchema, type ExecutionReconciliation } from "@paperclipai/shared";
+import { agentWakeupRequests, assets, environmentLeases, heartbeatRuns, issueAttachments, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, type Db } from "@pilibalaai/db";
+import { reconstructWorkspaceSchema, type ExecutionReconciliation } from "@pilibalaai/shared";
 import type { z } from "zod";
 import { conflict } from "../../errors.js";
 import { persistActivity, publishActivity } from "../activity-log.js";
@@ -24,7 +24,7 @@ export function unreconciledNativeExportPredicate() {
       )),
       sql`${issueRecoveryActions.evidence}->'executionReconciliation'->'workspaceReconstruction' is null`,
     ), and(eq(issueRecoveryActions.status, "resolved"),
-      sql`${issueRecoveryActions.evidence}->'executionReconciliation'->'workspaceReconstruction'->>'schema' = 'paperclip.workspace-reconstruction.v1'`,
+      sql`${issueRecoveryActions.evidence}->'executionReconciliation'->'workspaceReconstruction'->>'schema' = 'pilibala.workspace-reconstruction.v1'`,
       sql`${issueRecoveryActions.evidence}->>'continuationDelivery' = 'pending'`,
     )),
     sql`exists (select 1 from ${heartbeatRuns} where ${heartbeatRuns.companyId} = ${issueRecoveryActions.companyId}
@@ -64,7 +64,7 @@ export async function validateNativeWorkspaceReconstruction(db: Db, input: {
   if (!lease || lease.issueId !== issue.id || lease.providerLeaseId !== reference.providerLeaseId
     || !leases.every(hasRemoteTerminationReceipt) || object(lease.metadata?.remoteExecutionTermination).state !== "destroyed"
     || leases.some(row => row.metadata?.pendingCleanupInFlight === true)) {
-    throw conflict("Paperclip has not confirmed destruction of the original workspace. Recover its files or retry its export first.", { code: "workspace_reconstruction_source_not_destroyed" });
+    throw conflict("Pilibala has not confirmed destruction of the original workspace. Recover its files or retry its export first.", { code: "workspace_reconstruction_source_not_destroyed" });
   }
   const [otherLease] = await db.select({ id: environmentLeases.id }).from(environmentLeases).where(and(
     ne(environmentLeases.id, lease.id), eq(environmentLeases.provider, lease.provider!), eq(environmentLeases.providerLeaseId, lease.providerLeaseId!),
@@ -102,7 +102,7 @@ export async function validateNativeWorkspaceReconstruction(db: Db, input: {
   const decision = action.evidence.executionReconciliation as ExecutionReconciliation | undefined;
   if (decision?.workspaceReconstruction) {
     const reconstruction = decision.workspaceReconstruction;
-    if ((!input.successorRunId && issue.status !== "todo") || decision.runId !== run.id || reconstruction.schema !== "paperclip.workspace-reconstruction.v1"
+    if ((!input.successorRunId && issue.status !== "todo") || decision.runId !== run.id || reconstruction.schema !== "pilibala.workspace-reconstruction.v1"
       || (input.successorRunId && (action.evidence.continuationRunId !== (input.continuationRootRunId ?? input.successorRunId) || action.evidence.continuationDelivery !== "delivered"))
       || reconstruction.leaseId !== lease.id || reconstruction.resultId !== result.id
       || reconstruction.descriptorSha256 !== reference.descriptorSha256 || !reconstruction.sources?.length
@@ -172,7 +172,7 @@ export async function reconstructNativeWorkspace(input: {
     }
     const decision: ExecutionReconciliation = { runId: request.runId, providerStopped: true,
       actionOutcome: request.actionOutcome, outcomeEvidence: request.outcomeEvidence,
-      workspaceReconstruction: { schema: "paperclip.workspace-reconstruction.v1", leaseId: source.lease.id,
+      workspaceReconstruction: { schema: "pilibala.workspace-reconstruction.v1", leaseId: source.lease.id,
         resultId: source.result.id, descriptorSha256: source.reference.descriptorSha256, missingWork: request.missingWork, sources: files,
         ...(source.interveningExecutions.length ? { interveningExecutions: source.interveningExecutions } : {}) } };
     await markExecutionReconciliation(db, source.action, decision, input.actorId);

@@ -1,5 +1,5 @@
-import type { AdapterEnvironmentTestResult } from "@paperclipai/shared";
-import { ADAPTER_AUTH_MISSING_CHECK_CODE } from "@paperclipai/shared";
+import type { AdapterEnvironmentTestResult } from "@pilibalaai/shared";
+import { ADAPTER_AUTH_MISSING_CHECK_CODE } from "@pilibalaai/shared";
 import { agentsApi } from "../api/agents";
 
 /** ACP readiness checks do not authenticate a provider. Verify credentials with
@@ -8,10 +8,10 @@ export async function testAgentSetup(input: {
   companyId: string;
   agentId?: string;
   adapterType: string;
-  runner?: import("@paperclipai/shared").AgentRunnerChoice;
+  runner?: import("@pilibalaai/shared").AgentRunnerChoice;
   providerAdapter: string;
   adapterConfig: Record<string, unknown>;
-  aiConnection?: import("@paperclipai/shared").AiRuntimeConnectionBinding;
+  aiConnection?: import("@pilibalaai/shared").AiRuntimeConnectionBinding;
   testCredentials?: Record<string, string>;
   environmentId: string | null;
 }): Promise<AdapterEnvironmentTestResult> {
@@ -47,8 +47,8 @@ export async function testAgentSetup(input: {
       adapterConfig: {
         ...input.adapterConfig,
         engine: "cli",
-        ...(input.adapterType === "paperclip_runner" && input.providerAdapter === "grok_local"
-          ? { command: "/opt/paperclip/providers/grok/1.0.13/grok" }
+        ...(input.adapterType === "pilibala_runner" && input.providerAdapter === "grok_local"
+          ? { command: "/opt/pilibala/providers/grok/1.0.13/grok" }
           : {}),
       },
     },

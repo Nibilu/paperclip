@@ -160,11 +160,11 @@ ACPX adapters use their applicable ACPX permission policy. Host-assigned native
 Codex tools run without a new per-call prompt, matching existing execution-host shell
 utilities. Explicit deny/prompt rules remain effective; requested approvals use
 PRP with active thread/turn checks and one-time decisions. Preconfigured Claude
-rejects interactive approval requests. See the [Runner contract](../../packages/paperclip-runner/README.md#assigned-local-mcp-servers).
+rejects interactive approval requests. See the [Runner contract](../../packages/pilibala-runner/README.md#assigned-local-mcp-servers).
 
-Local fixture coverage: [binding validation](../../packages/paperclip-runner/src/drivers/stdio-mcp.test.ts),
-[relay processes and cancellation](../../packages/paperclip-runner/runner/crates/runner-core/tests/stdio_mcp.rs),
-and [approval projection](../../packages/paperclip-runner/src/drivers/codex/codex-question-adapter.test.ts).
+Local fixture coverage: [binding validation](../../packages/pilibala-runner/src/drivers/stdio-mcp.test.ts),
+[relay processes and cancellation](../../packages/pilibala-runner/runner/crates/runner-core/tests/stdio_mcp.rs),
+and [approval projection](../../packages/pilibala-runner/src/drivers/codex/codex-question-adapter.test.ts).
 Provider-client image and approval smoke tests used native Codex and Claude SDK;
 that coverage is not an exhaustive adapter compatibility test.
 Vendor-client evidence belongs in the PR. These checks do not

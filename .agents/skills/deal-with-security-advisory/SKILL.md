@@ -1,7 +1,7 @@
 ---
 name: deal-with-security-advisory
 description: >
-  Handle confidential GitHub Security Advisory response for Paperclip. Use when
+  Handle confidential GitHub Security Advisory response for Pilibala. Use when
   coordinating advisory triage, private-fork fixes, CVE/publication steps, and
   immediate security releases.
 ---
@@ -28,7 +28,7 @@ A security vulnerability has been reported via GitHub Security Advisory:
 Pull the full advisory so you understand the vulnerability before doing anything else:
 
 ```
-gh api repos/paperclipai/paperclip/security-advisories/{{ghsaId}}
+gh api repos/pilibalaai/pilibala/security-advisories/{{ghsaId}}
 
 ```
 
@@ -50,7 +50,7 @@ This is where all fix development happens. Never push to the public repo.
 
 ```
 gh api --method POST \
-  repos/paperclipai/paperclip/security-advisories/{{ghsaId}}/forks
+  repos/pilibalaai/pilibala/security-advisories/{{ghsaId}}/forks
 
 ```
 
@@ -59,14 +59,14 @@ This returns a repository object for the private fork. Save the `full_name` and 
 Clone it and set up your workspace:
 
 ```
-# Clone the private fork somewhere outside ~/paperclip
+# Clone the private fork somewhere outside ~/pilibala
 git clone <clone_url_from_response> ~/security-patch-{{ghsaId}}
 cd ~/security-patch-{{ghsaId}}
 git checkout -b security-fix
 
 ```
 
-**Do not edit `~/paperclip`** — the dev server is running off the `~/paperclip` master branch and we don't want to touch it. All work happens in the private fork clone.
+**Do not edit `~/pilibala`** — the dev server is running off the `~/pilibala` master branch and we don't want to touch it. All work happens in the private fork clone.
 
 **TIPS:**
 
@@ -114,7 +114,7 @@ This makes vulnerability scanners (npm audit, Snyk, Dependabot) warn users to up
 
 ```
 gh api --method POST \
-  repos/paperclipai/paperclip/security-advisories/{{ghsaId}}/cve
+  repos/pilibalaai/pilibala/security-advisories/{{ghsaId}}/cve
 
 ```
 
@@ -127,7 +127,7 @@ This all happens at once — do not stagger these steps. The goal is **zero wind
 ### 6a. Verify reporter credit before publishing
 
 ```
-gh api repos/paperclipai/paperclip/security-advisories/{{ghsaId}} --jq '.credits'
+gh api repos/pilibalaai/pilibala/security-advisories/{{ghsaId}} --jq '.credits'
 
 ```
 
@@ -135,7 +135,7 @@ If the reporter is not credited, add them:
 
 ```
 gh api --method PATCH \
-  repos/paperclipai/paperclip/security-advisories/{{ghsaId}} \
+  repos/pilibalaai/pilibala/security-advisories/{{ghsaId}} \
   --input - << 'EOF'
 {
   "credits": [
@@ -153,7 +153,7 @@ EOF
 
 ```
 gh api --method PATCH \
-  repos/paperclipai/paperclip/security-advisories/{{ghsaId}} \
+  repos/pilibalaai/pilibala/security-advisories/{{ghsaId}} \
   --input - << 'EOF'
 {
   "state": "published",
@@ -161,7 +161,7 @@ gh api --method PATCH \
     {
       "package": {
         "ecosystem": "npm",
-        "name": "paperclip"
+        "name": "pilibala"
       },
       "vulnerable_version_range": "< {{patchedVersion}}",
       "patched_versions": "{{patchedVersion}}"
@@ -181,11 +181,11 @@ Publishing the advisory simultaneously:
 ### 6c. Cut a release immediately after merge
 
 ```
-cd ~/paperclip
+cd ~/pilibala
 git pull origin master
 
 gh release create v{{patchedVersion}} \
-  --repo paperclipai/paperclip \
+  --repo pilibalaai/pilibala \
   --title "v{{patchedVersion}} — Security Release" \
   --notes "## Security Release
 
@@ -195,7 +195,7 @@ This release fixes a critical security vulnerability.
 {{briefDescription}} (e.g., Remote code execution via DNS rebinding in \`local_trusted\` mode)
 
 ### Advisory
-https://github.com/paperclipai/paperclip/security/advisories/{{ghsaId}}
+https://github.com/pilibalaai/pilibala/security/advisories/{{ghsaId}}
 
 ### Credit
 Thanks to @{{reporterHandle}} for responsibly disclosing this vulnerability.
@@ -209,11 +209,11 @@ All users running versions prior to {{patchedVersion}} should upgrade immediatel
 
 ```
 # Verify the advisory is published and CVE is assigned
-gh api repos/paperclipai/paperclip/security-advisories/{{ghsaId}} \
+gh api repos/pilibalaai/pilibala/security-advisories/{{ghsaId}} \
   --jq '{state: .state, cve_id: .cve_id, published_at: .published_at}'
 
 # Verify the release exists
-gh release view v{{patchedVersion}} --repo paperclipai/paperclip
+gh release view v{{patchedVersion}} --repo pilibalaai/pilibala
 
 ```
 
@@ -223,7 +223,7 @@ If the CVE hasn't been assigned yet, that's normal — it can take a few hours.
 
 Tell the human operator what you did by posting a comment to this task, including:
 
-* The published advisory URL: `https://github.com/paperclipai/paperclip/security/advisories/{{ghsaId}}`
+* The published advisory URL: `https://github.com/pilibalaai/pilibala/security/advisories/{{ghsaId}}`
 * The release URL
 * Whether the CVE has been assigned yet
 * All URLs to any pull requests or branches

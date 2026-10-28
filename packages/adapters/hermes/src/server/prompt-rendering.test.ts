@@ -13,7 +13,7 @@ function baseContext(overrides: Record<string, unknown> = {}) {
     config: {},
     context: {
       issueId: "issue-1",
-      paperclipWake: {
+      pilibalaWake: {
         reason: "issue_assigned",
         issue: {
           id: "issue-1",
@@ -28,8 +28,8 @@ function baseContext(overrides: Record<string, unknown> = {}) {
         comments: [],
         fallbackFetchNeeded: false,
       },
-      paperclipTaskMarkdown: [
-        "Paperclip task context:",
+      pilibalaTaskMarkdown: [
+        "Pilibala task context:",
         '- Issue: "PAP-3404"',
         '- Title: "Plan the Hermes prompt update"',
         "",
@@ -48,7 +48,7 @@ function baseContext(overrides: Record<string, unknown> = {}) {
 
 test("renders standard assignment wake with task authority and no backlog discovery guidance", () => {
   const prompt = buildPrompt(baseContext({
-    paperclipWake: {
+    pilibalaWake: {
       reason: "issue_assigned",
       issue: {
         id: "issue-1",
@@ -63,8 +63,8 @@ test("renders standard assignment wake with task authority and no backlog discov
       comments: [],
       fallbackFetchNeeded: false,
     },
-    paperclipTaskMarkdown: [
-      "Paperclip task context:",
+    pilibalaTaskMarkdown: [
+      "Pilibala task context:",
       '- Issue: "PAP-11750"',
       '- Title: "Add Hermes prompt rendering regression tests"',
       "",
@@ -75,11 +75,11 @@ test("renders standard assignment wake with task authority and no backlog discov
     ].join("\n"),
   }), {});
 
-  expect(prompt).toContain("## Paperclip Wake Payload");
+  expect(prompt).toContain("## Pilibala Wake Payload");
   expect(prompt).toContain("- reason: issue_assigned");
   expect(prompt).toContain("- issue: PAP-11750 Add Hermes prompt rendering regression tests");
   expect(prompt).toContain("- issue work mode: standard");
-  expect(prompt).toContain("Paperclip task context:");
+  expect(prompt).toContain("Pilibala task context:");
   expect(prompt).toContain("Add focused unit tests for assignment wake and custom prompt rendering.");
   expect(prompt).toContain("The harness already checked out this issue for the current run.");
   expect(prompt).not.toContain("clear final disposition");
@@ -90,7 +90,7 @@ test("renders standard assignment wake with task authority and no backlog discov
 test("keeps current wake comments in the wake owner and preserves assignment markdown inputs", () => {
   const commentBody = "Please preserve the exact current comment once.";
   const prompt = buildPrompt(baseContext({
-    paperclipWake: {
+    pilibalaWake: {
       reason: "issue_commented",
       issue: {
         id: "issue-1",
@@ -104,11 +104,11 @@ test("keeps current wake comments in the wake owner and preserves assignment mar
       comments: [{ id: "comment-1", body: commentBody }],
       fallbackFetchNeeded: false,
     },
-    paperclipTaskMarkdown: [
-      "Paperclip task context:",
+    pilibalaTaskMarkdown: [
+      "Pilibala task context:",
       '- Issue: "PAP-11751"',
     ].join("\n"),
-    paperclipTurnContext: {
+    pilibalaTurnContext: {
       version: 1,
       assignment: { owner: "task_markdown" },
       events: { owner: "wake_prompt", comments: [{ id: "comment-1", revision: "rev-1" }] },
@@ -116,15 +116,15 @@ test("keeps current wake comments in the wake owner and preserves assignment mar
   }), {});
 
   expect(prompt.split(commentBody)).toHaveLength(2);
-  expect(prompt).toContain('Paperclip task context:\n- Issue: "PAP-11751"');
+  expect(prompt).toContain('Pilibala task context:\n- Issue: "PAP-11751"');
 });
 
 test("renders scoped planning wake authority before the Hermes default workflow", () => {
   const prompt = buildPrompt(baseContext(), {
-    paperclipApiUrl: "http://127.0.0.1:3101/api",
+    pilibalaApiUrl: "http://127.0.0.1:3101/api",
   });
 
-  expect(prompt).toContain("## Paperclip Wake Payload");
+  expect(prompt).toContain("## Pilibala Wake Payload");
   expect(prompt).toContain("- issue: PAP-3404 Plan the Hermes prompt update");
   expect(prompt).toContain("- planning directive: Make the plan only. Do not write code or perform implementation work.");
   expect(prompt).toContain("- checkout: already claimed by the harness for this run");
@@ -138,7 +138,7 @@ test("renders scoped planning wake authority before the Hermes default workflow"
 
 test("renders resume deltas instead of full scoped-wake boilerplate when continuing a session", () => {
   const prompt = buildPrompt(baseContext({
-    paperclipWake: {
+    pilibalaWake: {
       reason: "issue_commented",
       issue: {
         id: "issue-1",
@@ -155,8 +155,8 @@ test("renders resume deltas instead of full scoped-wake boilerplate when continu
     },
   }), {}, { resumedSession: true });
 
-  expect(prompt).toContain("## Paperclip Resume Delta");
-  expect(prompt).toContain("You are resuming an existing Paperclip session.");
+  expect(prompt).toContain("## Pilibala Resume Delta");
+  expect(prompt).toContain("You are resuming an existing Pilibala session.");
   expect(prompt).toContain("Focus on the new wake delta below");
   expect(prompt).toContain("Please add the resume-delta case.");
   expect(prompt).toContain("- fallback fetch needed: no");
@@ -166,7 +166,7 @@ test("renders resume deltas instead of full scoped-wake boilerplate when continu
 test("renders comment wake batch guidance without defaulting to a full-thread refetch", () => {
   const prompt = buildPrompt(baseContext({
     wakeCommentId: "comment-1",
-    paperclipWake: {
+    pilibalaWake: {
       reason: "issue_commented",
       issue: {
         id: "issue-1",
@@ -192,7 +192,7 @@ test("renders comment wake batch guidance without defaulting to a full-thread re
 
 test("renders accepted-plan continuation without authorizing implementation on the planning issue", () => {
   const prompt = buildPrompt(baseContext({
-    paperclipWake: {
+    pilibalaWake: {
       reason: "issue_commented",
       issue: {
         id: "issue-1",
@@ -219,8 +219,8 @@ test("renders accepted-plan continuation without authorizing implementation on t
 
 test("keeps authoritative parent and ancestor context from task markdown", () => {
   const prompt = buildPrompt(baseContext({
-    paperclipTaskMarkdown: [
-      "Paperclip task context:",
+    pilibalaTaskMarkdown: [
+      "Pilibala task context:",
       '- Issue: "PAP-3404"',
       "",
       "Authoritative parent / ancestor context:",
@@ -236,71 +236,71 @@ test("keeps authoritative parent and ancestor context from task markdown", () =>
 
 test("keeps current runtime identity in the user turn without repeating static API examples", () => {
   const prompt = buildPrompt(baseContext(), {
-    paperclipApiUrl: "http://paperclip.local/api",
+    pilibalaApiUrl: "http://pilibala.local/api",
   });
 
   expect(prompt).toContain("- Agent ID: agent-1");
   expect(prompt).toContain("- Company ID: company-1");
   expect(prompt).toContain("- Run ID: run-1");
-  expect(prompt).toContain("- API base: http://paperclip.local/api");
+  expect(prompt).toContain("- API base: http://pilibala.local/api");
   expect(prompt).not.toContain("Safe multiline update pattern:");
 });
 
 test("preserves custom prompt templates while exposing runtime and wake variables", () => {
   const prompt = buildPrompt(baseContext(), {
-    paperclipApiUrl: "http://paperclip.local/api",
+    pilibalaApiUrl: "http://pilibala.local/api",
     promptTemplate: [
       "CUSTOM TEMPLATE",
       "agent={{agent.name}}",
-      "api={{paperclipApiUrl}}",
-      "keyEnv={{paperclipApiKeyEnv}}",
-      "runEnv={{paperclipRunIdEnv}}",
-      "wakePrompt={{paperclipWakePrompt}}",
-      "task={{paperclipTaskMarkdown}}",
-      "wakeJson={{paperclipWakeJson}}",
+      "api={{pilibalaApiUrl}}",
+      "keyEnv={{pilibalaApiKeyEnv}}",
+      "runEnv={{pilibalaRunIdEnv}}",
+      "wakePrompt={{pilibalaWakePrompt}}",
+      "task={{pilibalaTaskMarkdown}}",
+      "wakeJson={{pilibalaWakeJson}}",
       "wake={{wakePayloadJson}}",
     ].join("\n"),
   });
 
   expect(prompt).toContain("CUSTOM TEMPLATE");
   expect(prompt).toContain("agent=Hermes Engineer");
-  expect(prompt).toContain("api=http://paperclip.local/api");
-  expect(prompt).toContain("keyEnv=PAPERCLIP_API_KEY");
-  expect(prompt).toContain("runEnv=PAPERCLIP_RUN_ID");
-  expect(prompt).toContain("wakePrompt=## Paperclip Wake Payload");
-  expect(prompt).toContain("task=Paperclip task context:");
+  expect(prompt).toContain("api=http://pilibala.local/api");
+  expect(prompt).toContain("keyEnv=PILIBALA_API_KEY");
+  expect(prompt).toContain("runEnv=PILIBALA_RUN_ID");
+  expect(prompt).toContain("wakePrompt=## Pilibala Wake Payload");
+  expect(prompt).toContain("task=Pilibala task context:");
   expect(prompt).toContain("wakeJson={\"reason\":\"issue_assigned\"");
   expect(prompt).toContain('"reason":"issue_assigned"');
-  expect(prompt).toContain("## Paperclip Wake Payload");
+  expect(prompt).toContain("## Pilibala Wake Payload");
   expect(prompt).toContain("Issue description:\n```text\nUse the wake payload as runtime authority.\n```");
-  expect(prompt).toContain("Paperclip runtime identity:");
+  expect(prompt).toContain("Pilibala runtime identity:");
 });
 
 test("keeps historical task markdown available to custom templates while automatic context uses assignment markdown", () => {
   const historical = "Historical task with current comment.";
   const assignment = "Assignment task without current comment.";
   const prompt = buildPrompt(baseContext({
-    paperclipTaskMarkdown: historical,
-    paperclipTaskMarkdownAssignment: assignment,
-    paperclipWake: {
+    pilibalaTaskMarkdown: historical,
+    pilibalaTaskMarkdownAssignment: assignment,
+    pilibalaWake: {
       reason: "issue_commented",
       issue: { id: "issue-1", identifier: "PAP-1", title: "Task", status: "in_progress" },
       comments: [{ id: "comment-1", body: "Current comment." }],
       commentWindow: { requestedCount: 1, includedCount: 1, missingCount: 0 },
       fallbackFetchNeeded: false,
     },
-  }), { promptTemplate: "custom={{paperclipTaskMarkdown}}" });
+  }), { promptTemplate: "custom={{pilibalaTaskMarkdown}}" });
   expect(prompt).toContain(`custom=${historical}`);
   expect(prompt).toContain(assignment);
   expect(prompt).toContain("Current comment.");
 });
 
 test("keeps legacy task markdown when ownership fields are absent", () => {
-  const legacyTask = "Legacy task context from an older Paperclip caller.";
+  const legacyTask = "Legacy task context from an older Pilibala caller.";
   const prompt = buildPrompt(baseContext({
-    paperclipTaskMarkdown: legacyTask,
-    paperclipTaskMarkdownAssignment: undefined,
-    paperclipTaskMarkdownCompact: undefined,
+    pilibalaTaskMarkdown: legacyTask,
+    pilibalaTaskMarkdownAssignment: undefined,
+    pilibalaTaskMarkdownCompact: undefined,
   }), {});
 
   expect(prompt).toContain(legacyTask);
@@ -311,11 +311,11 @@ test.each([false, true])("conversation prompts preserve the handoff policy (resu
   const directive = "Chat directive: clarify goals and hand the plan off to project tasks.";
   const ctx = baseContext({
     conversationMode: true,
-    paperclipTaskMarkdown: directive,
-    paperclipTaskMarkdownCompact: directive,
+    pilibalaTaskMarkdown: directive,
+    pilibalaTaskMarkdownCompact: directive,
   });
-  ctx.context.paperclipWake.interactionKind = "request_confirmation";
-  ctx.context.paperclipWake.interactionStatus = "accepted";
+  ctx.context.pilibalaWake.interactionKind = "request_confirmation";
+  ctx.context.pilibalaWake.interactionStatus = "accepted";
   for (const config of [{}, { promptTemplate: "Custom agent instruction." }]) {
     const prompt = buildPrompt(ctx, config, { resumedSession });
     expect(prompt).toContain(directive);

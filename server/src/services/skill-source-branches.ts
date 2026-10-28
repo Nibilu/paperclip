@@ -1,4 +1,4 @@
-import type { SkillSource, SkillSourceBranches } from '@paperclipai/shared';
+import type { SkillSource, SkillSourceBranches } from '@pilibalaai/shared';
 import { conflict, unprocessable } from '../errors.js';
 import type { GitHubRead } from './github-skill-source.js';
 

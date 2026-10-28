@@ -35,7 +35,7 @@ Use Settings → Connections (`/company/settings/connections`) when fast respons
 are enabled. Otherwise decision-model settings remain in Company Settings.
 Open the Decisions and Fast responses tabs in Costs to inspect invocation history.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use two disposable companies and a small package fixture. Record cloud-managed restrictions and visible settings gates.
 

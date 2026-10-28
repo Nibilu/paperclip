@@ -15,7 +15,7 @@ import {
   issueDocuments,
   issues,
   principalPermissionGrants,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 
 const support = await getEmbeddedPostgresTestSupport();
@@ -42,7 +42,7 @@ describePostgres("agent action audit routes", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-agent-action-audit-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-agent-action-audit-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 

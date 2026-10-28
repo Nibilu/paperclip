@@ -2,7 +2,7 @@
 
 Run-log events write to the `heartbeat_run_events` table
 (`packages/db/src/schema/heartbeat_run_events.ts:6-20`). They are not
-Paperclip Telemetry events, and they are not OpenTelemetry exports. A run-log
+Pilibala Telemetry events, and they are not OpenTelemetry exports. A run-log
 event needs no operator endpoint.
 
 ## Ordinary event persistence
@@ -95,7 +95,7 @@ restoring its plaintext into the checkpoint.
 PostgreSQL JSONB cannot represent NUL (U+0000), which can occur in command
 output such as Vite virtual-module paths. The run-event payload column uses a
 lossless storage codec for these events: the JSONB projection renders NUL as
-the literal `\u0000`, and the reserved `$paperclipRunEventJsonV1` field contains
+the literal `\u0000`, and the reserved `$pilibalaRunEventJsonV1` field contains
 the original serialized JSON as a doubly escaped string. Ordinary payloads
 retain their existing representation. Drizzle reads restore the exact stored
 payload before replay, hash validation, redaction, or API presentation. SQL
@@ -111,7 +111,7 @@ tickets, reconnect leases, authentication proofs, encryption keys, and raw
 credential material are never written to the run log.
 
 These records remain run-log events. They do not create an OpenTelemetry or
-Paperclip Telemetry export, and legacy adapters do not use this writer.
+Pilibala Telemetry export, and legacy adapters do not use this writer.
 
 ## Semantic Settlement Diagnostics and Retry Logs
 
@@ -159,7 +159,7 @@ Earlier attempts therefore remain available for incident diagnosis. Existing
 records without `attemptId` remain readable.
 
 These records use the instance run log and its configured storage. They add no
-Paperclip Telemetry or OpenTelemetry export.
+Pilibala Telemetry or OpenTelemetry export.
 
 ## Omitted Unsafe Workspace Export
 
@@ -172,10 +172,10 @@ create a task warning, recovery action, Telemetry event, or OpenTelemetry export
 
 ## Native Restart Recovery Run-Log Event
 
-Paperclip writes a `native.recovery.transition` event for every native restart
+Pilibala writes a `native.recovery.transition` event for every native restart
 classification and for graceful restart suspension. This immutable run-log
 record lets operators reconstruct recovery decisions without exporting data to
-Paperclip Telemetry or OpenTelemetry.
+Pilibala Telemetry or OpenTelemetry.
 
 The payload contains the restart kind, recovery request id when one exists,
 runner disposition, and the controller generation and provider attempt for a
@@ -240,7 +240,7 @@ It remains in the local run log and adds no Telemetry or OpenTelemetry export.
 
 ## Sandbox Startup Run-Log Event
 
-Paperclip writes one `run.startup.step` event to the run log for each bring-up
+Pilibala writes one `run.startup.step` event to the run log for each bring-up
 step. This event is a run-log record, not a first-party telemetry event. The
 generated telemetry contract does not cover it, so this section is its canonical
 contract.
@@ -266,7 +266,7 @@ endpoint. A run with no endpoint keeps only the three run-log fields above.
 
 ## Run Phase Timing Run-Log Event
 
-Paperclip writes one `run.phase.timing` event to the run log for each
+Pilibala writes one `run.phase.timing` event to the run log for each
 run-lifecycle phase. This event is a run-log record, not a first-party telemetry
 event. The generated telemetry contract does not cover it, so this section is its
 canonical contract. The producer is `emitRunPhaseTiming` in
@@ -308,7 +308,7 @@ run-log-only. It needs no OTLP endpoint.
 The heartbeat controller writes these records with `eventType: "lifecycle"`,
 `stream: "system"`, and `level: "info"`. The event name below is its `message`
 and its payload's `phase`. They remain in the instance run log and add no
-Paperclip Telemetry or OpenTelemetry export.
+Pilibala Telemetry or OpenTelemetry export.
 
 | Event | Payload fields besides `phase` | Meaning |
 | --- | --- | --- |
@@ -377,7 +377,7 @@ Recovery still uses the typed failure category and the adapter's existing
 classifier. Provider warnings do not become failures, and timeouts or lost
 control channels keep their authoritative failure messages. These diagnostics
 stay in the instance's run records and configured run-log storage. They add no
-Paperclip Telemetry or OpenTelemetry export.
+Pilibala Telemetry or OpenTelemetry export.
 
 ## Related instrumentation
 
@@ -548,7 +548,7 @@ Successful checkpoints can include `checkpointStats`: `scannedEntries`,
 `hashedBytes`, `copiedFiles`, and `copiedBytes`. These counts describe that
 capture, not cumulative traffic or an atomic snapshot of background writers.
 They contain no file contents. The receipt remains in the instance run log;
-it adds no Paperclip Telemetry or OpenTelemetry export.
+it adds no Pilibala Telemetry or OpenTelemetry export.
 
 If instruction-copy release throws, `instruction_cleanup` records a warning
 with payload `{ "state": "deferred" }`. The existing working-copy recovery sweep

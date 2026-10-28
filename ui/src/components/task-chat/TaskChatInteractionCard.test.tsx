@@ -4,7 +4,7 @@ import { act, forwardRef, useImperativeHandle, type ForwardedRef } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IssueDocument } from "@paperclipai/shared";
+import type { IssueDocument } from "@pilibalaai/shared";
 import type {
   IssueThreadInteraction,
   RequestConfirmationInteraction,
@@ -393,8 +393,8 @@ describe("TaskChatInteractionCard", () => {
         );
       });
 
-    render({ type: "custom", key: "github:paperclipai/paperclip-desktop:pull:16" });
-    expect(container.textContent).not.toContain("github:paperclipai");
+    render({ type: "custom", key: "github:pilibalaai/pilibala-desktop:pull:16" });
+    expect(container.textContent).not.toContain("github:pilibalaai");
     const prompt = Array.from(container.querySelectorAll("p")).find((node) =>
       node.textContent?.startsWith("The change is open"),
     );
@@ -404,15 +404,15 @@ describe("TaskChatInteractionCard", () => {
 
     render({
       type: "custom",
-      key: "github:paperclipai/paperclip-desktop:pull:16",
+      key: "github:pilibalaai/pilibala-desktop:pull:16",
       label: "PR #16",
-      href: "https://github.com/paperclipai/paperclip-desktop/pull/16",
+      href: "https://github.com/pilibalaai/pilibala-desktop/pull/16",
     });
     const link = container.querySelector(
-      'a[href="https://github.com/paperclipai/paperclip-desktop/pull/16"]',
+      'a[href="https://github.com/pilibalaai/pilibala-desktop/pull/16"]',
     );
     expect(link?.textContent).toBe("PR #16");
-    expect(container.textContent).not.toContain("github:paperclipai");
+    expect(container.textContent).not.toContain("github:pilibalaai");
   });
 
   it("stacks the checkbox confirmation prompt full-width and hides unlabeled custom target keys", () => {
@@ -437,8 +437,8 @@ describe("TaskChatInteractionCard", () => {
         );
       });
 
-    render({ type: "custom", key: "github:paperclipai/paperclip-desktop:pull:16" });
-    expect(container.textContent).not.toContain("github:paperclipai");
+    render({ type: "custom", key: "github:pilibalaai/pilibala-desktop:pull:16" });
+    expect(container.textContent).not.toContain("github:pilibalaai");
     const prompt = Array.from(container.querySelectorAll("p")).find((node) =>
       node.textContent?.startsWith("Pick the drafts"),
     );
@@ -448,15 +448,15 @@ describe("TaskChatInteractionCard", () => {
 
     render({
       type: "custom",
-      key: "github:paperclipai/paperclip-desktop:pull:16",
+      key: "github:pilibalaai/pilibala-desktop:pull:16",
       label: "PR #16",
-      href: "https://github.com/paperclipai/paperclip-desktop/pull/16",
+      href: "https://github.com/pilibalaai/pilibala-desktop/pull/16",
     });
     const link = container.querySelector(
-      'a[href="https://github.com/paperclipai/paperclip-desktop/pull/16"]',
+      'a[href="https://github.com/pilibalaai/pilibala-desktop/pull/16"]',
     );
     expect(link?.textContent).toBe("PR #16");
-    expect(container.textContent).not.toContain("github:paperclipai");
+    expect(container.textContent).not.toContain("github:pilibalaai");
   });
 
   it("keeps the plan revision in the header and hides the prompt while requesting changes", async () => {
@@ -740,7 +740,7 @@ describe("TaskChatInteractionCard", () => {
           required: true,
           options: [
             {
-              id: "__paperclip_text__",
+              id: "__pilibala_text__",
               label: "Enter an integer",
               freeText: true,
             },
@@ -748,7 +748,7 @@ describe("TaskChatInteractionCard", () => {
         },
       ],
       questionSet: {
-        schema: "paperclip.question_set.v1",
+        schema: "pilibala.question_set.v1",
         title: "Configure deployment",
         description: "The provider disconnected while waiting for this answer.",
         submitLabel: "Continue",
@@ -814,7 +814,7 @@ describe("TaskChatInteractionCard", () => {
       options: [{ id: "preset", label: "Preset" }, { id: "other", label: "Custom answer", freeText: true }],
     }];
     interaction.payload.questionSet = mode === "legacy_custom" ? undefined : {
-      schema: "paperclip.question_set.v1",
+      schema: "pilibala.question_set.v1",
       questions: [mode === "canonical_text"
         ? { id: "draft", prompt: "Edit", required: true, answerMode: "text", initialText: "Provider draft" }
         : { id: "draft", prompt: "Edit", required: true, answerMode: "single_select", options: [{ id: "preset", label: "Preset" }], customAnswer: { enabled: true, label: "Custom answer" } }],

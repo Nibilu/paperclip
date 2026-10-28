@@ -20,7 +20,7 @@ const entries = {
   "packages/plugins/sdk/src/index.ts": 'SDK API',
   "server/src/server.ts": 'server',
 };
-const scope = { node: 'v24.19.0', root: '/work/paperclip', arch: 'x64', libc: '2.39', pnpm: '9.15.4', store: '/store' };
+const scope = { node: 'v24.19.0', root: '/work/pilibala', arch: 'x64', libc: '2.39', pnpm: '9.15.4', store: '/store' };
 const plan = (files = entries, runtime = scope) => cachePlan({
   files: Object.keys(files), read: (file) => files[file] === null ? null : Buffer.from(files[file]), scope: runtime,
   packageDirs: ['.', 'packages/plugins/sdk', 'packages/shared', 'server'],
@@ -78,7 +78,7 @@ test('cache restores are exact and only a frozen canonical master push can publi
   for (const restore of [installed, builds]) assert.doesNotMatch(restore, /restore-keys:/);
   for (const step of action.split('    - name: Save ').slice(1)) {
     assert.match(step, /inputs\.save-cache == 'true'/);
-    assert.match(step, /github\.repository == 'paperclipai\/paperclip'/);
+    assert.match(step, /github\.repository == 'pilibalaai\/pilibala'/);
     assert.match(step, /github\.event_name == 'push'/);
     assert.match(step, /github\.ref == 'refs\/heads\/master'/);
     assert.match(step, /steps\.install\.outputs\.frozen == 'true'/);

@@ -4,7 +4,7 @@ import { lstat, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { withAccountHomeSecretMutationLock } from "@paperclipai/adapter-codex-local/server";
+import { withAccountHomeSecretMutationLock } from "@pilibalaai/adapter-codex-local/server";
 import { AdapterAuthSessionConflictError } from "../services/device-login-service.js";
 import type {
   AdapterAuthSessionRow,
@@ -203,8 +203,8 @@ vi.mock("../middleware/logger.js", () => ({
 // Retain the production readiness helper while making the promotion decision
 // observable. This lets the route test prove that a resolved but rejected
 // Decision H outcome becomes a failed terminal rather than authenticated.
-vi.mock("@paperclipai/adapter-codex-local/server", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paperclipai/adapter-codex-local/server")>();
+vi.mock("@pilibalaai/adapter-codex-local/server", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@pilibalaai/adapter-codex-local/server")>();
   return {
     ...actual,
     promoteDeviceLoginCredential: mockDeviceLoginPromotion,
@@ -328,7 +328,7 @@ function createFakeRuntime(promptOutput: string = PROMPT_OUTPUT): LoginSessionRu
       harness.acquisitions.push(input);
       const lease: LoginSessionLease = {
         providerLeaseId: `provider-lease-${input.sessionId}`,
-        authPath: `/tmp/paperclip-adapter-login/${input.sessionId}/auth.json`,
+        authPath: `/tmp/pilibala-adapter-login/${input.sessionId}/auth.json`,
         driver: {
           async start(_command, onData) {
             onData(promptOutput);
@@ -395,7 +395,7 @@ describe("adapter device-login routes", () => {
     mockDeviceLoginPromotion.mockResolvedValue({
       outcome: "promoted",
       accountId: "acct-default",
-      accountHomeDir: "/tmp/paperclip-codex-account-home/acct-default",
+      accountHomeDir: "/tmp/pilibala-codex-account-home/acct-default",
     });
     mockSecretService.getByName.mockResolvedValue(null);
     mockSecretService.create.mockResolvedValue({ id: "secret-1" });
@@ -848,7 +848,7 @@ describe("adapter device-login routes", () => {
     // reconfirms the bound secret's value a second time right before it
     // commits the terminal `authenticated` state.
     mockSecretService.resolveSecretValueForDeviceLoginCheck.mockResolvedValue(
-      "/tmp/paperclip-codex-account-home/acct-default",
+      "/tmp/pilibala-codex-account-home/acct-default",
     );
     const app = await createApp();
 
@@ -891,7 +891,7 @@ describe("adapter device-login routes", () => {
     // reconfirms the bound secret's value a second time right before it
     // commits the terminal `authenticated` state.
     mockSecretService.resolveSecretValueForDeviceLoginCheck.mockResolvedValue(
-      "/tmp/paperclip-codex-account-home/acct-default",
+      "/tmp/pilibala-codex-account-home/acct-default",
     );
     const app = await createApp();
 
@@ -923,10 +923,10 @@ describe("adapter device-login routes", () => {
     // binding the agent's CODEX_HOME only when the identities differ, which
     // is the one case where the login cannot take effect through the shared
     // company home.
-    const instanceRoot = await mkdtemp(path.join(os.tmpdir(), "paperclip-login-binding-"));
+    const instanceRoot = await mkdtemp(path.join(os.tmpdir(), "pilibala-login-binding-"));
     try {
-      vi.stubEnv("PAPERCLIP_HOME", instanceRoot);
-      vi.stubEnv("PAPERCLIP_INSTANCE_ID", "default");
+      vi.stubEnv("PILIBALA_HOME", instanceRoot);
+      vi.stubEnv("PILIBALA_INSTANCE_ID", "default");
       const companyHome = path.join(instanceRoot, "instances", "default", "companies", COMPANY_1, "codex-home");
       await mkdir(companyHome, { recursive: true });
       await writeFile(
@@ -936,7 +936,7 @@ describe("adapter device-login routes", () => {
         }),
       );
       mockSecretService.resolveSecretValueForDeviceLoginCheck.mockResolvedValue(
-        "/tmp/paperclip-codex-account-home/acct-default",
+        "/tmp/pilibala-codex-account-home/acct-default",
       );
       const app = await createApp();
       const started = await request(app).post(loginPath(COMPANY_1)).send({ environmentId: SANDBOX_ENV_1 });
@@ -973,10 +973,10 @@ describe("adapter device-login routes", () => {
     // Same-account logins take effect through the company-home refresh; the
     // claim still rides along with `companyIdentityDiffers: false`, and the
     // client deliberately binds nothing.
-    const instanceRoot = await mkdtemp(path.join(os.tmpdir(), "paperclip-login-binding-same-"));
+    const instanceRoot = await mkdtemp(path.join(os.tmpdir(), "pilibala-login-binding-same-"));
     try {
-      vi.stubEnv("PAPERCLIP_HOME", instanceRoot);
-      vi.stubEnv("PAPERCLIP_INSTANCE_ID", "default");
+      vi.stubEnv("PILIBALA_HOME", instanceRoot);
+      vi.stubEnv("PILIBALA_INSTANCE_ID", "default");
       const companyHome = path.join(instanceRoot, "instances", "default", "companies", COMPANY_1, "codex-home");
       await mkdir(companyHome, { recursive: true });
       await writeFile(
@@ -986,7 +986,7 @@ describe("adapter device-login routes", () => {
         }),
       );
       mockSecretService.resolveSecretValueForDeviceLoginCheck.mockResolvedValue(
-        "/tmp/paperclip-codex-account-home/acct-default",
+        "/tmp/pilibala-codex-account-home/acct-default",
       );
       const app = await createApp();
       const started = await request(app).post(loginPath(COMPANY_1)).send({ environmentId: SANDBOX_ENV_1 });
@@ -1041,12 +1041,12 @@ describe("adapter device-login routes", () => {
     // A second, different account no longer fails behind an occupied company
     // home: each account gets its own home, named by a company secret.
     mockSecretService.resolveSecretValueForDeviceLoginCheck.mockResolvedValue(
-      "/tmp/paperclip-codex-account-home/acct-second",
+      "/tmp/pilibala-codex-account-home/acct-second",
     );
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted",
       accountId: "acct-second",
-      accountHomeDir: "/tmp/paperclip-codex-account-home/acct-second",
+      accountHomeDir: "/tmp/pilibala-codex-account-home/acct-second",
     });
     const app = await createApp();
 
@@ -1067,7 +1067,7 @@ describe("adapter device-login routes", () => {
       COMPANY_1,
       expect.objectContaining({
         name: "CODEX_HOME_acct-second",
-        value: "/tmp/paperclip-codex-account-home/acct-second",
+        value: "/tmp/pilibala-codex-account-home/acct-second",
       }),
       expect.anything(),
     );
@@ -1077,7 +1077,7 @@ describe("adapter device-login routes", () => {
     // The secret already names this account's home, so the route reads it,
     // confirms the value still matches, and creates nothing new: a repeat
     // login is idempotent.
-    const accountHomeDir = "/tmp/paperclip-codex-account-home/acct-default";
+    const accountHomeDir = "/tmp/pilibala-codex-account-home/acct-default";
     mockSecretService.getByName.mockResolvedValue({ id: "existing-secret" });
     mockSecretService.resolveSecretValueForDeviceLoginCheck.mockResolvedValue(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
@@ -1116,7 +1116,7 @@ describe("adapter device-login routes", () => {
     // that no longer names the account's own home. This proves the check
     // waits for a lock held elsewhere, and only reads the secret's value
     // once that lock frees.
-    const accountHomeDir = "/tmp/paperclip-codex-account-home/acct-default";
+    const accountHomeDir = "/tmp/pilibala-codex-account-home/acct-default";
     mockSecretService.getByName.mockResolvedValue({ id: "existing-secret" });
     mockSecretService.resolveSecretValueForDeviceLoginCheck.mockResolvedValue(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
@@ -1162,7 +1162,7 @@ describe("adapter device-login routes", () => {
     // must run the same check again, right before that commit, under a
     // fresh lock acquisition: this test proves the second check runs, not
     // only the first.
-    const accountHomeDir = "/tmp/paperclip-codex-account-home/acct-default";
+    const accountHomeDir = "/tmp/pilibala-codex-account-home/acct-default";
     mockSecretService.getByName.mockResolvedValue({ id: "existing-secret" });
     mockSecretService.resolveSecretValueForDeviceLoginCheck.mockResolvedValue(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
@@ -1194,7 +1194,7 @@ describe("adapter device-login routes", () => {
     // The service must catch this with a second check it runs right before
     // that commit, or it would report `authenticated` for a value that no
     // longer names the account's own home.
-    const accountHomeDir = "/tmp/paperclip-codex-account-home/acct-default";
+    const accountHomeDir = "/tmp/pilibala-codex-account-home/acct-default";
     mockSecretService.getByName.mockResolvedValue({ id: "existing-secret" });
     mockSecretService.resolveSecretValueForDeviceLoginCheck
       // `promote`'s own early check: still matches.
@@ -1235,7 +1235,7 @@ describe("adapter device-login routes", () => {
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "kept",
       accountId: "acct-stale",
-      accountHomeDir: "/tmp/paperclip-codex-account-home/acct-stale",
+      accountHomeDir: "/tmp/pilibala-codex-account-home/acct-stale",
     });
     const app = await createApp();
 
@@ -1259,7 +1259,7 @@ describe("adapter device-login routes", () => {
     // This login created the account home, so a secret-creation failure must
     // fail the login and remove the directory it just created, so the
     // operation stays atomic.
-    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-account-home-test-"));
+    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-codex-account-home-test-"));
     accountHomeTestDirs.push(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted",
@@ -1291,7 +1291,7 @@ describe("adapter device-login routes", () => {
     // secret but kept the directory, or an earlier login already wrote it).
     // A secret-creation failure must still fail the login, but it must never
     // remove a directory this login did not create.
-    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-account-home-test-"));
+    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-codex-account-home-test-"));
     accountHomeTestDirs.push(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted",
@@ -1325,7 +1325,7 @@ describe("adapter device-login routes", () => {
     // so the loser must confirm the winning secret's value, report a
     // successful login, and must never remove the account home the winner
     // just wrote.
-    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-account-home-test-"));
+    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-codex-account-home-test-"));
     accountHomeTestDirs.push(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted",
@@ -1366,7 +1366,7 @@ describe("adapter device-login routes", () => {
     // secret could belong to unrelated stale state, not the winner of a
     // genuine same-account race. The login must not report success without
     // checking the winning secret's value.
-    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-account-home-test-"));
+    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-codex-account-home-test-"));
     accountHomeTestDirs.push(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted",
@@ -1406,7 +1406,7 @@ describe("adapter device-login routes", () => {
   });
 
   it("keeps a newly promoted account home claimed by an instance secret when company secret creation fails", async () => {
-    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-account-home-test-"));
+    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-codex-account-home-test-"));
     accountHomeTestDirs.push(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted", accountId: "acct-instance-owner", accountHomeDir, accountHomeCreated: true,
@@ -1432,7 +1432,7 @@ describe("adapter device-login routes", () => {
     // the company secret before this call's own, unrelated secret-creation
     // attempt fails. The directory now belongs to that other login's secret,
     // so the cleanup scan must find it by value and keep the directory.
-    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-account-home-test-"));
+    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-codex-account-home-test-"));
     accountHomeTestDirs.push(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted",
@@ -1473,7 +1473,7 @@ describe("adapter device-login routes", () => {
     // no relation to the generated `CODEX_HOME_<handle>` name. A cleanup that
     // checks only the generated name would miss this secret and delete a
     // directory it still needs; the scan must catch it by value instead.
-    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-account-home-test-"));
+    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-codex-account-home-test-"));
     accountHomeTestDirs.push(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted",
@@ -1517,7 +1517,7 @@ describe("adapter device-login routes", () => {
     // hand-named secret bound to this account home through AWS Secrets
     // Manager is just as real a claimant as a `local_encrypted` one. The
     // scan must resolve it too, not skip it for its provider.
-    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-account-home-test-"));
+    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-codex-account-home-test-"));
     accountHomeTestDirs.push(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted",
@@ -1558,7 +1558,7 @@ describe("adapter device-login routes", () => {
     // No secret, under any name, resolves to this directory, so the cleanup
     // must still remove it — the broader scan must not make cleanup any less
     // eager than the old name-only check when nothing claims the directory.
-    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-account-home-test-"));
+    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-codex-account-home-test-"));
     accountHomeTestDirs.push(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted",
@@ -1596,7 +1596,7 @@ describe("adapter device-login routes", () => {
     // have matched. The cleanup must keep the directory rather than treat an
     // unresolved secret as a non-match, even when every secret that DID
     // resolve named a different directory.
-    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-account-home-test-"));
+    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-codex-account-home-test-"));
     accountHomeTestDirs.push(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted",
@@ -1639,7 +1639,7 @@ describe("adapter device-login routes", () => {
     // secret can appear after that first list call, while the scan is still
     // resolving an earlier secret. The scan must re-list and check that new
     // secret too, instead of trusting its first, now-stale list.
-    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-account-home-test-"));
+    const accountHomeDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-codex-account-home-test-"));
     accountHomeTestDirs.push(accountHomeDir);
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted",
@@ -1687,7 +1687,7 @@ describe("adapter device-login routes", () => {
     mockDeviceLoginPromotion.mockResolvedValueOnce({
       outcome: "promoted",
       accountId: "acct with space",
-      accountHomeDir: "/tmp/paperclip-codex-account-home/unused",
+      accountHomeDir: "/tmp/pilibala-codex-account-home/unused",
     });
     const app = await createApp();
 

@@ -12,7 +12,7 @@ import {
   toolConnections,
   connectionGrants,
   agents,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   createAiConnectionSchema,
   aiConnectionLoginIntentSchema,
@@ -25,7 +25,7 @@ import {
   type AiConnectionBinding,
   type AiConnectionList,
   aiConnectionPoolConfigSchema,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
 import { forbidden, notFound, unprocessable } from "../errors.js";
 import { accessService } from "../services/access.js";

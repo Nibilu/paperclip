@@ -2,7 +2,7 @@ import {
   aiRoutingBaseUrl,
   aiRoutingModel,
   type AiProviderRouting,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 /** Projects one authoritative connection into an isolated harness environment. */
 export function managedProviderRouting(
@@ -23,8 +23,8 @@ export function managedProviderRouting(
     env.AWS_EC2_METADATA_DISABLED = "true";
     env.AWS_BEARER_TOKEN_BEDROCK = credential;
   } else if (harness === "codex_local") {
-    env.PAPERCLIP_AI_PROVIDER_KEY = credential;
-    codexConfig = `model_provider = "paperclip"\n[model_providers.paperclip]\nname = "Paperclip connection"\nbase_url = ${JSON.stringify(baseUrl)}\nwire_api = "responses"\nrequires_openai_auth = false\n${route.auth === "none" ? "" : 'env_key = "PAPERCLIP_AI_PROVIDER_KEY"\n'}`;
+    env.PILIBALA_AI_PROVIDER_KEY = credential;
+    codexConfig = `model_provider = "pilibala"\n[model_providers.pilibala]\nname = "Pilibala connection"\nbase_url = ${JSON.stringify(baseUrl)}\nwire_api = "responses"\nrequires_openai_auth = false\n${route.auth === "none" ? "" : 'env_key = "PILIBALA_AI_PROVIDER_KEY"\n'}`;
   } else if (harness === "claude_local") {
     env.ANTHROPIC_BASE_URL = baseUrl;
     env[
@@ -39,11 +39,11 @@ export function managedProviderRouting(
       env.CLAUDE_CODE_SUBAGENT_MODEL = model;
     }
   } else if (harness === "opencode_local") {
-    const provider = route.kind === "openrouter" ? "openrouter" : "paperclip";
+    const provider = route.kind === "openrouter" ? "openrouter" : "pilibala";
     if (route.kind === "openrouter") env.OPENROUTER_API_KEY = credential;
     else {
-      env.PAPERCLIP_AI_PROVIDER_KEY = credential;
-      env.PAPERCLIP_AI_PROVIDER_URL = baseUrl;
+      env.PILIBALA_AI_PROVIDER_KEY = credential;
+      env.PILIBALA_AI_PROVIDER_URL = baseUrl;
     }
     const id = model.startsWith(`${provider}/`)
       ? model.slice(provider.length + 1)
@@ -51,8 +51,8 @@ export function managedProviderRouting(
     env.OPENCODE_CONFIG_CONTENT = JSON.stringify({
       provider: {
         [provider]: {
-          ...(provider === "paperclip"
-            ? { npm: "@ai-sdk/openai-compatible", name: "Paperclip connection" }
+          ...(provider === "pilibala"
+            ? { npm: "@ai-sdk/openai-compatible", name: "Pilibala connection" }
             : {}),
           options: { baseURL: baseUrl, apiKey: credential },
           models: id ? { [id]: { name: id } } : {},

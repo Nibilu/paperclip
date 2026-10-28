@@ -20,7 +20,7 @@ import { Router, type Request, type Response } from "express";
 import multer from "multer";
 import { z } from "zod";
 import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   assets,
@@ -36,13 +36,13 @@ import {
   issues,
   labels,
   projects,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   createDocumentAnnotationCommentSchema,
   createDocumentAnnotationThreadSchema,
   updateDocumentAnnotationThreadSchema,
   isUuidLike,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { formatAttachmentSize, MAX_ATTACHMENT_BYTES, normalizeContentType } from "../attachment-types.js";
 import { badRequest, conflict, forbidden, notFound, unprocessable } from "../errors.js";
 import { validate } from "../middleware/validate.js";
@@ -71,17 +71,17 @@ async function assertCasesEnabled(db: Db) {
 }
 
 async function lockCaseUpsertKey(db: CaseRouteDb, input: { companyId: string; caseType: string; key: string | null | undefined }) {
-  const lockKey = `paperclip:case-upsert:${input.companyId}:${input.caseType}:${input.key ?? "<null>"}`;
+  const lockKey = `pilibala:case-upsert:${input.companyId}:${input.caseType}:${input.key ?? "<null>"}`;
   await db.execute(sql`select pg_advisory_xact_lock(hashtext(${lockKey}))`);
 }
 
 async function lockCaseDocumentKey(db: CaseRouteDb, input: { companyId: string; caseId: string; key: string }) {
-  const lockKey = `paperclip:case-document:${input.companyId}:${input.caseId}:${input.key}`;
+  const lockKey = `pilibala:case-document:${input.companyId}:${input.caseId}:${input.key}`;
   await db.execute(sql`select pg_advisory_xact_lock(hashtext(${lockKey}))`);
 }
 
 async function lockCaseLabels(db: CaseRouteDb, input: { companyId: string; caseId: string }) {
-  const lockKey = `paperclip:case-labels:${input.companyId}:${input.caseId}`;
+  const lockKey = `pilibala:case-labels:${input.companyId}:${input.caseId}`;
   await db.execute(sql`select pg_advisory_xact_lock(hashtext(${lockKey}))`);
 }
 
@@ -362,7 +362,7 @@ async function autoLinkRunIssue(db: CaseRouteDb, input: {
 }
 
 async function nextCaseIdentity(db: CaseRouteDb, companyId: string) {
-  await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`paperclip:cases:${companyId}`}))`);
+  await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`pilibala:cases:${companyId}`}))`);
   const [company] = await db
     .select({ issuePrefix: companies.issuePrefix })
     .from(companies)

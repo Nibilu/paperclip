@@ -4,15 +4,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setImmediate } from "node:timers/promises";
 import { afterEach, describe, expect, it } from "vitest";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
 import { createRemoteNativeArtifactPreparation } from "./native-session-executor.js";
 
 type Request = Parameters<CommandManagedRuntimeRunner["execute"]>[0];
 const roots: string[] = [];
 const metadata = {
-  schema: "paperclip-runner/runnerd-build-metadata/v1",
-  binaryName: "paperclip-runnerd",
-  packageName: "@paperclipai/paperclip-runner",
+  schema: "pilibala-runner/runnerd-build-metadata/v1",
+  binaryName: "pilibala-runnerd",
+  packageName: "@pilibalaai/pilibala-runner",
   binaryContractVersion: 2,
   durableSessionCapabilities: ["unlimited_runtime", "connection_lease_renewal"],
   prpTransportModes: ["dial_ws_loopback", "dial_wss", "listen_ws"],
@@ -29,7 +29,7 @@ async function fixture(input: {
   const cwd = join(root, "workspace");
   await mkdir(bin, { recursive: true });
   await mkdir(cwd);
-  const runnerSource = join(bin, "paperclip-runnerd");
+  const runnerSource = join(bin, "pilibala-runnerd");
   const codexSource = join(bin, "codex");
   const runnerScript = `#!/bin/sh\n[ "$1" = --build-metadata ] || exit 17\nprintf '%s\\n' '${JSON.stringify(metadata)}'\n`;
   await writeFile(runnerSource, runnerScript, { mode: 0o700 });
@@ -64,8 +64,8 @@ async function fixture(input: {
       }
     },
   };
-  const runtimeRoot = join(cwd, ".paperclip-runtime");
-  const runnerTarget = join(runtimeRoot, "bin", "paperclip-runnerd");
+  const runtimeRoot = join(cwd, ".pilibala-runtime");
+  const runnerTarget = join(runtimeRoot, "bin", "pilibala-runnerd");
   const codexTarget = join(runtimeRoot, "bin", "codex");
   const options: Parameters<typeof createRemoteNativeArtifactPreparation>[0] = {
     target: { kind: "remote", transport: "sandbox", providerKey: "daytona", remoteCwd: cwd, runner },
@@ -81,7 +81,7 @@ async function fixture(input: {
 }
 
 const discovers = (request: Request, name: string) => request.command === "sh"
-  && request.args?.some(value => value.includes(`for candidate in /opt/paperclip-runner/bin/${name} `));
+  && request.args?.some(value => value.includes(`for candidate in /opt/pilibala-runner/bin/${name} `));
 
 afterEach(async () => {
   await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true })));
@@ -122,7 +122,7 @@ describe("remote native artifact preparation", () => {
     const harnessGate = new Promise<void>(resolve => { releaseHarness = resolve; });
     let harnessStarted = false;
     const f = await fixture({ before: async request => {
-      if (discovers(request, "paperclip-runnerd")) throw failure;
+      if (discovers(request, "pilibala-runnerd")) throw failure;
       if (discovers(request, "codex")) { harnessStarted = true; await harnessGate; }
     } });
     let rejected = false;
@@ -146,7 +146,7 @@ describe("remote native artifact preparation", () => {
     const runnerFailure = new Error("runner discovery unavailable");
     const harnessFailure = new Error("harness discovery unavailable");
     const f = await fixture({ before: async request => {
-      if (discovers(request, "paperclip-runnerd")) throw runnerFailure;
+      if (discovers(request, "pilibala-runnerd")) throw runnerFailure;
       if (discovers(request, "codex")) throw harnessFailure;
     } });
     await expect(createRemoteNativeArtifactPreparation(f.options).prepare("listen_ws")).rejects.toBe(runnerFailure);

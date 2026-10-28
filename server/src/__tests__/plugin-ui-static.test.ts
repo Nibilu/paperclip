@@ -25,7 +25,7 @@ let originalNodeEnv: string | undefined;
 function createPluginPackage(source = "export default {};\n") {
   const packageRoot = path.join(
     tmpdir(),
-    `paperclip-plugin-ui-static-${randomUUID()}`,
+    `pilibala-plugin-ui-static-${randomUUID()}`,
   );
   const uiDir = path.join(packageRoot, "dist", "ui");
   mkdirSync(uiDir, { recursive: true });
@@ -37,13 +37,13 @@ function createPluginPackage(source = "export default {};\n") {
 function readyPlugin(packageRoot: string) {
   mockRegistry.getById.mockResolvedValue({
     id: pluginId,
-    pluginKey: "paperclip.example",
-    packageName: "paperclip-plugin-example",
+    pluginKey: "pilibala.example",
+    packageName: "pilibala-plugin-example",
     packagePath: packageRoot,
     version: "1.0.0",
     status: "ready",
     manifestJson: {
-      id: "paperclip.example",
+      id: "pilibala.example",
       entrypoints: {
         ui: "./dist/ui",
       },

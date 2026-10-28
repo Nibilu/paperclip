@@ -1,11 +1,11 @@
 # Cloud customer-success inspection support
 
-Paperclip exposes `/api/customer-success/v1/run-authority` and `/read` for the
+Pilibala exposes `/api/customer-success/v1/run-authority` and `/read` for the
 coordinated Cloud inspection broker. This foundation supports one registered
-Paperclip agent; bot creation, scheduling, scoring and reporting are separate.
+Pilibala agent; bot creation, scheduling, scoring and reporting are separate.
 
 The authority endpoint is disabled unless
-`PAPERCLIP_CUSTOMER_SUCCESS_AUTHORITY_ENABLED=true`. It accepts only a strict,
+`PILIBALA_CUSTOMER_SUCCESS_AUTHORITY_ENABLED=true`. It accepts only a strict,
 current instance/company-derived managed-run JWT. It requires the authenticated
 agent's existing provisioned Ed25519 identity and an active running heartbeat;
 paused, cancelled/stopped, finished and unsupported-runtime agents are rejected.
@@ -13,11 +13,11 @@ No identity GET provisions keys. Normal API JWT compatibility remains unchanged;
 legacy signatures are rejected specifically at this authority boundary.
 
 Tenant reads are disabled unless
-`PAPERCLIP_CUSTOMER_SUCCESS_INSPECTION_ENABLED=true`. Configure the public-only
-`PAPERCLIP_CUSTOMER_SUCCESS_INSPECTION_JWKS` and the stable HTTPS
-`PAPERCLIP_CUSTOMER_SUCCESS_CLOUD_ORIGIN`. Cloud provision/roll delivers the trust
+`PILIBALA_CUSTOMER_SUCCESS_INSPECTION_ENABLED=true`. Configure the public-only
+`PILIBALA_CUSTOMER_SUCCESS_INSPECTION_JWKS` and the stable HTTPS
+`PILIBALA_CUSTOMER_SUCCESS_CLOUD_ORIGIN`. Cloud provision/roll delivers the trust
 configuration. The persisted runtime stack identity is authoritative; an explicit
-`PAPERCLIP_CLOUD_STACK_ID` is usable on operator-configured qualification stacks.
+`PILIBALA_CLOUD_STACK_ID` is usable on operator-configured qualification stacks.
 Cloud's dedicated inspection key is distinct from the inspecting agent's key.
 
 The tenant verifies a maximum-sixty-second, audience/type-bound Ed25519 permit
@@ -71,7 +71,7 @@ Focused verification:
 pnpm exec vitest run server/src/__tests__/customer-success.test.ts \
   server/src/__tests__/agent-auth-jwt.test.ts server/src/__tests__/agent-identity.test.ts
 # Coordinated qualification, with the sibling Cloud build:
-PAPERCLIP_INSPECTION_CLOUD_DIST=/absolute/path/paperclip-cloud/dist \
+PILIBALA_INSPECTION_CLOUD_DIST=/absolute/path/pilibala-cloud/dist \
   pnpm exec vitest run server/src/__tests__/customer-success-cloud.test.ts
 ```
 

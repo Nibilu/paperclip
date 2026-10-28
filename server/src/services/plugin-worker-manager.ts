@@ -23,7 +23,7 @@ import { randomUUID } from "node:crypto";
 import { beginIdleTrackedWork, readTaskDrain, trackIdleWork } from "./task-admission.js";
 import { EventEmitter } from "node:events";
 import { createInterface, type Interface as ReadlineInterface } from "node:readline";
-import type { PaperclipPluginManifestV1 } from "@paperclipai/shared";
+import type { PilibalaPluginManifestV1 } from "@pilibalaai/shared";
 import {
   JSONRPC_VERSION,
   JSONRPC_ERROR_CODES,
@@ -44,7 +44,7 @@ import {
   DUPLEX_CHANNEL_EXIT_NOTIFICATION,
   encodeChannelBytes,
   decodeChannelBytes,
-} from "@paperclipai/plugin-sdk";
+} from "@pilibalaai/plugin-sdk";
 import type {
   JsonRpcId,
   PluginInvocationContext,
@@ -58,8 +58,8 @@ import type {
   WorkerToHostMethodName,
   WorkerToHostMethods,
   InitializeParams,
-} from "@paperclipai/plugin-sdk";
-import { getActiveStepContext } from "@paperclipai/adapter-utils/acpx-engine/startup-timing";
+} from "@pilibalaai/plugin-sdk";
+import { getActiveStepContext } from "@pilibalaai/adapter-utils/acpx-engine/startup-timing";
 import {
   isLoginCommandKey,
   validateLoginSessionHome,
@@ -407,7 +407,7 @@ export interface WorkerStartOptions {
   /** Absolute path to the plugin worker entrypoint (CJS bundle). */
   entrypointPath: string;
   /** Plugin manifest. */
-  manifest: PaperclipPluginManifestV1;
+  manifest: PilibalaPluginManifestV1;
   /** Resolved plugin configuration. */
   config: Record<string, unknown>;
   /** Host instance information for the initialize call. */
@@ -575,7 +575,7 @@ export interface LoginPtyOpenInput {
   loginCommandKey: LoginCommandKey;
   /**
    * The server-controlled, validated session home. The shape is exact:
-   * `/tmp/paperclip-adapter-login/<uuid>`.
+   * `/tmp/pilibala-adapter-login/<uuid>`.
    */
   sessionHome: string;
 }
@@ -1007,7 +1007,7 @@ export function createPluginWorkerHandle(
   // A proactive plugin (e.g. the chat gateway) does company-scoped work from
   // its own timers/loops — not inside a host-issued top-level invocation
   // (onEvent/performAction/executeTool/configChanged). Those worker→host calls
-  // carry no `paperclipInvocationId`, so the governed-access gate
+  // carry no `pilibalaInvocationId`, so the governed-access gate
   // (host-client-factory.ts) rejects any company-scoped request with
   // "company context is required" (regression class from #9557). The host
   // authorizes a bounded set of companies — the plugin's configured companies,
@@ -1269,7 +1269,7 @@ export function createPluginWorkerHandle(
   // Complete mediation: the host and the worker share one stdio pipe, and the
   // worker process sees every active invocation id. So the host cannot prove
   // which concurrent invocation produced a notification, and it must NOT treat
-  // the worker-supplied `paperclipInvocationId` alone as proof of origin. The
+  // the worker-supplied `pilibalaInvocationId` alone as proof of origin. The
   // host validates the exact company scope instead: it delivers only while every
   // active execute route on this worker belongs to ONE company. When a second
   // company's execute overlaps, the host fails closed — it latches the active
@@ -1279,7 +1279,7 @@ export function createPluginWorkerHandle(
   // stream pauses while two companies overlap.
   function routeExecuteLogNotification(notification: JsonRpcNotification): void {
     const invocationId = readNonEmptyString(
-      (notification as { paperclipInvocationId?: unknown }).paperclipInvocationId,
+      (notification as { pilibalaInvocationId?: unknown }).pilibalaInvocationId,
     );
     const params = isRecord(notification.params) ? notification.params : {};
     const stream = params.stream;
@@ -2704,7 +2704,7 @@ export function createPluginWorkerHandle(
 
   function contextForWorkerMessage(message: JsonRpcRequest | JsonRpcNotification): WorkerHostCallContext {
     const invocationId = readNonEmptyString(
-      (message as { paperclipInvocationId?: unknown }).paperclipInvocationId,
+      (message as { pilibalaInvocationId?: unknown }).pilibalaInvocationId,
     );
     if (!invocationId) {
       // No host-issued invocation is being echoed. This is a genuinely
@@ -2932,7 +2932,7 @@ export function createPluginWorkerHandle(
       ...options.env,
       PATH: process.env.PATH ?? "",
       NODE_PATH: process.env.NODE_PATH ?? "",
-      PAPERCLIP_PLUGIN_ID: pluginId,
+      PILIBALA_PLUGIN_ID: pluginId,
       NODE_ENV: process.env.NODE_ENV ?? "production",
       TZ: process.env.TZ ?? "UTC",
     };
@@ -3450,7 +3450,7 @@ export function createPluginWorkerHandle(
       try {
         const request = {
           ...createRequest(method, params, id),
-          ...(invocation ? { paperclipInvocation: invocation } : {}),
+          ...(invocation ? { pilibalaInvocation: invocation } : {}),
         };
         sendMessage(request);
       } catch (err) {
@@ -3594,7 +3594,7 @@ export function createPluginWorkerHandle(
           jsonrpc: JSONRPC_VERSION,
           method,
           params,
-          ...(invocation ? { paperclipInvocation: invocation } : {}),
+          ...(invocation ? { pilibalaInvocation: invocation } : {}),
         });
       } catch {
         clearInvocation(invocation);

@@ -36,7 +36,7 @@ const meta = {
           "Production environment admin page. API replies are fictional; no probe connects to a provider. List loading/errors currently fall back to empty saved environments rather than dedicated feedback.",
       },
     },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "execution-environments/configuration",
         "execution-environments/capabilities",

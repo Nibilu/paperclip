@@ -4,10 +4,10 @@ import { stampClaudeAgentIdHeader } from "./claude-agent-id-header.js";
 import {
   buildSandboxNpmInstallCommand,
   getAdapterSessionManagement,
-  PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES,
-} from "@paperclipai/adapter-utils";
-import type { AdapterLoginCapability } from "@paperclipai/adapter-utils";
-import { runAdapterExecutionTargetShellCommand } from "@paperclipai/adapter-utils/execution-target";
+  PILIBALA_RUNNER_PERMISSION_CAPABILITIES,
+} from "@pilibalaai/adapter-utils";
+import type { AdapterLoginCapability } from "@pilibalaai/adapter-utils";
+import { runAdapterExecutionTargetShellCommand } from "@pilibalaai/adapter-utils/execution-target";
 import {
   execute as claudeExecute,
   listClaudeSkills,
@@ -21,11 +21,11 @@ import {
   CLAUDE_SETUP_TOKEN_COMMAND,
   parseSetupTokenPrompt,
   parseSetupTokenCredential,
-} from "@paperclipai/adapter-claude-local/server";
+} from "@pilibalaai/adapter-claude-local/server";
 import {
   agentConfigurationDoc as claudeAgentConfigurationDoc,
   models as claudeModels,
-} from "@paperclipai/adapter-claude-local";
+} from "@pilibalaai/adapter-claude-local";
 import {
   execute as codexExecute,
   listCodexSkills,
@@ -36,29 +36,29 @@ import {
   getConfigSchema as getCodexConfigSchema,
   CODEX_DEVICE_LOGIN_COMMAND,
   parseDeviceLoginPrompt,
-} from "@paperclipai/adapter-codex-local/server";
+} from "@pilibalaai/adapter-codex-local/server";
 import {
   agentConfigurationDoc as codexAgentConfigurationDoc,
   models as codexModels,
-} from "@paperclipai/adapter-codex-local";
+} from "@pilibalaai/adapter-codex-local";
 import {
   execute as cursorExecute,
   listCursorSkills,
   syncCursorSkills,
   testEnvironment as cursorTestEnvironment,
   sessionCodec as cursorSessionCodec,
-} from "@paperclipai/adapter-cursor-local/server";
+} from "@pilibalaai/adapter-cursor-local/server";
 import {
   agentConfigurationDoc as cursorAgentConfigurationDoc,
   models as cursorModels,
-} from "@paperclipai/adapter-cursor-local";
+} from "@pilibalaai/adapter-cursor-local";
 import {
   execute as cursorCloudExecute,
   getConfigSchema as getCursorCloudConfigSchema,
   sessionCodec as cursorCloudSessionCodec,
   testEnvironment as cursorCloudTestEnvironment,
-} from "@paperclipai/adapter-cursor-cloud/server";
-import { agentConfigurationDoc as cursorCloudAgentConfigurationDoc } from "@paperclipai/adapter-cursor-cloud";
+} from "@pilibalaai/adapter-cursor-cloud/server";
+import { agentConfigurationDoc as cursorCloudAgentConfigurationDoc } from "@pilibalaai/adapter-cursor-cloud";
 import {
   execute as geminiExecute,
   listGeminiSkills,
@@ -66,11 +66,11 @@ import {
   testEnvironment as geminiTestEnvironment,
   sessionCodec as geminiSessionCodec,
   getConfigSchema as getGeminiConfigSchema,
-} from "@paperclipai/adapter-gemini-local/server";
+} from "@pilibalaai/adapter-gemini-local/server";
 import {
   agentConfigurationDoc as geminiAgentConfigurationDoc,
   models as geminiModels,
-} from "@paperclipai/adapter-gemini-local";
+} from "@pilibalaai/adapter-gemini-local";
 import {
   execute as grokExecute,
   listGrokSkills,
@@ -79,26 +79,26 @@ import {
   sessionCodec as grokSessionCodec,
   GROK_DEVICE_LOGIN_COMMAND,
   parseGrokDeviceLoginPrompt,
-} from "@paperclipai/adapter-grok-local/server";
+} from "@pilibalaai/adapter-grok-local/server";
 import {
   agentConfigurationDoc as grokAgentConfigurationDoc,
   models as grokModels,
-} from "@paperclipai/adapter-grok-local";
+} from "@pilibalaai/adapter-grok-local";
 import {
   execute as kimiExecute,
   listKimiSkills,
   syncKimiSkills,
   testEnvironment as kimiTestEnvironment,
   sessionCodec as kimiSessionCodec,
-} from "@paperclipai/adapter-kimi-local/server";
+} from "@pilibalaai/adapter-kimi-local/server";
 import {
   agentConfigurationDoc as kimiAgentConfigurationDoc,
   models as kimiModels,
-} from "@paperclipai/adapter-kimi-local";
+} from "@pilibalaai/adapter-kimi-local";
 import {
   createHermesGatewayServerAdapter,
   createHermesLocalServerAdapter,
-} from "@paperclipai/hermes-paperclip-adapter";
+} from "@pilibalaai/hermes-pilibala-adapter";
 import {
   execute as openCodeExecute,
   listOpenCodeSkills,
@@ -106,19 +106,19 @@ import {
   testEnvironment as openCodeTestEnvironment,
   sessionCodec as openCodeSessionCodec,
   listOpenCodeModels,
-} from "@paperclipai/adapter-opencode-local/server";
+} from "@pilibalaai/adapter-opencode-local/server";
 import {
   agentConfigurationDoc as openCodeAgentConfigurationDoc,
   models as openCodeModels,
-} from "@paperclipai/adapter-opencode-local";
+} from "@pilibalaai/adapter-opencode-local";
 import {
   execute as openclawGatewayExecute,
   testEnvironment as openclawGatewayTestEnvironment,
-} from "@paperclipai/adapter-openclaw-gateway/server";
+} from "@pilibalaai/adapter-openclaw-gateway/server";
 import {
   agentConfigurationDoc as openclawGatewayAgentConfigurationDoc,
   models as openclawGatewayModels,
-} from "@paperclipai/adapter-openclaw-gateway";
+} from "@pilibalaai/adapter-openclaw-gateway";
 import { listCodexModels, refreshCodexModels } from "./codex-models.js";
 import { listCursorModels } from "./cursor-models.js";
 import {
@@ -128,8 +128,8 @@ import {
   testEnvironment as piTestEnvironment,
   sessionCodec as piSessionCodec,
   listPiModels,
-} from "@paperclipai/adapter-pi-local/server";
-import { agentConfigurationDoc as piAgentConfigurationDoc } from "@paperclipai/adapter-pi-local";
+} from "@pilibalaai/adapter-pi-local/server";
+import { agentConfigurationDoc as piAgentConfigurationDoc } from "@pilibalaai/adapter-pi-local";
 import { BUILTIN_ADAPTER_TYPES } from "./builtin-adapter-types.js";
 import { buildExternalAdapters } from "./plugin-loader.js";
 import { getDisabledAdapterTypes } from "../services/adapter-plugin-store.js";
@@ -137,10 +137,10 @@ import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
 import {
   DEFAULT_OPENCODE_RUNNER_MODEL,
-  PaperclipRunnerProviderProfileError,
+  PilibalaRunnerProviderProfileError,
   DEFAULT_ACPX_RUNNER_MODELS,
   QUALIFIED_OPENCODE_RUNNER_VERSION,
-  resolvePaperclipRunnerProviderProfile,
+  resolvePilibalaRunnerProviderProfile,
 } from "../services/native-runtime/provider-profile.js";
 
 function readConfiguredCommand(config: Record<string, unknown>, fallback: string): string {
@@ -194,7 +194,7 @@ The standalone ACPX adapter has been retired. Use:
 - claude_local with adapterConfig.engine="acp" for Claude ACP execution.
 - codex_local with adapterConfig.engine="acp" for Codex ACP execution.
 
-Paperclip keeps this tombstone registered so stale acpx_local rows fail clearly instead of falling back to the process adapter.
+Pilibala keeps this tombstone registered so stale acpx_local rows fail clearly instead of falling back to the process adapter.
 `;
 
 // The Claude interactive login capability. Claude runs `claude setup-token` on a
@@ -359,18 +359,18 @@ const codexLocalAdapter: ServerAdapterModule = {
   loginCapability: codexLoginCapability,
 };
 
-const paperclipRunnerAdapter: ServerAdapterModule = {
-  type: "paperclip_runner",
+const pilibalaRunnerAdapter: ServerAdapterModule = {
+  type: "pilibala_runner",
   runtimeToolDelivery: "environment",
   async execute(ctx) {
-    const message = "paperclip_runner requires the native runner coordinator";
+    const message = "pilibala_runner requires the native runner coordinator";
     await ctx.onLog("stderr", `${message}\n`);
     return {
       exitCode: 1,
       signal: null,
       timedOut: false,
       errorMessage: message,
-      errorCode: "paperclip_runner_coordinator_required",
+      errorCode: "pilibala_runner_coordinator_required",
       provider: ctx.config.provider === "opencode"
         ? "opencode"
         : ctx.config.provider === "claude_managed"
@@ -384,18 +384,18 @@ const paperclipRunnerAdapter: ServerAdapterModule = {
     };
   },
   async testEnvironment(context) {
-    let profile: ReturnType<typeof resolvePaperclipRunnerProviderProfile>;
+    let profile: ReturnType<typeof resolvePilibalaRunnerProviderProfile>;
     try {
-      profile = resolvePaperclipRunnerProviderProfile(context.config);
+      profile = resolvePilibalaRunnerProviderProfile(context.config);
     } catch (error) {
-      const profileError = error instanceof PaperclipRunnerProviderProfileError
+      const profileError = error instanceof PilibalaRunnerProviderProfileError
         ? error
-        : new PaperclipRunnerProviderProfileError(
-            "paperclip_runner_provider_unsupported",
-            "Paperclip Runner provider configuration is invalid.",
+        : new PilibalaRunnerProviderProfileError(
+            "pilibala_runner_provider_unsupported",
+            "Pilibala Runner provider configuration is invalid.",
           );
       return {
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         status: "fail" as const,
         testedAt: new Date().toISOString(),
         checks: [{
@@ -406,19 +406,19 @@ const paperclipRunnerAdapter: ServerAdapterModule = {
       };
     }
     if (profile.provider === "muse") {
-      return { adapterType: "paperclip_runner", status: "warn" as const, testedAt: new Date().toISOString(),
-        checks: [{ code: "muse_background_test_required", level: "warn" as const, message: "Muse manages its model and billing. Verify the paired receiver and independent background reply in Paperclip; this read-only check does not wake Muse." }] };
+      return { adapterType: "pilibala_runner", status: "warn" as const, testedAt: new Date().toISOString(),
+        checks: [{ code: "muse_background_test_required", level: "warn" as const, message: "Muse manages its model and billing. Verify the paired receiver and independent background reply in Pilibala; this read-only check does not wake Muse." }] };
     }
     if (profile.provider === "openai_dot") {
-      return { adapterType: "paperclip_runner", status: "warn" as const, testedAt: new Date().toISOString(),
-        checks: [{ code: "dot_event_test_required", level: "warn" as const, message: "Dot manages its model and billing. Validate the dedicated agent binding and event round trip in Paperclip; this read-only check does not wake the Dot." }] };
+      return { adapterType: "pilibala_runner", status: "warn" as const, testedAt: new Date().toISOString(),
+        checks: [{ code: "dot_event_test_required", level: "warn" as const, message: "Dot manages its model and billing. Validate the dedicated agent binding and event round trip in Pilibala; this read-only check does not wake the Dot." }] };
     }
     if (profile.provider === "acpx") {
       if (["copilot"].includes(profile.acpxAgent)) {
         // The profile resolver already validated the isolated host's exact
         // qualification pair. Do not report a production readiness pass.
         return {
-          adapterType: "paperclip_runner", status: "warn" as const, testedAt: new Date().toISOString(),
+          adapterType: "pilibala_runner", status: "warn" as const, testedAt: new Date().toISOString(),
           checks: [{ code: "acpx_candidate_qualification_only", level: "warn" as const,
             message: "This exact candidate and model are admitted for operator-controlled qualification only. Verified runtime installation, bound credentials, and model access are checked before execution; production support remains pending." }],
         };
@@ -437,20 +437,20 @@ const paperclipRunnerAdapter: ServerAdapterModule = {
             throw new Error(`ACPX ${profile.acpxAgent} requires a qualified Linux x64 or macOS architecture.`);
           }
           return {
-            adapterType: "paperclip_runner", status: "warn" as const, testedAt: new Date().toISOString(),
+            adapterType: "pilibala_runner", status: "warn" as const, testedAt: new Date().toISOString(),
             checks: [{ code: "acpx_remote_runtime_unverified", level: "warn" as const,
               message: "The remote platform is supported. Runtime package integrity and readiness must still be verified by the remote runner before launch." }],
           };
         }
-        const { probeAcpxClaudeInstallation, probeAcpxGrokInstallation, probeAcpxCursorInstallation, probeAcpxPiInstallation } = await import("../vendor/paperclip-runner/live/index.js");
+        const { probeAcpxClaudeInstallation, probeAcpxGrokInstallation, probeAcpxCursorInstallation, probeAcpxPiInstallation } = await import("../vendor/pilibala-runner/live/index.js");
         await (profile.acpxAgent === "pi" ? probeAcpxPiInstallation : profile.acpxAgent === "grok" ? probeAcpxGrokInstallation : profile.acpxAgent === "cursor" ? probeAcpxCursorInstallation : probeAcpxClaudeInstallation)(profile.model);
         return {
-          adapterType: "paperclip_runner", status: "pass" as const, testedAt: new Date().toISOString(),
+          adapterType: "pilibala_runner", status: "pass" as const, testedAt: new Date().toISOString(),
           checks: [{ code: "acpx_runtime_ready", level: "info" as const, message: `ACPX ${profile.acpxAgent} runtime is installed and verified. Model access is checked when it runs.` }],
         };
       } catch (error) {
         return {
-          adapterType: "paperclip_runner", status: "fail" as const, testedAt: new Date().toISOString(),
+          adapterType: "pilibala_runner", status: "fail" as const, testedAt: new Date().toISOString(),
           checks: [{
             code: error instanceof Error && "code" in error && error.code === "ACPX_RUNTIME_PACKAGE_MISSING"
               ? "acpx_runtime_package_missing" : "acpx_runtime_unavailable",
@@ -462,7 +462,7 @@ const paperclipRunnerAdapter: ServerAdapterModule = {
     }
     if (profile.provider === "claude_managed") {
       return {
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         status: "warn" as const,
         testedAt: new Date().toISOString(),
         checks: [{
@@ -478,7 +478,7 @@ const paperclipRunnerAdapter: ServerAdapterModule = {
     }
     if (profile.provider === "aws_agentcore") {
       return {
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         status: "warn" as const,
         testedAt: new Date().toISOString(),
         checks: [{
@@ -497,7 +497,7 @@ const paperclipRunnerAdapter: ServerAdapterModule = {
       return testNativeRunnerAuthentication(context, "codex", profile.model);
     }
     const result = await openCodeTestEnvironment(context);
-    return { ...result, adapterType: "paperclip_runner" };
+    return { ...result, adapterType: "pilibala_runner" };
   },
   listSkills: listCodexSkills,
   syncSkills: syncCodexSkills,
@@ -527,7 +527,7 @@ const paperclipRunnerAdapter: ServerAdapterModule = {
   getRuntimeCommandSpec: (config) => config.provider === "claude_managed"
     || config.provider === "aws_agentcore"
     || config.provider === "acpx"
-    ? { command: "paperclip-runnerd", detectCommand: null, installCommand: null }
+    ? { command: "pilibala-runnerd", detectCommand: null, installCommand: null }
     : config.provider === "opencode"
       ? buildNpmRuntimeCommandSpec(
           config,
@@ -536,7 +536,7 @@ const paperclipRunnerAdapter: ServerAdapterModule = {
         )
       : buildNpmRuntimeCommandSpec(config, "codex", "@openai/codex@0.160.0"),
   agentConfigurationDoc:
-    "# Paperclip Runner\n\nAdapter: paperclip_runner\n\nRuns Codex, OpenCode, Claude Managed, AWS AgentCore, or ACPX Claude/Grok Build/Cursor/Pi through the Rust Paperclip runner and authenticated PRP transport. Pi accepts an explicit provider/model ID and uses the company credentials bound to the agent environment. GitHub Copilot awaits local and Daytona qualification. Managed providers use company-scoped qualified profiles, explicit retention acknowledgement, and spend limits.\n",
+    "# Pilibala Runner\n\nAdapter: pilibala_runner\n\nRuns Codex, OpenCode, Claude Managed, AWS AgentCore, or ACPX Claude/Grok Build/Cursor/Pi through the Rust Pilibala runner and authenticated PRP transport. Pi accepts an explicit provider/model ID and uses the company credentials bound to the agent environment. GitHub Copilot awaits local and Daytona qualification. Managed providers use company-scoped qualified profiles, explicit retention acknowledgement, and spend limits.\n",
   getConfigSchema: () => ({
     fields: [
       {
@@ -562,22 +562,22 @@ const paperclipRunnerAdapter: ServerAdapterModule = {
         key: "codexPermissionMode",
         label: "Codex permission mode",
         type: "select" as const,
-        default: PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES.codex.defaultMode,
-        options: PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES.codex.options.map(
+        default: PILIBALA_RUNNER_PERMISSION_CAPABILITIES.codex.defaultMode,
+        options: PILIBALA_RUNNER_PERMISSION_CAPABILITIES.codex.options.map(
           ({ value, label }) => ({ value, label }),
         ),
-        hint: PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES.codex.description,
+        hint: PILIBALA_RUNNER_PERMISSION_CAPABILITIES.codex.description,
         meta: { visibleWhen: { key: "provider", value: "codex" } },
       },
       {
         key: "opencodePermissionMode",
         label: "OpenCode permission mode",
         type: "select" as const,
-        default: PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES.opencode.defaultMode,
-        options: PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES.opencode.options.map(
+        default: PILIBALA_RUNNER_PERMISSION_CAPABILITIES.opencode.defaultMode,
+        options: PILIBALA_RUNNER_PERMISSION_CAPABILITIES.opencode.options.map(
           ({ value, label }) => ({ value, label }),
         ),
-        hint: PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES.opencode.description,
+        hint: PILIBALA_RUNNER_PERMISSION_CAPABILITIES.opencode.description,
         meta: { visibleWhen: { key: "provider", value: "opencode" } },
       },
       {
@@ -597,11 +597,11 @@ const paperclipRunnerAdapter: ServerAdapterModule = {
         key: "acpxPermissionMode",
         label: "ACPX permission mode",
         type: "select" as const,
-        default: PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES.acpx.defaultMode,
-        options: PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES.acpx.options.map(
+        default: PILIBALA_RUNNER_PERMISSION_CAPABILITIES.acpx.defaultMode,
+        options: PILIBALA_RUNNER_PERMISSION_CAPABILITIES.acpx.options.map(
           ({ value, label }) => ({ value, label }),
         ),
-        hint: PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES.acpx.description,
+        hint: PILIBALA_RUNNER_PERMISSION_CAPABILITIES.acpx.description,
         meta: { visibleWhen: { key: "provider", value: "acpx" } },
       },
       {
@@ -650,7 +650,7 @@ const paperclipRunnerAdapter: ServerAdapterModule = {
         label: "Estimated session ceiling (USD)",
         type: "number" as const,
         default: 1,
-        hint: "Paperclip estimate; AWS does not provide a per-session currency hard stop.",
+        hint: "Pilibala estimate; AWS does not provide a per-session currency hard stop.",
         meta: { visibleWhen: { key: "provider", value: "aws_agentcore" } },
       },
       {
@@ -913,7 +913,7 @@ function registerBuiltInAdapters() {
     acpxLocalAdapter,
     claudeLocalAdapter,
     codexLocalAdapter,
-    paperclipRunnerAdapter,
+    pilibalaRunnerAdapter,
     openCodeLocalAdapter,
     piLocalAdapter,
     cursorCloudAdapter,
@@ -989,7 +989,7 @@ const externalAdaptersReady: Promise<void> = (async () => {
       const overriding = BUILTIN_ADAPTER_TYPES.has(externalAdapter.type);
       if (overriding) {
         console.log(
-          `[paperclip] External adapter "${externalAdapter.type}" overrides built-in adapter`,
+          `[pilibala] External adapter "${externalAdapter.type}" overrides built-in adapter`,
         );
         // Save the original builtin for later restoration.
         const existing = adaptersByType.get(externalAdapter.type);
@@ -1003,7 +1003,7 @@ const externalAdaptersReady: Promise<void> = (async () => {
       );
     }
   } catch (err) {
-    console.error("[paperclip] Failed to load external adapters:", err);
+    console.error("[pilibala] Failed to load external adapters:", err);
   }
 })();
 
@@ -1056,7 +1056,7 @@ export function getServerAdapter(type: string): ServerAdapterModule {
 }
 
 /**
- * Memoized view of PAPERCLIP_ADAPTER_MODELS, keyed by the raw env string so
+ * Memoized view of PILIBALA_ADAPTER_MODELS, keyed by the raw env string so
  * tests (and live env mutation) that change the variable are still observed.
  * Parsing happens at most once per distinct raw value instead of per
  * `listAdapterModels` request, and malformed values fail SOFT here: we log the
@@ -1069,7 +1069,7 @@ let adapterModelsEnvCache: {
 } | null = null;
 
 function getDeclaredAdapterModels(): ReturnType<typeof parseAdapterModelsEnv> {
-  const raw = process.env.PAPERCLIP_ADAPTER_MODELS;
+  const raw = process.env.PILIBALA_ADAPTER_MODELS;
   if (adapterModelsEnvCache && adapterModelsEnvCache.raw === raw) {
     return adapterModelsEnvCache.value;
   }
@@ -1078,7 +1078,7 @@ function getDeclaredAdapterModels(): ReturnType<typeof parseAdapterModelsEnv> {
     value = parseAdapterModelsEnv(process.env);
   } catch (err) {
     console.error(
-      "[paperclip] Invalid PAPERCLIP_ADAPTER_MODELS; ignoring declared model lists:",
+      "[pilibala] Invalid PILIBALA_ADAPTER_MODELS; ignoring declared model lists:",
       err,
     );
   }
@@ -1217,12 +1217,12 @@ export function setOverridePaused(type: string, paused: boolean): boolean {
   const wasPaused = pausedOverrides.has(type);
   if (paused && !wasPaused) {
     pausedOverrides.add(type);
-    console.log(`[paperclip] Override paused for "${type}" — builtin adapter restored`);
+    console.log(`[pilibala] Override paused for "${type}" — builtin adapter restored`);
     return true;
   }
   if (!paused && wasPaused) {
     pausedOverrides.delete(type);
-    console.log(`[paperclip] Override resumed for "${type}" — external adapter active`);
+    console.log(`[pilibala] Override resumed for "${type}" — external adapter active`);
     return true;
   }
   return false;

@@ -1,4 +1,4 @@
-import { slackTestMessageSchema, slackRegistrationSchema, slackSetupActionSchema, slackManagedProvisionSchema } from "@paperclipai/shared";
+import { slackTestMessageSchema, slackRegistrationSchema, slackSetupActionSchema, slackManagedProvisionSchema } from "@pilibalaai/shared";
 import { isCrossSiteOAuthCallbackNavigation, oauthCallbackInterstitialHtml } from "../lib/oauth-browser-return.js";
 import {
   Router,
@@ -7,8 +7,8 @@ import {
 } from "express";
 import { z } from "zod";
 import { githubChatManagementService } from "../services/chat-github-management.js";
-import { updateGitHubChatConfigurationSchema } from "@paperclipai/shared";
-import type { Db } from "@paperclipai/db";
+import { updateGitHubChatConfigurationSchema } from "@pilibalaai/shared";
+import type { Db } from "@pilibalaai/db";
 import {
   CHAT_PROVIDERS,
   configureChatEndpointSchema,
@@ -25,7 +25,7 @@ import {
   resolveChatPublicationSchema,
   updateChatEndpointSchema,
   type ChatProvider,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { validate } from "../middleware/validate.js";
 import {
   chatChannelService,
@@ -99,7 +99,7 @@ export function chatChannelRoutes(db: Db, options: ChatChannelRouteOptions) {
   async function assertIdentityLinkAccess(req: ExpressRequest) {
     assertBoard(req);
     const userId = actorUserId(req);
-    if (!userId) throw badRequest("A signed-in Paperclip user is required");
+    if (!userId) throw badRequest("A signed-in Pilibala user is required");
     // Enforce rollout here: invited nonmembers cannot read the board's
     // experimental-settings API. A private token never bypasses this gate.
     const experimental = await instanceSettingsService(db).getExperimental();
@@ -268,7 +268,7 @@ export function chatChannelRoutes(db: Db, options: ChatChannelRouteOptions) {
 
   const githubUser = (req: ExpressRequest) => {
     const userId = actorUserId(req);
-    if (!userId) throw badRequest("Sign in to your Paperclip account to set up this bot");
+    if (!userId) throw badRequest("Sign in to your Pilibala account to set up this bot");
     return userId;
   };
   router.get("/chat-endpoints/:endpointId/github/configuration", async (req, res) => {
@@ -406,13 +406,13 @@ export function chatChannelRoutes(db: Db, options: ChatChannelRouteOptions) {
   router.post("/chat-endpoints/:endpointId/finish", async (req, res) => {
     if (!(await assertEndpointManagementAccess(req, res))) return;
     const userId = actorUserId(req);
-    if (!userId) throw badRequest("A signed-in Paperclip user is required");
+    if (!userId) throw badRequest("A signed-in Pilibala user is required");
     res.json(await service.finishSlackSetup(endpointId(req), userId));
   });
   router.get("/chat-endpoints/:endpointId/test-status", async (req, res) => {
     if (!(await assertEndpointAccess(req, res, service))) return;
     const userId = actorUserId(req);
-    if (!userId) throw badRequest("A signed-in Paperclip user is required");
+    if (!userId) throw badRequest("A signed-in Pilibala user is required");
     res.set("Cache-Control", "no-store");
     res.json(await service.setupTestStatus(endpointId(req), userId));
   });

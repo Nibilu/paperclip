@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { WebSocketServer } from "ws";
-import { FAST_RESPONSE_AGENT_GUIDANCE } from "@paperclipai/shared";
+import { FAST_RESPONSE_AGENT_GUIDANCE } from "@pilibalaai/shared";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
   agents,
@@ -30,7 +30,7 @@ import {
   nativeRunFinalizations,
   toolApplications,
   toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { runningProcesses } from "../adapters/index.js";
 import { heartbeatService } from "../services/heartbeat.ts";
 import { issueThreadInteractionService } from "../services/issue-thread-interactions.js";
@@ -207,7 +207,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
   ): typeof companies.$inferInsert {
     return {
       id: rowId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -295,7 +295,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
 
   beforeAll(async () => {
     const started = await startEmbeddedPostgresTestDatabase(
-      "paperclip-heartbeat-comment-wake-",
+      "pilibala-heartbeat-comment-wake-",
     );
     db = createDb(started.connectionString);
     tempDb = started;
@@ -338,7 +338,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
       .then((rows) => rows[0] ?? null);
     const context = run?.contextSnapshot;
     const wake = context && typeof context === "object" && !Array.isArray(context)
-      ? (context as Record<string, unknown>).paperclipWake
+      ? (context as Record<string, unknown>).pilibalaWake
       : null;
     if (!wake || typeof wake !== "object" || Array.isArray(wake)) {
       throw new Error("Gateway payload omitted JSON without a structured wake context");
@@ -434,7 +434,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
       approvalStatus: "approved",
     });
     expect(
-      (deferred?.payload as Record<string, unknown>)._paperclipWakeContext,
+      (deferred?.payload as Record<string, unknown>)._pilibalaWakeContext,
     ).toMatchObject({
       issueId,
       taskId: issueId,
@@ -542,7 +542,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
       }),
     });
     expect(
-      (deferred?.payload as Record<string, unknown>)._paperclipWakeContext,
+      (deferred?.payload as Record<string, unknown>)._pilibalaWakeContext,
     ).toMatchObject({
       issueId,
       taskId: issueId,
@@ -658,7 +658,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
 
       const deferredContext = (
         deferredWake?.payload as Record<string, unknown> | null
-      )?._paperclipWakeContext as Record<string, unknown> | undefined;
+      )?._pilibalaWakeContext as Record<string, unknown> | undefined;
       expect(deferredContext?.wakeCommentIds).toEqual([
         comment2.id,
         comment3.id,
@@ -699,7 +699,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
         .then((rows) => rows[0]);
       const promotedTaskMarkdown = String(
         (promotedRun.contextSnapshot as Record<string, unknown> | null)
-          ?.paperclipTaskMarkdown ?? "",
+          ?.pilibalaTaskMarkdown ?? "",
       );
       expect(promotedTaskMarkdown).toContain(
         "Pending wake comments (oldest to newest):",
@@ -709,7 +709,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
       );
       expect(promotedTaskMarkdown).not.toContain("First comment");
 
-      expect(secondPayload.paperclip).toBeUndefined();
+      expect(secondPayload.pilibala).toBeUndefined();
       const secondWake = await readGatewayWakePayload(secondPayload);
       expect(secondWake).toMatchObject({
         commentIds: [comment2.id, comment3.id],
@@ -1081,7 +1081,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
       });
 
       const secondPayload = gateway.getAgentPayloads()[1] ?? {};
-      expect(secondPayload.paperclip).toBeUndefined();
+      expect(secondPayload.pilibala).toBeUndefined();
       const secondWake = await readGatewayWakePayload(secondPayload);
       expect(secondWake).toMatchObject({
         reason: "issue_commented",
@@ -1306,7 +1306,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
       else expect(issueAfterPromotion?.completedAt).not.toBeNull();
 
       const secondPayload = gateway.getAgentPayloads()[1] ?? {};
-      expect(secondPayload.paperclip).toBeUndefined();
+      expect(secondPayload.pilibala).toBeUndefined();
       const secondWake = await readGatewayWakePayload(secondPayload);
       expect(secondWake).toMatchObject({
         reason: wakeReason,
@@ -1628,7 +1628,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
           companyId,
           endpointId,
           principalId,
-          paperclipUserId: userId,
+          pilibalaUserId: userId,
           status: "linked",
         });
         await db.insert(companyMemberships).values({
@@ -1676,12 +1676,12 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
             issueId,
             taskId: issueId,
             source: "chat:slack",
-            paperclipTaskCommunicationGuidance: "FORGED caller preference",
+            pilibalaTaskCommunicationGuidance: "FORGED caller preference",
             commentId: sourceComment.id,
             wakeCommentId: sourceComment.id,
             wakeCommentIds: [sourceComment.id],
-            paperclipHarnessCheckedOut: true,
-            paperclipWake: {
+            pilibalaHarnessCheckedOut: true,
+            pilibalaWake: {
               externalChatProvider: "slack",
               checkedOutByHarness: true,
               issue: { id: issueId, workMode: "standard" },
@@ -1886,7 +1886,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
             }),
           });
           expect(deniedRun?.contextSnapshot).not.toHaveProperty(
-            "paperclipExternalChatQuestionResponse",
+            "pilibalaExternalChatQuestionResponse",
           );
           expect(gateway.getAgentPayloads()).toHaveLength(0);
           return;
@@ -1906,10 +1906,10 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
             externalChatContinuation: true,
             wakeCommentId: sourceComment.id,
             wakeCommentIds: [sourceComment.id],
-            paperclipExternalChatExecutionBound: true,
-            paperclipTaskCommunicationGuidance: `## Communication in Slack\nFrozen connection preference.\n\n${FAST_RESPONSE_AGENT_GUIDANCE}`,
-            paperclipExternalChatQuestionResponse: expect.objectContaining({
-              schema: "paperclip.external_chat_question_response.v1",
+            pilibalaExternalChatExecutionBound: true,
+            pilibalaTaskCommunicationGuidance: `## Communication in Slack\nFrozen connection preference.\n\n${FAST_RESPONSE_AGENT_GUIDANCE}`,
+            pilibalaExternalChatQuestionResponse: expect.objectContaining({
+              schema: "pilibala.external_chat_question_response.v1",
               interactionId: answered.id,
               sourceRunId,
               sourceCommentId: sourceComment.id,
@@ -1928,7 +1928,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
           "Preserve the original request's exact-output constraints literally.",
         );
         expect(String(gateway.getAgentPayloads()[0]?.message ?? "")).toContain(
-          "Do not narrate Paperclip workflow, checkout, status, or completion bookkeeping.",
+          "Do not narrate Pilibala workflow, checkout, status, or completion bookkeeping.",
         );
         const continuationWake = await readGatewayWakePayload(
           gateway.getAgentPayloads()[0] ?? {},
@@ -2136,7 +2136,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
       });
 
       const secondPayload = gateway.getAgentPayloads()[1] ?? {};
-      expect(secondPayload.paperclip).toBeUndefined();
+      expect(secondPayload.pilibala).toBeUndefined();
       const secondWake = await readGatewayWakePayload(secondPayload);
       expect(secondWake).toMatchObject({
         reason: "issue_commented",
@@ -2613,9 +2613,9 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
       expect(firstRun).not.toBeNull();
       await waitFor(() => gateway.getAgentPayloads().length === 1);
       const firstPayload = gateway.getAgentPayloads()[0] ?? {};
-      expect(firstPayload.paperclip).toBeUndefined();
+      expect(firstPayload.pilibala).toBeUndefined();
       expect(String(firstPayload.message ?? "")).toContain(
-        "## Paperclip Wake Payload",
+        "## Pilibala Wake Payload",
       );
       expect(String(firstPayload.message ?? "")).toContain(
         "Do not switch to another issue until you have handled this wake.",
@@ -3107,7 +3107,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
     const runId = randomUUID();
     const issuePrefix = `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
     // Pin scheduling suppression off with the runtimeEnv test seam. Do not rely
-    // on the ambient PAPERCLIP_IN_WORKTREE value: startNextQueuedRunForAgent
+    // on the ambient PILIBALA_IN_WORKTREE value: startNextQueuedRunForAgent
     // no-ops under suppression and would leave the promoted wake at "queued".
     const heartbeat = heartbeatService(db, { runtimeEnv: {} });
 
@@ -3239,14 +3239,14 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
     await db.insert(companies).values([
       {
         id: companyId,
-        name: "Paperclip",
+        name: "Pilibala",
         issuePrefix,
         requireBoardApprovalForNewAgents: false,
         defaultResponsibleUserId: "responsible-user",
       },
       {
         id: otherCompanyId,
-        name: "Other Paperclip",
+        name: "Other Pilibala",
         issuePrefix: otherIssuePrefix,
         requireBoardApprovalForNewAgents: false,
       },
@@ -3338,7 +3338,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
     const runId = randomUUID();
     const issuePrefix = `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
     // Pin scheduling suppression off with the runtimeEnv test seam. Do not rely
-    // on the ambient PAPERCLIP_IN_WORKTREE value: startNextQueuedRunForAgent
+    // on the ambient PILIBALA_IN_WORKTREE value: startNextQueuedRunForAgent
     // no-ops under suppression and would leave the promoted wake at "queued".
     const heartbeat = heartbeatService(db, { runtimeEnv: {} });
 
@@ -3428,7 +3428,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
       payload: {
         issueId,
         commentId: holdComment.id,
-        _paperclipWakeContext: {
+        _pilibalaWakeContext: {
           wakeReason: "issue_commented",
           source: "issue.comment",
           wakeCommentIds: [holdComment.id],
@@ -3486,7 +3486,7 @@ describeEmbeddedPostgres("heartbeat comment wake batching", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
       // No defaultResponsibleUserId: the company default must not resolve this wake.

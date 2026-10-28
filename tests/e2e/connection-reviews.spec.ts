@@ -49,9 +49,9 @@ async function createAgent(
 
 function reviewAgentScript(connectionId: string, query: string) {
   return `
-const base = process.env.PAPERCLIP_API_URL + "/api";
+const base = process.env.PILIBALA_API_URL + "/api";
 
-const headers = { authorization: "Bearer " + process.env.PAPERCLIP_API_KEY, "content-type": "application/json", "x-paperclip-run-id": process.env.PAPERCLIP_RUN_ID };
+const headers = { authorization: "Bearer " + process.env.PILIBALA_API_KEY, "content-type": "application/json", "x-pilibala-run-id": process.env.PILIBALA_RUN_ID };
 const api = async (path, method = "GET", body) => {
   const response = await fetch(base + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   if (!response.ok) throw new Error(await response.text());
@@ -63,7 +63,7 @@ const describePages = (raw) => {
   const content = typeof value === "string" ? value : typeof value?.content === "string" ? value.content : value?.data?.content?.filter(item => item.type === "text").map(item => item.text).join(" ") ?? "No pages returned.";
   return "I found these recent pages: " + content.replace(/^Pages: /, "") + ".";
 };
-const issueId = process.env.PAPERCLIP_TASK_ID ?? (await api("/heartbeat-runs/" + process.env.PAPERCLIP_RUN_ID)).contextSnapshot.issueId;
+const issueId = process.env.PILIBALA_TASK_ID ?? (await api("/heartbeat-runs/" + process.env.PILIBALA_RUN_ID)).contextSnapshot.issueId;
 const interactions = await api("/issues/" + issueId + "/interactions");
 const review = interactions.find(i => i.payload?.toolAction);
 if (review?.status === "pending") { console.log("Still waiting for the existing review; no retry."); process.exit(0); }
@@ -75,8 +75,8 @@ if (review && review.status !== "pending") {
   console.log(message);
   process.exit(0);
 }
-const session = await api("/tool-gateway/sessions", "POST", { runId: process.env.PAPERCLIP_RUN_ID, ttlMs: 60000 });
-const gatewayHeaders = { "x-paperclip-tool-gateway-token": session.token, "content-type": "application/json" };
+const session = await api("/tool-gateway/sessions", "POST", { runId: process.env.PILIBALA_RUN_ID, ttlMs: 60000 });
+const gatewayHeaders = { "x-pilibala-tool-gateway-token": session.token, "content-type": "application/json" };
 const tools = await (await fetch(base + "/tool-gateway/tools", { headers: gatewayHeaders })).json();
 const tool = tools.find(t => t.connectionId === ${JSON.stringify(connectionId)} && t.upstreamToolName === "notion:list_pages");
 if (!tool) throw new Error("Missing fixture connection");
@@ -107,7 +107,7 @@ for (const journey of [
   }, testInfo) => {
     test.setTimeout(180_000);
     test.skip(
-      journey === "restart" && !process.env.PAPERCLIP_REVIEW_RESTART_FILE,
+      journey === "restart" && !process.env.PILIBALA_REVIEW_RESTART_FILE,
       "Use connection-reviews.config.ts for controlled server restart",
     );
     let suppressReviewEvents = journey === "decline";
@@ -229,7 +229,7 @@ for (const journey of [
         queue.getByRole("button", { name: "Decline", exact: true }),
       ).toBeVisible({ timeout: 20_000 });
       if (journey === "restart") {
-        const control = process.env.PAPERCLIP_REVIEW_RESTART_FILE!;
+        const control = process.env.PILIBALA_REVIEW_RESTART_FILE!;
         const token = String(Date.now());
         await writeFile(control, `restart:${token}`);
         await expect

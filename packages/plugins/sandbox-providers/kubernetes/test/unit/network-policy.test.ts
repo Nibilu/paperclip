@@ -3,16 +3,16 @@ import { buildNetworkPolicyManifests } from "../../src/network-policy.js";
 
 describe("buildNetworkPolicyManifests", () => {
   const baseInput = {
-    namespace: "paperclip-acme",
-    paperclipServerNamespace: "paperclip",
+    namespace: "pilibala-acme",
+    pilibalaServerNamespace: "pilibala",
     egressAllowCidrs: [] as string[],
   };
 
   it("produces a deny-all + egress allow pair", () => {
     const manifests = buildNetworkPolicyManifests(baseInput);
     expect(manifests).toHaveLength(2);
-    expect(manifests[0].metadata.name).toBe("paperclip-deny-all");
-    expect(manifests[1].metadata.name).toBe("paperclip-egress-allow");
+    expect(manifests[0].metadata.name).toBe("pilibala-deny-all");
+    expect(manifests[1].metadata.name).toBe("pilibala-egress-allow");
   });
 
   it("deny-all has no ingress/egress rules and applies to all pods", () => {
@@ -23,17 +23,17 @@ describe("buildNetworkPolicyManifests", () => {
     expect(denyAll.spec.egress).toBeUndefined();
   });
 
-  it("egress allow includes kube-dns and paperclip-server callback", () => {
+  it("egress allow includes kube-dns and pilibala-server callback", () => {
     const [, egress] = buildNetworkPolicyManifests(baseInput);
     const rules = egress.spec.egress;
     const dnsRule = rules.find((r: { ports?: { protocol: string; port: number }[] }) =>
       r.ports?.some((p) => p.port === 53),
     );
     expect(dnsRule).toBeDefined();
-    const paperclipRule = rules.find((r: { to: { namespaceSelector?: { matchLabels?: Record<string, string> } }[] }) =>
-      r.to.some((t) => t.namespaceSelector?.matchLabels?.["kubernetes.io/metadata.name"] === "paperclip"),
+    const pilibalaRule = rules.find((r: { to: { namespaceSelector?: { matchLabels?: Record<string, string> } }[] }) =>
+      r.to.some((t) => t.namespaceSelector?.matchLabels?.["kubernetes.io/metadata.name"] === "pilibala"),
     );
-    expect(paperclipRule).toBeDefined();
+    expect(pilibalaRule).toBeDefined();
   });
 
   it("includes user-supplied CIDRs in egress allow", () => {
@@ -44,10 +44,10 @@ describe("buildNetworkPolicyManifests", () => {
     expect(cidrRule).toBeDefined();
   });
 
-  it("uses paperclip-server pod label selector for callback ingress to paperclip ns", () => {
+  it("uses pilibala-server pod label selector for callback ingress to pilibala ns", () => {
     const [, egress] = buildNetworkPolicyManifests(baseInput);
     const callbackRule = egress.spec.egress.find((r: { to: { podSelector?: { matchLabels?: Record<string, string> } }[] }) =>
-      r.to.some((t) => t.podSelector?.matchLabels?.app === "paperclip-server"),
+      r.to.some((t) => t.podSelector?.matchLabels?.app === "pilibala-server"),
     );
     expect(callbackRule).toBeDefined();
     expect(callbackRule.ports[0].port).toBe(3100);
@@ -97,7 +97,7 @@ describe("buildNetworkPolicyManifests", () => {
     const [, egress] = buildNetworkPolicyManifests({
       ...baseInput,
       name: "pc-run-egress",
-      podSelector: { "paperclip.io/run-id": "run-123" },
+      podSelector: { "pilibala.io/run-id": "run-123" },
       includeBaseRules: false,
       egressAllowFqdns: ["github.com", "pypi.org"],
       ownerReferences: [{ apiVersion: "batch/v1", kind: "Job", name: "pc-run", uid: "uid-1" }],
@@ -105,7 +105,7 @@ describe("buildNetworkPolicyManifests", () => {
 
     expect(egress.metadata.name).toBe("pc-run-egress");
     expect(egress.metadata.ownerReferences).toHaveLength(1);
-    expect(egress.spec.podSelector.matchLabels).toEqual({ "paperclip.io/run-id": "run-123" });
+    expect(egress.spec.podSelector.matchLabels).toEqual({ "pilibala.io/run-id": "run-123" });
     expect(egress.spec.egress).toHaveLength(1);
     expect(egress.spec.egress[0].to[0].ipBlock.cidr).toBe("0.0.0.0/0");
   });

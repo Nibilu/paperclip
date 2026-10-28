@@ -12,7 +12,7 @@ import {
   nativeRunFinalizations,
   toolInvocations,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { decideNativeReplacement } from "./native-replacement-evidence.js";
 import { issueService } from "../issues.js";
 import { issueRecoveryActionService } from "../issue-recovery-actions.js";
@@ -130,10 +130,10 @@ export async function reconcileSafeNativeReplacements(
       const safeControlReads = new Set([
         "connections_search",
         "connection_request",
-        "paperclip_get_agent",
-        "paperclip_get_issue",
-        "paperclip_list_issues",
-        "paperclip_read_document",
+        "pilibala_get_agent",
+        "pilibala_get_issue",
+        "pilibala_list_issues",
+        "pilibala_read_document",
       ]);
       const uncertainProviderActions = events.flatMap((event) => {
         const envelope = record(event.payload);
@@ -157,7 +157,7 @@ export async function reconcileSafeNativeReplacements(
         if (event.eventType === "tool.execution.started") {
           const name = typeof p.name === "string" ? p.name : "unknown tool";
           const completedTaskControlCallIds = stoppedSession?.evidence.completedTaskControlCallIds;
-          if (name === "paperclip_finish" && Array.isArray(completedTaskControlCallIds) &&
+          if (name === "pilibala_finish" && Array.isArray(completedTaskControlCallIds) &&
               completedTaskControlCallIds.includes(p.executionId)) return [];
           const receiptedRead = invocations.some(
             (row) =>
@@ -374,8 +374,8 @@ export async function reconcileSafeNativeReplacements(
         for (const key of [
           "explicitUserContinuation", "wakeCommentId", "wakeCommentIds", "commentId",
           "commentIds", "latestCommentId", "resumeIntent", "followUpRequested",
-          "paperclipWake", "paperclipWakeComment", "paperclipTaskMarkdown", "paperclipTaskMarkdownCompact",
-          "paperclipTaskMarkdownAssignment", "paperclipTaskMarkdownAssignmentCompact", "paperclipTurnContext",
+          "pilibalaWake", "pilibalaWakeComment", "pilibalaTaskMarkdown", "pilibalaTaskMarkdownCompact",
+          "pilibalaTaskMarkdownAssignment", "pilibalaTaskMarkdownAssignmentCompact", "pilibalaTurnContext",
         ]) delete predecessorContext[key];
         const context = {
           ...predecessorContext,

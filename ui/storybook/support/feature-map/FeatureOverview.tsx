@@ -15,7 +15,7 @@ type Capability = {
   verification?: { scope: string; storybook: string; production: string; sources: string };
 };
 type Feature = { id: string; title: string; description: string; capabilities: Capability[] };
-const recipeRoot = "https://github.com/paperclipai/paperclip/blob/master/maps/feature-map/";
+const recipeRoot = "https://github.com/pilibalaai/pilibala/blob/master/maps/feature-map/";
 const allFeatures: Feature[] = featureIndex.sections.flatMap(section => section.features);
 const examples = entries.filter(entry => entry.implementation !== "guide");
 const featureHref = (id: string) => `./?path=/story/feature-map-${id}--overview`;
@@ -78,9 +78,9 @@ export function FeatureMapIndex() {
   const foundations = examples.filter(entry => (entry.home === "foundations" || !entry.capabilities.length)
     && ["Shared foundations", entry.file, entry.purpose, entry.status, entry.implementation, entry.boundary].join(" ").toLowerCase().includes(search));
   return (
-    <main className="paperclip-story__inner space-y-6 p-6">
+    <main className="pilibala-story__inner space-y-6 p-6">
       <header className="space-y-3">
-        <h1 className="text-2xl font-semibold">Paperclip feature map</h1>
+        <h1 className="text-2xl font-semibold">Pilibala feature map</h1>
         <p className="text-sm text-muted-foreground">The same product index as the feature map, with Storybook examples alongside each capability.</p>
         <p className="text-sm text-muted-foreground">{allFeatures.length} feature families · {allFeatures.reduce((count, feature) => count + feature.capabilities.length, 0)} capabilities. Examples are fixtures and references, not proof of production behavior.</p>
         <a className="text-sm underline underline-offset-4" href={`${recipeRoot}README.md`} target="_blank" rel="noreferrer">Read the feature-map index</a>
@@ -124,7 +124,7 @@ export function FeatureOverview({ area }: { area: string }) {
   if (!feature) return <p role="alert">This feature is not in the feature-map index.</p>;
   const guides = entries.filter(entry => entry.implementation === "guide" && entry.capabilities.some(ref => ref.startsWith(`${area}/`)));
   return (
-    <main className="paperclip-story__inner space-y-6 p-6">
+    <main className="pilibala-story__inner space-y-6 p-6">
       <header className="space-y-3">
         <a className="text-sm underline underline-offset-4" href="./?path=/story/overview-storybook-guide--coverage-guide" target="_top">All features</a>
         <h1 className="text-2xl font-semibold">{feature.title}</h1>

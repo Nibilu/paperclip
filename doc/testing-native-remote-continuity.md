@@ -17,8 +17,8 @@ asserts that it does not start another runner or provider process.
 It does not qualify a live model or a sandbox provider API.
 
 Use a disposable Linux container with Node.js, `sh`, `tar`, `base64`, `ps`, and
-`setsid`. Build `paperclip-runnerd` and `fake-codex-app-server` from the checkout's
-`packages/paperclip-runner/runner/Cargo.toml` for that container's architecture.
+`setsid`. Build `pilibala-runnerd` and `fake-codex-app-server` from the checkout's
+`packages/pilibala-runner/runner/Cargo.toml` for that container's architecture.
 Keep the Linux runner binary on the host as well: the product hashes and stages
 that artifact. Put the fake provider at `/opt/continuity/fake-codex-app-server`
 inside the container. Do not put credentials in this container.
@@ -52,11 +52,11 @@ Run the test with the container name, current host port, and Linux artifact path
 
 ```sh
 NODE_EXTRA_CA_CERTS=/tmp/continuity-test.crt \
-PAPERCLIP_TEST_RUNNER_TLS_KEY=/tmp/continuity-test.key \
-PAPERCLIP_TEST_RUNNER_CONTAINER=CONTAINER \
-PAPERCLIP_TEST_RUNNER_PORT=HOST_PORT \
-PAPERCLIP_TEST_LINUX_RUNNER_BINARY=/path/to/linux/paperclip-runnerd \
-PAPERCLIP_TEST_FAKE_CODEX_WRAPPER=/tmp/continuity-fake-codex \
+PILIBALA_TEST_RUNNER_TLS_KEY=/tmp/continuity-test.key \
+PILIBALA_TEST_RUNNER_CONTAINER=CONTAINER \
+PILIBALA_TEST_RUNNER_PORT=HOST_PORT \
+PILIBALA_TEST_LINUX_RUNNER_BINARY=/path/to/linux/pilibala-runnerd \
+PILIBALA_TEST_FAKE_CODEX_WRAPPER=/tmp/continuity-fake-codex \
 pnpm exec vitest run \
   server/src/services/native-runtime/native-runner-restart-recovery.integration.test.ts \
   -t 'preserves remote warm continuity' --maxWorkers=1

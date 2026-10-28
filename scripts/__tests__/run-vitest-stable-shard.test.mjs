@@ -157,10 +157,10 @@ test("workspaces-c runs the db project alone and workspaces-b no longer carries 
   // (PR runs 38084171761, 38083084276 and 38083020834, 2026-10-10), so it
   // runs in its own lane. The PR and release matrices both carry that lane.
   const workspacesC = dryRunJson(["--mode", "general", "--group", "general-workspaces-c"]);
-  assert.deepEqual(workspacesC.workspaceProjects, ["@paperclipai/db"]);
+  assert.deepEqual(workspacesC.workspaceProjects, ["@pilibalaai/db"]);
   assert.equal(workspacesC.workspacesVitestShard, null);
   const workspacesB = dryRunJson(["--mode", "general", "--group", "general-workspaces-b"]);
-  assert.ok(!workspacesB.workspaceProjects.includes("@paperclipai/db"), "db must not run twice");
+  assert.ok(!workspacesB.workspaceProjects.includes("@pilibalaai/db"), "db must not run twice");
   assert.ok(workspacesB.workspaceProjects.length > 0, "workspaces-b must still run its other projects");
   for (const workflow of ["pr-trusted.yml", "release-verify.yml"]) {
     const entries = matrixEntries(readFileSync(path.join(repoRoot, ".github", "workflows", workflow), "utf8"));
@@ -323,7 +323,7 @@ const restartRecoverySuitePath =
 
 // Mirrors pr-trusted.yml (12 shards, called by pr.yml so GITHUB_WORKFLOW is
 // "PR"): the chat suite runs in its dedicated lanes and the cargo-dependent
-// native-runner suite in the Rust-cached final Verify Paperclip Runner vitest
+// native-runner suite in the Rust-cached final Verify Pilibala Runner vitest
 // shard, so together the three cover the full server group exactly.
 test("12 PR without-chat shards plus the dedicated chat and native-runner lanes cover the original server group exactly", () => {
   const durations = loadShardDurations(durationsManifest);
@@ -441,12 +441,12 @@ test("the PR workflow wiring for the native-runner lane holds", () => {
     "exactly one final vitest shard carries the native-runner group");
 
   const runnerPackage = JSON.parse(
-    readFileSync(path.join(repoRoot, "packages/paperclip-runner/package.json"), "utf8"),
+    readFileSync(path.join(repoRoot, "packages/pilibala-runner/package.json"), "utf8"),
   );
   assert.equal(runnerPackage.scripts["test:typescript:vitest"], "node ./scripts/run-pr-vitest-lane.mjs");
 });
 
-const laneWrapper = path.join(repoRoot, "packages/paperclip-runner/scripts/run-pr-vitest-lane.mjs");
+const laneWrapper = path.join(repoRoot, "packages/pilibala-runner/scripts/run-pr-vitest-lane.mjs");
 
 function wrapperPlan(args, envOverrides = {}) {
   const result = spawnSync(process.execPath, [laneWrapper, ...args, "--dry-run"], {
@@ -488,7 +488,7 @@ test("the PR vitest lane wrapper runs the native-runner group exactly on the fin
 });
 
 const lineShardFile = path.join(repoRoot, "server/src/__tests__/chat-channels.integration.test.ts");
-const caseAt = (line, name) => ({ name, file: lineShardFile, projectName: "@paperclipai/server", location: { line, column: 3 } });
+const caseAt = (line, name) => ({ name, file: lineShardFile, projectName: "@pilibalaai/server", location: { line, column: 3 } });
 
 test("test-line shards cover nested and parameterized cases exactly once without splitting a source line", () => {
   const cases = [caseAt(10, "suite > nested > first"), caseAt(10, "suite > nested > second"),
@@ -526,7 +526,7 @@ test("parallel chat jobs form a complete disjoint partition", () => {
   for (const count of [2, 3, 4]) {
     const shards = Array.from({ length: count }, (_, index) =>
       dryRunJson(["--mode", "general", "--group", "general-chat", "--shard-index", String(index), "--shard-count", String(count)],
-        { PAPERCLIP_TEST_DATABASE_URL: "" }).chatVitestShards,
+        { PILIBALA_TEST_DATABASE_URL: "" }).chatVitestShards,
     );
     assert.ok(shards.every((workers) => workers.length === 2));
     assert.deepEqual(shards.flat().map(({ index }) => index).sort((a, b) => a - b),
@@ -538,11 +538,11 @@ test("parallel chat jobs form a complete disjoint partition", () => {
 test("shared-database and unsharded chat runs retain one serial partition", () => {
   for (let index = 0; index < 3; index++) {
     const result = dryRunJson(["--mode", "general", "--group", "general-chat", "--shard-index", String(index), "--shard-count", "3"],
-      { PAPERCLIP_TEST_DATABASE_URL: "postgresql://shared/test" });
+      { PILIBALA_TEST_DATABASE_URL: "postgresql://shared/test" });
     assert.deepEqual(result.chatVitestShards, [{ index, count: 3 }]);
   }
   assert.deepEqual(dryRunJson(["--mode", "general", "--group", "general-chat"],
-    { PAPERCLIP_TEST_DATABASE_URL: "" }).chatVitestShards, [{ index: 0, count: 1 }]);
+    { PILIBALA_TEST_DATABASE_URL: "" }).chatVitestShards, [{ index: 0, count: 1 }]);
 });
 
 
@@ -552,7 +552,7 @@ test("a failed chat child fails the job after its sibling finishes", { skip: pro
   const lines = readFileSync(file, "utf8").split("\n")
     .flatMap((line, index) => /^\s*it\(/.test(line) ? [index + 1] : []).slice(0, 6);
   assert.equal(lines.length, 6);
-  const tests = lines.map((line) => ({ file, projectName: "@paperclipai/server",
+  const tests = lines.map((line) => ({ file, projectName: "@pilibalaai/server",
     name: `launcher fixture ${line}`, location: { line } }));
   const receipt = path.join(directory, "sibling-finished");
   const fakePnpm = path.join(directory, "pnpm");
@@ -577,7 +577,7 @@ test("a failed chat child fails the job after its sibling finishes", { skip: pro
       "--shard-index", "0", "--shard-count", "3"], {
       cwd: repoRoot, encoding: "utf8", timeout: 30_000,
       env: { ...process.env, PATH: `${directory}${path.delimiter}${process.env.PATH}`,
-        PAPERCLIP_TEST_DATABASE_URL: "", PAPERCLIP_CI_PROFILE: "false" },
+        PILIBALA_TEST_DATABASE_URL: "", PILIBALA_CI_PROFILE: "false" },
     });
     assert.equal(result.status, 1, result.stdout + result.stderr);
     assert.match(result.stderr, /failed \(7\)/);

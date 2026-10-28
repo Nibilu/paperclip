@@ -1,4 +1,4 @@
-import type { ExecutionProjection } from "@paperclipai/shared";
+import type { ExecutionProjection } from "@pilibalaai/shared";
 import type {
   ReasoningMessagePart,
   TextMessagePart,
@@ -8,7 +8,7 @@ import type {
   ThreadSystemMessage,
   ThreadUserMessage,
 } from "@assistant-ui/react";
-import type { Agent, IssueComment } from "@paperclipai/shared";
+import type { Agent, IssueComment } from "@pilibalaai/shared";
 import type { ActiveRunForIssue, LiveRunForIssue } from "../api/heartbeats";
 import { formatAssigneeUserLabel } from "./assignees";
 import { isOperatorInterruptedRun } from "./interrupt-handoff";
@@ -581,10 +581,10 @@ function authorNameForComment(
 ) {
   const authorAgentId = effectiveCommentAuthorAgentId(comment);
   if (authorAgentId) {
-    return agentMap?.get(authorAgentId)?.name ?? (options?.isSystemNotice ? "Paperclip" : authorAgentId.slice(0, 8));
+    return agentMap?.get(authorAgentId)?.name ?? (options?.isSystemNotice ? "Pilibala" : authorAgentId.slice(0, 8));
   }
   const authorUserId = comment.authorUserId ?? null;
-  if (!authorUserId) return options?.isSystemNotice ? "Paperclip" : "You";
+  if (!authorUserId) return options?.isSystemNotice ? "Pilibala" : "You";
   const userLabel = userLabelMap?.get(authorUserId)?.trim();
   if (userLabel) return userLabel;
   return formatAssigneeUserLabel(authorUserId, currentUserId, userLabelMap) ?? "You";
@@ -990,7 +990,7 @@ export function buildAssistantPartsFromTranscript(entries: readonly IssueChatTra
       orderedParts.push({
         type: "tool-call",
         toolCallId,
-        toolName: "paperclip_provider_activity",
+        toolName: "pilibala_provider_activity",
         args,
         argsText: "",
         ...(entry.status === "running" ? {} : { result: { status: entry.status ?? "informational" } }),

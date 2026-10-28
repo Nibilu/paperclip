@@ -4,7 +4,7 @@ import { act, useState, type ComponentProps } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { agentsApi } from "@/api/agents";
 import { ComposerRunSettingsPicker } from "./ComposerRunSettingsPicker";
@@ -304,7 +304,7 @@ describe("composer assignee picker", () => {
   it.each([false, true])("hides unsupported Muse settings without loading a catalog (mobile: %s)", async (mobile) => {
     const loadModels = vi.spyOn(agentsApi, "adapterModels").mockResolvedValue([]);
     const onSettingsChange = vi.fn();
-    const muse = { ...agent, adapterType: "paperclip_runner", adapterConfig: { provider: "muse", model: "old-model" } } as Agent;
+    const muse = { ...agent, adapterType: "pilibala_runner", adapterConfig: { provider: "muse", model: "old-model" } } as Agent;
     rememberComposerEffort("company-1", "high");
     render(vi.fn(), onSettingsChange, true, { mobile, settings: null, agents: new Map([[muse.id, muse]]) });
     expect(container!.querySelector('[aria-label="Select model and effort"]')).toBeNull();
@@ -323,7 +323,7 @@ describe("composer assignee picker", () => {
       const [muse, setMuse] = useState(false);
       const [settings, setSettings] = useState<ComposerRunSettings | null>({ model: "gpt-6-sol", effort: "high", fast: true });
       const selectedAgent = muse
-        ? { ...agent, adapterType: "paperclip_runner", adapterConfig: { provider: "muse" } } as Agent
+        ? { ...agent, adapterType: "pilibala_runner", adapterConfig: { provider: "muse" } } as Agent
         : agent;
       return <>
         <button type="button" aria-label="Switch to Muse" onClick={() => setMuse(true)}>Switch to Muse</button>

@@ -1,6 +1,6 @@
 import { Router, type Request } from "express";
-import type { Db } from "@paperclipai/db";
-import { generateSummarySlotSchema, writeSummarySlotSchema } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { generateSummarySlotSchema, writeSummarySlotSchema } from "@pilibalaai/shared";
 import { validate } from "../middleware/validate.js";
 import { forbidden, notFound } from "../errors.js";
 import { accessService, heartbeatService, instanceSettingsService, logActivity } from "../services/index.js";

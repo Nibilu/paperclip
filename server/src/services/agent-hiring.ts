@@ -1,6 +1,6 @@
-import { agentAppearanceSchema, randomAgentAppearance } from "@paperclipai/shared";
-import { normalizePaperclipRunnerAdapterConfig } from "@paperclipai/adapter-utils/server-utils";
-import { agents, toolConnectionInstalls, principalPermissionGrants, type Db } from "@paperclipai/db";
+import { agentAppearanceSchema, randomAgentAppearance } from "@pilibalaai/shared";
+import { normalizePilibalaRunnerAdapterConfig } from "@pilibalaai/adapter-utils/server-utils";
+import { agents, toolConnectionInstalls, principalPermissionGrants, type Db } from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
 import { unprocessable } from "../errors.js";
 import { agentRecordQueries, isPlainRecord, configPatchFromApprovalPayload, normalizeRuntimeConfigForNewAgent,
@@ -43,7 +43,7 @@ export async function prepareAgentHire(db: Db, companyId: string, input: CreateA
   const rawAdapterConfig = isPlainRecord(data.adapterConfig)
     ? await secretService(db).normalizeAdapterConfigForPersistence(companyId, data.adapterConfig, { adapterType })
     : {};
-  const adapterConfig = normalizePaperclipRunnerAdapterConfig(adapterType, rawAdapterConfig);
+  const adapterConfig = normalizePilibalaRunnerAdapterConfig(adapterType, rawAdapterConfig);
   await agentCredentialService(db).enforceClaudeOAuthBindingClaim(db, {
     companyId, consume: true, environmentId: data.defaultEnvironmentId ?? null,
     childAdapterConfig: adapterConfig, claudeLogin: options?.claudeLogin,
@@ -98,7 +98,7 @@ export async function prepareAgentHireApproval(txDb: Db, existing: AgentHireReco
     const normalizedAdapterConfig = await secretService(txDb).normalizeAdapterConfigForPersistence(
       existing.companyId, patch.adapterConfig, { adapterType: (patch.adapterType ?? existing.adapterType) as string },
     );
-    patch.adapterConfig = normalizePaperclipRunnerAdapterConfig(
+    patch.adapterConfig = normalizePilibalaRunnerAdapterConfig(
       (patch.adapterType ?? existing.adapterType) as string,
       normalizedAdapterConfig,
     );
@@ -106,7 +106,7 @@ export async function prepareAgentHireApproval(txDb: Db, existing: AgentHireReco
     Object.prototype.hasOwnProperty.call(patch, "adapterType")
     && isPlainRecord(existing.adapterConfig)
   ) {
-    patch.adapterConfig = normalizePaperclipRunnerAdapterConfig(
+    patch.adapterConfig = normalizePilibalaRunnerAdapterConfig(
       patch.adapterType as string,
       existing.adapterConfig,
     );

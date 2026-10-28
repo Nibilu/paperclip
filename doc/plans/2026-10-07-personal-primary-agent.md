@@ -100,7 +100,7 @@ not evidence of authorization, persistence, concurrency, or real execution.
 
 ## Real test-drive acceptance (2026-10-07)
 
-- Isolated CLI test drive: `/tmp/paperclip-primary-agent-test-drive`, company
+- Isolated CLI test drive: `/tmp/pilibala-primary-agent-test-drive`, company
   **Primary Agent Test Drive**, prefix `PRI`, at http://localhost:3104.
 - Maia was crowned automatically through the real creation API. Creating Alex
   preserved Maia. The simplified creation wizard's model-connection step rejected
@@ -157,7 +157,7 @@ the primary is their fallback when no eligible recent choice or draft exists.
 
 ## Pull request verification
 
-- PR: https://github.com/paperclipai/paperclip/pull/15470. The user authorized
+- PR: https://github.com/pilibalaai/pilibala/pull/15470. The user authorized
   passing PR checks and merging into master.
 - The rebased branch passes repository typecheck and build, token gates, and
   114 focused tests. Migration replay now runs twice without replacing choices.

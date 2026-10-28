@@ -23,7 +23,7 @@ import {
   toolProfileEntries,
   toolProfiles,
   toolRateLimitCounters,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -204,7 +204,7 @@ describeEmbeddedPostgres("tool access policy service", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-tool-access-policy-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-tool-access-policy-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 

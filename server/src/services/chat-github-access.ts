@@ -6,7 +6,7 @@ import {
   chatIdentityLinks,
   companyMemberships,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 
 type Database = Db | Parameters<Parameters<Db["transaction"]>[0]>[0];
 
@@ -75,16 +75,16 @@ export async function githubChatPrincipalAccess(
       .for("share");
     return !!membership && membership.membershipRole !== "viewer";
   };
-  if (link?.status === "linked" && link.paperclipUserId) {
+  if (link?.status === "linked" && link.pilibalaUserId) {
     const allowed =
-      (await activeMember(link.paperclipUserId)) &&
+      (await activeMember(link.pilibalaUserId)) &&
       (config.memberAccess === "all_linked" ||
-        (person?.kind === "member" && person.userId === link.paperclipUserId));
+        (person?.kind === "member" && person.userId === link.pilibalaUserId));
     return {
       ...denied,
       allowed,
       linkedDenied: !allowed,
-      userId: allowed ? link.paperclipUserId : null,
+      userId: allowed ? link.pilibalaUserId : null,
     };
   }
   // Revocation is not an invitation to fall back to a guest identity.

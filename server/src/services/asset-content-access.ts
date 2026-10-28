@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import { assets, heartbeatRuns, issues, issueAttachments, runnerApiResponseReservations, type Db } from "@paperclipai/db";
-import { isUuidLike } from "@paperclipai/shared";
+import { assets, heartbeatRuns, issues, issueAttachments, runnerApiResponseReservations, type Db } from "@pilibalaai/db";
+import { isUuidLike } from "@pilibalaai/shared";
 import { authorizationService, type AuthorizationActor } from "./authorization.js";
 import { canActorReadHeartbeatRun } from "./heartbeat-run-privacy.js";
 

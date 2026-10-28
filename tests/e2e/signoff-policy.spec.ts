@@ -21,7 +21,7 @@ import { test, expect, request as pwRequest, type APIRequestContext } from "@pla
  *     the in_review state the signoff policy requires).
  */
 
-const PORT = Number(process.env.PAPERCLIP_E2E_PORT ?? 3199);
+const PORT = Number(process.env.PILIBALA_E2E_PORT ?? 3199);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const COMPANY_NAME = `E2E-Signoff-${Date.now()}`;
 
@@ -319,7 +319,7 @@ async function retryAgentPatchWithCurrentLockOnConflict(
     // Read the current lock again; never PATCH under that cancelled run.
     if (!(await waitForFixtureRun(board, agent.agentId, issueId, lockedRunId, true))) continue;
     res = await agent.request.patch(`${BASE_URL}/api/issues/${issueId}`, {
-      headers: { "X-Paperclip-Run-Id": lockedRunId },
+      headers: { "X-Pilibala-Run-Id": lockedRunId },
       data: patchData,
     });
   }
@@ -362,7 +362,7 @@ async function agentPatch(
   await waitForFixtureRun(board, agent.agentId, issueId, runId);
   const patchWith = (patchRunId: string) =>
     agent.request.patch(`${BASE_URL}/api/issues/${issueId}`, {
-      headers: { "X-Paperclip-Run-Id": patchRunId },
+      headers: { "X-Pilibala-Run-Id": patchRunId },
       data,
     });
 
@@ -391,14 +391,14 @@ async function agentCheckoutAndPatch(
   const runId = await invokeHeartbeat(board, agent.agentId, issueId);
   await waitForFixtureRun(board, agent.agentId, issueId, runId);
   const directPatchRes = await agent.request.patch(`${BASE_URL}/api/issues/${issueId}`, {
-    headers: { "X-Paperclip-Run-Id": runId },
+    headers: { "X-Pilibala-Run-Id": runId },
     data: patchData,
   });
   if (directPatchRes.ok()) return directPatchRes;
 
   // Checkout (sets executionRunId so PATCH is allowed)
   const checkoutRes = await agent.request.post(`${BASE_URL}/api/issues/${issueId}/checkout`, {
-    headers: { "X-Paperclip-Run-Id": runId },
+    headers: { "X-Pilibala-Run-Id": runId },
     data: { agentId: agent.agentId, expectedStatuses },
   });
   if (!checkoutRes.ok()) {
@@ -431,7 +431,7 @@ async function agentCheckoutAndPatch(
   }
   // PATCH with agent identity
   const res = await agent.request.patch(`${BASE_URL}/api/issues/${issueId}`, {
-    headers: { "X-Paperclip-Run-Id": runId },
+    headers: { "X-Pilibala-Run-Id": runId },
     data: patchData,
   });
   const retried = await retryAgentPatchWithCurrentLockOnConflict(
@@ -462,7 +462,7 @@ async function setupCompany(boardRequest: APIRequestContext): Promise<TestContex
     throw new Error(
       `Signoff e2e tests require local_trusted deployment mode, ` +
         `but server is in "${health.deploymentMode}" mode. ` +
-        `Set PAPERCLIP_DEPLOYMENT_MODE=local_trusted or use the webServer config.`,
+        `Set PILIBALA_DEPLOYMENT_MODE=local_trusted or use the webServer config.`,
     );
   }
 

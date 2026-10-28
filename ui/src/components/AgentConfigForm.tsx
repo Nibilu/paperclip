@@ -1,10 +1,10 @@
 import { useConnectionModels } from "./ai-connections/useConnectionModels";
-import { agentHarnessType, agentRunner, type AgentRunnerChoice } from "@paperclipai/shared";
+import { agentHarnessType, agentRunner, type AgentRunnerChoice } from "@pilibalaai/shared";
 import { adaptersApi } from "../api/adapters";
 import { CodexRunnerSelect } from "./CodexRunnerSelect";
-import { aiRoutingHarness } from "@paperclipai/shared";
+import { aiRoutingHarness } from "@pilibalaai/shared";
 import { AiConnectionField } from "./ai-connections/AiConnectionField";
-import { aiConnectionBindingSchema, aiRuntimeConnectionBindingSchema } from "@paperclipai/shared";
+import { aiConnectionBindingSchema, aiRuntimeConnectionBindingSchema } from "@pilibalaai/shared";
 import { testAgentSetup } from "@/lib/test-agent-setup";
 import { setupEfforts } from "../lib/agent-setup-fields";
 import { RuntimeTestCard } from "./RuntimeTestCard";
@@ -23,8 +23,8 @@ import type {
   EnvBinding,
   EnvSecretRefBinding,
   Environment,
-} from "@paperclipai/shared";
-import { AGENT_DEFAULT_MAX_CONCURRENT_RUNS, supportedEnvironmentDriversForAdapter, isValidBrowserCode, ADAPTER_AUTH_MISSING_CHECK_CODE } from "@paperclipai/shared";
+} from "@pilibalaai/shared";
+import { AGENT_DEFAULT_MAX_CONCURRENT_RUNS, supportedEnvironmentDriversForAdapter, isValidBrowserCode, ADAPTER_AUTH_MISSING_CHECK_CODE } from "@pilibalaai/shared";
 import type { AdapterModel } from "../api/agents";
 import { agentsApi } from "../api/agents";
 import { ApiError } from "../api/client";
@@ -35,12 +35,12 @@ import { assetsApi } from "../api/assets";
 import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
   DEFAULT_CODEX_LOCAL_MODEL,
-} from "@paperclipai/adapter-codex-local";
-import { DEFAULT_CLAUDE_LOCAL_MODEL } from "@paperclipai/adapter-claude-local";
-import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
-import { DEFAULT_KIMI_LOCAL_MODEL } from "@paperclipai/adapter-kimi-local";
-import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@paperclipai/adapter-opencode-local";
+} from "@pilibalaai/adapter-codex-local";
+import { DEFAULT_CLAUDE_LOCAL_MODEL } from "@pilibalaai/adapter-claude-local";
+import { DEFAULT_CURSOR_LOCAL_MODEL } from "@pilibalaai/adapter-cursor-local";
+import { DEFAULT_GEMINI_LOCAL_MODEL } from "@pilibalaai/adapter-gemini-local";
+import { DEFAULT_KIMI_LOCAL_MODEL } from "@pilibalaai/adapter-kimi-local";
+import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@pilibalaai/adapter-opencode-local";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, SelectPopover } from "@/components/ui/select";
@@ -100,14 +100,14 @@ import { codexReasoningEffortOptions } from "../lib/codex-reasoning-effort";
 
 /* ---- Create mode values ---- */
 
-// Canonical type lives in @paperclipai/adapter-utils; re-exported here
+// Canonical type lives in @pilibalaai/adapter-utils; re-exported here
 // so existing imports from this file keep working.
-export type { CreateConfigValues } from "@paperclipai/adapter-utils";
+export type { CreateConfigValues } from "@pilibalaai/adapter-utils";
 import {
-  PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES,
-  paperclipRunnerTransitionConfig,
+  PILIBALA_RUNNER_PERMISSION_CAPABILITIES,
+  pilibalaRunnerTransitionConfig,
   type CreateConfigValues,
-} from "@paperclipai/adapter-utils";
+} from "@pilibalaai/adapter-utils";
 import { Badge } from "@/components/ui/badge";
 
 /* ---- Props ---- */
@@ -176,14 +176,14 @@ const emptyOverlay: AgentConfigOverlay = {
 const EMPTY_ENV: Record<string, EnvBinding> = {};
 
 export function supportsAdapterModelRefresh(adapterType: string): boolean {
-  return adapterType === "claude_local" || adapterType === "codex_local" || adapterType === "paperclip_runner" || adapterType === "opencode_local";
+  return adapterType === "claude_local" || adapterType === "codex_local" || adapterType === "pilibala_runner" || adapterType === "opencode_local";
 }
 
-export function resolvePaperclipRunnerTransitionModel(
+export function resolvePilibalaRunnerTransitionModel(
   previousAdapterType: string,
   previousModel: unknown,
 ): string {
-  return paperclipRunnerTransitionConfig(previousAdapterType, previousModel).model as string;
+  return pilibalaRunnerTransitionConfig(previousAdapterType, previousModel).model as string;
 }
 
 function isOverlayDirty(o: AgentConfigOverlay): boolean {
@@ -402,9 +402,9 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     // their current value in edit mode, but the picker does not offer a fresh
     // native selection until the explicit experimental opt-in is known true.
     if (experimentalSettings?.enableNativeRunner !== true) {
-      next.add("paperclip_runner");
+      next.add("pilibala_runner");
     }
-    if (experimentalSettings?.enableOpenAiDot !== true || disabledTypes.has("paperclip_runner")) {
+    if (experimentalSettings?.enableOpenAiDot !== true || disabledTypes.has("pilibala_runner")) {
       next.add("openai_dot");
     }
     return next;
@@ -623,11 +623,11 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
   const codexRunnerAvailability = runnerDiscovery.data?.find(item => item.type === "codex_local");
   const runner: AgentRunnerChoice = isCreate ? props.values.runner ?? "auto" : overlay.runner ?? agentRunner(adapterType);
   const fieldsAdapterType = isCodexHarness
-    ? (runner === "paperclip" || (runner === "auto" && codexRunnerAvailability?.defaultRunner === "paperclip") ? "paperclip_runner" : "codex_local")
+    ? (runner === "pilibala" || (runner === "auto" && codexRunnerAvailability?.defaultRunner === "pilibala") ? "pilibala_runner" : "codex_local")
     : adapterType;
   const getCapabilities = useAdapterCapabilities();
   const adapterCaps = getCapabilities(isCodexHarness ? harnessType : adapterType);
-  const runnerProvider = adapterType === "paperclip_runner"
+  const runnerProvider = adapterType === "pilibala_runner"
     ? String(isCreate ? props.values.adapterSchemaValues?.provider ?? "codex"
       : eff("adapterConfig", "provider", config.provider === "acpx" && config.acpxAgent === "codex" ? "codex" : config.provider ?? "codex"))
     : undefined;
@@ -914,7 +914,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
   const inheritedEnvironmentLabel = instanceDefaultEnvironment
     ? environmentDisplayLabel(instanceDefaultEnvironment)
     : managedSandboxOnly
-      ? "Paperclip Computer"
+      ? "Pilibala Computer"
       : "Local";
 
   const configuredModelProvider = String(eff("adapterConfig", "provider", config.provider ?? "") ?? "");
@@ -994,7 +994,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       }
       return agentsApi.detectModel(selectedCompanyId, adapterType);
     },
-    enabled: Boolean(selectedCompanyId && isLocal && adapterType !== "opencode_local" && adapterType !== "paperclip_runner"),
+    enabled: Boolean(selectedCompanyId && isLocal && adapterType !== "opencode_local" && adapterType !== "pilibala_runner"),
   });
   const detectedModel = detectedModelData?.model ?? null;
   const detectedModelCandidates = detectedModelData?.candidates ?? [];
@@ -1150,7 +1150,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
         (overlay.runtime.runtimeConfig as Record<string, unknown> | undefined)?.aiConnection ?? props.agent.runtimeConfig.aiConnection,
       ).data;
       if (props.compactTestFeedback) {
-        const providerAdapter = adapterType === "paperclip_runner"
+        const providerAdapter = adapterType === "pilibala_runner"
           ? adapterConfig.provider === "codex" ? "codex_local"
             : adapterConfig.provider === "acpx" && adapterConfig.acpxAgent === "grok" ? "grok_local"
             : adapterConfig.provider === "acpx" && adapterConfig.acpxAgent === "claude" ? "claude_local"
@@ -1392,7 +1392,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
           : eff("adapterConfig", thinkingEffortKey, String(config[thinkingEffortKey] ?? ""));
   const showThinkingEffort = adapterType !== "gemini_local"
     && adapterType !== "cursor_cloud"
-    && (adapterType !== "paperclip_runner" || isCodexHarness);
+    && (adapterType !== "pilibala_runner" || isCodexHarness);
   const codexSearchEnabled = adapterType === "codex_local"
     ? (isCreate ? Boolean(val!.search) : eff("adapterConfig", "search", Boolean(config.search)))
     : false;
@@ -1697,7 +1697,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                   const dot = choice === "openai_dot";
                   const muse = choice === "muse";
                   const external = dot || muse;
-                  const t = external ? "paperclip_runner" : choice;
+                  const t = external ? "pilibala_runner" : choice;
                   if (isCreate) {
                     // Reset all adapter-specific fields to defaults when switching adapter type
                     const { adapterType: _at, ...defaults } = defaultCreateValues;
@@ -1713,7 +1713,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                       nextValues.model = DEFAULT_CURSOR_LOCAL_MODEL;
                     } else if (t === "opencode_local") {
                       nextValues.model = DEFAULT_OPENCODE_LOCAL_MODEL;
-                    } else if (t === "paperclip_runner") {
+                    } else if (t === "pilibala_runner") {
                       nextValues.model = DEFAULT_CODEX_LOCAL_MODEL;
                     }
                     if (external) {
@@ -1739,8 +1739,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                             : t === "cursor"
                               ? DEFAULT_CURSOR_LOCAL_MODEL
                             : external ? ""
-                            : t === "paperclip_runner"
-                              ? resolvePaperclipRunnerTransitionModel(adapterType, config.model)
+                            : t === "pilibala_runner"
+                              ? resolvePilibalaRunnerTransitionModel(adapterType, config.model)
                               : "",
                         effort: "",
                         modelReasoningEffort: "",
@@ -1748,9 +1748,9 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                         mode: "",
                         ...(external
                             ? { provider: muse ? "muse" : "openai_dot", lifecycleMode: "per_turn", allowUnmeteredProvider: false, ...(dot ? { dotAttachmentAccess: false, dotWorkspaceAccess: false } : {}) }
-                          : t === "paperclip_runner"
+                          : t === "pilibala_runner"
                             ? {
-                                ...paperclipRunnerTransitionConfig(adapterType, eff("adapterConfig", "model", config.model)),
+                                ...pilibalaRunnerTransitionConfig(adapterType, eff("adapterConfig", "model", config.model)),
                               }
                           // Local -> local: drop the old adapter's provider/model so the
                           // stale selection can't bleed through eff()'s fallback to
@@ -1910,14 +1910,14 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                 open={modelOpen}
                 onOpenChange={setModelOpen}
                 defaultLabel={adapterType === "claude_local" ? `Default (${DEFAULT_CLAUDE_LOCAL_MODEL})` : undefined}
-                allowDefault={adapterType !== "opencode_local" && adapterType !== "pi_local" && adapterType !== "paperclip_runner"}
+                allowDefault={adapterType !== "opencode_local" && adapterType !== "pi_local" && adapterType !== "pilibala_runner"}
                 required={adapterType === "opencode_local" || adapterType === "pi_local"}
                 groupByProvider={!connectionModels && (adapterType === "opencode_local" || adapterType === "pi_local")}
                 preserveOrder={Boolean(connectionModels) || adapterCuratesModelOrder(adapterType)}
                 creatable
                 detectedModel={connectionModels ? undefined : detectedModel}
                 detectedModelCandidates={[]}
-                onDetectModel={connectionModels || adapterType === "opencode_local" || adapterType === "paperclip_runner"
+                onDetectModel={connectionModels || adapterType === "opencode_local" || adapterType === "pilibala_runner"
                   ? undefined
                   : async () => {
                       const result = await refetchDetectedModel();
@@ -2307,7 +2307,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
               <div className="mt-3 flex items-start gap-2 rounded-md border border-border bg-background/60 px-3 py-2 text-xs text-foreground">
                 <Bug className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
-                  Raw tracing is on for future runs. Paperclip keeps at most 64 MiB per run and automatically deletes it after 24 hours.
+                  Raw tracing is on for future runs. Pilibala keeps at most 64 MiB per run and automatically deletes it after 24 hours.
                 </span>
               </div>
             ) : null}
@@ -2455,7 +2455,7 @@ export type AdapterLoginDescriptor = {
 // correctly, and the first thing to rot would have been the timeout and
 // cleanup paths, which are the ones nobody exercises by hand.
 export type AdapterLoginPanelProps = AdapterLoginDescriptor & {
-  aiConnection?: import("@paperclipai/shared").AiConnectionLoginIntent;
+  aiConnection?: import("@pilibalaai/shared").AiConnectionLoginIntent;
   onStored?: (storedSessionId: string) => void;
   onApplyStored?: () => void;
   // Applies the non-secret Codex account-binding claim from an authenticated
@@ -3853,8 +3853,8 @@ export function AdapterTypeDropdown({
     [...listAdapterOptions(type => adapterLabels[type] ?? getAdapterLabel(type)),
       ...(openAiDotEnabled ? [{ value: "openai_dot", label: "OpenAI Dot", experimental: true, comingSoon: false }] : []),
       ...(museEnabled ? [{ value: "muse", label: "Muse — Personal agent", experimental: true, comingSoon: false }] : []),
-    ].filter(item => (item.value !== "paperclip_runner" || nativeRunnerEnabled) && !disabledTypes.has(item.value))
-      .sort((a, b) => Number(a.value === "paperclip_runner") - Number(b.value === "paperclip_runner")),
+    ].filter(item => (item.value !== "pilibala_runner" || nativeRunnerEnabled) && !disabledTypes.has(item.value))
+      .sort((a, b) => Number(a.value === "pilibala_runner") - Number(b.value === "pilibala_runner")),
     [disabledTypes, openAiDotEnabled, nativeRunnerEnabled, museEnabled]);
   return <SelectPopover aria-label="Harness" value={value} onValueChange={onChange}
     displayValue={<span className="inline-flex min-w-0 items-center gap-1.5">
@@ -3863,7 +3863,7 @@ export function AdapterTypeDropdown({
       {selectedDisplay.experimental && <ExperimentalBadge />}
     </span>}
     options={adapterList.map(item => ({ value: item.value, disabled: item.comingSoon,
-      group: item.value === "paperclip_runner" ? "Advanced" : undefined,
+      group: item.value === "pilibala_runner" ? "Advanced" : undefined,
       label: <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="inline-flex shrink-0"><AdapterMark type={item.value} className="size-4" /></span><span>{item.label}</span>{item.experimental && <ExperimentalBadge />}</span>,
       suffix: item.comingSoon ? <span className="text-(length:--text-nano) text-muted-foreground">Coming soon</span> : undefined,
     }))} />;
@@ -3992,7 +3992,7 @@ export function ModelDropdown({
   }
 
   if (presentation === "native") {
-    const customOption = "__paperclip_custom_model__";
+    const customOption = "__pilibala_custom_model__";
     const extraModels = [...new Set([value, ...promotedModelIds])].filter(id => id && (!models.some(model => model.id === id) || promotedModelIds.has(id)));
     return (
       <Field label="Model" hint={help.model}>

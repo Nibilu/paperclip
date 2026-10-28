@@ -49,7 +49,7 @@ export async function validateHermesAdapterConfig(
   const model = configString(config.model);
   // A pair is only enforceable when BOTH sides are explicit. Model-only (or
   // provider-only) configs delegate to Hermes's own native resolution of its
-  // host default — Paperclip must not guess, and must not block the
+  // host default — Pilibala must not guess, and must not block the
   // "Default (Hermes config)" setup path.
   if (!provider || !model || provider === "auto") return;
 
@@ -65,7 +65,7 @@ export async function validateHermesAdapterConfig(
   const entries = await listProviders().catch(() => [] as HermesProviderEntryLike[]);
   if (entries.length > 0 && !entries.some((entry) => entry.name === provider)) {
     throw new Error(
-      `Unknown model provider "${provider}". Pick a provider from the setup catalog — Paperclip keeps the provider/model pair validated end to end.`,
+      `Unknown model provider "${provider}". Pick a provider from the setup catalog — Pilibala keeps the provider/model pair validated end to end.`,
     );
   }
 

@@ -4,7 +4,7 @@ import { CircleCheck, CircleAlert, Loader2, Play } from "lucide-react";
 import { agentsApi, type CapabilityUpgradeTaskSummary } from "@/api/agents";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { AgentCapabilityDiffEntry, AgentCapabilityObservation } from "@paperclipai/shared";
+import type { AgentCapabilityDiffEntry, AgentCapabilityObservation } from "@pilibalaai/shared";
 
 /**
  * Manual adapter capability check panel (SPEC-implementation 11.2). Explicit

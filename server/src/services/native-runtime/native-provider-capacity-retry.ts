@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { agentWakeupRequests, heartbeatRuns, type Db } from "@paperclipai/db";
+import { agentWakeupRequests, heartbeatRuns, type Db } from "@pilibalaai/db";
 import { accountingForScheduledRetry, executionFailureRetryCount } from "../execution-recovery-attempt.js";
 import { NATIVE_PROVIDER_CAPACITY_MAX_RETRIES, NATIVE_PROVIDER_OVERLOADED_CODE, NATIVE_PROVIDER_OVERLOADED_MESSAGE } from "./native-provider-failure.js";
 
@@ -34,8 +34,8 @@ export async function materializeNativeProviderCapacityRetry(input: {
   for (const key of [
     "explicitUserContinuation", "wakeCommentId", "wakeCommentIds", "commentId",
     "commentIds", "latestCommentId", "resumeIntent", "followUpRequested",
-    "paperclipWake", "paperclipWakeComment", "paperclipTaskMarkdown", "paperclipTaskMarkdownCompact",
-    "paperclipTaskMarkdownAssignment", "paperclipTaskMarkdownAssignmentCompact", "paperclipTurnContext",
+    "pilibalaWake", "pilibalaWakeComment", "pilibalaTaskMarkdown", "pilibalaTaskMarkdownCompact",
+    "pilibalaTaskMarkdownAssignment", "pilibalaTaskMarkdownAssignmentCompact", "pilibalaTurnContext",
   ]) delete predecessorContext[key];
   const contextSnapshot = {
     ...predecessorContext,

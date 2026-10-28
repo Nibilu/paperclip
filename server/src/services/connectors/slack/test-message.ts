@@ -1,6 +1,6 @@
 import { and, eq, gte, inArray, ne } from "drizzle-orm";
-import { agents, chatActions, chatEndpoints, chatExternalPrincipals, chatIdentityLinks, chatSlackManagerGrants, companyMemberships, toolConnections, type Db } from "@paperclipai/db";
-import { slackTestMessageSchema, type SlackTestMessageInput, type SlackTestMessageResult } from "@paperclipai/shared";
+import { agents, chatActions, chatEndpoints, chatExternalPrincipals, chatIdentityLinks, chatSlackManagerGrants, companyMemberships, toolConnections, type Db } from "@pilibalaai/db";
+import { slackTestMessageSchema, type SlackTestMessageInput, type SlackTestMessageResult } from "@pilibalaai/shared";
 import { conflict, forbidden, notFound, tooManyRequests, unprocessable } from "../../../errors.js";
 import { logger } from "../../../middleware/logger.js";
 import { logActivity } from "../../activity-log.js";
@@ -33,7 +33,7 @@ export function slackTestMessageService(db: Db, options: Options) {
         eq(companyMemberships.companyId, endpoint.companyId), eq(companyMemberships.principalType, "user"),
         eq(companyMemberships.principalId, actor.userId), eq(companyMemberships.status, "active"), ne(companyMemberships.membershipRole, "viewer"),
       ));
-      if (!membership) throw forbidden("An active Paperclip account is required");
+      if (!membership) throw forbidden("An active Pilibala account is required");
       const actionKey = `slack_test_message:${actor.userId}:${input.requestId}`;
       const [previous] = await db.select().from(chatActions).where(and(eq(chatActions.endpointId, endpointId), eq(chatActions.companyId, endpoint.companyId), eq(chatActions.providerActionId, actionKey)));
       if (previous) {
@@ -46,7 +46,7 @@ export function slackTestMessageService(db: Db, options: Options) {
       if (recent.length >= 5) throw tooManyRequests("Wait a minute before sending another test message");
       const links = await db.select({ endpointId: chatIdentityLinks.endpointId, slackUserId: chatExternalPrincipals.externalId }).from(chatIdentityLinks)
         .innerJoin(chatExternalPrincipals, and(eq(chatExternalPrincipals.id, chatIdentityLinks.principalId), eq(chatExternalPrincipals.companyId, chatIdentityLinks.companyId)))
-        .where(and(eq(chatIdentityLinks.companyId, endpoint.companyId), eq(chatIdentityLinks.paperclipUserId, actor.userId), eq(chatIdentityLinks.status, "linked"),
+        .where(and(eq(chatIdentityLinks.companyId, endpoint.companyId), eq(chatIdentityLinks.pilibalaUserId, actor.userId), eq(chatIdentityLinks.status, "linked"),
           eq(chatExternalPrincipals.provider, "slack"), eq(chatExternalPrincipals.providerAccountId, endpoint.providerAccountId), eq(chatExternalPrincipals.isBot, false)));
       const current = links.filter(link => link.endpointId === endpointId);
       const grants = await db.select({ slackUserId: chatSlackManagerGrants.slackUserId }).from(chatSlackManagerGrants).where(and(
@@ -78,7 +78,7 @@ export function slackTestMessageService(db: Db, options: Options) {
       if (!known.includes(userId)) {
         const principalId = await options.ensureAccount(endpointId, user);
         const principalLinks = await db.select().from(chatIdentityLinks).where(and(eq(chatIdentityLinks.companyId, endpoint.companyId), eq(chatIdentityLinks.principalId, principalId)));
-        if (principalLinks.some(link => link.status === "linked" && link.paperclipUserId !== actor.userId)
+        if (principalLinks.some(link => link.status === "linked" && link.pilibalaUserId !== actor.userId)
           || principalLinks.some(link => link.endpointId === endpointId && link.status === "revoked")) throw conflict("This Slack account has an existing link");
         if (invitation) {
           if (invitation.status !== "processed") throw conflict("The invitation may already have been sent. Check Slack before requesting another.");
@@ -93,8 +93,8 @@ export function slackTestMessageService(db: Db, options: Options) {
           kind: "slack_test_message_invitation", providerActionId: `${actionKey}:invite`, status: "processing", payload: { userId: actor.userId, slackUserId: userId } }).returning();
         try {
           const response = await call("chat.postMessage", { channel: userId,
-            text: `Connect your Slack account to ${record.agentName} in Paperclip to receive your test message.`,
-            blocks: JSON.stringify([{ type: "section", text: { type: "plain_text", text: `Connect your Slack account to ${record.agentName} in Paperclip.` } },
+            text: `Connect your Slack account to ${record.agentName} in Pilibala to receive your test message.`,
+            blocks: JSON.stringify([{ type: "section", text: { type: "plain_text", text: `Connect your Slack account to ${record.agentName} in Pilibala.` } },
               { type: "section", text: { type: "mrkdwn", text: `<${intent.confirmationUrl}|Connect my account> to receive your test message.` } }]),
             unfurl_links: "false", unfurl_media: "false" });
           if (typeof response.channel !== "string" || !/^D[A-Z0-9]+$/.test(response.channel) || typeof response.ts !== "string") throw unprocessable("Slack did not confirm invitation delivery");

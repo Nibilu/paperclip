@@ -6,9 +6,9 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { and, eq, isNull, sql } from "drizzle-orm";
-import { heartbeatRuns, runUsageReceipts, type Db } from "@paperclipai/db";
-import type { AdapterExecutionResult, AdapterUsageCheckpoint } from "@paperclipai/adapter-utils";
-import { pricingProvenanceSchema, usdToUnits } from "@paperclipai/shared";
+import { heartbeatRuns, runUsageReceipts, type Db } from "@pilibalaai/db";
+import type { AdapterExecutionResult, AdapterUsageCheckpoint } from "@pilibalaai/adapter-utils";
+import { pricingProvenanceSchema, usdToUnits } from "@pilibalaai/shared";
 import { idleAccountingSpoolPath, registerIdleSpoolDirectory } from "./idle-local-work.js";
 import { conflict, notFound } from "../errors.js";
 import { logger } from "../middleware/logger.js";
@@ -33,7 +33,7 @@ const checkpointSchema = z.object({
   providerRequestId: z.string().max(250).nullable().optional(), complete: z.boolean(),
 });
 const envelopeSchema = z.object({
-  schema: z.literal("paperclip/accounting-receipt/v1"), id: z.string().uuid(), companyId: z.string().uuid(),
+  schema: z.literal("pilibala/accounting-receipt/v1"), id: z.string().uuid(), companyId: z.string().uuid(),
   runId: z.string().uuid(), sourceId: z.string().uuid(), sequence: z.number().int().positive(), receivedAt: z.iso.datetime(),
   adapterType: z.string().max(100), receipt: checkpointSchema,
 });
@@ -289,7 +289,7 @@ export async function createRunUsageRecorder(db: Db, input: { companyId: string;
       // can be considered complete, even if a later attempt succeeded.
       receipt.complete = !captureFailed && parts.every(part => part.complete);
     }
-    const envelope: UsageReceiptEnvelope = { schema: "paperclip/accounting-receipt/v1", id: randomUUID(), ...input, sourceId, sequence: ++sequence, receivedAt: new Date().toISOString(), receipt };
+    const envelope: UsageReceiptEnvelope = { schema: "pilibala/accounting-receipt/v1", id: randomUUID(), ...input, sourceId, sequence: ++sequence, receivedAt: new Date().toISOString(), receipt };
     const file = await spoolUsageReceipt(envelope, directory);
     try { await persistUsageReceipt(db, envelope); await fs.rm(file, { force: true }); }
     catch (error) { logger.warn({ err: error, runId: input.runId, receiptId: envelope.id }, "Usage receipt is durable on disk; database replay pending"); }

@@ -8,14 +8,14 @@ describe("adapter display registry", () => {
     ["grok_bot", "Grok Bot"],
     ["muse", "Muse — Personal agent"],
   ])("keeps saved %s external runners branded by provider", (provider, label) => {
-    const type = agentDisplayAdapterType({ adapterType: "paperclip_runner", adapterConfig: { provider } });
+    const type = agentDisplayAdapterType({ adapterType: "pilibala_runner", adapterConfig: { provider } });
     expect(getAdapterDisplay(type).label).toBe(label);
   });
   it("brands saved Codex runners as Codex without guessing managed or unknown providers", () => {
-    expect(agentDisplayAdapterType({ adapterType: "paperclip_runner", adapterConfig: { provider: "codex" } })).toBe("codex_local");
-    expect(agentDisplayAdapterType({ adapterType: "paperclip_runner", adapterConfig: {} })).toBe("codex_local");
+    expect(agentDisplayAdapterType({ adapterType: "pilibala_runner", adapterConfig: { provider: "codex" } })).toBe("codex_local");
+    expect(agentDisplayAdapterType({ adapterType: "pilibala_runner", adapterConfig: {} })).toBe("codex_local");
     for (const provider of ["claude_managed", "aws_agentcore", "unknown"]) {
-      expect(agentDisplayAdapterType({ adapterType: "paperclip_runner", adapterConfig: { provider } })).toBe("paperclip_runner");
+      expect(agentDisplayAdapterType({ adapterType: "pilibala_runner", adapterConfig: { provider } })).toBe("pilibala_runner");
     }
   });
   it("uses user-facing labels without the legacy local qualifier for built-in adapters", () => {

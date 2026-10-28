@@ -3,18 +3,18 @@ import { mkdtemp } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { agents, executionWorkspaceRepositories, executionWorkspaces, issues, heartbeatRuns, projects, projectWorkspaces, principalPermissionGrants, companyMemberships } from "@paperclipai/db";
+import { agents, executionWorkspaceRepositories, executionWorkspaces, issues, heartbeatRuns, projects, projectWorkspaces, principalPermissionGrants, companyMemberships } from "@pilibalaai/db";
 import { createLocalAgentJwt } from "../agent-auth-jwt.js";
 import { startRunnerApiTestServer } from "./helpers/runner-api-server.js";
 import { getEmbeddedPostgresTestSupport } from "./helpers/embedded-postgres.js";
-import { PaperclipRunnerToolAuthority } from "../services/native-runtime/paperclip-runner-tool-authority.js";
+import { PilibalaRunnerToolAuthority } from "../services/native-runtime/pilibala-runner-tool-authority.js";
 
 const support = await getEmbeddedPostgresTestSupport();
 (support.supported ? describe : describe.skip)("task workspace API and native semantic authority", () => {
   let server: Awaited<ReturnType<typeof startRunnerApiTestServer>>;
-  const originalSecret = process.env.PAPERCLIP_AGENT_JWT_SECRET;
-  beforeAll(async () => { process.env.PAPERCLIP_AGENT_JWT_SECRET = randomUUID(); server = await startRunnerApiTestServer(); }, 60_000);
-  afterAll(async () => { await server?.close(); if (originalSecret === undefined) delete process.env.PAPERCLIP_AGENT_JWT_SECRET; else process.env.PAPERCLIP_AGENT_JWT_SECRET = originalSecret; });
+  const originalSecret = process.env.PILIBALA_AGENT_JWT_SECRET;
+  beforeAll(async () => { process.env.PILIBALA_AGENT_JWT_SECRET = randomUUID(); server = await startRunnerApiTestServer(); }, 60_000);
+  afterAll(async () => { await server?.close(); if (originalSecret === undefined) delete process.env.PILIBALA_AGENT_JWT_SECRET; else process.env.PILIBALA_AGENT_JWT_SECRET = originalSecret; });
   it("creates an explicit-workspace child through the authenticated low-trust API without repeating its saved policy", async () => {
     const f = await server.fixture({ connectionScenario: "fresh", disableWakeOnDemand: true });
     const policy = { trustPreset: "low_trust_review", authorizationPolicy: { trustPreset: "low_trust_review",
@@ -25,7 +25,7 @@ const support = await getEmbeddedPostgresTestSupport();
     await server.db.update(projects).set({ executionWorkspacePolicy: policy }).where(eq(projects.id, f.projectId));
     await server.db.update(issues).set({ executionPolicy: policy, executionWorkspaceId: workspace.id }).where(eq(issues.id, f.issueId));
     await server.db.update(heartbeatRuns).set({ contextSnapshot: { issueId: f.issueId, executionPolicy: policy } }).where(eq(heartbeatRuns.id, f.runId));
-    const token = createLocalAgentJwt(f.agentId, f.companyId, "paperclip_runner", f.runId, f.userId);
+    const token = createLocalAgentJwt(f.agentId, f.companyId, "pilibala_runner", f.runId, f.userId);
     const create = (parentId: string) => fetch(`${server.apiUrl}/api/companies/${f.companyId}/issues`, {
       method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
       body: JSON.stringify({ title: `Review child ${randomUUID()}`, parentId, projectId: f.projectId,
@@ -43,7 +43,7 @@ const support = await getEmbeddedPostgresTestSupport();
     const f = await server.fixture({ conversation: true, disableWakeOnDemand: true });
     const [workspace] = await server.db.insert(executionWorkspaces).values({ companyId: f.companyId, projectId: null, sourceIssueId: f.issueId, name: "Task files", cwd: f.workspace, mode: "shared_workspace", strategyType: "task_directory", status: "idle" }).returning();
     await server.db.update(issues).set({ projectId: null, projectWorkspaceId: null, executionWorkspaceId: workspace.id }).where(eq(issues.id, f.issueId));
-    const authority = new PaperclipRunnerToolAuthority(server.db, { companyId: f.companyId, issueId: f.issueId, agentId: f.agentId, runId: f.runId, apiUrl: server.apiUrl, workspaceRoot: "/admitted/task" });
+    const authority = new PilibalaRunnerToolAuthority(server.db, { companyId: f.companyId, issueId: f.issueId, agentId: f.agentId, runId: f.runId, apiUrl: server.apiUrl, workspaceRoot: "/admitted/task" });
     const call = (tool: string, args: Record<string, unknown>) => authority.execute({ tool, arguments: args, callId: randomUUID() });
     const view = await call("get_workspace", {}) as { bindingRevision: number; cwd: string; workspace: { id: string } };
     expect(view).toMatchObject({ cwd: "/admitted/task", workspace: { id: workspace.id } });

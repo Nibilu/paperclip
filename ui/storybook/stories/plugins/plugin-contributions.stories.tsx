@@ -35,7 +35,7 @@ const meta = {
   parameters: {
     layout: "padded",
     initialEntries: ["/PAP/plugins/contribution-gap"],
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "plugins/contributions"
       ],

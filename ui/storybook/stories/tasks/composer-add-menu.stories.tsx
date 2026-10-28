@@ -2,7 +2,7 @@ import { useState, type CSSProperties } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { ChevronLeft, Ellipsis } from "lucide-react";
-import type { IssueAttachment, IssueWorkMode, RunnerGoalCapability } from "@paperclipai/shared";
+import type { IssueAttachment, IssueWorkMode, RunnerGoalCapability } from "@pilibalaai/shared";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { TaskChatComposer } from "@/components/task-chat/TaskChatComposer";
 import { TaskChatComposerDock } from "@/components/task-chat/TaskChatComposerDock";
@@ -115,7 +115,7 @@ const meta = {
     layout: "fullscreen",
     options: { showPanel: false },
     docs: { description: { component: "The production task composer. The Add menu opens upward on desktop and as a dialog on mobile for files, supported goals, Plan mode, and Ask mode. Plan and Ask are exclusive; selecting a mode shows a removable chip. Cmd+. cycles standard, Plan, and Ask. Mobile stories include capsule agent avatars and the actual bottom navigation." } },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "tasks/create"
       ],

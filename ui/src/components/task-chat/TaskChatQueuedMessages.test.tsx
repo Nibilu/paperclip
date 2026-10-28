@@ -4,7 +4,7 @@ import { act, type ComponentProps } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IssueQueuedCommentQueue } from "@paperclipai/shared";
+import type { IssueQueuedCommentQueue } from "@pilibalaai/shared";
 import {
   reorderQueuedMessageEntries,
   TaskChatQueuedMessages,
@@ -26,7 +26,7 @@ const queue: IssueQueuedCommentQueue = {
   state: "deferred",
   targetRunId: "run-1",
   revision: "rev-1",
-  protocol: "paperclip_runner_v1",
+  protocol: "pilibala_runner_v1",
   steeringDisposition: "available",
   entries: ["First queued message", "Second queued message"].map(
     (body, position) => ({
@@ -111,7 +111,7 @@ describe("TaskChatQueuedMessages", () => {
       source: { kind: "interaction" as const, interactionId: "confirmation-1", interactionKind: "request_confirmation",
         requiresFreshSession: runtime === "native-plan" } };
     const props = render({ queue: { ...queue, entries: [entry],
-      protocol: runtime === "legacy" ? "legacy" : "paperclip_runner_v1" },
+      protocol: runtime === "legacy" ? "legacy" : "pilibala_runner_v1" },
       onInterrupt: vi.fn().mockResolvedValue(undefined) });
     expect(props.onSteer).not.toHaveBeenCalled();
     expect(props.onInterrupt).not.toHaveBeenCalled();
@@ -194,7 +194,7 @@ describe("TaskChatQueuedMessages", () => {
 
   it.each(["steer", "interrupt"] as const)("shows a delivery error even when the queue becomes empty while %s is pending", async action => {
     const delivery = deferred<void>();
-    const props = render({ queue: { ...queue, protocol: action === "interrupt" ? "legacy" : "paperclip_runner_v1" },
+    const props = render({ queue: { ...queue, protocol: action === "interrupt" ? "legacy" : "pilibala_runner_v1" },
       onSteer: vi.fn().mockReturnValue(delivery.promise), onInterrupt: vi.fn().mockReturnValue(delivery.promise) });
     await act(async () => { container.querySelector<HTMLButtonElement>(`[data-testid="task-chat-queued-${action}-comment-1"]`)!.click(); });
     await act(async () => { render({ ...props, queue: { ...props.queue, revision: "empty-poll", entries: [] } }); });

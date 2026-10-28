@@ -84,13 +84,13 @@ it("keeps cache outcomes and clone references on their owning concurrent phases"
     })),
   ]);
   expect(spans.find(span => span.name === "workspace.checkout.cache_lookup")?.attributes).toMatchObject({
-    "paperclip.execution.repositoryCache.outcome": "hit",
+    "pilibala.execution.repositoryCache.outcome": "hit",
   });
   expect(spans.find(span => span.name === "workspace.checkout.git_clone")?.attributes).toMatchObject({
-    "paperclip.execution.repositoryCache.reference_supplied": false,
+    "pilibala.execution.repositoryCache.reference_supplied": false,
   });
   expect(spans.filter(span => span.name === "task.execution_attempt").every(span =>
-    Object.keys(span.attributes).every(key => key === "paperclip.task.run.run_id"))).toBe(true);
+    Object.keys(span.attributes).every(key => key === "pilibala.task.run.run_id"))).toBe(true);
 });
 
 it("does not let cache attribute failures replace the operation result", async () => {

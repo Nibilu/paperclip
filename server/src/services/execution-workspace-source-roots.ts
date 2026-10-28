@@ -3,7 +3,7 @@ import { promisify } from "node:util";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { eq } from "drizzle-orm";
-import { projectWorkspaces, executionWorkspaceRepositoryAccess, executionWorkspaces, type Db } from "@paperclipai/db";
+import { projectWorkspaces, executionWorkspaceRepositoryAccess, executionWorkspaces, type Db } from "@pilibalaai/db";
 import { forbidden } from "../errors.js";
 import { localRepositoryPath } from "./local-repository-path.js";
 

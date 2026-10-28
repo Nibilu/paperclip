@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import type { RunnerIngressEndpoint } from "@paperclipai/adapter-utils/runner-connectivity";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import type { RunnerIngressEndpoint } from "@pilibalaai/adapter-utils/runner-connectivity";
 import { createNativeRunnerExecutionDriver } from "./native-runner-execution-driver.js";
 
 const transport = vi.hoisted(() => ({
@@ -75,7 +75,7 @@ describe("shared Runner execution driver", () => {
     const prepare = vi.fn();
     const driver = createNativeRunnerExecutionDriver({
       target: ssh, binding, prepareRemote: prepare, runnerPublicUrl: "wss://core.example",
-      runnerCaBundlePath: "/nonexistent/paperclip-runner-test-ca.pem",
+      runnerCaBundlePath: "/nonexistent/pilibala-runner-test-ca.pem",
     });
     await expect(driver.controlPlaneRegistration!(authority)).rejects.toThrow("runner_direct_wss_failed");
     expect(prepare).not.toHaveBeenCalled();

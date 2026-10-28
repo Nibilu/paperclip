@@ -101,8 +101,8 @@ describe("runner API catalog", () => {
   });
   it.each(runnerApiCatalog().filter(operation => operation.transport === "rest"))("resolves the catalog route $operationId inside the bound origin", operation => {
     const pathParams = Object.fromEntries(operation.parameters.filter(parameter => parameter.in === "path").map(parameter => [parameter.name, parameter.name === "companyId" ? context.companyId : "fixture-id"]));
-    const url = runnerApiUrl(operation, { operationId: operation.operationId, pathParams }, context, "https://paperclip.test");
-    expect(url.origin).toBe("https://paperclip.test");
+    const url = runnerApiUrl(operation, { operationId: operation.operationId, pathParams }, context, "https://pilibala.test");
+    expect(url.origin).toBe("https://pilibala.test");
     expect(url.pathname).not.toContain("{");
     expect(operation.responses).toBeDefined();
     expect(operation.authorization.actor).toBeTruthy();
@@ -156,7 +156,7 @@ describe("runner API request boundary", () => {
       expect(request).toHaveBeenCalledOnce();
       const headers = new Headers(request.mock.calls[0][1]?.headers);
       expect(headers.get("Authorization")).toBe("Bearer private-agent-token");
-      expect(headers.get("X-Paperclip-Run-Id")).toBe(context.runId);
+      expect(headers.get("X-Pilibala-Run-Id")).toBe(context.runId);
     },
   );
   it.each([
@@ -237,9 +237,9 @@ describe("runner API request boundary", () => {
       runnerApiOperation(projects),
       input,
       context,
-      "https://paperclip.test/api",
+      "https://pilibala.test/api",
     );
-    expect(url.origin).toBe("https://paperclip.test");
+    expect(url.origin).toBe("https://pilibala.test");
     expect(url.pathname).toBe("/api/companies/company-a/projects");
     expect(url.searchParams.get("q")).toBe("hello & goodbye");
   });
@@ -255,7 +255,7 @@ describe("runner API request boundary", () => {
           runnerApiOperation(input.operationId),
           input,
           context,
-          "https://paperclip.test",
+          "https://pilibala.test",
         ),
       ).toThrow();
     },
@@ -334,7 +334,7 @@ describe("runner API request boundary", () => {
     expect(new Headers(options.headers).get("Authorization")).toBe(
       "Bearer private-agent-token",
     );
-    expect(new Headers(options.headers).get("X-Paperclip-Run-Id")).toBe(
+    expect(new Headers(options.headers).get("X-Pilibala-Run-Id")).toBe(
       context.runId,
     );
     expect(options.redirect).toBe("manual");

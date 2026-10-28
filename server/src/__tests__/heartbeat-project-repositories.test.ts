@@ -2,7 +2,7 @@ import express from "express";
 import request from "supertest";
 import { fileResourceRoutes } from "../routes/file-resources.js";
 import { errorHandler } from "../middleware/index.js";
-import { EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@paperclipai/db";
+import { EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@pilibalaai/db";
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { execFileSync } from "node:child_process";
@@ -11,14 +11,14 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, authUsers, companies, companyMemberships, createDb, environments, executionWorkspaces, heartbeatRuns, issues, issueAccessGrants, principalPermissionGrants, projects, projectAccessMembers, projectWorkspaces } from "@paperclipai/db";
-import { setExpensiveWorkspaceGitExecutor } from "@paperclipai/adapter-utils/git-workspace-sync";
-import { buildProjectMentionHref } from "@paperclipai/shared";
+import { agents, authUsers, companies, companyMemberships, createDb, environments, executionWorkspaces, heartbeatRuns, issues, issueAccessGrants, principalPermissionGrants, projects, projectAccessMembers, projectWorkspaces } from "@pilibalaai/db";
+import { setExpensiveWorkspaceGitExecutor } from "@pilibalaai/adapter-utils/git-workspace-sync";
+import { buildProjectMentionHref } from "@pilibalaai/shared";
 import { createWorkspaceGitOperationScheduler, WorkspaceGitScanError } from "../services/workspace-git-operation-scheduler.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { heartbeatService } from "../services/heartbeat.ts";
 import { createHeartbeatWorkspaceResolver } from "../services/heartbeat/workspaces.js";
-import { resolveManagedProjectWorkspaceDir, resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { resolveManagedProjectWorkspaceDir, resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { accessService } from "../services/access.js";
 import { assertExecutionWorkspaceRootWriteAccess } from "../services/execution-workspace-repositories.js";
 import { instanceSettingsService } from "../services/instance-settings.ts";
@@ -41,9 +41,9 @@ suite("task project repository provisioning", () => {
   let root: string;
   let heartbeat: ReturnType<typeof heartbeatService>;
   beforeAll(async () => {
-    root = await mkdtemp(path.join(os.tmpdir(), "paperclip-project-repos-"));
-    vi.stubEnv("PAPERCLIP_HOME", path.join(root, "home"));
-    vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC", "false");
+    root = await mkdtemp(path.join(os.tmpdir(), "pilibala-project-repos-"));
+    vi.stubEnv("PILIBALA_HOME", path.join(root, "home"));
+    vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC", "false");
     database = await startEmbeddedPostgresTestDatabase("project-repositories");
     db = createDb(database.connectionString);
     await db.insert(authUsers).values({ id: "responsible-user", name: "Fixture owner", email: "owner@example.test", createdAt: new Date(), updatedAt: new Date() });
@@ -63,7 +63,7 @@ suite("task project repository provisioning", () => {
   afterEach(async () => {
     await drainHeartbeatRunsToQuiescence(db, heartbeat);
     setExpensiveWorkspaceGitExecutor(null);
-    vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC", "false");
+    vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC", "false");
     await instanceSettingsService(db).updateExperimental({
       enableIsolatedWorkspaces: false,
       enableIsolatedWorkspacesByDefault: false,
@@ -73,7 +73,7 @@ suite("task project repository provisioning", () => {
   it.each(["agent", "organization"] as const)("isolates repository-free low-trust tasks while preserving reassignment and authorized referenced projects (%s policy)", async policyOwner => {
     const companyId = randomUUID(), projectId = randomUUID(), agentId = randomUUID(), environmentId = randomUUID();
     const referencedProjectId = randomUUID(), deniedProjectId = randomUUID();
-    vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC", "true");
+    vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC", "true");
     await instanceSettingsService(db).updateExperimental({ enableIsolatedWorkspaces: true });
     await db.insert(companies).values({ id: companyId, name: "Email company", issuePrefix: `E${companyId.slice(0, 6)}`, defaultResponsibleUserId: "responsible-user" });
     await db.insert(companyMemberships).values({ companyId, principalType: "user", principalId: "responsible-user", status: "active", membershipRole: "owner" });
@@ -127,13 +127,13 @@ suite("task project repository provisioning", () => {
       expect(workspace.cwd).toContain(`/isolated-workspaces/${companyId}/${issueId}`);
       expect(execute.mock.calls.filter(([input]) => input.runId === run!.id)).toHaveLength(1);
       const call = execute.mock.calls.find(([input]) => input.runId === run!.id)![0];
-      expect(call.context.paperclipEnvironment.driver).toBe("sandbox");
+      expect(call.context.pilibalaEnvironment.driver).toBe("sandbox");
       expect((await sandboxHeartbeat.getRun(run!.id))?.contextSnapshot).toMatchObject({
         executionPolicy: { trustPreset: "low_trust_review", authorizationPolicy: {
           trustBoundary: { projectIds: [projectId, referencedProjectId].sort() },
         } },
       });
-      expect(call.context.paperclipWorkspaces.map((workspace: { projectId: string }) => workspace.projectId)).toEqual([referencedProjectId]);
+      expect(call.context.pilibalaWorkspaces.map((workspace: { projectId: string }) => workspace.projectId)).toEqual([referencedProjectId]);
       directories.push(workspace.cwd!);
       await writeFile(path.join(workspace.cwd!, "email.txt"), `private email ${index}`);
     }
@@ -150,7 +150,7 @@ suite("task project repository provisioning", () => {
     }, { timeout: 15_000 });
     await drainHeartbeatRunsToQuiescence(db, sandboxHeartbeat);
     const reassignedCall = execute.mock.calls.find(([input]) => input.runId === reassignedRun!.id)![0];
-    expect(reassignedCall.context.paperclipWorkspace.cwd).toBe(directories[0]);
+    expect(reassignedCall.context.pilibalaWorkspace.cwd).toBe(directories[0]);
     expect(await readFile(path.join(directories[0], "email.txt"), "utf8")).toBe("private email 0");
   }, 40_000);
 
@@ -200,7 +200,7 @@ suite("task project repository provisioning", () => {
     const calls = execute.mock.calls.filter(([input]) => input.runId === run!.id);
     expect(calls).toHaveLength(explicitIsolation ? 0 : 1);
     if (!explicitIsolation) {
-      const workspace = calls[0]![0].context.paperclipWorkspace;
+      const workspace = calls[0]![0].context.pilibalaWorkspace;
       expect(workspace.mode).toBe(configuredWorkspace ? "isolated_workspace" : "shared_workspace");
       if (configuredWorkspace) {
         expect(workspace.strategy).toBe("git_worktree");
@@ -231,13 +231,13 @@ suite("task project repository provisioning", () => {
       assigneeAdapterOverrides: { adapterConfig: { cwd: overrideCwd } },
       workspaceSelection: taskDirectory ? { version: 1, source: "explicit", selection: { kind: "task_directory" } } : null });
     const expectedCwd = taskDirectory
-      ? path.join(resolvePaperclipInstanceRoot(), "isolated-workspaces", companyId, issueId)
+      ? path.join(resolvePilibalaInstanceRoot(), "isolated-workspaces", companyId, issueId)
       : overrideCwd;
     let bindingId: string | null = null;
     for (let admission = 0; admission < 2; admission++) {
       const defaultExecute = execute.getMockImplementation()!;
       execute.mockImplementationOnce(async (input) => {
-        const cwd = input.context.paperclipWorkspace.cwd;
+        const cwd = input.context.pilibalaWorkspace.cwd;
         expect(await realpath(cwd)).toBe(await realpath(expectedCwd));
         if (!taskDirectory) expect(await readFile(path.join(cwd, "input.txt"), "utf8")).toBe(overrideCwd);
         if (admission === 1) expect(await readFile(path.join(cwd, "output.txt"), "utf8")).toBe("first admission");
@@ -282,7 +282,7 @@ suite("task project repository provisioning", () => {
       if (bindingId) expect(workspace.id).toBe(bindingId);
       bindingId = workspace.id;
       const scope = await findNativeChatWorkspaceScope(db, { companyId, agentId, issueId, instanceRoot: root,
-        adapterType: "paperclip_runner", environmentDriver: "local" });
+        adapterType: "pilibala_runner", environmentDriver: "local" });
       expect(scope?.projectId).toBeNull();
     }
   }, 40_000);
@@ -311,7 +311,7 @@ suite("task project repository provisioning", () => {
     expect(call.config.env).toMatchObject({ PROJECT_VALUE: "task", TASK_ONLY: "present" });
     expect(call.config.env.SOURCE_ONLY).toBeUndefined();
     expect(call.context.projectId).toBe(projectId);
-    if (kind === "configured_source") expect(await realpath(call.context.paperclipWorkspace.cwd)).toBe(await realpath(cwd));
+    if (kind === "configured_source") expect(await realpath(call.context.pilibalaWorkspace.cwd)).toBe(await realpath(cwd));
   }, 25_000);
 
   it.each([
@@ -421,7 +421,7 @@ suite("task project repository provisioning", () => {
     await drainHeartbeatRunsToQuiescence(db, heartbeat);
     const calls = execute.mock.calls.filter(([input]) => input.runId === run!.id);
     expect(calls).toHaveLength(1);
-    expect(await realpath(calls[0]![0].context.paperclipWorkspace.cwd)).toBe(await realpath(cwd));
+    expect(await realpath(calls[0]![0].context.pilibalaWorkspace.cwd)).toBe(await realpath(cwd));
     expect(await readFile(path.join(cwd, "work.txt"), "utf8")).toBe("Existing assignment files");
   }, 30_000);
 
@@ -461,7 +461,7 @@ suite("task project repository provisioning", () => {
     } else {
       expect(result).toMatchObject({ status: "succeeded", error: null });
       expect(calls).toHaveLength(1);
-      const workspace = calls[0]![0].context.paperclipWorkspace;
+      const workspace = calls[0]![0].context.pilibalaWorkspace;
       expect(workspace.strategy).toBe("git_worktree");
       expect(await realpath(workspace.cwd)).not.toBe(await realpath(cwd));
       expect(await readFile(path.join(workspace.cwd, "work.txt"), "utf8")).toBe("Protected source content");
@@ -470,15 +470,15 @@ suite("task project repository provisioning", () => {
   }, 30_000);
 
   it.each(["success", "provision_failure", "copy_only_provision", "occupied_target"] as const)("checks nested private source access before worktree copy and retains it after read-grant revocation (%s)", async (scenario) => {
-    const previousPrivacyMode = process.env.PAPERCLIP_ISSUE_PRIVACY_MODE;
-    vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", "enforce");
+    const previousPrivacyMode = process.env.PILIBALA_ISSUE_PRIVACY_MODE;
+    vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", "enforce");
     try {
       if (scenario === "provision_failure") await instanceSettingsService(db).updateExperimental({ enableIsolatedWorkspaces: true });
       const companyId = randomUUID(), projectId = randomUUID(), privateProjectId = randomUUID();
       const sourceId = randomUUID(), agentId = randomUUID(), issueId = randomUUID();
       const cwd = path.join(root, companyId, "public-source");
       const privateCwd = path.join(cwd, "private");
-      const occupiedTarget = path.join(cwd, ".paperclip", "worktrees", "occupied-private");
+      const occupiedTarget = path.join(cwd, ".pilibala", "worktrees", "occupied-private");
       await mkdir(privateCwd, { recursive: true });
       const git = (...args: string[]) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
       git("init", "-b", "main");
@@ -563,8 +563,8 @@ suite("task project repository provisioning", () => {
       } else {
         expect(allowed).toMatchObject({ status: "succeeded", error: null });
         expect(calls).toHaveLength(1);
-        expect(calls[0]![0].context.paperclipWorkspace.strategy).toBe("git_worktree");
-        copiedCwd = calls[0]![0].context.paperclipWorkspace.cwd;
+        expect(calls[0]![0].context.pilibalaWorkspace.strategy).toBe("git_worktree");
+        copiedCwd = calls[0]![0].context.pilibalaWorkspace.cwd;
         if (scenario === "copy_only_provision") {
           await expect(readFile(path.join(copiedCwd, "provision-ran"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
           const [bound] = await db.select().from(issues).where(eq(issues.id, issueId));
@@ -592,7 +592,7 @@ suite("task project repository provisioning", () => {
       }
       expect(await readFile(path.join(workspace.cwd, "private/secret.txt"), "utf8")).toBe("NESTED_PRIVATE_TRACKED_BYTES");
     } finally {
-      vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", previousPrivacyMode);
+      vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", previousPrivacyMode);
     }
   }, 40_000);
 
@@ -630,7 +630,7 @@ suite("task project repository provisioning", () => {
     if (bound) {
       expect(result).toMatchObject({ status: "succeeded", error: null });
       expect(calls).toHaveLength(1);
-      expect(await realpath(calls[0]![0].context.paperclipWorkspace.cwd)).toBe(await realpath(cwd));
+      expect(await realpath(calls[0]![0].context.pilibalaWorkspace.cwd)).toBe(await realpath(cwd));
       const [task] = await db.select().from(issues).where(eq(issues.id, issueId));
       const [workspace] = await db.select().from(executionWorkspaces).where(eq(executionWorkspaces.id, bindingId!));
       expect(task.executionWorkspaceId).toBe(bindingId);
@@ -748,7 +748,7 @@ suite("task project repository provisioning", () => {
     expect(execute.mock.calls.filter(([input]) => input.runId === retry!.id)).toHaveLength(1);
     const [task] = await db.select().from(issues).where(and(eq(issues.companyId, companyId), eq(issues.id, issueId)));
     expect(task).toMatchObject({ status: "done", assigneeAgentId: agentId });
-    const copies = (execute.mock.calls.find(([input]) => input.runId === retry!.id)![0].context.paperclipWorkspaces as Array<{ cwd: string }>).filter((hint) => hint.cwd.includes(".paperclip-repositories"));
+    const copies = (execute.mock.calls.find(([input]) => input.runId === retry!.id)![0].context.pilibalaWorkspaces as Array<{ cwd: string }>).filter((hint) => hint.cwd.includes(".pilibala-repositories"));
     expect(copies.length).toBeGreaterThan(0);
     expect(await readFile(path.join(copies[0]!.cwd, "README.md"), "utf8")).toBe("preserved dirty work");
     await expect(readFile(path.join(copies[0]!.cwd, "private.secret"))).rejects.toMatchObject({ code: "ENOENT" });
@@ -756,8 +756,8 @@ suite("task project repository provisioning", () => {
   }, 40_000);
 
   it.each(["fresh", "existing", "occupied", "file_url", "absolute_path"] as const)("authorizes a late private configured sibling before %s copy and retains its privacy", async (scenario) => {
-    const previousPrivacyMode = process.env.PAPERCLIP_ISSUE_PRIVACY_MODE;
-    vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", "enforce");
+    const previousPrivacyMode = process.env.PILIBALA_ISSUE_PRIVACY_MODE;
+    vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", "enforce");
     try {
       const companyId = randomUUID(), projectId = randomUUID(), agentId = randomUUID(), issueId = randomUUID();
       const sourceId = randomUUID(), siblingId = randomUUID(), privateIssueId = randomUUID();
@@ -796,7 +796,7 @@ suite("task project repository provisioning", () => {
       const initial = await admit();
       expect(initial).toMatchObject({ status: "succeeded", error: null });
       const binding = (await db.select().from(issues).where(eq(issues.id, issueId)))[0].executionWorkspaceId!;
-      const taskCwd = execute.mock.calls.find(([input]) => input.runId === initial.id)![0].context.paperclipWorkspace.cwd as string;
+      const taskCwd = execute.mock.calls.find(([input]) => input.runId === initial.id)![0].context.pilibalaWorkspace.cwd as string;
       await db.insert(issues).values({ id: privateIssueId, companyId, title: "Private source task", status: "todo", visibility: "private", responsibleUserId: "private-owner" });
       await db.insert(executionWorkspaces).values({ companyId, projectId: null, sourceIssueId: privateIssueId, name: "Private source files",
         mode: "shared_workspace", strategyType: "project_primary", cwd: sibling, providerType: "local_fs", status: "active" });
@@ -804,7 +804,7 @@ suite("task project repository provisioning", () => {
       const configuredCwd = urlOnly ? null : sibling;
       await db.insert(projectWorkspaces).values({ id: siblingId, companyId, projectId, name: "Late sibling", sourceType: "local_path", cwd: configuredCwd, repoUrl, isPrimary: false });
       const key = (scenario === "absolute_path" ? "repo-" : "private-sibling-") + createHash("sha256").update(JSON.stringify([siblingId, repoUrl, null, configuredCwd])).digest("hex").slice(0, 12);
-      const copy = path.join(taskCwd, ".paperclip-repositories", key);
+      const copy = path.join(taskCwd, ".pilibala-repositories", key);
       if (scenario === "existing" || scenario === "occupied") {
         await mkdir(path.dirname(copy), { recursive: true });
         if (scenario === "existing") execFileSync("git", ["clone", "--no-hardlinks", sibling, copy], { stdio: "ignore" });
@@ -814,7 +814,7 @@ suite("task project repository provisioning", () => {
       const denied = await admit();
       expect(denied.status).toBe("failed");
       expect(execute.mock.calls.filter(([input]) => input.runId === denied.id)).toHaveLength(0);
-      if (scenario === "fresh" || urlOnly) expect(await readdir(path.join(taskCwd, ".paperclip-repositories")).catch(() => [])).toEqual([]);
+      if (scenario === "fresh" || urlOnly) expect(await readdir(path.join(taskCwd, ".pilibala-repositories")).catch(() => [])).toEqual([]);
       else expect(await readFile(path.join(copy, "private.txt"), "utf8")).toBe("PRESERVED_EXISTING_SIBLING_BYTES");
       await db.insert(issueAccessGrants).values([
         { issueId: privateIssueId, subjectType: "agent", subjectId: agentId, source: "explicit" },
@@ -847,13 +847,13 @@ suite("task project repository provisioning", () => {
       expect(execute.mock.calls.filter(([input]) => input.runId === deniedContinuation.id)).toHaveLength(0);
       expect(await readFile(path.join(copy, "private.txt"), "utf8")).toBe(expectedBytes);
     } finally {
-      vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", previousPrivacyMode);
+      vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", previousPrivacyMode);
     }
   }, 60_000);
 
   it("guards an unbound private file-URL anchor before cloning and retains copied source privacy", async () => {
-    const previousPrivacyMode = process.env.PAPERCLIP_ISSUE_PRIVACY_MODE;
-    vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", "enforce");
+    const previousPrivacyMode = process.env.PILIBALA_ISSUE_PRIVACY_MODE;
+    vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", "enforce");
     try {
       const companyId = randomUUID(), projectId = randomUUID(), agentId = randomUUID(), issueId = randomUUID();
       const sourceId = randomUUID(), privateIssueId = randomUUID();
@@ -906,7 +906,7 @@ suite("task project repository provisioning", () => {
       ]);
       const authorized = await admit();
       expect(authorized).toMatchObject({ status: "succeeded", error: null });
-      const copiedCwd = execute.mock.calls.find(([input]) => input.runId === authorized.id)![0].context.paperclipWorkspace.cwd;
+      const copiedCwd = execute.mock.calls.find(([input]) => input.runId === authorized.id)![0].context.pilibalaWorkspace.cwd;
       expect(await realpath(copiedCwd)).toBe(await realpath(managedCwd));
       expect(await readFile(path.join(copiedCwd, "secret.txt"), "utf8")).toBe("PRIVATE_ANCHOR_COMMITTED_BYTES");
       await expect(readFile(path.join(copiedCwd, "dirty.txt"))).rejects.toMatchObject({ code: "ENOENT" });
@@ -925,7 +925,7 @@ suite("task project repository provisioning", () => {
       for (const download of [false, true]) await request(app).get(fileUrl).query({ workspace: "execution", path: "secret.txt", download }).expect(404);
       expect(await readFile(path.join(copiedCwd, "secret.txt"), "utf8")).toBe("PRIVATE_ANCHOR_COMMITTED_BYTES");
     } finally {
-      vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", previousPrivacyMode);
+      vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", previousPrivacyMode);
     }
   }, 40_000);
 
@@ -958,7 +958,7 @@ suite("task project repository provisioning", () => {
       expect({ status: latest?.status, error: latest?.error }).toEqual({ status: "succeeded", error: null });
     }, { timeout: 15_000 });
     const input = execute.mock.calls.find(([ctx]) => ctx.runId === run!.id)![0];
-    const hints = input.context.paperclipWorkspaces as Array<{ workspaceId: string; cwd: string }>;
+    const hints = input.context.pilibalaWorkspaces as Array<{ workspaceId: string; cwd: string }>;
     for (let index = 0; index < count; index++) {
       const hint = hints.find((entry) => entry.workspaceId === repositoryRows[index]!.id);
       expect(hint?.cwd).toBeTruthy();

@@ -1,4 +1,4 @@
-export const BUILT_IN_AGENT_METADATA_KEY = "paperclipBuiltInAgent";
+export const BUILT_IN_AGENT_METADATA_KEY = "pilibalaBuiltInAgent";
 
 export interface BuiltInAgentMarker {
   key: string;

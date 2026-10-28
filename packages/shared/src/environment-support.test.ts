@@ -7,9 +7,9 @@ import {
 } from "./environment-support.js";
 
 describe("isSandboxProviderSupportedForAdapter", () => {
-  it("treats Paperclip Runner as a remote-managed adapter", () => {
-    expect(adapterSupportsRemoteManagedEnvironments("paperclip_runner")).toBe(true);
-    expect(supportedEnvironmentDriversForAdapter("paperclip_runner")).toEqual([
+  it("treats Pilibala Runner as a remote-managed adapter", () => {
+    expect(adapterSupportsRemoteManagedEnvironments("pilibala_runner")).toBe(true);
+    expect(supportedEnvironmentDriversForAdapter("pilibala_runner")).toEqual([
       "local",
       "ssh",
       "sandbox",

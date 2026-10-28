@@ -1,16 +1,16 @@
-import type { Db } from "@paperclipai/db";
-import { agentHarnessType, isEnvironmentDriverSupportedForAdapter, paperclipRunnerSupportsPlatform, type AgentRunnerChoice, type AgentRunnerAvailability } from "@paperclipai/shared";
-import { normalizeLegacyRunnerProvider, PAPERCLIP_RUNNER_DEFAULT_MODELS } from "@paperclipai/adapter-utils";
+import type { Db } from "@pilibalaai/db";
+import { agentHarnessType, isEnvironmentDriverSupportedForAdapter, pilibalaRunnerSupportsPlatform, type AgentRunnerChoice, type AgentRunnerAvailability } from "@pilibalaai/shared";
+import { normalizeLegacyRunnerProvider, PILIBALA_RUNNER_DEFAULT_MODELS } from "@pilibalaai/adapter-utils";
 import { findActiveServerAdapter, hasActiveAdapterOverride, waitForExternalAdapters } from "../adapters/registry.js";
 import { getDisabledAdapterTypes } from "./adapter-plugin-store.js";
-import { PaperclipRunnerProviderProfileError, resolvePaperclipRunnerNativeProviderInput } from "./native-runtime/provider-profile.js";
+import { PilibalaRunnerProviderProfileError, resolvePilibalaRunnerNativeProviderInput } from "./native-runtime/provider-profile.js";
 import { forbidden, unprocessable } from "../errors.js";
-import { runSshCommand } from "@paperclipai/adapter-utils/ssh";
+import { runSshCommand } from "@pilibalaai/adapter-utils/ssh";
 import { resolveEnvironmentDriverConfigForRuntime } from "./environment-config.js";
 import { localAgentRunnerTarget } from "../lib/agent-runner-platform.js";
 
 export type RunnerTarget = { driver: string; platform?: string; architecture?: string; libc?: "glibc" | "musl" | "unknown"; glibcVersion?: string };
-export const AGENT_RUNNER_SSH_PLATFORM_COMMAND = "uname -s; uname -m; if paperclip_glibc_version=$(getconf GNU_LIBC_VERSION 2>/dev/null) && [ -n \"$paperclip_glibc_version\" ]; then printf 'glibc\\n%s\\n' \"$paperclip_glibc_version\"; else case \"$(ldd --version 2>&1)\" in *musl*) printf 'musl\\n' ;; *) printf 'unknown\\n' ;; esac; fi";
+export const AGENT_RUNNER_SSH_PLATFORM_COMMAND = "uname -s; uname -m; if pilibala_glibc_version=$(getconf GNU_LIBC_VERSION 2>/dev/null) && [ -n \"$pilibala_glibc_version\" ]; then printf 'glibc\\n%s\\n' \"$pilibala_glibc_version\"; else case \"$(ldd --version 2>&1)\" in *musl*) printf 'musl\\n' ;; *) printf 'unknown\\n' ;; esac; fi";
 export interface AgentRunnerSelection {
   adapterType?: string | null;
   adapterConfig?: Record<string, unknown>;
@@ -21,30 +21,30 @@ export interface AgentRunnerSelection {
 export function agentRunnerAvailability(harness: string, target: RunnerTarget = localAgentRunnerTarget()): AgentRunnerAvailability {
   const disabled = new Set(getDisabledAdapterTypes());
   const supported = harness === "codex_local"
-    && !disabled.has(harness) && !disabled.has("paperclip_runner")
-    && !!findActiveServerAdapter(harness) && !!findActiveServerAdapter("paperclip_runner")
-    && !hasActiveAdapterOverride(harness) && !hasActiveAdapterOverride("paperclip_runner")
-    && isEnvironmentDriverSupportedForAdapter("paperclip_runner", target.driver)
+    && !disabled.has(harness) && !disabled.has("pilibala_runner")
+    && !!findActiveServerAdapter(harness) && !!findActiveServerAdapter("pilibala_runner")
+    && !hasActiveAdapterOverride(harness) && !hasActiveAdapterOverride("pilibala_runner")
+    && isEnvironmentDriverSupportedForAdapter("pilibala_runner", target.driver)
     && (target.driver !== "sandbox" || Boolean(target.platform && target.architecture
       && (target.platform !== "linux" || (target.libc === "glibc" && target.glibcVersion))))
-    && (!target.platform || paperclipRunnerSupportsPlatform(harness, target.platform, target.architecture ?? "", target.libc, target.glibcVersion));
-  return { supportedRunners: supported ? ["paperclip", "legacy"] : ["legacy"], defaultRunner: supported ? "paperclip" : "legacy" };
+    && (!target.platform || pilibalaRunnerSupportsPlatform(harness, target.platform, target.architecture ?? "", target.libc, target.glibcVersion));
+  return { supportedRunners: supported ? ["pilibala", "legacy"] : ["legacy"], defaultRunner: supported ? "pilibala" : "legacy" };
 }
 
 function incompatible(fields: string[]): never {
-  throw unprocessable(`Paperclip Runner cannot honor these settings: ${fields.join(", ")}. Remove them or select Legacy runner in Advanced.`, { code: "agent_runner_config_incompatible", fields });
+  throw unprocessable(`Pilibala Runner cannot honor these settings: ${fields.join(", ")}. Remove them or select Legacy runner in Advanced.`, { code: "agent_runner_config_incompatible", fields });
 }
 
 export function resolveNewAgentRunner(input: AgentRunnerSelection): { adapterType: string; adapterConfig: Record<string, unknown> } {
   const adapterType = input.adapterType ?? "process";
   let config = { ...input.adapterConfig };
   const harness = agentHarnessType(adapterType, config);
-  const native = adapterType === "paperclip_runner";
+  const native = adapterType === "pilibala_runner";
   if (adapterType === "codex_local" && getDisabledAdapterTypes().includes(adapterType)) throw unprocessable("Codex is disabled on this instance. Enable its adapter or choose another harness.", { code: "agent_runner_unavailable" });
-  if (native && (input.runner === undefined || input.runner === "paperclip" || (harness !== "codex_local" && input.runner !== "legacy"))) return { adapterType, adapterConfig: normalizeLegacyRunnerProvider(config) };
+  if (native && (input.runner === undefined || input.runner === "pilibala" || (harness !== "codex_local" && input.runner !== "legacy"))) return { adapterType, adapterConfig: normalizeLegacyRunnerProvider(config) };
   const availability = agentRunnerAvailability(harness, input.target);
   const choice = input.runner ?? "auto";
-  const useNative = choice === "paperclip" || (choice === "auto" && availability.defaultRunner === "paperclip");
+  const useNative = choice === "pilibala" || (choice === "auto" && availability.defaultRunner === "pilibala");
   if (!useNative) {
     if (!native && harness !== "codex_local") return { adapterType, adapterConfig: config };
     if (!native && !["codexPermissionMode", "lifecycleMode", "idleTimeoutMs"].some(key => config[key] !== undefined)) return { adapterType, adapterConfig: config };
@@ -54,10 +54,10 @@ export function resolveNewAgentRunner(input: AgentRunnerSelection): { adapterTyp
     for (const key of ["provider", "codexPermissionMode", "opencodePermissionMode", "acpxPermissionMode", "lifecycleMode", "idleTimeoutMs"]) delete config[key];
     return { adapterType: "codex_local", adapterConfig: { ...config, dangerouslyBypassApprovalsAndSandbox: config.dangerouslyBypassApprovalsAndSandbox ?? true } };
   }
-  if (native && harness !== "codex_local" && choice === "paperclip") return { adapterType, adapterConfig: normalizeLegacyRunnerProvider(config) };
-  if (availability.defaultRunner !== "paperclip") throw unprocessable(input.target?.driver === "sandbox"
-    ? "Paperclip Runner is unavailable for this sandbox. Choose an immutable OCI image digest and run its environment connection probe to qualify the OS, architecture and libc, or select Legacy runner in Advanced."
-    : "Paperclip Runner is unavailable for this harness and environment. Select Legacy runner in Advanced.", { code: "agent_runner_unavailable" });
+  if (native && harness !== "codex_local" && choice === "pilibala") return { adapterType, adapterConfig: normalizeLegacyRunnerProvider(config) };
+  if (availability.defaultRunner !== "pilibala") throw unprocessable(input.target?.driver === "sandbox"
+    ? "Pilibala Runner is unavailable for this sandbox. Choose an immutable OCI image digest and run its environment connection probe to qualify the OS, architecture and libc, or select Legacy runner in Advanced."
+    : "Pilibala Runner is unavailable for this harness and environment. Select Legacy runner in Advanced.", { code: "agent_runner_unavailable" });
   if (native) return { adapterType, adapterConfig: normalizeLegacyRunnerProvider(config) };
   const aliasSources = new Map<string, string>();
   for (const [canonical, alias] of [
@@ -93,29 +93,29 @@ export function resolveNewAgentRunner(input: AgentRunnerSelection): { adapterTyp
   if (unsupported.length) incompatible(unsupported.map(field => aliasSources.get(field) ?? field));
   const env = config.env && typeof config.env === "object" && !Array.isArray(config.env)
     ? config.env as Record<string, unknown> : {};
-  const network = env.PAPERCLIP_CODEX_ACP_NETWORK_ACCESS;
+  const network = env.PILIBALA_CODEX_ACP_NETWORK_ACCESS;
   const binding = network && typeof network === "object" && !Array.isArray(network)
     ? network as Record<string, unknown> : null;
   if (config.engine !== "cli" && (network === "false"
     || (binding?.type === "plain" && binding.value === "false")
     || binding?.type === "secret_ref" || binding?.type === "user_secret_ref")) {
-    incompatible(["env.PAPERCLIP_CODEX_ACP_NETWORK_ACCESS"]);
+    incompatible(["env.PILIBALA_CODEX_ACP_NETWORK_ACCESS"]);
   }
   const effort = config.modelReasoningEffort ?? config.reasoningEffort ?? config.effort;
   for (const key of ["engine", "command", "extraArgs", "args", "agentCommand", "mode", "nonInteractivePermissions", "stateDir", "warmHandleIdleMs", "dangerouslyBypassApprovalsAndSandbox", "dangerouslyBypassSandbox", "search", "fastMode", "reasoningEffort", "effort"]) delete config[key];
   if (config.model !== undefined && typeof config.model !== "string") incompatible(["model"]);
-  config = { ...config, provider: "codex", model: typeof config.model === "string" && config.model.trim() ? config.model.trim() : PAPERCLIP_RUNNER_DEFAULT_MODELS.codex, codexPermissionMode: config.codexPermissionMode ?? "never", lifecycleMode: config.lifecycleMode ?? "per_turn", ...(effort === undefined ? {} : { modelReasoningEffort: effort }) };
-  try { resolvePaperclipRunnerNativeProviderInput({ backend: "codex_app_server", adapterConfig: config }); }
+  config = { ...config, provider: "codex", model: typeof config.model === "string" && config.model.trim() ? config.model.trim() : PILIBALA_RUNNER_DEFAULT_MODELS.codex, codexPermissionMode: config.codexPermissionMode ?? "never", lifecycleMode: config.lifecycleMode ?? "per_turn", ...(effort === undefined ? {} : { modelReasoningEffort: effort }) };
+  try { resolvePilibalaRunnerNativeProviderInput({ backend: "codex_app_server", adapterConfig: config }); }
   catch (error) {
-    if (error instanceof PaperclipRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
+    if (error instanceof PilibalaRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
     throw error;
   }
-  return { adapterType: "paperclip_runner", adapterConfig: config };
+  return { adapterType: "pilibala_runner", adapterConfig: config };
 }
 
 export async function resolveNewAgentRunnerForCompany(db: Db, companyId: string, input: AgentRunnerSelection & { defaultEnvironmentId?: string | null }) {
   if (agentHarnessType(input.adapterType ?? "process", input.adapterConfig) !== "codex_local"
-    || input.runner === "legacy" || (input.adapterType === "paperclip_runner" && (input.runner === undefined || input.runner === "paperclip"))) return resolveNewAgentRunner(input);
+    || input.runner === "legacy" || (input.adapterType === "pilibala_runner" && (input.runner === undefined || input.runner === "pilibala"))) return resolveNewAgentRunner(input);
   const target = await resolveAgentRunnerTargetForCompany(db, companyId, input.defaultEnvironmentId);
   return resolveNewAgentRunner({ ...input, target });
 }
@@ -130,7 +130,7 @@ export async function resolveAgentRunnerTargetForCompany(db: Db, companyId: stri
   let environment = environmentId ? await envs.getById(environmentId) : null;
   if (settings.experimental?.enableManagedSandboxOnly && (!environment || environment.driver === "local")) {
     environment = await envs.findManagedSandboxEnvironment(companyId);
-    if (!environment) throw unprocessable("The managed sandbox is unavailable. Restore Paperclip Computer and retry.", { code: "managed_sandbox_unavailable" });
+    if (!environment) throw unprocessable("The managed sandbox is unavailable. Restore Pilibala Computer and retry.", { code: "managed_sandbox_unavailable" });
   }
   if (settings.general?.executionMode === "kubernetes") {
     environment = await envs.findKubernetesEnvironment(companyId);
@@ -151,7 +151,7 @@ export async function resolveAgentRunnerTargetForCompany(db: Db, companyId: stri
     const qualified = await readSandboxPlatformQualification(db, environment, companyId);
     if (qualified) target = { driver, ...qualified };
   }
-  if (driver === "ssh" && environment && agentRunnerAvailability("codex_local", target).defaultRunner === "paperclip") {
+  if (driver === "ssh" && environment && agentRunnerAvailability("codex_local", target).defaultRunner === "pilibala") {
     const parsed = await resolveEnvironmentDriverConfigForRuntime(db, companyId, environment);
     if (parsed.driver !== "ssh") throw unprocessable("The selected SSH environment is unavailable.");
     let output: string;

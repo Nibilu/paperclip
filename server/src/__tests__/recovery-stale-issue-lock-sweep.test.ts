@@ -15,7 +15,7 @@ import {
   issues,
   nativeRunFinalizations,
   nativeRunResults,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -43,7 +43,7 @@ describeEmbeddedPostgres("recovery sweepStaleIssueLocks", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-stale-lock-sweep-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-stale-lock-sweep-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -75,7 +75,7 @@ describeEmbeddedPostgres("recovery sweepStaleIssueLocks", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -560,7 +560,7 @@ describeEmbeddedPostgres("recovery sweepStaleIssueLocks", () => {
     });
     await db.insert(completionContracts).values({
       id: contractId, companyId, issueId, revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1", policyVersion: "fixture",
+      schemaVersion: "pilibala.completion-contract.v1", policyVersion: "fixture",
       risk: "standard", completionAuthority: "server_arbiter",
       incompleteCriteriaPolicy: "preserve_non_terminal", contractJson: {},
       canonicalSha256: "fixture-contract", createdByActorType: "system", createdByActorId: "test",

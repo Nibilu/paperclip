@@ -5,7 +5,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { agents, folders, companySkillSources, companySkillSourceEntries, companies, companySkills, companySkillVersions, companySkillRepositorySnapshots, resourceLifecycleEvents, createDb } from '@paperclipai/db';
+import { agents, folders, companySkillSources, companySkillSourceEntries, companies, companySkills, companySkillVersions, companySkillRepositorySnapshots, resourceLifecycleEvents, createDb } from '@pilibalaai/db';
 import { and, eq, sql } from 'drizzle-orm';
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from './helpers/embedded-postgres.js';
 import { unprocessable } from '../errors.js';
@@ -20,7 +20,7 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
   let testDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: ReturnType<typeof createDb>;
   let home: string;
-  const originalHome = process.env.PAPERCLIP_HOME;
+  const originalHome = process.env.PILIBALA_HOME;
   const companyId = randomUUID();
   const sha = 'a'.repeat(40);
   const md = (name: string) => `---\nname: ${name}\ndescription: Example\n---\nDo useful work.\n`;
@@ -29,12 +29,12 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
   let commit = sha;
   const context: SkillSourceContext = { actor: { type: 'user', userId: 'board' }, read: () => githubFixture(files, { 'deep/one/scripts/run.sh': '100755', 'shared/check.sh': '100755' }, commit), authorize: async () => {}, audit: async () => {} };
   beforeAll(async () => {
-    testDb = await startEmbeddedPostgresTestDatabase('paperclip-skill-sources-'); db = createDb(testDb.connectionString);
-    home = await fs.mkdtemp(path.join(os.tmpdir(), 'paperclip-source-test-')); process.env.PAPERCLIP_HOME = home;
+    testDb = await startEmbeddedPostgresTestDatabase('pilibala-skill-sources-'); db = createDb(testDb.connectionString);
+    home = await fs.mkdtemp(path.join(os.tmpdir(), 'pilibala-source-test-')); process.env.PILIBALA_HOME = home;
     await db.insert(companies).values({ id: companyId, name: 'Skills', issuePrefix: 'SKL' });
   }, 30000);
   afterAll(async () => {
-    if (originalHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = originalHome;
+    if (originalHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = originalHome;
     await testDb?.cleanup(); if (home) await fs.rm(home, { recursive: true, force: true });
   });
   it('publishes two assigned skills while a concurrent version save holds the second skill', async () => {
@@ -45,7 +45,7 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
     const created = await skillSourceService(db).create(companyId, { repositoryUrl: 'https://github.com/acme/skills', trackingRef: 'main', commitSha: sha, selectedPaths: Object.keys(originals) }, sourceContext);
     const selected = await Promise.all(created.source.entries.map(entry => companySkillService(db).getById(companyId, entry.skillId!)));
     const second = selected.find(skill => skill!.name === 'b')!;
-    const [agent] = await db.insert(agents).values({ companyId, name: 'Uses both skills', adapterType: 'paperclip_runner', adapterConfig: { paperclipSkillSync: { desiredSkills: selected.map(skill => skill!.key) } } }).returning();
+    const [agent] = await db.insert(agents).values({ companyId, name: 'Uses both skills', adapterType: 'pilibala_runner', adapterConfig: { pilibalaSkillSync: { desiredSkills: selected.map(skill => skill!.key) } } }).returning();
     const sourceDb = createDb(testDb.connectionString, { maxConnections: 1 });
     const versionDb = createDb(testDb.connectionString, { maxConnections: 1 });
     const [backend] = await sourceDb.execute(sql`SELECT pg_backend_pid() AS pid`);
@@ -360,7 +360,7 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
     await db.insert(companies).values({ id: legacyCompany, name: 'Legacy', issuePrefix: 'LEG' });
     const [legacy, bundled] = await db.insert(companySkills).values([
       { companyId: legacyCompany, key: 'legacy/custom', slug: 'original-slug', name: 'Original name', markdown: md('legacy'), sourceType: 'github', sourceRef: sha, metadata: { hostname: 'github.com', owner: 'acme', repo: 'skills', trackingRef: 'legacy', repoSkillDir: 'legacy' } },
-      { companyId: legacyCompany, key: 'paperclipai/paperclip/bundled', slug: 'bundled', name: 'Bundled', markdown: md('bundled'), sourceType: 'github', metadata: { hostname: 'github.com', owner: 'acme', repo: 'skills', sourceKind: 'paperclip_bundled' } },
+      { companyId: legacyCompany, key: 'pilibalaai/pilibala/bundled', slug: 'bundled', name: 'Bundled', markdown: md('bundled'), sourceType: 'github', metadata: { hostname: 'github.com', owner: 'acme', repo: 'skills', sourceKind: 'pilibala_bundled' } },
     ]).returning();
     // Production runs 0291 before 0341. This harness uses the latest schema,
     // whose repository/ref uniqueness is partial; retain the same backfill
@@ -539,24 +539,24 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
     expect(installed.source.packageMode).toBe('repository');
     const main = installed.imported.find(skill => skill.name === 'main')!;
     expect((await skills.detail(companyId, main.id))?.fileInventory).toEqual(expect.arrayContaining([
-      expect.objectContaining({ path: '.paperclip-repository/agents/worker.md' }),
-      expect.objectContaining({ path: '.paperclip-repository/assets/data.bin' }),
+      expect.objectContaining({ path: '.pilibala-repository/agents/worker.md' }),
+      expect.objectContaining({ path: '.pilibala-repository/assets/data.bin' }),
     ]));
-    expect((await skills.readFile(companyId, main.id, '.paperclip-repository/agents/worker.md'))?.content).toBe('Worker v1');
-    const installedAsset = (await skills.readFile(companyId, main.id, '.paperclip-repository/assets/data.bin'))!;
+    expect((await skills.readFile(companyId, main.id, '.pilibala-repository/agents/worker.md'))?.content).toBe('Worker v1');
+    const installedAsset = (await skills.readFile(companyId, main.id, '.pilibala-repository/assets/data.bin'))!;
     expect(skillFileBytes(installedAsset)).toEqual(Buffer.from([0, 255, 128]));
-    expect((await skills.readFile(companyId, main.id, '.paperclip-repository/shared/check.sh'))?.executable).toBe(true);
+    expect((await skills.readFile(companyId, main.id, '.pilibala-repository/shared/check.sh'))?.executable).toBe(true);
     expect((await skills.readFile(companyId, main.id, 'SKILL.md'))?.content).toBe(files['skills/main/SKILL.md']);
     const otherCompanyId = randomUUID();
     await db.insert(companies).values({ id: otherCompanyId, name: 'File isolation', issuePrefix: 'FIL' });
-    expect(await skills.readFile(otherCompanyId, main.id, '.paperclip-repository/agents/worker.md')).toBeNull();
+    expect(await skills.readFile(otherCompanyId, main.id, '.pilibala-repository/agents/worker.md')).toBeNull();
     expect(installed.imported.every(skill => skill.trustLevel === 'scripts_executables')).toBe(true);
     const audit = await skills.auditSkill(companyId, main.id);
     expect(audit?.verdict).not.toBe('fail');
     expect(audit?.codes).not.toContain('inventory_mismatch');
     expect(audit?.codes).not.toContain('non_text_file');
-    expect(audit?.findings.some(finding => finding.path === '.paperclip-repository/assets/data.bin' && finding.code === 'asset_trust')).toBe(true);
-    expect(audit?.findings.some(finding => finding.path === '.paperclip-repository/shared/check.sh' && finding.code === 'script_trust')).toBe(true);
+    expect(audit?.findings.some(finding => finding.path === '.pilibala-repository/assets/data.bin' && finding.code === 'asset_trust')).toBe(true);
+    expect(audit?.findings.some(finding => finding.path === '.pilibala-repository/shared/check.sh' && finding.code === 'script_trust')).toBe(true);
     const v1 = (await skills.getVersion(companyId, main.id, main.currentVersionId!))!;
     const helper = installed.imported.find(skill => skill.name === 'helper')!;
     expect((await skills.getVersion(companyId, helper.id, helper.currentVersionId!))?.repositorySnapshotId).toBe(v1.repositorySnapshotId);
@@ -571,26 +571,26 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
     const newest = changed.updated.find(skill => skill.id === main.id)!;
     expect(newest.currentVersionId).not.toBe(v1.id);
     const latest = (await skills.listRuntimeSkillEntries(companyId)).find(entry => entry.key === main.key)!;
-    expect(await fs.readFile(path.join(latest.source, '.paperclip-repository/agents/worker.md'), 'utf8')).toBe('Worker v2');
+    expect(await fs.readFile(path.join(latest.source, '.pilibala-repository/agents/worker.md'), 'utf8')).toBe('Worker v2');
     const pinned = (await skills.listRuntimeSkillEntries(companyId, { versionSelections: new Map([[main.key, v1.id]]) })).find(entry => entry.key === main.key)!;
-    expect(await fs.readFile(path.join(pinned.source, '.paperclip-repository/agents/worker.md'), 'utf8')).toBe('Worker v1');
-    expect(await fs.readFile(path.join(pinned.source, '.paperclip-repository/NOTICE.md'), 'utf8')).toBe('Credits');
+    expect(await fs.readFile(path.join(pinned.source, '.pilibala-repository/agents/worker.md'), 'utf8')).toBe('Worker v1');
+    expect(await fs.readFile(path.join(pinned.source, '.pilibala-repository/NOTICE.md'), 'utf8')).toBe('Credits');
     const copy = await skills.forkSkill(companyId, main.id, { slug: 'repository-copy' });
-    expect((await skills.readFile(companyId, copy.skill.id, '.paperclip-repository/agents/worker.md'))?.content).toBe('Worker v2');
+    expect((await skills.readFile(companyId, copy.skill.id, '.pilibala-repository/agents/worker.md'))?.content).toBe('Worker v2');
     expect((await skills.auditSkill(companyId, copy.skill.id))?.verdict).not.toBe('fail');
     const localCopy = await skills.createLocalSkill(companyId, { name: 'Repository local copy', slug: 'repository-local-copy', forkedFromSkillId: main.id });
-    expect((await skills.readFile(companyId, localCopy.id, 'SKILL.md'))?.content).toContain('.paperclip-repository/skills/main/SKILL.md');
-    expect((await skills.readFile(companyId, localCopy.id, '.paperclip-repository/agents/worker.md'))?.content).toBe('Worker v2');
+    expect((await skills.readFile(companyId, localCopy.id, 'SKILL.md'))?.content).toContain('.pilibala-repository/skills/main/SKILL.md');
+    expect((await skills.readFile(companyId, localCopy.id, '.pilibala-repository/agents/worker.md'))?.content).toBe('Worker v2');
     expect((await skills.auditSkill(companyId, localCopy.id))?.verdict).not.toBe('fail');
     for (const copied of [copy.skill, localCopy]) {
       const version = (await skills.getVersion(companyId, copied.id, copied.currentVersionId!))!;
-      const asset = version.fileInventory.find(file => file.path === '.paperclip-repository/assets/data.bin')!;
+      const asset = version.fileInventory.find(file => file.path === '.pilibala-repository/assets/data.bin')!;
       expect(asset.kind).toBe('asset');
       expect(skillFileBytes(asset)).toEqual(Buffer.from([0, 255, 128]));
-      expect(version.fileInventory.find(file => file.path === '.paperclip-repository/shared/check.sh')?.executable).toBe(true);
+      expect(version.fileInventory.find(file => file.path === '.pilibala-repository/shared/check.sh')?.executable).toBe(true);
       const runtime = (await skills.listRuntimeSkillEntries(companyId, { versionSelections: new Map([[copied.key, version.id]]) })).find(entry => entry.key === copied.key)!;
       expect(await fs.readFile(path.join(runtime.source, asset.path))).toEqual(Buffer.from([0, 255, 128]));
-      expect((await fs.stat(path.join(runtime.source, '.paperclip-repository/shared/check.sh'))).mode & 0o111).toBeGreaterThan(0);
+      expect((await fs.stat(path.join(runtime.source, '.pilibala-repository/shared/check.sh'))).mode & 0o111).toBeGreaterThan(0);
     }
     const saved = await skills.createVersion(companyId, main.id, { label: 'Repository checkpoint' });
     expect(saved.repositorySnapshotId).toBe((await skills.getVersion(companyId, main.id, newest.currentVersionId!))?.repositorySnapshotId);
@@ -603,8 +603,8 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
     expect(warned.source.lastError).toBeNull();
     expect(warned.source.repositoryPackage?.files.some(file => file.path === 'shared/install.sh')).toBe(false);
     const updatedRuntime = (await skills.listRuntimeSkillEntries(companyId)).find(entry => entry.key === main.key)!;
-    await expect(fs.stat(path.join(updatedRuntime.source, '.paperclip-repository/shared/install.sh'))).rejects.toMatchObject({ code: 'ENOENT' });
-    await expect(skills.readFile(companyId, main.id, '.paperclip-repository/shared/install.sh')).rejects.toThrow(/missing a file/);
+    await expect(fs.stat(path.join(updatedRuntime.source, '.pilibala-repository/shared/install.sh'))).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(skills.readFile(companyId, main.id, '.pilibala-repository/shared/install.sh')).rejects.toThrow(/missing a file/);
     expect((await skills.getById(companyId, main.id))?.currentVersionId).toBe(saved.id);
     expect((await sources.detail(companyId, installed.source.id)).lastScanCommit).toBe('c'.repeat(40));
     expect(await skills.getVersion(randomUUID(), main.id, v1.id)).toBeNull();
@@ -627,11 +627,11 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
     expect(source.repositoryPackage?.warnings.join(' ')).toMatch(/Symlink/);
     expect(source.entries.find(entry => entry.path === 'skills/main/SKILL.md')?.error).toBeNull();
     expect(source.entries.find(entry => entry.path === 'broken/SKILL.md')?.selection).toBe('selected');
-    expect((await skills.readFile(companyId, result.imported[0]!.id, '.paperclip-repository/broken/SKILL.md'))?.content).toBe(files['broken/SKILL.md']);
+    expect((await skills.readFile(companyId, result.imported[0]!.id, '.pilibala-repository/broken/SKILL.md'))?.content).toBe(files['broken/SKILL.md']);
     const runtime = (await skills.listRuntimeSkillEntries(companyId)).find(entry => entry.key === result.imported[0]!.key)!;
-    expect(await fs.readFile(path.join(runtime.source, '.paperclip-repository/shared/guide.md'), 'utf8')).toBe('Shared instructions');
-    expect(await fs.readFile(path.join(runtime.source, '.paperclip-repository/broken/SKILL.md'), 'utf8')).toBe(files['broken/SKILL.md']);
-    await expect(fs.stat(path.join(runtime.source, '.paperclip-repository/shared/tools'))).rejects.toMatchObject({ code: 'ENOENT' });
+    expect(await fs.readFile(path.join(runtime.source, '.pilibala-repository/shared/guide.md'), 'utf8')).toBe('Shared instructions');
+    expect(await fs.readFile(path.join(runtime.source, '.pilibala-repository/broken/SKILL.md'), 'utf8')).toBe(files['broken/SKILL.md']);
+    await expect(fs.stat(path.join(runtime.source, '.pilibala-repository/shared/tools'))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it.each([false, true])('updates bounded dependencies after repository growth and retains versions when dependencies cannot fit (scheduled: %s)', async scheduled => {
@@ -665,7 +665,7 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
       const refreshed = await service.refresh(temporaryCompany, installed.source.id, localContext, undefined, undefined, { checkCommit: scheduled });
       expect(refreshed.source.packageMode).toBe('repository');
       expect(refreshed.updated.map(skill => skill.id)).toContain(main.id);
-      expect((await library.readFile(temporaryCompany, main.id, '.paperclip-repository/shared/guide.md'))?.content).toBe('New shared instructions');
+      expect((await library.readFile(temporaryCompany, main.id, '.pilibala-repository/shared/guide.md'))?.content).toBe('New shared instructions');
       expect(await library.getVersion(temporaryCompany, main.id, versions[0]!.id)).not.toBeNull();
       const updatedVersions = await library.listVersions(temporaryCompany, main.id);
       head = 'e'.repeat(40);
@@ -677,12 +677,12 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
       expect(retained.lastScanCommit).toBe('f'.repeat(40));
       expect(retained.lastError).toContain('dependencies were kept');
       expect(await library.listVersions(temporaryCompany, main.id)).toEqual(updatedVersions);
-      expect((await library.readFile(temporaryCompany, main.id, '.paperclip-repository/shared/guide.md'))?.content).toBe('New shared instructions');
-      expect((await library.readFile(temporaryCompany, main.id, '.paperclip-repository/skills/helper/SKILL.md'))?.content).toBe(md('helper'));
+      expect((await library.readFile(temporaryCompany, main.id, '.pilibala-repository/shared/guide.md'))?.content).toBe('New shared instructions');
+      expect((await library.readFile(temporaryCompany, main.id, '.pilibala-repository/skills/helper/SKILL.md'))?.content).toBe(md('helper'));
       repoFiles = { 'skills/main/SKILL.md': repoFiles['skills/main/SKILL.md'], 'skills/helper/SKILL.md': md('helper'), 'shared/guide.md': 'New shared instructions' };
       await service.refresh(temporaryCompany, installed.source.id, localContext);
       expect((await service.detail(temporaryCompany, installed.source.id)).lastError).toBeNull();
-      expect((await library.readFile(temporaryCompany, main.id, '.paperclip-repository/shared/guide.md'))?.content).toBe('New shared instructions');
+      expect((await library.readFile(temporaryCompany, main.id, '.pilibala-repository/shared/guide.md'))?.content).toBe('New shared instructions');
     } finally {
       await deleteCompany(db, temporaryCompany);
     }
@@ -758,21 +758,21 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
     const created = await removalFixture();
     const original = created.imported[0]!;
     const [agent] = await db.insert(agents).values({ companyId, name: 'Copy user', role: 'engineer',
-      adapterType: 'codex_local', adapterConfig: { paperclipSkillSync: { desiredSkills: [{ key: original.key }] } } }).returning();
+      adapterType: 'codex_local', adapterConfig: { pilibalaSkillSync: { desiredSkills: [{ key: original.key }] } } }).returning();
     const result = await service.disconnect(companyId, created.source.id, { ...context, read: () => { throw new Error('GitHub unavailable'); } }, { revision: created.source.revision, skills: 'copy' });
     expect(result).toMatchObject({ copiedCount: 2, deletedCount: 0 });
     await expect(service.detail(companyId, created.source.id)).rejects.toThrow(/not found/);
     const copy = (await skills.detail(companyId, original.id))!;
     expect(copy).toMatchObject({ id: original.id, key: original.key, sourceType: 'local_path', sourceRef: null, editable: true });
     expect(copy.metadata?.skillSourceId).toBeUndefined();
-    expect((await skills.readFile(companyId, original.id, '.paperclip-repository/one/reference.md'))?.content).toBe('Local reference');
+    expect((await skills.readFile(companyId, original.id, '.pilibala-repository/one/reference.md'))?.content).toBe('Local reference');
     const [personal] = await db.select().from(folders).where(eq(folders.id, copy.folderId!));
     expect(personal?.systemKey).toBe('my:board');
-    expect((await skills.readFile(companyId, original.id, '.paperclip-repository/shared/image.png'))?.content).toBe(Buffer.from([0,255,137,80]).toString('base64'));
-    const script = await skills.readFile(companyId, original.id, '.paperclip-repository/shared/check.sh');
+    expect((await skills.readFile(companyId, original.id, '.pilibala-repository/shared/image.png'))?.content).toBe(Buffer.from([0,255,137,80]).toString('base64'));
+    const script = await skills.readFile(companyId, original.id, '.pilibala-repository/shared/check.sh');
     expect(script).toMatchObject({ content: '#!/bin/sh\necho preserved', executable: true });
-    await skills.updateFile(companyId, original.id, '.paperclip-repository/shared/check.sh', '#!/bin/sh\necho edited', context.actor);
-    expect((await skills.readFile(companyId, original.id, '.paperclip-repository/shared/check.sh'))?.content).toBe('#!/bin/sh\necho edited');
+    await skills.updateFile(companyId, original.id, '.pilibala-repository/shared/check.sh', '#!/bin/sh\necho edited', context.actor);
+    expect((await skills.readFile(companyId, original.id, '.pilibala-repository/shared/check.sh'))?.content).toBe('#!/bin/sh\necho edited');
     expect((await db.select().from(agents).where(eq(agents.id, agent!.id)))[0]?.adapterConfig).toEqual(agent!.adapterConfig);
     await db.delete(agents).where(eq(agents.id, agent!.id));
   });
@@ -781,7 +781,7 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
     const service = skillSourceService(db), skills = companySkillService(db);
     const created = await removalFixture();
     const [agent] = await db.insert(agents).values({ companyId, name: 'Needs this skill', role: 'engineer', adapterType: 'codex_local',
-      adapterConfig: { paperclipSkillSync: { desiredSkills: [{ key: created.imported[1]!.key }] } } }).returning();
+      adapterConfig: { pilibalaSkillSync: { desiredSkills: [{ key: created.imported[1]!.key }] } } }).returning();
     try {
       await expect(service.disconnect(companyId, created.source.id, context, { revision: created.source.revision, skills: 'delete' })).rejects.toThrow(/Needs this skill/);
       expect((await service.detail(companyId, created.source.id)).enabled).toBe(true);
@@ -810,7 +810,7 @@ describe.skipIf(!support.supported)('skill source persistence', () => {
     expect((await service.detail(companyId, created.source.id)).revision).toBe(created.source.revision);
     for (const skill of created.imported) {
       expect(await skills.getById(companyId, skill.id)).toMatchObject({ sourceType: 'github', currentVersionId: skill.currentVersionId });
-      expect(await skills.readFile(companyId, skill.id, '.paperclip-repository/shared/image.png')).not.toBeNull();
+      expect(await skills.readFile(companyId, skill.id, '.pilibala-repository/shared/image.png')).not.toBeNull();
     }
   });
 

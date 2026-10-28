@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { agents, heartbeatRuns, issueComments, issueRecoveryActions, issues, type Db } from "@paperclipai/db";
-import type { ReconciliationFixOption } from "@paperclipai/shared";
+import { agents, heartbeatRuns, issueComments, issueRecoveryActions, issues, type Db } from "@pilibalaai/db";
+import type { ReconciliationFixOption } from "@pilibalaai/shared";
 import { persistActivity } from "../activity-log.js";
 import { logger } from "../../middleware/logger.js";
 
@@ -90,7 +90,7 @@ function mergeEvidence(patch: Record<string, unknown>) {
 
 /**
  * S11 — IM/UI notification. Recovery milestones post a system comment on the
- * source task: it is the Paperclip-native surface that renders in the UI and
+ * source task: it is the Pilibala-native surface that renders in the UI and
  * flows to any bound chat channel. Milestones are one-shot state transitions
  * (guarded by the sweeps' evidence predicates), so comments never repeat.
  */

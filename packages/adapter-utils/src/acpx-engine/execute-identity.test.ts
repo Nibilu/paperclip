@@ -34,7 +34,7 @@ const SAMPLE_FINGERPRINT_IDENTITY: SessionFingerprintIdentity = {
   additionalSourcesIdentity: {},
   skillsIdentity: {},
   skillPromptInstructions: "",
-  paperclipClaudeSettings: null,
+  pilibalaClaudeSettings: null,
   mcpServers: [],
   secretManifestHash: "0000",
   adapterEnvHash: "0000",
@@ -60,7 +60,7 @@ describe("acpx identity split and launch environment", () => {
   });
 
   it("keeps the fingerprint independent of the run auth token hash", () => {
-    // The run-scoped Paperclip token rotates every run; the fingerprint must
+    // The run-scoped Pilibala token rotates every run; the fingerprint must
     // not encode it, or the resumable session is orphaned after every run.
     // Token isolation lives in the process lifecycle (fresh spawn per run +
     // the Amendment B warm-save credential gate), not in the fingerprint.
@@ -142,8 +142,8 @@ describe("acpx identity split and launch environment", () => {
       KIMI_MODEL_BASE_URL: "https://kimi.example",
       KIMI_MODEL_PROVIDER_TYPE: "openai_legacy",
       KIMI_CODE_HOME: "/host/kimi",
-      PAPERCLIP_NATIVE_MCP_TOKEN: "native-mcp-host-secret",
-      PAPERCLIP_ACPX_CODEX_AUTH_JSON_SECRET: "managed-auth-host-secret",
+      PILIBALA_NATIVE_MCP_TOKEN: "native-mcp-host-secret",
+      PILIBALA_ACPX_CODEX_AUTH_JSON_SECRET: "managed-auth-host-secret",
       UNRELATED_SECRET: "unrelated-host-secret",
       NODE_OPTIONS: "--require /tmp/host-hook.cjs",
     };
@@ -197,8 +197,8 @@ describe("acpx identity split and launch environment", () => {
     const inherited = {
       PATH: "/host/bin",
       OPENAI_API_KEY: "ambient-provider-secret",
-      PAPERCLIP_NATIVE_MCP_TOKEN: "ambient-native-mcp-secret",
-      PAPERCLIP_RUNNER_BOOTSTRAP_TICKET: "ambient-bootstrap-secret",
+      PILIBALA_NATIVE_MCP_TOKEN: "ambient-native-mcp-secret",
+      PILIBALA_RUNNER_BOOTSTRAP_TICKET: "ambient-bootstrap-secret",
     };
 
     expect(projectAcpxInheritedHostEnvironment(inherited, "codex", false)).toEqual({});
@@ -209,12 +209,12 @@ describe("acpx identity split and launch environment", () => {
       {
         OPENAI_API_KEY: "explicit-provider-secret",
         EXPLICIT_ADAPTER_SECRET: "adapter-secret",
-        PAPERCLIP_RUNTIME_API_URL: "http://paperclip.internal/api",
+        PILIBALA_RUNTIME_API_URL: "http://pilibala.internal/api",
       },
       [
         {
           scope: "session",
-          env: { PAPERCLIP_NATIVE_MCP_TOKEN: "explicit-run-contribution" },
+          env: { PILIBALA_NATIVE_MCP_TOKEN: "explicit-run-contribution" },
         },
       ],
       {
@@ -223,8 +223,8 @@ describe("acpx identity split and launch environment", () => {
         inheritedEnv: {
           PATH: "/host/bin",
           OPENAI_API_KEY: "ambient-provider-secret",
-          PAPERCLIP_NATIVE_MCP_TOKEN: "ambient-native-mcp-secret",
-          PAPERCLIP_RUNNER_BOOTSTRAP_TICKET: "ambient-bootstrap-secret",
+          PILIBALA_NATIVE_MCP_TOKEN: "ambient-native-mcp-secret",
+          PILIBALA_RUNNER_BOOTSTRAP_TICKET: "ambient-bootstrap-secret",
         },
       },
     );
@@ -232,11 +232,11 @@ describe("acpx identity split and launch environment", () => {
     expect(launchEnvironment.env).toMatchObject({
       OPENAI_API_KEY: "explicit-provider-secret",
       EXPLICIT_ADAPTER_SECRET: "adapter-secret",
-      PAPERCLIP_RUNTIME_API_URL: "http://paperclip.internal/api",
-      PAPERCLIP_NATIVE_MCP_TOKEN: "explicit-run-contribution",
+      PILIBALA_RUNTIME_API_URL: "http://pilibala.internal/api",
+      PILIBALA_NATIVE_MCP_TOKEN: "explicit-run-contribution",
     });
     expect(launchEnvironment.env).not.toHaveProperty("PATH");
-    expect(launchEnvironment.env).not.toHaveProperty("PAPERCLIP_RUNNER_BOOTSTRAP_TICKET");
+    expect(launchEnvironment.env).not.toHaveProperty("PILIBALA_RUNNER_BOOTSTRAP_TICKET");
   });
 
   it("preserves an explicit remote PATH instead of synthesizing a host fallback", () => {

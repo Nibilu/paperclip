@@ -11,8 +11,8 @@ import {
 } from "./company-skill.js";
 
 const catalogSkill = {
-  id: "paperclipai:bundled:software-development:review",
-  key: "paperclipai/bundled/software-development/review",
+  id: "pilibalaai:bundled:software-development:review",
+  key: "pilibalaai/bundled/software-development/review",
   kind: "bundled",
   category: "software-development",
   slug: "review",

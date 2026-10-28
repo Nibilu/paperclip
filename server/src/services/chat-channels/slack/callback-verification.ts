@@ -1,10 +1,10 @@
-import { isProvisionedSlackSetup } from "@paperclipai/shared";
+import { isProvisionedSlackSetup } from "@pilibalaai/shared";
 import type { EndpointRow, DbOrTransaction, SlackCallbackSurface, InternalSetupState } from "../runtime-types.js";
 
 import { notifyChatVerificationWork } from "../../chat-work-notifications.js";
 
 import { slackChatRegistrationService } from "../../chat-slack-registration.js";
-import { chatSlackRegistrations } from "@paperclipai/db";
+import { chatSlackRegistrations } from "@pilibalaai/db";
 
 import { runtimeCanonicalOrigin } from "../../cloud-runtime-identity.js";
 
@@ -18,15 +18,15 @@ import {
   eq,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatEndpoints,
   toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   ToolCredentialSecretRef,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import {
   logActivity,
@@ -217,9 +217,9 @@ type SlackCallbackInspection = {
 function slackCallbackObservationUrl(request: Request): string | null {
   const directUrl = canonicalCallbackUrl(request.url);
   if (!directUrl || !runtimeCanonicalOrigin()) return directUrl;
-  const hasCloudEvidence = request.headers.has("x-paperclip-cloud-forwarded-host");
-  const host = request.headers.get(hasCloudEvidence ? "x-paperclip-cloud-forwarded-host" : "x-forwarded-host")?.trim();
-  const protocol = request.headers.get(hasCloudEvidence ? "x-paperclip-cloud-forwarded-proto" : "x-forwarded-proto")?.trim();
+  const hasCloudEvidence = request.headers.has("x-pilibala-cloud-forwarded-host");
+  const host = request.headers.get(hasCloudEvidence ? "x-pilibala-cloud-forwarded-host" : "x-forwarded-host")?.trim();
+  const protocol = request.headers.get(hasCloudEvidence ? "x-pilibala-cloud-forwarded-proto" : "x-forwarded-proto")?.trim();
   if (!host || /[\s/@\\?#,]/.test(host) || (protocol !== "https" && protocol !== "http")) return directUrl;
   try {
     const origin = new URL(`${protocol}://${host}`);

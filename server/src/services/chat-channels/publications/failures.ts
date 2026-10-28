@@ -14,7 +14,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatActions,
@@ -23,7 +23,7 @@ import {
   chatEndpoints,
   chatPublications,
   toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 
 import { logger } from "../../../middleware/logger.js";
 import { redactSensitiveText } from "../../../redaction.js";
@@ -61,7 +61,7 @@ export function createChatPublicationFailures(db: Db, options: PublicationFailur
       ? {
           kind: "delivery_unknown" as const,
           reason:
-            "Provider accepted the publication, but Paperclip could not confirm its durable result",
+            "Provider accepted the publication, but Pilibala could not confirm its durable result",
         }
       : error instanceof NativeChatReviewPresentationContentionError
         ? { kind: "retry" as const, retryAfterMs: 250, reason: error.message }
@@ -278,8 +278,8 @@ export function createChatPublicationFailures(db: Db, options: PublicationFailur
           );
           const noticeText =
             attachmentFailure.kind === "generated_response"
-              ? "Paperclip could not send the response attachment. The complete response remains on its Paperclip task for an operator to retry."
-              : "Paperclip could not send an attachment. The file remains on its Paperclip task for an operator to retry.";
+              ? "Pilibala could not send the response attachment. The complete response remains on its Pilibala task for an operator to retry."
+              : "Pilibala could not send an attachment. The file remains on its Pilibala task for an operator to retry.";
           const idempotencyKey = `${ATTACHMENT_FAILURE_NOTICE_PREFIX}${publication.id}:${attachmentFailureRuntimeContext.generation}:${attachmentFailureRuntimeContext.credentialFingerprint}`;
           await notifyChatPublicationWork(tx);
           await tx

@@ -1,5 +1,5 @@
 import type { ChatEndpoint } from "@/api/chatEndpoints";
-import { isProvisionedSlackSetup } from "@paperclipai/shared";
+import { isProvisionedSlackSetup } from "@pilibalaai/shared";
 export { isProvisionedSlackSetup };
 export function slackSetupNavigation(method: string | undefined, availableStage = 1) {
   const managed = method === "managed";

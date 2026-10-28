@@ -3,9 +3,9 @@ import { realpathSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { and, eq, inArray, lte, sql } from "drizzle-orm";
-import { adapterAuthSessions, ADAPTER_AUTH_SESSION_ACTIVE_STATES, environments, type Db } from "@paperclipai/db";
-import type { AiConnectionLoginIntent, LocalAiLoginAttempt, LocalAiLoginStatus } from "@paperclipai/shared";
-import { resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { adapterAuthSessions, ADAPTER_AUTH_SESSION_ACTIVE_STATES, environments, type Db } from "@pilibalaai/db";
+import type { AiConnectionLoginIntent, LocalAiLoginAttempt, LocalAiLoginStatus } from "@pilibalaai/shared";
+import { resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { notFound, unprocessable } from "../errors.js";
 import { aiConnectionService } from "./ai-connections.js";
 import { readVerifiedLocalAiCredential } from "./local-ai-credentials.js";
@@ -15,7 +15,7 @@ import { startLocalBrowserLogin, type LocalBrowserLoginState } from "./local-ai-
 const LOCAL_LOGIN_METHOD = "local_subscription";
 const ATTEMPT_DURATION_MS = 30 * 60 * 1000;
 function loginHome(id: string) {
-  const root = resolvePaperclipInstanceRoot();
+  const root = resolvePilibalaInstanceRoot();
   // macOS exposes /var through a system symlink to /private/var. Credential
   // reads use O_NOFOLLOW_ANY, so generate login homes from the canonical root.
   // A fresh instance root may not exist yet; prepareHome creates it first.

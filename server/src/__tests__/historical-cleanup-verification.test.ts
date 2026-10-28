@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, companies, createDb, environmentCustomImageSetupSessions, environmentLeases, environments, heartbeatRuns } from "@paperclipai/db";
+import { agents, companies, createDb, environmentCustomImageSetupSessions, environmentLeases, environments, heartbeatRuns } from "@pilibalaai/db";
 import { historicalCleanupVerificationService } from "../services/historical-cleanup-verification.js";
 import { withoutCleanupVerification } from "../services/cleanup-verification-proof.js";
 import { idleWorkSnapshot } from "../services/task-admission.js";
@@ -122,5 +122,5 @@ if (!support.supported) console.warn(`Skipping historical cleanup database tests
 });
 
 it("removes host-owned cleanup evidence from provider metadata", () => {
-  expect(withoutCleanupVerification({ paperclipCleanupVerification: { state: "destroyed" }, driver: "sandbox" })).toEqual({ driver: "sandbox" });
+  expect(withoutCleanupVerification({ pilibalaCleanupVerification: { state: "destroyed" }, driver: "sandbox" })).toEqual({ driver: "sandbox" });
 });

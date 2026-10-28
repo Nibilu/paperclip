@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import type { Db } from "@paperclipai/db";
-import { agents, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, environments, environmentLeases, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { agents, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, environments, environmentLeases, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations } from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
@@ -38,8 +38,8 @@ vi.mock("../native-runtime/index.js", async (importOriginal) => ({
   reconcileRetainedNativeSessionCleanups: native.cleanups,
   claimNativeRestartRecoveries: native.claims,
 }));
-vi.mock("../../vendor/paperclip-runner/index.js", async (importOriginal) => ({
-  ...await importOriginal<typeof import("../../vendor/paperclip-runner/index.js")>(),
+vi.mock("../../vendor/pilibala-runner/index.js", async (importOriginal) => ({
+  ...await importOriginal<typeof import("../../vendor/pilibala-runner/index.js")>(),
   drainRetainedRunnerdMaintenanceOperations: native.drainMaintenance,
 }));
 
@@ -173,7 +173,7 @@ describePostgres("heartbeat recovery module ownership", () => {
   let db: Db;
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-heartbeat-recovery-module-");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-heartbeat-recovery-module-");
     db = createDb(database.connectionString);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
   afterAll(async () => { await database?.cleanup(); });
@@ -203,7 +203,7 @@ describePostgres("heartbeat recovery module ownership", () => {
       expect(deps.scheduleBoundedRetryForRun).not.toHaveBeenCalled();
       expect((await deps.getRun(run.id))?.status).toBe("interrupted");
       const resultJson = outcome === "restore_failed" ? { workspaceRestoreFailure: "restore_failed",
-        workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [randomUUID()] } }
+        workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [randomUUID()] } }
         : { workspaceRestored: true };
       await db.update(heartbeatRuns).set({ resultJson }).where(eq(heartbeatRuns.id, run.id));
       control.finish();
@@ -441,7 +441,7 @@ describePostgres("heartbeat recovery module ownership", () => {
     deps.getRun.mockImplementation(async id => (await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, id)))[0] ?? null);
     deps.releaseEnvironmentLeasesForRun.mockImplementation(async () => {
       expect((await deps.getRun(run.id))?.resultJson).toMatchObject({ workspaceRestoreFailure: "restore_failed",
-        workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [lease.id] } });
+        workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [lease.id] } });
       expect((await db.select().from(environmentLeases).where(eq(environmentLeases.id, lease.id)))[0]).toMatchObject({
         status: "pending_cleanup", leasePolicy: "retain_on_failure", metadata: { sandboxStopAndRetain: { leaseId: lease.id } } });
     });

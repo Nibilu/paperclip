@@ -13,7 +13,7 @@ Agent access: [companion](../agent-access-map/chat-channels.md).
 ## Sub-features
 
 - `providers`: configure the available Slack, Discord, Microsoft Teams, Telegram, GitHub, AgentMail, and experimental iMessage Photon and Speko paths; availability still depends on gates and provider support.
-- `identity`: link the external sender to the intended authorized Paperclip identity.
+- `identity`: link the external sender to the intended authorized Pilibala identity.
 - `conversation`: route inbound messages to the selected agent and send replies to the correct thread.
 - `attachments`: transfer supported files with inspectable delivery and failure states.
 - `lifecycle`: inspect endpoint activity, repair auth, and disable delivery when required.
@@ -22,7 +22,7 @@ Agent access: [companion](../agent-access-map/chat-channels.md).
 
 ### `external-thread`
 
-Message the configured bot/address from its external provider and follow the corresponding Paperclip conversation/task.
+Message the configured bot/address from its external provider and follow the corresponding Pilibala conversation/task.
 
 ### `endpoint-management`
 
@@ -82,7 +82,7 @@ Automated: [channel integration](../../server/src/__tests__/chat-channels.integr
 Manual: Inspect the bound agent and identity, recent activity, and delivery failure details. Repair a disposable credential, retry a safe message when offered, and verify exactly one external reply. Disable the endpoint and confirm new traffic is not silently processed.
 
 For GitHub, submit a disposable PR and verify the summary heading uses the bot's
-display name and the check remains **Paperclip Review**. For two separate bots on one PR, verify
+display name and the check remains **Pilibala Review**. For two separate bots on one PR, verify
 their App-scoped checks and comments remain independent.
 
 For GitHub publication recovery, interrupt a response after GitHub accepts a

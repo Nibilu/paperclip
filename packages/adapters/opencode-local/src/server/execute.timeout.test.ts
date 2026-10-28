@@ -2,14 +2,14 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AdapterExecutionContext } from "@paperclipai/adapter-utils";
-import type { RunProcessResult } from "@paperclipai/adapter-utils/server-utils";
+import type { AdapterExecutionContext } from "@pilibalaai/adapter-utils";
+import type { RunProcessResult } from "@pilibalaai/adapter-utils/server-utils";
 
 const mocks = vi.hoisted(() => ({
   process: vi.fn(), restore: vi.fn(), stop: vi.fn(),
 }));
-vi.mock("@paperclipai/adapter-utils/execution-target", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@paperclipai/adapter-utils/execution-target")>(),
+vi.mock("@pilibalaai/adapter-utils/execution-target", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@pilibalaai/adapter-utils/execution-target")>(),
   ensureAdapterExecutionTargetRuntimeCommandInstalled: vi.fn(),
   ensureAdapterExecutionTargetCommandResolvable: vi.fn(),
   prepareAdapterExecutionTargetRuntime: vi.fn(async () => ({
@@ -17,7 +17,7 @@ vi.mock("@paperclipai/adapter-utils/execution-target", async (importOriginal) =>
     assetDirs: {}, restoreWorkspace: mocks.restore,
   })),
   readAdapterExecutionTargetHomeDir: vi.fn(async () => "/home/fixture"),
-  startAdapterExecutionTargetPaperclipBridge: vi.fn(async () => ({ env: {}, stop: mocks.stop })),
+  startAdapterExecutionTargetPilibalaBridge: vi.fn(async () => ({ env: {}, stop: mocks.stop })),
   runAdapterExecutionTargetProcess: mocks.process,
 }));
 import { execute } from "./execute.js";
@@ -32,7 +32,7 @@ const failed: RunProcessResult = {
 describe("OpenCode timeout reporting", () => {
   let dir: string;
   beforeEach(async () => {
-    dir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-opencode-timeout-"));
+    dir = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-opencode-timeout-"));
     vi.stubEnv("XDG_CONFIG_HOME", dir);
     mocks.process.mockReset().mockResolvedValue(failed);
     mocks.restore.mockReset().mockResolvedValue(undefined);
@@ -81,7 +81,7 @@ describe("OpenCode timeout reporting", () => {
   });
 
   it("runs the sandbox CLI through the actual process seam with session dispatch and incremental output", async () => {
-    const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/execution-target")>("@paperclipai/adapter-utils/execution-target");
+    const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/execution-target")>("@pilibalaai/adapter-utils/execution-target");
     mocks.process.mockImplementation(actual.runAdapterExecutionTargetProcess);
     const logs = vi.fn(async () => {});
     const runner = {
@@ -115,7 +115,7 @@ describe("OpenCode timeout reporting", () => {
   });
 
   it("retains real local deadline and termination behavior without claiming provider origin", async () => {
-    const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/execution-target")>("@paperclipai/adapter-utils/execution-target");
+    const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/execution-target")>("@pilibalaai/adapter-utils/execution-target");
     mocks.process.mockImplementation(actual.runAdapterExecutionTargetProcess);
     const command = path.join(dir, "fixture-opencode");
     await fs.writeFile(command, "#!/usr/bin/env node\nsetInterval(() => {}, 1000);\n", { mode: 0o755 });

@@ -3,7 +3,7 @@
  * through the shared acpx engine. Uses the engine's own session-params
  * fingerprint seam via the adapter config mapping — no mocks.
  *
- * Run: pnpm --filter @paperclipai/hermes-paperclip-adapter exec \
+ * Run: pnpm --filter @pilibalaai/hermes-pilibala-adapter exec \
  *        vitest run src/server/acp.e2e.test.ts
  */
 import { describe, expect, it } from "vitest";
@@ -35,11 +35,11 @@ describe.skipIf(!timeoutSec)("hermes acp e2e (HERMES_ACP_E2E=1)", () => {
       runtime: { taskKey: "e2e" } as never,
       context: {
         wakeReason: "e2e_proof",
-        paperclipWake: { version: 1, kind: "e2e_proof" },
+        pilibalaWake: { version: 1, kind: "e2e_proof" },
         // A trivial deterministic instruction: the model must echo a fixed
         // marker so the assertion is content-based, not just exit-code-based.
         taskTitle: "E2E echo proof",
-        taskBody: 'Reply with exactly the single token PAPERCLIP_E2E_OK and nothing else. Do not use tools.',
+        taskBody: 'Reply with exactly the single token PILIBALA_E2E_OK and nothing else. Do not use tools.',
       },
       cwd,
       timeoutSec,
@@ -57,7 +57,7 @@ describe.skipIf(!timeoutSec)("hermes acp e2e (HERMES_ACP_E2E=1)", () => {
     expect(summary.length).toBeGreaterThan(0);
     // Content assertion proves the model actually answered through the
     // shared engine's prompt path (not merely that the process exited).
-    expect(summary).toContain("PAPERCLIP_E2E_OK");
+    expect(summary).toContain("PILIBALA_E2E_OK");
     // Session params must record acpx identity for cross-run resume.
     const params = (result.resultJson as Record<string, unknown> | undefined)?.sessionParams
       ?? (result as unknown as { sessionParams?: Record<string, unknown> }).sessionParams;

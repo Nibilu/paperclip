@@ -1,16 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, ne, sql } from "drizzle-orm";
-import { aiConnectionPools, aiConnectionRouterCursors, aiConnectionTaskPins, companySecrets, connectionGrants, instanceSettings, plugins, toolApplications, toolConnections, toolConnectionInstalls, type Db } from "@paperclipai/db";
-import { aiConnectionRouterAppDefinition, aiConnectionRouterSlug, aiConnectionPoolConfigSchema, isAiConnectionCompatible, type AiConnectionPool, type AiConnectionPoolMember, type AiConnectionRouterRequest, type AiConnectionRouterSelection, type AiConnectionPoolSaveInput, type AiConnectionUsage } from "@paperclipai/shared";
-import { isCodexLocalKnownModel, codexLocalReasoningEffortsForModel } from "@paperclipai/adapter-codex-local";
-import { models as claudeModels, claudeLocalReasoningEffortsForModel } from "@paperclipai/adapter-claude-local";
-import { models as grokModels, grokLocalReasoningEffortsForModel } from "@paperclipai/adapter-grok-local";
+import { aiConnectionPools, aiConnectionRouterCursors, aiConnectionTaskPins, companySecrets, connectionGrants, instanceSettings, plugins, toolApplications, toolConnections, toolConnectionInstalls, type Db } from "@pilibalaai/db";
+import { aiConnectionRouterAppDefinition, aiConnectionRouterSlug, aiConnectionPoolConfigSchema, isAiConnectionCompatible, type AiConnectionPool, type AiConnectionPoolMember, type AiConnectionRouterRequest, type AiConnectionRouterSelection, type AiConnectionPoolSaveInput, type AiConnectionUsage } from "@pilibalaai/shared";
+import { isCodexLocalKnownModel, codexLocalReasoningEffortsForModel } from "@pilibalaai/adapter-codex-local";
+import { models as claudeModels, claudeLocalReasoningEffortsForModel } from "@pilibalaai/adapter-claude-local";
+import { models as grokModels, grokLocalReasoningEffortsForModel } from "@pilibalaai/adapter-grok-local";
 import { aiConnectionService } from "./ai-connections.js";
 import { instanceSettingsService } from "./instance-settings.js";
 import { logActivity } from "./activity-log.js";
 import { forbidden, notFound, conflict, unprocessable } from "../errors.js";
 import type { PluginWorkerManager } from "./plugin-worker-manager.js";
-import { resolvePaperclipRunnerProviderProfile, resolvePaperclipRunnerNativeProviderInput } from "./native-runtime/provider-profile.js";
+import { resolvePilibalaRunnerProviderProfile, resolvePilibalaRunnerNativeProviderInput } from "./native-runtime/provider-profile.js";
 
 const usageCache = new Map<string, { expires: number; value: AiConnectionUsage }>();
 const usageInFlight = new Map<string, Promise<AiConnectionUsage | undefined>>();
@@ -39,9 +39,9 @@ export function poolMemberRuntimeConfig(member: AiConnectionPoolMember, adapterT
   const config: Record<string, unknown> = { provider: profile.provider, ...(profile.acpxAgent ? { acpxAgent: profile.acpxAgent } : {}), model: profile.model };
   const validate = () => {
     if (!isAiConnectionCompatible(member.binding, adapterType, config.model, config.provider, config.acpxAgent)) throw unprocessable("Pool member is incompatible with this harness");
-    if (adapterType === "paperclip_runner") {
-      const resolved = resolvePaperclipRunnerProviderProfile(config);
-      resolvePaperclipRunnerNativeProviderInput({ backend: resolved.backend, adapterConfig: config });
+    if (adapterType === "pilibala_runner") {
+      const resolved = resolvePilibalaRunnerProviderProfile(config);
+      resolvePilibalaRunnerNativeProviderInput({ backend: resolved.backend, adapterConfig: config });
     }
   };
   validate();
@@ -56,7 +56,7 @@ export function poolMemberRuntimeConfig(member: AiConnectionPoolMember, adapterT
     : provider === "anthropic" ? claudeLocalReasoningEffortsForModel(model)
     : provider === "xai" ? grokLocalReasoningEffortsForModel(model) : [];
   // ACPX currently has no qualified effort override; keep that host limitation explicit.
-  const effortKey = adapterType === "paperclip_runner" ? profile.provider === "codex" ? "modelReasoningEffort" : null
+  const effortKey = adapterType === "pilibala_runner" ? profile.provider === "codex" ? "modelReasoningEffort" : null
     : provider === "anthropic" ? "effort" : provider === "xai" ? "reasoningEffort" : provider === "openai" ? "modelReasoningEffort" : "variant";
   const requested = overrides.modelReasoningEffort ?? overrides.reasoningEffort ?? overrides.effort ?? overrides.variant;
   const effort = typeof requested === "string" && efforts.includes(requested) && effortKey ? requested
@@ -125,7 +125,7 @@ export function aiConnectionRouterService(db: Db, workerManager?: PluginWorkerMa
     const visible = await aiConnectionService(db).list(input.companyId, userId);
     for (const member of config.members) {
       if (!visible.some((v) => v.id === member.binding.connectionId && v.grantId === member.binding.grantId)) throw forbidden("Choose an account you may use in this company");
-      poolMemberRuntimeConfig(member, "paperclip_runner");
+      poolMemberRuntimeConfig(member, "pilibala_runner");
     }
     const id = input.id ?? randomUUID();
     await db.transaction(async (tx) => {
@@ -139,7 +139,7 @@ export function aiConnectionRouterService(db: Db, workerManager?: PluginWorkerMa
         await tx.update(toolConnections).set({ name: config.name, enabled: config.enabled, updatedAt: new Date() }).where(and(eq(toolConnections.id, id), eq(toolConnections.companyId, input.companyId)));
       } else {
         const key = `plugin:${pluginKey}:ai-router`;
-        await tx.insert(toolApplications).values({ companyId: input.companyId, applicationKey: key, name: plugin.manifestJson.aiConnectionRouter?.name ?? plugin.manifestJson.displayName, metadata: { sourceTemplateKey: aiConnectionRouterSlug(pluginKey) }, type: "paperclip_plugin", pluginId: plugin.id }).onConflictDoNothing();
+        await tx.insert(toolApplications).values({ companyId: input.companyId, applicationKey: key, name: plugin.manifestJson.aiConnectionRouter?.name ?? plugin.manifestJson.displayName, metadata: { sourceTemplateKey: aiConnectionRouterSlug(pluginKey) }, type: "pilibala_plugin", pluginId: plugin.id }).onConflictDoNothing();
         const [application] = await tx.select().from(toolApplications).where(and(eq(toolApplications.companyId, input.companyId), eq(toolApplications.applicationKey, key)));
         if (!application) throw new Error("Router application could not be created");
         await tx.insert(toolConnections).values({ id, companyId: input.companyId, applicationId: application.id, name: config.name, uid: id, connectionPurpose: "ai", transport: "runtime_auth", enabled: config.enabled, status: "active", healthStatus: "ok", config: { aiRouter: { pluginKey }, sourceTemplateKey: aiConnectionRouterSlug(pluginKey) }, createdByUserId: userId });

@@ -1,6 +1,6 @@
 import { trace } from "@opentelemetry/api";
 import { InMemorySpanExporter, SimpleSpanProcessor, TracerProvider } from "@opentelemetry/sdk-trace";
-import { configuredEnvironment, configuredEnvironmentProjection } from "../../vendor/paperclip-runner/index.js";
+import { configuredEnvironment, configuredEnvironmentProjection } from "../../vendor/pilibala-runner/index.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { PgDialect } from "drizzle-orm/pg-core";
@@ -33,7 +33,7 @@ import {
   nativeRunFinalizations,
   nativeRunResults,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   canonicalNativeRuntimeContextDigest,
   CURSOR_DISTRIBUTION_PINS,
@@ -49,7 +49,7 @@ import {
   type NativeExecutionInputV3,
   type NativeExecutionInput,
   type PrpEvent,
-} from "@paperclipai/paperclip-runner";
+} from "@pilibalaai/pilibala-runner";
 import { createHash, generateKeyPairSync, randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { nativeSha256 } from "./canonical.js";
@@ -57,18 +57,18 @@ import { RemoteRunnerRecoveryError, readRemoteRunnerRecoveryError } from "./remo
 import { agentDirectoryWorkingCopyService } from "../agent-directory-working-copies.js";
 import { probeAgentDirectory } from "../agent-directory-probe.js";
 import { AGENT_FILES_CONTRACT } from "../agent-file-store.js";
-import { captureDirectorySnapshot, directorySnapshotSha256, serializeDirectorySnapshot } from "@paperclipai/adapter-utils/workspace-restore-merge";
-import { agentInstructionWorkingCopies } from "@paperclipai/db";
+import { captureDirectorySnapshot, directorySnapshotSha256, serializeDirectorySnapshot } from "@pilibalaai/adapter-utils/workspace-restore-merge";
+import { agentInstructionWorkingCopies } from "@pilibalaai/db";
 import * as noLaunchProofModule from "./native-maintenance-no-launch.js";
 import {
   NativeSessionCleanupQuarantinedError,
   NativeProviderTerminalFailure,
   NativeSessionProtocolIntegrityError,
-} from "../../vendor/paperclip-runner/index.js";
+} from "../../vendor/pilibala-runner/index.js";
 import * as issueServiceModule from "../issues.js";
 import * as runEventWriter from "../heartbeat-run-events.js";
 import { NativePermissionDeclinedError } from "./native-permission-decline.js";
-import { resolvePaperclipRunnerNativeProviderInput } from "./provider-profile.js";
+import { resolvePilibalaRunnerNativeProviderInput } from "./provider-profile.js";
 import {
   createNativeHarnessBackupStamp,
   verifyNativeHarnessBackupStamp,
@@ -126,7 +126,7 @@ type RunnerTransportOptions = {
   provider?: "codex" | "opencode" | "acpx";
   opencodePermissionMode?: "allow" | "ask" | "deny";
   acpxAgent?: "claude" | "codex";
-  acpxPermissionMode?: "approve-all" | "approve-paperclip" | "approve-reads" | "deny-all";
+  acpxPermissionMode?: "approve-all" | "approve-pilibala" | "approve-reads" | "deny-all";
   resumeActiveTurnId?: string | null;
   resumeProviderSession?: {
     driverSessionId: string;
@@ -147,14 +147,14 @@ type RunnerTransportOptions = {
 };
 
 const durableControlPlaneState = (identity: Record<string, unknown>) => ({
-  schema: "paperclip.runner.durable.control-plane-state.v1",
+  schema: "pilibala.runner.durable.control-plane-state.v1",
   identity,
 });
 const durableRunnerState = (
   identity: Record<string, unknown>,
   lifecycle: string,
 ) => ({
-  schema: "paperclip.runner.durable.state.v1",
+  schema: "pilibala.runner.durable.state.v1",
   ...identity,
   lifecycle,
 });
@@ -210,16 +210,16 @@ const state = vi.hoisted(() => ({
   assertCurrentWakeCommentsRead: vi.fn(async () => undefined),
   bundledPackManifestPath: null as string | null,
   bundledRunnerBinary: null as string | null,
-  resolveRunnerBinary: vi.fn(() => "/tmp/paperclip-runnerd"),
-  resolveRemoteRunnerBinary: vi.fn(async (input: { configuredPath?: string | null }) => input.configuredPath || "/tmp/paperclip-runnerd"),
+  resolveRunnerBinary: vi.fn(() => "/tmp/pilibala-runnerd"),
+  resolveRemoteRunnerBinary: vi.fn(async (input: { configuredPath?: string | null }) => input.configuredPath || "/tmp/pilibala-runnerd"),
   release: null as null | (() => void),
 }));
 
 const accountingEvents = vi.hoisted(() => ({ committed: undefined as undefined | ((event: PrpEvent) => Promise<void>), duplicate: undefined as undefined | ((event: PrpEvent) => Promise<void>) }));
-vi.mock("./paperclip-control-plane-port.js", async importOriginal => {
-  const original = await importOriginal<typeof import("./paperclip-control-plane-port.js")>();
-  return { ...original, PaperclipControlPlanePort: class extends original.PaperclipControlPlanePort {
-    constructor(...args: ConstructorParameters<typeof original.PaperclipControlPlanePort>) {
+vi.mock("./pilibala-control-plane-port.js", async importOriginal => {
+  const original = await importOriginal<typeof import("./pilibala-control-plane-port.js")>();
+  return { ...original, PilibalaControlPlanePort: class extends original.PilibalaControlPlanePort {
+    constructor(...args: ConstructorParameters<typeof original.PilibalaControlPlanePort>) {
       super(...args);
       accountingEvents.committed = args[2]?.onCommittedEvent;
       accountingEvents.duplicate = args[2]?.onDuplicateEvent;
@@ -228,14 +228,14 @@ vi.mock("./paperclip-control-plane-port.js", async importOriginal => {
 });
 
 const grokCopyBack = vi.hoisted(() => vi.fn(async (_input: { readSandboxAuth: () => Promise<Buffer>; hostHomeDir: string }) => undefined));
-vi.mock("@paperclipai/adapter-grok-local/server", async importOriginal => ({
-  ...await importOriginal<typeof import("@paperclipai/adapter-grok-local/server")>(),
+vi.mock("@pilibalaai/adapter-grok-local/server", async importOriginal => ({
+  ...await importOriginal<typeof import("@pilibalaai/adapter-grok-local/server")>(),
   copyBackGrokAuth: grokCopyBack,
 }));
 
-vi.mock("../../vendor/paperclip-runner/index.js", async (importOriginal) => {
+vi.mock("../../vendor/pilibala-runner/index.js", async (importOriginal) => {
   const original = await importOriginal<
-    typeof import("../../vendor/paperclip-runner/index.js")
+    typeof import("../../vendor/pilibala-runner/index.js")
   >();
   return {
     ...original,
@@ -247,19 +247,19 @@ vi.mock("../../vendor/paperclip-runner/index.js", async (importOriginal) => {
     settleRetainedRunnerdSession: state.cleanup,
     retainedRunnerdMaintenanceIsIdle: state.maintenanceIdle,
     completeRetainedNativeSessionCleanup: state.retireCleanup,
-    parsePaperclipQuestionSet: (value: unknown) => value,
+    parsePilibalaQuestionSet: (value: unknown) => value,
   };
 });
 
-vi.mock("@paperclipai/adapter-codex-local/server", async (importOriginal) => ({
+vi.mock("@pilibalaai/adapter-codex-local/server", async (importOriginal) => ({
   ...(await importOriginal<
-    typeof import("@paperclipai/adapter-codex-local/server")
+    typeof import("@pilibalaai/adapter-codex-local/server")
   >()),
   copyBackCodexAuth: state.copyBackCodexAuth,
 }));
 
-vi.mock("./paperclip-runner-tool-authority.js", () => ({
-  PaperclipRunnerToolAuthority: class {
+vi.mock("./pilibala-runner-tool-authority.js", () => ({
+  PilibalaRunnerToolAuthority: class {
     close() {}
     readonly binding: Record<string, unknown>;
 
@@ -305,8 +305,8 @@ vi.mock("../issue-recovery-actions.js", () => ({
 }));
 
 vi.mock("./native-codex-runner.js", () => ({
-  resolvePaperclipRunnerBinary: state.resolveRunnerBinary,
-  resolveRemotePaperclipRunnerBinary: state.resolveRemoteRunnerBinary,
+  resolvePilibalaRunnerBinary: state.resolveRunnerBinary,
+  resolveRemotePilibalaRunnerBinary: state.resolveRemoteRunnerBinary,
 }));
 
 import {
@@ -323,7 +323,7 @@ import {
   createGovernedWaitEventObservation,
   createRemoteRunnerProcessLauncher,
   createRunnerdBackend,
-  executePaperclipNativeSession,
+  executePilibalaNativeSession,
   detachNativeSessionsForRestart,
   NativeControllerDetachedForRestartError,
   getNativeSessionSteeringState,
@@ -379,8 +379,8 @@ beforeEach(() => {
   state.bundledPackManifestPath = null;
   state.bundledRunnerBinary = null;
   state.createAssignedMcpTools.mockReset();
-  state.resolveRunnerBinary.mockReset().mockReturnValue("/tmp/paperclip-runnerd");
-  state.resolveRemoteRunnerBinary.mockReset().mockImplementation(async (input: { configuredPath?: string | null }) => input.configuredPath || "/tmp/paperclip-runnerd");
+  state.resolveRunnerBinary.mockReset().mockReturnValue("/tmp/pilibala-runnerd");
+  state.resolveRemoteRunnerBinary.mockReset().mockImplementation(async (input: { configuredPath?: string | null }) => input.configuredPath || "/tmp/pilibala-runnerd");
   state.resolveCurrentWakeCommentsBinding.mockReset().mockResolvedValue(null);
   state.assertCurrentWakeCommentsRead.mockReset().mockResolvedValue(undefined);
 });
@@ -529,10 +529,10 @@ describe("remote controller restart adoption", () => {
   });
   it("wires remote adoption when only controller state survived on the host", async () => {
     const stateBase = await mkdtemp(
-      join(tmpdir(), "paperclip-remote-reattach-"),
+      join(tmpdir(), "pilibala-remote-reattach-"),
     );
-    const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = stateBase;
+    const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = stateBase;
     const current = {
       ...execution,
       binding: { ...execution.binding, runId: "run" },
@@ -569,8 +569,8 @@ describe("remote controller restart adoption", () => {
       expect(await readdir(root)).toContain("control-plane");
       expect(await readdir(root)).not.toContain("runner");
     } finally {
-      if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
-      else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+      if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR;
+      else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
       await rm(stateBase, { recursive: true, force: true });
     }
   });
@@ -599,7 +599,7 @@ describe("remote controller restart adoption", () => {
     const { target, execute } = fixture();
     const original = execute.getMockImplementation()!;
     const operation = stage === "identity_marker"
-      ? "paperclip-runner-recovery-identity" : "paperclip-runner-recovery-check";
+      ? "pilibala-runner-recovery-identity" : "pilibala-runner-recovery-check";
     let probes = 0;
     execute.mockImplementation(async request => {
       if ((stage === "runner_state" ? request.args[1].includes("base64") : request.args[2] === operation) && probes++ === 0) {
@@ -618,7 +618,7 @@ describe("remote controller restart adoption", () => {
   it("rejects a marker that cannot prove its process generation", async () => {
     const { target, execute } = fixture();
     const original = execute.getMockImplementation()!;
-    execute.mockImplementation(async request => request.args[2] === "paperclip-runner-recovery-identity"
+    execute.mockImplementation(async request => request.args[2] === "pilibala-runner-recovery-identity"
       ? { stdout: "nonce\n123\n2026-09-19T10:00:00.000Z\nrunner\n", stderr: "", exitCode: 0, timedOut: false }
       : original(request));
     await expect(verifyRemoteRunnerReattachment({ claim, target: target as never, identity, runId: "run", normalizedSessionId: "session" }))
@@ -642,7 +642,7 @@ describe("remote controller restart adoption", () => {
   ] as const)("records the closed reason for marker read exit %s", async (exitCode, reason) => {
     const { target, execute } = fixture();
     const original = execute.getMockImplementation()!;
-    execute.mockImplementation(async request => request.args[2] === "paperclip-runner-recovery-identity"
+    execute.mockImplementation(async request => request.args[2] === "pilibala-runner-recovery-identity"
       ? { stdout: "", stderr: "private transport text", exitCode, timedOut: false }
       : original(request));
     await expect(verifyRemoteRunnerReattachment({ claim, target: target as never, identity, runId: "run", normalizedSessionId: "session" }))
@@ -654,7 +654,7 @@ describe("remote controller restart adoption", () => {
     const transportError = new Error("private bridge response");
     const original = execute.getMockImplementation()!;
     execute.mockImplementation(async request => {
-      if (request.args[2] !== "paperclip-runner-recovery-identity") return original(request);
+      if (request.args[2] !== "pilibala-runner-recovery-identity") return original(request);
       if (failure === "transport") throw transportError;
       return { stdout: "", stderr: "private bridge response", exitCode: -1, timedOut: true };
     });
@@ -682,10 +682,10 @@ describe("remote controller restart adoption", () => {
       await writeFile(join(proc, "sys/kernel/random/boot_id"), "abcd-1234\n");
       await writeFile(markerPath, marker);
       execute.mockImplementation(async request => {
-        if (request.args[2] === "paperclip-runner-recovery-identity") {
+        if (request.args[2] === "pilibala-runner-recovery-identity") {
           return { stdout: marker, stderr: "", exitCode: 0, timedOut: false };
         }
-        if (request.args[2] !== "paperclip-runner-recovery-check") return original(request);
+        if (request.args[2] !== "pilibala-runner-recovery-check") return original(request);
         // Run the actual ownership shell against controlled Linux proc files.
         // kill -0 still checks a real live PID; only its generation changes.
         const args = [...request.args];
@@ -712,7 +712,7 @@ describe("remote controller restart adoption", () => {
     const original = execute.getMockImplementation()!;
     const transportError = new Error("provider_transport_failed: private bridge response");
     execute.mockImplementation(async request => {
-      if (request.args[2] !== "paperclip-runner-recovery-check") return original(request);
+      if (request.args[2] !== "pilibala-runner-recovery-check") return original(request);
       if (failure === "transport") throw transportError;
       return { stdout: "", stderr: "private probe output", exitCode: failure === "liveness" ? 45 : -1, timedOut: failure === "timeout" };
     });
@@ -791,7 +791,7 @@ describe("remote runner process supervision", () => {
         bypassSession?: boolean;
       }) => {
         const label = input.args?.[2];
-        if (label === "paperclip-runner-launch") {
+        if (label === "pilibala-runner-launch") {
           launchNonce = input.args?.[4] ?? "";
           return {
             exitCode: 0,
@@ -801,7 +801,7 @@ describe("remote runner process supervision", () => {
             stderr: "",
           };
         }
-        if (label === "paperclip-runner-process-identity") {
+        if (label === "pilibala-runner-process-identity") {
           return {
             exitCode: 0,
             signal: null,
@@ -810,7 +810,7 @@ describe("remote runner process supervision", () => {
             stderr: "",
           };
         }
-        if (label === "paperclip-runner-monitor") {
+        if (label === "pilibala-runner-monitor") {
           return {
             exitCode: 3,
             signal: null,
@@ -819,12 +819,12 @@ describe("remote runner process supervision", () => {
             stderr: "",
           };
         }
-        if (label === "paperclip-runner-diagnostics") {
+        if (label === "pilibala-runner-diagnostics") {
           return {
             exitCode: 0,
             signal: null,
             timedOut: false,
-            stdout: "paperclip-runnerd: provider transport closed",
+            stdout: "pilibala-runnerd: provider transport closed",
             stderr: "",
           };
         }
@@ -842,7 +842,7 @@ describe("remote runner process supervision", () => {
             stderr: "",
           };
         }
-        if (label === "paperclip-runner-signal") {
+        if (label === "pilibala-runner-signal") {
           if (signalOutcome !== "delivered") throw new Error("Sandbox with ID test-deleted-sandbox not found");
           return {
             exitCode: 0,
@@ -868,7 +868,7 @@ describe("remote runner process supervision", () => {
         remoteCwd: "/workspace",
       },
       runner: { execute } as never,
-      remoteBinary: "/runtime/paperclip-runnerd",
+      remoteBinary: "/runtime/pilibala-runnerd",
       processIdentityPath: "/runtime/runner-process.identity",
       stateDirectory: "/runtime",
       diagnosticsDirectory: "/runtime/diagnostics",
@@ -878,18 +878,18 @@ describe("remote runner process supervision", () => {
     });
 
     const handle = launcher({
-      command: "/controller/paperclip-runnerd",
+      command: "/controller/pilibala-runnerd",
       args: ["--runner-id", "runner-remote"],
       cwd: "/controller",
       environment: {},
     });
     await expect(handle.completion).resolves.toMatchObject({
       code: null,
-      stderr: "paperclip-runnerd: provider transport closed",
+      stderr: "pilibala-runnerd: provider transport closed",
     });
 
     const launch = execute.mock.calls.find(
-      ([input]) => input.args?.[2] === "paperclip-runner-launch",
+      ([input]) => input.args?.[2] === "pilibala-runner-launch",
     )?.[0];
     expect(launch).toMatchObject({
       timeoutMs: 20_000,
@@ -913,7 +913,7 @@ describe("remote runner process supervision", () => {
       expect(
         execute.mock.calls.some(
           ([input]) =>
-            input.args?.[2] === "paperclip-runner-signal" &&
+            input.args?.[2] === "pilibala-runner-signal" &&
             input.args?.[1]?.includes('kill -KILL "$expected_pid"'),
         ),
       ).toBe(true),
@@ -938,7 +938,7 @@ describe("remote runner process supervision", () => {
       const execute = vi.fn(
         async (input: { command?: string; args?: string[] }) => {
           const label = input.args?.[2];
-          if (label === "paperclip-runner-launch") {
+          if (label === "pilibala-runner-launch") {
             launchNonce = input.args?.[4] ?? "";
             return {
               exitCode: 0,
@@ -948,7 +948,7 @@ describe("remote runner process supervision", () => {
               stderr: "",
             };
           }
-          if (label === "paperclip-runner-process-identity") {
+          if (label === "pilibala-runner-process-identity") {
             return {
               exitCode: kind === "missing fingerprint" ? 0 : 3,
               signal: null,
@@ -957,7 +957,7 @@ describe("remote runner process supervision", () => {
               stderr: "",
             };
           }
-          if (label === "paperclip-runner-identity-failure-cleanup") {
+          if (label === "pilibala-runner-identity-failure-cleanup") {
             expect(input.args?.[4]).toBe(launchNonce);
             return {
               exitCode: 0,
@@ -979,7 +979,7 @@ describe("remote runner process supervision", () => {
           remoteCwd: "/workspace",
         },
         runner: { execute } as never,
-        remoteBinary: "/runtime/paperclip-runnerd",
+        remoteBinary: "/runtime/pilibala-runnerd",
         processIdentityPath: "/runtime/runner-process.identity",
         stateDirectory: "/runtime",
         diagnosticsDirectory: "/runtime/diagnostics",
@@ -988,7 +988,7 @@ describe("remote runner process supervision", () => {
       });
 
       const handle = launcher({
-        command: "/controller/paperclip-runnerd",
+        command: "/controller/pilibala-runnerd",
         args: ["--runner-id", "runner-remote"],
         cwd: "/controller",
         environment: {},
@@ -1001,7 +1001,7 @@ describe("remote runner process supervision", () => {
 
       const cleanup = execute.mock.calls.find(
         ([call]) =>
-          call.args?.[2] === "paperclip-runner-identity-failure-cleanup",
+          call.args?.[2] === "pilibala-runner-identity-failure-cleanup",
       )?.[0];
       expect(cleanup).toMatchObject({
         bypassSession: true,
@@ -1028,11 +1028,11 @@ describe("remote runner process supervision", () => {
           const label = input.args?.[2];
           return {
             exitCode:
-              label === "paperclip-runner-launch"
+              label === "pilibala-runner-launch"
                 ? 0
-                : label === "paperclip-runner-process-identity"
+                : label === "pilibala-runner-process-identity"
                   ? 3
-                  : label === "paperclip-runner-identity-failure-cleanup"
+                  : label === "pilibala-runner-identity-failure-cleanup"
                     ? 4
                     : 1,
             signal: null,
@@ -1051,7 +1051,7 @@ describe("remote runner process supervision", () => {
           remoteCwd: "/workspace",
         },
         runner: { execute } as never,
-        remoteBinary: "/runtime/paperclip-runnerd",
+        remoteBinary: "/runtime/pilibala-runnerd",
         processIdentityPath: "/runtime/runner-process.identity",
         stateDirectory: "/runtime",
         diagnosticsDirectory: "/runtime/diagnostics",
@@ -1059,7 +1059,7 @@ describe("remote runner process supervision", () => {
       });
 
       const handle = launcher({
-        command: "/controller/paperclip-runnerd",
+        command: "/controller/pilibala-runnerd",
         args: ["--runner-id", "runner-remote"],
         cwd: "/controller",
         environment: {},
@@ -1082,7 +1082,7 @@ describe("native incomplete-bootstrap evidence", () => {
     await mkdir(controlPlaneRoot, { recursive: true });
     const statePath = join(controlPlaneRoot, "control-plane-state.json");
     const base = {
-      schema: "paperclip.runner.durable.control-plane-state.v1",
+      schema: "pilibala.runner.durable.control-plane-state.v1",
       connectionCount: 0,
       committedEvents: [],
       commands: [
@@ -1231,7 +1231,7 @@ describe("remote provider pack manifest", () => {
   };
 
   it.each(["opencode", "cursor"] as const)("uses the bundled Linux image authority for remote %s without controller overrides", async provider => {
-    const root = await mkdtemp(join(tmpdir(), "paperclip-bundled-image-"));
+    const root = await mkdtemp(join(tmpdir(), "pilibala-bundled-image-"));
     const digest = "sha256:" + "a".repeat(64);
     const artifacts = Object.fromEntries(Object.entries({
       grokLauncher: "dist/providers/grok/launcher.cjs", nodeCommand: "node_modules/node/bin/node",
@@ -1249,10 +1249,10 @@ describe("remote provider pack manifest", () => {
       distDigest: digest, artifacts,
       bridgeDigest: "sha256:" + createHash("sha256").update(digest + "\n" + digest + "\n" + digest).digest("hex"),
     };
-    const manifest = { schema: "paperclip-runner/remote-provider-pack/v1", payload,
+    const manifest = { schema: "pilibala-runner/remote-provider-pack/v1", payload,
       digest: "sha256:" + createHash("sha256").update(canonical(payload)).digest("hex") };
     state.bundledPackManifestPath = join(root, "provider-pack.json");
-    state.bundledRunnerBinary = join(root, "linux-paperclip-runnerd");
+    state.bundledRunnerBinary = join(root, "linux-pilibala-runnerd");
     await writeFile(state.bundledPackManifestPath, JSON.stringify(manifest));
     await writeFile(state.bundledRunnerBinary, "verified Linux daemon fixture");
     const remoteExecution = { ...execution, provider: provider === "opencode"
@@ -1278,7 +1278,7 @@ describe("remote provider pack manifest", () => {
       expect(transport.runnerBinary).toBe(state.bundledRunnerBinary);
       await expect(transport.controlPlaneRegistration({})).rejects.toThrow("reached-staged-Linux-daemon-verification");
       expect(syncIn).toHaveBeenCalledWith([expect.objectContaining({ files: [expect.objectContaining({
-        sourcePath: state.bundledRunnerBinary, targetPath: "/workspace/.paperclip-runtime/paperclip-runner/bin/paperclip-runnerd",
+        sourcePath: state.bundledRunnerBinary, targetPath: "/workspace/.pilibala-runtime/pilibala-runner/bin/pilibala-runnerd",
       })] })]);
       expect(execute.mock.calls.some(([call]) => call.args?.[1] === "uname -s; uname -m")).toBe(false);
     } finally {
@@ -1288,7 +1288,7 @@ describe("remote provider pack manifest", () => {
   });
 
   it("accepts a fully digested pack and rejects artifact tampering", async () => {
-    const root = await mkdtemp(join(tmpdir(), "paperclip-provider-pack-"));
+    const root = await mkdtemp(join(tmpdir(), "pilibala-provider-pack-"));
     await mkdir(join(root, "dist", "cli"), { recursive: true });
     await mkdir(join(root, "node_modules", "node", "bin"), { recursive: true });
     await mkdir(join(root, "node_modules", ".bin"), { recursive: true });
@@ -1383,7 +1383,7 @@ describe("remote provider pack manifest", () => {
       writeFile(
         join(root, "provider-pack.json"),
         JSON.stringify({
-          schema: "paperclip-runner/remote-provider-pack/v1",
+          schema: "pilibala-runner/remote-provider-pack/v1",
           digest: `sha256:${createHash("sha256").update(canonical(payload)).digest("hex")}`,
           payload,
         }),
@@ -1401,7 +1401,7 @@ describe("remote provider pack manifest", () => {
     Object.assign(payload, { providers: { cursor } });
     await writeManifest();
     expect(readRemoteProviderPackManifest(root).payload.providers?.cursor?.version).toBe(QUALIFIED_ACPX_PROFILES.cursor.agentServerVersion);
-    const releaseMetadata = await mkdtemp(join(tmpdir(), "paperclip-image-identity-"));
+    const releaseMetadata = await mkdtemp(join(tmpdir(), "pilibala-image-identity-"));
     const manifestPath = join(releaseMetadata, "provider-pack.json");
     await cp(join(root, "provider-pack.json"), manifestPath);
     expect(readBundledRemoteProviderPackManifest(manifestPath).digest).toBe(readRemoteProviderPackManifest(root).digest);
@@ -1529,7 +1529,7 @@ describe("provider pack read diagnostics", () => {
   });
 
   it("classifies a JSON null manifest as incompatible instead of a TypeError", async () => {
-    const root = await mkdtemp(join(tmpdir(), "paperclip-null-pack-"));
+    const root = await mkdtemp(join(tmpdir(), "pilibala-null-pack-"));
     try {
       await writeFile(join(root, "provider-pack.json"), "null");
       expect(() => readRemoteProviderPackManifest(root)).toThrow(
@@ -1539,7 +1539,7 @@ describe("provider pack read diagnostics", () => {
   });
 
   it.each(["missing", "invalid_json", "invalid_path_type"])("reports %s without putting the path in the terminal message", async (reason) => {
-    const root = await mkdtemp(join(tmpdir(), "paperclip-private-pack-"));
+    const root = await mkdtemp(join(tmpdir(), "pilibala-private-pack-"));
     try {
       const manifestPath = join(root, "provider-pack.json");
       if (reason === "invalid_json") await writeFile(manifestPath, "{ private-invalid-json");
@@ -1657,7 +1657,7 @@ describe("verified native harness backups", () => {
       cwd: "/workspace",
       repoUrl: "https://example.test/repo.git",
       repoRef: "main",
-      branchName: "paperclip/test",
+      branchName: "pilibala/test",
     },
     session: {
       normalizedSessionId: "native-session",
@@ -1829,7 +1829,7 @@ describe("verified native harness backups", () => {
   });
 
   it("accepts a complete digest-matched backup and rejects corruption", async () => {
-    const root = await mkdtemp(join(tmpdir(), "paperclip-harness-backup-"));
+    const root = await mkdtemp(join(tmpdir(), "pilibala-harness-backup-"));
     try {
       const current = join(root, "failover-backups", "current");
       await mkdir(join(current, "runner"), { recursive: true });
@@ -1907,7 +1907,7 @@ describe("verified native harness backups", () => {
 
   it("rejects a backup whose provider identity or harness contract changed", async () => {
     const root = await mkdtemp(
-      join(tmpdir(), "paperclip-harness-backup-identity-"),
+      join(tmpdir(), "pilibala-harness-backup-identity-"),
     );
     try {
       const current = join(root, "failover-backups", "current");
@@ -1936,9 +1936,9 @@ describe("verified native harness backups", () => {
   });
 
   it("verifies the lease stamp and all backup directory digests before replacement", async () => {
-    const stateBase = await mkdtemp(join(tmpdir(), "paperclip-harness-stamp-"));
-    const previousStateDirectory = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = stateBase;
+    const stateBase = await mkdtemp(join(tmpdir(), "pilibala-harness-stamp-"));
+    const previousStateDirectory = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = stateBase;
     try {
       const sessionScopeId = "native-session-scope-v2";
       const sessionRoot = join(
@@ -1995,9 +1995,9 @@ describe("verified native harness backups", () => {
       expect(verifyNativeHarnessBackupStamp(stamp, "sandbox-1")).toBe(false);
     } finally {
       if (previousStateDirectory === undefined) {
-        delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
+        delete process.env.PILIBALA_RUNNER_STATE_DIR;
       } else {
-        process.env.PAPERCLIP_RUNNER_STATE_DIR = previousStateDirectory;
+        process.env.PILIBALA_RUNNER_STATE_DIR = previousStateDirectory;
       }
       await rm(stateBase, { recursive: true, force: true });
     }
@@ -2005,10 +2005,10 @@ describe("verified native harness backups", () => {
 
   it("rejects a digest-valid legacy stamp for remote lease authorization", async () => {
     const stateBase = await mkdtemp(
-      join(tmpdir(), "paperclip-legacy-harness-stamp-"),
+      join(tmpdir(), "pilibala-legacy-harness-stamp-"),
     );
-    const previousStateDirectory = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = stateBase;
+    const previousStateDirectory = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = stateBase;
     try {
       const legacyRoot = join(
         stateBase,
@@ -2045,7 +2045,7 @@ describe("verified native harness backups", () => {
       expect(
         verifyNativeHarnessBackupStamp(
           {
-            schema: "paperclip.native-harness-backup-stamp.v1",
+            schema: "pilibala.native-harness-backup-stamp.v1",
             normalizedSessionId: "native-session",
             runnerInstanceId: "runner-1",
             manifestSha256: `sha256:${createHash("sha256").update(manifestBytes).digest("hex")}`,
@@ -2056,9 +2056,9 @@ describe("verified native harness backups", () => {
       ).toBe(false);
     } finally {
       if (previousStateDirectory === undefined) {
-        delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
+        delete process.env.PILIBALA_RUNNER_STATE_DIR;
       } else {
-        process.env.PAPERCLIP_RUNNER_STATE_DIR = previousStateDirectory;
+        process.env.PILIBALA_RUNNER_STATE_DIR = previousStateDirectory;
       }
       await rm(stateBase, { recursive: true, force: true });
     }
@@ -2096,7 +2096,7 @@ describe("split durable provider checkpoint identity", () => {
       providerLifetimeFenceCandidates: [53001, 53002, 53003],
     };
     const state = {
-      schema: "paperclip.runner.acpx-provider-state.v3", lifecycle: "suspended",
+      schema: "pilibala.runner.acpx-provider-state.v3", lifecycle: "suspended",
       activeTurnId: null, providerExitUnconfirmed: false,
       descriptor: { kind: "acpx", provider: "acpx", driver: "acpx_runtime", agent: "cursor",
         model: "explicit-model", commandDigest: profileDigest, normalizedSessionId: "native-session", mode: mode },
@@ -2143,7 +2143,7 @@ describe("split durable provider checkpoint identity", () => {
           "acpx_runtime",
         ),
         providerState: {
-          schema: "paperclip.runner.acpx-provider-state.v3",
+          schema: "pilibala.runner.acpx-provider-state.v3",
           lifecycle: "suspended",
           activeTurnId: null,
           providerExitUnconfirmed: false,
@@ -2170,7 +2170,7 @@ describe("split durable provider checkpoint identity", () => {
     const profileDigest = `sha256:${"a".repeat(64)}`;
     const input = execution({ kind: "acpx", agent: "cursor", model: "explicit-model", permissionMode: "deny-all", mode: "plan" }, "acpx_runtime");
     const providerState = {
-      schema: "paperclip.runner.acpx-provider-state.v3", lifecycle: "suspended", activeTurnId: null, providerExitUnconfirmed: false,
+      schema: "pilibala.runner.acpx-provider-state.v3", lifecycle: "suspended", activeTurnId: null, providerExitUnconfirmed: false,
       descriptor: { kind: "acpx", provider: "acpx", driver: "acpx_runtime", agent: "cursor", model: "explicit-model", commandDigest: profileDigest, normalizedSessionId: "native-session", mode: "plan" },
       identity: { kind: "acpx", normalizedSessionId: "native-session", acpxRecordId: "record-1", backendSessionId: "backend-1", agentSessionId: "agent-1", profileDigest,
         workspaceDigest: `sha256:${"b".repeat(64)}`, requestedModel: "explicit-model", effectiveModel: "explicit-model", permissionMode: "deny-all", mode: "plan", providerLifetimeFenceCandidates: [53001, 53002, 53003] },
@@ -2197,7 +2197,7 @@ describe("split durable provider checkpoint identity", () => {
         providerSessionIdentityFromDurableProviderState({
           execution: execution({ kind: provider }, driverKind),
           providerState: {
-            schema: "paperclip.runner.codex-provider-state.v1",
+            schema: "pilibala.runner.codex-provider-state.v1",
             lifecycle: "prepared",
             config: { provider, driver: driverKind },
             threadId: "driver-session-1",
@@ -2227,7 +2227,7 @@ describe("split durable provider checkpoint identity", () => {
     );
     for (const providerState of [
       {
-        schema: "paperclip.runner.acpx-provider-state.v3",
+        schema: "pilibala.runner.acpx-provider-state.v3",
         lifecycle: "turn_active",
         activeTurnId: "turn-1",
         providerExitUnconfirmed: false,
@@ -2255,7 +2255,7 @@ describe("split durable provider checkpoint identity", () => {
         },
       },
       {
-        schema: "paperclip.runner.acpx-provider-state.v3",
+        schema: "pilibala.runner.acpx-provider-state.v3",
         lifecycle: "suspended",
         activeTurnId: null,
         providerExitUnconfirmed: false,
@@ -2303,7 +2303,7 @@ describe("split durable provider checkpoint identity", () => {
         providerSessionIdentityFromDurableProviderState({
           execution: execution({ kind: provider }, `${provider}_driver`),
           providerState: {
-            schema: "paperclip.runner.managed-provider-state.v1",
+            schema: "pilibala.runner.managed-provider-state.v1",
             lifecycle: "suspended",
             normalizedSessionId: "native-session",
             descriptor: { kind: provider, config: {} },
@@ -2392,7 +2392,7 @@ describe("remote provider checkpoint snapshots", () => {
     await syncRemoteRunnerDirectoryOut({
       runner: { execute, syncOut } as never,
       sourcePath: "/remote/session/filesystem/codex-home",
-      targetPath: "/tmp/paperclip-checkpoint-test-codex-home",
+      targetPath: "/tmp/pilibala-checkpoint-test-codex-home",
       mode: 0o700,
       excludeEntries: ["tmp", ".tmp", "auth.json", "config.toml"],
     });
@@ -2418,14 +2418,14 @@ describe("remote provider checkpoint snapshots", () => {
     const batch = syncOut.mock.calls[0]?.[0]?.[0];
     expect(batch?.files[0]).toMatchObject({
       sourcePath: expect.stringMatching(
-        /^\/remote\/session\/filesystem\/\.paperclip-checkpoint-/,
+        /^\/remote\/session\/filesystem\/\.pilibala-checkpoint-/,
       ),
-      targetPath: "/tmp/paperclip-checkpoint-test-codex-home",
+      targetPath: "/tmp/pilibala-checkpoint-test-codex-home",
       kind: "directory",
       mode: 0o700,
     });
     expect(String(execute.mock.calls[2]?.[0]?.args?.[1])).toMatch(
-      /^rm -rf -- '\/remote\/session\/filesystem\/\.paperclip-checkpoint-/,
+      /^rm -rf -- '\/remote\/session\/filesystem\/\.pilibala-checkpoint-/,
     );
   });
 
@@ -2448,7 +2448,7 @@ describe("remote provider checkpoint snapshots", () => {
     await syncRemoteRunnerDirectoryOut({
       runner: { execute, syncOut } as never,
       sourcePath: "/remote/session/filesystem/acpx",
-      targetPath: "/tmp/paperclip-checkpoint-test-acpx",
+      targetPath: "/tmp/pilibala-checkpoint-test-acpx",
       mode: 0o700,
       excludeEntries: excluded,
     });
@@ -2473,7 +2473,7 @@ describe("remote provider checkpoint snapshots", () => {
       syncRemoteRunnerDirectoryOut({
         runner: { execute, syncOut: vi.fn() } as never,
         sourcePath: "/remote/codex-home",
-        targetPath: "/tmp/paperclip-checkpoint-invalid-codex-home",
+        targetPath: "/tmp/pilibala-checkpoint-invalid-codex-home",
         mode: 0o700,
         excludeEntries: ["../outside"],
       }),
@@ -2481,7 +2481,7 @@ describe("remote provider checkpoint snapshots", () => {
   });
 
   it("rejects unsafe fallback archives without replacing durable state", async () => {
-    const root = await mkdtemp(join(tmpdir(), "paperclip-checkpoint-unsafe-"));
+    const root = await mkdtemp(join(tmpdir(), "pilibala-checkpoint-unsafe-"));
     const archiveSource = join(root, "archive-source");
     const targetPath = join(root, "durable-target");
     try {
@@ -2529,7 +2529,7 @@ describe("remote provider checkpoint snapshots", () => {
 describe("remote provider checkpoint restores", () => {
   it("does not upload excluded Codex scratch trees or credentials", async () => {
     const sourcePath = await mkdtemp(
-      join(tmpdir(), "paperclip-codex-restore-source-"),
+      join(tmpdir(), "pilibala-codex-restore-source-"),
     );
     try {
       await mkdir(join(sourcePath, "sessions"), { recursive: true });
@@ -2588,7 +2588,7 @@ describe("remote provider checkpoint restores", () => {
 
 describe("remote preinstalled executable discovery", () => {
   it("stages a relative-path CLI shim without changing its installation or losing arguments", async () => {
-    const root = await mkdtemp(join(tmpdir(), "paperclip-codex-shim-"));
+    const root = await mkdtemp(join(tmpdir(), "pilibala-codex-shim-"));
     try {
       const installation = join(root, "image install's bin");
       const target = join(root, "workspace", "bin", "codex");
@@ -2623,13 +2623,13 @@ describe("remote preinstalled executable discovery", () => {
   it("accepts one normalized absolute executable path", () => {
     expect(
       parseRemoteExecutableCandidate(
-        "/home/daytona/.local/bin/paperclip-runnerd\n",
+        "/home/daytona/.local/bin/pilibala-runnerd\n",
       ),
-    ).toBe("/home/daytona/.local/bin/paperclip-runnerd");
+    ).toBe("/home/daytona/.local/bin/pilibala-runnerd");
   });
 
   it.each([
-    "paperclip-runnerd\n",
+    "pilibala-runnerd\n",
     "/safe/path\n/unexpected/second-line\n",
     "/safe/path with spaces\n",
     "/safe/path;touch-bad\n",
@@ -2639,7 +2639,7 @@ describe("remote preinstalled executable discovery", () => {
 
   it("does not accept a merely contract-compatible runnerd when a build-owned artifact is configured", () => {
     expect(
-      mayUsePreinstalledRunnerArtifact("/artifacts/paperclip-runnerd"),
+      mayUsePreinstalledRunnerArtifact("/artifacts/pilibala-runnerd"),
     ).toBe(false);
     expect(mayUsePreinstalledRunnerArtifact("  ")).toBe(true);
     expect(mayUsePreinstalledRunnerArtifact(undefined)).toBe(true);
@@ -2682,9 +2682,9 @@ describe("remote runner build metadata", () => {
   });
 
   const current = {
-    schema: "paperclip-runner/runnerd-build-metadata/v1",
-    binaryName: "paperclip-runnerd",
-    packageName: "@paperclipai/paperclip-runner",
+    schema: "pilibala-runner/runnerd-build-metadata/v1",
+    binaryName: "pilibala-runnerd",
+    packageName: "@pilibalaai/pilibala-runner",
     binaryContractVersion: 2,
     durableSessionCapabilities: ["unlimited_runtime", "connection_lease_renewal"],
     prpTransportModes: ["dial_ws_loopback", "dial_wss", "listen_ws"],
@@ -2793,7 +2793,7 @@ describe("required remote checkpoint completion", () => {
 
 describe("runtime question fallback", () => {
   const questionSet = {
-    schema: "paperclip.question_set.v1" as const,
+    schema: "pilibala.question_set.v1" as const,
     title: "Configure deployment",
     description: "These answers are required before work can continue.",
     submitLabel: "Continue",
@@ -2831,7 +2831,7 @@ describe("runtime question fallback", () => {
           reason,
           replayAllowed: false,
           request: {
-            schema: "paperclip.runtime_request.v2",
+            schema: "pilibala.runtime_request.v2",
             requestKind: "runtime",
             requestId: "elicitation-1",
             type: "input",
@@ -2865,7 +2865,7 @@ describe("runtime question fallback", () => {
             {
               id: "replicas",
               selectionMode: "single",
-              options: [{ id: "__paperclip_text__", freeText: true }],
+              options: [{ id: "__pilibala_text__", freeText: true }],
             },
           ],
         },
@@ -2889,7 +2889,7 @@ describe("runtime question fallback", () => {
             reason,
             replayAllowed,
             request: {
-              schema: "paperclip.runtime_request.v2",
+              schema: "pilibala.runtime_request.v2",
               requestKind: "runtime",
               requestId: "elicitation-1",
               type: "input",
@@ -2960,7 +2960,7 @@ describe("native provider bootstrap environment", () => {
     const provider = { kind: "acpx", agent } as NativeExecutionInput["provider"];
     const host = { PATH: "/host/bin", HOME: "/host/home", OPENROUTER_API_KEY: "ambient-pi",
       CURSOR_API_KEY: "ambient-cursor", CURSOR_AUTH_TOKEN: "ambient-cursor-login", COPILOT_GITHUB_TOKEN: "ambient-copilot",
-      PAPERCLIP_ACPX_CREDENTIAL_BINDING: "ambient-forged-binding" };
+      PILIBALA_ACPX_CREDENTIAL_BINDING: "ambient-forged-binding" };
     expect(resolveNativeProviderEnvironment(provider, undefined, host)).toEqual({ PATH: "/host/bin", HOME: "/host/home" });
     const explicit = { COPILOT_GITHUB_TOKEN: "explicit-company-binding" };
     expect(resolveNativeProviderEnvironment(provider, explicit, host)).toBe(explicit);
@@ -2981,7 +2981,7 @@ describe("native provider bootstrap environment", () => {
           PATH: "/opt/homebrew/bin:/usr/bin",
           HOME: "/Users/runner",
           CODEX_HOME: "/Users/runner/.codex",
-          PAPERCLIP_INTERNAL_SECRET: "must-not-leak",
+          PILIBALA_INTERNAL_SECRET: "must-not-leak",
         },
       ),
     ).toEqual({
@@ -3014,21 +3014,21 @@ describe("native provider bootstrap environment", () => {
     expect(
       buildNativeProviderEnvironment(
         {
-          PAPERCLIP_WORKSPACE_CWD: "/untrusted/configured-workspace",
+          PILIBALA_WORKSPACE_CWD: "/untrusted/configured-workspace",
         },
         { HOME: "/Users/runner" },
-        "/Users/runner/.paperclip/instances/default/workspaces/agent-1",
+        "/Users/runner/.pilibala/instances/default/workspaces/agent-1",
       ),
     ).toEqual({
       HOME: "/Users/runner",
-      PAPERCLIP_WORKSPACE_CWD:
-        "/Users/runner/.paperclip/instances/default/workspaces/agent-1",
+      PILIBALA_WORKSPACE_CWD:
+        "/Users/runner/.pilibala/instances/default/workspaces/agent-1",
     });
   });
 });
 
 const execution = {
-  schema: "paperclip.native-execution-input.v1",
+  schema: "pilibala.native-execution-input.v1",
   provider: { kind: "codex", model: null },
   binding: {
     companyId: "company",
@@ -3045,7 +3045,7 @@ const execution = {
     workMode: "standard",
   },
   workspace: {
-    cwd: "/tmp/paperclip-native-session-test",
+    cwd: "/tmp/pilibala-native-session-test",
     repoUrl: null,
     repoRef: null,
     branchName: null,
@@ -3059,7 +3059,7 @@ const execution = {
   completionContract: {
     id: "contract",
     sha256: "sha",
-    schemaVersion: "paperclip.completion-contract.v1",
+    schemaVersion: "pilibala.completion-contract.v1",
     contract: {
       revision: "1",
       objective: "Exercise the native session.",
@@ -3144,7 +3144,7 @@ describe("retained native cleanup activation", () => {
     "legacy_activation",
   ])("preserves exact original evidence for %s", async (mode) => {
     const directory = await mkdtemp(
-      join(tmpdir(), "paperclip-maintenance-activation-"),
+      join(tmpdir(), "pilibala-maintenance-activation-"),
     );
     let providerHomeDatabase: DatabaseSync | undefined;
     const preservedHomeFiles = [
@@ -3157,8 +3157,8 @@ describe("retained native cleanup activation", () => {
       "config.toml",
     ];
     let preservedHomeBytes: Buffer[] | null = null;
-    const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = directory;
+    const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = directory;
     const canonical = (value: unknown): string =>
       value && typeof value === "object" && !Array.isArray(value)
         ? `{${Object.entries(value)
@@ -3169,7 +3169,7 @@ describe("retained native cleanup activation", () => {
     const key = createHash("sha256")
       .update(
         canonical({
-          schema: "paperclip.native-session-scope.v2",
+          schema: "pilibala.native-session-scope.v2",
           companyId: execution.binding.companyId,
           agentId: execution.binding.agentId,
           workspace: {
@@ -3215,7 +3215,7 @@ describe("retained native cleanup activation", () => {
       ? "exact-account"
       : "exact-thread";
     const event = {
-      schema: "paperclip.prp.event.v1",
+      schema: "pilibala.prp.event.v1",
       schemaVersion: 1,
       sourceKind: "runner",
       sourceSeq: 1,
@@ -3268,7 +3268,7 @@ describe("retained native cleanup activation", () => {
       resultJson: {
         result: validatedResult.result,
         terminal: {
-          schema: "paperclip.prp.terminal.v1",
+          schema: "pilibala.prp.terminal.v1",
           turnTerminalState: "completed",
           runTerminalState: "succeeded",
           reportedWorkDisposition: "yielded",
@@ -3295,7 +3295,7 @@ describe("retained native cleanup activation", () => {
     const semantic = {
       ...createPrpSemanticToolInputEnvelope({
         callId: "finish-call",
-        operationId: "paperclip_finish",
+        operationId: "pilibala_finish",
         correlation,
         content: semanticInput,
       }),
@@ -3318,7 +3318,7 @@ describe("retained native cleanup activation", () => {
       payload: {
         semantic_tool: createPrpSemanticToolResultEnvelope({
           callId: "finish-call",
-          operationId: "paperclip_finish",
+          operationId: "pilibala_finish",
           correlation,
           content: semanticInput,
           outcome: "succeeded",
@@ -4076,7 +4076,7 @@ describe("retained native cleanup activation", () => {
           stagingName: input.stateDirectory.split("/").at(-1),
         });
         const epoch = {
-          schema: "paperclip.native_cleanup_runner_epoch.v1",
+          schema: "pilibala.native_cleanup_runner_epoch.v1",
           requestId: input.requestId,
           epoch: 0,
           launchId: "fixture-launch",
@@ -4515,8 +4515,8 @@ describe("retained native cleanup activation", () => {
       proofSpy.mockRestore();
       state.maintenanceIdle.mockReset().mockReturnValue(true);
       releaseCommit();
-      if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
-      else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+      if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR;
+      else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
       await rm(directory, { recursive: true, force: true });
     }
   });
@@ -4528,8 +4528,8 @@ describe("stopped native conversation physical cleanup", () => {
     "foreign_run", "foreign_company", "foreign_runner", "remote", "unreleased", "changed_state", "changed_pid", "symlink", "startup_intent", "pending_identity", "wrong_schema", "replacement", "replacement_alive", "agent_alive", "checkpoint_owner_alive", "diagnostic_owner_alive", "normalized_session_receipt",
   ].map(mode => ({ provider, mode }))))("$provider $mode", async ({ provider, mode }) => {
     const base = await mkdtemp(join(tmpdir(), "native-conversation-cleanup-"));
-    const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = base;
+    const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = base;
     const input = parseNativeExecutionInput({ ...execution,
       provider: provider === "codex" ? execution.provider : { kind: "acpx", agent: "claude", model: "claude-sonnet-5", permissionPolicy: "interactive",
         profile: { driverKind: "acpx_runtime", protocolVersion: 1, acpxVersion: "0.13.1", agent: "claude", agentProfileVersion: 1,
@@ -4542,12 +4542,12 @@ describe("stopped native conversation physical cleanup", () => {
       : JSON.stringify(value);
     const hash = (value: unknown) => createHash("sha256").update(canonical(value)).digest("hex");
     const providerScope = input.provider.kind === "acpx" ? { kind: "acpx", agent: input.provider.agent, profile: input.provider.profile } : { kind: "codex" };
-    const root = join(base, hash({ schema: "paperclip.native-session-scope.v2", companyId: input.binding.companyId,
+    const root = join(base, hash({ schema: "pilibala.native-session-scope.v2", companyId: input.binding.companyId,
       agentId: input.binding.agentId, workspace: { kind: "managed", executionWorkspaceId: input.binding.executionWorkspaceId },
       provider: { driverKind: input.session.driverKind, identity: providerScope }, normalizedSessionId: input.session.normalizedSessionId }));
     const identity = { runId: input.binding.runId, normalizedSessionId: input.session.normalizedSessionId,
       runnerInstanceId: "runner-crashed", environmentLeaseId: "lease", turnId: "turn", itemId: "item" };
-    const event = { schema: "paperclip.prp.event.v1", schemaVersion: 1, sourceKind: "runner", sourceSeq: 1,
+    const event = { schema: "pilibala.prp.event.v1", schemaVersion: 1, sourceKind: "runner", sourceSeq: 1,
       sourceEventId: "provider-identity", sourceInstanceId: identity.runnerInstanceId, runId: identity.runId,
       normalizedSessionId: identity.normalizedSessionId, turnId: identity.turnId, itemId: identity.itemId,
       priority: 0, emittedAt: new Date().toISOString(), eventType: "session.started",
@@ -4557,7 +4557,7 @@ describe("stopped native conversation physical cleanup", () => {
     const providerEvents = mode.startsWith("replacement") ? [event, replacement] : [event];
     if (mode === "diagnostic_owner_alive") providerEvents.push({ ...event, eventType: "harness.diagnostic",
       payload: { providerMethod: "acpx/process", role: "acp_agent", pid: process.pid } } as unknown as typeof event);
-    const providerState = { schema: mode === "wrong_schema" ? "unknown" : `paperclip.runner.${provider}-provider-state.${provider === "codex" ? "v1" : "v3"}`, lifecycle: "turn_active",
+    const providerState = { schema: mode === "wrong_schema" ? "unknown" : `pilibala.runner.${provider}-provider-state.${provider === "codex" ? "v1" : "v3"}`, lifecycle: "turn_active",
       ...(mode === "startup_intent" ? { startupAttempt: { phase: "intent" } } : {}),
       ...(mode === "pending_identity" ? { pendingEvents: [{ eventType: "session.started" }] } : {}),
     };
@@ -4595,7 +4595,7 @@ describe("stopped native conversation physical cleanup", () => {
         expect(await readFile(join(root, `runner/${provider}-provider-state.json`), "utf8")).toBe(JSON.stringify(providerState));
       } else expect(proof).toBeNull();
     } finally {
-      if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR; else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+      if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR; else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
       await rm(base, { recursive: true, force: true });
     }
   });
@@ -4625,10 +4625,10 @@ describe("explicit failed native retry physical evidence", () => {
     "unselected_result",
   ])("observes %s without mutating the retained root", async (kind) => {
     const stateBase = await mkdtemp(
-      join(tmpdir(), "paperclip-failed-retry-state-"),
+      join(tmpdir(), "pilibala-failed-retry-state-"),
     );
-    const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = stateBase;
+    const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = stateBase;
     const canonical = (value: unknown): string =>
       value && typeof value === "object" && !Array.isArray(value)
         ? `{${Object.entries(value)
@@ -4639,7 +4639,7 @@ describe("explicit failed native retry physical evidence", () => {
     const key = createHash("sha256")
       .update(
         canonical({
-          schema: "paperclip.native-session-scope.v2",
+          schema: "pilibala.native-session-scope.v2",
           companyId: execution.binding.companyId,
           agentId: execution.binding.agentId,
           workspace: {
@@ -4709,7 +4709,7 @@ describe("explicit failed native retry physical evidence", () => {
         await writeFile(
           join(root, "runner", "codex-provider-state.json"),
           JSON.stringify({
-            schema: "paperclip.runner.codex-provider-state.v1",
+            schema: "pilibala.runner.codex-provider-state.v1",
             lifecycle: "prepared",
             threadId: "exact-thread",
             providerSessionId: providerAccount,
@@ -4830,8 +4830,8 @@ describe("explicit failed native retry physical evidence", () => {
           await access(join(root, "control-plane", "control-plane-state.json")),
         ).toBeUndefined();
     } finally {
-      if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
-      else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+      if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR;
+      else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
       await rm(stateBase, { recursive: true, force: true });
     }
   });
@@ -4975,7 +4975,7 @@ describe("provider plan synchronization", () => {
 
 describe("native conversation replies", () => {
   const reply: PrpEvent = {
-    schema: "paperclip.prp.event.v1", sourceInstanceId: "runner-1",
+    schema: "pilibala.prp.event.v1", sourceInstanceId: "runner-1",
     sourceEventId: "runner-1:run-1:8", sourceSeq: 8, sourceKind: "runner",
     runId: "run-1", normalizedSessionId: "session-1", turnId: "turn-1",
     eventType: "item.completed", schemaVersion: 1, priority: 1,
@@ -5061,7 +5061,7 @@ describe("native governed waits", () => {
       }),
     ).toEqual(
       expect.objectContaining({
-        schema: "paperclip.run_result.v1",
+        schema: "pilibala.run_result.v1",
         reportedWorkDisposition: "yielded",
         summary: "Waiting for Choose an output format.",
         completionClaim: expect.objectContaining({
@@ -5128,7 +5128,7 @@ describe("native governed waits", () => {
       async () => waitResult,
     );
     const replayedEvent: PrpEvent = {
-      schema: "paperclip.prp.event.v1" as const,
+      schema: "pilibala.prp.event.v1" as const,
       sourceInstanceId: "runner-recovered",
       sourceEventId: "runner-recovered:item:7",
       sourceSeq: 7,
@@ -5453,7 +5453,7 @@ describe("native startup cancellation fence", () => {
       }
       throw new Error("provider should not have been submitted");
     });
-    await expect(executePaperclipNativeSession({
+    await expect(executePilibalaNativeSession({
       db: leaseDb(execution, {}, resultJson), execution, runnerInstanceId: "startup-stop",
     })).rejects.toThrow("native_cancellation_pending_recovery");
     expect(cancel).toHaveBeenCalledOnce();
@@ -5477,7 +5477,7 @@ describe("native startup restart detachment", () => {
       await options.onSession(null);
       throw new Error("settlement test complete");
     });
-    const outcome = executePaperclipNativeSession({ db: leaseDb(restarting), execution: restarting, runnerInstanceId: "runner" }).catch(error => error);
+    const outcome = executePilibalaNativeSession({ db: leaseDb(restarting), execution: restarting, runnerInstanceId: "runner" }).catch(error => error);
     await checkpointed;
     const detached = detachNativeSessionsForRestart([restarting.binding.runId]);
     try {
@@ -5504,7 +5504,7 @@ describe("native startup restart detachment", () => {
       await options.onSession(null);
       return { result: {}, terminal: { runTerminalState: "succeeded" }, usage: null };
     });
-    const outcome = executePaperclipNativeSession({ db: leaseDb(restarting), execution: restarting, runnerInstanceId: "runner", onUsage }).catch(error => error);
+    const outcome = executePilibalaNativeSession({ db: leaseDb(restarting), execution: restarting, runnerInstanceId: "runner", onUsage }).catch(error => error);
     await checkpointed;
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
     const detaching = detachNativeSessionsForRestart([restarting.binding.runId]);
@@ -5520,8 +5520,8 @@ describe("native startup restart detachment", () => {
   });
   it("waits for in-flight runner startup and its detach acknowledgement before shutdown returns", async () => {
     const root = await mkdtemp(join(tmpdir(), "native-startup-detach-"));
-    const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = root;
+    const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = root;
     const restarting = structuredClone(execution);
     restarting.binding.runId = "restart-inflight-bootstrap";
     restarting.session.normalizedSessionId = "restart-inflight-session";
@@ -5538,7 +5538,7 @@ describe("native startup restart detachment", () => {
       await options.onSession(null);
       throw new Error("detachment closed the old event stream");
     });
-    const running = executePaperclipNativeSession({ db: leaseDb(restarting), execution: restarting, runnerInstanceId: "runner", useRunnerd: true });
+    const running = executePilibalaNativeSession({ db: leaseDb(restarting), execution: restarting, runnerInstanceId: "runner", useRunnerd: true });
     const outcome = running.catch(error => error);
     let detaching: Promise<unknown> | undefined;
     try {
@@ -5557,8 +5557,8 @@ describe("native startup restart detachment", () => {
       open(); acknowledge();
       await outcome;
       await detaching;
-      if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
-      else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+      if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR;
+      else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
       await rm(root, { recursive: true, force: true });
     }
   });
@@ -5575,7 +5575,7 @@ describe("native startup restart detachment", () => {
       return { result: {},
         terminal: { runTerminalState: "succeeded" }, usage: null };
     });
-    await expect(executePaperclipNativeSession({ db: leaseDb(restarting), execution: restarting,
+    await expect(executePilibalaNativeSession({ db: leaseDb(restarting), execution: restarting,
       runnerInstanceId: "runner", onUsage })).rejects.toBeInstanceOf(NativeControllerDetachedForRestartError);
     expect(detach).toHaveBeenCalledOnce();
     expect(onUsage).not.toHaveBeenCalled();
@@ -5583,8 +5583,8 @@ describe("native startup restart detachment", () => {
 
   it.each([false, true])("settles failed startup without claiming detachment (deadline exceeded: %s)", async (exceedDeadline) => {
     const root = await mkdtemp(join(tmpdir(), "native-startup-failure-"));
-    const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = root;
+    const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = root;
     const restarting = structuredClone(execution);
     restarting.binding.runId = `restart-failed-bootstrap-${exceedDeadline}`;
     restarting.session.normalizedSessionId = `restart-failed-session-${exceedDeadline}`;
@@ -5596,7 +5596,7 @@ describe("native startup restart detachment", () => {
       await opening;
       throw new Error("bootstrap failed before session publication");
     });
-    const outcome = executePaperclipNativeSession({ db: leaseDb(restarting), execution: restarting, runnerInstanceId: "runner", useRunnerd: true }).catch(error => error);
+    const outcome = executePilibalaNativeSession({ db: leaseDb(restarting), execution: restarting, runnerInstanceId: "runner", useRunnerd: true }).catch(error => error);
     try {
       await admitted;
       if (exceedDeadline) vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
@@ -5613,8 +5613,8 @@ describe("native startup restart detachment", () => {
       vi.useRealTimers();
       release();
       await outcome;
-      if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
-      else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+      if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR;
+      else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
       await rm(root, { recursive: true, force: true });
     }
   });
@@ -5630,15 +5630,15 @@ describe("native startup restart detachment", () => {
       await options.onSession(null);
       throw new Error("detachment closed the old event stream");
     });
-    await expect(executePaperclipNativeSession({ db: leaseDb(restarting), execution: restarting, runnerInstanceId: "runner" })).rejects.toBeInstanceOf(NativeControllerDetachedForRestartError);
+    await expect(executePilibalaNativeSession({ db: leaseDb(restarting), execution: restarting, runnerInstanceId: "runner" })).rejects.toBeInstanceOf(NativeControllerDetachedForRestartError);
   });
 });
 
 describe("native terminal-turn accounting", () => {
   it.each([false, true])("prices only complete direct Claude API turn accounting (%s)", async complete => {
-    const { rehydrateRunnerdUsageNotification } = await import("@paperclipai/paperclip-runner/live");
+    const { rehydrateRunnerdUsageNotification } = await import("@pilibalaai/pilibala-runner/live");
     const { priceAnthropicReceipt } = await import("../anthropic-pricing.js");
-    const onUsage = vi.fn(async (_receipt: import("@paperclipai/adapter-utils").AdapterUsageCheckpoint) => {});
+    const onUsage = vi.fn(async (_receipt: import("@pilibalaai/adapter-utils").AdapterUsageCheckpoint) => {});
     const counts = { inputTokens: 12, outputTokens: 4, cacheReadTokens: 30, cacheWriteTokens: 20, providerCostUsd: 0 };
     state.execute.mockReset().mockImplementationOnce(async () => {
       const notification = rehydrateRunnerdUsageNotification({ provider: "acpx", cumulative: { ...counts, providerCostUsd: 10 }, runDelta: counts, runDeltaAvailable: complete }, "session", "turn");
@@ -5646,7 +5646,7 @@ describe("native terminal-turn accounting", () => {
       await accountingEvents.committed!({ eventType: "turn.interrupted", turnId: "turn", payload: {} } as unknown as PrpEvent);
       return { result: { summary: "Waiting for approval" }, terminal: { runTerminalState: "succeeded" }, turnId: "turn", normalizedSessionId: "session", providerSessionId: null, driverKind: "acpx_runtime", driverVersion: "1", nativeEventCount: 2, highestContiguousSourceSeq: 2, usage: null };
     });
-    await executePaperclipNativeSession({ db: leaseDb(), execution: { ...execution, provider: { kind: "acpx", agent: "claude", model: "claude-sonnet-5" } } as NativeExecutionInput, runnerInstanceId: "runner", runnerEnvironment: { ANTHROPIC_API_KEY: "fixture" }, onUsage });
+    await executePilibalaNativeSession({ db: leaseDb(), execution: { ...execution, provider: { kind: "acpx", agent: "claude", model: "claude-sonnet-5" } } as NativeExecutionInput, runnerInstanceId: "runner", runnerEnvironment: { ANTHROPIC_API_KEY: "fixture" }, onUsage });
     const receipt = onUsage.mock.calls.at(-1)![0];
     const priced = priceAnthropicReceipt(receipt);
     if (complete) expect(priced).toMatchObject({ complete: true, costStatus: "estimated", costUsdExact: "0.000150000" });
@@ -5655,8 +5655,8 @@ describe("native terminal-turn accounting", () => {
   it.each(["claude", "codex"].flatMap(agent => [false, true].flatMap(restart =>
     [false, true].flatMap(partialFirst => [false, true].map(zeroFirst => ({ agent, restart, partialFirst, zeroFirst }))),
   )))("accumulates ACPX turns for $agent (restart: $restart, partial: $partialFirst, zero first: $zeroFirst)", async ({ agent, restart, partialFirst, zeroFirst }) => {
-    const { rehydrateRunnerdUsageNotification } = await import("@paperclipai/paperclip-runner/live");
-    const onUsage = vi.fn(async (_receipt: import("@paperclipai/adapter-utils").AdapterUsageCheckpoint) => {});
+    const { rehydrateRunnerdUsageNotification } = await import("@pilibalaai/pilibala-runner/live");
+    const onUsage = vi.fn(async (_receipt: import("@pilibalaai/adapter-utils").AdapterUsageCheckpoint) => {});
     const event = (eventType: string, turnId: string, sourceSeq: number, payload: object = {}) => ({
       eventType, turnId, sourceSeq, sourceInstanceId: "provider", emittedAt: new Date().toISOString(), payload,
     }) as unknown as PrpEvent;
@@ -5675,7 +5675,7 @@ describe("native terminal-turn accounting", () => {
         normalizedSessionId: "session", providerSessionId: null, driverKind: "acpx_runtime", driverVersion: "1",
         nativeEventCount: 6, highestContiguousSourceSeq: 6, usage: null };
     });
-    const result = await executePaperclipNativeSession({ db: leaseDb(execution, {}, {}, [], {}, "running", restart ? first : []),
+    const result = await executePilibalaNativeSession({ db: leaseDb(execution, {}, {}, [], {}, "running", restart ? first : []),
       execution: { ...execution, provider: { kind: "acpx", agent, model: agent === "codex" ? "gpt-6-astra" : "claude-sonnet-4-6" } } as NativeExecutionInput,
       runnerInstanceId: "runner", runnerEnvironment: { OPENAI_API_KEY: "fixture" }, onUsage });
     expect(result).toMatchObject({ usageComplete: !partialFirst,
@@ -5697,8 +5697,8 @@ describe("native terminal-turn accounting", () => {
   it.each(["claude", "codex"].flatMap(agent =>
     ["missing", "partial", "complete_zero", "later_partial", "recovered"].map(scenario => ({ agent, scenario })),
   ))("honors runner completeness for ACPX $agent ($scenario)", async ({ agent, scenario }) => {
-    const { rehydrateRunnerdUsageNotification } = await import("@paperclipai/paperclip-runner/live");
-    const onUsage = vi.fn(async (_receipt: import("@paperclipai/adapter-utils").AdapterUsageCheckpoint) => {});
+    const { rehydrateRunnerdUsageNotification } = await import("@pilibalaai/pilibala-runner/live");
+    const onUsage = vi.fn(async (_receipt: import("@pilibalaai/adapter-utils").AdapterUsageCheckpoint) => {});
     const complete = ["complete_zero", "recovered"].includes(scenario);
     const zero = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, providerCostUsd: 0 };
     const full = { ...zero, inputTokens: 12, outputTokens: 4 };
@@ -5720,7 +5720,7 @@ describe("native terminal-turn accounting", () => {
         normalizedSessionId: "session", providerSessionId: null, driverKind: "acpx_runtime", driverVersion: "1", nativeEventCount: 2, highestContiguousSourceSeq: 2,
         usage: { runDelta: full, runDeltaComplete: true } };
     });
-    const result = await executePaperclipNativeSession({ db: leaseDb(), execution: { ...execution,
+    const result = await executePilibalaNativeSession({ db: leaseDb(), execution: { ...execution,
       provider: { kind: "acpx", agent, model: agent === "codex" ? "gpt-6-astra" : "claude-sonnet-4-6" } } as NativeExecutionInput,
       runnerInstanceId: "runner", onUsage });
     expect(result).toMatchObject({ usageComplete: complete });
@@ -5729,8 +5729,8 @@ describe("native terminal-turn accounting", () => {
   });
 
   it.each([0, 0.25])("keeps interrupted AgentCore accounting pending despite cumulative cost %s", async providerCostUsd => {
-    const { rehydrateRunnerdUsageNotification } = await import("@paperclipai/paperclip-runner/live");
-    const onUsage = vi.fn(async (_receipt: import("@paperclipai/adapter-utils").AdapterUsageCheckpoint) => {});
+    const { rehydrateRunnerdUsageNotification } = await import("@pilibalaai/pilibala-runner/live");
+    const onUsage = vi.fn(async (_receipt: import("@pilibalaai/adapter-utils").AdapterUsageCheckpoint) => {});
     const total = { inputTokens: 10, outputTokens: 2, cacheReadTokens: 0, cacheWriteTokens: 0, providerCostUsd };
     const notification = rehydrateRunnerdUsageNotification({ provider: "aws_agentcore", cumulative: total, runDelta: null, runDeltaAvailable: false }, "session", "turn");
     state.execute.mockReset().mockImplementationOnce(async () => {
@@ -5742,13 +5742,13 @@ describe("native terminal-turn accounting", () => {
       return { result: { summary: "interrupted" }, terminal: { runTerminalState: "cancelled" }, turnId: "turn",
         normalizedSessionId: "session", providerSessionId: null, driverKind: "test", driverVersion: "1", nativeEventCount: 2, highestContiguousSourceSeq: 2, usage: { total } };
     });
-    const result = await executePaperclipNativeSession({ db: leaseDb(), execution: { ...execution, provider: { kind: "aws_agentcore", model: "managed-model", agentCoreProfile: { profileId: "agentcore-test" } } } as unknown as NativeExecutionInput, runnerInstanceId: "runner", onUsage });
+    const result = await executePilibalaNativeSession({ db: leaseDb(), execution: { ...execution, provider: { kind: "aws_agentcore", model: "managed-model", agentCoreProfile: { profileId: "agentcore-test" } } } as unknown as NativeExecutionInput, runnerInstanceId: "runner", onUsage });
     expect(result).toMatchObject({ usageComplete: false, costStatus: "unpriced", billingType: "metered_api" });
   });
 
   it.each(["claude_managed", "aws_agentcore"] as const)("settles fresh runner receipts for %s and preserves estimated pricing", async kind => {
-    const { rehydrateRunnerdUsageNotification } = await import("@paperclipai/paperclip-runner/live");
-    const onUsage = vi.fn(async (_receipt: import("@paperclipai/adapter-utils").AdapterUsageCheckpoint) => {});
+    const { rehydrateRunnerdUsageNotification } = await import("@pilibalaai/pilibala-runner/live");
+    const onUsage = vi.fn(async (_receipt: import("@pilibalaai/adapter-utils").AdapterUsageCheckpoint) => {});
     const total = { inputTokens: 121, outputTokens: 18, cacheReadTokens: 33, cacheWriteTokens: 15, providerCostUsd: 1.25 };
     const delta = { inputTokens: 21, outputTokens: 8, cacheReadTokens: 13, cacheWriteTokens: 5, providerCostUsd: 0.25 };
     const notification = rehydrateRunnerdUsageNotification({ provider: kind, cumulative: total, runDelta: delta, runDeltaAvailable: true }, "session", "turn");
@@ -5763,7 +5763,7 @@ describe("native terminal-turn accounting", () => {
       return { result: { summary: "cancelled" }, terminal: { runTerminalState: "cancelled" },
         turnId: "turn", normalizedSessionId: "session", providerSessionId: null, driverKind: "test", driverVersion: "1", nativeEventCount: 2, highestContiguousSourceSeq: 2, usage: { total } };
     });
-    const result = await executePaperclipNativeSession({ db: leaseDb(), execution: { ...execution, provider: { kind, model: "managed-model", managedProfile: { profileId: "managed-test" }, agentCoreProfile: { profileId: "agentcore-test" } } } as unknown as NativeExecutionInput, runnerInstanceId: "runner", onUsage });
+    const result = await executePilibalaNativeSession({ db: leaseDb(), execution: { ...execution, provider: { kind, model: "managed-model", managedProfile: { profileId: "managed-test" }, agentCoreProfile: { profileId: "agentcore-test" } } } as unknown as NativeExecutionInput, runnerInstanceId: "runner", onUsage });
     expect(result).toMatchObject({ usageComplete: true, costUsd: 0.25, billingType: "metered_api", costStatus: kind === "aws_agentcore" ? "estimated" : undefined });
   });
 
@@ -5771,7 +5771,7 @@ describe("native terminal-turn accounting", () => {
     { provider: "codex", restart: false }, { provider: "codex", restart: true },
     { provider: "opencode", restart: false }, { provider: "opencode", restart: true },
   ] as const)("preserves earlier turns for $provider (restart: $restart)", async ({ provider, restart }) => {
-    const onUsage = vi.fn(async (_receipt: import("@paperclipai/adapter-utils").AdapterUsageCheckpoint) => {});
+    const onUsage = vi.fn(async (_receipt: import("@pilibalaai/adapter-utils").AdapterUsageCheckpoint) => {});
     const event = (eventType: string, turnId: string, sourceSeq: number, payload: object = {}) => ({
       eventType, turnId, sourceSeq, sourceInstanceId: "provider", emittedAt: new Date().toISOString(), payload,
     }) as unknown as PrpEvent;
@@ -5788,7 +5788,7 @@ describe("native terminal-turn accounting", () => {
         normalizedSessionId: "session", providerSessionId: null, driverKind: "test", driverVersion: "1", nativeEventCount: 6,
         highestContiguousSourceSeq: 6, usage: null };
     });
-    const result = await executePaperclipNativeSession({
+    const result = await executePilibalaNativeSession({
       db: leaseDb(execution, {}, {}, [], {}, "running", restart ? first : []),
       execution: { ...execution, provider: { kind: provider, model: provider === "opencode" ? "openai/test" : "gpt-6-astra" } } as NativeExecutionInput,
       runnerInstanceId: "runner", onUsage,
@@ -5802,7 +5802,7 @@ describe("native terminal-turn accounting", () => {
   });
 
   it.each(["missing_usage", "partial_usage", "missing_terminal", "unknown_price", "late_update"] as const)("keeps OpenCode retry accounting conservative (%s)", async scenario => {
-    const onUsage = vi.fn(async (_receipt: import("@paperclipai/adapter-utils").AdapterUsageCheckpoint) => {});
+    const onUsage = vi.fn(async (_receipt: import("@pilibalaai/adapter-utils").AdapterUsageCheckpoint) => {});
     let seq = 0;
     const emit = (eventType: string, turnId: string, payload: object = {}) => accountingEvents.committed!({
       eventType, turnId, sourceSeq: ++seq, sourceInstanceId: "provider", emittedAt: new Date().toISOString(), payload,
@@ -5824,7 +5824,7 @@ describe("native terminal-turn accounting", () => {
         normalizedSessionId: "session", providerSessionId: null, driverKind: "test", driverVersion: "1", nativeEventCount: seq,
         highestContiguousSourceSeq: seq, usage: null };
     });
-    const result = await executePaperclipNativeSession({ db: leaseDb(),
+    const result = await executePilibalaNativeSession({ db: leaseDb(),
       execution: { ...execution, provider: { kind: "opencode", model: "openai/test" } } as NativeExecutionInput,
       runnerInstanceId: "runner", onUsage });
     const complete = ["unknown_price", "late_update"].includes(scenario);
@@ -5836,7 +5836,7 @@ describe("native terminal-turn accounting", () => {
   });
 
   it.each(["committed", "duplicate"] as const)("saves completed usage before returning to result commitment (%s)", async mode => {
-    const onUsage = vi.fn(async (_receipt: import("@paperclipai/adapter-utils").AdapterUsageCheckpoint) => {});
+    const onUsage = vi.fn(async (_receipt: import("@pilibalaai/adapter-utils").AdapterUsageCheckpoint) => {});
     const failure = new Error("stopped after result commit, before executor returns");
     state.execute.mockReset().mockImplementationOnce(async () => {
       const observe = accountingEvents[mode]!;
@@ -5846,7 +5846,7 @@ describe("native terminal-turn accounting", () => {
       expect(onUsage).toHaveBeenLastCalledWith(expect.objectContaining({ complete: true, costUsd: 0.25, usage: { inputTokens: 20, cachedInputTokens: 100, outputTokens: 10 } }));
       throw failure;
     });
-    await expect(executePaperclipNativeSession({ db: leaseDb(), execution: { ...execution, provider: { kind: "codex", model: "gpt-6-astra" } } as NativeExecutionInput, runnerInstanceId: "runner", onUsage })).rejects.toBe(failure);
+    await expect(executePilibalaNativeSession({ db: leaseDb(), execution: { ...execution, provider: { kind: "codex", model: "gpt-6-astra" } } as NativeExecutionInput, runnerInstanceId: "runner", onUsage })).rejects.toBe(failure);
     expect(onUsage).toHaveBeenLastCalledWith(expect.objectContaining({ complete: true }));
   });
   it("clears provisional unpriced status when direct database persistence receives complete usage", async () => {
@@ -5856,7 +5856,7 @@ describe("native terminal-turn accounting", () => {
       return { result: { summary: "cancelled" }, terminal: { runTerminalState: "cancelled" },
         turnId: "turn", normalizedSessionId: "session", providerSessionId: null, driverKind: "test", driverVersion: "1", nativeEventCount: 1, highestContiguousSourceSeq: 1, usage: null };
     });
-    await executePaperclipNativeSession({ db: leaseDb(execution, {}, {}, updates), execution, runnerInstanceId: "runner" });
+    await executePilibalaNativeSession({ db: leaseDb(execution, {}, {}, updates), execution, runnerInstanceId: "runner" });
     const dialect = new PgDialect();
     const writes = updates.filter(update => update.values.usageJson).map(update =>
       JSON.parse(dialect.sqlToQuery(update.values.usageJson as SQL).params[0] as string) as Record<string, unknown>);
@@ -5866,7 +5866,7 @@ describe("native terminal-turn accounting", () => {
   });
 
   it.each(["stale_warm_zero", "partial", "fresh", "fresh_zero", "new_turn", "later_partial", "merged_partial"])("requires fresh complete usage at native completion (%s)", async scenario => {
-    const onUsage = vi.fn(async (_receipt: import("@paperclipai/adapter-utils").AdapterUsageCheckpoint) => {});
+    const onUsage = vi.fn(async (_receipt: import("@pilibalaai/adapter-utils").AdapterUsageCheckpoint) => {});
     const usage = { inputTokens: 120, cacheReadTokens: 100, outputTokens: 10, providerCostUsd: 0 };
     const runDelta = scenario === "partial" ? { inputTokens: 120 } : scenario === "fresh_zero" ? { inputTokens: 0, outputTokens: 0 } : usage;
     state.execute.mockReset().mockImplementationOnce(async () => {
@@ -5882,7 +5882,7 @@ describe("native terminal-turn accounting", () => {
         usage: { runDelta: scenario === "stale_warm_zero" ? { inputTokens: 0, outputTokens: 0, providerCostUsd: 0 } : runDelta },
       };
     });
-    const result = await executePaperclipNativeSession({ db: leaseDb(), execution: { ...execution, provider: { kind: "codex", model: "gpt-6-astra" } } as NativeExecutionInput, runnerInstanceId: "runner", runnerEnvironment: { OPENAI_API_KEY: "fixture" }, onUsage });
+    const result = await executePilibalaNativeSession({ db: leaseDb(), execution: { ...execution, provider: { kind: "codex", model: "gpt-6-astra" } } as NativeExecutionInput, runnerInstanceId: "runner", runnerEnvironment: { OPENAI_API_KEY: "fixture" }, onUsage });
     const complete = ["fresh", "fresh_zero"].includes(scenario);
     expect(result.usageComplete).toBe(complete);
     expect(onUsage).toHaveBeenLastCalledWith(expect.objectContaining({ complete }));
@@ -5895,7 +5895,7 @@ describe("native terminal-turn accounting", () => {
   beforeEach(() => vi.spyOn(issueServiceModule, "issueService").mockReturnValue({ update: vi.fn(async () => ({ status: "blocked", statusVersion: 1 })) } as unknown as ReturnType<typeof issueServiceModule.issueService>));
   afterEach(() => vi.restoreAllMocks());
   it.each(["turn.failed", "turn.cancelled", "turn.interrupted", "missing_terminal", "session_total", "empty_usage", "different_turn"])("preserves run usage for %s without certifying incomplete evidence", async (scenario) => {
-    const onUsage = vi.fn(async (_receipt: import("@paperclipai/adapter-utils").AdapterUsageCheckpoint) => {});
+    const onUsage = vi.fn(async (_receipt: import("@pilibalaai/adapter-utils").AdapterUsageCheckpoint) => {});
     const failure = new Error("provider_transport_failed: no semantic result");
     state.execute.mockReset().mockImplementationOnce(async () => {
       const usage = { inputTokens: 120, cacheReadTokens: 100, outputTokens: 10, providerCostUsd: 0.25 };
@@ -5903,7 +5903,7 @@ describe("native terminal-turn accounting", () => {
       if (scenario !== "missing_terminal") await accountingEvents.committed!({ eventType: scenario.startsWith("turn.") ? scenario : "turn.failed", turnId: scenario === "different_turn" ? "another-turn" : "turn", emittedAt: new Date().toISOString(), payload: { status: "failed" } } as unknown as PrpEvent);
       throw failure;
     });
-    await expect(executePaperclipNativeSession({ db: leaseDb(), execution: { ...execution, provider: { kind: "codex", model: "gpt-6-astra" } } as NativeExecutionInput, runnerInstanceId: "runner", onUsage })).rejects.toBe(failure);
+    await expect(executePilibalaNativeSession({ db: leaseDb(), execution: { ...execution, provider: { kind: "codex", model: "gpt-6-astra" } } as NativeExecutionInput, runnerInstanceId: "runner", onUsage })).rejects.toBe(failure);
     if (scenario === "session_total") expect(onUsage).not.toHaveBeenCalled();
     else if (scenario === "empty_usage") expect(onUsage).toHaveBeenLastCalledWith(expect.objectContaining({ complete: false, usage: undefined, costUsd: null, costStatus: "unpriced" }));
     else {
@@ -5930,7 +5930,7 @@ describe("native resumed preparation timing", () => {
     });
     const clock = vi.spyOn(Date, "now").mockReturnValue(answeredAtMs + 100);
     try {
-      await executePaperclipNativeSession({
+      await executePilibalaNativeSession({
         db: leaseDb(),
         execution,
         runnerInstanceId: "runner",
@@ -5989,7 +5989,7 @@ describe("native resumed preparation timing", () => {
       .spyOn(Date, "now")
       .mockReturnValue(attemptStartedAtMs + 50);
     try {
-      await executePaperclipNativeSession({
+      await executePilibalaNativeSession({
         db: leaseDb(),
         execution,
         runnerInstanceId: "runner",
@@ -6060,8 +6060,8 @@ describe("native session cancellation", () => {
     { useRunnerd: false, durableIntentVisible: true },
   ])("waits for an in-flight startup handle before acknowledging Stop (runnerd=$useRunnerd, durable intent=$durableIntentVisible)", async ({ useRunnerd, durableIntentVisible }) => {
     const root = await mkdtemp(join(tmpdir(), "native-startup-stop-"));
-    const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = root;
+    const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = root;
     let open!: () => void, started!: () => void, finish!: () => void;
     const opening = new Promise<void>(resolve => { open = resolve; });
     const admitted = new Promise<void>(resolve => { started = resolve; });
@@ -6082,7 +6082,7 @@ describe("native session cancellation", () => {
       };
     });
     const runResultJson: Record<string, unknown> = {};
-    const running = executePaperclipNativeSession({
+    const running = executePilibalaNativeSession({
       db: leaseDb(execution, {}, runResultJson), execution, runnerInstanceId: "runner", useRunnerd,
     });
     const outcome = running.catch(error => error);
@@ -6091,7 +6091,7 @@ describe("native session cancellation", () => {
     let acknowledged = false;
     try {
       await admitted;
-      await expect(executePaperclipNativeSession({
+      await expect(executePilibalaNativeSession({
         db: leaseDb(), execution, runnerInstanceId: "duplicate-runner", useRunnerd,
       })).rejects.toThrow("native_session_supervisor_busy");
       stopping = cancelNativeSession(execution.binding.runId, "operator Stop during startup", {
@@ -6117,16 +6117,16 @@ describe("native session cancellation", () => {
       open(); finish();
       await outcome;
       await stopping;
-      if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
-      else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+      if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR;
+      else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
       await rm(root, { recursive: true, force: true });
     }
   });
 
   it.each([true, false])("fences a late startup even when Stop reaches its acknowledgement deadline (runnerd=%s)", async (useRunnerd) => {
     const root = await mkdtemp(join(tmpdir(), "native-late-startup-stop-"));
-    const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = root;
+    const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = root;
     let open!: () => void, started!: () => void;
     const opening = new Promise<void>(resolve => { open = resolve; });
     const admitted = new Promise<void>(resolve => { started = resolve; });
@@ -6137,7 +6137,7 @@ describe("native session cancellation", () => {
       submitTurn();
       throw new Error("a stopped startup must not reach prompt submission");
     });
-    const outcome = executePaperclipNativeSession({ db: leaseDb(), execution, runnerInstanceId: "runner", useRunnerd }).catch(error => error);
+    const outcome = executePilibalaNativeSession({ db: leaseDb(), execution, runnerInstanceId: "runner", useRunnerd }).catch(error => error);
     const persistence = cancellationDb();
     try {
       await admitted;
@@ -6154,14 +6154,14 @@ describe("native session cancellation", () => {
       expect(submitTurn).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers(); open(); await outcome;
-      if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
-      else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+      if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR;
+      else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
       await rm(root, { recursive: true, force: true });
     }
   });
 
   it("routes control-plane cancellation to the active normalized session and removes the handle", async () => {
-    const running = executePaperclipNativeSession({
+    const running = executePilibalaNativeSession({
       db: leaseDb(),
       execution,
       runnerInstanceId: "runner",
@@ -6191,7 +6191,7 @@ describe("native session cancellation", () => {
     state.cancel.mockImplementationOnce(() => {
       throw new Error("transport unavailable");
     });
-    const running = executePaperclipNativeSession({
+    const running = executePilibalaNativeSession({
       db: leaseDb(),
       execution,
       runnerInstanceId: "runner",
@@ -6217,7 +6217,7 @@ describe("native session cancellation", () => {
     state.cancel.mockImplementationOnce(() => ({
       cleanup: Promise.reject(new Error("provider cleanup failed")),
     }));
-    const running = executePaperclipNativeSession({
+    const running = executePilibalaNativeSession({
       db: leaseDb(),
       execution,
       runnerInstanceId: "runner",
@@ -6253,7 +6253,7 @@ describe("native session cancellation", () => {
     expect(cancellationUpdate?.values.resultJson).toMatchObject({
       durableReceipt: { operationId: "operation-1" },
       nativeCancellation: {
-        schema: "paperclip.native-cancellation.v1",
+        schema: "pilibala.native-cancellation.v1",
         dispatchState: "acknowledged",
         scope: "run",
         dispatched: false,
@@ -6339,7 +6339,7 @@ describe("native session cancellation", () => {
 
   it("recovers a post-dispatch persistence failure without cancelling the provider twice", async () => {
     const persistence = cancellationDb({ failResultJsonUpdateAt: 2 });
-    const running = executePaperclipNativeSession({
+    const running = executePilibalaNativeSession({
       db: leaseDb(),
       execution,
       runnerInstanceId: "runner",
@@ -6470,7 +6470,7 @@ describe("native session execution lease fencing", () => {
     state.createTransport.mockClear();
 
     await expect(
-      executePaperclipNativeSession({
+      executePilibalaNativeSession({
         db: leaseDb(execution, {
           phase: "workspace_finalizing",
           resultId: "native-result-1",
@@ -6492,13 +6492,13 @@ describe("native session execution lease fencing", () => {
       state.createTransport.mockClear();
 
       await expect(
-        executePaperclipNativeSession({
+        executePilibalaNativeSession({
           db: leaseDb(
             execution,
             {},
             {
               nativeCancellation: {
-                schema: "paperclip.native-cancellation.v1",
+                schema: "pilibala.native-cancellation.v1",
                 intentId: "native-cancellation:intent-1",
                 intentAuditId: "native-cancellation-audit",
                 companyId: execution.binding.companyId,
@@ -6562,7 +6562,7 @@ describe("native runtime request resolution", () => {
   });
 
   it("revalidates lifecycle after provider reads and blocks stale dispatch", async () => {
-    const running = executePaperclipNativeSession({
+    const running = executePilibalaNativeSession({
       db: leaseDb(),
       execution,
       runnerInstanceId: "runner",
@@ -6591,7 +6591,7 @@ describe("native runtime request resolution", () => {
   });
 
   it("atomically joins duplicate responses and rejects a concurrent conflict", async () => {
-    const running = executePaperclipNativeSession({
+    const running = executePilibalaNativeSession({
       db: leaseDb(),
       execution,
       runnerInstanceId: "runner",
@@ -6648,7 +6648,7 @@ describe("native runtime request resolution", () => {
   });
 
   it("clears completed response reservations when the session tears down", async () => {
-    const firstSession = executePaperclipNativeSession({
+    const firstSession = executePilibalaNativeSession({
       db: leaseDb(),
       execution,
       runnerInstanceId: "runner",
@@ -6665,7 +6665,7 @@ describe("native runtime request resolution", () => {
     await firstSession;
 
     state.release = null;
-    const secondSession = executePaperclipNativeSession({
+    const secondSession = executePilibalaNativeSession({
       db: leaseDb(),
       execution,
       runnerInstanceId: "runner",
@@ -6717,7 +6717,7 @@ describe("native session same-turn steering", () => {
   });
 
   async function startActiveSession() {
-    const running = executePaperclipNativeSession({
+    const running = executePilibalaNativeSession({
       db: leaseDb(),
       execution,
       runnerInstanceId: "runner",
@@ -6832,7 +6832,7 @@ describe("bounded stopped instruction collection", () => {
 
 describe("native warm session supervision", () => {
   it.each(["collect", "close-failure", "stopped", "destroyed", "missing-lease", "foreign-run", "foreign-environment", "deleted-environment", "claim-edit", "claim-add", "claim-remove", "claim-remove-entry", "claim-canonical", "claim-config", "claim-uncertain"])("composes remote warm ownership with real DB successor leases and current-run collection: %s", async ending => {
-    const tables = await import("@paperclipai/db");
+    const tables = await import("@pilibalaai/db");
     const { eq } = await import("drizzle-orm");
     const { randomUUID } = await import("node:crypto");
     const { promisify } = await import("node:util");
@@ -6844,8 +6844,8 @@ describe("native warm session supervision", () => {
     const { prepareNativeHeartbeatRun } = await import("./prepare-native-run.js");
     const { buildNativeCompletionContract } = await import("./completion-contracts.js");
     const home = await realpath(await mkdtemp(join(tmpdir(), "warm-remote-db-")));
-    const previousHome = process.env.PAPERCLIP_HOME;
-    process.env.PAPERCLIP_HOME = home;
+    const previousHome = process.env.PILIBALA_HOME;
+    process.env.PILIBALA_HOME = home;
     const database = await startEmbeddedPostgresTestDatabase("warm-remote-db-");
     const db = tables.createDb(database.connectionString);
     const companyId = randomUUID(), agentId = randomUUID(), userId = randomUUID(), environmentId = randomUUID(), issueId = randomUUID();
@@ -6853,7 +6853,7 @@ describe("native warm session supervision", () => {
     const canonical = resolveManagedInstructionsRoot({ id: agentId, companyId, name: "Warm remote", adapterConfig: {} }), remoteCwd = join(home, "remote");
     let currentLease = "", failCleanup = false, failProbe = false, closed = false;
     const commands: Array<{ leaseId: string; command: string }> = [];
-    const commandRunner = (leaseId: string): import("@paperclipai/adapter-utils/command-managed-runtime").CommandManagedRuntimeRunner => ({ execute: async input => {
+    const commandRunner = (leaseId: string): import("@pilibalaai/adapter-utils/command-managed-runtime").CommandManagedRuntimeRunner => ({ execute: async input => {
       expect(leaseId).toBe(currentLease); // The replaced collector must never execute.
       commands.push({ leaseId, command: `${input.command} ${(input.args ?? []).join(" ")}` });
       if (failProbe) {
@@ -6867,8 +6867,8 @@ describe("native warm session supervision", () => {
       }
       const env = { PATH: process.env.PATH, ...input.env }, args = [...(input.args ?? [])];
       if (input.stdin != null && (args[0] === "-c" || args[0] === "-lc")) {
-        Object.assign(env, { PAPERCLIP_TEST_STDIN: input.stdin });
-        args[1] = `printf '%s' "$PAPERCLIP_TEST_STDIN" | (${args[1]})`;
+        Object.assign(env, { PILIBALA_TEST_STDIN: input.stdin });
+        args[1] = `printf '%s' "$PILIBALA_TEST_STDIN" | (${args[1]})`;
       }
       const result = await executeCommand(input.command, args, { cwd: input.cwd, env, timeout: input.timeoutMs, maxBuffer: 32 * 1024 * 1024 });
       return { exitCode: 0, signal: null, timedOut: false, ...result, pid: null, startedAt: new Date().toISOString() };
@@ -6917,9 +6917,9 @@ describe("native warm session supervision", () => {
         await prepareNativeHeartbeatRun({ db, run: run!, issue: issue!, environmentLeaseId: currentLease });
         const [contract] = await db.select().from(tables.completionContracts).where(eq(tables.completionContracts.issueId, issueId));
         const target = { kind: "remote" as const, transport: "sandbox" as const, providerKey: "daytona", environmentId, leaseId: currentLease, remoteCwd, runner: commandRunner(currentLease) };
-        const current: NativeExecutionInputV3 = { ...execution, schema: "paperclip.native-execution-input.v3",
+        const current: NativeExecutionInputV3 = { ...execution, schema: "pilibala.native-execution-input.v3",
           executionMode: "default", planningContext: null, runtimeContext: nativeRuntimeContextFixture(),
-          completionContract: { id: contract!.id, sha256: contract!.canonicalSha256, schemaVersion: "paperclip.completion-contract.v1",
+          completionContract: { id: contract!.id, sha256: contract!.canonicalSha256, schemaVersion: "pilibala.completion-contract.v1",
             contract: buildNativeCompletionContract(issue!, { revision: contract!.revision }) }, binding: { companyId, agentId, issueId, runId, executionWorkspaceId: runId },
           workspace: { cwd: remoteCwd, repoUrl: null, repoRef: null, branchName: null },
           session: { ...execution.session, normalizedSessionId: environmentId, lifecyclePolicy: { mode: "warm", idleTimeoutMs: 60_000 } } };
@@ -6996,7 +6996,7 @@ describe("native warm session supervision", () => {
         current.runtimeContext = await buildNativeRuntimeContext({ db, agent, runId, runtimeConfig: {}, runtimeSkillEntries: [],
           instructionWorkingCopy: { rootPath: active!.executionRoot, entryPath: "AGENTS.md", kind: "agent_files" } });
         expect(current.runtimeContext.instructions.workingCopy?.rootPath).toBe(originalRoot);
-        await executePaperclipNativeSession({ db, execution: current, runnerInstanceId: environmentId, runnerExecutionTarget: target, instructionWorkingCopy: capability() });
+        await executePilibalaNativeSession({ db, execution: current, runnerInstanceId: environmentId, runnerExecutionTarget: target, instructionWorkingCopy: capability() });
         if (prior) expect(state.execute.mock.calls.at(-1)?.[0].existingSession).toBe(session);
         expect(closed).toBe(false);
         await release?.(); expect(closed).toBe(false);
@@ -7083,7 +7083,7 @@ describe("native warm session supervision", () => {
       const cleanupFailures: unknown[] = [];
       try { await closeWarmNativeSessionsForEnvironment({ environmentId, reason: "test cleanup" }); } catch (error) { cleanupFailures.push(error); }
       try { await database.cleanup(); } catch (error) { cleanupFailures.push(error); }
-      if (previousHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = previousHome;
+      if (previousHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = previousHome;
       try {
         const writable = async (directory: string): Promise<void> => {
           await chmod(directory, 0o700);
@@ -7131,7 +7131,7 @@ describe("native warm session supervision", () => {
         driverKind: "test", driverVersion: "1", nativeEventCount: 1, highestContiguousSourceSeq: 1, usage: null };
     });
     try {
-      await executePaperclipNativeSession({ db: leaseDb(warmExecution), execution: warmExecution,
+      await executePilibalaNativeSession({ db: leaseDb(warmExecution), execution: warmExecution,
         runnerInstanceId: identity, runnerExecutionTarget: { kind: "remote", transport: "sandbox", environmentId: identity, remoteCwd: `/tmp/${identity}` },
         instructionWorkingCopy: { runId: identity, root: localRoot, preparationKey: "same-preparation", hasChanges: () => copies.hasChanges(row), collectStopped } });
       expect(close).not.toHaveBeenCalled();
@@ -7160,7 +7160,7 @@ describe("native warm session supervision", () => {
         environmentId: identity, runId: second.binding.runId, preparationKey: "same-preparation",
         adopt: async () => currentCopy });
       expect(release).toBeTypeOf("function");
-      await executePaperclipNativeSession({ db: leaseDb(second), execution: second, runnerInstanceId: identity,
+      await executePilibalaNativeSession({ db: leaseDb(second), execution: second, runnerInstanceId: identity,
         runnerExecutionTarget: { kind: "remote", transport: "sandbox", environmentId: identity, remoteCwd: `/tmp/${identity}` },
         instructionWorkingCopy: currentCopy });
       expect(state.execute.mock.calls.at(-1)?.[0].existingSession).toBe(session);
@@ -7216,7 +7216,7 @@ describe("native warm session supervision", () => {
       executionWorkspaceId: first.binding.executionWorkspaceId, workspace: first.workspace, environmentId: identity,
       runId: second.binding.runId, preparationKey: "key", adopt };
     try {
-      await executePaperclipNativeSession({ db: leaseDb(first), execution: first, runnerInstanceId: identity, runnerExecutionTarget: target, instructionWorkingCopy: copy });
+      await executePilibalaNativeSession({ db: leaseDb(first), execution: first, runnerInstanceId: identity, runnerExecutionTarget: target, instructionWorkingCopy: copy });
       if (scenario.startsWith("foreign")) {
         expect(await claimWarmNativeInstructionCopy({ ...claim,
           ...(scenario === "foreign-company" ? { companyId: "other" } : { executionWorkspaceId: "other" }) })).toBeNull();
@@ -7227,7 +7227,7 @@ describe("native warm session supervision", () => {
         if (scenario === "final-config" || scenario === "changed-root" || scenario === "late-edit") {
           lateEdit = scenario === "late-edit";
           const changed = scenario !== "final-config" ? second : { ...second, session: { ...second.session, lifecyclePolicy: { mode: "warm" as const, idleTimeoutMs: 99_000 } } };
-          await expect(executePaperclipNativeSession({ db: leaseDb(changed), execution: changed, runnerInstanceId: identity,
+          await expect(executePilibalaNativeSession({ db: leaseDb(changed), execution: changed, runnerInstanceId: identity,
             runnerExecutionTarget: target, instructionWorkingCopy: current })).rejects.toThrow(scenario === "late-edit"
               ? "native_instruction_preparation_copy_changed" : "native_instruction_preparation_configuration_changed");
           expect(state.execute).toHaveBeenCalledOnce();
@@ -7270,7 +7270,7 @@ describe("native warm session supervision", () => {
       return scenario === "wrong-capability" ? { ...current, runId: "foreign" } : current;
     });
     try {
-      await executePaperclipNativeSession({ db: leaseDb(first), execution: first, runnerInstanceId: identity, runnerExecutionTarget: target, instructionWorkingCopy: priorCopy });
+      await executePilibalaNativeSession({ db: leaseDb(first), execution: first, runnerInstanceId: identity, runnerExecutionTarget: target, instructionWorkingCopy: priorCopy });
       priorCopy.hasChanges.mockClear();
       const claiming = claimWarmNativeInstructionCopy({ priorExecution: first, companyId: first.binding.companyId, agentId: first.binding.agentId,
         executionWorkspaceId: first.binding.executionWorkspaceId, workspace: first.workspace, environmentId: identity,
@@ -7320,10 +7320,10 @@ describe("native warm session supervision", () => {
       });
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     try {
-      await executePaperclipNativeSession({ db: leaseDb(current), execution: current, runnerInstanceId: name,
+      await executePilibalaNativeSession({ db: leaseDb(current), execution: current, runnerInstanceId: name,
         runnerEnvironment: configuredEnvironmentProjection(before) });
       const next = { ...current, binding: { ...current.binding, runId: `${name}-two` } };
-      await executePaperclipNativeSession({ db: leaseDb(next), execution: next, runnerInstanceId: name,
+      await executePilibalaNativeSession({ db: leaseDb(next), execution: next, runnerInstanceId: name,
         runnerEnvironment: configuredEnvironmentProjection(after) });
       expect(first.close).toHaveBeenCalledTimes(replaced ? 1 : 0);
       if (replaced) expect(first.close).toHaveBeenCalledWith({ reason: "warm native session configuration changed" });
@@ -7359,7 +7359,7 @@ describe("native warm session supervision", () => {
       return terminalResult;
     });
     try {
-      const result = await executePaperclipNativeSession({ db: leaseDb(current), execution: current,
+      const result = await executePilibalaNativeSession({ db: leaseDb(current), execution: current,
         runnerInstanceId: name, runnerExecutionTarget: target, ...(managedFiles ? { instructionWorkingCopy: copy } : {}) });
       expect(result.exitCode).toBe(1);
       // Heartbeat stops failed/cancelled sandboxes after the native executor
@@ -7381,7 +7381,7 @@ describe("native warm session supervision", () => {
         expect(options.existingSession).toBeUndefined();
         return { ...terminalResult, terminal: { runTerminalState: "succeeded" } };
       });
-      await expect(executePaperclipNativeSession({ db: leaseDb(next), execution: next,
+      await expect(executePilibalaNativeSession({ db: leaseDb(next), execution: next,
         runnerInstanceId: `${name}-two`, runnerExecutionTarget: target })).resolves.toMatchObject({ exitCode: 0 });
       expect(close).toHaveBeenCalledOnce();
     } finally {
@@ -7406,7 +7406,7 @@ describe("native warm session supervision", () => {
         turnId: name, normalizedSessionId: name, providerSessionId: name, driverKind: "test", driverVersion: "1",
         nativeEventCount: 1, highestContiguousSourceSeq: 1, usage: null };
     });
-    await expect(executePaperclipNativeSession({ db: leaseDb(current), execution: current, runnerInstanceId: name,
+    await expect(executePilibalaNativeSession({ db: leaseDb(current), execution: current, runnerInstanceId: name,
       instructionWorkingCopy: { runId: name, root: `/tmp/${name}`, checkpointWarm, collectStopped, hasChanges: vi.fn() },
     })).resolves.toMatchObject({ exitCode: 1 });
     expect(checkpointWarm).toHaveBeenCalledOnce();
@@ -7433,7 +7433,7 @@ describe("native warm session supervision", () => {
         turnId: name, normalizedSessionId: name, providerSessionId: name, driverKind: "test", driverVersion: "1",
         nativeEventCount: 1, highestContiguousSourceSeq: 1, usage: null };
     });
-    await expect(executePaperclipNativeSession({ db: leaseDb(current), execution: current, runnerInstanceId: name,
+    await expect(executePilibalaNativeSession({ db: leaseDb(current), execution: current, runnerInstanceId: name,
       instructionWorkingCopy: { runId: name, root: `/tmp/${name}`, collectStopped, hasChanges: vi.fn(),
         checkpointWarm: async () => { throw failure; } },
     })).rejects.toBe(failure);
@@ -7460,7 +7460,7 @@ describe("native warm session supervision", () => {
         turnId: name, normalizedSessionId: name, providerSessionId: name, driverKind: "test", driverVersion: "1",
         nativeEventCount: 1, highestContiguousSourceSeq: 1, usage: null };
     });
-    await expect(executePaperclipNativeSession({ db: leaseDb(current), execution: current, runnerInstanceId: name,
+    await expect(executePilibalaNativeSession({ db: leaseDb(current), execution: current, runnerInstanceId: name,
       instructionWorkingCopy: { runId: name, root: `/tmp/${name}`, checkpointWarm, collectStopped, hasChanges: vi.fn() },
     })).resolves.toMatchObject({ exitCode: 1 });
     expect(checkpointWarm).toHaveBeenCalledOnce();
@@ -7484,7 +7484,7 @@ describe("native warm session supervision", () => {
       const target = { kind: "remote" as const, transport: "sandbox" as const, environmentId: name, remoteCwd: `/tmp/${name}`, sandboxLeaseAcquisition: { outcome: "created" as const, providerLeaseId: name } };
       const copy = { runId: current.binding.runId, root: `/tmp/${name}/home`, collectStopped, checkpointWarm, hasChanges: vi.fn(async () => true) };
       state.execute.mockReset().mockImplementationOnce(async options => { await options.onSession?.(session); return result; });
-      const run = (next: NativeExecutionInputV1, nextCopy = copy) => executePaperclipNativeSession({
+      const run = (next: NativeExecutionInputV1, nextCopy = copy) => executePilibalaNativeSession({
         db: leaseDb(next), execution: next, runnerInstanceId: name, runnerExecutionTarget: target, instructionWorkingCopy: nextCopy });
       await run(current);
       const reserve = (canReuse: () => Promise<boolean>, nextTarget = target) => reserveWarmNativeInstructionDirectory({
@@ -7608,7 +7608,7 @@ describe("native warm session supervision", () => {
         turnId: identity, normalizedSessionId: identity, providerSessionId: identity,
         driverKind: "test", driverVersion: "1", nativeEventCount: 1, highestContiguousSourceSeq: 1, usage: null };
     });
-    const running = executePaperclipNativeSession({ db: leaseDb(warmExecution), execution: warmExecution,
+    const running = executePilibalaNativeSession({ db: leaseDb(warmExecution), execution: warmExecution,
       runnerInstanceId: identity, runnerExecutionTarget: { kind: "remote", transport: "sandbox", environmentId: identity, remoteCwd: `/tmp/${identity}` },
       instructionWorkingCopy: { hasChanges, collectStopped } });
     const observed = running.then(() => null, error => error);
@@ -7640,14 +7640,14 @@ describe("native warm session supervision", () => {
     let previousHome: string | undefined;
     let isolatedHome: string;
     beforeEach(async () => {
-      previousHome = process.env.PAPERCLIP_HOME;
+      previousHome = process.env.PILIBALA_HOME;
       isolatedHome = await mkdtemp(join(tmpdir(), "native-identity-transition-"));
-      process.env.PAPERCLIP_HOME = isolatedHome;
+      process.env.PILIBALA_HOME = isolatedHome;
     });
     afterEach(async () => {
       await closeIdleWarmNativeSessionsForRestart();
-      if (previousHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousHome;
+      if (previousHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = previousHome;
       await rm(isolatedHome, { recursive: true, force: true });
     });
     const result = {
@@ -7665,7 +7665,7 @@ describe("native warm session supervision", () => {
       } as NativeExecutionInputV1;
       const next = { ...base, binding: { ...base.binding, runId: `${name}-second` },
         session: { ...base.session, normalizedSessionId: `${name}-new` } };
-      const run = (input: NativeExecutionInputV1) => executePaperclipNativeSession({
+      const run = (input: NativeExecutionInputV1) => executePilibalaNativeSession({
         db: leaseDb(input), execution: input, runnerInstanceId: "runner",
       });
       return { base, next, run };
@@ -7682,9 +7682,9 @@ describe("native warm session supervision", () => {
         expect(options.existingSession).toBeUndefined();
         return result;
       });
-      await executePaperclipNativeSession({ db: leaseDb(base), execution: base, runnerInstanceId: "runner" });
-      await executePaperclipNativeSession({ db: leaseDb(next), execution: next, runnerInstanceId: "runner",
-        runnerEnvironment: { PAPERCLIP_AGENT_KEY_ID: "sha256:identity-key" } });
+      await executePilibalaNativeSession({ db: leaseDb(base), execution: base, runnerInstanceId: "runner" });
+      await executePilibalaNativeSession({ db: leaseDb(next), execution: next, runnerInstanceId: "runner",
+        runnerEnvironment: { PILIBALA_AGENT_KEY_ID: "sha256:identity-key" } });
       expect(state.execute).toHaveBeenCalledTimes(2);
     });
 
@@ -7776,7 +7776,7 @@ describe("native warm session supervision", () => {
           highestContiguousSourceSeq: 1,
         };
       });
-      await executePaperclipNativeSession({
+      await executePilibalaNativeSession({
         db: leaseDb(),
         execution,
         runnerInstanceId: "runner",
@@ -7809,7 +7809,7 @@ describe("native warm session supervision", () => {
       };
     });
     await expect(
-      executePaperclipNativeSession({
+      executePilibalaNativeSession({
         db: leaseDb(),
         execution,
         runnerInstanceId: "runner",
@@ -7855,7 +7855,7 @@ describe("native warm session supervision", () => {
       };
     });
 
-    await executePaperclipNativeSession({
+    await executePilibalaNativeSession({
       db: leaseDb(warmExecution),
       execution: warmExecution,
       runnerInstanceId: "runner-warm-environment-delete",
@@ -7886,9 +7886,9 @@ describe("native warm session supervision", () => {
   });
 
   it.each(["checkpoint first", "turn first"])("serializes restart checkpoint and turn admission: %s", async (order) => {
-    const stateBase = await mkdtemp(join(tmpdir(), "paperclip-close-race-"));
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    process.env.PAPERCLIP_HOME = stateBase;
+    const stateBase = await mkdtemp(join(tmpdir(), "pilibala-close-race-"));
+    const previousPilibalaHome = process.env.PILIBALA_HOME;
+    process.env.PILIBALA_HOME = stateBase;
     let finishClose!: () => void;
     const closing = new Promise<void>((resolve) => { finishClose = resolve; });
     const close = vi.fn(() => closing);
@@ -7922,7 +7922,7 @@ describe("native warm session supervision", () => {
         await options.onSession?.({ close });
         return result;
       });
-      await executePaperclipNativeSession({
+      await executePilibalaNativeSession({
         db: leaseDb(first), execution: first,
         runnerInstanceId: "runner-close-race", useRunnerd: true,
       });
@@ -7938,7 +7938,7 @@ describe("native warm session supervision", () => {
       });
       const shutdown = order === "checkpoint first" ? closeIdleWarmNativeSessionsForRestart() : undefined;
       if (shutdown) await vi.waitFor(() => expect(close).toHaveBeenCalledOnce());
-      const continuation = executePaperclipNativeSession({
+      const continuation = executePilibalaNativeSession({
         db: leaseDb(second), execution: second,
         runnerInstanceId: "runner-close-race", useRunnerd: true,
       }).catch((error) => error);
@@ -7959,16 +7959,16 @@ describe("native warm session supervision", () => {
     } finally {
       finishClose();
       await closeIdleWarmNativeSessionsForRestart();
-      if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousPaperclipHome;
+      if (previousPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = previousPilibalaHome;
       await rm(stateBase, { recursive: true, force: true });
     }
   });
 
   it.each(["idle expiry first", "turn first"])("serializes idle expiry and turn admission: %s", async (order) => {
-    const stateBase = await mkdtemp(join(tmpdir(), "paperclip-idle-race-"));
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    process.env.PAPERCLIP_HOME = stateBase;
+    const stateBase = await mkdtemp(join(tmpdir(), "pilibala-idle-race-"));
+    const previousPilibalaHome = process.env.PILIBALA_HOME;
+    process.env.PILIBALA_HOME = stateBase;
     let finishClose!: () => void;
     const closing = new Promise<void>((resolve) => { finishClose = resolve; });
     const close = vi.fn(() => closing);
@@ -8003,7 +8003,7 @@ describe("native warm session supervision", () => {
         await options.onSession?.({ close });
         return result;
       });
-      await executePaperclipNativeSession({
+      await executePilibalaNativeSession({
         db: leaseDb(first), execution: first,
         runnerInstanceId: "runner-idle-race", useRunnerd: true,
       });
@@ -8021,7 +8021,7 @@ describe("native warm session supervision", () => {
       if (order === "idle expiry first") {
         await vi.waitFor(() => expect(close).toHaveBeenCalledOnce(), { timeout: 2_000 });
       }
-      const continuation = executePaperclipNativeSession({
+      const continuation = executePilibalaNativeSession({
         db: leaseDb(second), execution: second,
         runnerInstanceId: "runner-idle-race", useRunnerd: true,
       }).catch((error) => error);
@@ -8039,8 +8039,8 @@ describe("native warm session supervision", () => {
     } finally {
       finishClose();
       await closeIdleWarmNativeSessionsForRestart();
-      if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousPaperclipHome;
+      if (previousPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = previousPilibalaHome;
       await rm(stateBase, { recursive: true, force: true });
     }
   });
@@ -8084,7 +8084,7 @@ describe("native warm session supervision", () => {
       };
     });
     let settled = false;
-    const running = executePaperclipNativeSession({
+    const running = executePilibalaNativeSession({
       db: leaseDb(warmExecution),
       execution: warmExecution,
       runnerInstanceId: "runner-warm-restart-release",
@@ -8102,10 +8102,10 @@ describe("native warm session supervision", () => {
 
   it("preserves the active turn when a warm checkpoint resumes the same run", async () => {
     const stateBase = await mkdtemp(
-      join(tmpdir(), "paperclip-warm-same-run-recovery-"),
+      join(tmpdir(), "pilibala-warm-same-run-recovery-"),
     );
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    process.env.PAPERCLIP_HOME = stateBase;
+    const previousPilibalaHome = process.env.PILIBALA_HOME;
+    process.env.PILIBALA_HOME = stateBase;
     const activeRun = {
       ...execution,
       binding: {
@@ -8169,7 +8169,7 @@ describe("native warm session supervision", () => {
       });
 
     try {
-      await executePaperclipNativeSession({
+      await executePilibalaNativeSession({
         db: leaseDb(activeRun),
         execution: activeRun,
         runnerInstanceId: "runner-warm-same-run-recovery",
@@ -8178,17 +8178,17 @@ describe("native warm session supervision", () => {
         timeout: 500,
       });
       await expect(
-        executePaperclipNativeSession({
+        executePilibalaNativeSession({
           db: leaseDb(activeRun),
           execution: activeRun,
           runnerInstanceId: "runner-warm-same-run-recovery",
         }),
       ).resolves.toBeDefined();
     } finally {
-      if (previousPaperclipHome === undefined) {
-        delete process.env.PAPERCLIP_HOME;
+      if (previousPilibalaHome === undefined) {
+        delete process.env.PILIBALA_HOME;
       } else {
-        process.env.PAPERCLIP_HOME = previousPaperclipHome;
+        process.env.PILIBALA_HOME = previousPilibalaHome;
       }
       await rm(stateBase, { recursive: true, force: true });
     }
@@ -8244,12 +8244,12 @@ describe("native warm session supervision", () => {
         return result;
       });
 
-    await executePaperclipNativeSession({
+    await executePilibalaNativeSession({
       db: leaseDb(base),
       execution: base,
       runnerInstanceId: "runner",
     });
-    await executePaperclipNativeSession({
+    await executePilibalaNativeSession({
       db: leaseDb(second),
       execution: second,
       runnerInstanceId: "runner",
@@ -8312,12 +8312,12 @@ describe("native warm session supervision", () => {
         return result;
       });
 
-    await executePaperclipNativeSession({
+    await executePilibalaNativeSession({
       db: leaseDb(first),
       execution: first,
       runnerInstanceId: "runner-native-warm-quarantined",
     });
-    await executePaperclipNativeSession({
+    await executePilibalaNativeSession({
       db: leaseDb(second),
       execution: second,
       runnerInstanceId: "runner-native-warm-quarantined",
@@ -8440,7 +8440,7 @@ describe("native warm session supervision", () => {
       githubAccess.create.mockReset().mockImplementation(async () => {
         const creation = githubAccess.create.mock.calls.length;
         return {
-          env: { PAPERCLIP_GITHUB_BROKER_TOKEN: "stable-session-capability" },
+          env: { PILIBALA_GITHUB_BROKER_TOKEN: "stable-session-capability" },
           get ready() { return brokerReady && (creation !== 1 || !brokerLost); },
           duplexRequested: creation === 1 ? firstDuplex : secondDuplex,
           activate,
@@ -8454,12 +8454,12 @@ describe("native warm session supervision", () => {
         firstNetwork !== secondNetwork ||
         firstDuplex !== secondDuplex || loseBridge;
       const stateBase = await mkdtemp(
-        join(tmpdir(), "paperclip-runnerd-warm-authority-"),
+        join(tmpdir(), "pilibala-runnerd-warm-authority-"),
       );
-      const previousStateDirectory = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-      const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-      process.env.PAPERCLIP_RUNNER_STATE_DIR = stateBase;
-      process.env.PAPERCLIP_HOME = stateBase;
+      const previousStateDirectory = process.env.PILIBALA_RUNNER_STATE_DIR;
+      const previousPilibalaHome = process.env.PILIBALA_HOME;
+      process.env.PILIBALA_RUNNER_STATE_DIR = stateBase;
+      process.env.PILIBALA_HOME = stateBase;
       let checkpointFirstRunner: (() => Promise<void>) | undefined;
       const firstClose = vi.fn(async () => {
         if (instructionFiles) {
@@ -8510,7 +8510,7 @@ describe("native warm session supervision", () => {
               kind: "remote" as const,
               transport: "sandbox" as const,
               environmentId: "environment-runnerd-warm-authority",
-              remoteCwd: "/home/daytona/paperclip-workspace",
+              remoteCwd: "/home/daytona/pilibala-workspace",
               enableSandboxDuplexBridge: duplex,
               runner: { execute: vi.fn() },
             }
@@ -8575,14 +8575,14 @@ describe("native warm session supervision", () => {
         });
 
       try {
-        await executePaperclipNativeSession({
+        await executePilibalaNativeSession({
           db: leaseDb(first),
           execution: first,
           runnerEnvironment: {
-            PAPERCLIP_GITHUB_AUTH_MODE: firstMode,
-            PAPERCLIP_RUNNER_NETWORK_ACCESS: firstNetwork,
+            PILIBALA_GITHUB_AUTH_MODE: firstMode,
+            PILIBALA_RUNNER_NETWORK_ACCESS: firstNetwork,
             ...(firstBroker
-              ? { PAPERCLIP_GITHUB_BROKER_TOKEN: "first-run-capability" }
+              ? { PILIBALA_GITHUB_BROKER_TOKEN: "first-run-capability" }
               : {}),
           },
           runnerInstanceId: "runner-runnerd-warm",
@@ -8598,7 +8598,7 @@ describe("native warm session supervision", () => {
             await readdir(stateBase, { recursive: true })
           ).find(
             (path) =>
-              path.includes("paperclip-runner/sessions/") &&
+              path.includes("pilibala-runner/sessions/") &&
               path.endsWith(".json"),
           );
           expect(checkpointFile).toBeDefined();
@@ -8681,14 +8681,14 @@ describe("native warm session supervision", () => {
           preparationKey: secondCopy.preparationKey, adopt: async () => secondCopy,
         }) : null;
         if (instructionFiles) expect(releasePreparation === null).toBe(replacesProvider);
-        await executePaperclipNativeSession({
+        await executePilibalaNativeSession({
           db: continuationDb,
           execution: second,
           runnerEnvironment: {
-            PAPERCLIP_GITHUB_AUTH_MODE: secondMode,
-            PAPERCLIP_RUNNER_NETWORK_ACCESS: secondNetwork,
+            PILIBALA_GITHUB_AUTH_MODE: secondMode,
+            PILIBALA_RUNNER_NETWORK_ACCESS: secondNetwork,
             ...(secondBroker
-              ? { PAPERCLIP_GITHUB_BROKER_TOKEN: "second-run-capability" }
+              ? { PILIBALA_GITHUB_BROKER_TOKEN: "second-run-capability" }
               : {}),
           },
           runnerInstanceId: "runner-runnerd-warm",
@@ -8730,14 +8730,14 @@ describe("native warm session supervision", () => {
         }
       } finally {
         if (previousStateDirectory === undefined) {
-          delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
+          delete process.env.PILIBALA_RUNNER_STATE_DIR;
         } else {
-          process.env.PAPERCLIP_RUNNER_STATE_DIR = previousStateDirectory;
+          process.env.PILIBALA_RUNNER_STATE_DIR = previousStateDirectory;
         }
-        if (previousPaperclipHome === undefined) {
-          delete process.env.PAPERCLIP_HOME;
+        if (previousPilibalaHome === undefined) {
+          delete process.env.PILIBALA_HOME;
         } else {
-          process.env.PAPERCLIP_HOME = previousPaperclipHome;
+          process.env.PILIBALA_HOME = previousPilibalaHome;
         }
         await rm(stateBase, { recursive: true, force: true });
       }
@@ -8801,12 +8801,12 @@ describe("native warm session supervision", () => {
         return result;
       });
 
-    await executePaperclipNativeSession({
+    await executePilibalaNativeSession({
       db: leaseDb(base),
       execution: base,
       runnerInstanceId: "runner-first",
     });
-    await executePaperclipNativeSession({
+    await executePilibalaNativeSession({
       db: leaseDb(second),
       execution: second,
       runnerInstanceId: "runner-second",
@@ -8832,7 +8832,7 @@ describe("native warm session supervision", () => {
     const secondSession = { close: secondClose };
     const base = {
       ...execution,
-      schema: "paperclip.native-execution-input.v4",
+      schema: "pilibala.native-execution-input.v4",
       provider: change === "ACPX runtime contract"
         ? { kind: "acpx", agent: "claude", model: "claude-sonnet-5", permissionMode: "approve-all" }
         : { kind: "codex", model: null, approvalPolicy: "never" },
@@ -8895,14 +8895,14 @@ describe("native warm session supervision", () => {
     // Advance that window only after proving the permission change closed it.
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     try {
-      await executePaperclipNativeSession({
+      await executePilibalaNativeSession({
         db: leaseDb(base),
         execution: base,
         managedAiCredentialIdentity: "first-identity",
         runnerInstanceId: "runner",
       });
       contract?.mockReturnValue(currentRuntimeContract);
-      await executePaperclipNativeSession({
+      await executePilibalaNativeSession({
         db: leaseDb(lowered),
         execution: lowered,
         managedAiCredentialIdentity: change === "managed credential" ? "second-identity" : "first-identity",
@@ -8932,7 +8932,7 @@ describe("native session bounded recovery", () => {
     state.upsertRecoveryAction.mockReset().mockResolvedValue({});
     const service = vi.spyOn(issueServiceModule, "issueService").mockReturnValue({ update: vi.fn(async () => null) } as unknown as ReturnType<typeof issueServiceModule.issueService>);
     try {
-    await expect(executePaperclipNativeSession({ db: leaseDb(execution, {}, {}, updates), execution, runnerInstanceId: "runner", onEvent })).rejects.toBe(failure);
+    await expect(executePilibalaNativeSession({ db: leaseDb(execution, {}, {}, updates), execution, runnerInstanceId: "runner", onEvent })).rejects.toBe(failure);
     expect(onEvent).toHaveBeenCalledWith({ eventType: "native.remote_runner_recovery_failed", level: "error",
       message: "Could not verify the existing remote runner.", payload: { remoteRunnerRecovery } });
     expect(updates.find(update => update.table === nativeRunFinalizations && update.values.failureDetail)?.values.failureDetail)
@@ -8954,7 +8954,7 @@ describe("native session bounded recovery", () => {
     const updateIssue = vi.fn(async () => ({ status: "blocked", statusVersion: 7 }));
     const service = vi.spyOn(issueServiceModule, "issueService").mockReturnValue({ update: updateIssue } as unknown as ReturnType<typeof issueServiceModule.issueService>);
     try {
-    await expect(executePaperclipNativeSession({ db: leaseDb(execution, {}, {}, updates), execution, runnerInstanceId: "runner" })).rejects.toBe(failure);
+    await expect(executePilibalaNativeSession({ db: leaseDb(execution, {}, {}, updates), execution, runnerInstanceId: "runner" })).rejects.toBe(failure);
     expect(updates.find(update => update.table === nativeRunFinalizations && update.values.phase === "terminal_failure")?.values).toMatchObject({
       failureCode: "native_permission_declined", nextAttemptAt: null,
       failureDetail: { recoverable: false, nextAction: expect.stringContaining("Automatic recovery is stopped") },
@@ -8971,13 +8971,13 @@ describe("native session bounded recovery", () => {
       Object.assign(stop, { ...(source === "operator"
         ? { cancelledByActorType: "user", cancelledByUserId: "board" }
         : { reassignmentStopRequested: true }), nativeCancellation: {
-        schema: "paperclip.native-cancellation.v1", ...execution.binding, scope: "run", reasonCode: "cancellation_run_only",
+        schema: "pilibala.native-cancellation.v1", ...execution.binding, scope: "run", reasonCode: "cancellation_run_only",
         dispatched: true, dispatchState: "acknowledged", intentAuditId: "intent", acknowledgementAuditId: "ack",
       } });
       throw failureKind === "permission-declined" ? new NativePermissionDeclinedError() : new Error("native_finalization_missing: session returned no semantic result");
     });
     state.upsertRecoveryAction.mockClear();
-    await expect(executePaperclipNativeSession({
+    await expect(executePilibalaNativeSession({
       db: leaseDb(execution, {}, stop, updates), execution, runnerInstanceId: "stop-before-completion",
     })).rejects.toThrow("native_cancellation_pending_recovery");
     expect(updates.some(update => update.table === heartbeatRuns && update.values.status === "failed")).toBe(false);
@@ -8990,14 +8990,14 @@ describe("native session bounded recovery", () => {
     const stop: Record<string, unknown> = {};
     state.execute.mockReset().mockImplementationOnce(async () => {
       Object.assign(stop, { nativeCancellation: {
-        schema: "paperclip.native-cancellation.v1", ...execution.binding,
+        schema: "pilibala.native-cancellation.v1", ...execution.binding,
         scope: "run", reasonCode: "cancellation_run_only", dispatchState,
         dispatched: true, intentAuditId: "intent", acknowledgementAuditId: "ack",
       } });
       throw new Error("native_session_cancelled");
     });
     state.upsertRecoveryAction.mockClear();
-    await expect(executePaperclipNativeSession({
+    await expect(executePilibalaNativeSession({
       db: leaseDb(execution, {}, stop, updates), execution, runnerInstanceId: "stop-before-first-turn",
     })).rejects.toThrow("native_cancellation_pending_recovery");
     expect(updates.some(update => update.table === heartbeatRuns && update.values.status === "failed")).toBe(false);
@@ -9086,7 +9086,7 @@ describe("native session bounded recovery", () => {
         >);
       try {
         await expect(
-          executePaperclipNativeSession({
+          executePilibalaNativeSession({
             db,
             execution,
             runnerInstanceId: "runner",
@@ -9206,9 +9206,9 @@ describe("native session bounded recovery", () => {
       update: vi.fn(async () => ({ status: "blocked", statusVersion: 1 })),
     } as unknown as ReturnType<typeof issueServiceModule.issueService>);
     try {
-      await expect(executePaperclipNativeSession({
+      await expect(executePilibalaNativeSession({
         db: leaseDb(execution, {}, {}, updates), execution, runnerInstanceId: "runner",
-        runnerEnvironment: { PAPERCLIP_AGENT_PRIVATE_KEY: privateKeyPem },
+        runnerEnvironment: { PILIBALA_AGENT_PRIVATE_KEY: privateKeyPem },
         onLog: async (_stream, text) => { logs.push(text); },
       })).rejects.toBe(failure);
       expect(updates.some(entry => entry.table === nativeRunFinalizations && entry.values.failureDetail)).toBe(true);
@@ -9235,7 +9235,7 @@ describe("native session bounded recovery", () => {
       >);
     try {
       await expect(
-        executePaperclipNativeSession({
+        executePilibalaNativeSession({
           db: leaseDb(execution, {}, {}, updates),
           execution,
           runnerInstanceId: "runner",
@@ -9298,7 +9298,7 @@ describe("native session bounded recovery", () => {
         );
       }
       await expect(
-        executePaperclipNativeSession({
+        executePilibalaNativeSession({
           db: leaseDb(execution, {}, {}, updates),
           execution,
           runnerInstanceId: "runner",
@@ -9639,7 +9639,7 @@ describe("native session bounded recovery", () => {
 describe("native process ownership", () => {
   it("checks the complete wake-comment receipt before finalizing a successful provider turn", async () => {
     const expectedBinding = {
-      schema: "paperclip.current-wake-comments-binding.v1",
+      schema: "pilibala.current-wake-comments-binding.v1",
       companyId: execution.binding.companyId,
       issueId: execution.binding.issueId,
       runId: execution.binding.runId,
@@ -9662,7 +9662,7 @@ describe("native process ownership", () => {
       highestContiguousSourceSeq: 1,
       usage: null,
     });
-    await executePaperclipNativeSession({
+    await executePilibalaNativeSession({
       db: leaseDb(),
       execution,
       runnerInstanceId: "runner-current-wake-receipt",
@@ -9678,7 +9678,7 @@ describe("native process ownership", () => {
     "refuses native provider claims after the run became %s", async status => {
       const updates: Array<{ table: unknown; values: Record<string, unknown> }> = [];
       state.createBackend.mockClear();
-      await expect(executePaperclipNativeSession({
+      await expect(executePilibalaNativeSession({
         db: leaseDb(execution, {}, {}, updates, {}, status), execution, runnerInstanceId: "late-startup",
       })).rejects.toThrow();
       expect(state.createBackend).not.toHaveBeenCalled();
@@ -9689,7 +9689,7 @@ describe("native process ownership", () => {
 
   it("fences a cancellation request before its terminal status commits", async () => {
     state.createBackend.mockClear();
-    await expect(executePaperclipNativeSession({
+    await expect(executePilibalaNativeSession({
       db: leaseDb(execution, {}, { startupCancellation: { requestedAt: new Date().toISOString() } }),
       execution, runnerInstanceId: "cancel-requested",
     })).rejects.toThrow();
@@ -9740,7 +9740,7 @@ describe("native process ownership", () => {
     });
 
     try {
-      await executePaperclipNativeSession({ db, execution, runnerInstanceId: "runner", onSpawn });
+      await executePilibalaNativeSession({ db, execution, runnerInstanceId: "runner", onSpawn });
       expect(admissionWriter).toHaveBeenCalledOnce();
     } finally {
       admissionWriter.mockRestore();
@@ -9816,7 +9816,7 @@ describe("native process ownership", () => {
         highestContiguousSourceSeq: 1,
       });
 
-      await executePaperclipNativeSession({
+      await executePilibalaNativeSession({
         db: leaseDb(providerExecution),
         execution: providerExecution,
         runnerInstanceId: "runner",
@@ -9839,7 +9839,7 @@ describe("native process ownership", () => {
     state.createBackend.mockClear();
 
     await expect(
-      executePaperclipNativeSession({
+      executePilibalaNativeSession({
         db: leaseDb(piExecution),
         execution: piExecution,
         runnerInstanceId: "runner",
@@ -9868,7 +9868,7 @@ describe("runnerd provider runtime wiring", () => {
       highestContiguousSourceSeq: 1,
     });
 
-    await executePaperclipNativeSession({
+    await executePilibalaNativeSession({
       db: leaseDb(current),
       execution: current,
       runnerInstanceId: "runner-remote-warm-settlement",
@@ -9928,25 +9928,25 @@ describe("runnerd provider runtime wiring", () => {
   let previousStateDirectory: string | undefined;
 
   beforeEach(async () => {
-    previousStateDirectory = process.env.PAPERCLIP_RUNNER_STATE_DIR;
+    previousStateDirectory = process.env.PILIBALA_RUNNER_STATE_DIR;
     isolatedStateDirectory = await mkdtemp(
-      join(tmpdir(), "paperclip-runnerd-wiring-"),
+      join(tmpdir(), "pilibala-runnerd-wiring-"),
     );
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = isolatedStateDirectory;
+    process.env.PILIBALA_RUNNER_STATE_DIR = isolatedStateDirectory;
   });
 
   afterEach(async () => {
     if (previousStateDirectory === undefined) {
-      delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
+      delete process.env.PILIBALA_RUNNER_STATE_DIR;
     } else {
-      process.env.PAPERCLIP_RUNNER_STATE_DIR = previousStateDirectory;
+      process.env.PILIBALA_RUNNER_STATE_DIR = previousStateDirectory;
     }
     await rm(isolatedStateDirectory, { recursive: true, force: true });
   });
 
   it.each(["unchanged", "changed", "runtime-context", "retirement-failed", "stale-owner", "active-owner", "missing-owner", "foreign-environment"] as const)("rotates an owned warm remote runner before checking changed configuration: %s", async scenario => {
     const first = { ...scopedNativeExecution(`warm-admission-${scenario}`),
-      schema: "paperclip.native-execution-input.v5" as const,
+      schema: "pilibala.native-execution-input.v5" as const,
       provider: { kind: "codex" as const, model: null, approvalPolicy: "never" as const },
       executionMode: "default" as const, planningContext: null, runtimeContext: nativeRuntimeContextFixture() };
     first.session.lifecyclePolicy = { mode: "warm", idleTimeoutMs: 60_000 };
@@ -9993,7 +9993,7 @@ describe("runnerd provider runtime wiring", () => {
       ? priorNativeRunDb(scenario === "stale-owner" ? older : first, scenario === "active-owner" ? "running" : "succeeded").select(fields as never)
       : ordinarySelect(fields as never)) as Db["select"];
     try {
-      await executePaperclipNativeSession({ db: leaseDb(first), execution: first,
+      await executePilibalaNativeSession({ db: leaseDb(first), execution: first,
         runnerInstanceId: identity.runnerInstanceId, useRunnerd: true, runnerExecutionTarget: target as never });
       if (scenario === "stale-owner") await writeRunnerAuthority(root, { ...identity, runId: older.binding.runId }, "ready");
       if (scenario === "missing-owner") {
@@ -10002,7 +10002,7 @@ describe("runnerd provider runtime wiring", () => {
         order.length = 0;
         firstSession.close.mockClear();
       }
-      const continuation = executePaperclipNativeSession({ db: nextDb, execution: next,
+      const continuation = executePilibalaNativeSession({ db: nextDb, execution: next,
         runnerInstanceId: `runner-next-${scenario}`, useRunnerd: true,
         runnerExecutionTarget: (scenario === "foreign-environment" ? { ...target, environmentId: `${environmentId}-other` } : target) as never });
       if (["stale-owner", "active-owner", "missing-owner", "foreign-environment"].includes(scenario)) {
@@ -10032,7 +10032,7 @@ describe("runnerd provider runtime wiring", () => {
             await options.onSession?.(firstSession);
             return result;
           });
-          await expect(executePaperclipNativeSession({ db: thirdDb, execution: third,
+          await expect(executePilibalaNativeSession({ db: thirdDb, execution: third,
             runnerInstanceId: `runner-third-${scenario}`, useRunnerd: true,
             runnerExecutionTarget: target as never })).resolves.toMatchObject({ exitCode: 0 });
           expect(firstSession.close).not.toHaveBeenCalled();
@@ -10099,9 +10099,9 @@ describe("runnerd provider runtime wiring", () => {
   });
 
   it("copies back and removes Grok credentials from the exact ACPX launch home", async () => {
-    const priorHome = process.env.PAPERCLIP_HOME;
+    const priorHome = process.env.PILIBALA_HOME;
     const privateRoot = await realpath(isolatedStateDirectory);
-    process.env.PAPERCLIP_HOME = privateRoot;
+    process.env.PILIBALA_HOME = privateRoot;
     const managedHome = join(privateRoot, "company-login");
     await mkdir(managedHome, { mode: 0o700 });
     await writeFile(join(managedHome, "auth.json"), "fixture-old-login", { mode: 0o600 });
@@ -10136,8 +10136,8 @@ describe("runnerd provider runtime wiring", () => {
         await expect(access(join(agentHome, name))).rejects.toMatchObject({ code: "ENOENT" });
       }
     } finally {
-      if (priorHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = priorHome;
+      if (priorHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = priorHome;
     }
   });
 
@@ -10181,14 +10181,14 @@ describe("runnerd provider runtime wiring", () => {
           contentType: "text/plain",
           byteSize: 12,
           workspaceRelativePath:
-            ".paperclip-inbound/run/00000000-0000-4000-8000-000000009202",
+            ".pilibala-inbound/run/00000000-0000-4000-8000-000000009202",
           unavailableReason: null,
         },
       ],
       cleanup,
     });
     state.renderNativeRunnerStagedAttachmentPrompt.mockReturnValueOnce(
-      "Paperclip native attachment access: staged.",
+      "Pilibala native attachment access: staged.",
     );
     state.execute.mockReset().mockResolvedValueOnce({
       result: { summary: "completed" },
@@ -10215,7 +10215,7 @@ describe("runnerd provider runtime wiring", () => {
     } as NativeExecutionInputV1;
 
     await expect(
-      executePaperclipNativeSession({
+      executePilibalaNativeSession({
         db: leaseDb(stagedExecution),
         execution: stagedExecution,
         runnerInstanceId: "runner-attachment-cleanup",
@@ -10317,7 +10317,7 @@ describe("runnerd provider runtime wiring", () => {
         }),
     );
 
-    const active = executePaperclipNativeSession({
+    const active = executePilibalaNativeSession({
       db: leaseDb(first),
       execution: first,
       runnerInstanceId: "runner-runnerd-overlap",
@@ -10332,7 +10332,7 @@ describe("runnerd provider runtime wiring", () => {
       }),
     );
     await expect(
-      executePaperclipNativeSession({
+      executePilibalaNativeSession({
         db: leaseDb(second),
         execution: second,
         runnerInstanceId: "runner-runnerd-overlap",
@@ -10367,7 +10367,7 @@ describe("runnerd provider runtime wiring", () => {
         executionWorkspaceId: "run-projectless-next",
       },
     } as NativeExecutionInputV1;
-    const remoteCwd = "/home/daytona/paperclip-workspace";
+    const remoteCwd = "/home/daytona/pilibala-workspace";
     const scopedRoot = await initializeScopedRunnerRoot(prior, "runner-projectless-stable");
     await mkdir(join(scopedRoot, "control-plane"), { recursive: true });
     await mkdir(join(scopedRoot, "runner"), { recursive: true });
@@ -10415,7 +10415,7 @@ describe("runnerd provider runtime wiring", () => {
       }),
     } as unknown as Db;
 
-    await executePaperclipNativeSession({
+    await executePilibalaNativeSession({
       db: continuationDb,
       execution: continuation,
       runnerInstanceId: "runner-new-heartbeat",
@@ -10467,16 +10467,16 @@ describe("runnerd provider runtime wiring", () => {
   });
 
   it.each([
-    { PAPERCLIP_NATIVE_MCP_NAME: "paperclip-assigned" },
-    { PAPERCLIP_NATIVE_MCP_URL: "http://127.0.0.1:3217/mcp/gateways/test" },
-    { PAPERCLIP_NATIVE_MCP_TOKEN: "private-run-token" },
+    { PILIBALA_NATIVE_MCP_NAME: "pilibala-assigned" },
+    { PILIBALA_NATIVE_MCP_URL: "http://127.0.0.1:3217/mcp/gateways/test" },
+    { PILIBALA_NATIVE_MCP_TOKEN: "private-run-token" },
   ])("rejects partial remote assigned MCP bindings", async (runnerEnvironment) => {
     const prepareRunnerEnvironment = vi.fn(async () => runnerEnvironment);
     await expect(createRunnerdBackend({
       db: leaseDb(execution), execution, runnerInstanceId: "runner-partial-mcp", runnerEnvironment, prepareRunnerEnvironment,
       runnerExecutionTarget: {
         kind: "remote", transport: "sandbox", providerKey: "daytona",
-        leaseId: "lease-partial-mcp", remoteCwd: "/home/daytona/paperclip-workspace",
+        leaseId: "lease-partial-mcp", remoteCwd: "/home/daytona/pilibala-workspace",
         runner: { execute: vi.fn() },
       } as never,
     })).rejects.toThrow("assigned native MCP launch binding is incomplete");
@@ -10492,15 +10492,15 @@ describe("runnerd provider runtime wiring", () => {
     const assignedGate = new Promise<void>(resolve => { releaseAssigned = resolve; });
     const assignedReady = new Promise<void>(resolve => { assignedStarted = resolve; });
     const runnerEnvironment = {
-      PAPERCLIP_NATIVE_MCP_NAME: "paperclip-assigned",
-      PAPERCLIP_NATIVE_MCP_URL: "http://127.0.0.1:3217/mcp/gateways/assigned-overlap",
-      PAPERCLIP_NATIVE_MCP_TOKEN: "private-overlap-token",
+      PILIBALA_NATIVE_MCP_NAME: "pilibala-assigned",
+      PILIBALA_NATIVE_MCP_URL: "http://127.0.0.1:3217/mcp/gateways/assigned-overlap",
+      PILIBALA_NATIVE_MCP_TOKEN: "private-overlap-token",
     };
     const assignedMcpTools = { definitions: () => [], has: () => false, execute: vi.fn() };
     const prepareRunnerEnvironment = vi.fn(async () => {
       await environmentGate;
       if (failure === "environment" || failure === "both") throw new Error("environment failed");
-      return { ...runnerEnvironment, PAPERCLIP_GITHUB_BROKER_TOKEN: "prepared-github-capability" };
+      return { ...runnerEnvironment, PILIBALA_GITHUB_BROKER_TOKEN: "prepared-github-capability" };
     });
     state.createAssignedMcpTools.mockImplementationOnce(async () => {
       assignedStarted();
@@ -10516,7 +10516,7 @@ describe("runnerd provider runtime wiring", () => {
       runnerEnvironment, prepareRunnerEnvironment,
       runnerExecutionTarget: {
         kind: "remote", transport: "sandbox", providerKey: "daytona",
-        leaseId: "lease-overlap", remoteCwd: "/home/daytona/paperclip-workspace",
+        leaseId: "lease-overlap", remoteCwd: "/home/daytona/pilibala-workspace",
         runner: { execute: vi.fn() },
       } as never,
     }).then(value => ({ value }), error => ({ error })).finally(() => { settled = true; });
@@ -10541,8 +10541,8 @@ describe("runnerd provider runtime wiring", () => {
         expect(state.toolAuthorityDefinitions).toHaveBeenCalledWith(expect.objectContaining({ assignedMcpTools }));
         state.createBackend.mock.calls[0]![1].codexTransportFactory!();
         const options = state.createTransport.mock.calls[0]![0] as { environment: NodeJS.ProcessEnv };
-        expect(options.environment.PAPERCLIP_GITHUB_BROKER_TOKEN).toBe("prepared-github-capability");
-        expect(options.environment.PAPERCLIP_NATIVE_MCP_TOKEN).toBeUndefined();
+        expect(options.environment.PILIBALA_GITHUB_BROKER_TOKEN).toBe("prepared-github-capability");
+        expect(options.environment.PILIBALA_NATIVE_MCP_TOKEN).toBeUndefined();
       }
     } finally {
       releaseEnvironment();
@@ -10565,7 +10565,7 @@ describe("runnerd provider runtime wiring", () => {
     githubAccess.create.mockImplementationOnce(async () => {
       await githubGate;
       if (failure === "github") throw new Error("github setup failed");
-      return { env: { PAPERCLIP_GITHUB_BROKER_TOKEN: "run-owned-capability" }, ready: true,
+      return { env: { PILIBALA_GITHUB_BROKER_TOKEN: "run-owned-capability" }, ready: true,
         duplexRequested: false, activate, stop };
     });
     state.createAssignedMcpTools.mockImplementationOnce(async () => {
@@ -10576,17 +10576,17 @@ describe("runnerd provider runtime wiring", () => {
     state.execute.mockClear();
     state.createBackend.mockClear();
     let settled = false;
-    const running = executePaperclipNativeSession({
+    const running = executePilibalaNativeSession({
       db: leaseDb(execution), execution, runnerInstanceId: "runner-overlap-cleanup",
       useRunnerd: true, managedGitHub: true,
       runnerEnvironment: {
-        PAPERCLIP_NATIVE_MCP_NAME: "paperclip-assigned",
-        PAPERCLIP_NATIVE_MCP_URL: "http://127.0.0.1:3217/mcp/gateways/assigned-cleanup",
-        PAPERCLIP_NATIVE_MCP_TOKEN: "private-cleanup-token",
+        PILIBALA_NATIVE_MCP_NAME: "pilibala-assigned",
+        PILIBALA_NATIVE_MCP_URL: "http://127.0.0.1:3217/mcp/gateways/assigned-cleanup",
+        PILIBALA_NATIVE_MCP_TOKEN: "private-cleanup-token",
       },
       runnerExecutionTarget: {
         kind: "remote", transport: "sandbox", providerKey: "daytona",
-        leaseId: "lease-overlap-cleanup", remoteCwd: "/home/daytona/paperclip-workspace",
+        leaseId: "lease-overlap-cleanup", remoteCwd: "/home/daytona/pilibala-workspace",
         runner: { execute: vi.fn() },
       } as never,
     }).then(value => ({ value }), error => ({ error })).finally(() => { settled = true; });
@@ -10630,13 +10630,13 @@ describe("runnerd provider runtime wiring", () => {
       await createRunnerdBackend({
         db: leaseDb(execution), execution, runnerInstanceId: "runner-assigned-mcp",
         runnerEnvironment: {
-          PAPERCLIP_NATIVE_MCP_NAME: "paperclip-assigned",
-          PAPERCLIP_NATIVE_MCP_URL: "http://127.0.0.1:3217/mcp/gateways/assigned-test",
-          PAPERCLIP_NATIVE_MCP_TOKEN: "private-run-token",
+          PILIBALA_NATIVE_MCP_NAME: "pilibala-assigned",
+          PILIBALA_NATIVE_MCP_URL: "http://127.0.0.1:3217/mcp/gateways/assigned-test",
+          PILIBALA_NATIVE_MCP_TOKEN: "private-run-token",
         },
         runnerExecutionTarget: {
           kind: "remote", transport: "sandbox", providerKey: "daytona",
-          leaseId: "lease-assigned-mcp", remoteCwd: "/home/daytona/paperclip-workspace",
+          leaseId: "lease-assigned-mcp", remoteCwd: "/home/daytona/pilibala-workspace",
           runner: { execute: vi.fn() },
         } as never,
       });
@@ -10646,9 +10646,9 @@ describe("runnerd provider runtime wiring", () => {
       expect(state.toolAuthorityDefinitions).toHaveBeenCalledWith(expect.objectContaining({ assignedMcpTools }));
       state.createBackend.mock.calls[0]![1].codexTransportFactory!();
       const options = state.createTransport.mock.calls[0]![0] as { environment: NodeJS.ProcessEnv };
-      expect(options.environment.PAPERCLIP_NATIVE_MCP_NAME).toBeUndefined();
-      expect(options.environment.PAPERCLIP_NATIVE_MCP_URL).toBeUndefined();
-      expect(options.environment.PAPERCLIP_NATIVE_MCP_TOKEN).toBeUndefined();
+      expect(options.environment.PILIBALA_NATIVE_MCP_NAME).toBeUndefined();
+      expect(options.environment.PILIBALA_NATIVE_MCP_URL).toBeUndefined();
+      expect(options.environment.PILIBALA_NATIVE_MCP_TOKEN).toBeUndefined();
       await provider.forceFlush();
       const spans = exporter.getFinishedSpans();
       expect(spans.map(span => span.name)).toEqual(expect.arrayContaining([
@@ -10656,7 +10656,7 @@ describe("runnerd provider runtime wiring", () => {
         "native.controller.wake_binding", "native.controller.companion_selection",
       ]));
       for (const span of spans) {
-        expect(Object.keys(span.attributes)).toEqual(["paperclip.task.run.run_id"]);
+        expect(Object.keys(span.attributes)).toEqual(["pilibala.task.run.run_id"]);
         expect(JSON.stringify(span.attributes)).not.toContain("private-run-token");
       }
     } finally {
@@ -10673,7 +10673,7 @@ describe("runnerd provider runtime wiring", () => {
       transport: "sandbox" as const,
       providerKey: "daytona",
       leaseId: "lease-authority-archive",
-      remoteCwd: "/home/daytona/paperclip-workspace",
+      remoteCwd: "/home/daytona/pilibala-workspace",
       runner: { execute: remoteExecute },
     } as never;
     const normalizedSessionId = execution.session.normalizedSessionId;
@@ -10689,7 +10689,7 @@ describe("runnerd provider runtime wiring", () => {
       itemId: "item-authority-archive",
     };
     const archivedState = {
-      schema: "paperclip.runner.durable.state.v1",
+      schema: "pilibala.runner.durable.state.v1",
       ...archiveIdentity,
       lifecycle: "suspended",
     };
@@ -10706,7 +10706,7 @@ describe("runnerd provider runtime wiring", () => {
       expect.objectContaining({
         externallySandboxed: true,
         environment: expect.objectContaining({
-          PAPERCLIP_RUNNER_EXTERNAL_SANDBOX: "1",
+          PILIBALA_RUNNER_EXTERNAL_SANDBOX: "1",
         }),
       }),
     );
@@ -10767,8 +10767,8 @@ describe("runnerd provider runtime wiring", () => {
       runnerInstanceId: "runner-local-workspace",
       runnerEnvironment: {
         HOME: "/home/runner",
-        PAPERCLIP_WORKSPACE_CWD: "/untrusted/configured-workspace",
-        PAPERCLIP_RUNNER_EXTERNAL_SANDBOX: "1",
+        PILIBALA_WORKSPACE_CWD: "/untrusted/configured-workspace",
+        PILIBALA_RUNNER_EXTERNAL_SANDBOX: "1",
       },
     });
 
@@ -10778,7 +10778,7 @@ describe("runnerd provider runtime wiring", () => {
     expect(state.createTransport).toHaveBeenCalledWith(
       expect.objectContaining({
         environment: expect.objectContaining({
-          PAPERCLIP_WORKSPACE_CWD: execution.workspace.cwd,
+          PILIBALA_WORKSPACE_CWD: execution.workspace.cwd,
         }),
       }),
     );
@@ -10786,7 +10786,7 @@ describe("runnerd provider runtime wiring", () => {
       environment: NodeJS.ProcessEnv;
     };
     expect(
-      localTransportOptions.environment.PAPERCLIP_RUNNER_EXTERNAL_SANDBOX,
+      localTransportOptions.environment.PILIBALA_RUNNER_EXTERNAL_SANDBOX,
     ).toBeUndefined();
   });
 
@@ -10848,7 +10848,7 @@ describe("runnerd provider runtime wiring", () => {
       }),
     );
     expect(state.createTransport.mock.calls[0]![0].runnerBinary).toBe(
-      "/tmp/paperclip-runnerd",
+      "/tmp/pilibala-runnerd",
     );
     expect(state.resolveRunnerBinary).toHaveBeenCalled();
 
@@ -10951,7 +10951,7 @@ describe("runnerd provider runtime wiring", () => {
         eventType: "item.delta",
         priority: 1,
         envelope: {
-          schema: "paperclip.prp.event.v1",
+          schema: "pilibala.prp.event.v1",
           schemaVersion: 1,
           sourceKind: "runner",
           sourceInstanceId: identity.runnerInstanceId,
@@ -11087,7 +11087,7 @@ describe("runnerd provider runtime wiring", () => {
           privateKey: null, knownHosts: null, strictHostKeyChecking: true },
         providerKey: "daytona",
         leaseId: "environment-lease-remote-prior-scope",
-        remoteCwd: "/home/daytona/paperclip-workspace",
+        remoteCwd: "/home/daytona/pilibala-workspace",
         runner: {
           execute: vi.fn(),
         },
@@ -11413,7 +11413,7 @@ describe("runnerd provider runtime wiring", () => {
                       scenario === "missing process identity" ? null : 90000001,
                     processGroupId: 90000001,
                     contextSnapshot: {
-                      paperclipEnvironment: { driver: "local" },
+                      pilibalaEnvironment: { driver: "local" },
                     },
                   },
                 ]),
@@ -11448,7 +11448,7 @@ describe("runnerd provider runtime wiring", () => {
           await writeFile(
             join(root, "runner", "codex-provider-state.json"),
             JSON.stringify({
-              schema: "paperclip.runner.codex-provider-state.v1",
+              schema: "pilibala.runner.codex-provider-state.v1",
               lifecycle: "session_open",
               config: { provider: "codex", driver: "codex_app_server" },
               threadId: "recovery-thread",
@@ -11707,7 +11707,7 @@ describe("runnerd provider runtime wiring", () => {
         eventType: "item.delta",
         priority: 1,
         envelope: {
-          schema: "paperclip.prp.event.v1",
+          schema: "pilibala.prp.event.v1",
           schemaVersion: 1,
           sourceKind: "runner",
           sourceInstanceId: identity.runnerInstanceId,
@@ -11808,7 +11808,7 @@ describe("runnerd provider runtime wiring", () => {
       const pending = {
         phase: variant === "awaiting_result" ? "awaiting_result" : "prepared",
         receipt: {
-          schema: "paperclip.runner.warm-transition.v1",
+          schema: "pilibala.runner.warm-transition.v1",
           newIdentity: {
             ...identity,
             runId:
@@ -11825,7 +11825,7 @@ describe("runnerd provider runtime wiring", () => {
           : {
               ...durableControlPlaneState(identity),
               schema:
-                "paperclip.runner.durable.control-plane-state.warm-transition.v1",
+                "pilibala.runner.durable.control-plane-state.warm-transition.v1",
               ...(variant === "schema_only"
                 ? {}
                 : { warmTransition: pending }),
@@ -11838,12 +11838,12 @@ describe("runnerd provider runtime wiring", () => {
             };
       const runner = {
         ...durableRunnerState(identity, "ready"),
-        schema: "paperclip.runner.durable.state.warm-transition.v1",
+        schema: "pilibala.runner.durable.state.warm-transition.v1",
         warmTransition: pending,
       };
       const coreBytes =
         variant === "malformed"
-          ? '{"schema":"paperclip.runner.durable.control-plane-state.warm-transition.v1",'
+          ? '{"schema":"pilibala.runner.durable.control-plane-state.warm-transition.v1",'
           : JSON.stringify(core);
       const runnerBytes = JSON.stringify(runner);
       const corePath = join(
@@ -11908,7 +11908,7 @@ describe("runnerd provider runtime wiring", () => {
           caseName === "unknown_schema"
             ? {
                 ...runnerState,
-                schema: "paperclip.runner.durable.state.v999",
+                schema: "pilibala.runner.durable.state.v999",
               }
             : runnerState,
         ),
@@ -11962,7 +11962,7 @@ describe("runnerd provider runtime wiring", () => {
                     environmentLeaseId:
                       scopedExecution.binding.executionWorkspaceId,
                   }),
-                  schema: "paperclip.runner.durable.control-plane-state.v999",
+                  schema: "pilibala.runner.durable.control-plane-state.v999",
                 })
               : JSON.stringify(
                   durableControlPlaneState({
@@ -12224,7 +12224,7 @@ describe("runnerd provider runtime wiring", () => {
     const scopedExecution = (companyId: string, runId: string) =>
       ({
         ...execution,
-        schema: "paperclip.native-execution-input.v4",
+        schema: "pilibala.native-execution-input.v4",
         binding: {
           ...execution.binding,
           companyId,
@@ -12304,7 +12304,7 @@ describe("runnerd provider runtime wiring", () => {
     }) =>
       ({
         ...execution,
-        schema: "paperclip.native-execution-input.v4",
+        schema: "pilibala.native-execution-input.v4",
         binding: {
           ...execution.binding,
           companyId: "company-session-scope",
@@ -12315,7 +12315,7 @@ describe("runnerd provider runtime wiring", () => {
         },
         workspace: {
           cwd: "/tmp/native-session-scope",
-          repoUrl: "https://example.test/paperclip.git",
+          repoUrl: "https://example.test/pilibala.git",
           repoRef: "refs/heads/main",
           branchName: "main",
         },
@@ -12509,7 +12509,7 @@ describe("runnerd provider runtime wiring", () => {
   });
 
   it("uses the remote workspace for both the runner backend and native session", async () => {
-    const remoteCwd = "/home/daytona/paperclip-workspace";
+    const remoteCwd = "/home/daytona/pilibala-workspace";
     const remoteExecution = {
       ...execution,
       binding: { ...execution.binding, runId: "run-remote-workspace-test" },
@@ -12521,7 +12521,7 @@ describe("runnerd provider runtime wiring", () => {
         workMode: "standard",
       },
       workspace: {
-        cwd: "/host/paperclip-workspace",
+        cwd: "/host/pilibala-workspace",
         repoUrl: null,
         repoRef: null,
         branchName: null,
@@ -12555,7 +12555,7 @@ describe("runnerd provider runtime wiring", () => {
       highestContiguousSourceSeq: 1,
     });
 
-    await executePaperclipNativeSession({
+    await executePilibalaNativeSession({
       db: leaseDb(remoteExecution),
       execution: remoteExecution,
       runnerInstanceId: "runner",
@@ -12575,7 +12575,7 @@ describe("runnerd provider runtime wiring", () => {
           strictHostKeyChecking: true,
         },
       },
-      runnerPublicUrl: "wss://paperclip.example.test",
+      runnerPublicUrl: "wss://pilibala.example.test",
     });
 
     expect(state.createBackend).toHaveBeenCalledWith(
@@ -12598,9 +12598,9 @@ describe("runnerd provider runtime wiring", () => {
     backendOptions.codexTransportFactory!();
     expect(state.createTransport).toHaveBeenCalledWith(
       expect.objectContaining({
-        runnerBinary: "/tmp/paperclip-runnerd",
+        runnerBinary: "/tmp/pilibala-runnerd",
         environment: expect.objectContaining({
-          PAPERCLIP_WORKSPACE_CWD: remoteCwd,
+          PILIBALA_WORKSPACE_CWD: remoteCwd,
         }),
       }),
     );
@@ -12608,10 +12608,10 @@ describe("runnerd provider runtime wiring", () => {
       environment: NodeJS.ProcessEnv;
     };
     expect(
-      sshTransportOptions.environment.PAPERCLIP_RUNNER_EXTERNAL_SANDBOX,
+      sshTransportOptions.environment.PILIBALA_RUNNER_EXTERNAL_SANDBOX,
     ).toBeUndefined();
     expect(state.createTransport.mock.calls[0]![0].runnerBinary).not.toBe(
-      `${remoteCwd}/.paperclip-runtime/paperclip-runner/bin/paperclip-runnerd`,
+      `${remoteCwd}/.pilibala-runtime/pilibala-runner/bin/pilibala-runnerd`,
     );
   });
 
@@ -12620,7 +12620,7 @@ describe("runnerd provider runtime wiring", () => {
       XDG_DATA_HOME: "/controller/data", XDG_CACHE_HOME: "/controller/cache" };
     const runnerEnvironment = { ...configuredEnvironmentProjection({ ...paths, TASK_FLAG: "kept" }),
       HOME: "/controller/home", CODEX_HOME: "/controller/codex", AMBIENT_FLAG: "not-task-bound" };
-    const remoteExecution = { ...execution, schema: "paperclip.native-execution-input.v7" as const,
+    const remoteExecution = { ...execution, schema: "pilibala.native-execution-input.v7" as const,
       homeMode: "preconfigured" as const, executionMode: "default" as const, planningContext: null,
       provider: { kind: "codex" as const, model: null, approvalPolicy: "never" as const }, runtimeContext: nativeRuntimeContextFixture() };
     const remoteExecute = vi.fn(async (command: { args?: string[] }) => ({
@@ -12637,7 +12637,7 @@ describe("runnerd provider runtime wiring", () => {
     expect(environment.HOME).toBe("/home/executor");
     expect(environment.CODEX_HOME).toBeUndefined();
     for (const key of Object.keys(paths)) expect(environment[key]).toBeUndefined();
-    expect(configuredEnvironment(environment)).toEqual({ TASK_FLAG: "kept", PAPERCLIP_CONFIGURED_ENV_KEYS: '["TASK_FLAG"]' });
+    expect(configuredEnvironment(environment)).toEqual({ TASK_FLAG: "kept", PILIBALA_CONFIGURED_ENV_KEYS: '["TASK_FLAG"]' });
     expect(runnerEnvironment).toMatchObject(paths);
   });
 
@@ -12646,8 +12646,8 @@ describe("runnerd provider runtime wiring", () => {
     const remoteExecute = vi.fn(async (command: { command: string; args?: string[] }) => {
       if (command.args?.[0] === "--build-metadata") return {
         exitCode: 0, timedOut: false, stdout: JSON.stringify({
-          schema: "paperclip-runner/runnerd-build-metadata/v1", binaryName: "paperclip-runnerd",
-          packageName: "@paperclipai/paperclip-runner", binaryContractVersion: 2,
+          schema: "pilibala-runner/runnerd-build-metadata/v1", binaryName: "pilibala-runnerd",
+          packageName: "@pilibalaai/pilibala-runner", binaryContractVersion: 2,
           durableSessionCapabilities: ["unlimited_runtime", "connection_lease_renewal"],
           prpTransportModes: ["listen_ws"],
         }), stderr: "",
@@ -12707,14 +12707,14 @@ describe("runnerd provider runtime wiring", () => {
   it.each(["fresh", "existing_state", "symlink_parent", "wrong_identity", "connected", "pending_turn", "remote_probe_failed", "backup_present"])(
     "bootstraps only an untouched provider session in a resumed workspace lease: %s", async (scenario) => {
     const remoteCwd = join(isolatedStateDirectory, "remote");
-    const runtimeRoot = join(remoteCwd, ".paperclip-runtime", "paperclip-runner");
+    const runtimeRoot = join(remoteCwd, ".pilibala-runtime", "pilibala-runner");
     await mkdir(runtimeRoot, { recursive: true });
     const sessionRoot = join(runtimeRoot, "sessions", createHash("sha256").update(execution.session.normalizedSessionId!).digest("hex"));
     if (scenario === "existing_state") await mkdir(sessionRoot, { recursive: true });
     if (scenario === "symlink_parent") await symlink(isolatedStateDirectory, join(runtimeRoot, "sessions"));
     const syncIn = vi.fn(async () => undefined);
     const remoteExecute = vi.fn(async (command: { command: string; args?: string[] }) => {
-      if (command.args?.[2] === "paperclip-runner-claim-unstarted-session") {
+      if (command.args?.[2] === "pilibala-runner-claim-unstarted-session") {
         let exitCode = 1;
         if (scenario !== "remote_probe_failed") {
           try { execFileSync("sh", command.args, { stdio: "pipe" }); exitCode = 0; } catch {}
@@ -12723,8 +12723,8 @@ describe("runnerd provider runtime wiring", () => {
       }
       if (command.args?.[0] === "--build-metadata") return {
         exitCode: 0, timedOut: false, stdout: JSON.stringify({
-          schema: "paperclip-runner/runnerd-build-metadata/v1", binaryName: "paperclip-runnerd",
-          packageName: "@paperclipai/paperclip-runner", binaryContractVersion: 2,
+          schema: "pilibala-runner/runnerd-build-metadata/v1", binaryName: "pilibala-runnerd",
+          packageName: "@pilibalaai/pilibala-runner", binaryContractVersion: 2,
           durableSessionCapabilities: ["unlimited_runtime", "connection_lease_renewal"],
           prpTransportModes: ["listen_ws"],
         }), stderr: "",
@@ -12732,7 +12732,7 @@ describe("runnerd provider runtime wiring", () => {
       if (command.args?.[0] === "--version") return {
         exitCode: 0, timedOut: false, stdout: "codex-cli 0.160.0", stderr: "",
       };
-      if (command.args?.[2] === "paperclip-runner-launch") {
+      if (command.args?.[2] === "pilibala-runner-launch") {
         throw new Error("fixture_stop_after_launch_staging");
       }
       if (command.args?.[1]?.includes("base64")) return {
@@ -12761,7 +12761,7 @@ describe("runnerd provider runtime wiring", () => {
     };
     await mkdir(join(options.stateDirectory!, "control-plane"), { recursive: true });
     await writeFile(join(options.stateDirectory!, "control-plane", "control-plane-state.json"), JSON.stringify({
-      schema: "paperclip.runner.durable.control-plane-state.v1",
+      schema: "pilibala.runner.durable.control-plane-state.v1",
       identity: { ...options.prpIdentity, ...(scenario === "wrong_identity" ? { runId: "other-run" } : {}) },
       connectionCount: scenario === "connected" ? 1 : 0, committedEvents: [],
       commands: [{ type: "run.prepare", status: "pending" }, { type: scenario === "pending_turn" ? "turn.start" : "session.open", status: "pending" }],
@@ -12774,7 +12774,7 @@ describe("runnerd provider runtime wiring", () => {
       await expect(options.prepareExternalRunnerState()).resolves.toBeUndefined();
       expect(remoteExecute.mock.calls.some(([command]) => command.args?.[1]?.includes("install -d"))).toBe(false);
       expect(syncIn).not.toHaveBeenCalled();
-      const claimCommand = remoteExecute.mock.calls.find(([command]) => command.args?.[2] === "paperclip-runner-claim-unstarted-session")![0];
+      const claimCommand = remoteExecute.mock.calls.find(([command]) => command.args?.[2] === "pilibala-runner-claim-unstarted-session")![0];
       expect((await lstat(sessionRoot)).mode & 0o777).toBe(0o700);
       // The exact same claim cannot silently reopen an existing partial root.
       expect(() => execFileSync("sh", claimCommand.args!, { stdio: "pipe" })).toThrow();
@@ -12790,7 +12790,7 @@ describe("runnerd provider runtime wiring", () => {
       await expect(options.prepareExternalRunnerState()).resolves.toBeUndefined();
       expect(syncIn).not.toHaveBeenCalled();
       const launched = options.runnerProcessLauncher({
-        command: "/controller/paperclip-runnerd", args: [], cwd: "/controller", environment: {},
+        command: "/controller/pilibala-runnerd", args: [], cwd: "/controller", environment: {},
       });
       await expect(launched.completion).rejects.toThrow("fixture_stop_after_launch_staging");
       for (const name of ["auth.json", "config.toml"]) {
@@ -12803,7 +12803,7 @@ describe("runnerd provider runtime wiring", () => {
       expect(syncIn).toHaveBeenCalledWith([expect.objectContaining({
         files: [expect.objectContaining({ sourcePath: join(options.stateDirectory!, "runtime-context.json"), kind: "file" })],
       })]);
-      expect(remoteExecute.mock.calls.filter(([command]) => command.args?.[2] === "paperclip-runner-claim-unstarted-session")).toHaveLength(1);
+      expect(remoteExecute.mock.calls.filter(([command]) => command.args?.[2] === "pilibala-runner-claim-unstarted-session")).toHaveLength(1);
     } else {
       await expect(options.prepareExternalRunnerState()).rejects.toThrow("runner_harness_state_mismatch");
       expect(remoteExecute.mock.calls.some(([command]) => command.args?.[1]?.includes("install -d"))).toBe(false);
@@ -12823,7 +12823,7 @@ describe("runnerd provider runtime wiring", () => {
     const needsReplacement = image !== "current" && image !== "preinstalled-exact" && !exactRetained;
     // The mocked remote executes metadata probes; artifact staging only needs bytes.
     // Keep this regression independent of a locally compiled Rust runner binary.
-    const controllerArtifact = join(isolatedStateDirectory, "paperclip-runnerd");
+    const controllerArtifact = join(isolatedStateDirectory, "pilibala-runnerd");
     await writeFile(controllerArtifact, "fixture runner artifact");
     state.resolveRemoteRunnerBinary.mockResolvedValue(controllerArtifact);
     const onLog = vi.fn(async () => undefined);
@@ -12840,11 +12840,11 @@ describe("runnerd provider runtime wiring", () => {
           };
         } else if (command.args?.[0] === "--build-metadata") {
           stdout = JSON.stringify({
-            schema: "paperclip-runner/runnerd-build-metadata/v1",
-            binaryName: "paperclip-runnerd",
-            packageName: "@paperclipai/paperclip-runner",
+            schema: "pilibala-runner/runnerd-build-metadata/v1",
+            binaryName: "pilibala-runnerd",
+            packageName: "@pilibalaai/pilibala-runner",
             binaryContractVersion: 2,
-            durableSessionCapabilities: (image === "stale" || retained) && command.command === "/usr/local/bin/paperclip-runnerd"
+            durableSessionCapabilities: (image === "stale" || retained) && command.command === "/usr/local/bin/pilibala-runnerd"
               ? undefined
               : ["unlimited_runtime", "connection_lease_renewal"],
             prpTransportModes: ["listen_ws"],
@@ -12852,7 +12852,7 @@ describe("runnerd provider runtime wiring", () => {
         } else if (command.args?.[0] === "--version") {
           if (
             command.command.endsWith(
-              "/.paperclip-runtime/paperclip-runner/bin/codex",
+              "/.pilibala-runtime/pilibala-runner/bin/codex",
             )
           ) {
             throw new Error("reached-preinstalled-codex-verification");
@@ -12860,15 +12860,15 @@ describe("runnerd provider runtime wiring", () => {
           stdout = `codex-cli ${version}`;
         } else if (script === "uname -s; uname -m") {
           stdout = `${process.platform === "darwin" ? "Darwin" : "Linux"}\n${process.arch === "arm64" ? "arm64" : "x86_64"}\n`;
-        } else if (script.includes("command -v paperclip-runnerd")) {
-          stdout = image === "missing" ? "" : "/usr/local/bin/paperclip-runnerd\n";
+        } else if (script.includes("command -v pilibala-runnerd")) {
+          stdout = image === "missing" ? "" : "/usr/local/bin/pilibala-runnerd\n";
         } else if (script.includes("command -v codex")) {
-          stdout = script.includes("/opt/paperclip-runner/bin/codex")
-            ? "/opt/paperclip-runner/bin/codex\n"
+          stdout = script.includes("/opt/pilibala-runner/bin/codex")
+            ? "/opt/pilibala-runner/bin/codex\n"
             : "/usr/local/bin/codex\n";
         } else if (
           !script.includes("ln -sfn") &&
-          !script.includes("paperclip_codex_launcher_tmp")
+          !script.includes("pilibala_codex_launcher_tmp")
         ) {
           throw new Error(`unexpected command: ${command.command}`);
         }
@@ -12918,22 +12918,22 @@ describe("runnerd provider runtime wiring", () => {
       expect(syncIn).toHaveBeenCalledWith([expect.objectContaining({
         files: [expect.objectContaining({
           sourcePath: controllerArtifact,
-          targetPath: "/workspace/.paperclip-runtime/paperclip-runner/bin/paperclip-runnerd",
+          targetPath: "/workspace/.pilibala-runtime/pilibala-runner/bin/pilibala-runnerd",
         })],
       })]);
     } else {
       expect(syncIn).not.toHaveBeenCalled();
     }
     if (exactRetained) {
-      expect(remoteExecute.mock.calls.some(([call]) => call.args?.[1]?.includes("command -v paperclip-runnerd"))).toBe(false);
+      expect(remoteExecute.mock.calls.some(([call]) => call.args?.[1]?.includes("command -v pilibala-runnerd"))).toBe(false);
       expect(remoteExecute).toHaveBeenCalledWith(expect.objectContaining({
-        command: "/workspace/.paperclip-runtime/paperclip-runner/bin/paperclip-runnerd",
+        command: "/workspace/.pilibala-runtime/pilibala-runner/bin/pilibala-runnerd",
         args: ["--build-metadata"],
       }));
     }
     expect(remoteExecute).toHaveBeenCalledWith(
       expect.objectContaining({
-        command: "/opt/paperclip-runner/bin/codex",
+        command: "/opt/pilibala-runner/bin/codex",
         args: ["--version"],
       }),
     );
@@ -12957,7 +12957,7 @@ describe("runnerd provider runtime wiring", () => {
     { version: "0.156.0", model: "gpt-6.1-sol", floor: null, recover: true },
     { version: "0.158.0", model: "gpt-6.1-sol", floor: null, recover: true },
   ])("lets sandbox Codex $version reach actual model verification ($model, recover=$recover)", async ({ version, model, recover }) => {
-    const preparedModel = recover ? resolvePaperclipRunnerNativeProviderInput({
+    const preparedModel = recover ? resolvePilibalaRunnerNativeProviderInput({
       backend: "codex_app_server", adapterConfig: { provider: "codex", model }, codexCliVersion: version,
     }).model : model;
     const gatedExecution = {
@@ -12973,25 +12973,25 @@ describe("runnerd provider runtime wiring", () => {
         const script = command.args?.[1] ?? "";
         if (command.args?.[0] === "--build-metadata") {
           stdout = JSON.stringify({
-            schema: "paperclip-runner/runnerd-build-metadata/v1",
-            binaryName: "paperclip-runnerd",
-            packageName: "@paperclipai/paperclip-runner",
+            schema: "pilibala-runner/runnerd-build-metadata/v1",
+            binaryName: "pilibala-runnerd",
+            packageName: "@pilibalaai/pilibala-runner",
             binaryContractVersion: 2,
             durableSessionCapabilities: ["unlimited_runtime", "connection_lease_renewal"],
             prpTransportModes: ["listen_ws"],
           });
         } else if (command.args?.[0] === "--version") {
-          if (command.command.endsWith("/.paperclip-runtime/paperclip-runner/bin/codex")) {
+          if (command.command.endsWith("/.pilibala-runtime/pilibala-runner/bin/codex")) {
             throw new Error("reached-preinstalled-codex-verification");
           }
           stdout = `codex-cli ${version}`;
         } else if (script === "uname -s; uname -m") {
           stdout = `${process.platform === "darwin" ? "Darwin" : "Linux"}\n${process.arch === "arm64" ? "arm64" : "x86_64"}\n`;
-        } else if (script.includes("command -v paperclip-runnerd")) {
-          stdout = "/usr/local/bin/paperclip-runnerd\n";
+        } else if (script.includes("command -v pilibala-runnerd")) {
+          stdout = "/usr/local/bin/pilibala-runnerd\n";
         } else if (script.includes("command -v codex")) {
-          stdout = "/opt/paperclip-runner/bin/codex\n";
-        } else if (!script.includes("ln -sfn") && !script.includes("paperclip_codex_launcher_tmp")) {
+          stdout = "/opt/pilibala-runner/bin/codex\n";
+        } else if (!script.includes("ln -sfn") && !script.includes("pilibala_codex_launcher_tmp")) {
           throw new Error(`unexpected command: ${command.command}`);
         }
         return { exitCode: 0, signal: null, timedOut: false, stderr: "", stdout };
@@ -13034,8 +13034,8 @@ describe("runnerd provider runtime wiring", () => {
 
   it.each(["ssh", "sandbox"].flatMap(transport => ["explicit", "linux-arm64", "linux-x64", "missing", "mismatch"].map(mode => ({ transport, mode }))))
   ("binds a $transport launch to the selected controller-owned runner artifact ($mode)", async ({ transport, mode }) => {
-    const remoteCwd = "/home/daytona/paperclip-workspace";
-    const controllerArtifact = `/controller/artifacts/${mode}/paperclip-runnerd`;
+    const remoteCwd = "/home/daytona/pilibala-workspace";
+    const controllerArtifact = `/controller/artifacts/${mode}/pilibala-runnerd`;
     const explicit = mode === "explicit" || mode === "missing" || mode === "mismatch";
     const error = mode === "missing" ? "runner_remote_artifact_unavailable" : mode === "mismatch" ? "runner_remote_artifact_platform_mismatch" : null;
     if (error) state.resolveRemoteRunnerBinary.mockRejectedValue(new Error(error));
@@ -13043,7 +13043,7 @@ describe("runnerd provider runtime wiring", () => {
     const remoteExecution = {
       ...execution,
       binding: { ...execution.binding, runId: "run-remote-runner-artifact" },
-      workspace: { ...execution.workspace, cwd: "/host/paperclip-workspace" },
+      workspace: { ...execution.workspace, cwd: "/host/pilibala-workspace" },
     } as NativeExecutionInputV1;
 
     const backend = createRunnerdBackend({
@@ -13096,7 +13096,7 @@ describe("runnerd provider runtime wiring", () => {
     "requires a build-owned provider pack identity before launching remote %s",
     async (providerKind, provider, driverKind) => {
       state.bundledPackManifestPath = join(tmpdir(), randomUUID(), "provider-pack.json");
-      const remoteCwd = "/home/daytona/paperclip-workspace";
+      const remoteCwd = "/home/daytona/pilibala-workspace";
       const remoteProviderExecution = {
         ...execution,
         binding: {
@@ -13135,7 +13135,7 @@ describe("runnerd provider runtime wiring", () => {
         }),
       ).rejects.toThrow(providerKind === "opencode"
         ? "runner_remote_provider_artifact_incompatible: provider-pack.json is unreadable"
-        : "runner_remote_provider_artifact_incompatible: configure PAPERCLIP_RUNNER_REMOTE_PROVIDER_PACK_PATH",
+        : "runner_remote_provider_artifact_incompatible: configure PILIBALA_RUNNER_REMOTE_PROVIDER_PACK_PATH",
       );
       expect(state.createBackend).not.toHaveBeenCalled();
     },
@@ -13144,7 +13144,7 @@ describe("runnerd provider runtime wiring", () => {
   it("passes the isolated ACPX runtime directory to the native backend factory", async () => {
     const acpxExecution = {
       ...execution,
-      schema: "paperclip.native-execution-input.v4",
+      schema: "pilibala.native-execution-input.v4",
       task: {
         identifier: "DOT-ACPX",
         title: "ACPX task",
@@ -13201,7 +13201,7 @@ describe("runnerd provider runtime wiring", () => {
       acpxExecution,
       expect.objectContaining({
         acpxRuntimeDirectory: expect.stringContaining(
-          "/runtime/paperclip-runner/acpx",
+          "/runtime/pilibala-runner/acpx",
         ),
         acpxDynamicToolHandler: expect.any(Function),
       }),
@@ -13221,7 +13221,7 @@ describe("runnerd provider runtime wiring", () => {
   it("passes the persisted OpenCode permission mode to runnerd", async () => {
     const opencodeExecution = {
       ...execution,
-      schema: "paperclip.native-execution-input.v4",
+      schema: "pilibala.native-execution-input.v4",
       binding: { ...execution.binding, runId: "run-opencode-permissions" },
       session: {
         ...execution.session,

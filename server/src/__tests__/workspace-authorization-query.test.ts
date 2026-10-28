@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { agents, authUsers, companies, companyMemberships, createDb, executionWorkspaces, executionWorkspaceRepositoryAccess, heartbeatRuns, issueAccessGrants,
-  issues, projects, projectAccessMembers, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@paperclipai/db";
+  issues, projects, projectAccessMembers, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@pilibalaai/db";
 import { authorizationService, executionWorkspaceReadSqlCondition, type AuthorizationActor } from "../services/authorization.js";
 import { executionWorkspaceRepositoryService, assertExecutionWorkspaceRootReadAccess } from "../services/execution-workspace-repositories.js";
 import { assertTaskWorkspaceAccess } from "../services/task-workspace-source-access.js";
@@ -21,7 +21,7 @@ const support = await getEmbeddedPostgresTestSupport();
   const actor: AuthorizationActor = { type: "agent", source: "agent_jwt", companyId, agentId, runId, onBehalfOfUserId: userId };
 
   beforeAll(async () => {
-    vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", "enforce");
+    vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", "enforce");
     database = await startEmbeddedPostgresTestDatabase("workspace-authorization-query-");
     db = createDb(database.connectionString);
     await db.insert(companies).values({ id: companyId, name: "Workspace authorization", issuePrefix: "WAQ" });
@@ -182,7 +182,7 @@ const support = await getEmbeddedPostgresTestSupport();
     expect(await read()).toHaveLength(0);
   });
   it.each(["enforce", "shadow", "off"])("matches individual read decisions for a fresh batch in %s mode", async mode => {
-    vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", mode);
+    vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", mode);
     try {
       const resources = [{ type: "issue" as const, companyId, issueId: sourceId }, { type: "company" as const, companyId }];
       const actors: AuthorizationActor[] = [actor, { ...actor, onBehalfOfUserId: undefined },
@@ -195,7 +195,7 @@ const support = await getEmbeddedPostgresTestSupport();
           action: resource.type === "issue" ? "issue:read" : "company_scope:read" }));
         expect(await service.decideReads(candidate, resources)).toEqual(individual);
       }
-    } finally { vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", "enforce"); }
+    } finally { vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", "enforce"); }
   });
 
   it("matches private project decisions as each principal gains and loses access", async () => {

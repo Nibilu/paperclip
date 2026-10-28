@@ -17,12 +17,12 @@ import {
   or,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatPublications,
   chatTeamsFileTransfers,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 
 import {
   teamsFileTransferService,

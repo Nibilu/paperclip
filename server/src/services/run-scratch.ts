@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-export const HEARTBEAT_RUN_SCRATCH_MARKER = ".paperclip-run-scratch.json";
+export const HEARTBEAT_RUN_SCRATCH_MARKER = ".pilibala-run-scratch.json";
 
 export interface HeartbeatRunScratchMetadata {
   version: 1;
@@ -87,7 +87,7 @@ export async function prepareHeartbeatRunScratch(input: {
 }): Promise<HeartbeatRunScratch> {
   const issueSegment = sanitizePathSegment(input.issueIdentifier, "unassigned");
   const runSegment = sanitizePathSegment(input.runId.slice(0, 12), "run");
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), `paperclip-run-${issueSegment}-${runSegment}-`));
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), `pilibala-run-${issueSegment}-${runSegment}-`));
   const markerPath = path.join(dir, HEARTBEAT_RUN_SCRATCH_MARKER);
   const metadata: HeartbeatRunScratchMetadata = {
     version: 1,
@@ -107,10 +107,10 @@ export function buildHeartbeatRunScratchEnv(
   scratch: HeartbeatRunScratch,
 ): HeartbeatRunScratchEnvResult {
   const env: Record<string, string> = {
-    PAPERCLIP_RUN_SCRATCH_DIR: scratch.dir,
-    PAPERCLIP_TASK_SCRATCH_DIR: scratch.dir,
-    PAPERCLIP_SCRATCH_DIR: scratch.dir,
-    PAPERCLIP_TMPDIR: scratch.dir,
+    PILIBALA_RUN_SCRATCH_DIR: scratch.dir,
+    PILIBALA_TASK_SCRATCH_DIR: scratch.dir,
+    PILIBALA_SCRATCH_DIR: scratch.dir,
+    PILIBALA_TMPDIR: scratch.dir,
   };
   const tempKeysApplied: string[] = [];
   for (const key of TEMP_ENV_KEYS) {
@@ -129,7 +129,7 @@ export async function cleanupHeartbeatRunScratch(input: {
 }): Promise<HeartbeatRunScratchCleanupResult> {
   const tmpRoot = path.resolve(os.tmpdir());
   const dir = path.resolve(input.scratch.dir);
-  if (!isPathInside(tmpRoot, dir) || !path.basename(dir).startsWith("paperclip-run-")) {
+  if (!isPathInside(tmpRoot, dir) || !path.basename(dir).startsWith("pilibala-run-")) {
     return { removed: false, dir, reason: "unmarked" };
   }
   try {

@@ -12,10 +12,10 @@ import { associatedProfilePr, ciOwners, trustedOwnerIds } from "../../../scripts
 const at = (seconds) => new Date(1_800_000_000_000 + seconds * 1000).toISOString();
 const run = {
   id: 42, run_attempt: 1, run_number: 7, status: "completed", conclusion: "failure",
-  repository: { id: 1170821064, full_name: "paperclipai/paperclip" }, head_repository: { id: 99 },
+  repository: { id: 1170821064, full_name: "pilibalaai/pilibala" }, head_repository: { id: 99 },
   actor: { id: 123, type: "User" }, triggering_actor: { id: 123, type: "User" },
   head_sha: "abc", head_branch: "branch", created_at: at(0), run_started_at: at(0),
-  html_url: "https://github.com/paperclipai/paperclip/actions/runs/42",
+  html_url: "https://github.com/pilibalaai/pilibala/actions/runs/42",
 };
 const job = (id, name, start, end) => ({
   id, run_id: 42, run_attempt: 1, name: `ci / ${name}`, status: "completed",
@@ -132,7 +132,7 @@ test("trusted policy commands work with both current and pre-profile checkouts",
         mkdirSync(path.join(directory, "scripts"));
         symlinkSync(fileURLToPath(new URL("../../../scripts/ci-profile", import.meta.url)), path.join(directory, "scripts/ci-profile"));
       }
-      const env = { ...process.env, GITHUB_ENV: path.join(directory, "env"), PAPERCLIP_CI_PROFILE: "false" };
+      const env = { ...process.env, GITHUB_ENV: path.join(directory, "env"), PILIBALA_CI_PROFILE: "false" };
       delete env.NODE_TEST_CONTEXT;
       const result = spawnSync("bash", ["-c", `${script}\nsource "$GITHUB_ENV"\nnode "$CI_NODE_TEST" probe.test.cjs`], {
         cwd: directory, env, encoding: "utf8",
@@ -201,8 +201,8 @@ test("profiling uses only infrastructure CODEOWNERS resolved at trusted master",
     return { id: endpoint === '/users/owner' ? 123 : 456, type: 'User' };
   }), [123, 456]);
   assert.deepEqual(endpoints, [
-    '/repos/paperclipai/paperclip/git/ref/heads/master',
-    `/repos/paperclipai/paperclip/contents/.github/CODEOWNERS?ref=${sha}`, '/users/owner', '/users/second',
+    '/repos/pilibalaai/pilibala/git/ref/heads/master',
+    `/repos/pilibalaai/pilibala/contents/.github/CODEOWNERS?ref=${sha}`, '/users/owner', '/users/second',
   ]);
 });
 
@@ -210,8 +210,8 @@ test("export paces batches and retries only rejected transient events", async ()
   const events = Array.from({ length: 501 }, () => ({ data: {} }));
   const sizes = [];
   const pauses = [];
-  await sendEvents(events, "test-only", "paperclip-ci", async (url, options) => {
-    assert.equal(url, "https://api.honeycomb.io/1/batch/paperclip-ci");
+  await sendEvents(events, "test-only", "pilibala-ci", async (url, options) => {
+    assert.equal(url, "https://api.honeycomb.io/1/batch/pilibala-ci");
     assert.equal(options.redirect, "error");
     const size = JSON.parse(options.body).length;
     sizes.push(size);
@@ -221,7 +221,7 @@ test("export paces batches and retries only rejected transient events", async ()
   assert.deepEqual(pauses, [1000, 1000]);
   let calls = 0;
   const retried = [];
-  await sendEvents([{ data: { id: 1 } }, { data: { id: 2 } }], "test-only", "paperclip-ci", async (_url, options) => {
+  await sendEvents([{ data: { id: 1 } }, { data: { id: 2 } }], "test-only", "pilibala-ci", async (_url, options) => {
     const batch = JSON.parse(options.body);
     retried.push(batch.map((event) => event.data.id));
     calls += 1;
@@ -229,7 +229,7 @@ test("export paces batches and retries only rejected transient events", async ()
   }, async (ms) => { pauses.push(ms); });
   assert.deepEqual(retried, [[1, 2], [2]]);
   assert.equal(pauses.at(-1), 1000);
-  await assert.rejects(sendEvents([events[0]], "test-only", "paperclip-ci", async () => ({ ok: true, json: async () => [{ status: 400 }] })), /status 400/);
+  await assert.rejects(sendEvents([events[0]], "test-only", "pilibala-ci", async () => ({ ok: true, json: async () => [{ status: 400 }] })), /status 400/);
 });
 
 function secretReference(text, includeQuoted = false) {
@@ -328,9 +328,9 @@ test("workflow exporter runs trusted code and keeps keys out of the PR jobs", ()
   assert.deepEqual(JSON.parse(boundedScan.stdout), [[false, false], [true, true], [true, true], [false, false], [true, true], [true, true]]);
   assert.equal(secretReference(pr), false);
   assertNoPrWorkflowCredentials(pr);
-  assert.match(pr, /if: always\(\) && env.PAPERCLIP_CI_PROFILE == 'true'/);
-  assert.doesNotMatch(pr, /PAPERCLIP_CI_PROFILE:.*labels/);
-  assert.equal(pr.match(/PAPERCLIP_CI_PROFILE: \$\{\{ needs.gate.outputs.profile_ci \}\}/g).length, 9);
+  assert.match(pr, /if: always\(\) && env.PILIBALA_CI_PROFILE == 'true'/);
+  assert.doesNotMatch(pr, /PILIBALA_CI_PROFILE:.*labels/);
+  assert.equal(pr.match(/PILIBALA_CI_PROFILE: \$\{\{ needs.gate.outputs.profile_ci \}\}/g).length, 9);
   // upload-artifact excludes files inside dot-directories by default. Keep
   // this opt-in scoped to timing NDJSON, never the workspace or other secrets.
   assert.equal(pr.match(/path: \.ci-profile\/\*\.ndjson\n {10}include-hidden-files: true/g).length, 9);

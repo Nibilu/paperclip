@@ -7,11 +7,11 @@ import fs from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import path from "node:path";
 import { and, inArray, eq, isNotNull, or, sql } from "drizzle-orm";
-import { activityLog, agents, heartbeatRuns, projects, projectWorkspaces, executionWorkspaceRepositoryAccess, executionWorkspaceRepositoryRoots, executionWorkspaceRepositories, executionWorkspaces, issues, type Db } from "@paperclipai/db";
-import { prepareWorkspaceRepositorySchema, type PrepareWorkspaceRepository, type ProjectRepository } from "@paperclipai/shared";
-import { withDirectoryPublicationLock } from "@paperclipai/adapter-utils/workspace-restore-merge";
+import { activityLog, agents, heartbeatRuns, projects, projectWorkspaces, executionWorkspaceRepositoryAccess, executionWorkspaceRepositoryRoots, executionWorkspaceRepositories, executionWorkspaces, issues, type Db } from "@pilibalaai/db";
+import { prepareWorkspaceRepositorySchema, type PrepareWorkspaceRepository, type ProjectRepository } from "@pilibalaai/shared";
+import { withDirectoryPublicationLock } from "@pilibalaai/adapter-utils/workspace-restore-merge";
 import { conflict, forbidden, notFound } from "../errors.js";
-import { parseNativeExecutionInput } from "../vendor/paperclip-runner/index.js";
+import { parseNativeExecutionInput } from "../vendor/pilibala-runner/index.js";
 import { assertTaskWorkspacesReadAccessForActors, assertTaskWorkspacesReadAccess, assertTaskWorkspaceAccess, assertTaskWorkspaceSourceProjectAccess } from "./task-workspace-source-access.js";
 import { authorizationService, canActorReadExecutionWorkspace, executionWorkspaceReadSqlCondition, issueReadSqlCondition, projectReadSqlCondition, type AuthorizationActor } from "./authorization.js";
 import { LOW_TRUST_ISSUE_ANCESTRY_MAX_DEPTH, resolveCoreTrustPreset } from "./trust-preset-resolver.js";
@@ -73,7 +73,7 @@ export function resolveTaskRepository(request: PrepareWorkspaceRepository["repos
 }
 
 export function taskRepositoryRelativePath(identity: string) {
-  return `.paperclip-repositories/task-repo-${createHash("sha256").update(identity).digest("hex").slice(0, 24)}`;
+  return `.pilibala-repositories/task-repo-${createHash("sha256").update(identity).digest("hex").slice(0, 24)}`;
 }
 
 export function assertRepositoryRetryMatches(row: Pick<RepositoryRow, "repositoryIdentity" | "requestedRef">, identity: string, ref: string) {
@@ -143,7 +143,7 @@ async function resolveRepositoryRootSources(tx: Db | DbTransaction, input: {
     identity: executionWorkspaceRepositories.repositoryIdentity }).from(executionWorkspaceRepositories)
     .innerJoin(executionWorkspaces, eq(executionWorkspaces.id, executionWorkspaceRepositories.executionWorkspaceId))
     .where(and(eq(executionWorkspaceRepositories.companyId, input.companyId), eq(executionWorkspaces.companyId, input.companyId))));
-  const namespace = path.join(canonicalCwd, ".paperclip-repositories");
+  const namespace = path.join(canonicalCwd, ".pilibala-repositories");
   const namespaceEntry = await fs.lstat(namespace).catch((error: NodeJS.ErrnoException) => {
     if (error.code === "ENOENT") return null;
     throw error;
@@ -522,7 +522,7 @@ export function executionWorkspaceRepositoryService(db: Db) {
         .where(and(eq(executionWorkspaceRepositories.companyId, companyId), eq(executionWorkspaces.companyId, companyId),
           isNotNull(executionWorkspaceRepositories.catalogRepositoryId))));
       if (managed.length) {
-        const namespace = path.join(canonicalCwd, ".paperclip-repositories");
+        const namespace = path.join(canonicalCwd, ".pilibala-repositories");
         const namespaceEntry = await fs.lstat(namespace).catch((error: NodeJS.ErrnoException) => {
           if (error.code === "ENOENT") return null;
           throw error;
@@ -851,12 +851,12 @@ export function executionWorkspaceRepositoryService(db: Db) {
       if (reservedRoot !== root) throw conflict("Repository workspace root changed during admission");
     }
     await reserveRootAccess({ companyId: input.companyId, cwd: root, sourceWorkspaceId: input.workspaceId, reader: input });
-    const repositoryRoot = path.join(root, ".paperclip-repositories");
+    const repositoryRoot = path.join(root, ".pilibala-repositories");
     if (!acquisitionRestricted) await fs.mkdir(repositoryRoot, { recursive: true });
     if ((await fs.lstat(repositoryRoot)).isSymbolicLink() || await fs.realpath(repositoryRoot) !== repositoryRoot) throw conflict("Repository directory escapes the task workspace");
     let stagingParent = root;
     if (!acquisitionRestricted) {
-      for (const name of [".paperclip-runtime", "repository-staging"]) {
+      for (const name of [".pilibala-runtime", "repository-staging"]) {
         stagingParent = path.join(stagingParent, name);
         await fs.mkdir(stagingParent, { mode: 0o700 }).catch((error: NodeJS.ErrnoException) => {
           if (error.code !== "EEXIST") throw error;
@@ -899,7 +899,7 @@ export function executionWorkspaceRepositoryService(db: Db) {
         anonymous.env = { ...anonymous.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_SYSTEM: "/dev/null" };
         if (!acquisitionRestricted) await db.update(executionWorkspaceRepositories).set({ state: "preparing", catalogRepositoryId: source.catalogRepositoryId, failureCode: null, updatedAt: new Date() }).where(eq(executionWorkspaceRepositories.id, row.id));
         try {
-          const ownershipPath = path.join(cwd, ".git", "paperclip-workspace-owner.json");
+          const ownershipPath = path.join(cwd, ".git", "pilibala-workspace-owner.json");
           const readOwnership = async () => {
             const handle = await fs.open(ownershipPath, fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW | fsConstants.O_NONBLOCK).catch(() => null);
             if (!handle) return null;
@@ -927,7 +927,7 @@ export function executionWorkspaceRepositoryService(db: Db) {
                 await assertCurrentControllerAcquisition(input);
                 await reserveRootAccess({ companyId: input.companyId, cwd: root, sourceWorkspaceId: input.workspaceId, reader: input });
                 const pinnedCommit = (await execFile("git", ["-C", cloneCwd, "rev-parse", "HEAD"], { timeout: 30_000 })).stdout.trim();
-                await fs.writeFile(path.join(cloneCwd, ".git", "paperclip-workspace-owner.json"), JSON.stringify({ version: 1, repositoryId: row.id, pinnedCommit }), { flag: "wx", mode: 0o600 });
+                await fs.writeFile(path.join(cloneCwd, ".git", "pilibala-workspace-owner.json"), JSON.stringify({ version: 1, repositoryId: row.id, pinnedCommit }), { flag: "wx", mode: 0o600 });
               },
             });
             if (result.warning) throw conflict(result.warning);

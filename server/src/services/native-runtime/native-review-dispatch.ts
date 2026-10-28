@@ -1,5 +1,5 @@
 import { withExternalAdmissionGuard, assertNoExternalOverlap } from "../../modules/external-agents/index.js";
-import { agentWakeupRequests, heartbeatRuns, issues, type Db } from "@paperclipai/db";
+import { agentWakeupRequests, heartbeatRuns, issues, type Db } from "@pilibalaai/db";
 import { and, eq } from "drizzle-orm";
 import type { PgUpdateSetSource } from "drizzle-orm/pg-core";
 import { claimNativeReviewExecutionLock, readNativeReviewAssignmentContext } from "./native-review-participant.js";

@@ -46,7 +46,7 @@ afterEach(async () => {
 
 function result(execution: MatrixExecution, status: "passed" | "failed") {
   return {
-    schema: "paperclip.runner-e2e.result/v2",
+    schema: "pilibala.runner-e2e.result/v2",
     executionId: execution.id,
     suiteId: execution.suite.id,
     suiteDefinitionHash: execution.suiteDefinitionHash,
@@ -77,14 +77,14 @@ describe("runner E2E campaign history", () => {
       workflowRunUrl: "https://example.test/actions/runs/1",
     };
     const results = [
-      { ...result(runnerMatrix[0]!, "passed"), schema: "paperclip.runner-e2e.result/v1" },
+      { ...result(runnerMatrix[0]!, "passed"), schema: "pilibala.runner-e2e.result/v1" },
       { ...result(runnerMatrix[1]!, "passed"), source },
     ];
     await writeFile(path.join(root, "normalized-results.json"), JSON.stringify({
       campaignId: "legacy-source", generatedAt: results[0]!.finishedAt,
       expected: results.map((entry) => entry.executionId), results,
     }));
-    vi.stubEnv("PAPERCLIP_RUNNER_E2E_SOURCE_SHA", "renderer-sha");
+    vi.stubEnv("PILIBALA_RUNNER_E2E_SOURCE_SHA", "renderer-sha");
     vi.stubEnv("GITHUB_EVENT_NAME", "push");
     await regenerateRunnerDashboard({ bundle: root });
     const regenerated = JSON.parse(await readFile(path.join(root, "normalized-results.json"), "utf8"));
@@ -108,8 +108,8 @@ describe("runner E2E campaign history", () => {
     });
     const published = { ...campaign, source: eventName === undefined ? undefined : { ...source, eventName } };
     await writeFile(path.join(root, "normalized-results.json"), JSON.stringify(published));
-    vi.stubEnv("PAPERCLIP_RUNNER_E2E_SOURCE_SHA", "renderer-sha");
-    vi.stubEnv("PAPERCLIP_RUNNER_E2E_SOURCE_REF", "refs/heads/renderer");
+    vi.stubEnv("PILIBALA_RUNNER_E2E_SOURCE_SHA", "renderer-sha");
+    vi.stubEnv("PILIBALA_RUNNER_E2E_SOURCE_REF", "refs/heads/renderer");
     vi.stubEnv("GITHUB_EVENT_NAME", "push");
     await regenerateRunnerDashboard({ bundle: root });
     const regenerated = JSON.parse(await readFile(path.join(root, "normalized-results.json"), "utf8"));
@@ -169,8 +169,8 @@ describe("runner E2E campaign history", () => {
     vi.stubEnv("GITHUB_SERVER_URL", "");
     vi.stubEnv("GITHUB_REPOSITORY", "");
     vi.stubEnv("GITHUB_RUN_ID", "");
-    vi.stubEnv("PAPERCLIP_RUNNER_E2E_SOURCE_SHA", "target-sha");
-    vi.stubEnv("PAPERCLIP_RUNNER_E2E_SOURCE_REF", "refs/heads/target");
+    vi.stubEnv("PILIBALA_RUNNER_E2E_SOURCE_SHA", "target-sha");
+    vi.stubEnv("PILIBALA_RUNNER_E2E_SOURCE_REF", "refs/heads/target");
     vi.stubEnv("GITHUB_SHA", "trusted-master-sha");
     vi.stubEnv("GITHUB_REF", "refs/heads/master");
     const execution = runnerMatrix[0]!;
@@ -495,7 +495,7 @@ describe("historical publication security", () => {
       JSON.parse(
         await readFile(path.join(output, "normalized-results.json"), "utf8"),
       ).schema,
-    ).toBe("paperclip.runner-e2e.campaign/v2");
+    ).toBe("pilibala.runner-e2e.campaign/v2");
     await expect(
       regenerateRunnerDashboard({
         bundle: root,
@@ -759,33 +759,33 @@ describe("historical publication security", () => {
   it("requires a private-origin-compatible destination shape", () => {
     expect(
       validateHistoryDestination({
-        bucket: "paperclip-runner-e2e-history",
+        bucket: "pilibala-runner-e2e-history",
         prefix: "/runner-e2e/",
-        publicBaseUrl: "https://history.paperclip.ai/",
+        publicBaseUrl: "https://history.pilibala.ai/",
       }),
     ).toEqual({
       prefix: "runner-e2e",
-      publicBaseUrl: "https://history.paperclip.ai",
+      publicBaseUrl: "https://history.pilibala.ai",
     });
     expect(() =>
       validateHistoryDestination({
-        bucket: "paperclip-runner-e2e-history",
+        bucket: "pilibala-runner-e2e-history",
         prefix: "../unsafe",
-        publicBaseUrl: "https://history.paperclip.ai/",
+        publicBaseUrl: "https://history.pilibala.ai/",
       }),
     ).toThrow("safe non-empty key prefix");
     expect(() =>
       validateHistoryDestination({
-        bucket: "paperclip-runner-e2e-history",
+        bucket: "pilibala-runner-e2e-history",
         prefix: "runner-e2e?other",
-        publicBaseUrl: "https://history.paperclip.ai/",
+        publicBaseUrl: "https://history.pilibala.ai/",
       }),
     ).toThrow("safe non-empty key prefix");
     expect(() =>
       validateHistoryDestination({
-        bucket: "paperclip-runner-e2e-history",
+        bucket: "pilibala-runner-e2e-history",
         prefix: "runner-e2e",
-        publicBaseUrl: "http://history.paperclip.ai/",
+        publicBaseUrl: "http://history.pilibala.ai/",
       }),
     ).toThrow("credential-free HTTPS");
   });
@@ -833,7 +833,7 @@ describe("historical publication security", () => {
         "evidence/core-compatibility.profile.local.case/attempt-1/snapshots/api-state.json",
       ),
     ).toBe(false);
-    expect(isHistoricalBundlePathAllowed("paperclip-home/database")).toBe(
+    expect(isHistoricalBundlePathAllowed("pilibala-home/database")).toBe(
       false,
     );
 

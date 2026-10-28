@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { and, eq, type SQL } from "drizzle-orm";
-import type { UpdateEnvironment } from "@paperclipai/shared";
+import type { UpdateEnvironment } from "@pilibalaai/shared";
 import { SANDBOX_PLATFORM_PROBE_METADATA_KEY } from "../services/environment-custom-image-runtime.js";
 import {
   activityLog,
@@ -19,7 +19,7 @@ import {
   instanceSettings,
   issues,
   projects,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -102,7 +102,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
         host: "fixture.example.test",
         port: 22,
         username: "fixture",
-        remoteWorkspacePath: "/srv/paperclip",
+        remoteWorkspacePath: "/srv/pilibala",
       },
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -144,7 +144,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
       const staleProof = { v: 1, marker: "old" };
       const freshProof = { v: 1, marker: "new" };
       const created = await svc.create({ name: "Concurrent metadata", driver: "sandbox", config,
-        metadata: { userNote: "old", _paperclipManagedArchiveToken: "old-archive-token",
+        metadata: { userNote: "old", _pilibalaManagedArchiveToken: "old-archive-token",
           [SANDBOX_PLATFORM_PROBE_METADATA_KEY]: { [companyId]: staleProof } } });
       const patches: Record<typeof operation, UpdateEnvironment> = {
         clear: { metadata: null },
@@ -185,7 +185,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
       }
       if (operation === "clear") expect(saved?.metadata).toEqual({ [SANDBOX_PLATFORM_PROBE_METADATA_KEY]: { [companyId]: freshProof } });
       else expect(saved?.metadata?.userNote).toBe(operation === "replace" ? "replacement" : "old");
-      if (operation !== "unrelated") expect(saved?.metadata).not.toHaveProperty("_paperclipManagedArchiveToken");
+      if (operation !== "unrelated") expect(saved?.metadata).not.toHaveProperty("_pilibalaManagedArchiveToken");
     },
   );
 
@@ -303,7 +303,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
           host: "fixture.example.test",
           port: 22,
           username: "fixture",
-          remoteWorkspacePath: "/srv/paperclip",
+          remoteWorkspacePath: "/srv/pilibala",
         },
         createdAt: now,
         updatedAt: now,
@@ -317,7 +317,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
           host: "other.example.test",
           port: 22,
           username: "fixture",
-          remoteWorkspacePath: "/srv/paperclip",
+          remoteWorkspacePath: "/srv/pilibala",
         },
         createdAt: now,
         updatedAt: now,
@@ -523,7 +523,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
           host: "default.example.test",
           port: 22,
           username: "fixture",
-          remoteWorkspacePath: "/srv/paperclip",
+          remoteWorkspacePath: "/srv/pilibala",
         },
         createdAt: now,
         updatedAt: now,
@@ -537,7 +537,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
           host: "delete.example.test",
           port: 22,
           username: "fixture",
-          remoteWorkspacePath: "/srv/paperclip",
+          remoteWorkspacePath: "/srv/pilibala",
         },
         createdAt: now,
         updatedAt: now,
@@ -592,7 +592,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
         host: "pending.example.test",
         port: 22,
         username: "fixture",
-        remoteWorkspacePath: "/srv/paperclip",
+        remoteWorkspacePath: "/srv/pilibala",
       },
       createdAt: now,
       updatedAt: now,
@@ -790,7 +790,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
         host: "resolved.example.test",
         port: 22,
         username: "fixture",
-        remoteWorkspacePath: "/srv/paperclip",
+        remoteWorkspacePath: "/srv/pilibala",
       },
       createdAt: now,
       updatedAt: now,
@@ -841,7 +841,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
         host: "deleted.example.test",
         port: 22,
         username: "fixture",
-        remoteWorkspacePath: "/srv/paperclip",
+        remoteWorkspacePath: "/srv/pilibala",
       },
       createdAt: now,
       updatedAt: now,
@@ -900,7 +900,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
         host: "race.example.test",
         port: 22,
         username: "fixture",
-        remoteWorkspacePath: "/srv/paperclip",
+        remoteWorkspacePath: "/srv/pilibala",
       },
       createdAt: now,
       updatedAt: now,
@@ -1079,13 +1079,13 @@ describeEmbeddedPostgres("environmentService leases", () => {
       })
       .returning();
 
-    process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
+    process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
     try {
       const adopted = await svc.ensureLocalEnvironment(companyId);
 
       expect(adopted.id).toBe(existing?.id);
       expect(adopted.name).toBe("Tenant Local");
-      expect(adopted.metadata).toEqual({ owner: "operator", managedByPaperclip: true });
+      expect(adopted.metadata).toEqual({ owner: "operator", managedByPilibala: true });
 
       // Re-ensuring an already-adopted row must not rewrite it.
       const adoptedRow = await db
@@ -1094,7 +1094,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
         .where(eq(environments.driver, "local"))
         .then((rows) => rows[0]);
       const reused = await svc.ensureLocalEnvironment(companyId);
-      expect(reused.metadata).toEqual({ owner: "operator", managedByPaperclip: true });
+      expect(reused.metadata).toEqual({ owner: "operator", managedByPilibala: true });
       const reusedRow = await db
         .select()
         .from(environments)
@@ -1102,7 +1102,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
         .then((rows) => rows[0]);
       expect(reusedRow?.updatedAt.toISOString()).toBe(adoptedRow?.updatedAt.toISOString());
     } finally {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
     }
   });
 
@@ -1246,7 +1246,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
     expect(created.name).toBe("Daytona");
     expect(created.config.provider).toBe("daytona");
     expect(created.config.target).toBe("us");
-    expect(created.metadata?.managedByPaperclip).toBe(true);
+    expect(created.metadata?.managedByPilibala).toBe(true);
     expect(created.metadata?.managedSandboxProvider).toBe("daytona");
 
     // A stock update advances config and name in place, and a description
@@ -1732,7 +1732,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
       status: "active",
       config: { provider: "daytona", target: "us" },
     });
-    expect(handMade.metadata?.managedByPaperclip).toBeUndefined();
+    expect(handMade.metadata?.managedByPilibala).toBeUndefined();
 
     const reconciliation = await svc.ensureManagedSandboxEnvironment({
       companyId,
@@ -1747,7 +1747,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
     });
     expect(reconciliation.environment.id).toBe(handMade.id);
     expect(reconciliation.environment.config.target).toBe("us");
-    expect(reconciliation.environment.metadata?.managedByPaperclip).toBeUndefined();
+    expect(reconciliation.environment.metadata?.managedByPilibala).toBeUndefined();
 
     const rows = await db
       .select()
@@ -1769,7 +1769,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
       status: "active",
       config: { provider: "daytona", target: "us" },
     });
-    expect(handMade.metadata?.managedByPaperclip).toBeUndefined();
+    expect(handMade.metadata?.managedByPilibala).toBeUndefined();
 
     const reconciliation = await svc.ensureManagedSandboxEnvironment({
       companyId,
@@ -1785,7 +1785,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
     });
     expect(reconciliation.environment.id).toBe(handMade.id);
     expect(reconciliation.environment.config.target).toBe("us");
-    expect(reconciliation.environment.metadata?.managedByPaperclip).toBeUndefined();
+    expect(reconciliation.environment.metadata?.managedByPilibala).toBeUndefined();
 
     const rows = await db
       .select()
@@ -1804,7 +1804,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
         host: "fixture.example.test",
         port: 22,
         username: "fixture",
-        remoteWorkspacePath: "/srv/paperclip",
+        remoteWorkspacePath: "/srv/pilibala",
       },
     });
     const kubernetes = await svc.ensureKubernetesEnvironment(companyId, { inCluster: true });
@@ -1833,7 +1833,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
         host: "fixture.example.test",
         port: 22,
         username: "fixture",
-        remoteWorkspacePath: "/srv/paperclip",
+        remoteWorkspacePath: "/srv/pilibala",
       },
     });
 
@@ -1898,13 +1898,13 @@ describeEmbeddedPostgres("environmentService leases", () => {
       driver: "sandbox",
       status: "active",
       config: { provider: "kubernetes" },
-      metadata: { managedByPaperclip: true, managedKubernetesSandbox: true },
+      metadata: { managedByPilibala: true, managedKubernetesSandbox: true },
       createdAt: now,
       updatedAt: now,
     });
 
     // Partial unique index environments_company_managed_sandbox_idx rejects a
-    // second row matching driver='sandbox' AND managedByPaperclip=true for the
+    // second row matching driver='sandbox' AND managedByPilibala=true for the
     // same company. This is the DB-level invariant that replaced the previous
     // application-side post-insert convergence loop.
     const secondInsert = db.insert(environments).values({
@@ -1912,7 +1912,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
       driver: "sandbox",
       status: "active",
       config: { provider: "kubernetes" },
-      metadata: { managedByPaperclip: true, managedKubernetesSandbox: true },
+      metadata: { managedByPilibala: true, managedKubernetesSandbox: true },
       createdAt: new Date(now.getTime() + 1),
       updatedAt: new Date(now.getTime() + 1),
     });
@@ -1928,7 +1928,7 @@ describeEmbeddedPostgres("environmentService leases", () => {
     }
     expect(raisedConstraint).toBe("environments_managed_sandbox_idx");
 
-    // Index does NOT cover tenant-created sandbox rows (no managedByPaperclip
+    // Index does NOT cover tenant-created sandbox rows (no managedByPilibala
     // marker) — operators must be able to keep multiple tenant sandbox envs.
     await db.insert(environments).values({
       name: "Tenant Sandbox",

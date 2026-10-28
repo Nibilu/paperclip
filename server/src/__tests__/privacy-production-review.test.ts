@@ -7,7 +7,7 @@ import request from "supertest";
 import WebSocket from "ws";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { workspaceOperations, agents, approvals, assets, chatEndpoints, chatExternalPrincipals, chatConversations, chatIdentityLinks, chatDeliveries, toolApplications, toolConnections, executionWorkspaces, authUsers, companies, companyMemberships, createDb, heartbeatRuns, issueAccessGrants, issues, projectAccessMembers, projects, startEmbeddedPostgresTestDatabase } from "@paperclipai/db";
+import { workspaceOperations, agents, approvals, assets, chatEndpoints, chatExternalPrincipals, chatConversations, chatIdentityLinks, chatDeliveries, toolApplications, toolConnections, executionWorkspaces, authUsers, companies, companyMemberships, createDb, heartbeatRuns, issueAccessGrants, issues, projectAccessMembers, projects, startEmbeddedPostgresTestDatabase } from "@pilibalaai/db";
 import { authorizationService, canPublishIssueToChatAudience, canActorReadIssuePrivacy, issueReadSqlCondition, canActorReadProjectPrivacy, projectReadSqlCondition, canActorReadApproval, approvalReadSqlCondition, canActorReadExecutionWorkspace, type AuthorizationActor } from "../services/authorization.js";
 
 import { canActorReadWorkspaceOperation } from "../services/heartbeat-run-privacy.js";
@@ -17,8 +17,8 @@ describe("private task production review", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: ReturnType<typeof createDb>;
   beforeAll(async () => {
-    process.env.PAPERCLIP_ISSUE_PRIVACY_MODE = "enforce";
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-private-review-");
+    process.env.PILIBALA_ISSUE_PRIVACY_MODE = "enforce";
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-private-review-");
     db = createDb(tempDb.connectionString);
     // Load the current route dependency graph during setup, outside assertion timeouts.
     await Promise.all([import("../routes/issues.js"), import("../routes/projects.js")]);
@@ -75,7 +75,7 @@ describe("private task production review", () => {
     const publication = { companyId: f.company.id, issueId: task.id, endpointId: endpoint.id, conversationId: conversation.id };
     expect(await canPublishIssueToChatAudience(db, publication)).toBe(false);
     await db.insert(chatDeliveries).values({ companyId: f.company.id, endpointId: endpoint.id, conversationId: conversation.id, principalId: principal.id, providerEventId: randomUUID(), deduplicationKey: randomUUID(), eventKind: "message", normalizedEvent: {} as any });
-    const [link] = await db.insert(chatIdentityLinks).values({ companyId: f.company.id, endpointId: endpoint.id, principalId: principal.id, paperclipUserId: f.outsider, status: "linked" }).returning();
+    const [link] = await db.insert(chatIdentityLinks).values({ companyId: f.company.id, endpointId: endpoint.id, principalId: principal.id, pilibalaUserId: f.outsider, status: "linked" }).returning();
     expect(await canPublishIssueToChatAudience(db, publication)).toBe(false);
     const [grant] = await db.insert(issueAccessGrants).values({ issueId: task.id, subjectType: "user", subjectId: f.outsider, source: "explicit" }).returning();
     expect(await canPublishIssueToChatAudience(db, publication)).toBe(true);
@@ -84,7 +84,7 @@ describe("private task production review", () => {
     await db.update(chatConversations).set({ isDirectMessage: true }).where(eq(chatConversations.id, conversation.id));
     await db.update(issueAccessGrants).set({ revokedAt: new Date() }).where(eq(issueAccessGrants.id, grant.id));
     expect(await canPublishIssueToChatAudience(db, publication)).toBe(false);
-    await db.update(chatIdentityLinks).set({ paperclipUserId: f.owner }).where(eq(chatIdentityLinks.id, link.id));
+    await db.update(chatIdentityLinks).set({ pilibalaUserId: f.owner }).where(eq(chatIdentityLinks.id, link.id));
     expect(await canPublishIssueToChatAudience(db, publication)).toBe(true);
     await db.update(chatIdentityLinks).set({ revokedAt: new Date() }).where(eq(chatIdentityLinks.id, link.id));
     expect(await canPublishIssueToChatAudience(db, publication)).toBe(false);

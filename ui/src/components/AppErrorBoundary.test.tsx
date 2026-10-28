@@ -50,7 +50,7 @@ describe("AppErrorBoundary", () => {
       );
     });
 
-    expect(container.textContent).toContain("Paperclip hit an error");
+    expect(container.textContent).toContain("Pilibala hit an error");
     expect(container.textContent).toContain("Maximum update depth exceeded");
 
     expect(captureBrowserExceptionMock).toHaveBeenCalledTimes(1);
@@ -78,7 +78,7 @@ describe("AppErrorBoundary", () => {
       );
     });
 
-    expect(container.textContent).toContain("Paperclip hit an error");
+    expect(container.textContent).toContain("Pilibala hit an error");
     expect(container.textContent).toContain("effect exploded");
 
     act(() => {
@@ -118,7 +118,7 @@ describe("AppErrorBoundary", () => {
       expect.objectContaining({ name: "NotFoundError" }),
       { boundary: "app", componentStack: expect.stringContaining("BrokenDomInsertion") },
     );
-    expect(container.textContent).toContain("Paperclip hit an error");
+    expect(container.textContent).toContain("Pilibala hit an error");
     act(() => root.unmount());
   });
 

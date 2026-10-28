@@ -8,7 +8,7 @@ import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { agents, authUsers, companies, companyMemberships, createDb, executionWorkspaceRepositoryRoots, executionWorkspaceRepositoryAccess, executionWorkspaceRepositories, executionWorkspaces,
-  heartbeatRuns, issueAccessGrants, issues, projects, projectWorkspaces, projectAccessMembers, principalPermissionGrants, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@paperclipai/db";
+  heartbeatRuns, issueAccessGrants, issues, projects, projectWorkspaces, projectAccessMembers, principalPermissionGrants, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@pilibalaai/db";
 import { assertExecutionWorkspaceRootReadAccess, assertExecutionWorkspaceRootWriteAccess, assertIsolatedWorkspaceSourceReadAccess, retainIsolatedWorkspaceSourceAccess, executionWorkspaceRepositoryService } from "../services/execution-workspace-repositories.js";
 import { executionWorkspaceService } from "../services/execution-workspaces.js";
 import { projectService } from "../services/projects.js";
@@ -252,7 +252,7 @@ const support = await getEmbeddedPostgresTestSupport();
     ]);
     const captured = await assertIsolatedWorkspaceSourceReadAccess(db, { companyId: f.companyId, sourceCwd, actor: f.actor });
     expect(captured.projectIds).toContain(project.id);
-    const targetCwd = sourceKind === "nested_target" ? path.join(f.admission.cwd, ".paperclip", "worktrees", "copy") : path.join(root, `${f.issueId}-copy`);
+    const targetCwd = sourceKind === "nested_target" ? path.join(f.admission.cwd, ".pilibala", "worktrees", "copy") : path.join(root, `${f.issueId}-copy`);
     await retainIsolatedWorkspaceSourceAccess(db, { companyId: f.companyId, sourceCwd, targetCwd, actor: f.actor, captured });
     await expect(fs.lstat(targetCwd)).rejects.toMatchObject({ code: "ENOENT" });
     if (sourceKind === "nested_target") {
@@ -390,7 +390,7 @@ const support = await getEmbeddedPostgresTestSupport();
       await expect(f.service.prepareConfiguredRepositorySource(input)).rejects.toThrow(/source project/);
     } else {
       const beforePublish = await f.service.prepareConfiguredRepositorySource(input);
-      const destination = path.join(f.admission.cwd, ".paperclip-repositories", "configured-source");
+      const destination = path.join(f.admission.cwd, ".pilibala-repositories", "configured-source");
       await exec("git", ["clone", sourceCwd, destination]);
       await expect(beforePublish()).resolves.toBeUndefined();
       if (scenario === "source_detached") await db.delete(projectWorkspaces).where(eq(projectWorkspaces.id, configuration.id));
@@ -586,7 +586,7 @@ exec "$PROBE_REAL_GIT" "$@"
       { companyId: f.companyId, projectId: project.id, subjectType: "user", subjectId: f.userId },
     ]);
     const captured = await assertIsolatedWorkspaceSourceReadAccess(db, { companyId: f.companyId, sourceCwd: f.admission.cwd, actor: f.actor });
-    const targetCwd = path.join(f.admission.cwd, ".paperclip", "worktrees", "legacy");
+    const targetCwd = path.join(f.admission.cwd, ".pilibala", "worktrees", "legacy");
     const input = { companyId: f.companyId, sourceCwd: f.admission.cwd, targetCwd, actor: f.actor, issueId: f.issueId, captured };
     if (scenario === "interrupted_creation") await retainIsolatedWorkspaceSourceAccess(db, input);
     if (scenario === "unrelated_owner") {

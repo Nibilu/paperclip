@@ -23,5 +23,5 @@ SOFTWARE.
 Adapted from Warp's complain skill:
 https://github.com/warpdotdev/common-skills/blob/main/.agents/skills/complain/SKILL.md
 
-Paperclip adaptations: local attributed storage, native tools, free-form
+Pilibala adaptations: local attributed storage, native tools, free-form
 suggestions, and document-sized input limits.

@@ -2,13 +2,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, gt, inArray, isNull, lte, ne, or } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { providerTraceRecords } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { providerTraceRecords } from "@pilibalaai/db";
 import type {
   ProviderTraceFrame,
   ProviderTraceMetadata,
-} from "@paperclipai/shared";
-import { resolvePaperclipInstanceRoot } from "../home-paths.js";
+} from "@pilibalaai/shared";
+import { resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { logActivity } from "./activity-log.js";
 
 export const PROVIDER_TRACE_MAX_BYTES = 64 * 1024 * 1024;
@@ -26,7 +26,7 @@ type TraceRow = typeof providerTraceRecords.$inferSelect;
 function traceRoot() {
   return (
     process.env.PROVIDER_TRACE_BASE_PATH ??
-    path.resolve(resolvePaperclipInstanceRoot(), "data", "provider-traces")
+    path.resolve(resolvePilibalaInstanceRoot(), "data", "provider-traces")
   );
 }
 
@@ -46,7 +46,7 @@ function rehydrationTracePath(traceRef: string) {
 
 function asMetadata(row: TraceRow): ProviderTraceMetadata {
   return {
-    schema: "paperclip.provider_trace_metadata.v1",
+    schema: "pilibala.provider_trace_metadata.v1",
     id: row.id,
     runId: row.runId,
     companyId: row.companyId,

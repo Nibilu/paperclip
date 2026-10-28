@@ -32,10 +32,10 @@ describe("chat run milestone projection", () => {
         errorCode: "low_trust_isolation_unavailable",
         milestone: "failed",
         issueId: "issue-1",
-        publicBaseUrl: "https://paperclip.example/path",
+        publicBaseUrl: "https://pilibala.example/path",
       }),
     ).toBe(
-      "Maya couldn't safely start this turn because this task was started for an unlinked external guest and isolated guest execution isn't available. Ask a Paperclip admin to create a private identity link for this account or enable isolated guest execution, then start a new task. Open the task in Paperclip: https://paperclip.example/issues/issue-1",
+      "Maya couldn't safely start this turn because this task was started for an unlinked external guest and isolated guest execution isn't available. Ask a Pilibala admin to create a private identity link for this account or enable isolated guest execution, then start a new task. Open the task in Pilibala: https://pilibala.example/issues/issue-1",
     );
     expect(
       safeMilestoneText({
@@ -46,7 +46,7 @@ describe("chat run milestone projection", () => {
         publicBaseUrl: null,
       }),
     ).toBe(
-      "Maya couldn't safely start this turn because this task was started for an unlinked external guest and isolated guest execution isn't available. Ask a Paperclip admin to create a private identity link for this account or enable isolated guest execution, then start a new task. Open the task in Paperclip for details.",
+      "Maya couldn't safely start this turn because this task was started for an unlinked external guest and isolated guest execution isn't available. Ask a Pilibala admin to create a private identity link for this account or enable isolated guest execution, then start a new task. Open the task in Pilibala for details.",
     );
   });
 
@@ -58,12 +58,12 @@ describe("chat run milestone projection", () => {
       issueId: "issue-1",
     });
     expect(text).toBe(
-      "Maya couldn't safely continue this turn. A Paperclip admin needs to review the run before it can be retried. Open the task in Paperclip for details.",
+      "Maya couldn't safely continue this turn. A Pilibala admin needs to review the run before it can be retried. Open the task in Pilibala for details.",
     );
     expect(text).not.toMatch(/digest|source.seq|semantic|replay.conflict/i);
   });
 
-  it("keeps every other run failure generic outside Paperclip", () => {
+  it("keeps every other run failure generic outside Pilibala", () => {
     expect(
       safeMilestoneText({
         agentName: "Maya",
@@ -72,15 +72,15 @@ describe("chat run milestone projection", () => {
         issueId: "issue-1",
       }),
     ).toBe(
-      "Maya stopped before completing this turn. Open the task in Paperclip for details.",
+      "Maya stopped before completing this turn. Open the task in Pilibala for details.",
     );
   });
 
   it.each([
-    [null, " Open the task in Paperclip for details."],
+    [null, " Open the task in Pilibala for details."],
     [
-      "https://paperclip.example",
-      " Open the task in Paperclip: https://paperclip.example/issues/issue-1",
+      "https://pilibala.example",
+      " Open the task in Pilibala: https://pilibala.example/issues/issue-1",
     ],
   ])(
     "explains retained-session recovery without encouraging duplicate requests (%s)",
@@ -93,7 +93,7 @@ describe("chat run milestone projection", () => {
         publicBaseUrl,
       });
       expect(text).toBe(
-        "Maya couldn't start this turn because an earlier session needs recovery. Your request is saved. Ask a Paperclip admin to recover that session before retrying; sending the request again won't repair it." +
+        "Maya couldn't start this turn because an earlier session needs recovery. Your request is saved. Ask a Pilibala admin to recover that session before retrying; sending the request again won't repair it." +
           suffix,
       );
       expect(text).not.toMatch(
@@ -119,12 +119,12 @@ describe("chat run milestone projection", () => {
         issueId: "issue-1",
       }),
     ).toBe(
-      "Maya needs a Paperclip admin to safely recover this turn before more work can start. Open the task in Paperclip for details.",
+      "Maya needs a Pilibala admin to safely recover this turn before more work can start. Open the task in Pilibala for details.",
     );
   });
 
   it.each(["server_shutdown_interrupted", "lease_released_before_terminal"])(
-    "keeps interruption bookkeeping for %s inside Paperclip",
+    "keeps interruption bookkeeping for %s inside Pilibala",
     (errorCode) => {
       expect(
         safeMilestoneText({
@@ -134,7 +134,7 @@ describe("chat run milestone projection", () => {
           issueId: "issue-1",
         }),
       ).toBe(
-        "Maya stopped before completing this turn. Open the task in Paperclip for details.",
+        "Maya stopped before completing this turn. Open the task in Pilibala for details.",
       );
     },
   );
@@ -148,7 +148,7 @@ describe("chat run milestone projection", () => {
         issueId: "issue-1",
       }),
     ).toBe(
-      "Maya couldn't complete this turn because the model provider's usage allowance is exhausted. A Paperclip admin needs to restore capacity before retrying. Open the task in Paperclip for details.",
+      "Maya couldn't complete this turn because the model provider's usage allowance is exhausted. A Pilibala admin needs to restore capacity before retrying. Open the task in Pilibala for details.",
     );
   });
 
@@ -193,7 +193,7 @@ describe("chat agent comment publication authorization", () => {
   });
 
   it.each([
-    "paperclip_runner_protocol",
+    "pilibala_runner_protocol",
     "allow_visible_issue_write",
     "allow_scoped_agent_write",
     "allow_chat_run_presentation",
@@ -207,7 +207,7 @@ describe("chat agent comment publication authorization", () => {
     "",
     null,
   ])(
-    "keeps an internal agent comment with reason %s inside Paperclip",
+    "keeps an internal agent comment with reason %s inside Pilibala",
     (reason) => {
       expect(isExplicitExternalAgentComment(metadata(reason))).toBe(false);
     },

@@ -1,10 +1,10 @@
-import { createProviderStoppedBoundary } from "@paperclipai/adapter-utils/provider-stopped-boundary";
-import { createUsageCheckpointLog } from "@paperclipai/adapter-utils/usage-checkpoint";
+import { createProviderStoppedBoundary } from "@pilibalaai/adapter-utils/provider-stopped-boundary";
+import { createUsageCheckpointLog } from "@pilibalaai/adapter-utils/usage-checkpoint";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { inferOpenAiCompatibleBiller, type AdapterExecutionContext, type AdapterExecutionResult } from "@paperclipai/adapter-utils";
+import { inferOpenAiCompatibleBiller, type AdapterExecutionContext, type AdapterExecutionResult } from "@pilibalaai/adapter-utils";
 import {
   adapterExecutionTargetIsRemote,
   adapterExecutionTargetRemoteCwd,
@@ -12,7 +12,7 @@ import {
   adapterExecutionTargetSessionIdentity,
   adapterExecutionTargetSessionMatches,
   adapterExecutionTargetUsesManagedHome,
-  adapterExecutionTargetUsesPaperclipBridge,
+  adapterExecutionTargetUsesPilibalaBridge,
   describeAdapterExecutionTarget,
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetFile,
@@ -25,36 +25,36 @@ import {
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
   runAdapterExecutionTargetShellCommand,
-  startAdapterExecutionTargetPaperclipBridge,
-} from "@paperclipai/adapter-utils/execution-target";
+  startAdapterExecutionTargetPilibalaBridge,
+} from "@pilibalaai/adapter-utils/execution-target";
 import {
   asString,
   asNumber,
   asStringArray,
   parseObject,
-  buildPaperclipEnv,
+  buildPilibalaEnv,
   buildRuntimeToolsEnv,
   joinPromptSections,
   buildInvocationEnvForLogs,
   ensureAbsoluteDirectory,
-  ensurePaperclipSkillSymlink,
+  ensurePilibalaSkillSymlink,
   ensurePathInEnv,
-  refreshPaperclipWorkspaceEnvForExecution,
-  isPaperclipSkillSourceMissing,
-  readPaperclipRuntimeSkillEntries,
-  readPaperclipIssueWorkModeFromContext,
-  resolveLegacyPaperclipDesiredSkillNames,
+  refreshPilibalaWorkspaceEnvForExecution,
+  isPilibalaSkillSourceMissing,
+  readPilibalaRuntimeSkillEntries,
+  readPilibalaIssueWorkModeFromContext,
+  resolveLegacyPilibalaDesiredSkillNames,
   removeMaintainerOnlySkillSymlinks,
   renderTemplate,
   hydrateFreshSessionHandoff,
-  selectPaperclipPromptSections,
+  selectPilibalaPromptSections,
   selectInitialCommunicationGuidance,
-  isPaperclipRecoveryWakePayload,
-  DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
-  DEFAULT_PAPERCLIP_CONVERSATION_PROMPT_TEMPLATE,
+  isPilibalaRecoveryWakePayload,
+  DEFAULT_PILIBALA_AGENT_PROMPT_TEMPLATE,
+  DEFAULT_PILIBALA_CONVERSATION_PROMPT_TEMPLATE,
   runChildProcess,
-} from "@paperclipai/adapter-utils/server-utils";
-import { shellQuote } from "@paperclipai/adapter-utils/ssh";
+} from "@pilibalaai/adapter-utils/server-utils";
+import { shellQuote } from "@pilibalaai/adapter-utils/ssh";
 import { isPiUnknownSessionError, parsePiJsonl, createPiJsonlParser } from "./parse.js";
 import { createPiStdoutCompactor, resolvePiStdoutLogMode } from "./stdout-compaction.js";
 import { ensurePiModelConfiguredAndAvailable } from "./models.js";
@@ -63,7 +63,7 @@ import { SANDBOX_INSTALL_COMMAND } from "../index.js";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
-const PAPERCLIP_SESSIONS_DIR = path.join(os.homedir(), ".pi", "paperclips");
+const PILIBALA_SESSIONS_DIR = path.join(os.homedir(), ".pi", "pilibalas");
 const PI_AGENT_SKILLS_DIR = path.join(os.homedir(), ".pi", "agent", "skills");
 
 function firstNonEmptyLine(text: string): string {
@@ -105,7 +105,7 @@ async function ensurePiSkillsInjected(
   for (const skillName of removedSkills) {
     await onLog(
       "stderr",
-      `[paperclip] Removed maintainer-only Pi skill "${skillName}" from ${PI_AGENT_SKILLS_DIR}\n`,
+      `[pilibala] Removed maintainer-only Pi skill "${skillName}" from ${PI_AGENT_SKILLS_DIR}\n`,
     );
   }
 
@@ -113,30 +113,30 @@ async function ensurePiSkillsInjected(
     const target = path.join(PI_AGENT_SKILLS_DIR, entry.runtimeName);
 
     try {
-      const result = await ensurePaperclipSkillSymlink(entry.source, target);
+      const result = await ensurePilibalaSkillSymlink(entry.source, target);
       if (result === "skipped") continue;
       await onLog(
         "stderr",
-        `[paperclip] ${result === "repaired" ? "Repaired" : "Injected"} Pi skill "${entry.runtimeName}" into ${PI_AGENT_SKILLS_DIR}\n`,
+        `[pilibala] ${result === "repaired" ? "Repaired" : "Injected"} Pi skill "${entry.runtimeName}" into ${PI_AGENT_SKILLS_DIR}\n`,
       );
     } catch (err) {
       await onLog(
         "stderr",
-        `[paperclip] Failed to inject Pi skill "${entry.runtimeName}" into ${PI_AGENT_SKILLS_DIR}: ${err instanceof Error ? err.message : String(err)}\n`,
+        `[pilibala] Failed to inject Pi skill "${entry.runtimeName}" into ${PI_AGENT_SKILLS_DIR}: ${err instanceof Error ? err.message : String(err)}\n`,
       );
     }
   }
 }
 
 async function buildPiSkillsDir(config: Record<string, unknown>): Promise<string> {
-  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-pi-skills-"));
+  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-pi-skills-"));
   const target = path.join(tmp, "skills");
   await fs.mkdir(target, { recursive: true });
-  const availableEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
-  const desiredNames = new Set(resolveLegacyPaperclipDesiredSkillNames(config, availableEntries));
+  const availableEntries = await readPilibalaRuntimeSkillEntries(config, __moduleDir);
+  const desiredNames = new Set(resolveLegacyPilibalaDesiredSkillNames(config, availableEntries));
   for (const entry of availableEntries) {
     if (!desiredNames.has(entry.key)) continue;
-    if (isPaperclipSkillSourceMissing(entry)) continue;
+    if (isPilibalaSkillSourceMissing(entry)) continue;
     await fs.symlink(entry.source, path.join(target, entry.runtimeName));
   }
   return target;
@@ -147,13 +147,13 @@ function resolvePiBiller(env: Record<string, string>, provider: string | null): 
 }
 
 async function ensureSessionsDir(): Promise<string> {
-  await fs.mkdir(PAPERCLIP_SESSIONS_DIR, { recursive: true });
-  return PAPERCLIP_SESSIONS_DIR;
+  await fs.mkdir(PILIBALA_SESSIONS_DIR, { recursive: true });
+  return PILIBALA_SESSIONS_DIR;
 }
 
 function buildSessionPath(agentId: string, timestamp: string): string {
   const safeTimestamp = timestamp.replace(/[:.]/g, "-");
-  return path.join(PAPERCLIP_SESSIONS_DIR, `${safeTimestamp}-${agentId}.jsonl`);
+  return path.join(PILIBALA_SESSIONS_DIR, `${safeTimestamp}-${agentId}.jsonl`);
 }
 
 function buildRemoteSessionPath(runtimeRootDir: string, agentId: string, timestamp: string): string {
@@ -235,8 +235,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const promptTemplate = asString(
     config.promptTemplate,
     context.conversationMode === true
-      ? DEFAULT_PAPERCLIP_CONVERSATION_PROMPT_TEMPLATE
-      : DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
+      ? DEFAULT_PILIBALA_CONVERSATION_PROMPT_TEMPLATE
+      : DEFAULT_PILIBALA_AGENT_PROMPT_TEMPLATE,
   );
   const hasCustomPromptTemplate = asString(config.promptTemplate, "").trim().length > 0;
   const command = asString(config.command, "pi");
@@ -248,15 +248,15 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const provider = parseModelProvider(model);
   const modelId = parseModelId(model);
 
-  const workspaceContext = parseObject(context.paperclipWorkspace);
+  const workspaceContext = parseObject(context.pilibalaWorkspace);
   const workspaceCwd = asString(workspaceContext.cwd, "");
   const workspaceSource = asString(workspaceContext.source, "");
   const workspaceId = asString(workspaceContext.workspaceId, "");
   const workspaceRepoUrl = asString(workspaceContext.repoUrl, "");
   const workspaceRepoRef = asString(workspaceContext.repoRef, "");
   const agentHome = asString(workspaceContext.agentHome, "");
-  const workspaceHints = Array.isArray(context.paperclipWorkspaces)
-    ? context.paperclipWorkspaces.filter(
+  const workspaceHints = Array.isArray(context.pilibalaWorkspaces)
+    ? context.pilibalaWorkspaces.filter(
         (value): value is Record<string, unknown> => typeof value === "object" && value !== null,
       )
     : [];
@@ -271,8 +271,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     await ensureSessionsDir();
   }
 
-  const piSkillEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
-  const desiredPiSkillNames = resolveLegacyPaperclipDesiredSkillNames(config, piSkillEntries);
+  const piSkillEntries = await readPilibalaRuntimeSkillEntries(config, __moduleDir);
+  const desiredPiSkillNames = resolveLegacyPilibalaDesiredSkillNames(config, piSkillEntries);
   if (!executionTargetIsRemote) {
     await ensurePiSkillsInjected(onLog, piSkillEntries, desiredPiSkillNames);
   }
@@ -280,10 +280,10 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   // Build environment
   const envConfig = parseObject(config.env);
   const env: Record<string, string> = {
-    ...buildPaperclipEnv(agent, ctx.agentIdentity),
+    ...buildPilibalaEnv(agent, ctx.agentIdentity),
     ...buildRuntimeToolsEnv(ctx.runtimeTools),
   };
-  env.PAPERCLIP_RUN_ID = runId;
+  env.PILIBALA_RUN_ID = runId;
 
   const wakeTaskId =
     (typeof context.taskId === "string" && context.taskId.trim().length > 0 && context.taskId.trim()) ||
@@ -308,16 +308,16 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const linkedIssueIds = Array.isArray(context.issueIds)
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
-  const issueWorkMode = readPaperclipIssueWorkModeFromContext(context);
+  const issueWorkMode = readPilibalaIssueWorkModeFromContext(context);
     
-  if (wakeTaskId) env.PAPERCLIP_TASK_ID = wakeTaskId;
-  if (issueWorkMode) env.PAPERCLIP_ISSUE_WORK_MODE = issueWorkMode;
-  if (wakeReason) env.PAPERCLIP_WAKE_REASON = wakeReason;
-  if (wakeCommentId) env.PAPERCLIP_WAKE_COMMENT_ID = wakeCommentId;
-  if (approvalId) env.PAPERCLIP_APPROVAL_ID = approvalId;
-  if (approvalStatus) env.PAPERCLIP_APPROVAL_STATUS = approvalStatus;
-  if (linkedIssueIds.length > 0) env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
-  refreshPaperclipWorkspaceEnvForExecution({
+  if (wakeTaskId) env.PILIBALA_TASK_ID = wakeTaskId;
+  if (issueWorkMode) env.PILIBALA_ISSUE_WORK_MODE = issueWorkMode;
+  if (wakeReason) env.PILIBALA_WAKE_REASON = wakeReason;
+  if (wakeCommentId) env.PILIBALA_WAKE_COMMENT_ID = wakeCommentId;
+  if (approvalId) env.PILIBALA_APPROVAL_ID = approvalId;
+  if (approvalStatus) env.PILIBALA_APPROVAL_STATUS = approvalStatus;
+  if (linkedIssueIds.length > 0) env.PILIBALA_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
+  refreshPilibalaWorkspaceEnvForExecution({
     env,
     envConfig,
     workspaceCwd: effectiveWorkspaceCwd,
@@ -331,9 +331,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     executionCwd: effectiveExecutionCwd,
   });
   if (authToken) {
-    env.PAPERCLIP_API_KEY = authToken;
+    env.PILIBALA_API_KEY = authToken;
   }
-  // Materialize custom Pi providers (PAPERCLIP_PI_PROVIDERS) into a managed
+  // Materialize custom Pi providers (PILIBALA_PI_PROVIDERS) into a managed
   // PI_CODING_AGENT_DIR before runtimeEnv is computed, so both local validation
   // and the spawned Pi process resolve models against the managed models.json.
   const preparedRuntimeConfig = await preparePiRuntimeConfig({ env });
@@ -343,7 +343,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   }
   try {
     // Prepend installed skill `bin/` dirs to PATH so an agent's bash tool can
-    // invoke skill binaries (e.g. `paperclip-get-issue`) by name. Without this,
+    // invoke skill binaries (e.g. `pilibala-get-issue`) by name. Without this,
     // any pi_local agent whose AGENTS.md calls a skill command via bash hits
     // exit 127 "command not found". Only include skills that ensurePiSkillsInjected
     // actually linked — otherwise non-injected skills' binaries would be reachable
@@ -415,14 +415,14 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     let remoteRuntimeRootDir: string | null = null;
     let localSkillsDir: string | null = null;
     let remoteSkillsDir: string | null = null;
-    let paperclipBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetPaperclipBridge>> = null;
+    let pilibalaBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetPilibalaBridge>> = null;
 
     if (executionTargetIsRemote) {
       try {
         localSkillsDir = await buildPiSkillsDir(config);
         await onLog(
           "stdout",
-          `[paperclip] Syncing workspace and Pi runtime assets to ${describeAdapterExecutionTarget(executionTarget)}.\n`,
+          `[pilibala] Syncing workspace and Pi runtime assets to ${describeAdapterExecutionTarget(executionTarget)}.\n`,
         );
         const preparedRemoteRuntime = await prepareAdapterExecutionTargetRuntime({
           runId,
@@ -451,7 +451,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         restoreRemoteWorkspace = () =>
           preparedRemoteRuntime.restoreWorkspace((line) => onLog("stdout", line));
         effectiveExecutionCwd = preparedRemoteRuntime.workspaceRemoteDir ?? effectiveExecutionCwd;
-        refreshPaperclipWorkspaceEnvForExecution({
+        refreshPilibalaWorkspaceEnvForExecution({
           env,
           envConfig,
           workspaceCwd: effectiveWorkspaceCwd,
@@ -481,8 +481,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       }
     }
     const runtimeExecutionTarget = overrideAdapterExecutionTargetRemoteCwd(executionTarget, effectiveExecutionCwd);
-    if (executionTargetIsRemote && adapterExecutionTargetUsesPaperclipBridge(runtimeExecutionTarget)) {
-      paperclipBridge = await startAdapterExecutionTargetPaperclipBridge({
+    if (executionTargetIsRemote && adapterExecutionTargetUsesPilibalaBridge(runtimeExecutionTarget)) {
+      pilibalaBridge = await startAdapterExecutionTargetPilibalaBridge({
         runId,
         target: runtimeExecutionTarget,
         enableSandboxDuplexBridge: adapterExecutionTargetEnablesSandboxDuplexBridge(runtimeExecutionTarget),
@@ -490,11 +490,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         runtimeRootDir: remoteRuntimeRootDir,
         adapterKey: "pi",
         timeoutSec,
-        hostApiToken: env.PAPERCLIP_API_KEY,
+        hostApiToken: env.PILIBALA_API_KEY,
         onLog,
       });
-      if (paperclipBridge) {
-        Object.assign(env, paperclipBridge.env);
+      if (pilibalaBridge) {
+        Object.assign(env, pilibalaBridge.env);
         loggedEnv = buildInvocationEnvForLogs(env, {
           runtimeEnv: Object.fromEntries(
             Object.entries(ensurePathInEnv({ ...process.env, ...env })).filter(
@@ -545,13 +545,13 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     if (runtimeSessionId && !canResumeSession) {
       const staleSessionCwdNote =
         savedSessionCwd !== null && !sessionHeaderCwdMatches
-          ? ` Pi stored cwd "${savedSessionCwd}" in the session header, so Paperclip will start a fresh session for "${effectiveExecutionCwd}".`
+          ? ` Pi stored cwd "${savedSessionCwd}" in the session header, so Pilibala will start a fresh session for "${effectiveExecutionCwd}".`
           : "";
       await onLog(
         "stdout",
         executionTargetIsRemote
-          ? `[paperclip] Pi session "${runtimeSessionId}" does not match the current remote execution state and will not be resumed in "${effectiveExecutionCwd}".${staleSessionCwdNote} Starting a fresh remote session.\n`
-          : `[paperclip] Pi session "${runtimeSessionId}" was saved for cwd "${runtimeSessionCwd}" and will not be resumed in "${effectiveExecutionCwd}".${staleSessionCwdNote}\n`,
+          ? `[pilibala] Pi session "${runtimeSessionId}" does not match the current remote execution state and will not be resumed in "${effectiveExecutionCwd}".${staleSessionCwdNote} Starting a fresh remote session.\n`
+          : `[pilibala] Pi session "${runtimeSessionId}" was saved for cwd "${runtimeSessionCwd}" and will not be resumed in "${effectiveExecutionCwd}".${staleSessionCwdNote}\n`,
       );
     }
 
@@ -592,14 +592,14 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
           `The above agent instructions were loaded from ${resolvedInstructionsFilePath}. ` +
           `Resolve any relative file references from ${instructionsFileDir}.\n\n` +
           (context.conversationMode === true
-            ? DEFAULT_PAPERCLIP_CONVERSATION_PROMPT_TEMPLATE
-            : DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE);
+            ? DEFAULT_PILIBALA_CONVERSATION_PROMPT_TEMPLATE
+            : DEFAULT_PILIBALA_AGENT_PROMPT_TEMPLATE);
       } catch (err) {
         instructionsReadFailed = true;
         const reason = err instanceof Error ? err.message : String(err);
         await onLog(
           "stdout",
-          `[paperclip] Warning: could not read agent instructions file "${resolvedInstructionsFilePath}": ${reason}\n`,
+          `[pilibala] Warning: could not read agent instructions file "${resolvedInstructionsFilePath}": ${reason}\n`,
         );
         // Fall back to base prompt template
         systemPromptExtension = promptTemplate;
@@ -620,7 +620,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     };
     const renderedSystemPromptExtension = renderTemplate(systemPromptExtension, templateData);
     const systemOwnsDefaultPolicy = !hasCustomPromptTemplate || Boolean(resolvedInstructionsFilePath && !instructionsReadFailed);
-    const sessionHandoffNote = asString(context.paperclipSessionHandoffMarkdown, "").trim();
+    const sessionHandoffNote = asString(context.pilibalaSessionHandoffMarkdown, "").trim();
 
     const commandNotes = (() => {
       const notes = [...preparedRuntimeConfig.notes];
@@ -670,7 +670,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     const runAttempt = async (sessionFile: string) => {
       const attemptResumedSession = canResumeSession && sessionFile === sessionPath;
       await hydrateFreshSessionHandoff(ctx, { resumedSession: attemptResumedSession });
-      const attemptSections = selectPaperclipPromptSections(context, {
+      const attemptSections = selectPilibalaPromptSections(context, {
         resumedSession: attemptResumedSession,
         includeCommunicationGuidance: false,
         includeExecutionContract: systemOwnsDefaultPolicy ? false : undefined,
@@ -680,7 +680,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         : "";
       const attemptWakePrompt = attemptSections.wakePrompt;
       const attemptRenderedHeartbeatPrompt = attemptResumedSession && attemptWakePrompt.length > 0
-        || isPaperclipRecoveryWakePayload(context.paperclipWake)
+        || isPilibalaRecoveryWakePayload(context.pilibalaWake)
         || !hasCustomPromptTemplate
         ? ""
         : renderTemplate(promptTemplate, templateData);
@@ -764,8 +764,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         onSpawn,
         onRuntimeProgress: ctx.onRuntimeProgress,
         onLog: accountingLog,
-        runLogTail: paperclipBridge?.runLogTail,
-        settleRunDisposition: paperclipBridge?.settleRunDisposition,
+        runLogTail: pilibalaBridge?.runLogTail,
+        settleRunDisposition: pilibalaBridge?.settleRunDisposition,
       });
       await accountingLog.flush();
 
@@ -872,7 +872,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       ) {
         await onLog(
           "stdout",
-          `[paperclip] Pi session "${runtimeSessionId}" is unavailable; retrying with a fresh session.\n`,
+          `[pilibala] Pi session "${runtimeSessionId}" is unavailable; retrying with a fresh session.\n`,
         );
         const newSessionPath = executionTargetIsRemote && remoteRuntimeRootDir
           ? buildRemoteSessionPath(remoteRuntimeRootDir, agent.id, new Date().toISOString())
@@ -904,7 +904,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         await providerStop.collectBeforeRestore();
       } finally {
         await Promise.all([
-          paperclipBridge?.stop(),
+          pilibalaBridge?.stop(),
           restoreRemoteWorkspace?.(),
           localSkillsDir ? fs.rm(path.dirname(localSkillsDir), { recursive: true, force: true }).catch(() => undefined) : Promise.resolve(),
         ]);

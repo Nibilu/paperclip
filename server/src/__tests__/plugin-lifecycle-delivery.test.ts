@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { eq } from "drizzle-orm";
-import { companies, createDb, pluginConfig, plugins, resourceLifecycleEvents, type Db } from "@paperclipai/db";
+import { companies, createDb, pluginConfig, plugins, resourceLifecycleEvents, type Db } from "@pilibalaai/db";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { logger } from "../middleware/logger.js";
@@ -23,7 +23,7 @@ describePostgres("durable plugin lifecycle delivery", () => {
   let db: Db;
   let companyId: string;
   let pluginId: string;
-  beforeAll(async () => { database = await startEmbeddedPostgresTestDatabase("paperclip-plugin-delivery-"); db = createDb(database.connectionString); }, 90_000);
+  beforeAll(async () => { database = await startEmbeddedPostgresTestDatabase("pilibala-plugin-delivery-"); db = createDb(database.connectionString); }, 90_000);
   afterAll(async () => { await database?.cleanup(); });
   afterEach(() => { vi.restoreAllMocks(); });
   beforeEach(async () => {

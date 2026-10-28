@@ -1,7 +1,7 @@
 import type {
   RunPresentationDecision,
   RunPresentationSource,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 export const HEARTBEAT_RUN_RESULT_SUMMARY_MAX_CHARS = 500;
 export const HEARTBEAT_RUN_RESULT_OUTPUT_MAX_CHARS = 4_096;
@@ -135,7 +135,7 @@ export const CHAT_RUN_PRESENTATION_AUTHORIZATION_REASON =
   "allow_chat_run_presentation";
 
 export type RunPresentationCommentAction = "reuse" | "create" | "none";
-export type { RunPresentationDecision } from "@paperclipai/shared";
+export type { RunPresentationDecision } from "@pilibalaai/shared";
 
 export interface ResolvedHeartbeatRunResponse {
   text: string | null;
@@ -197,7 +197,7 @@ export function isExternalChatPresentationContext(
   verifiedToolReviewChatOrigin = false,
 ): boolean {
   const context = record(contextSnapshot);
-  const wake = record(context.paperclipWake);
+  const wake = record(context.pilibalaWake);
   const source =
     typeof context.source === "string" ? context.source.trim() : "";
   // Approvals and Board comments also resume ordinary internal tasks. Only
@@ -249,7 +249,7 @@ export function readCompletedAssistantMessageCandidate(input: {
 function readAcceptedSemanticSummary(resultJson: Record<string, unknown>) {
   const candidates = semanticResultCandidates(resultJson);
   for (const candidate of candidates) {
-    if (candidate.schema !== "paperclip.run_result.v1") continue;
+    if (candidate.schema !== "pilibala.run_result.v1") continue;
     // A yielded result is a control-plane liveness fact, not a final assistant
     // response. Its summary belongs in diagnostics/system state while the
     // durable interaction card remains the user-facing surface.
@@ -272,14 +272,14 @@ export function hasAcceptedSemanticResult(
   resultJson: Record<string, unknown> | null | undefined,
 ) {
   return semanticResultCandidates(record(resultJson)).some(
-    (candidate) => candidate.schema === "paperclip.run_result.v1",
+    (candidate) => candidate.schema === "pilibala.run_result.v1",
   );
 }
 
 function hasYieldedSemanticResult(resultJson: Record<string, unknown>) {
   return semanticResultCandidates(resultJson).some(
     (candidate) =>
-      candidate.schema === "paperclip.run_result.v1" &&
+      candidate.schema === "pilibala.run_result.v1" &&
       candidate.reportedWorkDisposition === "yielded",
   );
 }
@@ -299,7 +299,7 @@ function readAcceptedExternalChatResponseWakeSummary(
         reviewPresentationAuthorized &&
         resultJson.finalizationReasonCode === "governed_response_waiting"
       )) ||
-    nativeResult.schema !== "paperclip.run_result.v1" ||
+    nativeResult.schema !== "pilibala.run_result.v1" ||
     nativeResult.reportedWorkDisposition !== "yielded" ||
     continuation.kind !== "response_wake" ||
     !readCommentText(continuation.summary) ||
@@ -341,7 +341,7 @@ function isStructuredSemanticResultText(value: string) {
       parsed &&
       typeof parsed === "object" &&
       !Array.isArray(parsed) &&
-      (parsed as Record<string, unknown>).schema === "paperclip.run_result.v1",
+      (parsed as Record<string, unknown>).schema === "pilibala.run_result.v1",
     );
   } catch {
     return false;
@@ -358,7 +358,7 @@ function decision(
   },
 ): RunPresentationDecision {
   return {
-    schema: "paperclip.run_presentation_decision.v1",
+    schema: "pilibala.run_presentation_decision.v1",
     resolverVersion: RUN_PRESENTATION_RESOLVER_VERSION,
     chosenSource,
     sourceEventId: input.sourceEventId ?? null,

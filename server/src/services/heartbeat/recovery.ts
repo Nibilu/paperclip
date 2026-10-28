@@ -29,14 +29,14 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   environmentLeases,
   heartbeatRuns,
   issues,
   nativeRunFinalizations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { logger } from "../../middleware/logger.js";
 import {
   claimNativeRestartRecoveries,
@@ -51,7 +51,7 @@ import {
   reconcileRetainedNativeSessionCleanup,
   reconcileRetainedNativeSessionCleanups,
 } from "../native-runtime/index.js";
-import { drainRetainedRunnerdMaintenanceOperations } from "../../vendor/paperclip-runner/index.js";
+import { drainRetainedRunnerdMaintenanceOperations } from "../../vendor/pilibala-runner/index.js";
 import { runningProcesses } from "../../adapters/index.js";
 import { parseObject } from "../../adapters/utils.js";
 import {
@@ -582,7 +582,7 @@ export function createHeartbeatRecovery(db: Db, dependencies: HeartbeatRecoveryD
     const nativeRunIds = activeRuns
       .filter(
         ({ run, adapterType }) =>
-          adapterType === "paperclip_runner" &&
+          adapterType === "pilibala_runner" &&
           isNativeSessionId(run.nativeSessionId),
       )
       .map(({ run }) => run.id);
@@ -765,7 +765,7 @@ export function createHeartbeatRecovery(db: Db, dependencies: HeartbeatRecoveryD
         continue;
       }
 
-      if (run.runtimeMode === "native" && adapterType === "paperclip_runner") {
+      if (run.runtimeMode === "native" && adapterType === "pilibala_runner") {
         classify(candidate, "skipped", "native_restart_recovery_owned", patch);
         continue;
       }
@@ -1100,7 +1100,7 @@ export function createHeartbeatRecovery(db: Db, dependencies: HeartbeatRecoveryD
       if (isNativeRunnerOwnershipHeld(run)) return;
       if (
         run.runtimeMode === "native" &&
-        agent.adapterType === "paperclip_runner"
+        agent.adapterType === "pilibala_runner"
       ) {
         // A graceful shutdown relinquishes controller authority just like a
         // hot restart. Leaving the old event consumer attached lets its
@@ -2037,7 +2037,7 @@ export function createHeartbeatRecovery(db: Db, dependencies: HeartbeatRecoveryD
         : await dispatchNativeSessionResumptions({
             db,
             runnerInstanceId:
-              runtimeEnv.PAPERCLIP_INSTANCE_ID?.trim() || "paperclip-heartbeat",
+              runtimeEnv.PILIBALA_INSTANCE_ID?.trim() || "pilibala-heartbeat",
             now,
             runIds: [...claimableNativeRunIds],
             dispatch: (claim) => {
@@ -2235,7 +2235,7 @@ export function createHeartbeatRecovery(db: Db, dependencies: HeartbeatRecoveryD
         !resumedRunIds.has(run.id) &&
         !locallyTracked;
       // Persisted numeric process identifiers prove only that some process is
-      // alive, not that Paperclip still owns it. Likewise an observed native
+      // alive, not that Pilibala still owns it. Likewise an observed native
       // coordinator without a live in-process execution has no durable proof
       // that its prior provider owner stopped. Keep both cases running but
       // blocked: never signal, finalize, or retry them automatically. This gate

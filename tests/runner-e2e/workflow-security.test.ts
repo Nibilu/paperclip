@@ -26,7 +26,7 @@ describe("public repository paid workflow security", () => {
     expect(manual).toContain('SOURCE_SHA: ${{ needs.authorize_manual.outputs.target_sha }}');
     expect([...manual.matchAll(/secrets\.([A-Z_]+)/gu)].map(match => match[1])).toEqual(["GITHUB_TOKEN"]);
     expect(manual).toContain('pnpm install --resolution-only --ignore-scripts --no-frozen-lockfile');
-    expect(manual).toContain('PAPERCLIP_RUNNER_LOCK_SHA256=$lock_sha');
+    expect(manual).toContain('PILIBALA_RUNNER_LOCK_SHA256=$lock_sha');
     expect(manual).toContain('docker logout ghcr.io');
   });
 
@@ -37,13 +37,13 @@ describe("public repository paid workflow security", () => {
     );
     const trustedWorkflowCalls = [
       ...ordinaryPrWorkflow.matchAll(
-        /^\s+uses:\s+(paperclipai\/paperclip\/\.github\/workflows\/pr-trusted\.yml)@([^\s#]+)$/gmu,
+        /^\s+uses:\s+(pilibalaai\/pilibala\/\.github\/workflows\/pr-trusted\.yml)@([^\s#]+)$/gmu,
       ),
     ];
 
     expect(trustedWorkflowCalls).toHaveLength(1);
     expect(trustedWorkflowCalls[0]?.[1]).toBe(
-      "paperclipai/paperclip/.github/workflows/pr-trusted.yml",
+      "pilibalaai/pilibala/.github/workflows/pr-trusted.yml",
     );
     expect(trustedWorkflowCalls[0]?.[2]).toBe(
       ordinaryPrTrustedWorkflowRevision,
@@ -224,7 +224,7 @@ describe("public repository paid workflow security", () => {
       /(?:(?:OPENAI|ANTHROPIC|OPENROUTER|DAYTONA|XAI)_API_KEY|GROK_AUTH_JSON)/,
     );
     expect(authorizeJob).toContain(
-      "aws_runner='runs-on/fleet=paperclip-public-pr-x64/env=public-ci'",
+      "aws_runner='runs-on/fleet=pilibala-public-pr-x64/env=public-ci'",
     );
     expect(authorizeJob).toContain("github_runner='ubuntu-latest'");
     expect(authorizeJob).toContain(
@@ -288,7 +288,7 @@ describe("public repository paid workflow security", () => {
       "if: needs.authorize.outputs.playwright_channel != 'chrome'",
     );
     expect(paidJob).toContain(
-      "PAPERCLIP_PLAYWRIGHT_CHANNEL: ${{ needs.authorize.outputs.playwright_channel }}",
+      "PILIBALA_PLAYWRIGHT_CHANNEL: ${{ needs.authorize.outputs.playwright_channel }}",
     );
     expect(paidJob).not.toContain(
       "pnpm exec playwright install --with-deps chromium",
@@ -321,7 +321,7 @@ describe("public repository paid workflow security", () => {
     expect(grokPreparation).toBeGreaterThan(paidInstall);
     expect(paidExecution).toBeGreaterThan(grokPreparation);
     expect(paidJob).toContain("if: matrix.environmentId == 'local' && (matrix.profileId == 'runner-acpx-grok' || matrix.profileId == 'runner-acpx-grok-subscription')");
-    expect(paidJob).toContain("run: sudo node packages/paperclip-runner/scripts/provision-grok.mjs /opt/paperclip/providers/grok/1.0.13/grok");
+    expect(paidJob).toContain("run: sudo node packages/pilibala-runner/scripts/provision-grok.mjs /opt/pilibala/providers/grok/1.0.13/grok");
 
     const everydayOracleStep = paidJob.slice(
       everydayOraclePreparation,
@@ -380,11 +380,11 @@ describe("public repository paid workflow security", () => {
       "node scripts/link-plugin-dev-sdk.mjs",
     );
     expect(preparedBeforeProviderAccess).toContain(
-      '"@paperclipai/plugin-daytona"',
+      '"@pilibalaai/plugin-daytona"',
     );
-    expect(preparedBeforeProviderAccess).toContain('"@paperclipai/plugin-sdk"');
+    expect(preparedBeforeProviderAccess).toContain('"@pilibalaai/plugin-sdk"');
     expect(preparedBeforeProviderAccess).toContain(
-      'realpath "$daytona_root/node_modules/@paperclipai/plugin-sdk"',
+      'realpath "$daytona_root/node_modules/@pilibalaai/plugin-sdk"',
     );
     expect(preparedBeforeProviderAccess).toContain(
       'pnpm --dir "$daytona_root" build',
@@ -429,7 +429,7 @@ describe("public repository paid workflow security", () => {
     expect(daytonaImageJob).toContain('echo "source_revision="');
     expect(daytonaImageJob).toContain('echo "content_id="');
     expect(daytonaImageJob).toContain(
-      "IMAGE_CACHE: ghcr.io/paperclipai/paperclip-daytona-runner:e2e-buildcache-amd64",
+      "IMAGE_CACHE: ghcr.io/pilibalaai/pilibala-daytona-runner:e2e-buildcache-amd64",
     );
     expect(daytonaImageJob).toContain(
       "TARGET_REF: ${{ needs.authorize.outputs.target_ref }}",
@@ -512,7 +512,7 @@ describe("public repository paid workflow security", () => {
     expect(fullStack.match(/persist-credentials: false/g)).toHaveLength(8);
     expect(fullStack).not.toContain("ref: ${{ inputs.target_branch }}");
     expect(fullStack).toContain(
-      "PAPERCLIP_RUNNER_SOURCE_REVISION=${TARGET_SHA}",
+      "PILIBALA_RUNNER_SOURCE_REVISION=${TARGET_SHA}",
     );
     const reportJob = fullStack.slice(
       fullStack.indexOf("  report:"),
@@ -534,10 +534,10 @@ describe("public repository paid workflow security", () => {
     );
     for (const targetProvenanceJob of [paidJob, reportJob]) {
       expect(targetProvenanceJob).toContain(
-        "PAPERCLIP_RUNNER_E2E_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}",
+        "PILIBALA_RUNNER_E2E_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}",
       );
       expect(targetProvenanceJob).toContain(
-        "PAPERCLIP_RUNNER_E2E_SOURCE_REF: ${{ needs.authorize.outputs.target_ref }}",
+        "PILIBALA_RUNNER_E2E_SOURCE_REF: ${{ needs.authorize.outputs.target_ref }}",
       );
     }
     for (const [secret, condition] of Object.entries({
@@ -626,16 +626,16 @@ describe("public repository paid workflow security", () => {
       buildJob.match(/pnpm install --frozen-lockfile --ignore-scripts/g),
     ).toHaveLength(2);
     expect(buildJob).toContain(
-      "pnpm --filter @paperclipai/paperclip-runner build:typescript",
+      "pnpm --filter @pilibalaai/pilibala-runner build:typescript",
     );
     expect(buildJob).toContain(
-      "pnpm --filter @paperclipai/paperclip-runner build:runner-binaries",
+      "pnpm --filter @pilibalaai/pilibala-runner build:runner-binaries",
     );
     expect(buildJob).toContain(
-      "node packages/paperclip-runner/scripts/build-provider-pack.mjs",
+      "node packages/pilibala-runner/scripts/build-provider-pack.mjs",
     );
     expect(buildJob).toContain(
-      "node packages/paperclip-runner/scripts/materialize-opencode-binary.mjs",
+      "node packages/pilibala-runner/scripts/materialize-opencode-binary.mjs",
     );
     expect(buildJob).toContain("runner-e2e-build-bundle.tar.gz.sha256");
     expect(buildJob).toContain("runner-e2e-provider-pack.tar.gz.sha256");
@@ -679,7 +679,7 @@ describe("public repository paid workflow security", () => {
       testJob.indexOf("tar --extract"),
     );
     expect(testJob).toContain(
-      "test -x packages/paperclip-runner/runner/target/debug/paperclip-runnerd",
+      "test -x packages/pilibala-runner/runner/target/debug/pilibala-runnerd",
     );
     expect(testJob).toContain(".payload.runnerSourceRevision == $revision");
     expect(workflow).toContain("Qualify local provider Node interpreter");
@@ -690,7 +690,7 @@ describe("public repository paid workflow security", () => {
       "matrix.profileId == 'legacy-opencode' || matrix.profileId == 'runner-opencode' || matrix.suiteId == 'openrouter-model-breadth'",
     );
     expect(testJob).toContain(
-      "node packages/paperclip-runner/scripts/materialize-opencode-binary.mjs",
+      "node packages/pilibala-runner/scripts/materialize-opencode-binary.mjs",
     );
     expect(testJob).not.toContain("postinstall.mjs");
     expect(testJob).not.toContain("pnpm rebuild");
@@ -706,14 +706,14 @@ describe("public repository paid workflow security", () => {
     );
 
     expect(config).toContain(
-      "process.env.PAPERCLIP_PLAYWRIGHT_CHANNEL?.trim()",
+      "process.env.PILIBALA_PLAYWRIGHT_CHANNEL?.trim()",
     );
     expect(config).toContain("{ channel: playwrightChannel }");
     expect(config).toContain(
-      "process.env.PAPERCLIP_RUNNER_E2E_CHROMIUM_EXECUTABLE?.trim()",
+      "process.env.PILIBALA_RUNNER_E2E_CHROMIUM_EXECUTABLE?.trim()",
     );
     expect(config).toContain(
-      "PAPERCLIP_PLAYWRIGHT_CHANNEL and PAPERCLIP_RUNNER_E2E_CHROMIUM_EXECUTABLE are mutually exclusive",
+      "PILIBALA_PLAYWRIGHT_CHANNEL and PILIBALA_RUNNER_E2E_CHROMIUM_EXECUTABLE are mutually exclusive",
     );
   });
 
@@ -761,13 +761,13 @@ describe("public repository paid workflow security", () => {
     expect(report).toContain("Select latest workflow attempt per cell");
     expect(report).toContain("tests/runner-e2e/select-rerun-artifacts.ts");
     expect(report).toContain(
-      "PAPERCLIP_RUNNER_E2E_REPORT_ROOT: ${{ github.workspace }}/selected-runner-e2e",
+      "PILIBALA_RUNNER_E2E_REPORT_ROOT: ${{ github.workspace }}/selected-runner-e2e",
     );
     expect(report).toContain(
-      "PAPERCLIP_RUNNER_E2E_HISTORY_PUBLIC_BASE_URL: ${{ vars.RUNNER_E2E_HISTORY_PUBLIC_BASE_URL }}",
+      "PILIBALA_RUNNER_E2E_HISTORY_PUBLIC_BASE_URL: ${{ vars.RUNNER_E2E_HISTORY_PUBLIC_BASE_URL }}",
     );
     expect(report).toContain(
-      "PAPERCLIP_RUNNER_E2E_HISTORY_PREFIX: ${{ vars.RUNNER_E2E_HISTORY_PREFIX || 'runner-e2e' }}",
+      "PILIBALA_RUNNER_E2E_HISTORY_PREFIX: ${{ vars.RUNNER_E2E_HISTORY_PREFIX || 'runner-e2e' }}",
     );
     expect(
       report.indexOf("Select latest workflow attempt per cell"),

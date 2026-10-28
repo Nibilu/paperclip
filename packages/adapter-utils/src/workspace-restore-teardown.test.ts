@@ -9,18 +9,18 @@ import { withWorkspaceRestoreDiagnostics, withWorkspaceRestoreStep } from "./wor
 const ADAPTER_MESSAGE_PAIRS = [
   {
     adapter: "claude-local",
-    startMessage: "[paperclip] Restoring workspace changes from the sandbox.\n",
-    failurePrefix: "[paperclip] Claude ACP teardown workspace restore failed",
+    startMessage: "[pilibala] Restoring workspace changes from the sandbox.\n",
+    failurePrefix: "[pilibala] Claude ACP teardown workspace restore failed",
   },
   {
     adapter: "codex-local",
-    startMessage: "[paperclip] Restoring workspace changes and Codex auth from the sandbox.\n",
-    failurePrefix: "[paperclip] Codex ACP teardown restore/copy-back failed",
+    startMessage: "[pilibala] Restoring workspace changes and Codex auth from the sandbox.\n",
+    failurePrefix: "[pilibala] Codex ACP teardown restore/copy-back failed",
   },
   {
     adapter: "gemini-local",
-    startMessage: "[paperclip] Restoring workspace changes from the sandbox.\n",
-    failurePrefix: "[paperclip] Gemini ACP teardown workspace restore failed",
+    startMessage: "[pilibala] Restoring workspace changes from the sandbox.\n",
+    failurePrefix: "[pilibala] Gemini ACP teardown workspace restore failed",
   },
 ];
 

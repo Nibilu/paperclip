@@ -15,7 +15,7 @@ function fixture() {
   const event = (seq: number, eventType: string, payload: Record<string, unknown> = {}, sourceKind = "runner", sourceSeq = seq) => {
     const sourceInstanceId = sourceKind === "runner" ? "runner" : "runner:control";
     return { seq, runId: "run", companyId: "company", eventType, protocolSchemaVersion: 1, payload: { prpEvent: {
-      schema: "paperclip.prp.event.v1", schemaVersion: 1, runId: "run", normalizedSessionId: "session", sourceKind,
+      schema: "pilibala.prp.event.v1", schemaVersion: 1, runId: "run", normalizedSessionId: "session", sourceKind,
       sourceInstanceId, sourceSeq, sourceEventId: `${sourceInstanceId}:run:${sourceSeq}`, eventType,
       turnId: eventType === "turn.submitted" ? null : "turn", payload,
     } } };

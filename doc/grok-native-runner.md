@@ -1,7 +1,7 @@
 # Grok Build native runner
 
 Select **Grok Build** in the native runner provider selector. The stored contract is
-`adapterType: "paperclip_runner"` with `provider: "acpx"`, `acpxAgent: "grok"`,
+`adapterType: "pilibala_runner"` with `provider: "acpx"`, `acpxAgent: "grok"`,
 and `model: "grok-4.7"`. Existing `grok_local` agents keep their legacy adapter.
 New Grok runner agents default to **Full auto (approve all)**
 (`acpxPermissionMode: "approve-all"`) in setup and the configuration form.
@@ -13,20 +13,20 @@ the new-agent picker or direct setup page offers the native runner.
 
 Grok Build speaks [ACP over stdio](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/15-agent-mode.md).
 The runner owns `grok agent --no-leader stdio` through ACPX, including session
-identity, cancellation, recovery and the authenticated Paperclip MCP bridge.
+identity, cancellation, recovery and the authenticated Pilibala MCP bridge.
 ACP permission requests are approved by the runner under the default full-auto
 policy. It does not add `--always-approve`: permission decisions remain under
 the selected ACPX policy. Grok's ACP metadata cannot independently establish
-Paperclip tool authority, so explicitly selecting `approve-paperclip` or
+Pilibala tool authority, so explicitly selecting `approve-pilibala` or
 `approve-reads` returns the approval-required outcome; `deny-all` rejects requests.
-Full auto does not bypass Paperclip's company permissions, governed approvals,
+Full auto does not bypass Pilibala's company permissions, governed approvals,
 or execution-environment boundaries. Isolated ask
 rules override project allow rules, and compatible always-approve settings are
 locked off. Compatible hook/MCP discovery and shell login capture are disabled.
 
 ## Installation and identity
 
-Grok support ships inside the native runner and the public Paperclip server npm
+Grok support ships inside the native runner and the public Pilibala server npm
 artifact. There is no separate Grok npm package, binary payload, or npm lifecycle
 download. The built-in launcher is identified as `builtin:grok-acp` version 1;
 its native runtime identity is `native:grok` version 1.0.13. The historical
@@ -34,11 +34,11 @@ its native runtime identity is `native:grok` version 1.0.13. The historical
 not npm dependencies. Existing npm-backed ACP bridges retain their package pins.
 
 Provision Grok Build 1.0.13 at
-`/opt/paperclip/providers/grok/1.0.13/grok` in the selected execution environment.
+`/opt/pilibala/providers/grok/1.0.13/grok` in the selected execution environment.
 The sandbox provisioning helper is explicit and is never run by npm:
 
 ```sh
-sudo node packages/paperclip-runner/scripts/provision-grok.mjs /opt/paperclip/providers/grok/1.0.13/grok
+sudo node packages/pilibala-runner/scripts/provision-grok.mjs /opt/pilibala/providers/grok/1.0.13/grok
 ```
 
 The standard Daytona image provisions it separately from the provider pack.
@@ -78,7 +78,7 @@ to Grok.
 
 ## Evaluation
 
-The private `paperclip-evals` repository maintains `live-acpx-grok-4.7.json` and
+The private `pilibala-evals` repository maintains `live-acpx-grok-4.7.json` and
 `rosters/live-acpx-grok.json`. The roster covers all 39 protocol cases. Its campaign
 lane remains disabled pending complete live qualification.
 
@@ -96,7 +96,7 @@ interactive sign-in UI. Authentication mode remains part of the profile identity
 After a subscription upgrade, a fresh `grok login` may be needed if the existing
 login still reports the previous entitlement through ACP.
 
-`packages/paperclip-runner/scripts/grok-native-smoke.mjs` records explicit auth,
+`packages/pilibala-runner/scripts/grok-native-smoke.mjs` records explicit auth,
 model/binary identity, MCP outcome, durable resume and restrictive permissions.
 Pass `--auth subscription --auth-file /private/path/auth.json --output /private/report.json`
 or `--auth api --output /private/report.json` with an explicitly supplied key.
@@ -129,10 +129,10 @@ positive probe mounts that binary read-only at the canonical sandbox path.
 
 
 The Cloud application image also carries the controller-owned provider pack and
-sets `PAPERCLIP_RUNNER_REMOTE_PROVIDER_PACK_PATH`. Remote ACPX execution verifies
+sets `PILIBALA_RUNNER_REMOTE_PROVIDER_PACK_PATH`. Remote ACPX execution verifies
 the sandbox against that pack before using it, or stages the matching pack when
 needed. The Cloud controller image does not install the native Grok executable;
 the selected sandbox image must provide the prerequisite above.
-Cloud builds must supply the full source SHA through `PAPERCLIP_BUILD_COMMIT`
+Cloud builds must supply the full source SHA through `PILIBALA_BUILD_COMMIT`
 to produce that verified pack. Unstamped local Cloud builds still work for other
 features, but omit the pack and cannot start remote ACPX sessions.

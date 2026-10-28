@@ -38,10 +38,10 @@ export type {
   QuotaWindow,
   ProviderQuotaResult,
   TranscriptEntry,
-  PaperclipQuestion,
-  PaperclipQuestionOption,
-  PaperclipQuestionResponse,
-  PaperclipQuestionSet,
+  PilibalaQuestion,
+  PilibalaQuestionOption,
+  PilibalaQuestionResponse,
+  PilibalaQuestionSet,
   StdoutLineParser,
   CLIAdapterModule,
   CreateConfigValues,
@@ -115,41 +115,41 @@ export type {
   LoginRunnerRaceResult,
 } from "./login-runner-lifecycle.js";
 export {
-  PAPERCLIP_RUNNER_IDLE_TIMEOUT_DEFAULT_MS,
-  PAPERCLIP_RUNNER_IDLE_TIMEOUT_MAX_MS,
-  PAPERCLIP_RUNNER_DEFAULT_MODELS,
-  PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES,
-  PAPERCLIP_RUNNER_ACPX_PROFILES,
-  isPaperclipRunnerProvider,
-  resolvePaperclipRunnerIdleTimeoutMs,
-  resolvePaperclipRunnerModel,
-  paperclipRunnerTransitionConfig,
+  PILIBALA_RUNNER_IDLE_TIMEOUT_DEFAULT_MS,
+  PILIBALA_RUNNER_IDLE_TIMEOUT_MAX_MS,
+  PILIBALA_RUNNER_DEFAULT_MODELS,
+  PILIBALA_RUNNER_PERMISSION_CAPABILITIES,
+  PILIBALA_RUNNER_ACPX_PROFILES,
+  isPilibalaRunnerProvider,
+  resolvePilibalaRunnerIdleTimeoutMs,
+  resolvePilibalaRunnerModel,
+  pilibalaRunnerTransitionConfig,
   normalizeLegacyRunnerProvider,
-  resolvePaperclipRunnerPermissionMode,
-  resolvePaperclipRunnerCursorMode,
-  resolvePaperclipRunnerPiThinkingLevel,
-} from "./paperclip-runner-permissions.js";
+  resolvePilibalaRunnerPermissionMode,
+  resolvePilibalaRunnerCursorMode,
+  resolvePilibalaRunnerPiThinkingLevel,
+} from "./pilibala-runner-permissions.js";
 export {
-  PAPERCLIP_RUNNER_INGRESS_PORT,
-  PAPERCLIP_RUNNER_CONNECT_PATH_PREFIX,
-  PaperclipRunnerTransportError,
+  PILIBALA_RUNNER_INGRESS_PORT,
+  PILIBALA_RUNNER_CONNECT_PATH_PREFIX,
+  PilibalaRunnerTransportError,
   buildDirectRunnerConnectUrl,
-  resolvePaperclipRunnerTransport,
+  resolvePilibalaRunnerTransport,
 } from "./runner-connectivity.js";
 export type {
   SecretHeader,
   RunnerIngressEndpoint,
-  PaperclipRunnerTransport,
+  PilibalaRunnerTransport,
 } from "./runner-connectivity.js";
 export type {
   AcpxPermissionMode,
   CodexPermissionMode,
   OpenCodePermissionMode,
-  PaperclipRunnerPermissionCapability,
-  PaperclipRunnerPermissionMode,
-  PaperclipRunnerPermissionOption,
-  PaperclipRunnerProvider,
-} from "./paperclip-runner-permissions.js";
+  PilibalaRunnerPermissionCapability,
+  PilibalaRunnerPermissionMode,
+  PilibalaRunnerPermissionOption,
+  PilibalaRunnerProvider,
+} from "./pilibala-runner-permissions.js";
 // Keep the root adapter-utils entry browser-safe because the UI imports it.
 // The sandbox callback bridge stays available via its dedicated subpath export.
 export type {

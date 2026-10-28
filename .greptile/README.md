@@ -1,7 +1,7 @@
 # Greptile configuration
 
 This directory tracks the supported review configuration for
-`paperclipai/paperclip`. It was prepared from a read-only dashboard inventory
+`pilibalaai/pilibala`. It was prepared from a read-only dashboard inventory
 on 2026-10-13. No dashboard settings or custom context were changed.
 
 - `config.json` records the observed review settings supported by Greptile's

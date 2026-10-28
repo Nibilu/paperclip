@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { EXECUTION_PREPARATION_SPAN_ATTRS, runWithRuntimeParent } from "@paperclipai/adapter-utils/acpx-engine/startup-timing";
+import { EXECUTION_PREPARATION_SPAN_ATTRS, runWithRuntimeParent } from "@pilibalaai/adapter-utils/acpx-engine/startup-timing";
 import { createHash } from "node:crypto";
 import { isSpanContextValid, ROOT_CONTEXT, SpanStatusCode, trace, type Context } from "@opentelemetry/api";
 
@@ -136,8 +136,8 @@ function measure<T>(runId: string, name: string, work: () => T | Promise<T>, ind
   try {
     const parent = independent ? undefined : getRunExecutionTraceContext(runId);
     const trigger = parent ? undefined : trace.getActiveSpan()?.spanContext();
-    const traced = trace.getTracer(name.startsWith("heartbeat.prepare.") ? "paperclip.heartbeat-preparation"
-      : name.startsWith("native.controller.") ? "paperclip.native-controller" : "paperclip.execution").startActiveSpan(name, {
+    const traced = trace.getTracer(name.startsWith("heartbeat.prepare.") ? "pilibala.heartbeat-preparation"
+      : name.startsWith("native.controller.") ? "pilibala.native-controller" : "pilibala.execution").startActiveSpan(name, {
       attributes: { [EXECUTION_PREPARATION_SPAN_ATTRS.runId]: createHash("sha256").update(runId).digest("hex").slice(0, 12),
         ...Object.fromEntries((["fileCount", "bytes"] as const).flatMap(key =>
           typeof counts[key] === "number" && Number.isSafeInteger(counts[key]) && counts[key]! >= 0
@@ -174,7 +174,7 @@ export function beginRunPhase(phase: ExecutionPhase): (failed?: boolean) => void
   if (count >= 16) return () => {};
   owned.details.set(phase, count + 1);
   try {
-    const span = trace.getTracer("paperclip.execution").startSpan(phase, {
+    const span = trace.getTracer("pilibala.execution").startSpan(phase, {
       attributes: { [EXECUTION_PREPARATION_SPAN_ATTRS.runId]: createHash("sha256").update(owned.runId).digest("hex").slice(0, 12) },
     }, owned.parent);
     let ended = false;

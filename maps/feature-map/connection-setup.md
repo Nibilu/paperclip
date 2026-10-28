@@ -63,7 +63,7 @@ or open `/apps/chat/connect`. Complete that provider's endpoint setup, then
 open its settings (`/apps/chat/:endpointId/settings`). Follow identity linking
 as the intended sender before messaging the agent externally.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey).
 Choose a disposable provider account/resource and record its auth method,
@@ -94,7 +94,7 @@ with a user who cannot install company-wide; the UI must not imply broad access.
 
 Daytona follows this same key/access wizard. Its native method exposes the
 published platform and Toolbox HTTP actions using provider sandbox IDs, without
-a Paperclip task or lease requirement. [Daytona browser setup](../../tests/e2e/daytona-connector.spec.ts)
+a Pilibala task or lease requirement. [Daytona browser setup](../../tests/e2e/daytona-connector.spec.ts)
 checks the catalog, password field, access controls, and optional organization
 pin. It does not submit a key or qualify a real provider account. See
 [Daytona](../../doc/connections/DAYTONA.md) for API-key authority and OAuth limits.

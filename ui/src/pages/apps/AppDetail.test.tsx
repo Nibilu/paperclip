@@ -5,8 +5,8 @@ import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getAppStoreDefinition } from "@paperclipai/shared";
-import type { AggregatorAppSnapshot, AggregatorAppsResponse } from "@paperclipai/shared/aggregator-apps";
+import { getAppStoreDefinition } from "@pilibalaai/shared";
+import type { AggregatorAppSnapshot, AggregatorAppsResponse } from "@pilibalaai/shared/aggregator-apps";
 import { queryKeys } from "@/lib/queryKeys";
 import { rememberSkillSourceReturn, skillSourceReturnPath } from "@/lib/skill-source-connect-return";
 import { AppDetail } from "./AppDetail";
@@ -164,7 +164,7 @@ vi.mock("@/lib/router", () => ({
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip" },
+    selectedCompany: { id: "company-1", name: "Pilibala" },
   }),
 }));
 
@@ -293,9 +293,9 @@ function dedicatedGitHubGrant(
         repositoryCount: 1,
         repositorySelection: "selected",
         installationIds: ["456"],
-        installationOwnerLogins: ["paperclipai"],
-        repositories: [{ id: "789", fullName: "paperclipai/test-repo", installationId: "456" }],
-        installationUrl: "https://github.com/apps/paperclip-test/installations/new",
+        installationOwnerLogins: ["pilibalaai"],
+        repositories: [{ id: "789", fullName: "pilibalaai/test-repo", installationId: "456" }],
+        installationUrl: "https://github.com/apps/pilibala-test/installations/new",
         managementUrl: "https://github.com/settings/installations/456",
         webhookHealth: "pending",
         lastWebhookAt: null,
@@ -1639,8 +1639,8 @@ describe("AppDetail", () => {
     mockParams.tab = "permissions";
     getConnectionMock.mockResolvedValue(perUserConnection());
     startPersonalAuthorizationMock.mockResolvedValue({
-      url: "https://my.paperclip.app/connections/confirm?session=legacy",
-      handoff: { kind: "paperclip_cloud", session },
+      url: "https://my.pilibala.app/connections/confirm?session=legacy",
+      handoff: { kind: "pilibala_cloud", session },
     });
 
     await renderAppDetail();
@@ -1733,8 +1733,8 @@ describe("AppDetail", () => {
       grants: [dedicatedGitHubGrant({ kind: "user", subjectAgentId: null, subjectUserId: "user-1" }, {
         repositoryCount: 2,
         repositories: [
-          { id: "1", fullName: "paperclipai/first", installationId: "456", private: true },
-          { id: "2", fullName: "paperclipai/second", installationId: "456", private: false },
+          { id: "1", fullName: "pilibalaai/first", installationId: "456", private: true },
+          { id: "2", fullName: "pilibalaai/second", installationId: "456", private: false },
         ],
       })],
       capabilities: fullCapabilities(), currentUserId: "user-1", members: [],
@@ -1743,12 +1743,12 @@ describe("AppDetail", () => {
     expect(container.textContent).toContain("@dottabot");
     expect(container.textContent).toContain("2 selected repositories");
     expect(container.querySelectorAll('ul[aria-label="Accessible GitHub repositories"] li')).toHaveLength(2);
-    expect(container.textContent).toContain("paperclipai/first");
-    expect(container.textContent).toContain("paperclipai/second");
-    expect(container.querySelector('a[href="https://github.com/paperclipai/first"] [aria-label="Private repository"]')).toBeTruthy();
-    expect(container.querySelector('a[href="https://github.com/paperclipai/second"] [aria-label="Private repository"]')).toBeNull();
+    expect(container.textContent).toContain("pilibalaai/first");
+    expect(container.textContent).toContain("pilibalaai/second");
+    expect(container.querySelector('a[href="https://github.com/pilibalaai/first"] [aria-label="Private repository"]')).toBeTruthy();
+    expect(container.querySelector('a[href="https://github.com/pilibalaai/second"] [aria-label="Private repository"]')).toBeNull();
     const configureHint = [...container.querySelectorAll("p a")].find((link) => link.textContent === "Configure access on GitHub");
-    expect(configureHint?.getAttribute("href")).toBe("https://github.com/apps/paperclip-test/installations/new");
+    expect(configureHint?.getAttribute("href")).toBe("https://github.com/apps/pilibala-test/installations/new");
   });
 
   it.each([undefined, "https://github.com/settings/installations"])("loads missing GitHub app configuration instead of linking legacy settings (%s)", async (installationUrl) => {
@@ -1766,14 +1766,14 @@ describe("AppDetail", () => {
     listConnectionGrantsMock.mockResolvedValue({
       connection: { id: "conn-1", uid: "conn-1" },
       grants: [dedicatedGitHubGrant({ kind: "user", subjectAgentId: null, subjectUserId: "user-1" }, {
-        appSlug: "paperclip-staging", installationUrl: "https://github.com/apps/paperclip-staging/installations/new",
+        appSlug: "pilibala-staging", installationUrl: "https://github.com/apps/pilibala-staging/installations/new",
       })],
       capabilities: fullCapabilities(), currentUserId: "user-1", members: [],
     });
     await act(async () => { findButton("Load GitHub configuration")!.click(); });
     await flushReact();
     expect(checkConnectionHealthMock).toHaveBeenCalledWith("conn-1");
-    expect(container.querySelector('a[href="https://github.com/apps/paperclip-staging/installations/new"]')?.textContent).toBe("Add More Repos on GitHub");
+    expect(container.querySelector('a[href="https://github.com/apps/pilibala-staging/installations/new"]')?.textContent).toBe("Add More Repos on GitHub");
     expect(findButton("Load GitHub configuration")).toBeUndefined();
   });
 
@@ -1784,10 +1784,10 @@ describe("AppDetail", () => {
       connection: { id: "conn-1", uid: "conn-1" },
       grants: [dedicatedGitHubGrant({ kind: "user", subjectAgentId: null, subjectUserId: "user-1" }, {
         repositoryCount: empty ? 0 : 3,
-        installationOwnerLogins: ["paperclipai", "dottabot", "empty-org"],
+        installationOwnerLogins: ["pilibalaai", "dottabot", "empty-org"],
         repositories: empty ? [] : [
-          { id: "1", fullName: "paperclipai/first", installationId: "456" },
-          { id: "2", fullName: "paperclipai/second", installationId: "456" },
+          { id: "1", fullName: "pilibalaai/first", installationId: "456" },
+          { id: "2", fullName: "pilibalaai/second", installationId: "456" },
           { id: "3", fullName: "dottabot/first", installationId: "789" },
         ],
       })],
@@ -1795,14 +1795,14 @@ describe("AppDetail", () => {
     });
     await renderAppDetail();
     const repositoryNames = () => [...container.querySelectorAll('ul[aria-label="Accessible GitHub repositories"] a')].map((link) => link.textContent);
-    expect(repositoryNames()).toEqual(empty ? [] : ["paperclipai/first", "paperclipai/second", "dottabot/first"]);
+    expect(repositoryNames()).toEqual(empty ? [] : ["pilibalaai/first", "pilibalaai/second", "dottabot/first"]);
     if (empty) {
       expect(container.querySelector('p[role="status"]')?.textContent?.trim()).toBe("No accessible repositories.");
       expect(container.textContent).not.toContain("Refresh access to load the current repository list.");
     }
     expect(container.querySelector('[aria-label="Filter repositories by account or organization"]')).toBeNull();
     expect(container.querySelector('input[aria-label="Search GitHub repositories"]')).toBeNull();
-    expect(container.querySelector('a[href="https://github.com/apps/paperclip-test/installations/new"]')?.textContent).toBe("Add More Repos on GitHub");
+    expect(container.querySelector('a[href="https://github.com/apps/pilibala-test/installations/new"]')?.textContent).toBe("Add More Repos on GitHub");
     expect(updateConnectionMock).not.toHaveBeenCalled();
   });
 
@@ -1826,9 +1826,9 @@ describe("AppDetail", () => {
     expect(container.textContent).toContain("Repositories");
     expect(container.textContent).toContain("1 selected repository");
     expect(container.querySelector('a[href="https://github.com/dottabot"]')?.textContent).toBe("@dottabot");
-    expect(container.querySelector('a[href="https://github.com/paperclipai/test-repo"]')?.textContent).toBe("paperclipai/test-repo");
+    expect(container.querySelector('a[href="https://github.com/pilibalaai/test-repo"]')?.textContent).toBe("pilibalaai/test-repo");
     expect(container.querySelector(
-      'a[href="https://github.com/apps/paperclip-test/installations/new"]',
+      'a[href="https://github.com/apps/pilibala-test/installations/new"]',
     )?.textContent).toBe("Add More Repos on GitHub");
     expect(container.querySelector('button[aria-label="Refresh access"]')).toBeTruthy();
     expect(container.textContent).not.toContain("Installation");

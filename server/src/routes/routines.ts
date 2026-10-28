@@ -1,5 +1,5 @@
 import { Router, type Request } from "express";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   createRoutineSchema,
   createDocumentAnnotationCommentSchema,
@@ -10,8 +10,8 @@ import {
   updateDocumentAnnotationThreadSchema,
   updateRoutineSchema,
   updateRoutineTriggerSchema,
-} from "@paperclipai/shared";
-import { trackRoutineCreated } from "@paperclipai/shared/telemetry";
+} from "@pilibalaai/shared";
+import { trackRoutineCreated } from "@pilibalaai/shared/telemetry";
 import { validate, validateIssueMutationBody } from "../middleware/validate.js";
 import { accessService, documentAnnotationService, logActivity, routineService } from "../services/index.js";
 import { assertCompanyAccess, getAccessibleResource, getActorInfo, hasCompanyAccess } from "./authz.js";
@@ -662,10 +662,10 @@ export function routineRoutes(
     }
     const result = await svc.firePublicTrigger(req.params.publicId as string, {
       authorizationHeader: req.header("authorization"),
-      signatureHeader: req.header("x-paperclip-signature"),
+      signatureHeader: req.header("x-pilibala-signature"),
       hubSignatureHeader: req.header("x-hub-signature-256"),
       firefliesSignatureHeader: req.header("x-hub-signature"),
-      timestampHeader: req.header("x-paperclip-timestamp"),
+      timestampHeader: req.header("x-pilibala-timestamp"),
       idempotencyKey: req.header("idempotency-key") ?? req.header("x-github-delivery"),
       rawBody: (req as { rawBody?: Buffer }).rawBody ?? null,
       payload: typeof req.body === "object" && req.body !== null ? req.body as Record<string, unknown> : null,

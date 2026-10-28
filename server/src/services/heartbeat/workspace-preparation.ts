@@ -16,13 +16,13 @@ import {
   recordWorkspaceConfigFreshnessOperation,
   prepareProjectRepositoryWorkspaces,
 } from "./workspaces.js";
-import { resolvePaperclipInstanceRoot } from "../../home-paths.js";
+import { resolvePilibalaInstanceRoot } from "../../home-paths.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { CONTROLLER_PROVISION_COPY_ONLY, workspaceRequiresCopyOnlyProvisioning } from "../workspace-host-provision.js";
 import { and, asc, eq } from "drizzle-orm";
-import { type ExecutionWorkspace } from "@paperclipai/shared";
-import { heartbeatRuns, issues, projectWorkspaces } from "@paperclipai/db";
+import { type ExecutionWorkspace } from "@pilibalaai/shared";
+import { heartbeatRuns, issues, projectWorkspaces } from "@pilibalaai/db";
 import { getStartupTracer } from "../../instrumentation.js";
 import { createHostDuplexObservabilityRecorder } from "../duplex-observability-recorder.js";
 import { incrementToolRuntimeMetricCounter } from "../tool-runtime-metrics.js";
@@ -56,13 +56,13 @@ import {
   resolveEffectiveWorkspaceStrategyType,
 } from "../execution-workspace-policy.js";
 import { evaluateExecutionAllowlist } from "../execution-allowlist.js";
-import type { Db, agents } from "@paperclipai/db";
+import type { Db, agents } from "@pilibalaai/db";
 import type {
   Environment,
   IssueExecutionWorkspaceSettings,
   ProjectExecutionWorkspacePolicy,
-} from "@paperclipai/shared";
-import type { NativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+} from "@pilibalaai/shared";
+import type { NativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 import type { NativeRunHistoricalSpan } from "../native-runtime/native-run-trace.js";
 import type { NativeRestartRecoveryClaim } from "../native-runtime/index.js";
 import type { NativeChatWorkspaceScope } from "../native-runtime/native-chat-workspace.js";
@@ -100,7 +100,7 @@ export interface HeartbeatWorkspacePreparationInput {
     context: Record<string, unknown>;
     responsibleUserId: string | null;
     previousSessionParams: Record<string, unknown> | null;
-    workspaceSelection?: import("@paperclipai/shared").TaskWorkspaceIntent | null;
+    workspaceSelection?: import("@pilibalaai/shared").TaskWorkspaceIntent | null;
   };
   policy: {
     trustPreset: TrustPresetResolution;
@@ -160,7 +160,7 @@ function readNonEmptyString(value: unknown): string | null {
 function restrictedWorkspaceSourceFailure(error: unknown, issueId: string): unknown {
   if (!isRestrictedWorkspaceSourceDenial(error)) return error;
   return new ConfigurationIncompleteFailure(
-    "This task's workspace source is a shared project checkout that also holds a task workspace this run cannot read, so Paperclip did not use it.",
+    "This task's workspace source is a shared project checkout that also holds a task workspace this run cannot read, so Pilibala did not use it.",
     { configurationIncomplete: { reason: RESTRICTED_WORKSPACE_SOURCE_REASON, issueId } },
   );
 }
@@ -250,7 +250,7 @@ async function prepareHeartbeatWorkspaceLocked(db: Db, input: HeartbeatWorkspace
       if (isDotRun) {
         // This is private controller storage, never a provider filesystem.
         // External providers receive workspace.access=none and cwd=null.
-        const cwd = path.resolve(resolvePaperclipInstanceRoot(), "runtime", "paperclip-runner", (persistedNativeExecutionInput?.provider.kind ?? mergedConfig.provider) === "muse" ? "muse-controllers" : "dot-controllers", agent.companyId, run.id);
+        const cwd = path.resolve(resolvePilibalaInstanceRoot(), "runtime", "pilibala-runner", (persistedNativeExecutionInput?.provider.kind ?? mergedConfig.provider) === "muse" ? "muse-controllers" : "dot-controllers", agent.companyId, run.id);
         await fs.mkdir(cwd, { recursive: true, mode: 0o700 });
         return { cwd, source: "agent_home" as const, projectId: null, workspaceId: null, repoUrl: null, repoRef: null,
           workspaceHints: [], warnings: [], baseCwdFallback: false, materializationFailures: [], additionalWorkspaces: [], referencedProjectFailures: [] };
@@ -539,7 +539,7 @@ async function prepareHeartbeatWorkspaceLocked(db: Db, input: HeartbeatWorkspace
         issueId, repoUrl: executionWorkspaceBase.repoUrl!, resolveGitAuth: workspaceGitAuthProvider }));
       executionWorkspaceBase.baseCwd = cwd;
       resolvedWorkspace.cwd = cwd;
-      isolatedRemoteSource = { schema: "paperclip.isolated-remote-source.v1", companyId: agent.companyId,
+      isolatedRemoteSource = { schema: "pilibala.isolated-remote-source.v1", companyId: agent.companyId,
         issueId, repoUrl: executionWorkspaceBase.repoUrl };
       isolatedWorkspaceSourceAccess = await timeWorkspace("workspace_source_authorization", () => assertIsolatedWorkspaceSourceReadAccess(db, {
         companyId: agent.companyId, sourceCwd: cwd, actor: isolatedWorkspaceSourceActor,
@@ -704,7 +704,7 @@ async function prepareHeartbeatWorkspaceLocked(db: Db, input: HeartbeatWorkspace
   // Native provider checkpoints bind to the workspace row, including ordinary
   // local shared workspaces. Persist that binding independently of the opt-in
   // isolated-workspace UI, just as warm sandbox continuity already does.
-  const nativeSharedWorkspace = agent.adapterType === "paperclip_runner" &&
+  const nativeSharedWorkspace = agent.adapterType === "pilibala_runner" &&
     requestedExecutionWorkspaceMode === "shared_workspace";
   const bindIssueToPersistedExecutionWorkspace = async (
     workspace: ExecutionWorkspace | null,

@@ -1,6 +1,6 @@
-import { agents, companies, createDb, issues, routines, routineTriggers } from "@paperclipai/db";
+import { agents, companies, createDb, issues, routines, routineTriggers } from "@pilibalaai/db";
 import { sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import type { createDeliveryWorkCoordinator } from "../services/delivery-work-coordinator.js";
@@ -12,7 +12,7 @@ describe.skipIf(!support.supported)("scheduled deadline database queries", () =>
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: Db;
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-scheduled-deadlines");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-scheduled-deadlines");
     db = createDb(database.connectionString);
   }, 30_000);
   afterAll(async () => { await db?.$client.end(); await database?.cleanup(); });

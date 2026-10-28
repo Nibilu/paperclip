@@ -1,4 +1,4 @@
-# Paperclip evaluation guide
+# Pilibala evaluation guide
 
 The [Slack connector probe catalog](../server/src/services/connectors/slack/evals/README.md)
 organizes eleven manual model acceptance probes and a selector for existing
@@ -17,7 +17,7 @@ Product E2E campaign. Synthetic receiver tests cannot qualify personal Muse;
 real setup, clarification and fresh-conversation collaboration remain separate
 release gates.
 
-Paperclip has two live eval families with different questions, owners, and
+Pilibala has two live eval families with different questions, owners, and
 evidence. Choose the family before selecting a model, profile, or case.
 
 The explicit-only [native instruction consolidation comparison](plans/2026-10-03-native-completion-consolidation.md)
@@ -29,9 +29,9 @@ retained content. Neither source admission nor a scripted pass proves model
 behavior.
 
 - **Runner Evals:** real Runner/provider behavior against a seeded mock control
-  plane. Definitions live in `paperclip-evals/evals/paperclip-runner`; see the
-  [direct live protocol evals](../packages/paperclip-runner/docs/runner-protocol-live-evals.md).
-- **Product E2E Evals:** real browser, Paperclip server, database, Runner,
+  plane. Definitions live in `pilibala-evals/evals/pilibala-runner`; see the
+  [direct live protocol evals](../packages/pilibala-runner/docs/runner-protocol-live-evals.md).
+- **Product E2E Evals:** real browser, Pilibala server, database, Runner,
   provider, and (where selected) Daytona, using an isolated instance and
   grading oracle. See [`tests/runner-e2e`](../tests/runner-e2e/README.md) and
   [Everyday Workflows](../tests/runner-e2e/EVERYDAY-WORKFLOWS.md).
@@ -39,7 +39,7 @@ behavior.
 Runner Evals answer whether a real runner/provider can perform a bounded
 protocol operation against the expected control-plane contract. Product E2E
 Evals answer whether a person can complete a product workflow through the real
-Paperclip surfaces and whether the resulting artifact and state are usable.
+Pilibala surfaces and whether the resulting artifact and state are usable.
 The names describe the system under test; “headless” is an execution option,
 not an eval category.
 
@@ -76,7 +76,7 @@ All remain unqualified until measured on the exact candidate runtime and harness
 
 Use **Runner Evals** for a runner protocol, adapter, transport, native session,
 tool grant, or one-turn provider qualification question. The workflow checks
-out an exact `paperclip-evals` revision, builds the Runner and viewer, runs a
+out an exact `pilibala-evals` revision, builds the Runner and viewer, runs a
 live roster, and renders the canonical Evalbook report. The control plane is a
 seeded test authority, so a passing result does not prove browser UX, production
 server behavior, database persistence, Daytona behavior, or a real third-party
@@ -86,13 +86,13 @@ Use **Product E2E Evals** for browser interaction, issue/task lifecycle,
 approval and clarification UI, project/repository selection, persistence over a
 controller restart, artifact delivery, billing/evidence behavior, or runner
 continuity in local or Daytona environments. The harness creates a fresh
-Paperclip instance per cell and uses public APIs and the production browser
+Pilibala instance per cell and uses public APIs and the production browser
 surface. The suite's [Everyday Workflows](../tests/runner-e2e/EVERYDAY-WORKFLOWS.md)
 are Product E2E even when their results are imported into Evalbook.
 
 Do not combine a partial Runner campaign and a partial Product E2E campaign into
 one score. A campaign is comparable when its definition/grader, model/profile,
-environment, and contract match. The evaluated Paperclip revision may
+environment, and contract match. The evaluated Pilibala revision may
 intentionally differ for a before/after fix comparison; record it as a
 comparison axis.
 
@@ -100,8 +100,8 @@ comparison axis.
 
 Runner Evals are owned by the Runner/evals maintainers. Definitions, rosters,
 case prompts, and the report program live in the sibling private repository
-`paperclipai/paperclip-evals`; Runner integration, viewer, aggregation, and
-publication code live under `packages/paperclip-runner` and the
+`pilibalaai/pilibala-evals`; Runner integration, viewer, aggregation, and
+publication code live under `packages/pilibala-runner` and the
 `runner-protocol-live-evals.yml` workflow. The public-facing report uses the
 same Evalbook renderer and Runner Lab viewer as the trusted report after
 sanitization.
@@ -199,12 +199,12 @@ explicitly; use a narrow selector while developing a fixture.
 
 For Runner Evals, the narrowest useful local validation is the report program's
 help/validation path and the deterministic Runner checks documented in
-[`runner-workflow-evals.md`](../packages/paperclip-runner/docs/runner-workflow-evals.md).
+[`runner-workflow-evals.md`](../packages/pilibala-runner/docs/runner-workflow-evals.md).
 Hosted direct live runs must use the default-branch workflow, an exact 40
 character `evals_sha`, an explicitly selected roster (or the maintained
 enabled `all` campaign), and the protected paid environment. The complete
 hosted command is intentionally kept in the workflow and
-[direct live protocol guide](../packages/paperclip-runner/docs/runner-protocol-live-evals.md).
+[direct live protocol guide](../packages/pilibala-runner/docs/runner-protocol-live-evals.md).
 Live provider runs can spend money; use the existing workflow authorization and
 the user's stated scope when selecting them.
 
@@ -212,7 +212,7 @@ the user's stated scope when selecting them.
 
 Record the primary failure class and preserve the evidence that supports it.
 
-- **Product failure:** evidence shows Paperclip or Runner behavior violates the
+- **Product failure:** evidence shows Pilibala or Runner behavior violates the
   authored case or a hard invariant, such as wrong task state, missing approval
   gate, lost persistence, bad artifact, or incorrect protocol operation.
 - **Model/provider behavior failure:** the provider turn completed with usable
@@ -226,7 +226,7 @@ Record the primary failure class and preserve the evidence that supports it.
   unavailability, transport admission failure, service startup failure, a
   missing credential/image, or inability to produce usable evidence. Startup,
   transport, and timeout symptoms can instead be product defects when evidence
-  implicates Paperclip or Runner; classify from the observed failure and
+  implicates Pilibala or Runner; classify from the observed failure and
   supported cause, rather than the symptom name alone. Preserve the artifact.
 
 Missing usage or price data means unknown, not free. Keep provider-reported
@@ -241,15 +241,15 @@ analytical label.
 ## Evidence, provenance, and history
 
 Retained result snapshots and dated measurement reports belong in
-`paperclip-evals`; application tests, Product E2E fixtures/graders, and executable
+`pilibala-evals`; application tests, Product E2E fixtures/graders, and executable
 scenario inventories remain in this repository. Keep a compact results index
 with immutable archive links and public report links, as in the
-[lifecycle baseline](../tests/lifecycle-baseline/README.md#recorded-results-moved-to-paperclip-evals).
+[lifecycle baseline](../tests/lifecycle-baseline/README.md#recorded-results-moved-to-pilibala-evals).
 The private archive is not a dependency of app test execution. Keep large logs,
 traces, and videos in the existing campaign artifact storage.
 
 An Evalbook report is a presentation of immutable attempt records, not the
-source of truth. Keep the campaign ID, Paperclip commit, `paperclip-evals`
+source of truth. Keep the campaign ID, Pilibala commit, `pilibala-evals`
 commit, catalog/roster or definition fingerprint, model/profile, environment,
 grader version, selected cells, retries, and provider/runtime usage with the
 report. Public projections follow each family's reviewed allowlist and may
@@ -270,9 +270,9 @@ Existing public histories are available at
 [Runner protocol history](https://d1p6rlowie26tp.cloudfront.net/runner-protocol-evals/index.html)
 and [Runner Product E2E history](https://d1p6rlowie26tp.cloudfront.net/runner-e2e/).
 The consolidated eval hub is at
-[pages.paperclip.ing/evals](https://pages.paperclip.ing/evals/).
+[pages.pilibala.ing/evals](https://pages.pilibala.ing/evals/).
 
-For a repeatable workflow, use the matching skill: [paperclip-evals](../.agents/skills/paperclip-evals/SKILL.md),
+For a repeatable workflow, use the matching skill: [pilibala-evals](../.agents/skills/pilibala-evals/SKILL.md),
 [add-runner-eval](../.agents/skills/add-runner-eval/SKILL.md), or
 [add-product-e2e-eval](../.agents/skills/add-product-e2e-eval/SKILL.md).
 
@@ -352,14 +352,14 @@ fresh attempt for a retryable failure.
 
 The reviewable sources live in this repository's `.agents/skills`. For a
 multi-repository workspace, install the three skills at
-`~/paperclipai/.agents/skills` (not `~/paperclipai/skills`). From the Paperclip
+`~/pilibalaai/.agents/skills` (not `~/pilibalaai/skills`). From the Pilibala
 checkout, run:
 
 ```sh
-for skill in paperclip-evals add-runner-eval add-product-e2e-eval; do
-  install -d "$HOME/paperclipai/.agents/skills/$skill"
+for skill in pilibala-evals add-runner-eval add-product-e2e-eval; do
+  install -d "$HOME/pilibalaai/.agents/skills/$skill"
   install -m 644 ".agents/skills/$skill/SKILL.md" \
-    "$HOME/paperclipai/.agents/skills/$skill/SKILL.md"
+    "$HOME/pilibalaai/.agents/skills/$skill/SKILL.md"
 done
 ```
 
@@ -377,7 +377,7 @@ Build from the public history feeds and check its summary logic:
 
 ```sh
 python3 -m unittest discover -s scripts/evals-hub -p 'test_*.py'
-python3 scripts/evals-hub/build.py --output .paperclip/evals-hub
+python3 scripts/evals-hub/build.py --output .pilibala/evals-hub
 ```
 
 The hub checks need Python 3 and do not call model providers.
@@ -387,21 +387,21 @@ For offline checks, pass `--history-dir <directory>` containing
 For a pre-merge preview, pass `--docs-ref <branch-or-sha>` to link the guide
 at that revision. The default guide link uses `master`.
 
-Publish with the [Paperclip page helper](../.agents/skills/paperclip-page/SKILL.md)
+Publish with the [Pilibala page helper](../.agents/skills/pilibala-page/SKILL.md)
 and the configured page-uploader credentials. Use Bash 4 or newer; macOS's
 system Bash 3 cannot run this helper. On macOS with Homebrew Bash installed,
 put `$(brew --prefix bash)/bin` first in `PATH` before these commands:
 
 ```sh
-export PAPERCLIP_PAGE_BUCKET=pages.paperclip.ing
-export PAPERCLIP_PAGE_BASE_URL=https://pages.paperclip.ing
+export PILIBALA_PAGE_BUCKET=pages.pilibala.ing
+export PILIBALA_PAGE_BASE_URL=https://pages.pilibala.ing
 export AWS_REGION=us-east-1
-bash .agents/skills/paperclip-page/scripts/publish.sh .paperclip/evals-hub --slug evals --dry-run
-bash .agents/skills/paperclip-page/scripts/publish.sh .paperclip/evals-hub --slug evals
+bash .agents/skills/pilibala-page/scripts/publish.sh .pilibala/evals-hub --slug evals --dry-run
+bash .agents/skills/pilibala-page/scripts/publish.sh .pilibala/evals-hub --slug evals
 ```
 
 For later refreshes, rebuild in the same output directory and publish with
-`--update`. Keep its ignored `.paperclip-page/state.json` ownership record;
+`--update`. Keep its ignored `.pilibala-page/state.json` ownership record;
 without that record, the helper will refuse to overwrite an existing prefix.
 Verify the public page and its links after publication. This manual refresh
 does not add a scheduled workflow. Preserve the measurement date when choosing

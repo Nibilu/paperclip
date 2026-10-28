@@ -6,7 +6,7 @@ import type {
   WorkspaceFileContent,
   WorkspaceFileListFileItem,
   WorkspaceFileListResponse,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { FileViewerProvider, useRequiredFileViewer } from "@/context/FileViewerContext";
 import { FileViewerSheet } from "@/components/FileViewerSheet";
 import { IssueWorkspaceCard } from "@/components/IssueWorkspaceCard";
@@ -179,7 +179,7 @@ function Placement() {
               mode: "isolated_workspace",
               status: "active",
               branchName: "PAP-1953-plan-a-file-viewer",
-              cwd: "/srv/paperclip/.../worktrees/PAP-1953",
+              cwd: "/srv/pilibala/.../worktrees/PAP-1953",
               repoUrl: null,
               projectWorkspaceId: "pw-1",
               name: "PAP-1953",
@@ -200,7 +200,7 @@ const meta: Meta = {
   id: "issue-workspace-file-browser",
   title: "Projects and execution/Workspaces, services, and files/Issue/Workspace File Browser",
   parameters: { layout: "fullscreen",
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "workspaces/files-git"
       ],

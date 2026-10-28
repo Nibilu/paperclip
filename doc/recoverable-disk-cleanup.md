@@ -29,14 +29,14 @@ Controls:
 
 | Environment variable | Default | Effect |
 | --- | --- | --- |
-| `PAPERCLIP_SKILL_VERSION_RETENTION_ENABLED` | `true` | Set `false` to stop future sweeps; restoration stays available |
-| `PAPERCLIP_SKILL_VERSION_RETENTION_DRY_RUN` | `false` | Set `true` to report candidates without changing cache or access records |
+| `PILIBALA_SKILL_VERSION_RETENTION_ENABLED` | `true` | Set `false` to stop future sweeps; restoration stays available |
+| `PILIBALA_SKILL_VERSION_RETENTION_DRY_RUN` | `false` | Set `true` to report candidates without changing cache or access records |
 
 The internal `skillVersionRetentionService` supports company-scoped diagnosis,
 bounded continuations, cancellation between entries, and dry run. Explicit agent
 pins stay cached. Operators can also retain newest versions with
-`PAPERCLIP_SKILL_VERSION_RETENTION_KEEP` (default `0`), or change the one-hour
-window with `PAPERCLIP_SKILL_VERSION_RETENTION_GRACE_MINUTES` (default `60`). Each batch reports
+`PILIBALA_SKILL_VERSION_RETENTION_KEEP` (default `0`), or change the one-hour
+window with `PILIBALA_SKILL_VERSION_RETENTION_GRACE_MINUTES` (default `60`). Each batch reports
 candidate and reclaimed allocated bytes, eviction counts, and skip reasons in
 the server log. Compare volume usage before and after to verify physical savings;
 concurrent writes and filesystem allocation can affect the net change. A dry run

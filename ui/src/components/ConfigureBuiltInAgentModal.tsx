@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { agentHarnessType, agentRunner, type AgentRunnerChoice } from "@paperclipai/shared";
+import { agentHarnessType, agentRunner, type AgentRunnerChoice } from "@pilibalaai/shared";
 import { adaptersApi } from "@/api/adapters";
 import { CodexRunnerSelect } from "./CodexRunnerSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

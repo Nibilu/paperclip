@@ -2,16 +2,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { runChildProcess } from "@paperclipai/adapter-utils/server-utils";
-import { execute } from "@paperclipai/adapter-codex-local/server";
-import { buildPaperclipTaskMarkdown } from "../services/heartbeat.js";
+import { runChildProcess } from "@pilibalaai/adapter-utils/server-utils";
+import { execute } from "@pilibalaai/adapter-codex-local/server";
+import { buildPilibalaTaskMarkdown } from "../services/heartbeat.js";
 import { AGENT_CHAT_DIRECTIVE } from "../services/agent-conversations.js";
 
 async function writeFakeCodexCommand(commandPath: string): Promise<void> {
   const script = `#!/usr/bin/env node
 const fs = require("node:fs");
 
-const capturePath = process.env.PAPERCLIP_TEST_CAPTURE_PATH;
+const capturePath = process.env.PILIBALA_TEST_CAPTURE_PATH;
 const payload = {
   argv: process.argv.slice(2),
   prompt: fs.readFileSync(0, "utf8"),
@@ -19,12 +19,12 @@ const payload = {
   codexConfigContents: process.env.CODEX_HOME && fs.existsSync(process.env.CODEX_HOME + "/config.toml")
     ? fs.readFileSync(process.env.CODEX_HOME + "/config.toml", "utf8")
     : null,
-  paperclipWakePayloadJson: process.env.PAPERCLIP_WAKE_PAYLOAD_JSON || null,
-  paperclipApiUrl: process.env.PAPERCLIP_API_URL || null,
-  paperclipApiKey: process.env.PAPERCLIP_API_KEY || null,
-  paperclipApiBridgeMode: process.env.PAPERCLIP_API_BRIDGE_MODE || null,
-  paperclipEnvKeys: Object.keys(process.env)
-    .filter((key) => key.startsWith("PAPERCLIP_"))
+  pilibalaWakePayloadJson: process.env.PILIBALA_WAKE_PAYLOAD_JSON || null,
+  pilibalaApiUrl: process.env.PILIBALA_API_URL || null,
+  pilibalaApiKey: process.env.PILIBALA_API_KEY || null,
+  pilibalaApiBridgeMode: process.env.PILIBALA_API_BRIDGE_MODE || null,
+  pilibalaEnvKeys: Object.keys(process.env)
+    .filter((key) => key.startsWith("PILIBALA_"))
     .sort(),
 };
 if (capturePath) {
@@ -52,11 +52,11 @@ type CapturePayload = {
   prompt: string;
   codexHome: string | null;
   codexConfigContents?: string | null;
-  paperclipWakePayloadJson: string | null;
-  paperclipApiUrl?: string | null;
-  paperclipApiKey?: string | null;
-  paperclipApiBridgeMode?: string | null;
-  paperclipEnvKeys: string[];
+  pilibalaWakePayloadJson: string | null;
+  pilibalaApiUrl?: string | null;
+  pilibalaApiKey?: string | null;
+  pilibalaApiBridgeMode?: string | null;
+  pilibalaEnvKeys: string[];
 };
 
 type LogEntry = {
@@ -119,15 +119,15 @@ function createLocalSandboxRunner() {
 }
 
 describe("codex execute", () => {
-  it("uses a Paperclip-managed CODEX_HOME outside worktree mode while preserving shared auth and config", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-default-"));
+  it("uses a Pilibala-managed CODEX_HOME outside worktree mode while preserving shared auth and config", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-default-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
     const sharedCodexHome = path.join(root, "shared-codex-home");
-    const paperclipHome = path.join(root, "paperclip-home");
+    const pilibalaHome = path.join(root, "pilibala-home");
     const managedCodexHome = path.join(
-      paperclipHome,
+      pilibalaHome,
       "instances",
       "default",
       "companies",
@@ -141,14 +141,14 @@ describe("codex execute", () => {
     await writeFakeCodexCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    const previousPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
-    const previousPaperclipInWorktree = process.env.PAPERCLIP_IN_WORKTREE;
+    const previousPilibalaHome = process.env.PILIBALA_HOME;
+    const previousPilibalaInstanceId = process.env.PILIBALA_INSTANCE_ID;
+    const previousPilibalaInWorktree = process.env.PILIBALA_IN_WORKTREE;
     const previousCodexHome = process.env.CODEX_HOME;
     process.env.HOME = root;
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    delete process.env.PAPERCLIP_INSTANCE_ID;
-    delete process.env.PAPERCLIP_IN_WORKTREE;
+    process.env.PILIBALA_HOME = pilibalaHome;
+    delete process.env.PILIBALA_INSTANCE_ID;
+    delete process.env.PILIBALA_IN_WORKTREE;
     process.env.CODEX_HOME = sharedCodexHome;
 
     try {
@@ -173,9 +173,9 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -203,18 +203,18 @@ describe("codex execute", () => {
       expect(logs).toContainEqual(
         expect.objectContaining({
           stream: "stdout",
-          chunk: expect.stringContaining("Using Paperclip-managed Codex home"),
+          chunk: expect.stringContaining("Using Pilibala-managed Codex home"),
         }),
       );
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousPaperclipHome;
-      if (previousPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = previousPaperclipInstanceId;
-      if (previousPaperclipInWorktree === undefined) delete process.env.PAPERCLIP_IN_WORKTREE;
-      else process.env.PAPERCLIP_IN_WORKTREE = previousPaperclipInWorktree;
+      if (previousPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = previousPilibalaHome;
+      if (previousPilibalaInstanceId === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+      else process.env.PILIBALA_INSTANCE_ID = previousPilibalaInstanceId;
+      if (previousPilibalaInWorktree === undefined) delete process.env.PILIBALA_IN_WORKTREE;
+      else process.env.PILIBALA_IN_WORKTREE = previousPilibalaInWorktree;
       if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = previousCodexHome;
       await fs.rm(root, { recursive: true, force: true });
@@ -222,14 +222,14 @@ describe("codex execute", () => {
   });
 
   it("writes managed MCP gateways into Codex config and warns on overlapping direct entries without logging tokens", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-managed-mcp-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-managed-mcp-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
     const sharedCodexHome = path.join(root, "shared-codex-home");
-    const paperclipHome = path.join(root, "paperclip-home");
+    const pilibalaHome = path.join(root, "pilibala-home");
     const managedCodexHome = path.join(
-      paperclipHome,
+      pilibalaHome,
       "instances",
       "default",
       "companies",
@@ -253,14 +253,14 @@ describe("codex execute", () => {
     await writeFakeCodexCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    const previousPaperclipApiUrl = process.env.PAPERCLIP_API_URL;
-    const previousPaperclipRuntimeApiUrl = process.env.PAPERCLIP_RUNTIME_API_URL;
+    const previousPilibalaHome = process.env.PILIBALA_HOME;
+    const previousPilibalaApiUrl = process.env.PILIBALA_API_URL;
+    const previousPilibalaRuntimeApiUrl = process.env.PILIBALA_RUNTIME_API_URL;
     const previousCodexHome = process.env.CODEX_HOME;
     process.env.HOME = root;
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_API_URL = "http://paperclip.local:3100";
-    process.env.PAPERCLIP_RUNTIME_API_URL = "http://paperclip.local:3100";
+    process.env.PILIBALA_HOME = pilibalaHome;
+    process.env.PILIBALA_API_URL = "http://pilibala.local:3100";
+    process.env.PILIBALA_RUNTIME_API_URL = "http://pilibala.local:3100";
     process.env.CODEX_HOME = sharedCodexHome;
 
     try {
@@ -285,15 +285,15 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         runtimeMcp: {
           getServers: () => [
             {
               name: "github",
-              url: "http://paperclip.local:3100/api/tool-gateway/gateways/gateway-1/mcp",
+              url: "http://pilibala.local:3100/api/tool-gateway/gateways/gateway-1/mcp",
               token: "pcgw_secret-managed-token",
               connectionId: "connection-github",
             },
@@ -311,14 +311,14 @@ describe("codex execute", () => {
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
       const configText = capture.codexConfigContents ?? "";
       expect(configText).toContain("[mcp_servers.github]");
-      expect(configText).toContain("[mcp_servers.\"paperclip-github\"]");
-      expect(configText).toContain('url = "http://paperclip.local:3100/api/tool-gateway/gateways/gateway-1/mcp"');
+      expect(configText).toContain("[mcp_servers.\"pilibala-github\"]");
+      expect(configText).toContain('url = "http://pilibala.local:3100/api/tool-gateway/gateways/gateway-1/mcp"');
       expect(configText).toContain('Authorization = "Bearer pcgw_secret-managed-token"');
       expect(logs).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             stream: "stderr",
-            chunk: expect.stringContaining("Paperclip cannot enforce policies for that direct entry"),
+            chunk: expect.stringContaining("Pilibala cannot enforce policies for that direct entry"),
           }),
         ]),
       );
@@ -326,12 +326,12 @@ describe("codex execute", () => {
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousPaperclipHome;
-      if (previousPaperclipApiUrl === undefined) delete process.env.PAPERCLIP_API_URL;
-      else process.env.PAPERCLIP_API_URL = previousPaperclipApiUrl;
-      if (previousPaperclipRuntimeApiUrl === undefined) delete process.env.PAPERCLIP_RUNTIME_API_URL;
-      else process.env.PAPERCLIP_RUNTIME_API_URL = previousPaperclipRuntimeApiUrl;
+      if (previousPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = previousPilibalaHome;
+      if (previousPilibalaApiUrl === undefined) delete process.env.PILIBALA_API_URL;
+      else process.env.PILIBALA_API_URL = previousPilibalaApiUrl;
+      if (previousPilibalaRuntimeApiUrl === undefined) delete process.env.PILIBALA_RUNTIME_API_URL;
+      else process.env.PILIBALA_RUNTIME_API_URL = previousPilibalaRuntimeApiUrl;
       if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = previousCodexHome;
       await fs.rm(root, { recursive: true, force: true });
@@ -339,7 +339,7 @@ describe("codex execute", () => {
   });
 
   it("emits a command note that Codex auto-applies repo-scoped AGENTS.md files", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-notes-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-notes-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
@@ -372,9 +372,9 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -387,7 +387,7 @@ describe("codex execute", () => {
       expect(result.exitCode).toBe(0);
       expect(result.errorMessage).toBeNull();
       expect(commandNotes).toContain(
-        "Codex exec automatically applies repo-scoped AGENTS.md instructions from the current workspace; Paperclip does not currently suppress that discovery.",
+        "Codex exec automatically applies repo-scoped AGENTS.md instructions from the current workspace; Pilibala does not currently suppress that discovery.",
       );
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
@@ -397,7 +397,7 @@ describe("codex execute", () => {
   });
 
   it("logs HOME and the resolved executable path in invocation metadata", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-meta-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-meta-"));
     const workspace = path.join(root, "workspace");
     const binDir = path.join(root, "bin");
     const commandPath = path.join(binDir, "codex");
@@ -435,9 +435,9 @@ describe("codex execute", () => {
           command: "codex",
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -452,7 +452,7 @@ describe("codex execute", () => {
       expect(result.errorMessage).toBeNull();
       expect(loggedCommand).toBe(commandPath);
       expect(loggedEnv.HOME).toBe(root);
-      expect(loggedEnv.PAPERCLIP_RESOLVED_COMMAND).toBe(commandPath);
+      expect(loggedEnv.PILIBALA_RESOLVED_COMMAND).toBe(commandPath);
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
@@ -463,7 +463,7 @@ describe("codex execute", () => {
   });
 
   it("injects bridge env into sandbox-managed remote runs", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-sandbox-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-sandbox-"));
     const localWorkspace = path.join(root, "workspace");
     const remoteWorkspace = path.join(root, "sandbox");
     const binDir = path.join(root, "bin");
@@ -502,9 +502,9 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: localWorkspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         executionTarget: {
@@ -525,10 +525,10 @@ describe("codex execute", () => {
       expect(result.errorMessage).toBeNull();
 
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
-      expect(capture.codexHome).toBe(path.join(remoteWorkspace, ".paperclip-runtime", "codex", "home"));
-      expect(capture.paperclipApiUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
-      expect(capture.paperclipApiKey).not.toBe("run-jwt-token");
-      expect(capture.paperclipApiBridgeMode).toBe("queue_v1");
+      expect(capture.codexHome).toBe(path.join(remoteWorkspace, ".pilibala-runtime", "codex", "home"));
+      expect(capture.pilibalaApiUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+      expect(capture.pilibalaApiKey).not.toBe("run-jwt-token");
+      expect(capture.pilibalaApiBridgeMode).toBe("queue_v1");
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
@@ -539,7 +539,7 @@ describe("codex execute", () => {
   });
 
   it.each([false, true])("delivers oversized wake context through stdin (sandbox=%s)", async (sandbox) => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-wake-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-wake-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
@@ -573,17 +573,17 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
-            PAPERCLIP_WAKE_PAYLOAD_JSON: description,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_WAKE_PAYLOAD_JSON: description,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {
           issueId: "issue-1",
           taskId: "issue-1",
           wakeReason: "issue_commented",
           wakeCommentId: "comment-2",
-          paperclipWake: {
+          pilibalaWake: {
             reason: "issue_commented",
             issue: {
               id: "issue-1",
@@ -640,11 +640,11 @@ describe("codex execute", () => {
       expect(result.errorMessage).toBeNull();
 
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
-      expect(capture.paperclipEnvKeys).not.toContain("PAPERCLIP_WAKE_PAYLOAD_JSON");
-      expect(capture.paperclipWakePayloadJson).toBeNull();
+      expect(capture.pilibalaEnvKeys).not.toContain("PILIBALA_WAKE_PAYLOAD_JSON");
+      expect(capture.pilibalaWakePayloadJson).toBeNull();
       expect(capture.prompt).toContain(description);
       expect(capture.prompt).toContain("- reason: issue_commented");
-      expect(capture.prompt).toContain("## Paperclip Wake Payload");
+      expect(capture.prompt).toContain("## Pilibala Wake Payload");
       expect(capture.prompt).toContain("Use this wake to continue the task, applying new user direction and preserving its approval gates.");
       expect(capture.prompt).toContain("Do not switch to another issue until you have handled this wake.");
       expect(capture.prompt).toContain(
@@ -660,13 +660,13 @@ describe("codex execute", () => {
   });
 
   it("keeps real assignment markdown and current wake events single-owned at the CLI boundary", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-context-owner-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-context-owner-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
     await fs.mkdir(workspace, { recursive: true });
     await writeFakeCodexCommand(commandPath);
-    const markdown = buildPaperclipTaskMarkdown({
+    const markdown = buildPilibalaTaskMarkdown({
       issue: { id: "issue-1", identifier: "PAP-900", title: "Repeat phrase Repeat phrase", description: "Repeat phrase Repeat phrase" },
       wakeComments: [
         { id: "comment-a", body: "Same event body." },
@@ -674,7 +674,7 @@ describe("codex execute", () => {
       ],
       includeWakeComments: false,
     });
-    const historicalMarkdown = buildPaperclipTaskMarkdown({
+    const historicalMarkdown = buildPilibalaTaskMarkdown({
       issue: { id: "issue-1", identifier: "PAP-900", title: "Repeat phrase Repeat phrase", description: "Repeat phrase Repeat phrase" },
       wakeComments: [
         { id: "comment-a", body: "Same event body." },
@@ -688,14 +688,14 @@ describe("codex execute", () => {
         runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
         config: {
           engine: "cli", command: commandPath, cwd: workspace,
-          env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath },
-          promptTemplate: "Custom template keeps {{paperclipTaskMarkdown}} and {{paperclipWakePrompt}}.",
+          env: { PILIBALA_TEST_CAPTURE_PATH: capturePath },
+          promptTemplate: "Custom template keeps {{pilibalaTaskMarkdown}} and {{pilibalaWakePrompt}}.",
         },
         context: {
           issueId: "issue-1",
-          paperclipTaskMarkdown: historicalMarkdown,
-          paperclipTaskMarkdownAssignment: markdown,
-          paperclipWake: {
+          pilibalaTaskMarkdown: historicalMarkdown,
+          pilibalaTaskMarkdownAssignment: markdown,
+          pilibalaWake: {
             reason: "issue_commented",
             issue: { id: "issue-1", identifier: "PAP-900", title: "Repeat phrase Repeat phrase", description: "Repeat phrase Repeat phrase", status: "in_progress" },
             executionContinuation: {
@@ -719,7 +719,7 @@ describe("codex execute", () => {
             commentWindow: { requestedCount: 2, includedCount: 2, missingCount: 0 },
             fallbackFetchNeeded: false,
           },
-          paperclipTurnContext: { version: 1, assignment: { owner: "task_markdown" }, events: { owner: "wake_prompt", comments: [{ id: "comment-a", revision: "a" }, { id: "comment-b", revision: "b" }] } },
+          pilibalaTurnContext: { version: 1, assignment: { owner: "task_markdown" }, events: { owner: "wake_prompt", comments: [{ id: "comment-a", revision: "a" }, { id: "comment-b", revision: "b" }] } },
         },
         onLog: async () => {},
       });
@@ -738,7 +738,7 @@ describe("codex execute", () => {
   });
 
   it("classifies remote-compaction high-demand failures as retryable transient upstream errors", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-transient-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-transient-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     await fs.mkdir(workspace, { recursive: true });
@@ -771,7 +771,7 @@ describe("codex execute", () => {
           engine: "cli",
           command: commandPath,
           cwd: workspace,
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -790,7 +790,7 @@ describe("codex execute", () => {
   });
 
   it.each([true, false])("retries missing resume only before a session starts (started=%s)", async (started) => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-resume-stop-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-resume-stop-"));
     const commandPath = path.join(root, "codex");
     const attemptsPath = path.join(root, "attempts");
     await seedSharedCodexAuth(root);
@@ -823,7 +823,7 @@ if (process.argv.includes("resume")) {
   });
 
   it("classifies mid-turn harness crashes as retryable transient upstream errors", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-harness-crash-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-harness-crash-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     await fs.mkdir(workspace, { recursive: true });
@@ -863,7 +863,7 @@ process.exit(1);
           engine: "cli",
           command: commandPath,
           cwd: workspace,
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -885,7 +885,7 @@ process.exit(1);
   });
 
   it("persists retry-not-before metadata for codex provider quota failures", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-usage-limit-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-usage-limit-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     await fs.mkdir(workspace, { recursive: true });
@@ -924,7 +924,7 @@ process.exit(1);
           command: commandPath,
           cwd: workspace,
           model: "gpt-5.3-codex-spark",
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -950,7 +950,7 @@ process.exit(1);
   });
 
   it("classifies Codex refresh-token auth failures without credential telemetry", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-refresh-token-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-refresh-token-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     await fs.mkdir(workspace, { recursive: true });
@@ -980,7 +980,7 @@ process.exit(1);
           engine: "cli",
           command: commandPath,
           cwd: workspace,
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -1000,7 +1000,7 @@ process.exit(1);
   });
 
   it("uses safer invocation settings and a fresh-session handoff for codex transient fallback retries", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-fallback-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-fallback-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
@@ -1038,13 +1038,13 @@ process.exit(1);
           fastMode: true,
           model: "gpt-5.4",
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {
           codexTransientFallbackMode: "fresh_session_safer_invocation",
-          paperclipContinuationSummary: {
+          pilibalaContinuationSummary: {
             key: "continuation-summary",
             title: "Continuation Summary",
             body: "Issue continuation summary for the next fresh session.",
@@ -1066,7 +1066,7 @@ process.exit(1);
       expect(capture.argv).not.toContain("resume");
       expect(capture.argv).not.toContain('service_tier="fast"');
       expect(capture.argv).not.toContain("features.fast_mode=true");
-      expect(capture.prompt).toContain("Paperclip session handoff:");
+      expect(capture.prompt).toContain("Pilibala session handoff:");
       expect(capture.prompt).toContain("Issue continuation summary for the next fresh session.");
       expect(commandNotes).toContain("Codex transient fallback requested safer invocation settings for this retry.");
       expect(commandNotes).toContain("Codex transient fallback forced a fresh session with a continuation handoff.");
@@ -1078,7 +1078,7 @@ process.exit(1);
   });
 
   it("renders execution-stage wake instructions for reviewer and executor roles", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-stage-wake-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-stage-wake-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
@@ -1110,15 +1110,15 @@ process.exit(1);
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {
           issueId: "issue-1",
           taskId: "issue-1",
           wakeReason: "execution_review_requested",
-          paperclipWake: {
+          pilibalaWake: {
             reason: "execution_review_requested",
             issue: {
               id: "issue-1",
@@ -1180,15 +1180,15 @@ process.exit(1);
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: executorCapturePath,
+            PILIBALA_TEST_CAPTURE_PATH: executorCapturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {
           issueId: "issue-1",
           taskId: "issue-1",
           wakeReason: "execution_changes_requested",
-          paperclipWake: {
+          pilibalaWake: {
             reason: "execution_changes_requested",
             issue: {
               id: "issue-1",
@@ -1235,7 +1235,7 @@ process.exit(1);
   });
 
   it("renders an issue-scoped wake prompt even when the wake has no comments yet", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-issue-wake-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-issue-wake-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
@@ -1267,15 +1267,15 @@ process.exit(1);
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {
           issueId: "issue-1",
           taskId: "issue-1",
           wakeReason: "issue_assigned",
-          paperclipWake: {
+          pilibalaWake: {
             reason: "issue_assigned",
             issue: {
               id: "issue-1",
@@ -1305,9 +1305,9 @@ process.exit(1);
       expect(result.errorMessage).toBeNull();
 
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
-      expect(capture.paperclipEnvKeys).not.toContain("PAPERCLIP_WAKE_PAYLOAD_JSON");
-      expect(capture.paperclipWakePayloadJson).toBeNull();
-      expect(capture.prompt).toContain("## Paperclip Wake Payload");
+      expect(capture.pilibalaEnvKeys).not.toContain("PILIBALA_WAKE_PAYLOAD_JSON");
+      expect(capture.pilibalaWakePayloadJson).toBeNull();
+      expect(capture.prompt).toContain("## Pilibala Wake Payload");
       expect(capture.prompt).toContain("Do not switch to another issue until you have handled this wake.");
       expect(capture.prompt).toContain("- issue: PAP-1201 Fix gallery opening for inline images");
       expect(capture.prompt).not.toContain("- pending comments:");
@@ -1324,7 +1324,7 @@ process.exit(1);
   });
 
   it.each([{ conversationMode: false, resumedSession: true }, { conversationMode: true, resumedSession: true }, { conversationMode: true, resumedSession: false }])("retains current task policy (conversation=$conversationMode, resumed=$resumedSession)", async ({ conversationMode, resumedSession }) => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-resume-wake-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-resume-wake-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
@@ -1338,7 +1338,7 @@ process.exit(1);
     await seedSharedCodexAuth(root);
 
     const policy = conversationMode
-      ? buildPaperclipTaskMarkdown({
+      ? buildPilibalaTaskMarkdown({
           issue: { id: "issue-1", title: "Chat", workMode: "planning", conversationAgentId: "agent-1" },
           interaction: { kind: "request_confirmation", status: "rejected" },
           planReview: { status: "rejected", reason: "Revise the final note." },
@@ -1373,19 +1373,19 @@ process.exit(1);
           cwd: workspace,
           instructionsFilePath: instructionsPath,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: conversationMode ? undefined : "Follow the paperclip heartbeat.",
+          promptTemplate: conversationMode ? undefined : "Follow the pilibala heartbeat.",
         },
         context: {
           conversationMode,
-          paperclipTaskMarkdown: `Full description that must not replay\n${policy}`,
-          paperclipTaskMarkdownCompact: policy,
+          pilibalaTaskMarkdown: `Full description that must not replay\n${policy}`,
+          pilibalaTaskMarkdownCompact: policy,
           issueId: "issue-1",
           taskId: "issue-1",
           wakeReason: "issue_commented",
           wakeCommentId: "comment-2",
-          paperclipWake: {
+          pilibalaWake: {
             reason: "issue_commented",
             issue: {
               id: "issue-1",
@@ -1430,7 +1430,7 @@ process.exit(1);
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
       if (resumedSession) expect(capture.argv).toEqual(expect.arrayContaining(["resume", "codex-session-1", "-"]));
       else expect(capture.argv).not.toContain("resume");
-      expect(capture.prompt).toContain(resumedSession ? "## Paperclip Resume Delta" : "## Paperclip Wake Payload");
+      expect(capture.prompt).toContain(resumedSession ? "## Pilibala Resume Delta" : "## Pilibala Wake Payload");
       expect(capture.prompt).toContain("Do not switch to another issue until you have handled this wake.");
       expect(capture.prompt).toContain("Second comment");
       expect(capture.prompt).toContain(policy);
@@ -1445,10 +1445,10 @@ process.exit(1);
         expect(capture.prompt).not.toContain("Use child issues");
       }
       expect(capture.prompt).not.toContain("Execution contract:");
-      expect(capture.prompt).not.toContain("Follow the paperclip heartbeat.");
+      expect(capture.prompt).not.toContain("Follow the pilibala heartbeat.");
       if (resumedSession) {
         expect(capture.prompt).not.toContain("You are managed instructions.");
-        expect(invocationPrompt).toContain("## Paperclip Resume Delta");
+        expect(invocationPrompt).toContain("## Pilibala Resume Delta");
         expect(invocationNotes).toContain("Skipped stdin instruction reinjection because an existing Codex session is being resumed with a wake delta.");
         expect(promptMetrics.instructionsChars).toBe(0);
         expect(promptMetrics.heartbeatPromptChars).toBe(0);
@@ -1463,21 +1463,21 @@ process.exit(1);
     }
   });
   it("uses a worktree-isolated CODEX_HOME and mounts the operational skill by default", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
     const sharedCodexHome = path.join(root, "shared-codex-home");
-    const paperclipHome = path.join(root, "paperclip-home");
+    const pilibalaHome = path.join(root, "pilibala-home");
     const isolatedCodexHome = path.join(
-      paperclipHome,
+      pilibalaHome,
       "instances",
       "worktree-1",
       "companies",
       "company-1",
       "codex-home",
     );
-    const homeSkill = path.join(isolatedCodexHome, "skills", "paperclip");
+    const homeSkill = path.join(isolatedCodexHome, "skills", "pilibala");
     await fs.mkdir(workspace, { recursive: true });
     await fs.mkdir(sharedCodexHome, { recursive: true });
     await fs.writeFile(path.join(sharedCodexHome, "auth.json"), `${fakeCodexAuthJson}\n`, "utf8");
@@ -1485,14 +1485,14 @@ process.exit(1);
     await writeFakeCodexCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    const previousPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
-    const previousPaperclipInWorktree = process.env.PAPERCLIP_IN_WORKTREE;
+    const previousPilibalaHome = process.env.PILIBALA_HOME;
+    const previousPilibalaInstanceId = process.env.PILIBALA_INSTANCE_ID;
+    const previousPilibalaInWorktree = process.env.PILIBALA_IN_WORKTREE;
     const previousCodexHome = process.env.CODEX_HOME;
     process.env.HOME = root;
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "worktree-1";
-    process.env.PAPERCLIP_IN_WORKTREE = "true";
+    process.env.PILIBALA_HOME = pilibalaHome;
+    process.env.PILIBALA_INSTANCE_ID = "worktree-1";
+    process.env.PILIBALA_IN_WORKTREE = "true";
     process.env.CODEX_HOME = sharedCodexHome;
 
     try {
@@ -1517,9 +1517,9 @@ process.exit(1);
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -1534,14 +1534,14 @@ process.exit(1);
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
       expect(capture.codexHome).toBe(isolatedCodexHome);
       expect(capture.argv).toEqual(expect.arrayContaining(["exec", "--json", "-"]));
-      expect(capture.prompt).toContain("Follow the paperclip heartbeat.");
-      expect(capture.paperclipEnvKeys).toEqual(
+      expect(capture.prompt).toContain("Follow the pilibala heartbeat.");
+      expect(capture.pilibalaEnvKeys).toEqual(
         expect.arrayContaining([
-          "PAPERCLIP_AGENT_ID",
-          "PAPERCLIP_API_KEY",
-          "PAPERCLIP_API_URL",
-          "PAPERCLIP_COMPANY_ID",
-          "PAPERCLIP_RUN_ID",
+          "PILIBALA_AGENT_ID",
+          "PILIBALA_API_KEY",
+          "PILIBALA_API_URL",
+          "PILIBALA_COMPANY_ID",
+          "PILIBALA_RUN_ID",
         ]),
       );
 
@@ -1562,18 +1562,18 @@ process.exit(1);
       expect(logs).toContainEqual(
         expect.objectContaining({
           stream: "stdout",
-          chunk: expect.stringContaining('Injected Codex skill "paperclip"'),
+          chunk: expect.stringContaining('Injected Codex skill "pilibala"'),
         }),
       );
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousPaperclipHome;
-      if (previousPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = previousPaperclipInstanceId;
-      if (previousPaperclipInWorktree === undefined) delete process.env.PAPERCLIP_IN_WORKTREE;
-      else process.env.PAPERCLIP_IN_WORKTREE = previousPaperclipInWorktree;
+      if (previousPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = previousPilibalaHome;
+      if (previousPilibalaInstanceId === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+      else process.env.PILIBALA_INSTANCE_ID = previousPilibalaInstanceId;
+      if (previousPilibalaInWorktree === undefined) delete process.env.PILIBALA_IN_WORKTREE;
+      else process.env.PILIBALA_IN_WORKTREE = previousPilibalaInWorktree;
       if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = previousCodexHome;
       await fs.rm(root, { recursive: true, force: true });
@@ -1581,7 +1581,7 @@ process.exit(1);
   });
 
   it("isolates connector skills by agent and revision without changing the selected model identity", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-connector-codex-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-connector-codex-"));
     const workspace = path.join(root, "workspace");
     const command = path.join(root, "codex");
     const capture = path.join(root, "capture.json");
@@ -1594,23 +1594,23 @@ process.exit(1);
     await fs.writeFile(path.join(sourceHome, "auth.json"), selectedAuth);
     await fs.writeFile(path.join(skillSource, "SKILL.md"), "# AgentMail\nAssigned inbox one.");
     await writeFakeCodexCommand(command);
-    const keys = ["PAPERCLIP_HOME", "PAPERCLIP_INSTANCE_ID", "CODEX_HOME"] as const;
+    const keys = ["PILIBALA_HOME", "PILIBALA_INSTANCE_ID", "CODEX_HOME"] as const;
     const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
-    process.env.PAPERCLIP_HOME = path.join(root, "paperclip");
-    process.env.PAPERCLIP_INSTANCE_ID = "connectors";
+    process.env.PILIBALA_HOME = path.join(root, "pilibala");
+    process.env.PILIBALA_INSTANCE_ID = "connectors";
     process.env.CODEX_HOME = sourceHome;
     const invoke = async (agentId: string, digest: string | null, source = skillSource, connectorSkillInstructions = "") => {
       const config = {
         engine: "cli", command, cwd: workspace,
-        env: { CODEX_HOME: sourceHome, PAPERCLIP_TEST_CAPTURE_PATH: capture },
-        paperclipConnectorSkillDigest: digest,
-        paperclipSkillSync: { desiredSkills: digest ? ["paperclipai/paperclip/agentmail"] : [] },
-        paperclipRuntimeSkills: digest ? [{ key: "paperclipai/paperclip/agentmail", runtimeName: "agentmail", source }] : [],
+        env: { CODEX_HOME: sourceHome, PILIBALA_TEST_CAPTURE_PATH: capture },
+        pilibalaConnectorSkillDigest: digest,
+        pilibalaSkillSync: { desiredSkills: digest ? ["pilibalaai/pilibala/agentmail"] : [] },
+        pilibalaRuntimeSkills: digest ? [{ key: "pilibalaai/pilibala/agentmail", runtimeName: "agentmail", source }] : [],
       };
       const result = await execute({ runId: `run-${agentId}-${digest?.slice(0, 1) ?? "none"}`,
         agent: { id: agentId, companyId: "company-1", name: "Email agent", adapterType: "codex_local", adapterConfig: config },
         runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
-        config, context: { paperclipWake: { connectorSkillInstructions } }, authToken: "test-token", onLog: async () => {},
+        config, context: { pilibalaWake: { connectorSkillInstructions } }, authToken: "test-token", onLog: async () => {},
       });
       expect(result.errorMessage).toBeNull();
       expect(result.exitCode).toBe(0);
@@ -1660,7 +1660,7 @@ process.exit(1);
   });
 
   it.each([false, true])("isolates private skills and keeps custom routing with an explicit credential home: %s", async (explicitHome) => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-private-codex-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-private-codex-"));
     const workspace = path.join(root, "workspace");
     const command = path.join(root, "codex");
     const capture = path.join(root, "capture.json");
@@ -1672,27 +1672,27 @@ process.exit(1);
     await fs.writeFile(path.join(sourceHome, "auth.json"), fakeCodexAuthJson);
     await fs.writeFile(path.join(skillSource, "SKILL.md"), "# AgentMail\nAssigned inbox one.");
     await writeFakeCodexCommand(command);
-    const keys = ["PAPERCLIP_HOME", "PAPERCLIP_INSTANCE_ID", "CODEX_HOME"] as const;
+    const keys = ["PILIBALA_HOME", "PILIBALA_INSTANCE_ID", "CODEX_HOME"] as const;
     const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
-    process.env.PAPERCLIP_HOME = path.join(root, "paperclip");
-    process.env.PAPERCLIP_INSTANCE_ID = "connectors";
+    process.env.PILIBALA_HOME = path.join(root, "pilibala");
+    process.env.PILIBALA_INSTANCE_ID = "connectors";
     process.env.CODEX_HOME = sourceHome;
     const invoke = async (agentId: string, digest: string | null, source = skillSource, connectorSkillInstructions = "") => {
       const config = {
         engine: "cli", command, cwd: workspace,
-        env: { ...(explicitHome ? { CODEX_HOME: sourceHome } : {}), PAPERCLIP_TEST_CAPTURE_PATH: capture,
-          PAPERCLIP_CODEX_PROVIDERS: JSON.stringify({ providers: { test_gateway: {
+        env: { ...(explicitHome ? { CODEX_HOME: sourceHome } : {}), PILIBALA_TEST_CAPTURE_PATH: capture,
+          PILIBALA_CODEX_PROVIDERS: JSON.stringify({ providers: { test_gateway: {
             name: "Fixture gateway", base_url: "https://gateway.example/v1", wire_api: "responses",
           } }, model_provider: "test_gateway" }),
         },
 
-        paperclipSkillSync: { desiredSkills: digest ? ["paperclipai/paperclip/agentmail"] : [] },
-        paperclipRuntimeSkills: digest ? [{ key: "paperclipai/paperclip/agentmail", runtimeName: "agentmail", source }] : [],
+        pilibalaSkillSync: { desiredSkills: digest ? ["pilibalaai/pilibala/agentmail"] : [] },
+        pilibalaRuntimeSkills: digest ? [{ key: "pilibalaai/pilibala/agentmail", runtimeName: "agentmail", source }] : [],
       };
       const result = await execute({ runId: `run-${agentId}-${digest?.slice(0, 1) ?? "none"}`,
         agent: { id: agentId, companyId: "company-1", name: "Email agent", adapterType: "codex_local", adapterConfig: config },
         runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
-        config, context: { paperclipWake: { connectorSkillInstructions } }, authToken: "test-token", onLog: async () => {},
+        config, context: { pilibalaWake: { connectorSkillInstructions } }, authToken: "test-token", onLog: async () => {},
       });
       expect(result.errorMessage).toBeNull();
       expect(result.exitCode).toBe(0);
@@ -1763,27 +1763,27 @@ process.exit(1);
   });
 
   it("respects an explicit CODEX_HOME config override even in worktree mode", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-explicit-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-codex-execute-explicit-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
     const sharedCodexHome = path.join(root, "shared-codex-home");
     const explicitCodexHome = path.join(root, "explicit-codex-home");
-    const paperclipHome = path.join(root, "paperclip-home");
+    const pilibalaHome = path.join(root, "pilibala-home");
     await fs.mkdir(workspace, { recursive: true });
     await fs.mkdir(sharedCodexHome, { recursive: true });
     await fs.writeFile(path.join(sharedCodexHome, "auth.json"), `${fakeCodexAuthJson}\n`, "utf8");
     await writeFakeCodexCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    const previousPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
-    const previousPaperclipInWorktree = process.env.PAPERCLIP_IN_WORKTREE;
+    const previousPilibalaHome = process.env.PILIBALA_HOME;
+    const previousPilibalaInstanceId = process.env.PILIBALA_INSTANCE_ID;
+    const previousPilibalaInWorktree = process.env.PILIBALA_IN_WORKTREE;
     const previousCodexHome = process.env.CODEX_HOME;
     process.env.HOME = root;
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "worktree-1";
-    process.env.PAPERCLIP_IN_WORKTREE = "true";
+    process.env.PILIBALA_HOME = pilibalaHome;
+    process.env.PILIBALA_INSTANCE_ID = "worktree-1";
+    process.env.PILIBALA_IN_WORKTREE = "true";
     process.env.CODEX_HOME = sharedCodexHome;
 
     try {
@@ -1807,12 +1807,12 @@ process.exit(1);
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
             CODEX_HOME: explicitCodexHome,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
-          paperclipSkillSync: {
-            desiredSkills: ["paperclip"],
+          promptTemplate: "Follow the pilibala heartbeat.",
+          pilibalaSkillSync: {
+            desiredSkills: ["pilibala"],
           },
         },
         context: {},
@@ -1825,17 +1825,17 @@ process.exit(1);
 
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
       expect(capture.codexHome).toBe(explicitCodexHome);
-      expect((await fs.lstat(path.join(explicitCodexHome, "skills", "paperclip"))).isSymbolicLink()).toBe(true);
-      await expect(fs.lstat(path.join(paperclipHome, "instances", "worktree-1", "codex-home"))).rejects.toThrow();
+      expect((await fs.lstat(path.join(explicitCodexHome, "skills", "pilibala"))).isSymbolicLink()).toBe(true);
+      await expect(fs.lstat(path.join(pilibalaHome, "instances", "worktree-1", "codex-home"))).rejects.toThrow();
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousPaperclipHome;
-      if (previousPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = previousPaperclipInstanceId;
-      if (previousPaperclipInWorktree === undefined) delete process.env.PAPERCLIP_IN_WORKTREE;
-      else process.env.PAPERCLIP_IN_WORKTREE = previousPaperclipInWorktree;
+      if (previousPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = previousPilibalaHome;
+      if (previousPilibalaInstanceId === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+      else process.env.PILIBALA_INSTANCE_ID = previousPilibalaInstanceId;
+      if (previousPilibalaInWorktree === undefined) delete process.env.PILIBALA_IN_WORKTREE;
+      else process.env.PILIBALA_IN_WORKTREE = previousPilibalaInWorktree;
       if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = previousCodexHome;
       await fs.rm(root, { recursive: true, force: true });

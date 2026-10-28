@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ToolCatalogEntry } from "@paperclipai/shared";
+import type { ToolCatalogEntry } from "@pilibalaai/shared";
 import { ActionTestDialog, errorHints } from "./ActionTestDialog";
 
 const listTestAgentsMock = vi.hoisted(() => vi.fn());
@@ -298,7 +298,7 @@ describe("Permissions action Test dialog", () => {
     expect(urlInput, document.body.textContent).toBeTruthy();
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
     await act(() => {
-      setValue!.call(urlInput, "https://paperclip.ing");
+      setValue!.call(urlInput, "https://pilibala.ing");
       urlInput!.dispatchEvent(new Event("input", { bubbles: true }));
     });
     const runButton = [...document.body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Run");
@@ -310,7 +310,7 @@ describe("Permissions action Test dialog", () => {
     expect(runTestCallMock).toHaveBeenCalledWith("conn-1", {
       agentId: "agent-ceo",
       toolName: "firecrawl_scrape",
-      parameters: { url: "https://paperclip.ing" },
+      parameters: { url: "https://pilibala.ing" },
     });
   });
 

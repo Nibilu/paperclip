@@ -15,10 +15,10 @@ for (const action of ["task_retry", "thread_retry", "inbox_retry", "message", "q
   test(`legacy startup hold: ${action} reaches a new agent response`, async ({ page, request }) => {
     test.setTimeout(120_000);
     const root = await mkdtemp(path.join(os.tmpdir(), "legacy-recovery-browser-"));
-    const config = JSON.parse(await readFile(process.env.PAPERCLIP_E2E_SERVER_CONFIG!, "utf8"));
+    const config = JSON.parse(await readFile(process.env.PILIBALA_E2E_SERVER_CONFIG!, "utf8"));
     // Use the running test server's actual port, including fallback allocation.
     const pid = await readFile(path.join(config.database.embeddedPostgresDataDir, "postmaster.pid"), "utf8");
-    const url = `postgres://paperclip:paperclip@127.0.0.1:${pid.split("\n")[3]}/paperclip`;
+    const url = `postgres://pilibala:pilibala@127.0.0.1:${pid.split("\n")[3]}/pilibala`;
     const db = createDb(url);
     const company = await json(await request.post("/api/companies", { data: { name: `Legacy recovery ${action} ${Date.now()}` } }));
     try {
@@ -28,7 +28,7 @@ for (const action of ["task_retry", "thread_retry", "inbox_retry", "message", "q
         adapterConfig: { engine: "acp", cwd: root, stateDir: path.join(root, "state"),
           agentCommand: `${JSON.stringify(process.execPath)} ${JSON.stringify(path.resolve("scripts/mcp-fixtures/servers/acp-stop-agent.mjs"))}`,
           // The ACP fixture has no provider login. Use a fixture key to keep setup offline.
-          env: { ANTHROPIC_API_KEY: "acp-stop-fixture-key", PAPERCLIP_STOP_FIXTURE_ROOT: root, PAPERCLIP_STOP_FIXTURE_FINISH_TASK: "1" } },
+          env: { ANTHROPIC_API_KEY: "acp-stop-fixture-key", PILIBALA_STOP_FIXTURE_ROOT: root, PILIBALA_STOP_FIXTURE_FINISH_TASK: "1" } },
         runtimeConfig: { heartbeat: { enabled: false, wakeOnDemand: true } },
       } }));
       await expect.poll(async () => (await json(await request.get(`/api/agents/${agent.id}`))).lifecycleState,
@@ -69,7 +69,7 @@ for (const action of ["task_retry", "thread_retry", "inbox_retry", "message", "q
         await db.insert(agentWakeupRequests).values({ companyId: company.id, agentId: agent.id,
           source: "automation", reason: "issue_commented", status: "deferred_issue_execution",
           requestedByActorType: "system", payload: { issueId: issue.id, commentId,
-            _paperclipWakeContext: { issueId: issue.id, wakeCommentIds: [commentId], wakeCommentId: commentId } },
+            _pilibalaWakeContext: { issueId: issue.id, wakeCommentIds: [commentId], wakeCommentId: commentId } },
         });
       }
       const taskUrl = `/${company.issuePrefix}/issues/${issue.identifier}`;

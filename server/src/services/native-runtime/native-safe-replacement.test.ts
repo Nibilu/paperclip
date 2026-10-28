@@ -4,7 +4,7 @@ import { buildExecutionContinuation } from "../execution-continuation.js";
 import { issueService } from "../issues.js";
 import { activityService } from "../activity.js";
 import { instanceSettingsService } from "../instance-settings.js";
-import { buildPaperclipWakePayload, heartbeatService } from "../heartbeat.js";
+import { buildPilibalaWakePayload, heartbeatService } from "../heartbeat.js";
 import { legacyExecutionNeedsReconciliation, terminalizeLegacyExecution } from "../legacy-execution-recovery.js";
 import { deliverExecutionStatuses } from "../execution-status-delivery.js";
 import { publishLiveEvent } from "../live-events.js";
@@ -35,14 +35,14 @@ import {
   documentRevisions,
   issues,
   nativeRunFinalizations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
 } from "../../__tests__/helpers/embedded-postgres.js";
 import { reconcileSafeNativeReplacements } from "./native-safe-replacement.js";
 import { reconcileAbandonedExecutionControl } from "../execution-control-reconciliation.js";
-const externalDatabaseUrl = process.env.PAPERCLIP_TEST_DATABASE_URL;
+const externalDatabaseUrl = process.env.PILIBALA_TEST_DATABASE_URL;
 const support = externalDatabaseUrl
   ? { supported: true }
   : await getEmbeddedPostgresTestSupport();
@@ -58,7 +58,7 @@ const support = externalDatabaseUrl
         return;
       }
       database = await startEmbeddedPostgresTestDatabase(
-        "paperclip-safe-replacement-",
+        "pilibala-safe-replacement-",
       );
       db = createDb(database.connectionString);
     }, 30_000);
@@ -86,7 +86,7 @@ const support = externalDatabaseUrl
         companyId,
         name: "Executor",
         role: "engineer",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
       });
       await db.insert(issues).values({
         id: issueId,
@@ -105,13 +105,13 @@ const support = externalDatabaseUrl
         contextSnapshot: {
           issueId,
           preservedRecoveryContext: true,
-          paperclipWake: { comments: [{ id: "stale-comment" }] },
-          paperclipWakeComment: { id: "stale-comment" },
-          paperclipTaskMarkdown: "stale historical task",
-          paperclipTaskMarkdownCompact: "stale historical compact task",
-          paperclipTaskMarkdownAssignment: "stale assignment task",
-          paperclipTaskMarkdownAssignmentCompact: "stale assignment compact task",
-          paperclipTurnContext: {
+          pilibalaWake: { comments: [{ id: "stale-comment" }] },
+          pilibalaWakeComment: { id: "stale-comment" },
+          pilibalaTaskMarkdown: "stale historical task",
+          pilibalaTaskMarkdownCompact: "stale historical compact task",
+          pilibalaTaskMarkdownAssignment: "stale assignment task",
+          pilibalaTaskMarkdownAssignmentCompact: "stale assignment compact task",
+          pilibalaTurnContext: {
             version: 1,
             assignment: { owner: "task_markdown" },
             events: { owner: "wake_prompt", comments: [{ id: "stale-comment" }] },
@@ -141,7 +141,7 @@ const support = externalDatabaseUrl
       async (mode) => {
         // The stopped-session verifier is the injected boundary here. These are
         // scheduler/database tests, not evidence that SIGKILL is a safe boundary.
-        const workspace = await mkdtemp(join(tmpdir(), "paperclip-recovery-work-"));
+        const workspace = await mkdtemp(join(tmpdir(), "pilibala-recovery-work-"));
         try {
           const file = join(workspace, "saved.txt");
           const saved = "Completed work from before the interruption.\n";
@@ -189,13 +189,13 @@ const support = externalDatabaseUrl
               preservedRecoveryContext: true,
             });
             for (const key of [
-              "paperclipWake",
-              "paperclipWakeComment",
-              "paperclipTaskMarkdown",
-              "paperclipTaskMarkdownCompact",
-              "paperclipTaskMarkdownAssignment",
-              "paperclipTaskMarkdownAssignmentCompact",
-              "paperclipTurnContext",
+              "pilibalaWake",
+              "pilibalaWakeComment",
+              "pilibalaTaskMarkdown",
+              "pilibalaTaskMarkdownCompact",
+              "pilibalaTaskMarkdownAssignment",
+              "pilibalaTaskMarkdownAssignmentCompact",
+              "pilibalaTurnContext",
             ]) {
               expect(successors[0]!.contextSnapshot).not.toHaveProperty(key);
             }
@@ -232,7 +232,7 @@ const support = externalDatabaseUrl
         run.id === source.runId && mode !== "unproven" ? { evidence: { completedTaskControlCallIds: ["completion"] }, retire } : null);
       await appendHeartbeatRunEvent(db, { companyId: source.companyId, runId: source.runId, agentId: source.agentId,
         eventType: "tool.execution.started", stream: "system",
-        payload: { name: "paperclip_finish", executionId: "completion", transport: "process" },
+        payload: { name: "pilibala_finish", executionId: "completion", transport: "process" },
       });
       await reconcileSafeNativeReplacements(db, new Date(), { verifyStoppedSession });
       await reconcileSafeNativeReplacements(db, new Date(), { verifyStoppedSession });
@@ -502,7 +502,7 @@ const support = externalDatabaseUrl
     it("does not turn an already reconciled continuation into a recovery assignment", async () => {
       const source = await seed();
       const [action] = await db.insert(issueRecoveryActions).values({ companyId: source.companyId, sourceIssueId: source.issueId, kind: "active_run_watchdog", status: "resolved", ownerType: "board", returnOwnerAgentId: source.agentId, cause: "native_event_replay_conflict", fingerprint: source.runId, nextAction: "Old recovery instruction", evidence: { executionReconciliation: { runId: source.runId } } }).returning();
-      const wake = await buildPaperclipWakePayload({ db, companyId: source.companyId, contextSnapshot: { issueId: source.issueId, recoveryActionId: action.id, wakeReason: "issue_recovery_action_restored" } });
+      const wake = await buildPilibalaWakePayload({ db, companyId: source.companyId, contextSnapshot: { issueId: source.issueId, recoveryActionId: action.id, wakeReason: "issue_recovery_action_restored" } });
       expect(wake?.recovery).toBeNull();
       expect(wake?.reason).toBe("issue_recovery_action_restored");
     });

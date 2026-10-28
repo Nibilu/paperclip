@@ -13,7 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { ServerAdapterModule } from "./types.js";
-import { validateAdapterLoginCapability } from "@paperclipai/adapter-utils";
+import { validateAdapterLoginCapability } from "@pilibalaai/adapter-utils";
 import { logger } from "../middleware/logger.js";
 
 import {
@@ -94,7 +94,7 @@ function extractUiParserSource(
     return undefined;
   }
 
-  const contractVersion = pkg.paperclip?.adapterUiParser;
+  const contractVersion = pkg.pilibala?.adapterUiParser;
   if (contractVersion) {
     const major = contractVersion.split(".")[0];
     if (major !== SUPPORTED_PARSER_CONTRACT) {
@@ -107,7 +107,7 @@ function extractUiParserSource(
   } else {
     logger.info(
       { packageName },
-      "Adapter has ./ui-parser export but no paperclip.adapterUiParser version — loading anyway (future versions may require it)",
+      "Adapter has ./ui-parser export but no pilibala.adapterUiParser version — loading anyway (future versions may require it)",
     );
   }
 

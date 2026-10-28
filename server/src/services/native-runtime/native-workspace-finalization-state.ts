@@ -1,4 +1,4 @@
-import { environmentLeases, heartbeatRuns, nativeRunFinalizations, nativeRunResults, type Db } from "@paperclipai/db";
+import { environmentLeases, heartbeatRuns, nativeRunFinalizations, nativeRunResults, type Db } from "@pilibalaai/db";
 import { and, eq, exists, sql } from "drizzle-orm";
 import { nativeRunHasNoWorkspaceAccess } from "../workspace-restore-recovery-state.js";
 import { readNativeWorkspaceSyncReference } from "./native-workspace-sync.js";

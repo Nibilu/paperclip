@@ -8,7 +8,7 @@ import {
   feedbackExports, feedbackVotes,
   heartbeatRuns, issues, issueWatchdogs, issueThreadInteractions, issueQuestionResponseDeliveries,
   projects, projectWorkspaces, routines, routineTriggers, toolApplications, toolConnections, workspaceOperations, executionWorkspaceRuntimeLeases, type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { readIdleSleepSafety, type IdleSleepDrainStatus } from "../services/idle-sleep-safety.js";
 
@@ -484,10 +484,10 @@ if (!support.supported) console.warn(`Skipping idle sleep Postgres tests: ${supp
       runId, companyId, agentId, responsibleUserId: "test-user", entryFile: "AGENTS.md",
       baseHash: "test-hash", localRoot: "/tmp/idle-copy", executionRoot: "/tmp/idle-copy",
       location: "local", state: "saved", processStoppedAt: new Date(now),
-      receipt: { schema: "paperclip.agent-files.v1", cleanupPending: true },
+      receipt: { schema: "pilibala.agent-files.v1", cleanupPending: true },
     });
     expect(await read()).toEqual(present);
-    await db.update(agentInstructionWorkingCopies).set({ receipt: { schema: "paperclip.agent-files.v1" } })
+    await db.update(agentInstructionWorkingCopies).set({ receipt: { schema: "pilibala.agent-files.v1" } })
       .where(eq(agentInstructionWorkingCopies.runId, runId));
     expect(await read()).toEqual(none);
   });
@@ -645,7 +645,7 @@ if (!support.supported) console.warn(`Skipping idle sleep Postgres tests: ${supp
     const [environment] = await db.insert(environments).values({ name: "Failed turn environment", driver: "sandbox" }).returning();
     const leaseId = randomUUID();
     const receipt = {
-      schema: "paperclip.remote-termination.v1", companyId: seeded.companyId,
+      schema: "pilibala.remote-termination.v1", companyId: seeded.companyId,
       runId: seeded.runId, leaseId, provider: "plugin:demo:sandbox",
       providerLeaseId: "fixture-resource", state: "destroyed", confirmedAt: new Date(now).toISOString(),
     };

@@ -13,7 +13,7 @@ permissions:
 jobs:
   export:
     if: >-
-      github.repository == 'paperclipai/paperclip' &&
+      github.repository == 'pilibalaai/pilibala' &&
       github.event.workflow_run.event == 'pull_request' &&
       startsWith(github.event.workflow_run.display_title, 'CI profile · PR #')
     runs-on: ubuntu-latest
@@ -35,7 +35,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           HONEYCOMB_CI_API_KEY: ${{ secrets.HONEYCOMB_CI_API_KEY }}
-          HONEYCOMB_CI_DATASET: paperclip-ci
-          HONEYCOMB_TEAM: paperclip
+          HONEYCOMB_CI_DATASET: pilibala-ci
+          HONEYCOMB_TEAM: pilibala
           HONEYCOMB_ENVIRONMENT: test
         run: node scripts/ci-profile/export.mjs

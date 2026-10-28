@@ -5,7 +5,7 @@ import { readTransientRecoveryContractFromRun, readHeartbeatRunErrorFamily, isTr
 import { type RunSessionOutcome, resolveNextSessionState, normalizeUsageTotals, resolveCacheAdjustedCostUsd, resolveLedgerBiller, resolveLedgerCostStatus, normalizeLedgerBillingType } from "./run-state.js";
 import { readGitConnectionFailure } from "../git-connection-failure.js";
 import { CONFIGURATION_INCOMPLETE_FAILURE_CODE, ConfigurationIncompleteFailure } from "./run-preparation.js";
-import { isWorkspaceValidationFailedRun, isWorkspaceValidationFailure, attachPaperclipSessionMetadataToSessionParams } from "./workspaces.js";
+import { isWorkspaceValidationFailedRun, isWorkspaceValidationFailure, attachPilibalaSessionMetadataToSessionParams } from "./workspaces.js";
 import { preserveWorkspaceRestoreRecoveryMetadataSql } from "../legacy-workspace-restore-recovery.js";
 import { cancellationResultJson, controllerLeaseLossCancellation, readRunCancellation } from "../run-cancellation.js";
 import { CONTROLLER_LEASE_LOST_FAILURE_CODE, LegacyControllerLeaseLostError } from "../legacy-controller-lease.js";
@@ -14,7 +14,7 @@ import { isConversation, settleConversationTurn } from "../agent-conversations.j
 import { legacyExecutionNeedsReconciliationWithEvidence } from "../legacy-execution-recovery.js";
 import { isWorkspaceGitScanError } from "../workspace-git-operation-scheduler.js";
 import { and, eq, sql } from "drizzle-orm";
-import { heartbeatRuns, issues, nativeRunFinalizations } from "@paperclipai/db";
+import { heartbeatRuns, issues, nativeRunFinalizations } from "@pilibalaai/db";
 import { HttpError } from "../../errors.js";
 import { logger } from "../../middleware/logger.js";
 import { normalizeResponsibleUserDenialCode } from "../responsible-user-denial-run-outcomes.js";
@@ -40,12 +40,12 @@ import type { BudgetServiceHooks } from "../budgets.js";
 import type { providerTraceStore } from "../provider-trace-store.js";
 import type { createAgentIdentityRedactor } from "../agent-identity-redaction.js";
 import type { CurrentUserRedactionOptions } from "../../log-redaction.js";
-import type { AdapterExecutionResult } from "@paperclipai/adapter-utils";
-import { projectHermesRunEvidence } from "@paperclipai/shared";
+import type { AdapterExecutionResult } from "@pilibalaai/adapter-utils";
+import { projectHermesRunEvidence } from "@pilibalaai/shared";
 import type { getRunLogStore, RunLogHandle } from "../run-log-store.js";
 import type { createHeartbeatRunState, getAdapterSessionCodec } from "./run-state.js";
 import type { EffectiveRunSessionConfigMetadata } from "./workspaces.js";
-import type { Db, agents } from "@paperclipai/db";
+import type { Db, agents } from "@pilibalaai/db";
 
 type Run = typeof heartbeatRuns.$inferSelect;
 type Agent = typeof agents.$inferSelect;
@@ -738,7 +738,7 @@ export function createHeartbeatRunCompletion(db: Db, dependencies: HeartbeatRunC
         );
         await onLog(
           "stderr",
-          `[paperclip] Failed to complete skill test run: ${err instanceof Error ? err.message : String(err)}\n`,
+          `[pilibala] Failed to complete skill test run: ${err instanceof Error ? err.message : String(err)}\n`,
         );
       }
       const livenessRun = finalizedRun;
@@ -881,7 +881,7 @@ export function createHeartbeatRunCompletion(db: Db, dependencies: HeartbeatRunC
       } catch (err) {
         await onLog(
           "stderr",
-          `[paperclip] Failed to resolve run presentation: ${err instanceof Error ? err.message : String(err)}\n`,
+          `[pilibala] Failed to resolve run presentation: ${err instanceof Error ? err.message : String(err)}\n`,
         );
       }
       if (outcome === "failed" && isMaxTurnExhaustionRun(livenessRun)) {
@@ -1038,7 +1038,7 @@ export function createHeartbeatRunCompletion(db: Db, dependencies: HeartbeatRunC
             adapterType: agent.adapterType,
             taskKey,
             sessionParamsJson:
-              attachPaperclipSessionMetadataToSessionParams(
+              attachPilibalaSessionMetadataToSessionParams(
                 nextSessionState.params,
                 configuredModel,
                 sessionConfigMetadata,
@@ -1274,7 +1274,7 @@ export function createHeartbeatRunCompletion(db: Db, dependencies: HeartbeatRunC
           taskKey,
           sessionParamsJson:
             goalCheckpointSession.current?.params ??
-            attachPaperclipSessionMetadataToSessionParams(
+            attachPilibalaSessionMetadataToSessionParams(
               previousSessionParams,
               configuredModel,
               sessionConfigMetadata,

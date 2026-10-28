@@ -16,7 +16,7 @@ import { type CredentialMutationLeaseGuard } from "../chat-credential-mutation-l
 
 import { photonSharedScope } from "../photon/cloud.js";
 
-import { photonChannelConfigurationSchema } from "@paperclipai/shared";
+import { photonChannelConfigurationSchema } from "@pilibalaai/shared";
 
 import {
   randomBytes,
@@ -29,17 +29,17 @@ import {
   ne,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatEndpoints,
   companySecretBindings,
   toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   ChatProvider,
   ToolCredentialSecretRef,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import { isUniqueViolation } from "../../db-errors.js";
 
@@ -216,7 +216,7 @@ export function createChatCredentials(db: Db, options: ChatCredentialsOptions) {
     });
     if (conflictEndpoint) {
       throw conflict(
-        `This ${PROVIDER_LABELS[endpoint.provider]} bot already represents another Paperclip agent connection`,
+        `This ${PROVIDER_LABELS[endpoint.provider]} bot already represents another Pilibala agent connection`,
         conflictEndpoint.companyId === endpoint.companyId
           ? {
               code: "chat_bot_identity_in_use",
@@ -243,7 +243,7 @@ export function createChatCredentials(db: Db, options: ChatCredentialsOptions) {
 
   function nativeBotIdentityConflict(provider: ChatProvider) {
     return conflict(
-      `This ${PROVIDER_LABELS[provider]} bot already represents another Paperclip agent connection`,
+      `This ${PROVIDER_LABELS[provider]} bot already represents another Pilibala agent connection`,
       { code: "chat_bot_identity_in_use" },
     );
   }
@@ -277,7 +277,7 @@ export function createChatCredentials(db: Db, options: ChatCredentialsOptions) {
             name: `chat.${endpoint.provider}.${endpoint.id.slice(0, 8)}.${key}.${suffix.slice(0, 8)}`,
             key: `CHAT_${endpoint.provider.replaceAll("-", "_")}_${endpoint.id.replaceAll("-", "_")}_${key}_${suffix}`.toUpperCase(),
             provider: "local_encrypted",
-            managedMode: "paperclip_managed",
+            managedMode: "pilibala_managed",
             value,
             description: `${PROVIDER_LABELS[endpoint.provider]} channel credential for endpoint ${endpoint.id}`,
           },

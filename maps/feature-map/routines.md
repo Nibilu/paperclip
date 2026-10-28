@@ -29,7 +29,7 @@ Open `/routines`, create one, and inspect `/routines/:routineId` and its edit se
 Use the routine's trigger controls and Runs/Recent Runs/Audit links; lists also
 offer Run now. **History** records configuration versions, not executions.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use a disposable routine, deterministic test agent, and harmless target. Record schedule timezone and enabled state.
 

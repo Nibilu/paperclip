@@ -5,14 +5,14 @@ import type {
   AdapterSkillContext,
   AdapterSkillEntry,
   AdapterSkillSnapshot,
-} from "@paperclipai/adapter-utils";
+} from "@pilibalaai/adapter-utils";
 import {
-  ensurePaperclipSkillSymlink,
-  isPaperclipSkillSourceMissing,
+  ensurePilibalaSkillSymlink,
+  isPilibalaSkillSourceMissing,
   readInstalledSkillTargets,
-  readPaperclipRuntimeSkillEntries,
-  resolveLegacyPaperclipDesiredSkillNames,
-} from "@paperclipai/adapter-utils/server-utils";
+  readPilibalaRuntimeSkillEntries,
+  resolveLegacyPilibalaDesiredSkillNames,
+} from "@pilibalaai/adapter-utils/server-utils";
 import { fileURLToPath } from "node:url";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -119,7 +119,7 @@ async function buildSkillEntry(
     origin: "user_installed",
     originLabel: "Hermes skill",
     locationLabel: `~/.hermes/skills/${categoryPath}`,
-    readOnly: true, // Hermes manages its own skills — Paperclip can't toggle them
+    readOnly: true, // Hermes manages its own skills — Pilibala can't toggle them
     sourcePath: skillMdPath,
     targetPath: null,
     detail: description,
@@ -134,22 +134,22 @@ async function buildHermesSkillSnapshot(config: Record<string, unknown>): Promis
   const home = resolveHermesHome(config);
   const hermesSkillsHome = path.join(home, "skills");
 
-  // 1. Scan Paperclip-managed skills (bundled with the adapter)
-  const paperclipEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
-  const desiredSkills = resolveLegacyPaperclipDesiredSkillNames(config, paperclipEntries);
+  // 1. Scan Pilibala-managed skills (bundled with the adapter)
+  const pilibalaEntries = await readPilibalaRuntimeSkillEntries(config, __moduleDir);
+  const desiredSkills = resolveLegacyPilibalaDesiredSkillNames(config, pilibalaEntries);
   const desiredSet = new Set(desiredSkills);
-  const availableByKey = new Map(paperclipEntries.map((e) => [e.key, e]));
+  const availableByKey = new Map(pilibalaEntries.map((e) => [e.key, e]));
 
   // 2. Scan Hermes's own skills from ~/.hermes/skills/
   const hermesSkillEntries = await scanHermesSkills(hermesSkillsHome);
   const hermesKeys = new Set(hermesSkillEntries.map((e) => e.key));
 
-  // 3. Merge: Paperclip skills first (ephemeral), then Hermes skills
+  // 3. Merge: Pilibala skills first (ephemeral), then Hermes skills
   const entries: AdapterSkillEntry[] = [];
   const warnings: string[] = [];
 
-  // Paperclip-managed skills
-  for (const entry of paperclipEntries) {
+  // Pilibala-managed skills
+  for (const entry of pilibalaEntries) {
     const desired = desiredSet.has(entry.key);
     entries.push({
       key: entry.key,
@@ -158,7 +158,7 @@ async function buildHermesSkillSnapshot(config: Record<string, unknown>): Promis
       managed: true,
       state: desired ? "configured" : "available",
       origin: "company_managed",
-      originLabel: "Managed by Paperclip",
+      originLabel: "Managed by Pilibala",
       readOnly: false,
       sourcePath: entry.source,
       targetPath: null,
@@ -170,7 +170,7 @@ async function buildHermesSkillSnapshot(config: Record<string, unknown>): Promis
 
   // Hermes-installed skills (read-only, always loaded)
   for (const entry of hermesSkillEntries) {
-    // Skip if Paperclip already manages a skill with the same key
+    // Skip if Pilibala already manages a skill with the same key
     if (availableByKey.has(entry.key)) continue;
     entries.push(entry);
   }
@@ -179,7 +179,7 @@ async function buildHermesSkillSnapshot(config: Record<string, unknown>): Promis
   for (const desiredSkill of desiredSkills) {
     if (availableByKey.has(desiredSkill) || hermesKeys.has(desiredSkill)) continue;
     warnings.push(
-      `Desired skill "${desiredSkill}" is not available in Paperclip or Hermes skills.`,
+      `Desired skill "${desiredSkill}" is not available in Pilibala or Hermes skills.`,
     );
     entries.push({
       key: desiredSkill,
@@ -193,7 +193,7 @@ async function buildHermesSkillSnapshot(config: Record<string, unknown>): Promis
       sourcePath: null,
       targetPath: null,
       detail:
-        "Cannot find this skill in Paperclip or ~/.hermes/skills/.",
+        "Cannot find this skill in Pilibala or ~/.hermes/skills/.",
     });
   }
 
@@ -218,8 +218,8 @@ export async function listHermesSkills(
 // ---------------------------------------------------------------------------
 
 /**
- * The Hermes skills home is shared space. When a Paperclip-managed skill path
- * is occupied by something Paperclip does not own, move the occupant aside
+ * The Hermes skills home is shared space. When a Pilibala-managed skill path
+ * is occupied by something Pilibala does not own, move the occupant aside
  * into `<skillsHome>/.archive/` (rename only — nothing is ever deleted) and
  * recreate the managed link, reporting what moved where through `onNotice`.
  *
@@ -264,25 +264,25 @@ function foreignOccupantConflictMessage(
     ? `symlink -> ${resolvedSource}`
     : "not a symlink";
   return (
-    `Cannot reconcile Paperclip-managed skill "${entryKey}": ${target} is occupied by another installation (${occupantDetail}). ` +
-    `Paperclip expects this path to link to ${expectedSource}. ` +
+    `Cannot reconcile Pilibala-managed skill "${entryKey}": ${target} is occupied by another installation (${occupantDetail}). ` +
+    `Pilibala expects this path to link to ${expectedSource}. ` +
     `Fix: move or remove the occupant, e.g. \`mv ${target} ${path.join(skillsHome, ".archive")}/\`, then restart the agent. ` +
     "Foreign symlinks and plain files are quarantined to the archive directory automatically; real directories are never moved automatically to avoid relocating user-maintained skills."
   );
 }
 
-export async function reconcileHermesPaperclipSkills(
+export async function reconcileHermesPilibalaSkills(
   config: Record<string, unknown>,
   requestedDesiredSkills?: string[],
   onNotice?: (line: string) => Promise<void> | void,
 ): Promise<string[]> {
-  const availableEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
+  const availableEntries = await readPilibalaRuntimeSkillEntries(config, __moduleDir);
   const desiredSkills = requestedDesiredSkills
     ? Array.from(new Set([
-        ...resolveLegacyPaperclipDesiredSkillNames({}, availableEntries),
+        ...resolveLegacyPilibalaDesiredSkillNames({}, availableEntries),
         ...requestedDesiredSkills,
       ]))
-    : resolveLegacyPaperclipDesiredSkillNames(config, availableEntries);
+    : resolveLegacyPilibalaDesiredSkillNames(config, availableEntries);
   const desiredSet = new Set(desiredSkills);
   const skillsHome = path.join(resolveHermesHome(config), "skills");
   await fs.mkdir(skillsHome, { recursive: true });
@@ -290,9 +290,9 @@ export async function reconcileHermesPaperclipSkills(
   const availableByRuntimeName = new Map(availableEntries.map((entry) => [entry.runtimeName, entry]));
 
   for (const entry of availableEntries) {
-    if (!desiredSet.has(entry.key) || isPaperclipSkillSourceMissing(entry)) continue;
+    if (!desiredSet.has(entry.key) || isPilibalaSkillSourceMissing(entry)) continue;
     const target = path.join(skillsHome, entry.runtimeName);
-    await ensurePaperclipSkillSymlink(entry.source, target);
+    await ensurePilibalaSkillSymlink(entry.source, target);
     let resolvedSource = await readResolvedSymlinkTarget(target);
     if (resolvedSource !== path.resolve(entry.source)) {
       const occupant = await fs.lstat(target).catch(() => null);
@@ -306,9 +306,9 @@ export async function reconcileHermesPaperclipSkills(
         const occupantKind = occupant.isSymbolicLink() ? "symlink" : "file";
         const archivePath = await quarantineForeignSkillEntry(skillsHome, target);
         await onNotice?.(
-          `[hermes] Quarantined foreign skill entry "${entry.key}" (${occupantKind}${linkDetail}) at ${target} -> ${archivePath}; recreated the Paperclip-managed link.`,
+          `[hermes] Quarantined foreign skill entry "${entry.key}" (${occupantKind}${linkDetail}) at ${target} -> ${archivePath}; recreated the Pilibala-managed link.`,
         );
-        await ensurePaperclipSkillSymlink(entry.source, target);
+        await ensurePilibalaSkillSymlink(entry.source, target);
         resolvedSource = await readResolvedSymlinkTarget(target);
       }
     }
@@ -335,7 +335,7 @@ export async function syncHermesSkills(
 ): Promise<AdapterSkillSnapshot> {
   // Quarantine notices are only streamed on the run path (execute.ts); the
   // skill-sync API surface has no log channel.
-  await reconcileHermesPaperclipSkills(ctx.config, desiredSkills);
+  await reconcileHermesPilibalaSkills(ctx.config, desiredSkills);
   return buildHermesSkillSnapshot(ctx.config);
 }
 
@@ -343,5 +343,5 @@ export function resolveHermesDesiredSkillNames(
   config: Record<string, unknown>,
   availableEntries: Array<{ key: string; runtimeName?: string | null }>,
 ): string[] {
-  return resolveLegacyPaperclipDesiredSkillNames(config, availableEntries);
+  return resolveLegacyPilibalaDesiredSkillNames(config, availableEntries);
 }

@@ -19,28 +19,28 @@ import {
 } from "./notion-generic-live-lib.mjs";
 
 const COMPLETE_ENV = {
-  PAPERCLIP_E2E_BASE_URL: "https://paperclip.example.test",
-  PAPERCLIP_E2E_EMAIL: "operator@example.test",
-  PAPERCLIP_DEV_LOGIN_PASSWORD: "not-a-real-password",
-  PAPERCLIP_API_URL: "https://paperclip.example.test/api",
-  PAPERCLIP_API_KEY: "not-a-real-agent-key",
-  PAPERCLIP_RUN_ID: "run-123",
-  PAPERCLIP_TASK_ID: "issue-123",
+  PILIBALA_E2E_BASE_URL: "https://pilibala.example.test",
+  PILIBALA_E2E_EMAIL: "operator@example.test",
+  PILIBALA_DEV_LOGIN_PASSWORD: "not-a-real-password",
+  PILIBALA_API_URL: "https://pilibala.example.test/api",
+  PILIBALA_API_KEY: "not-a-real-agent-key",
+  PILIBALA_RUN_ID: "run-123",
+  PILIBALA_TASK_ID: "issue-123",
 };
 
 test("preflight reports binding names without exposing supplied values", () => {
   assert.throws(
-    () => preflightNotionGenericLive({ PAPERCLIP_DEV_LOGIN_PASSWORD: "present" }),
+    () => preflightNotionGenericLive({ PILIBALA_DEV_LOGIN_PASSWORD: "present" }),
     (error) => {
       assert.ok(error instanceof NotionGenericLivePreflightError);
       assert.equal(error.code, "missing_environment");
       assert.deepEqual(error.details.missing, [
-        "PAPERCLIP_E2E_BASE_URL",
-        "PAPERCLIP_E2E_EMAIL",
-        "PAPERCLIP_API_URL",
-        "PAPERCLIP_API_KEY",
-        "PAPERCLIP_RUN_ID",
-        "PAPERCLIP_TASK_ID",
+        "PILIBALA_E2E_BASE_URL",
+        "PILIBALA_E2E_EMAIL",
+        "PILIBALA_API_URL",
+        "PILIBALA_API_KEY",
+        "PILIBALA_RUN_ID",
+        "PILIBALA_TASK_ID",
       ]);
       assert.doesNotMatch(error.message, /present/);
       return true;
@@ -51,20 +51,20 @@ test("preflight reports binding names without exposing supplied values", () => {
 test("preflight requires explicit credential-free HTTPS target and control-plane URLs", () => {
   for (const baseUrl of [
     "http://127.0.0.1:3100",
-    "http://paperclip.example.test",
-    "https://user:secret@paperclip.example.test",
-    "https://paperclip.example.test/?code=secret",
+    "http://pilibala.example.test",
+    "https://user:secret@pilibala.example.test",
+    "https://pilibala.example.test/?code=secret",
   ]) {
     assert.throws(
-      () => preflightNotionGenericLive({ ...COMPLETE_ENV, PAPERCLIP_E2E_BASE_URL: baseUrl }),
+      () => preflightNotionGenericLive({ ...COMPLETE_ENV, PILIBALA_E2E_BASE_URL: baseUrl }),
       (error) => error instanceof NotionGenericLivePreflightError && error.code === "unsafe_base_url",
     );
   }
   const split = preflightNotionGenericLive({
     ...COMPLETE_ENV,
-    PAPERCLIP_API_URL: "https://control-plane.example.test/api",
+    PILIBALA_API_URL: "https://control-plane.example.test/api",
   });
-  assert.equal(split.baseUrl, "https://paperclip.example.test");
+  assert.equal(split.baseUrl, "https://pilibala.example.test");
   assert.equal(split.apiBaseUrl, "https://control-plane.example.test/api");
 });
 
@@ -88,7 +88,7 @@ test("health and binding metadata pass before browser loading, without fetching 
       return { chromium: {} };
     },
   });
-  assert.equal(prepared.config.callbackUrl, "https://paperclip.example.test/api/tools/oauth/callback");
+  assert.equal(prepared.config.callbackUrl, "https://pilibala.example.test/api/tools/oauth/callback");
   assert.equal(browserLoaded, true);
   assert.deepEqual(requests.map((entry) => entry.method), ["GET", "GET"]);
   assert.equal(requests.some((entry) => entry.url.includes("/value")), false);
@@ -150,7 +150,7 @@ test("authorization proof requires automatic registration, PKCE, callback, resou
     );
   }
 
-  const baseUrl = "https://paperclip.example.test";
+  const baseUrl = "https://pilibala.example.test";
   const callbackUrl = `${baseUrl}/api/tools/oauth/callback`;
   const resource = "https://mcp.notion.com/mcp";
   const url = new URL("https://mcp.notion.com/authorize");
@@ -184,10 +184,10 @@ test("authorization proof requires automatic registration, PKCE, callback, resou
 test("authorization proof rejects a provider login page after OAuth parameters were consumed", () => {
   assert.throws(
     () => inspectAuthorizationUrl("https://id.notion.test/login", {
-      callbackUrl: "https://paperclip.example/api/tools/oauth/callback",
+      callbackUrl: "https://pilibala.example/api/tools/oauth/callback",
       resource: "https://mcp.notion.com/mcp",
       registrationSource: "dcr",
-      baseUrl: "https://paperclip.example",
+      baseUrl: "https://pilibala.example",
     }),
     (error) => error instanceof NotionGenericLivePreflightError
       && error.code === "authorization_parameter_missing",
@@ -254,7 +254,7 @@ test("workspace proof extraction and fresh-run comments retain only sanitized id
         text: JSON.stringify({
           id: "bot-123",
           type: "bot",
-          bot: { workspace_id: "workspace-123", workspace_name: "Paperclip" },
+          bot: { workspace_id: "workspace-123", workspace_name: "Pilibala" },
           token: "discard-me",
         }),
       }],
@@ -262,15 +262,15 @@ test("workspace proof extraction and fresh-run comments retain only sanitized id
   });
   assert.deepEqual(identity, {
     workspaceId: "workspace-123",
-    workspaceName: "Paperclip",
+    workspaceName: "Pilibala",
     botId: "bot-123",
   });
   assert.deepEqual(
     parseSanitizedAgentProof(
-      '{"workspaceId":"workspace-123","workspaceName":"Paperclip","invocationId":"inv-123"}',
+      '{"workspaceId":"workspace-123","workspaceName":"Pilibala","invocationId":"inv-123"}',
       identity,
     ),
-    { workspaceId: "workspace-123", workspaceName: "Paperclip", invocationId: "inv-123" },
+    { workspaceId: "workspace-123", workspaceName: "Pilibala", invocationId: "inv-123" },
   );
   assert.deepEqual(
     parseRuntimeAbsenceProof('{"connectionId":"conn-123","toolPresent":false}', "conn-123"),

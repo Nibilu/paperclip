@@ -3,17 +3,17 @@
 ## 决策状态
 
 - 状态：备选方案，暂不实施
-- 当前采用：所有 ACP 类 agent 在 Paperclip run 身份变化时启动新的 ACP 进程
+- 当前采用：所有 ACP 类 agent 在 Pilibala run 身份变化时启动新的 ACP 进程
 - 暂不采用：host-side runtime identity broker
 - 原因：优先保持与上游 ACP 接口兼容、降低 adapter-utils 与 provider 的耦合，并保留明确的 run 身份边界
 
 ## 背景
 
-ACP 进程可以跨 heartbeat run 复用，但 Paperclip 的 `PAPERCLIP_API_KEY` 与 `PAPERCLIP_RUN_ID` 是 run-scoped 身份。已有 warm ACP 进程可能继续持有旧环境，从而使新 run 的 Paperclip API 请求使用旧身份并表现为资源访问 404。
+ACP 进程可以跨 heartbeat run 复用，但 Pilibala 的 `PILIBALA_API_KEY` 与 `PILIBALA_RUN_ID` 是 run-scoped 身份。已有 warm ACP 进程可能继续持有旧环境，从而使新 run 的 Pilibala API 请求使用旧身份并表现为资源访问 404。
 
 ## 适用范围与验证结论
 
-本方案不是只针对 Codex 或 Hermes Gateway。基于当前仓库静态入口检查，所有当前实际调用共享 `@paperclipai/adapter-utils/acpx-engine/execute` / `createAcpxEngineExecutor` 的 ACP adapter 均进入同一 session fingerprint 逻辑：
+本方案不是只针对 Codex 或 Hermes Gateway。基于当前仓库静态入口检查，所有当前实际调用共享 `@pilibalaai/adapter-utils/acpx-engine/execute` / `createAcpxEngineExecutor` 的 ACP adapter 均进入同一 session fingerprint 逻辑：
 
 - `claude-local`
 - `codex-local`
@@ -48,23 +48,23 @@ run token hash 变化
 
 ### 目标
 
-在不重启 ACP 进程的前提下，使每个 Paperclip API 请求使用当前 run 的身份：
+在不重启 ACP 进程的前提下，使每个 Pilibala API 请求使用当前 run 的身份：
 
 ```text
-ACP process -> host-side broker -> Paperclip API
+ACP process -> host-side broker -> Pilibala API
 ```
 
-ACP 对话、system prompt、developer prompt、工具定义和 provider session 可以保持不变；broker 在请求转发时动态注入当前 token 与 `X-Paperclip-Run-Id`。
+ACP 对话、system prompt、developer prompt、工具定义和 provider session 可以保持不变；broker 在请求转发时动态注入当前 token 与 `X-Pilibala-Run-Id`。
 
 ### 关键约束
 
-1. 真实 Paperclip JWT 只存在于 host 内存，不进入 ACP prompt、持久化 session 或日志。
+1. 真实 Pilibala JWT 只存在于 host 内存，不进入 ACP prompt、持久化 session 或日志。
 2. broker capability 必须绑定 company、agent、ACP session、run 和 task scope。
 3. 同一 ACP session 第一版只允许一个 active run，避免身份切换时并发请求串用。
 4. run 完成、取消、超时或撤销时立即关闭对应 broker channel。
 5. sandbox/remote ACP 必须通过现有受控 bridge，不暴露任意转发代理。
 6. broker 故障必须 fail closed，不回退到旧 token。
-7. Paperclip 服务端仍然校验 JWT/run/company/agent 绑定，broker 不替代服务端授权。
+7. Pilibala 服务端仍然校验 JWT/run/company/agent 绑定，broker 不替代服务端授权。
 
 ## 预期收益
 
@@ -82,7 +82,7 @@ ACP 对话、system prompt、developer prompt、工具定义和 provider session
 
 ## 跨 agent 续传边界
 
-broker 适合解决同一 ACP session 的跨 run 身份刷新；Lucy 切换到 Hermi 时，不应直接复用 Lucy 的 provider session。跨 agent 续传应依靠 Paperclip task context、continuation summary、workspace、artifacts、run evidence 和未决决策。
+broker 适合解决同一 ACP session 的跨 run 身份刷新；Lucy 切换到 Hermi 时，不应直接复用 Lucy 的 provider session。跨 agent 续传应依靠 Pilibala task context、continuation summary、workspace、artifacts、run evidence 和未决决策。
 
 ## 触发实施条件
 

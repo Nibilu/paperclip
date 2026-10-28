@@ -20,12 +20,12 @@ import {
   startEmbeddedPostgresTestDatabase,
   toolApplications,
   toolConnections,
-} from "@paperclipai/db";
-import type { ChatFileTransferPhase } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import type { ChatFileTransferPhase } from "@pilibalaai/shared";
 import type { TeamsFileTransferSummary } from "./chat-teams-file-transfers.js";
 import { projectTeamsFilePublication } from "./chat-teams-file-publication.js";
 
-const external = process.env.PAPERCLIP_TEST_DATABASE_URL;
+const external = process.env.PILIBALA_TEST_DATABASE_URL;
 const support = external
   ? { supported: true }
   : await getEmbeddedPostgresTestSupport();
@@ -38,7 +38,7 @@ suite("Teams same-transaction publication projection (real PostgreSQL)", () => {
     if (external) db = createDb(external);
     else {
       temporary = await startEmbeddedPostgresTestDatabase(
-        "paperclip-teams-projection-",
+        "pilibala-teams-projection-",
       );
       db = createDb(temporary.connectionString);
     }
@@ -162,12 +162,12 @@ suite("Teams same-transaction publication projection (real PostgreSQL)", () => {
       "consent_unknown",
     ].includes(phase);
     const privateState = {
-      schema: "paperclip.teams.transfer-private.v1",
+      schema: "pilibala.teams.transfer-private.v1",
       binding: { ciphertext: "PRIVATE-PROJECTION-CANARY" },
       ...(operatorConfirmed
         ? {
             resolution: {
-              schema: "paperclip.teams.file-resolution.v1",
+              schema: "pilibala.teams.file-resolution.v1",
               action: "mark_delivered",
               fromPhase: "file_info_unknown",
               fromVersion: 3,
@@ -489,7 +489,7 @@ suite("Teams same-transaction publication projection (real PostgreSQL)", () => {
         providerActionId: `teams-file-effect:${r.attemptId}`,
         status: "processed",
         payload: {
-          schema: "paperclip.teams.file-effect-intent.v1",
+          schema: "pilibala.teams.file-effect-intent.v1",
           transferId: randomUUID(),
           publicationId: f.publicationId,
           attemptId: r.attemptId,

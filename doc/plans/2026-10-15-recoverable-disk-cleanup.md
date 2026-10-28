@@ -4,12 +4,12 @@
 
 Automatically expire reproducible skill caches and finished isolated Git workspaces,
 then restore them through normal use. Deliver two reviewed slices and verify actual
-reclamation plus restoration on `paperclip.staging.paperclip.app`. Keep the current
+reclamation plus restoration on `pilibala.staging.pilibala.app`. Keep the current
 storage architecture, unique work, and recovery data. Git restoration may depend
 on upstream availability; skill restoration must use saved database bytes alone.
 
 Apply dotta-kickoff, goal-poteto-style-definition, shorten-feedback-loop,
-paperclip-feature-to-production, and test-it-for-real. Retain one deployment owner.
+pilibala-feature-to-production, and test-it-for-real. Retain one deployment owner.
 
 ## Acceptance matrix
 
@@ -47,7 +47,7 @@ The remaining implementation gap is exact nested commit and local settings recov
 Current work builds on master `1f27427ffdefaf5fb2760d1d53c0d78cb9683d4c`, branch
 `codex/worktree-nested-restoration`. Serving SHA observed before work:
 `27ab902d3db2770ada79c9f42a9c06e1d346f34b`. No deployment or real reclamation yet.
-Review: [PR #16691](https://github.com/paperclipai/paperclip/pull/16691).
+Review: [PR #16691](https://github.com/pilibalaai/pilibala/pull/16691).
 Its first head `4696ba2fd171ec3970b7e116bcb5f77fe9331785` passed CI. Greptile
 found historical project-selection and failed-provision retry gaps; both now have
 fixes and real lifecycle controls. The updated head still needs review and CI.
@@ -59,7 +59,7 @@ fixes and real lifecycle controls. The updated head still needs review and CI.
 | Reclaim real finished backlog on staging | Oct 16 disk survey and skip reasons retained | Reviewed merge, one-target rollout, actual measured deletion | Existing deployment workflow / this task |
 | Ordinary reopening and subsequent work | Prior main-repository fixture proof only | Real expired nested workspace journey plus independent inspection | Product acceptance / this task |
 
-Retained experiment evidence: `/tmp/paperclip-disk-20261016/nested-baseline-built.log`.
+Retained experiment evidence: `/tmp/pilibala-disk-20261016/nested-baseline-built.log`.
 After 17s dependency installation and one SDK build, the useful baseline took 12.23s
 (6.91s test, 3.07s transform), using bare upstream repositories and normal preparation,
 expiration, and reopening. It failed because nested HEAD became B instead of A.
@@ -87,7 +87,7 @@ The representative crash experiment took 20.84s, mostly fixture Git/process work
 
 The live pre-cleanup baseline records 50 old terminal workspaces in 74.543s,
 including 19 with nested copies and 21 dirty controls. Evidence is
-`/tmp/paperclip-cleanup-20261017/eligible-baseline.jsonl`; no file contents or
+`/tmp/pilibala-cleanup-20261017/eligible-baseline.jsonl`; no file contents or
 credentials are printed. The ordinary staging UI is authenticated and reachable.
 Current disk observation: 129,519,296,512 bytes used and 17,779,265,536 free (88%).
 
@@ -109,17 +109,17 @@ First attempts exposed loopback sandbox denial and a missing SDK build; both set
 issues were corrected before judging behavior. Reuse this fixture for treatment.
 
 All prior temporary SSH keys have been revoked and removed. This iteration registered
-`paperclip-cleanup-20261017`, fingerprint `SHA256:h6kA+d64fu/OoA4bLNfjW0J3V5YsapuSWVbZpR+VcdA`.
-Revoke it and remove `/tmp/paperclip-cleanup-20261017/railway-key{,.pub}` and
-`~/.ssh/paperclip_cleanup_20261017{,.pub}` at completion. Historical details below describe prior
+`pilibala-cleanup-20261017`, fingerprint `SHA256:h6kA+d64fu/OoA4bLNfjW0J3V5YsapuSWVbZpR+VcdA`.
+Revoke it and remove `/tmp/pilibala-cleanup-20261017/railway-key{,.pub}` and
+`~/.ssh/pilibala_cleanup_20261017{,.pub}` at completion. Historical details below describe prior
 revisions and must not be treated as current deployment or access state.
 
 ## Historical state (2026-10-15, 19:27 UTC)
 
 
-- Skill [PR #16433](https://github.com/paperclipai/paperclip/pull/16433) merged as
+- Skill [PR #16433](https://github.com/pilibalaai/pilibala/pull/16433) merged as
   `86c965ce7ab1499864f74b8dd6ed0d2d8db15197`. Git
-  [PR #16457](https://github.com/paperclipai/paperclip/pull/16457) merged as
+  [PR #16457](https://github.com/pilibalaai/pilibala/pull/16457) merged as
   `59a70dc9e235d6df3d7db69b3ca170196d0c749f`. Both passed exact-head CI,
   security checks, and Greptile 5/5 with resolved findings. The user explicitly
   approved the administrator merge of #16457 after the self-approval gate.
@@ -153,7 +153,7 @@ revisions and must not be treated as current deployment or access state.
   saved result is `SAVED-SKILL-V3-20261015`, restored hash/mode and version pin
   match. Screenshot `skill-v3-user-proof.png`; evidence `ui-v3-restoration.jsonl`.
   The failed disposable Studio task was cancelled through the normal UI.
-- Follow-up [PR #16476](https://github.com/paperclipai/paperclip/pull/16476)
+- Follow-up [PR #16476](https://github.com/pilibalaai/pilibala/pull/16476)
   initially reached Greptile 5/5 after removing added comments. Before rollout,
   inspection found the Git expiration branch bypassed existing dependency/build
   compaction and replaced its startup deadline with a one-hour delay. A real Git
@@ -175,8 +175,8 @@ revisions and must not be treated as current deployment or access state.
   roll back the verified build. Do not change the fleet default.
 
 
-Evidence root: `/tmp/paperclip-cleanup-staging/` locally and
-`/paperclip/instances/default/acceptance/recoverable-cache-20261015/` on staging.
+Evidence root: `/tmp/pilibala-cleanup-staging/` locally and
+`/pilibala/instances/default/acceptance/recoverable-cache-20261015/` on staging.
 This is the single delivery state record.
 
 - Prior Git lifecycle suite: 20/20 in 46.41s, 328 controls in 238.69s,
@@ -197,10 +197,10 @@ This is the single delivery state record.
 - Railway SSH defaults to root; service UID/GID is 1001. Root dry-run evidence
   is invalid due to Git ownership checks. All current service harnesses run as
   `gosu node`; only owned acceptance directories were corrected to service UID.
-- Temporary key `paperclip-cleanup-acceptance-2026-10-15`, fingerprint
+- Temporary key `pilibala-cleanup-acceptance-2026-10-15`, fingerprint
   `SHA256:belt4FaWVyB6rtM4eRr5y9M6oFdgXDPf0a1wpndlRRQ`, must be revoked and
   both local copies removed at completion. Authorized key locations are the
-  private evidence directory and `~/.ssh/paperclip_cleanup_acceptance_20261015`.
+  private evidence directory and `~/.ssh/pilibala_cleanup_acceptance_20261015`.
 
 ## Feedback-loop evidence
 

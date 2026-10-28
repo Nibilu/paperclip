@@ -35,7 +35,7 @@ Upload files** or drop files anywhere in that panel. On mobile, open
 
 Open `/artifacts` and its grouping, search, and media controls.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use a task with a text document, a small attachment, and a generated work product. Use nonsensitive fixture files.
 

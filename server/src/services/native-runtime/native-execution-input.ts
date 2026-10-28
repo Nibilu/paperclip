@@ -1,5 +1,5 @@
-import type { PaperclipTurnContext } from "@paperclipai/adapter-utils/server-utils";
-import { resolvePaperclipRunnerCursorMode, resolvePaperclipRunnerPiThinkingLevel } from "@paperclipai/adapter-utils";
+import type { PilibalaTurnContext } from "@pilibalaai/adapter-utils/server-utils";
+import { resolvePilibalaRunnerCursorMode, resolvePilibalaRunnerPiThinkingLevel } from "@pilibalaai/adapter-utils";
 import { createHash } from "node:crypto";
 import { buildNativeContinuationPrompt } from "./native-continuation.js";
 import type {
@@ -18,21 +18,21 @@ import type {
   NativePlanningContext,
   NativeRuntimeContextSnapshot,
   StrictCompletionContractInput,
-} from "../../vendor/paperclip-runner/index.js";
+} from "../../vendor/pilibala-runner/index.js";
 import {
   parseNativeExecutionInput,
   resolveQualifiedAcpxProfile,
-} from "../../vendor/paperclip-runner/index.js";
+} from "../../vendor/pilibala-runner/index.js";
 import {
-  isPaperclipExternalChatContractTurn,
-  isPaperclipExternalChatQuestionResponseTurn,
-  selectPaperclipPromptSections,
-} from "@paperclipai/adapter-utils/server-utils";
+  isPilibalaExternalChatContractTurn,
+  isPilibalaExternalChatQuestionResponseTurn,
+  selectPilibalaPromptSections,
+} from "@pilibalaai/adapter-utils/server-utils";
 
 const NATIVE_GITHUB_ATTACHMENT_RECOVERY_GUIDANCE = [
   "## GitHub attachment recovery navigation",
-  "Paperclip owns recovery navigation for unavailable GitHub attachments. It may append an authenticated task link after an accepted response, only when the current source remains authorized and a safe configured Board URL is available. The model does not select or authorize that link.",
-  "A task URL missing from your prompt or tool results is not evidence that no task link can be provided; do not claim that a link is unavailable merely because you cannot see its URL. Do not invent a URL or promise that a link will appear. Briefly explain the unavailable input and ask the user to attach it directly to this Paperclip task or paste the needed text. Never infer the file's contents or substitute an older file.",
+  "Pilibala owns recovery navigation for unavailable GitHub attachments. It may append an authenticated task link after an accepted response, only when the current source remains authorized and a safe configured Board URL is available. The model does not select or authorize that link.",
+  "A task URL missing from your prompt or tool results is not evidence that no task link can be provided; do not claim that a link is unavailable merely because you cannot see its URL. Do not invent a URL or promise that a link will appear. Briefly explain the unavailable input and ask the user to attach it directly to this Pilibala task or paste the needed text. Never infer the file's contents or substitute an older file.",
 ].join("\n");
 
 /** Closed constructor: callers cannot spread legacy context or environment data. */
@@ -51,7 +51,7 @@ export interface BuildNativeExecutionInput {
   /** Bounded, redacted background restored only after a fresh provider bootstrap. */
   freshSessionHandoff?: string | null;
   /**
-   * The already-sanitized Paperclip wake envelope for this run. Native drivers
+   * The already-sanitized Pilibala wake envelope for this run. Native drivers
    * receive a closed execution input rather than the legacy adapter context,
    * so the constructor must deliberately project the same bounded wake delta
    * that legacy adapters place in their provider prompt.
@@ -121,8 +121,8 @@ export function buildNativeExecutionInput(input: BuildNativeExecutionInput): Nat
   if (input.issue.workMode !== "standard" && input.issue.workMode !== "planning" && input.issue.workMode !== "ask") {
     throw new Error("native_execution_input_invalid: issue work mode must be standard, planning, or ask");
   }
-  const mode = resolvePaperclipRunnerCursorMode(input.provider, input.acpxAgent, input.acpxSessionMode);
-  const piThinkingLevel = resolvePaperclipRunnerPiThinkingLevel(input.provider, input.acpxAgent, input.piThinkingLevel);
+  const mode = resolvePilibalaRunnerCursorMode(input.provider, input.acpxAgent, input.acpxSessionMode);
+  const piThinkingLevel = resolvePilibalaRunnerPiThinkingLevel(input.provider, input.acpxAgent, input.piThinkingLevel);
   const executionMode = input.executionMode
     ?? (input.issue.workMode === "planning" ? "plan" : "default");
   const acpxProfile = input.provider === "acpx"
@@ -180,9 +180,9 @@ export function buildNativeExecutionInput(input: BuildNativeExecutionInput): Nat
       : input.wakePayload;
   // Build the full bootstrap through the same owner as legacy adapters.
   // Verified native resume selection stays at the existing session boundary.
-  const { taskContextNote, wakePrompt } = selectPaperclipPromptSections({
-    paperclipTaskMarkdownAssignment: input.taskPrompt,
-    paperclipWake: wakePayload,
+  const { taskContextNote, wakePrompt } = selectPilibalaPromptSections({
+    pilibalaTaskMarkdownAssignment: input.taskPrompt,
+    pilibalaWake: wakePayload,
     conversationMode: input.conversationMode,
   }, {
     resumedSession: false,
@@ -190,8 +190,8 @@ export function buildNativeExecutionInput(input: BuildNativeExecutionInput): Nat
     nativeWakeReaderAvailable: true,
   });
   const externalChatTurn =
-    isPaperclipExternalChatContractTurn(wakePayload) ||
-    isPaperclipExternalChatQuestionResponseTurn(wakePayload);
+    isPilibalaExternalChatContractTurn(wakePayload) ||
+    isPilibalaExternalChatQuestionResponseTurn(wakePayload);
   const configuredGitHubSkillKeys = new Set(input.githubInstructionSkillKeys ?? []);
   const configuredGitHubSkills = externalChatTurn && wake?.externalChatProvider === "github"
     ? input.runtimeContext.skills.filter((skill) => configuredGitHubSkillKeys.has(skill.key))
@@ -205,7 +205,7 @@ export function buildNativeExecutionInput(input: BuildNativeExecutionInput): Nat
     wakePrompt,
     // Durable task questions must survive the current provider turn.
     // Keep routing visible before deferred tool discovery; usage belongs in the tool schema.
-    "Use Paperclip's request_human_input for durable task questions.",
+    "Use Pilibala's request_human_input for durable task questions.",
     externalChatTurn && wake?.externalChatProvider === "github"
       ? NATIVE_GITHUB_ATTACHMENT_RECOVERY_GUIDANCE
       : "",
@@ -217,7 +217,7 @@ export function buildNativeExecutionInput(input: BuildNativeExecutionInput): Nat
     ? verifiedCompletionSources(input.turnContext, input.completionContract.sources ?? [])
     : [];
   const prepared = {
-    schema: input.homeMode === "preconfigured" ? "paperclip.native-execution-input.v7" : "paperclip.native-execution-input.v5",
+    schema: input.homeMode === "preconfigured" ? "pilibala.native-execution-input.v7" : "pilibala.native-execution-input.v5",
     ...(input.homeMode === "preconfigured" ? { homeMode: input.homeMode } : {}),
     ...((input.initialCommunicationGuidance || input.freshSessionHandoff) ? {
       initialCommunicationGuidance: [input.initialCommunicationGuidance, input.freshSessionHandoff].filter(Boolean).join("\n\n"),
@@ -338,11 +338,11 @@ export function buildNativeExecutionInput(input: BuildNativeExecutionInput): Nat
     runtimeContext: input.runtimeContext,
   };
   return parseNativeExecutionInput(input.provider === "muse" ? { ...prepared,
-    schema: "paperclip.native-execution-input.v8", provider: { kind: "muse", model: null, binding: input.museBinding, bridgeRevision: "muse-v1" },
+    schema: "pilibala.native-execution-input.v8", provider: { kind: "muse", model: null, binding: input.museBinding, bridgeRevision: "muse-v1" },
     workspace: { access: "none", cwd: null, repoUrl: null, repoRef: null, branchName: null },
     session: { ...prepared.session, driverKind: "muse_external", lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null } }
   } : ["openai_dot", "grok_bot"].includes(input.provider ?? "") ? { ...prepared,
-    schema: "paperclip.native-execution-input.v6", provider: { kind: input.provider, model: null, binding: input.dotBinding },
+    schema: "pilibala.native-execution-input.v6", provider: { kind: input.provider, model: null, binding: input.dotBinding },
     workspace: { access: "none", cwd: null, repoUrl: null, repoRef: null, branchName: null },
     session: { ...prepared.session, driverKind: input.provider === "grok_bot" ? "grok_bot_mcp" : "openai_dot_mcp", lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null } }
   } : prepared) as NativeExecutionInputV5 | NativeExecutionInputV6 | NativeExecutionInputV7 | NativeExecutionInputV8;
@@ -355,7 +355,7 @@ function verifiedCompletionSources(
   sources: Array<{ id: string; source: NativeCompletionSource }>,
 ): Array<{ id: string; source: NativeCompletionSource }> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return [];
-  const context = value as Partial<PaperclipTurnContext>;
+  const context = value as Partial<PilibalaTurnContext>;
   if (context.version !== 1) return [];
   return sources.filter(({ source }) => {
     if (source.kind === "description") {

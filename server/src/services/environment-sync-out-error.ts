@@ -1,5 +1,5 @@
-import { readEnvironmentSyncErrorDiagnostic, JsonRpcCallError, PLUGIN_RPC_ERROR_CODES } from "@paperclipai/plugin-sdk";
-import { preserveWorkspaceRestoreErrorDiagnostic } from "@paperclipai/adapter-utils/workspace-restore-diagnostics";
+import { readEnvironmentSyncErrorDiagnostic, JsonRpcCallError, PLUGIN_RPC_ERROR_CODES } from "@pilibalaai/plugin-sdk";
+import { preserveWorkspaceRestoreErrorDiagnostic } from "@pilibalaai/adapter-utils/workspace-restore-diagnostics";
 
 /** Keep the original RPC failure and policy fields; add only private diagnostic evidence. */
 export function preserveEnvironmentSyncOutErrorDiagnostic(error: unknown): unknown {

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useQueryClient } from "@tanstack/react-query";
-import type { AcceptedPlanDecompositionSummary } from "@paperclipai/shared";
+import type { AcceptedPlanDecompositionSummary } from "@pilibalaai/shared";
 import { IssuePlanDecompositionsSection } from "@/components/IssuePlanDecompositionsSection";
 import { queryKeys } from "@/lib/queryKeys";
-import { storybookAgentMap } from "../../fixtures/paperclipData";
+import { storybookAgentMap } from "../../fixtures/pilibalaData";
 
 const issueId = "issue-plan-decomposition-story";
 const issueIdentifier = "PAP-6831";
@@ -67,8 +67,8 @@ function HydratedSection({
   if (!ready) return null;
 
   return (
-    <div className="paperclip-story">
-      <main className="paperclip-story__inner">
+    <div className="pilibala-story">
+      <main className="pilibala-story__inner">
         <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-background/95 p-6 shadow-sm">
           <IssuePlanDecompositionsSection
             issueId={issueId}
@@ -90,7 +90,7 @@ const meta = {
   },
   parameters: {
     layout: "fullscreen",
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "questions-and-approvals/plan-review",
         "task-coordination/delegation"

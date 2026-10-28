@@ -1,16 +1,16 @@
-import type { PaperclipPluginManifestV1 } from "@paperclipai/plugin-sdk";
+import type { PilibalaPluginManifestV1 } from "@pilibalaai/plugin-sdk";
 
-const PLUGIN_ID = "paperclip.modal-sandbox-provider";
+const PLUGIN_ID = "pilibala.modal-sandbox-provider";
 const PLUGIN_VERSION = "0.1.1";
 
-const manifest: PaperclipPluginManifestV1 = {
+const manifest: PilibalaPluginManifestV1 = {
   id: PLUGIN_ID,
   apiVersion: 1,
   version: PLUGIN_VERSION,
   displayName: "Modal Sandbox Provider",
   description:
-    "First-party sandbox provider plugin that provisions Modal sandboxes as Paperclip execution environments.",
-  author: "Paperclip",
+    "First-party sandbox provider plugin that provisions Modal sandboxes as Pilibala execution environments.",
+  author: "Pilibala",
   categories: ["automation"],
   capabilities: ["environment.drivers.register"],
   entrypoints: {
@@ -31,7 +31,7 @@ const manifest: PaperclipPluginManifestV1 = {
             type: "string",
             description:
               "Modal App name used as the parent for sandboxes. The plugin calls `modal.apps.fromName(appName, { createIfMissing: true })`, so the App is created on first acquire if it does not already exist.",
-            default: "paperclip",
+            default: "pilibala",
           },
           image: {
             type: "string",
@@ -43,7 +43,7 @@ const manifest: PaperclipPluginManifestV1 = {
             type: "string",
             format: "secret-ref",
             description:
-              "Modal token ID. Paste a token or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Required.",
+              "Modal token ID. Paste a token or an existing Pilibala secret reference; saved environments store pasted values as company secrets. Required.",
           },
           tokenSecret: {
             type: "string",
@@ -58,7 +58,7 @@ const manifest: PaperclipPluginManifestV1 = {
           workdir: {
             type: "string",
             description: "Remote working directory inside the sandbox.",
-            default: "/workspace/paperclip",
+            default: "/workspace/pilibala",
           },
           sandboxTimeoutMs: {
             type: "number",

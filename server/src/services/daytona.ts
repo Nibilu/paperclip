@@ -70,7 +70,7 @@ function decodeFile(value: unknown) {
 }
 
 /** A provider-focused REST bridge. It never reads host files, calls host shell
- * commands, borrows provider-plugin credentials, or looks up Paperclip tasks. */
+ * commands, borrows provider-plugin credentials, or looks up Pilibala tasks. */
 export function daytonaClient(headers: Record<string, string>, request: DaytonaRequest, pinnedOrganizationId?: unknown,
   signal: AbortSignal = AbortSignal.timeout(30_000), deadlineAt: number = Date.now() + 30_000) {
   const authorization = headers.Authorization;
@@ -104,7 +104,7 @@ export function daytonaClient(headers: Record<string, string>, request: DaytonaR
   async function send(url: string, init: RequestInit, organizationId?: string): Promise<unknown> {
     const projected = new Headers(init.headers);
     projected.set("Authorization", authorization!);
-    projected.set("X-Daytona-Source", "paperclip-connector");
+    projected.set("X-Daytona-Source", "pilibala-connector");
     if (organizationId) projected.set("X-Daytona-Organization-ID", organizationId);
     let response: Response;
     try {

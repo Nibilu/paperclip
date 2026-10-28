@@ -66,7 +66,7 @@ Initial local DB checks were skipped until the dependency's missing library
 symlinks were restored with its supplied postinstall script; skipped checks were
 not counted as passes.
 
-The next setup campaign, [37401094799](https://github.com/paperclipai/paperclip/actions/runs/37401094799),
+The next setup campaign, [37401094799](https://github.com/pilibalaai/pilibala/actions/runs/37401094799),
 measured source `370e51d110836b942e5f90567d2bbe260bcc0f3a` using trusted workflow
 revision `0e0b63e5a551388ac4601ed982b3e8f1c772f123` (workflow blob
 `0600886144d3e22ea2e4a38329a79177882f3948`). It remains an original FAIL,

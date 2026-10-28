@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * HG-A5 (SPEC-implementation 11.2): submission of an adapter capability-gap
- * upgrade task. The upgrade task is an ordinary Paperclip task; the capability
+ * upgrade task. The upgrade task is an ordinary Pilibala task; the capability
  * provenance below is immutable creation metadata, and the pre-dispatch user
  * confirmation gate (HG-A6) is admission metadata, not a task status.
  */

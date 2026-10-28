@@ -107,7 +107,7 @@ is source-level evidence only.
 Child creation by an admitted agent checks an explicit prospective-task context before the child is saved. The creator run must have an authoritative saved policy and a verified company/agent/parent lineage. Current parent, prospective child and physical source policies must fit that boundary. This creation path does not relax exact task/run checks for existing-task writes. The [child trust regression](../../server/src/__tests__/task-workspace-child-trust.test.ts) is automated source-level evidence, not live agent qualification.
 Source review for these additions: PR #15749 and
 [task workspace routes](../../server/src/routes/task-workspaces.ts),
-[native authority](../../server/src/services/native-runtime/paperclip-runner-tool-authority.ts),
+[native authority](../../server/src/services/native-runtime/pilibala-runner-tool-authority.ts),
 and [semantic transport](../../server/src/services/task-workspace-tools.ts).
 
 Evidence: `source-only` —

@@ -12,14 +12,14 @@ describe("task workspace admission authority", () => {
     expect(resolveExecutionWorkspaceMode({ projectPolicy: null, issueSettings: settings, legacyUseProjectWorkspace: null })).toBe("isolated_workspace");
   });
   it.each([
-    { admittedInput: { schema: "paperclip.native-execution-input.v3", binding: { executionWorkspaceId: "old-projectless-run" } }, restarting: false, hasLeaseOwner: false },
+    { admittedInput: { schema: "pilibala.native-execution-input.v3", binding: { executionWorkspaceId: "old-projectless-run" } }, restarting: false, hasLeaseOwner: false },
     { admittedInput: null, restarting: true, hasLeaseOwner: false },
     { admittedInput: null, restarting: false, hasLeaseOwner: true },
   ])("defers pending root changes while immutable execution/recovery owns the root", admission => {
     expect(canApplyTaskWorkspaceSelectionAtAdmission(admission)).toBe(false);
   });
   it("keeps a persisted task-owned source projectless when current organizational defaults have a project", async () => {
-    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-source-authority-"));
+    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-source-authority-"));
     try {
       const restored = await ensurePersistedExecutionWorkspaceAvailable({
         base: { baseCwd: cwd, source: "project_primary", projectId: "org-project", workspaceId: "org-source", repoUrl: null, repoRef: null },

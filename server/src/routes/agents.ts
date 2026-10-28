@@ -1,5 +1,5 @@
 import { cancellationRequestId } from "../services/native-runtime/native-cancellation-request.js";
-import { agentHarnessType, type AgentRunnerChoice } from "@paperclipai/shared";
+import { agentHarnessType, type AgentRunnerChoice } from "@pilibalaai/shared";
 import { resolveNewAgentRunnerForCompany } from "../services/agent-runner-selection.js";
 import { agentEnvironmentTestService } from "../services/agent-environment-test.js";
 import { createAgentLifecycle } from "../services/agent-lifecycle.js";
@@ -11,11 +11,11 @@ import { isCloudManagedInstance } from "../services/cloud-instance.js";
 import { dotRunnerBroker } from "../services/dot-runner-broker.js";
 import { publicMcpConfig } from "../services/public-mcp/oauth.js";
 import { connectionIntentDeliveryService } from "../services/connection-intent-delivery.js";
-import { completeConnectionIntentSchema } from "@paperclipai/shared";
-import { HEARTBEAT_RUN_LIST_DEFAULT_LIMIT, HEARTBEAT_RUN_LIST_MAX_LIMIT } from "@paperclipai/shared";
+import { completeConnectionIntentSchema } from "@pilibalaai/shared";
+import { HEARTBEAT_RUN_LIST_DEFAULT_LIMIT, HEARTBEAT_RUN_LIST_MAX_LIMIT } from "@pilibalaai/shared";
 import { agentFileStore, agentFileTokenFromHash } from "../services/agent-file-store.js";
 import { pipeline } from "node:stream/promises";
-import { resolveAgentAppearance, agentAvatarUrl } from "@paperclipai/shared";
+import { resolveAgentAppearance, agentAvatarUrl } from "@pilibalaai/shared";
 import { listOpenRouterModels } from "../services/openrouter-models.js";
 import { withManagedAiProbe, stripAiAuthBindings } from "../services/ai-connection-runtime.js";
 import {
@@ -23,17 +23,17 @@ import {
   aiConnectionBindingSchema,
   aiRuntimeConnectionBindingSchema,
   type AiRuntimeConnectionBinding,
-} from "@paperclipai/shared";
-import { toolConnections } from "@paperclipai/db";
+} from "@pilibalaai/shared";
+import { toolConnections } from "@pilibalaai/db";
 import { aiConnectionService } from "../services/ai-connections.js";
 import { defaultAiConnectionForHire } from "../services/agent-ai-connection-default.js";
 import { assertAiConnectionCreateAccess, canInstallSharedAiConnectionForNewAgent, responsibleUserForAiRequest } from "./ai-connections.js";
-import { isAiConnectionCompatible } from "@paperclipai/shared";
+import { isAiConnectionCompatible } from "@pilibalaai/shared";
 import { applyConnectorSkills, resolveConnectorAssignments, annotateConnectorSkills, isConnectorSkill } from "../services/connector-runtime.js";
 import { getExecutionBlocker } from "../services/execution-blocker.js";
 import { canRetryStoppedRun } from "../services/cancelled-native-startup.js";
 import { getNativeReviewAssignment, readNativeReviewAssignmentContext, type NativeReviewAssignmentContext } from "../services/native-runtime/native-review-participant.js";
-import { paperclipRunnerTransitionConfig, normalizeLegacyRunnerProvider, isPaperclipRunnerProvider } from "@paperclipai/adapter-utils";
+import { pilibalaRunnerTransitionConfig, normalizeLegacyRunnerProvider, isPilibalaRunnerProvider } from "@pilibalaai/adapter-utils";
 import { applyMcpReasoningEffort } from "../services/public-mcp/agent-config.js";
 import { executionProjectionForRun, executionProjectionsForRuns } from "../services/execution-projection.js";
 import { selectDashboardRunIds } from "../services/dashboard-run-selection.js";
@@ -41,9 +41,9 @@ import { Router, type NextFunction, type Request, type Response } from "express"
 import { generateKeyPairSync, randomUUID } from "node:crypto";
 import { readFile, rm } from "node:fs/promises";
 import path from "node:path";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import type { ChatChannelService } from "../services/chat-channels.js";
-import { activityLog, agents as agentsTable, chatConversations, companies, heartbeatRuns, issues as issuesTable, projects as projectsTable } from "@paperclipai/db";
+import { activityLog, agents as agentsTable, chatConversations, companies, heartbeatRuns, issues as issuesTable, projects as projectsTable } from "@pilibalaai/db";
 import { and, desc, eq, inArray, not, sql } from "drizzle-orm";
 import { sha256Digest } from "../services/feedback-redaction.js";
 import {
@@ -78,17 +78,17 @@ import {
   submitBrowserCodeRequestSchema,
   toAccountHandle,
   type AgentAdapterType,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   isForbiddenConfigEnvKey,
-  normalizePaperclipRunnerAdapterConfig,
-  PAPERCLIP_OPERATIONAL_SKILL_KEY,
+  normalizePilibalaRunnerAdapterConfig,
+  PILIBALA_OPERATIONAL_SKILL_KEY,
   parseObject,
-  resolvePaperclipInstanceRootForAdapter,
-  readPaperclipSkillSyncPreference,
-  writePaperclipSkillSyncPreference,
-} from "@paperclipai/adapter-utils/server-utils";
-import { trackAgentCreated } from "@paperclipai/shared/telemetry";
+  resolvePilibalaInstanceRootForAdapter,
+  readPilibalaSkillSyncPreference,
+  writePilibalaSkillSyncPreference,
+} from "@pilibalaai/adapter-utils/server-utils";
+import { trackAgentCreated } from "@pilibalaai/shared/telemetry";
 import { validate } from "../middleware/validate.js";
 import { inheritNativeRunnerAdapterConfig } from "../services/native-runtime/native-agent-runtime-inheritance.js";
 import { agentInstructionRevisionService } from "../services/agent-instruction-revisions.js";
@@ -114,7 +114,7 @@ import {
   workspaceOperationService,
 } from "../services/index.js";
 import { badRequest, conflict, forbidden, HttpError, notFound, unprocessable } from "../errors.js";
-import { ONBOARDING_FIRST_TASK_SKILL_KEY, PAPERCLIP_CORE_SKILL_KEYS } from "../services/company-skills.js";
+import { ONBOARDING_FIRST_TASK_SKILL_KEY, PILIBALA_CORE_SKILL_KEYS } from "../services/company-skills.js";
 import { createRunSecretRedactionRegistry } from "../services/run-secret-redaction.js";
 import { assertAuthenticated, assertBoard, assertCompanyAccess, assertInstanceAdmin, buildActorSecretContext, getAccessibleResource, getActorInfo, hasCompanyAccess } from "./authz.js";
 import { runAdapterLoginStartSpine } from "./adapter-login-route-spine.js";
@@ -128,19 +128,19 @@ import { environmentService } from "../services/environments.js";
 
 import { environmentRuntimeService } from "../services/environment-runtime.js";
 import { resolvePluginSandboxProviderDriverByKey } from "../services/plugin-environment-driver.js";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
 import type {
   AdapterEnvironmentCheck,
   AdapterEnvironmentTestResult,
-} from "@paperclipai/adapter-utils";
-import { evaluateCodexCredentialReadiness } from "@paperclipai/adapter-codex-local/server";
-import type { AdapterAuthSignal, AdapterAuthSignalResponse, CodexAccountBindingClaim } from "@paperclipai/shared";
+} from "@pilibalaai/adapter-utils";
+import { evaluateCodexCredentialReadiness } from "@pilibalaai/adapter-codex-local/server";
+import type { AdapterAuthSignal, AdapterAuthSignalResponse, CodexAccountBindingClaim } from "@pilibalaai/shared";
 import { getDisabledAdapterTypes } from "../services/adapter-plugin-store.js";
 import { skillVersionSelectionMap } from "../services/runtime-skill-selections.js";
 import { isFixedClaudeOAuthBinding, secretService } from "../services/secrets.js";
 import { capabilityCheckService } from "../services/agent-capability-check.js";
 import { capabilityUpgradeTaskService } from "../services/agent-capability-upgrade-task.js";
-import { createCapabilityUpgradeTaskSchema } from "@paperclipai/shared";
+import { createCapabilityUpgradeTaskSchema } from "@pilibalaai/shared";
 import { authorizationDeniedDetails } from "../services/authorization.js";
 import { providerTraceStore } from "../services/provider-trace-store.js";
 import {
@@ -169,7 +169,7 @@ import {
   parseHarnessRuntimeRequestResolution,
   type HarnessRuntimeRequestKind,
   type HarnessRuntimeRequestResolution,
-} from "../vendor/paperclip-runner/index.js";
+} from "../vendor/pilibala-runner/index.js";
 import {
   queueRunnerPrpRuntimeRequestResolution,
   RunnerPrpRuntimeRequestResolutionError,
@@ -190,7 +190,7 @@ import {
   isTruthyRuntimeEnvValue,
   resolveWorktreeRunExecutionActivationState,
 } from "../services/instance-settings.js";
-import { runClaudeLogin } from "@paperclipai/adapter-claude-local/server";
+import { runClaudeLogin } from "@pilibalaai/adapter-claude-local/server";
 import { createInviteRateLimiter } from "../services/invite-rate-limit.js";
 import {
   SetupTokenSessionService,
@@ -225,12 +225,12 @@ import type {
   ClaudeOAuthTokenStatusResponse,
   ClaudeSetupTokenOverwrite,
   SetupTokenTransportAdvisory,
-} from "@paperclipai/shared";
-import { SETUP_TOKEN_TRANSPORT_ADVISORY_CODE } from "@paperclipai/shared";
+} from "@pilibalaai/shared";
+import { SETUP_TOKEN_TRANSPORT_ADVISORY_CODE } from "@pilibalaai/shared";
 import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
   DEFAULT_CODEX_LOCAL_MODEL,
-} from "@paperclipai/adapter-codex-local";
+} from "@pilibalaai/adapter-codex-local";
 import {
   checkStagedCredentialReadiness,
   promoteDeviceLoginCredential,
@@ -238,11 +238,11 @@ import {
   resolveManagedCodexHomeDir,
   withAccountHomeSecretMutationLock,
   withCodexAccountHomePromotionLock,
-} from "@paperclipai/adapter-codex-local/server";
+} from "@pilibalaai/adapter-codex-local/server";
 import {
   checkStagedGrokCredentialReadiness,
   promoteGrokDeviceLoginCredential,
-} from "@paperclipai/adapter-grok-local/server";
+} from "@pilibalaai/adapter-grok-local/server";
 import {
   AdapterAuthSessionConflictError,
   createDeviceLoginService,
@@ -253,12 +253,12 @@ import {
   DEVICE_LOGIN_PROVIDER_UNSUPPORTED_CODE,
   type CredentialPromotion,
 } from "../services/device-login-service.js";
-import type { AdapterAuthSessionOwnerResponse } from "@paperclipai/shared";
-import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
-import { DEFAULT_KIMI_LOCAL_MODEL } from "@paperclipai/adapter-kimi-local";
-import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@paperclipai/adapter-opencode-local";
-import { requireOpenCodeModelId } from "@paperclipai/adapter-opencode-local/server";
+import type { AdapterAuthSessionOwnerResponse } from "@pilibalaai/shared";
+import { DEFAULT_CURSOR_LOCAL_MODEL } from "@pilibalaai/adapter-cursor-local";
+import { DEFAULT_GEMINI_LOCAL_MODEL } from "@pilibalaai/adapter-gemini-local";
+import { DEFAULT_KIMI_LOCAL_MODEL } from "@pilibalaai/adapter-kimi-local";
+import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@pilibalaai/adapter-opencode-local";
+import { requireOpenCodeModelId } from "@pilibalaai/adapter-opencode-local/server";
 import {
   loadDefaultAgentInstructionsBundle,
   resolveDefaultAgentInstructionsBundleRole,
@@ -285,10 +285,10 @@ import {
   redactHeartbeatRunListRow,
 } from "../services/heartbeat-run-privacy.js";
 import {
-  PaperclipRunnerProviderProfileError,
-  resolvePaperclipRunnerProviderProfile,
-  validatePaperclipRunnerDotConfig,
-  validatePaperclipRunnerGrokConfig,
+  PilibalaRunnerProviderProfileError,
+  resolvePilibalaRunnerProviderProfile,
+  validatePilibalaRunnerDotConfig,
+  validatePilibalaRunnerGrokConfig,
 } from "../services/native-runtime/provider-profile.js";
 import { managedAgentProfileService } from "../services/managed-agent-profiles.js";
 import { remoteAgentProfileService } from "../services/remote-agent-profiles.js";
@@ -347,8 +347,8 @@ function readLiveRunsQueryInt(value: unknown, max: number, fallback = 0) {
 function readRunIssueId(context: Record<string, unknown> | null) {
   const directIssueId = context?.issueId;
   if (typeof directIssueId === "string" && isUuidLike(directIssueId)) return directIssueId;
-  const paperclipIssue = readObject(context?.paperclipIssue);
-  const nestedIssueId = paperclipIssue?.id;
+  const pilibalaIssue = readObject(context?.pilibalaIssue);
+  const nestedIssueId = pilibalaIssue?.id;
   return typeof nestedIssueId === "string" && isUuidLike(nestedIssueId) ? nestedIssueId : null;
 }
 
@@ -470,7 +470,7 @@ async function anySecretNamesAccountHome(
 // Serializes hire requests that share a company and run, so a retried POST
 // cannot race its original past the idempotency lookup: the lookup, the create
 // and the activity record all happen inside the held section. In-process is
-// the right scope because a Paperclip instance serves its API from one
+// the right scope because a Pilibala instance serves its API from one
 // process, and the lock is keyed narrowly enough that unrelated hires never
 // wait on each other.
 const hireRunLocks = new Map<string, Promise<void>>();
@@ -782,8 +782,8 @@ export function agentRoutes(
   const agentFiles = agentFileStore(db);
   const instructionRevisions = agentInstructionRevisionService(db);
   const instructionWorkingCopies = agentInstructionWorkingCopyService(db);
-  function instructionFileDetail(snapshot: import("@paperclipai/shared").AgentInstructionSnapshot,
-    receipt?: import("@paperclipai/shared").AgentInstructionCommitReceipt) {
+  function instructionFileDetail(snapshot: import("@pilibalaai/shared").AgentInstructionSnapshot,
+    receipt?: import("@pilibalaai/shared").AgentInstructionCommitReceipt) {
     const path = snapshot.revision.entryFile;
     return { path, content: snapshot.content, contentHash: snapshot.revision.contentHash, size: snapshot.revision.byteLength, revision: snapshot.revision, receipt,
       language: path.toLowerCase().endsWith(".md") ? "markdown" : "text", markdown: path.toLowerCase().endsWith(".md"),
@@ -792,7 +792,7 @@ export function agentRoutes(
   const companySkills = companySkillService(db);
   const workspaceOperations = workspaceOperationService(db);
   const instanceSettings = instanceSettingsService(db);
-  const strictSecretsMode = process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true";
+  const strictSecretsMode = process.env.PILIBALA_SECRETS_STRICT_MODE === "true";
 
   async function actorCanReadRun(req: Request, run: RunReadBinding) {
     return canActorReadHeartbeatRun(db, access, req.actor, run);
@@ -1828,7 +1828,7 @@ export function agentRoutes(
    * (hire + create), as opposed to the paths that operate on an existing one.
    *
    * A disabled adapter is one this instance cannot run — most often because a
-   * declarative registry (PAPERCLIP_ADAPTERS) curated it out, which
+   * declarative registry (PILIBALA_ADAPTERS) curated it out, which
    * reconcileAdapterAvailability turns into a disabled type at boot. Registered
    * but disabled still passes assertKnownAdapterType, so an agent could be
    * created on it and then fail EVERY run at lease time with
@@ -1842,21 +1842,21 @@ export function agentRoutes(
    */
   async function assertSelectableAdapterType(type: string | null | undefined, config?: unknown): Promise<string> {
     const adapterType = assertKnownAdapterType(type);
-    if (adapterType === "paperclip_runner") {
+    if (adapterType === "pilibala_runner") {
       const experimental = await instanceSettings.getExperimental();
       if (asRecord(config)?.provider === "openai_dot") {
         if (experimental.enableOpenAiDot !== true) throw unprocessable(
           "OpenAI Dot is experimental and disabled on this instance.",
-          { code: "paperclip_runner_dot_disabled" },
+          { code: "pilibala_runner_dot_disabled" },
         );
       } else if (asRecord(config)?.provider === "muse") {
-        if (experimental.enableMuse !== true || experimental.enableNativeRunner !== true) throw unprocessable("Muse is experimental and disabled on this instance.", { code: "paperclip_runner_muse_disabled" });
+        if (experimental.enableMuse !== true || experimental.enableNativeRunner !== true) throw unprocessable("Muse is experimental and disabled on this instance.", { code: "pilibala_runner_muse_disabled" });
       } else if (asRecord(config)?.provider === "grok_bot" && (experimental.enableGrokBot !== true || experimental.enablePublicMcp !== true || experimental.enableNativeRunner !== true)) {
-        throw unprocessable("Enable Grok Bot, Assistant connections (MCP), and Paperclip Runner before connecting this agent.", { code: "paperclip_runner_grok_disabled" });
+        throw unprocessable("Enable Grok Bot, Assistant connections (MCP), and Pilibala Runner before connecting this agent.", { code: "pilibala_runner_grok_disabled" });
       } else if (!([undefined, "codex"].includes(asRecord(config)?.provider as string | undefined)) && experimental.enableNativeRunner !== true) {
         throw unprocessable(
-          "Paperclip Runner is experimental and disabled on this instance.",
-          { code: "paperclip_runner_rollout_disabled" },
+          "Pilibala Runner is experimental and disabled on this instance.",
+          { code: "pilibala_runner_rollout_disabled" },
         );
       }
     }
@@ -1872,25 +1872,25 @@ export function agentRoutes(
     );
   }
 
-  async function assertFreshPaperclipRunnerProvider(
+  async function assertFreshPilibalaRunnerProvider(
     companyId: string,
     adapterType: string,
     adapterConfig: Record<string, unknown>,
   ): Promise<void> {
-    if (adapterType !== "paperclip_runner") return;
+    if (adapterType !== "pilibala_runner") return;
     let profile;
     try {
       if (adapterConfig.provider === "grok_bot") {
-        validatePaperclipRunnerGrokConfig(adapterConfig, false);
+        validatePilibalaRunnerGrokConfig(adapterConfig, false);
         return;
       }
       if (adapterConfig.provider === "openai_dot") {
-        validatePaperclipRunnerDotConfig(adapterConfig, false);
+        validatePilibalaRunnerDotConfig(adapterConfig, false);
         return;
       }
-      profile = resolvePaperclipRunnerProviderProfile(adapterConfig);
+      profile = resolvePilibalaRunnerProviderProfile(adapterConfig);
     } catch (error) {
-      if (error instanceof PaperclipRunnerProviderProfileError) {
+      if (error instanceof PilibalaRunnerProviderProfileError) {
         throw unprocessable(error.message, { code: error.code });
       }
       throw error;
@@ -1909,23 +1909,23 @@ export function agentRoutes(
     }
   }
 
-  function resolvePaperclipRunnerAdapterTransition(input: {
+  function resolvePilibalaRunnerAdapterTransition(input: {
     previousAdapterType: string;
     nextAdapterType: string;
     previousAdapterConfig: Record<string, unknown>;
     nextAdapterConfig: Record<string, unknown>;
   }): Record<string, unknown> {
     if (
-      input.nextAdapterType !== "paperclip_runner"
+      input.nextAdapterType !== "pilibala_runner"
       || input.previousAdapterType === input.nextAdapterType
     ) {
       return input.nextAdapterConfig;
     }
     if (["openai_dot", "muse"].includes(String(input.nextAdapterConfig.provider))) return input.nextAdapterConfig;
-    const defaults = paperclipRunnerTransitionConfig(input.previousAdapterType, input.previousAdapterConfig.model, input.nextAdapterConfig.provider);
+    const defaults = pilibalaRunnerTransitionConfig(input.previousAdapterType, input.previousAdapterConfig.model, input.nextAdapterConfig.provider);
     if (!["claude_local", "codex_local", "opencode_local"].includes(input.previousAdapterType)
-      && !isPaperclipRunnerProvider(input.nextAdapterConfig.provider)) {
-      throw unprocessable("Select a Paperclip Runner provider before converting this agent.");
+      && !isPilibalaRunnerProvider(input.nextAdapterConfig.provider)) {
+      throw unprocessable("Select a Pilibala Runner provider before converting this agent.");
     }
     const next = { ...defaults, ...input.nextAdapterConfig };
     if (!asNonEmptyString(next.model)) next.model = defaults.model;
@@ -2159,7 +2159,7 @@ export function agentRoutes(
         ? { ...input.constraintAdapterConfig, ...normalizedAdapterConfig }
         : normalizedAdapterConfig,
     );
-    return normalizePaperclipRunnerAdapterConfig(
+    return normalizePilibalaRunnerAdapterConfig(
       input.adapterType ?? "",
       normalizedAdapterConfig,
     );
@@ -2182,9 +2182,9 @@ export function agentRoutes(
   }
 
   function codexLocalAgentHome(companyId: string, agentId: string): string {
-    const instanceRoot = resolvePaperclipInstanceRootForAdapter({
-      homeDir: asNonEmptyString(process.env.PAPERCLIP_HOME) ?? undefined,
-      instanceId: asNonEmptyString(process.env.PAPERCLIP_INSTANCE_ID) ?? undefined,
+    const instanceRoot = resolvePilibalaInstanceRootForAdapter({
+      homeDir: asNonEmptyString(process.env.PILIBALA_HOME) ?? undefined,
+      instanceId: asNonEmptyString(process.env.PILIBALA_INSTANCE_ID) ?? undefined,
       env: process.env,
     });
     return path.resolve(instanceRoot, "companies", companyId, "agents", agentId, "codex-home");
@@ -2312,8 +2312,8 @@ export function agentRoutes(
     adapterConfig: Record<string, unknown>,
   ): Record<string, unknown> {
     const next = { ...adapterConfig };
-    if (adapterType === "paperclip_runner") {
-      return normalizePaperclipRunnerAdapterConfig(adapterType, next);
+    if (adapterType === "pilibala_runner") {
+      return normalizePilibalaRunnerAdapterConfig(adapterType, next);
     }
     if (adapterType === "codex_local") {
       const hasBypassFlag =
@@ -2347,8 +2347,8 @@ export function agentRoutes(
     adapterType: string | null | undefined,
     adapterConfig: Record<string, unknown>,
   ) {
-    if (adapterType === "paperclip_runner") {
-      await assertFreshPaperclipRunnerProvider(companyId, adapterType, adapterConfig);
+    if (adapterType === "pilibala_runner") {
+      await assertFreshPilibalaRunnerProvider(companyId, adapterType, adapterConfig);
       return;
     }
     if (adapterType !== "opencode_local") return;
@@ -2611,10 +2611,10 @@ export function agentRoutes(
     ...INHERITABLE_AGENT_CREDENTIAL_ENV_KEYS,
     gemini_local: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
     kimi_local: ["KIMI_MODEL_API_KEY"],
-    opencode_local: ["PAPERCLIP_OPENCODE_PROVIDERS", "OPENCODE_AUTH_JSON"],
+    opencode_local: ["PILIBALA_OPENCODE_PROVIDERS", "OPENCODE_AUTH_JSON"],
   };
   const POOL_AUTH_OVERRIDE_ENV_KEYS = [
-    "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PAPERCLIP_OPENCODE_PROVIDERS", "OPENCODE_AUTH_JSON",
+    "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PILIBALA_OPENCODE_PROVIDERS", "OPENCODE_AUTH_JSON",
   ] as const;
 
   async function callerUsesAiConnectionPool(req: Request, companyId: string): Promise<boolean> {
@@ -2689,26 +2689,26 @@ export function agentRoutes(
   }
 
   // CEO and board-created onboarding chief-of-staff instructions assume the
-  // core paperclip skills (board coordination, planning, hiring, memory).
+  // core pilibala skills (board coordination, planning, hiring, memory).
   // Union them into these skills-capable hires/creates so their desired skills
   // match their instructions. Optional role
   // skills remain removable afterwards. Legacy adapters separately guarantee
-  // the Paperclip operational skill as a runtime invariant.
+  // the Pilibala operational skill as a runtime invariant.
   function defaultRoleSkillSelections(
     role: string | null | undefined,
     adapterType: string,
     boardOnboardingFirstAgent = false,
     adapterConfig?: Record<string, unknown>,
   ): AgentDesiredSkillEntry[] | undefined {
-    if (adapterType === "paperclip_runner" && ["openai_dot", "grok_bot"].includes(String(adapterConfig?.provider))) return undefined;
+    if (adapterType === "pilibala_runner" && ["openai_dot", "grok_bot"].includes(String(adapterConfig?.provider))) return undefined;
     if (role !== "ceo" && !boardOnboardingFirstAgent) return undefined;
     const adapter = findActiveServerAdapter(adapterType);
     if (!adapter?.listSkills && !adapter?.syncSkills) return undefined;
     const keys = boardOnboardingFirstAgent
-      ? [...PAPERCLIP_CORE_SKILL_KEYS, ONBOARDING_FIRST_TASK_SKILL_KEY]
-      : PAPERCLIP_CORE_SKILL_KEYS;
+      ? [...PILIBALA_CORE_SKILL_KEYS, ONBOARDING_FIRST_TASK_SKILL_KEY]
+      : PILIBALA_CORE_SKILL_KEYS;
     return keys
-      .filter((key) => adapterType !== "paperclip_runner" || key !== PAPERCLIP_OPERATIONAL_SKILL_KEY)
+      .filter((key) => adapterType !== "pilibala_runner" || key !== PILIBALA_OPERATIONAL_SKILL_KEY)
       .map((key) => ({ key, versionId: null }));
   }
 
@@ -2767,7 +2767,7 @@ export function agentRoutes(
       materializeMissing?: boolean;
     } = {},
   ) {
-    const preference = readPaperclipSkillSyncPreference(config);
+    const preference = readPilibalaSkillSyncPreference(config);
     const betaSkillsEnabled = (await instanceSettings.getExperimental()).enableBetaSkills === true;
     const runtimeSkillEntries = await companySkills.listRuntimeSkillEntries(companyId, {
       materializeMissing: options.materializeMissing
@@ -2778,7 +2778,7 @@ export function agentRoutes(
     });
     return {
       ...config,
-      paperclipRuntimeSkills: runtimeSkillEntries,
+      pilibalaRuntimeSkills: runtimeSkillEntries,
     };
   }
 
@@ -2817,7 +2817,7 @@ export function agentRoutes(
       (entry, index, entries) => entries.findIndex((candidate) => candidate.key === entry.key) === index,
     );
 
-    const currentPreference = readPaperclipSkillSyncPreference(adapterConfig);
+    const currentPreference = readPilibalaSkillSyncPreference(adapterConfig);
     const { resolved: resolvedCurrentSkillEntries, unresolved: unresolvedCurrentSkillKeys } =
       currentPreference.desiredSkillEntries.length > 0
         ? await companySkills.resolveRequestedSkillEntries(
@@ -2838,8 +2838,8 @@ export function agentRoutes(
       requestedSkillEntries,
       mode,
     ).filter(
-      (entry) => !isConnectorSkill(entry.key) && (adapterType !== "paperclip_runner"
-        || entry.key.trim().toLowerCase() !== PAPERCLIP_OPERATIONAL_SKILL_KEY),
+      (entry) => !isConnectorSkill(entry.key) && (adapterType !== "pilibala_runner"
+        || entry.key.trim().toLowerCase() !== PILIBALA_OPERATIONAL_SKILL_KEY),
     );
     const desiredSkills = desiredSkillEntries.map((entry) => entry.key);
     const resolvedKeys = new Set([
@@ -2857,7 +2857,7 @@ export function agentRoutes(
     });
 
     return {
-      adapterConfig: writePaperclipSkillSyncPreference(adapterConfig, desiredSkillEntries),
+      adapterConfig: writePilibalaSkillSyncPreference(adapterConfig, desiredSkillEntries),
       desiredSkills,
       desiredSkillEntries,
       runtimeSkillEntries,
@@ -3016,10 +3016,10 @@ export function agentRoutes(
       res.json(await listOpenRouterModels(refresh));
       return;
     }
-    if (type === "paperclip_runner" && provider && !isPaperclipRunnerProvider(provider)) {
-      throw unprocessable("Unknown Paperclip Runner provider");
+    if (type === "pilibala_runner" && provider && !isPilibalaRunnerProvider(provider)) {
+      throw unprocessable("Unknown Pilibala Runner provider");
     }
-    const modelAdapterType = type === "paperclip_runner"
+    const modelAdapterType = type === "pilibala_runner"
       ? provider === "acpx" || provider === "claude_managed" ? "claude_local"
         : provider === "opencode" ? "opencode_local"
           : provider === "aws_agentcore" ? type : "codex_local"
@@ -3101,7 +3101,7 @@ export function agentRoutes(
       try {
         if (!target.executionTarget && target.fallbackChecks.length > 0) throw unprocessable("The agent environment is not available for adoption");
         await withManagedAiProbe(db, { companyId, agentId, responsibleUserId: userId, adapterType, binding, config, allowUninstalledPersonal: newAgent, allowUninstalledShared, allowLegacyValidation: true }, async managed => {
-        const managedAiCredentialHome = adapterType === "paperclip_runner" && asRecord(managed.config)?.provider === "codex" && managed.home
+        const managedAiCredentialHome = adapterType === "pilibala_runner" && asRecord(managed.config)?.provider === "codex" && managed.home
           ? path.join(managed.home, "provider") : undefined;
         const result = await testManagedEnvironment(adapterType, { companyId, adapterType, config: managed.config, managedAiCredentialHome, executionTarget: target.executionTarget, environmentName: target.environmentName }, binding, managed, agentId);
         if (result.status === "fail" || result.checks.some(check => check.code === ADAPTER_AUTH_MISSING_CHECK_CODE)) throw unprocessable("The selected AI connection failed validation in this agent’s environment. Run the agent test to see the failing checks.", {
@@ -3156,7 +3156,7 @@ export function agentRoutes(
       // the probe treats "***REDACTED***" as a value to persist.
       let adapterConfigForTest = inputAdapterConfig;
       if (savedAgent) {
-        const providerAdapter = savedAgent.adapterType === "paperclip_runner"
+        const providerAdapter = savedAgent.adapterType === "pilibala_runner"
           ? inputAdapterConfig.provider === "codex"
             ? "codex_local"
             : inputAdapterConfig.provider === "acpx" && inputAdapterConfig.acpxAgent === "claude"
@@ -3195,7 +3195,7 @@ export function agentRoutes(
         res.json({ adapterType: type, status: "warn", testedAt: new Date().toISOString(), checks: [{ code: "ai_connection_pool_task_test_required", level: "warn", message: "Pool configuration is available. Run a task to verify the selected account and harness; this preview does not allocate a task or contact a provider." }] });
         return;
       }
-      if (type === "paperclip_runner" && inputAdapterConfig.provider === "openai_dot") {
+      if (type === "pilibala_runner" && inputAdapterConfig.provider === "openai_dot") {
         const dotEnabled = await dotRunnerBroker(db).enabled();
         const binding = savedAgentId ? await dotRunnerBroker(db).bindingForAgent(companyId, savedAgentId) : null;
         let resource: ReturnType<typeof publicMcpConfig> = null;
@@ -3208,7 +3208,7 @@ export function agentRoutes(
         const controllerAvailable = !managedOnly || environment?.driver === "sandbox";
         const checks: AdapterEnvironmentCheck[] = [
           { code: "dot_enabled", level: dotEnabled ? "info" : "error", message: dotEnabled ? "Dot is enabled." : "Enable OpenAI Dot and Assistant connections (MCP) in experimental settings." },
-          { code: "dot_public_endpoint", level: resource?.origin.startsWith("https://") ? "info" : "error", message: resource?.origin.startsWith("https://") ? "Public HTTPS MCP origin is configured." : "Configure a stable public HTTPS PAPERCLIP_PUBLIC_URL." },
+          { code: "dot_public_endpoint", level: resource?.origin.startsWith("https://") ? "info" : "error", message: resource?.origin.startsWith("https://") ? "Public HTTPS MCP origin is configured." : "Configure a stable public HTTPS PILIBALA_PUBLIC_URL." },
           { code: "dot_unmetered", level: inputAdapterConfig.allowUnmeteredProvider === true ? "info" : "error", message: "Dot usage and provider cost are unavailable. Explicit externally billed provider acknowledgement is required." },
           { code: "dot_binding", level: binding?.status === "ready" && binding.subscriptionVerified && binding.id === inputAdapterConfig.dotBindingId ? "info" : "warn", message: binding?.status === "ready" && binding.subscriptionVerified ? "Binding has a verified event subscription and completed readiness challenge." : "Save this agent, pair it, subscribe to mailbox events and complete the event test." },
           { code: "dot_controller", level: controllerAvailable ? "info" : "error", message: controllerAvailable
@@ -3341,7 +3341,7 @@ export function agentRoutes(
           }
         }
         const result = aiBinding ? await withManagedAiProbe(db, { companyId, agentId: req.body.agentId ?? "", responsibleUserId: responsibleUserForAiRequest(req), adapterType: type, binding: aiBinding, config: effectiveAdapterConfig, allowUninstalledPersonal: !req.body.agentId, allowUninstalledShared: !req.body.agentId && await canInstallSharedAiConnectionForNewAgent(db, req, companyId, aiBinding) }, async managed => {
-          const managedAiCredentialHome = type === "paperclip_runner" && asRecord(managed.config)?.provider === "codex" && managed.home
+          const managedAiCredentialHome = type === "pilibala_runner" && asRecord(managed.config)?.provider === "codex" && managed.home
             ? path.join(managed.home, "provider") : undefined;
           const tested = await testManagedEnvironment(type, { companyId, adapterType: type, config: managed.config, managedAiCredentialHome, executionTarget, environmentName }, aiBinding, managed, savedAgentId ?? undefined);
           tested.checks.unshift({ code: "ai_connection_tested", level: "info", message: `Tested ${managed.accountName} — ${managed.accountOwnerUserId ? managed.accountOwnerUserId === responsibleUserForAiRequest(req) ? "your personal account" : "the owner’s account authorized for this agent" : "company-shared account"}. Responsible user: ${req.actor.type === "agent" ? responsibleUserForAiRequest(req) ?? "unavailable" : "the signed-in user"}.` });
@@ -3410,7 +3410,7 @@ export function agentRoutes(
 
   // The codex_local branch of the auth-signal read. The host filesystem check
   // (`evaluateCodexCredentialReadiness` against `process.env`) describes only
-  // the Paperclip host, so it is authoritative for the null-environment and
+  // the Pilibala host, so it is authoritative for the null-environment and
   // "local" driver cases, where the host is the execution target. For a
   // non-local environment (a sandbox), the host's own credential state says
   // nothing about that sandbox, so the route checks the environment's own
@@ -3660,7 +3660,7 @@ export function agentRoutes(
 
     const adapter = findActiveServerAdapter(agent.adapterType);
     if (!adapter?.listSkills) {
-      const preference = readPaperclipSkillSyncPreference(
+      const preference = readPilibalaSkillSyncPreference(
         agent.adapterConfig as Record<string, unknown>,
       );
       const desiredSkillEntries = preference.desiredSkillEntries.filter(
@@ -3683,7 +3683,7 @@ export function agentRoutes(
       { materializeMissing: false },
     );
     const connectorAssignments = await resolveConnectorAssignments(db, { companyId: agent.companyId, agentId: agent.id });
-    const connectorConfig = await applyConnectorSkills(runtimeSkillConfig, runtimeSkillConfig.paperclipRuntimeSkills, connectorAssignments);
+    const connectorConfig = await applyConnectorSkills(runtimeSkillConfig, runtimeSkillConfig.pilibalaRuntimeSkills, connectorAssignments);
     const snapshot = await adapter.listSkills({
       agentId: agent.id,
       companyId: agent.companyId,
@@ -3754,7 +3754,7 @@ export function agentRoutes(
             companyId: updated.companyId,
             adapterType: updated.adapterType,
             config: manualSkillConfig,
-          }, readPaperclipSkillSyncPreference(manualSkillConfig).desiredSkills)
+          }, readPilibalaSkillSyncPreference(manualSkillConfig).desiredSkills)
         : adapter?.listSkills
           ? await adapter.listSkills({
               agentId: updated.id,
@@ -3970,7 +3970,7 @@ export function agentRoutes(
     const worktreeActivation = await resolveWorktreeRunExecutionActivationState({
       getExperimental: () => instanceSettingsService(db).getExperimental(),
     });
-    const isWorktreeRuntime = isTruthyRuntimeEnvValue(process.env.PAPERCLIP_IN_WORKTREE);
+    const isWorktreeRuntime = isTruthyRuntimeEnvValue(process.env.PILIBALA_IN_WORKTREE);
     const eligibleRows = !isWorktreeRuntime
       ? rows
       : worktreeActivation.armed
@@ -4210,7 +4210,7 @@ export function agentRoutes(
     );
     const rollbackAdapterConfig = asRecord(rollbackConfig.adapterConfig) ?? {};
     const existingRollbackProvider = asRecord(existing.adapterConfig)?.provider;
-    if (rollbackAdapterType !== existing.adapterType || (rollbackAdapterType === "paperclip_runner"
+    if (rollbackAdapterType !== existing.adapterType || (rollbackAdapterType === "pilibala_runner"
       && rollbackAdapterConfig.provider !== existingRollbackProvider
       && (["openai_dot", "muse"].includes(String(rollbackAdapterConfig.provider)) || ["openai_dot", "muse"].includes(String(existingRollbackProvider))))) {
       await assertSelectableAdapterType(rollbackAdapterType, rollbackAdapterConfig);
@@ -4231,9 +4231,9 @@ export function agentRoutes(
     });
     if (
       rollbackAdapterType !== existing.adapterType ||
-      rollbackAdapterType === "paperclip_runner"
+      rollbackAdapterType === "pilibala_runner"
     ) {
-      await assertFreshPaperclipRunnerProvider(
+      await assertFreshPilibalaRunnerProvider(
         existing.companyId,
         rollbackAdapterType,
         rollbackAdapterConfig,
@@ -4364,8 +4364,8 @@ export function agentRoutes(
       if (req.actor.type !== "agent" || !req.actor.agentId) {
         throw forbidden("Only an agent can inherit native runtime settings from the caller");
       }
-      if (hireInput.adapterType !== "paperclip_runner") {
-        throw unprocessable("inheritRuntimeFrom=caller requires adapterType=paperclip_runner");
+      if (hireInput.adapterType !== "pilibala_runner") {
+        throw unprocessable("inheritRuntimeFrom=caller requires adapterType=pilibala_runner");
       }
       const requestedConfig = (hireInput.adapterConfig ?? {}) as Record<string, unknown>;
       const requestedRuntime = (hireInput.runtimeConfig ?? {}) as Record<string, unknown>;
@@ -4376,8 +4376,8 @@ export function agentRoutes(
       if (!caller || caller.companyId !== companyId) {
         throw forbidden("The caller agent is not in this company");
       }
-      if (caller.adapterType !== "paperclip_runner") {
-        throw unprocessable("The caller must use the paperclip_runner adapter");
+      if (caller.adapterType !== "pilibala_runner") {
+        throw unprocessable("The caller must use the pilibala_runner adapter");
       }
       hireInput.adapterConfig = inheritNativeRunnerAdapterConfig(caller.adapterConfig);
       hireInput.defaultEnvironmentId = caller.defaultEnvironmentId ?? null;
@@ -4387,7 +4387,7 @@ export function agentRoutes(
     hireInput.adapterType = await assertSelectableAdapterType(hireInput.adapterType, hireInput.adapterConfig);
     const rawHireAdapterConfig = (hireInput.adapterConfig ?? {}) as Record<string, unknown>;
     assertProviderTraceSettingTransition(req, hireInput.runtimeConfig);
-    await assertFreshPaperclipRunnerProvider(
+    await assertFreshPilibalaRunnerProvider(
       companyId,
       hireInput.adapterType,
       rawHireAdapterConfig,
@@ -4711,7 +4711,7 @@ export function agentRoutes(
     const rawCreateAdapterConfig = (createInput.adapterConfig ?? {}) as Record<string, unknown>;
     await assertSupportedAdapterProvider(createInput.adapterType, rawCreateAdapterConfig);
     assertProviderTraceSettingTransition(req, createInput.runtimeConfig);
-    await assertFreshPaperclipRunnerProvider(
+    await assertFreshPilibalaRunnerProvider(
       companyId,
       createInput.adapterType,
       rawCreateAdapterConfig,
@@ -5099,7 +5099,7 @@ export function agentRoutes(
 
   router.put("/agents/:id/instructions-bundle/file", validate(upsertAgentInstructionsFileSchema), async (req, res) => {
     if (req.actor.source === "mcp_oauth" && req.body.path === "promptTemplate.legacy.md") {
-      throw unprocessable("Migrate legacy prompt instructions to a managed instruction file in Paperclip before editing through an assistant", { code: "MCP_LEGACY_INSTRUCTIONS_UNVERSIONED" });
+      throw unprocessable("Migrate legacy prompt instructions to a managed instruction file in Pilibala before editing through an assistant", { code: "MCP_LEGACY_INSTRUCTIONS_UNVERSIONED" });
     }
     const id = req.params.id as string;
     const existing = await getAccessibleResource(req, res, svc.getById(id), "Agent not found");
@@ -5427,15 +5427,15 @@ export function agentRoutes(
           existingAdapterConfig,
           rawEffectiveAdapterConfig,
         );
-        rawEffectiveAdapterConfig = resolvePaperclipRunnerAdapterTransition({
+        rawEffectiveAdapterConfig = resolvePilibalaRunnerAdapterTransition({
           previousAdapterType: existing.adapterType,
           nextAdapterType: requestedAdapterType,
           previousAdapterConfig: existingAdapterConfig,
           nextAdapterConfig: rawEffectiveAdapterConfig,
         });
       }
-      if (requestedAdapterType === "paperclip_runner") {
-        rawEffectiveAdapterConfig = normalizePaperclipRunnerAdapterConfig(requestedAdapterType, rawEffectiveAdapterConfig);
+      if (requestedAdapterType === "pilibala_runner") {
+        rawEffectiveAdapterConfig = normalizePilibalaRunnerAdapterConfig(requestedAdapterType, rawEffectiveAdapterConfig);
       }
       if (req.actor.type === "agent" && rawEffectiveAdapterConfig.homeMode !== existingAdapterConfig.homeMode)
         throw forbidden("Only an operator can configure Runner homeMode.");
@@ -5447,23 +5447,23 @@ export function agentRoutes(
         );
       }
       const existingRunnerProvider =
-        existing.adapterType === "paperclip_runner"
+        existing.adapterType === "pilibala_runner"
           ? existingAdapterConfig.provider
           : undefined;
       // Moving between the standalone Dot choice and general Runner is a new
       // selection. Preserve historical edits within the general Runner rollout.
-      if (!changingAdapterType && requestedAdapterType === "paperclip_runner"
+      if (!changingAdapterType && requestedAdapterType === "pilibala_runner"
         && rawEffectiveAdapterConfig.provider !== existingRunnerProvider
         && (["openai_dot", "muse"].includes(String(rawEffectiveAdapterConfig.provider)) || ["openai_dot", "muse"].includes(String(existingRunnerProvider)))) {
         await assertSelectableAdapterType(requestedAdapterType, rawEffectiveAdapterConfig);
       }
       if (
         changingAdapterType ||
-        (requestedAdapterType === "paperclip_runner" &&
+        (requestedAdapterType === "pilibala_runner" &&
           (requestedAdapterConfig !== null ||
             rawEffectiveAdapterConfig.provider !== existingRunnerProvider))
       ) {
-        await assertFreshPaperclipRunnerProvider(
+        await assertFreshPilibalaRunnerProvider(
           existing.companyId,
           requestedAdapterType,
           rawEffectiveAdapterConfig,
@@ -6370,7 +6370,7 @@ export function agentRoutes(
   /**
    * Assesses the setup-token confidential transport. The product
    * owner set a non-negotiable requirement: do not force TLS. Many users run
-   * Paperclip over plain HTTP on a home server or a Tailscale tailnet. So the
+   * Pilibala over plain HTTP on a home server or a Tailscale tailnet. So the
    * route does not block a non-confidential transport. It returns a non-blocking
    * advisory instead, and the route attaches it to the confidential response.
    * The client shows a visible disclaimer and lets the login proceed. The
@@ -7070,7 +7070,7 @@ export function agentRoutes(
             resolution = { action };
           } else if (
             action === "submit" &&
-            candidate?.response?.schema === "paperclip.question_response.v1" &&
+            candidate?.response?.schema === "pilibala.question_response.v1" &&
             candidate.response.answers &&
             typeof candidate.response.answers === "object" &&
             !Array.isArray(candidate.response.answers)

@@ -6,7 +6,7 @@ import {
   heartbeatRuns,
   runIdentityContexts,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { forbidden } from "../errors.js";
 import {
   authorizationService,

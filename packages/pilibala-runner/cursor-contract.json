@@ -1,0 +1,23 @@
+{
+  "schema": "pilibala.cursor.production-contract.v1",
+  "profileVersion": 15,
+  "sourceSnapshot": "22c78242a4e0c2369fecf0c2dc4e7600fbad6706",
+  "base": "dd868ed125cd709506dd9b29fca640a44d580501",
+  "vendor": "2026.09.26-dd393fe",
+  "nativePatch": "pilibala-cursor-usage-v4",
+  "acpxPatchSha256": "44f0effe066b7c968ceaa110a7b927d22849a29f084279dfecd9bece22c2a844",
+  "publicSetup": "pilibalaai runtime setup cursor",
+  "assets": "public-server-and-provider-pack",
+  "modes": [
+    "agent",
+    "plan",
+    "ask"
+  ],
+  "questions": "pilibala-semantic-native-defensive",
+  "accounting": "unknown-partial-diagnostics-only",
+  "warmFiles": "mainline-owned-checkpoint-handoff",
+  "planAcceptance": "successful-run-open-task-explicit-continuation",
+  "otherProviders": "mainline-gated",
+  "modelSelection": "explicit-provider-verified-startup-and-reconnect",
+  "commandDigest": "sha256:756e04a2f25ed32e2a2ef3ff0af7cb7459e15481d178b5f57a83dec3e3853317"
+}

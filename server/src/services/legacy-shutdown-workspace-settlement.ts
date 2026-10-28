@@ -1,10 +1,10 @@
 import { and, eq, gt, inArray, ne, or, sql } from "drizzle-orm";
-import { environmentLeases, heartbeatRuns, issues, type Db } from "@paperclipai/db";
+import { environmentLeases, heartbeatRuns, issues, type Db } from "@pilibalaai/db";
 import { adapterExecutionControls } from "./adapter-execution-control.js";
 import { legacyControllerBootId } from "./legacy-controller-lease.js";
 import { LEGACY_WORKSPACE_RECOVERY_SCHEMA } from "./workspace-restore-recovery-state.js";
 
-const SCHEMA = "paperclip.legacy-shutdown-workspace-settlement.v1";
+const SCHEMA = "pilibala.legacy-shutdown-workspace-settlement.v1";
 type Lease = Pick<typeof environmentLeases.$inferSelect, "id" | "companyId" | "heartbeatRunId" | "metadata">;
 type Run = Pick<typeof heartbeatRuns.$inferSelect, "id" | "companyId">;
 

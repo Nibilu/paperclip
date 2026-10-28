@@ -1,4 +1,4 @@
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   createAdmissionTransactionScope as buildAdmissionTransactionScope,
   createPostgresWakeQueueAdapter,

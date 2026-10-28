@@ -1,6 +1,6 @@
 # Expanded assistant MCP qualification — 2026-10-06
 
-This record separates model qualification from client interoperability and deployment. Core PR [15380](https://github.com/paperclipai/paperclip/pull/15380) and Cloud PR [678](https://github.com/paperclipai/paperclip-cloud/pull/678) contain implementation and final delivery status. Merging requires a separate action.
+This record separates model qualification from client interoperability and deployment. Core PR [15380](https://github.com/pilibalaai/pilibala/pull/15380) and Cloud PR [678](https://github.com/pilibalaai/pilibala-cloud/pull/678) contain implementation and final delivery status. Merging requires a separate action.
 
 ## Paid Product E2E
 
@@ -32,10 +32,10 @@ The selected new cases do not cover the entire existing 63-case/model `public-mc
 
 ## Actual clients, independent of model evals
 
-The local disposable instance was created with `paperclipai test-drive`, then configured for authenticated sign-in. No worktree database clone was used.
+The local disposable instance was created with `pilibalaai test-drive`, then configured for authenticated sign-in. No worktree database clone was used.
 
 - **Codex CLI 0.153.4:** native OAuth/CIMD; read organization and agents, updated EXP-1, wrote the report document. A first attempt with a ChatGPT login could not use Mini, so the authorized API provider was used. A noninteractive approval-disabled attempt correctly refused mutation; explicitly approved only the two fixture mutation tools for that invocation.
-- **Claude Code 2.1.245:** Paperclip device OAuth and the credential-protected stdio bridge. A later conversation read Codex's report, performed a revision-checked update, and read it back. Revision 2 preserved the original body and appended its own verification line.
+- **Claude Code 2.1.245:** Pilibala device OAuth and the credential-protected stdio bridge. A later conversation read Codex's report, performed a revision-checked update, and read it back. Revision 2 preserved the original body and appended its own verification line.
 - **OpenCode 1.18.17:** native remote OAuth; read organization/agents, created and updated a project, uploaded a file, downloaded it, compared hashes, then registered the existing attachment as a deliverable and listed it alongside the report. No completion tool was called.
 
 The 79-byte file round trip matched SHA-256 `fdec086f7051ebf67a596661e7567d8a53c471d6b86e63303da7734b8afc046a`. OpenCode's shell tool UI can display temporary transfer URLs in history; walkthrough captures use its safe summary instead. Transfer URLs are credentials even though short-lived.
@@ -85,7 +85,7 @@ the grader advances to v16. Its combined calibration suite passes 76 tests.
 Affected paid cases and the startup failure are rerun separately at the final
 source; do not reinterpret the earlier v15 runs as v16 evidence.
 
-Local revocation was also exercised: revoking only the Paperclip CLI device
+Local revocation was also exercised: revoking only the Pilibala CLI device
 grant makes the same stdio bridge reject subsequent MCP initialization. The
 Codex and OpenCode grants stay independent. A Claude diagnostic attempt that
 hallucinated a shell script is retained and is not counted as proof; the
@@ -106,7 +106,7 @@ merged source; this targeted repeat covers the changed transfer/OAuth path and
 stronger later-document grading.
 
 Butter's merged-source deployment was verified on `e81f114bc` by workflow
-[37535338093](https://github.com/paperclipai/paperclip-cloud/actions/runs/37535338093).
+[37535338093](https://github.com/pilibalaai/pilibala-cloud/actions/runs/37535338093).
 The public metadata advertises configuration scope; invalid upload and download
 tickets both return 403 through the tenant gateway. In a fresh OpenCode workspace,
 the copied invitation fetched setup instructions, added the remote server, started

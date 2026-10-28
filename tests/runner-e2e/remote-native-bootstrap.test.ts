@@ -90,7 +90,7 @@ it("withholds actual work until exact run admission, armed observer and awaited 
     sdkVersion: "0.203.0", targets: ["target.txt"],
     authority: { companyId: "company", environmentId: "env", runId: "run", leaseId: "lease", sandboxId: "sandbox", image: h.input.image },
   }));
-  expect(h.fixture.publishAction).toHaveBeenCalledWith(expect.stringMatching(/^\.paperclip-eval-action-[a-f0-9]{36}\.txt$/u), "PRIVATE ACTUAL ACTION");
+  expect(h.fixture.publishAction).toHaveBeenCalledWith(expect.stringMatching(/^\.pilibala-eval-action-[a-f0-9]{36}\.txt$/u), "PRIVATE ACTUAL ACTION");
   expect(JSON.stringify(h.input.evidence.mock.calls)).not.toContain("PRIVATE ACTUAL ACTION");
   await expect(h.bootstrap.bindAndRelease(h.request)).rejects.toThrow("one unconsumed");
 });
@@ -388,7 +388,7 @@ it.each([
 it.each([[503, "transient_infrastructure"], [403, "permanent_infrastructure"], [400, "candidate_failure"]])(
   "normalizes actual RunnerApi HTTP %s status independently of its private body", async (status, failureClass) => {
     vi.useFakeTimers(); vi.setSystemTime(0);
-    vi.stubEnv("PAPERCLIP_RUNNER_E2E_PORT", "3100");
+    vi.stubEnv("PILIBALA_RUNNER_E2E_PORT", "3100");
     const h = harness(REMOTE_FIXTURE_MIN_SETUP_BUDGET_MS + 1000); h.bootstrap.prompt("actual-api");
     const original = h.api.get.getMockImplementation()!;
     const secret = "PRIVATE body: forbidden secret plaintext 503 timeout socket hang up ".repeat(10_000);

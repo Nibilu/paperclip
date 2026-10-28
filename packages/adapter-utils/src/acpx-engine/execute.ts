@@ -7,14 +7,14 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createHash, randomUUID } from "node:crypto";
-import { parseFrontmatterMarkdown } from "@paperclipai/shared";
+import { parseFrontmatterMarkdown } from "@pilibalaai/shared";
 import { fileURLToPath } from "node:url";
 import type {
   AdapterBillingType,
   AdapterExecutionContext,
   AdapterExecutionResult,
   UsageSummary,
-} from "@paperclipai/adapter-utils";
+} from "@pilibalaai/adapter-utils";
 import {
   adapterExecutionTargetSessionIdentity,
   describeAdapterExecutionTarget,
@@ -27,17 +27,17 @@ import {
   resolveAdapterExecutionTargetTimeout,
   resolveReferencedSourceIgnore,
   runAdapterExecutionTargetShellCommand,
-  startAdapterExecutionTargetPaperclipBridge,
+  startAdapterExecutionTargetPilibalaBridge,
   startAdapterExecutionTargetProcessSessionBridge,
   type AdapterExecutionTarget,
-  type AdapterExecutionTargetPaperclipBridgeHandle,
+  type AdapterExecutionTargetPilibalaBridgeHandle,
   type AdapterExecutionTargetProcessSessionBridgeHandle,
   type AdapterExecutionTargetTimeoutResolution,
   type AdapterManagedRuntimeAsset,
   type PreparedAdapterExecutionTargetRuntime,
   type ReferencedSourceIgnoreResolution,
   type SandboxAdditionalSource,
-} from "@paperclipai/adapter-utils/execution-target";
+} from "@pilibalaai/adapter-utils/execution-target";
 import { captureLocalProcess, capturedProcessExited, killCapturedLocalProcess } from "./local-process-control.js";
 import type { DuplexLossReason } from "../duplex-observability.js";
 import { DUPLEX_CHANNEL_LOST_ERROR_CODE } from "../bridge-transport-contract.js";
@@ -56,37 +56,37 @@ import {
   describeWorkspaceRestoreFailure,
 } from "../workspace-restore-merge.js";
 import {
-  DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
-  DEFAULT_PAPERCLIP_CONVERSATION_PROMPT_TEMPLATE,
-  applyPaperclipWorkspaceEnv,
+  DEFAULT_PILIBALA_AGENT_PROMPT_TEMPLATE,
+  DEFAULT_PILIBALA_CONVERSATION_PROMPT_TEMPLATE,
+  applyPilibalaWorkspaceEnv,
   asNumber,
   asString,
   buildInvocationEnvForLogs,
-  buildPaperclipEnv,
+  buildPilibalaEnv,
   ensureAbsoluteDirectory,
   ensurePathInEnv,
-  ensurePaperclipSkillSymlink,
+  ensurePilibalaSkillSymlink,
   isForbiddenConfigEnvKey,
-  isPaperclipExternalChatTurn,
-  isPaperclipRuntimeEnvKey,
+  isPilibalaExternalChatTurn,
+  isPilibalaRuntimeEnvKey,
   joinPromptSections,
-  materializePaperclipSkillCopy,
+  materializePilibalaSkillCopy,
   parseObject,
-  isPaperclipSkillSourceMissing,
-  readPaperclipRuntimeSkillEntries,
-  readPaperclipIssueWorkModeFromContext,
+  isPilibalaSkillSourceMissing,
+  readPilibalaRuntimeSkillEntries,
+  readPilibalaIssueWorkModeFromContext,
   renderTemplate,
-  resolvePaperclipInstanceRootForAdapter,
+  resolvePilibalaInstanceRootForAdapter,
   hydrateFreshSessionHandoff,
   selectInitialCommunicationGuidance,
-  selectPaperclipPromptSections,
-  resolveLegacyPaperclipDesiredSkillNames,
+  selectPilibalaPromptSections,
+  resolveLegacyPilibalaDesiredSkillNames,
   removeMaintainerOnlySkillSymlinks,
   rewriteWorkspaceCwdEnvVarsForExecution,
-  shapePaperclipWorkspaceEnvForExecution,
-  type PaperclipSkillEntry,
-} from "@paperclipai/adapter-utils/server-utils";
-import { shellQuote } from "@paperclipai/adapter-utils/ssh";
+  shapePilibalaWorkspaceEnvForExecution,
+  type PilibalaSkillEntry,
+} from "@pilibalaai/adapter-utils/server-utils";
+import { shellQuote } from "@pilibalaai/adapter-utils/ssh";
 import { createEphemeralSessionEnvironmentStore } from "./ephemeral-session-environment.js";
 import {
   createAcpRuntime,
@@ -175,7 +175,7 @@ import {
 } from "./startup-timing.js";
 
 const defaultModuleDir = path.dirname(fileURLToPath(import.meta.url));
-const PAPERCLIP_MANAGED_CODEX_SKILLS_MANIFEST = ".paperclip-managed-skills.json";
+const PILIBALA_MANAGED_CODEX_SKILLS_MANIFEST = ".pilibala-managed-skills.json";
 const BENIGN_NES_CLOSE_STDERR = /method: ['"]nes\/close['"].*-32601/;
 
 function routeChildStderr(state: ChildStderrState, chunk: string) {
@@ -205,7 +205,7 @@ function flushChildStderr(state: ChildStderrState) {
   state.pendingLiveLine = "";
 }
 
-type PaperclipAcpRuntimeOptions = AcpRuntimeOptions & {
+type PilibalaAcpRuntimeOptions = AcpRuntimeOptions & {
   onAgentSpawn?: (meta: AcpxAgentProcessIdentity) => Promise<void>;
   // Return the current-run parent-context token. It is the `task.run` token
   // during startup and after the turn, and the `agent.turn` token during the
@@ -214,13 +214,13 @@ type PaperclipAcpRuntimeOptions = AcpRuntimeOptions & {
   getRuntimeParentContext?: () => StartupSpanContext | undefined;
 };
 
-type AcpxRuntimeFactory = (options: PaperclipAcpRuntimeOptions) => AcpRuntime;
+type AcpxRuntimeFactory = (options: PilibalaAcpRuntimeOptions) => AcpRuntime;
 
 /**
  * A remote runner-backed session's staged runtime, kept warm across runs so a
  * compatible resume reuses it instead of re-shipping the workspace / re-seeding
  * the managed home (PR 3: "stage once per session"). Keyed by the session's
- * `sessionKey` (`paperclip:companyId:agentId:taskKey:fingerprint`) — the SAME
+ * `sessionKey` (`pilibala:companyId:agentId:taskKey:fingerprint`) — the SAME
  * fingerprint scoping the warm handle uses — so one session can never read
  * another session's staged credentials: a different agent/task/config hashes to
  * a different key, misses this cache, and stages its own home.
@@ -280,7 +280,7 @@ export interface AcpxEngineBillingIdentity {
  * credential/home helpers (`copyBackCodexAuth`, `stageCodexHomeForSync`,
  * `prepareClaudeConfigSeed`, the Gemini skills stager, …) live in the adapter
  * packages, and the shared engine — which lives *inside*
- * `@paperclipai/adapter-utils`, a dependency of those packages — cannot import
+ * `@pilibalaai/adapter-utils`, a dependency of those packages — cannot import
  * them without a circular dependency. So the engine exposes this seam and each
  * adapter supplies it, reusing the exact same vetted helpers (no duplication of
  * the security-critical copy-back path).
@@ -477,7 +477,7 @@ interface AcpxPreparedRuntime {
   agentCommand: string | null;
   agentRegistry: AcpAgentRegistry;
   processSessionBridge: AdapterExecutionTargetProcessSessionBridgeHandle | null;
-  paperclipBridge: AdapterExecutionTargetPaperclipBridgeHandle | null;
+  pilibalaBridge: AdapterExecutionTargetPilibalaBridgeHandle | null;
   // The workspace/runtime staged into a runner-backed remote sandbox (null for
   // local runs and the runner-less ACP→CLI fallback). PR 1 stages the workspace
   // + cwd only; the `assetDirs`/`runtimeRootDir`/`restoreWorkspace` it carries
@@ -510,7 +510,7 @@ interface AcpxPreparedRuntime {
   skillPromptInstructions: string;
   skillsIdentity: Record<string, unknown>;
   childStderrLogPath: string | null;
-  paperclipClaudeSettings: PaperclipClaudeSettingsResult | null;
+  pilibalaClaudeSettings: PilibalaClaudeSettingsResult | null;
   mcpServers: NonNullable<AcpRuntimeOptions["mcpServers"]>;
   mcpIdentity: Array<{ name: string; url: string; connectionId: string }>;
   // Per-step round-trip / provider-duration readers sourced from the sandbox
@@ -556,7 +556,7 @@ function shortHash(value: unknown): string {
  * `SessionKeyIdentity`).
  */
 export function buildSessionFingerprint(identity: SessionFingerprintIdentity): string {
-  // The run-scoped Paperclip token hash must not affect the fingerprint: the
+  // The run-scoped Pilibala token hash must not affect the fingerprint: the
   // token rotates every run, so hashing it would orphan the resumable session
   // after every run. Token isolation lives in the process lifecycle (a fresh
   // agent spawn per run + the Amendment B warm-save credential gate), not in
@@ -568,13 +568,13 @@ export function buildSessionFingerprint(identity: SessionFingerprintIdentity): s
 
 /**
  * Build the session key from the fingerprint and the outer-key identity. The key
- * form is `paperclip:companyId:agentId:taskKey:fingerprint`.
+ * form is `pilibala:companyId:agentId:taskKey:fingerprint`.
  */
 export function buildSessionKey(identity: SessionKeyIdentity, fingerprint: string): string {
-  return `paperclip:${identity.companyId}:${identity.agentId}:${identity.taskKey}:${fingerprint}`;
+  return `pilibala:${identity.companyId}:${identity.agentId}:${identity.taskKey}:${fingerprint}`;
 }
 
-// ACPX runs inside the long-lived Paperclip server process. A local child needs
+// ACPX runs inside the long-lived Pilibala server process. A local child needs
 // a small amount of host context (PATH, locale, certificate/proxy settings, and
 // provider authentication), but it must not inherit the server's complete
 // environment. A runner-backed remote sandbox inherits no ambient host context
@@ -819,21 +819,21 @@ export async function referencedSourceContentSignature(
   return hash.digest("hex").slice(0, 16);
 }
 
-function defaultPaperclipInstanceDir(): string {
-  const home = process.env.PAPERCLIP_HOME?.trim() || path.join(os.homedir(), ".paperclip");
-  const instanceId = process.env.PAPERCLIP_INSTANCE_ID?.trim() || "default";
-  return resolvePaperclipInstanceRootForAdapter({
+function defaultPilibalaInstanceDir(): string {
+  const home = process.env.PILIBALA_HOME?.trim() || path.join(os.homedir(), ".pilibala");
+  const instanceId = process.env.PILIBALA_INSTANCE_ID?.trim() || "default";
+  return resolvePilibalaInstanceRootForAdapter({
     homeDir: home,
     instanceId,
   });
 }
 
 function defaultStateDir(companyId: string, agentId: string): string {
-  return path.join(defaultPaperclipInstanceDir(), "companies", companyId, "acp-engine", "agents", agentId);
+  return path.join(defaultPilibalaInstanceDir(), "companies", companyId, "acp-engine", "agents", agentId);
 }
 
 function resolveManagedCodexHomeDir(companyId: string): string {
-  return path.join(defaultPaperclipInstanceDir(), "companies", companyId, "codex-home");
+  return path.join(defaultPilibalaInstanceDir(), "companies", companyId, "codex-home");
 }
 
 function resolveManagedCodexApiKeyHomeDir(companyId: string, agentId: string): string {
@@ -847,7 +847,7 @@ function resolveManagedCodexApiKeyHomeDir(companyId: string, agentId: string): s
 // `resolveManagedCodexHomeDir` above duplicates the Codex adapter's own
 // helper.
 function resolveManagedGrokHomeDir(companyId: string): string {
-  return path.join(defaultPaperclipInstanceDir(), "companies", companyId, "grok-home");
+  return path.join(defaultPilibalaInstanceDir(), "companies", companyId, "grok-home");
 }
 
 // Walk up from startDir looking for `node_modules/.bin/<binName>`. This matches
@@ -1066,7 +1066,7 @@ async function prepareManagedCodexHome(input: {
 
   await onLog(
     "stdout",
-    `[paperclip] Using Paperclip-managed ACPX Codex home "${targetHome}" (seeded from "${sourceHome}").\n`,
+    `[pilibala] Using Pilibala-managed ACPX Codex home "${targetHome}" (seeded from "${sourceHome}").\n`,
   );
   return targetHome;
 }
@@ -1112,11 +1112,11 @@ async function hashPathContents(
 }
 
 async function buildSkillSetKey(input: {
-  skills: PaperclipSkillEntry[];
+  skills: PilibalaSkillEntry[];
   label: string;
 }): Promise<string> {
   const hash = createHash("sha256");
-  hash.update(`paperclip-acpx-${input.label}-skills:v1\n`);
+  hash.update(`pilibala-acpx-${input.label}-skills:v1\n`);
   const sorted = [...input.skills].sort((left, right) => left.runtimeName.localeCompare(right.runtimeName));
   for (const entry of sorted) {
     hash.update(`skill:${entry.key}:${entry.runtimeName}\n`);
@@ -1128,9 +1128,9 @@ async function buildSkillSetKey(input: {
 async function resolveSelectedRuntimeSkills(
   config: Record<string, unknown>,
   moduleDir: string,
-): Promise<{ allSkills: PaperclipSkillEntry[]; selectedSkills: PaperclipSkillEntry[]; desiredSkillNames: string[] }> {
-  const allSkills = await readPaperclipRuntimeSkillEntries(config, moduleDir);
-  const desiredSkillNames = resolveLegacyPaperclipDesiredSkillNames(config, allSkills);
+): Promise<{ allSkills: PilibalaSkillEntry[]; selectedSkills: PilibalaSkillEntry[]; desiredSkillNames: string[] }> {
+  const allSkills = await readPilibalaRuntimeSkillEntries(config, moduleDir);
+  const desiredSkillNames = resolveLegacyPilibalaDesiredSkillNames(config, allSkills);
   const desiredSet = new Set(desiredSkillNames);
   return {
     allSkills,
@@ -1138,7 +1138,7 @@ async function resolveSelectedRuntimeSkills(
     // selected entry's path contents, and a nonexistent source would abort
     // runtime construction over one broken skill.
     selectedSkills: allSkills.filter(
-      (entry) => desiredSet.has(entry.key) && !isPaperclipSkillSourceMissing(entry),
+      (entry) => desiredSet.has(entry.key) && !isPilibalaSkillSourceMissing(entry),
     ),
     desiredSkillNames,
   };
@@ -1180,13 +1180,13 @@ async function prepareClaudeSkillRuntime(input: {
   for (const entry of selectedSkills) {
     const target = path.join(skillsHome, entry.runtimeName);
     try {
-      const result = await materializePaperclipSkillCopy(entry.source, target);
+      const result = await materializePilibalaSkillCopy(entry.source, target);
       const skillMdStat = await fs.stat(path.join(target, "SKILL.md")).catch(() => null);
       if (!skillMdStat?.isFile()) {
         await fs.rm(target, { recursive: true, force: true });
         await input.onLog(
           "stderr",
-          `[paperclip] Skipped ACPX Claude skill "${entry.key}": the staged copy at ${target} has no usable SKILL.md.\n`,
+          `[pilibala] Skipped ACPX Claude skill "${entry.key}": the staged copy at ${target} has no usable SKILL.md.\n`,
         );
         continue;
       }
@@ -1194,13 +1194,13 @@ async function prepareClaudeSkillRuntime(input: {
       if (result.skippedSymlinks.length > 0) {
         await input.onLog(
           "stdout",
-          `[paperclip] Materialized ACPX Claude skill "${entry.runtimeName}" into ${skillsHome} and skipped ${result.skippedSymlinks.length} symlink(s).\n`,
+          `[pilibala] Materialized ACPX Claude skill "${entry.runtimeName}" into ${skillsHome} and skipped ${result.skippedSymlinks.length} symlink(s).\n`,
         );
       }
     } catch (err) {
       await input.onLog(
         "stderr",
-        `[paperclip] Failed to materialize ACPX Claude skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
+        `[pilibala] Failed to materialize ACPX Claude skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
       );
     }
   }
@@ -1220,7 +1220,7 @@ async function prepareClaudeSkillRuntime(input: {
   }));
   const promptInstructions = selectedNames.length > 0
     ? [
-        "Paperclip has materialized selected runtime skills for this ACPX Claude session.",
+        "Pilibala has materialized selected runtime skills for this ACPX Claude session.",
         `Skill root: ${skillsHome}`,
         `Selected skills: ${selectedNames.join(", ")}`,
         ...skillDescriptions,
@@ -1238,14 +1238,14 @@ async function prepareClaudeSkillRuntime(input: {
     },
     promptInstructions,
     commandNotes: selectedNames.length > 0
-      ? [`Materialized ${selectedNames.length} Paperclip skill(s) for ACPX Claude at ${skillsHome}.`]
+      ? [`Materialized ${selectedNames.length} Pilibala skill(s) for ACPX Claude at ${skillsHome}.`]
       : [],
     bundleDir: selectedNames.length > 0 ? skillsHome : null,
   };
 }
 
 async function readManagedCodexSkillsManifest(skillsHome: string): Promise<Set<string>> {
-  const manifestPath = path.join(skillsHome, PAPERCLIP_MANAGED_CODEX_SKILLS_MANIFEST);
+  const manifestPath = path.join(skillsHome, PILIBALA_MANAGED_CODEX_SKILLS_MANIFEST);
   try {
     const raw = JSON.parse(await fs.readFile(manifestPath, "utf8")) as unknown;
     const parsed = parseObject(raw);
@@ -1261,7 +1261,7 @@ async function readManagedCodexSkillsManifest(skillsHome: string): Promise<Set<s
 async function writeManagedCodexSkillsManifest(skillsHome: string, skillNames: Iterable<string>): Promise<void> {
   const managedSkillNames = Array.from(new Set(skillNames)).sort();
   await fs.writeFile(
-    path.join(skillsHome, PAPERCLIP_MANAGED_CODEX_SKILLS_MANIFEST),
+    path.join(skillsHome, PILIBALA_MANAGED_CODEX_SKILLS_MANIFEST),
     `${JSON.stringify({ version: 1, managedSkillNames }, null, 2)}\n`,
     "utf8",
   );
@@ -1276,8 +1276,8 @@ async function removeSkillTarget(target: string): Promise<boolean> {
 
 async function reconcileManagedCodexSkills(input: {
   skillsHome: string;
-  allSkills: PaperclipSkillEntry[];
-  selectedSkills: PaperclipSkillEntry[];
+  allSkills: PilibalaSkillEntry[];
+  selectedSkills: PilibalaSkillEntry[];
   onLog: AdapterExecutionContext["onLog"];
 }): Promise<void> {
   const desired = new Set(input.selectedSkills.map((entry) => entry.runtimeName));
@@ -1287,7 +1287,7 @@ async function reconcileManagedCodexSkills(input: {
   for (const name of managed) {
     if (desired.has(name)) continue;
     if (await removeSkillTarget(path.join(input.skillsHome, name))) {
-      await input.onLog("stdout", `[paperclip] Revoked ACPX Codex skill "${name}" from ${input.skillsHome}\n`);
+      await input.onLog("stdout", `[pilibala] Revoked ACPX Codex skill "${name}" from ${input.skillsHome}\n`);
     }
   }
 
@@ -1301,14 +1301,14 @@ async function reconcileManagedCodexSkills(input: {
     const resolvedLinkedPath = path.resolve(path.dirname(target), linkedPath);
     if (resolvedLinkedPath !== path.resolve(entry.source)) continue;
     if (await removeSkillTarget(target)) {
-      await input.onLog("stdout", `[paperclip] Revoked legacy ACPX Codex skill "${entry.runtimeName}" from ${input.skillsHome}\n`);
+      await input.onLog("stdout", `[pilibala] Revoked legacy ACPX Codex skill "${entry.runtimeName}" from ${input.skillsHome}\n`);
     }
   }
 
   for (const name of managed) {
     if (desired.has(name) || availableByRuntimeName.has(name)) continue;
     if (await removeSkillTarget(path.join(input.skillsHome, name))) {
-      await input.onLog("stdout", `[paperclip] Revoked unavailable ACPX Codex skill "${name}" from ${input.skillsHome}\n`);
+      await input.onLog("stdout", `[pilibala] Revoked unavailable ACPX Codex skill "${name}" from ${input.skillsHome}\n`);
     }
   }
 }
@@ -1385,17 +1385,17 @@ async function prepareCodexSkillRuntime(input: {
   for (const entry of selectedSkills) {
     const target = path.join(skillsHome, entry.runtimeName);
     try {
-      const result = await materializePaperclipSkillCopy(entry.source, target);
+      const result = await materializePilibalaSkillCopy(entry.source, target);
       if (result.skippedSymlinks.length > 0) {
         await input.onLog(
           "stdout",
-          `[paperclip] Materialized ACPX Codex skill "${entry.runtimeName}" into ${skillsHome} and skipped ${result.skippedSymlinks.length} symlink(s).\n`,
+          `[pilibala] Materialized ACPX Codex skill "${entry.runtimeName}" into ${skillsHome} and skipped ${result.skippedSymlinks.length} symlink(s).\n`,
         );
       }
     } catch (err) {
       await input.onLog(
         "stderr",
-        `[paperclip] Failed to inject ACPX Codex skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
+        `[pilibala] Failed to inject ACPX Codex skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
       );
     }
   }
@@ -1438,31 +1438,31 @@ async function prepareGeminiSkillRuntime(input: {
   const allowedSkillNames = selectedSkills.map((entry) => entry.runtimeName);
   const removedSkills = await removeMaintainerOnlySkillSymlinks(skillsHome, allowedSkillNames);
   for (const skillName of removedSkills) {
-    await input.onLog("stdout", `[paperclip] Removed maintainer-only ACPX Gemini skill "${skillName}" from ${skillsHome}\n`);
+    await input.onLog("stdout", `[pilibala] Removed maintainer-only ACPX Gemini skill "${skillName}" from ${skillsHome}\n`);
   }
 
   for (const entry of selectedSkills) {
     const target = path.join(skillsHome, entry.runtimeName);
     try {
-      const result = await ensurePaperclipSkillSymlink(entry.source, target);
+      const result = await ensurePilibalaSkillSymlink(entry.source, target);
       if (result === "created" || result === "repaired") {
         await input.onLog(
           "stdout",
-          `[paperclip] ${result === "repaired" ? "Repaired" : "Linked"} ACPX Gemini skill "${entry.runtimeName}" into ${skillsHome}\n`,
+          `[pilibala] ${result === "repaired" ? "Repaired" : "Linked"} ACPX Gemini skill "${entry.runtimeName}" into ${skillsHome}\n`,
         );
       }
     } catch (err) {
       if (isErrnoException(err, "EPERM")) {
-        const result = await materializePaperclipSkillCopy(entry.source, target);
+        const result = await materializePilibalaSkillCopy(entry.source, target);
         await input.onLog(
           "stdout",
-          `[paperclip] Copied ACPX Gemini skill "${entry.runtimeName}" into ${skillsHome} because symlinks are unavailable.${result.skippedSymlinks.length > 0 ? ` Skipped ${result.skippedSymlinks.length} nested symlink(s).` : ""}\n`,
+          `[pilibala] Copied ACPX Gemini skill "${entry.runtimeName}" into ${skillsHome} because symlinks are unavailable.${result.skippedSymlinks.length > 0 ? ` Skipped ${result.skippedSymlinks.length} nested symlink(s).` : ""}\n`,
         );
         continue;
       }
       await input.onLog(
         "stderr",
-        `[paperclip] Failed to link ACPX Gemini skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
+        `[pilibala] Failed to link ACPX Gemini skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
       );
     }
   }
@@ -1621,7 +1621,7 @@ function buildSessionParams(input: {
   };
 }
 
-interface PaperclipClaudeSettingsResult {
+interface PilibalaClaudeSettingsResult {
   filePath: string;
   allow: string[];
   additionalDirectories: string[];
@@ -1638,28 +1638,28 @@ function uniqueSorted(values: Array<string | null | undefined>): string[] {
 // `.claude/settings.local.json` we override the user's potentially-restrictive
 // `~/.claude/settings.json` (e.g. `defaultMode: "dontAsk"`, which silently
 // denies every non-allowlisted tool and never reaches `canUseTool`), and we
-// widen the SDK's Read sandbox to include the Paperclip state dirs the agent
+// widen the SDK's Read sandbox to include the Pilibala state dirs the agent
 // needs to talk to its own control plane.
-async function writePaperclipClaudeSettings(input: {
+async function writePilibalaClaudeSettings(input: {
   cwd: string;
   stateDir: string;
   agentHome: string;
   companyId: string;
-}): Promise<PaperclipClaudeSettingsResult> {
+}): Promise<PilibalaClaudeSettingsResult> {
   const filePath = path.join(input.cwd, ".claude", "settings.local.json");
-  const instanceRoot = defaultPaperclipInstanceDir();
+  const instanceRoot = defaultPilibalaInstanceDir();
   const companyRoot = path.join(instanceRoot, "companies", input.companyId);
-  const paperclipAdditionalDirectories = uniqueSorted([
+  const pilibalaAdditionalDirectories = uniqueSorted([
     input.stateDir,
     input.agentHome,
     companyRoot,
   ]);
-  const paperclipAllow = uniqueSorted([
+  const pilibalaAllow = uniqueSorted([
     "Bash(curl:*)",
     "Bash(env:*)",
     "Bash(env)",
-    `Bash(${input.cwd}/scripts/paperclip-issue-update.sh:*)`,
-    `Bash(${input.cwd}/scripts/paperclip:*)`,
+    `Bash(${input.cwd}/scripts/pilibala-issue-update.sh:*)`,
+    `Bash(${input.cwd}/scripts/pilibala:*)`,
   ]);
 
   let existing: Record<string, unknown> = {};
@@ -1682,10 +1682,10 @@ async function writePaperclipClaudeSettings(input: {
   const existingAdditionalDirectories = Array.isArray(existingPerms.additionalDirectories)
     ? (existingPerms.additionalDirectories as unknown[]).filter((value): value is string => typeof value === "string")
     : [];
-  const mergedAllow = uniqueSorted([...existingAllow, ...paperclipAllow]);
+  const mergedAllow = uniqueSorted([...existingAllow, ...pilibalaAllow]);
   const mergedAdditionalDirectories = uniqueSorted([
     ...existingAdditionalDirectories,
-    ...paperclipAdditionalDirectories,
+    ...pilibalaAdditionalDirectories,
   ]);
   const existingDefaultMode =
     typeof existingPerms.defaultMode === "string" ? (existingPerms.defaultMode as string) : "";
@@ -1750,7 +1750,7 @@ async function stageAcpRemoteRuntime(input: {
 }): Promise<PreparedAdapterExecutionTargetRuntime> {
   await input.onLog(
     "stdout",
-    `[paperclip] Syncing workspace to ${describeAdapterExecutionTarget(input.target)}.\n`,
+    `[pilibala] Syncing workspace to ${describeAdapterExecutionTarget(input.target)}.\n`,
   );
   return await prepareAdapterExecutionTargetRuntime({
     runId: input.runId,
@@ -1802,7 +1802,7 @@ async function disposeFreshStagedRuntime(input: {
   } catch (err) {
     await input.onLog(
       "stderr",
-      `[paperclip] Failed to dispose the fresh staged runtime after a managed-home seam error: ${
+      `[pilibala] Failed to dispose the fresh staged runtime after a managed-home seam error: ${
         err instanceof Error ? err.message : String(err)
       }\n`,
     );
@@ -1851,8 +1851,8 @@ async function buildRuntime(input: {
   // first instrumented boundary (step 1 `workspace.resolve`, below) so every
   // `measureStartupStep` call in this function shares one deterministic clock.
   const nowMs = input.deps.now ?? (() => Date.now());
-  const workspaceContext = parseObject(context.paperclipWorkspace);
-  const secretsContext = parseObject(context.paperclipSecrets);
+  const workspaceContext = parseObject(context.pilibalaWorkspace);
+  const secretsContext = parseObject(context.pilibalaSecrets);
   const secretManifest = Array.isArray(secretsContext.manifest) ? secretsContext.manifest : [];
   const workspaceCwd = asString(workspaceContext.cwd, "");
   const workspaceSource = asString(workspaceContext.source, "");
@@ -1928,12 +1928,12 @@ async function buildRuntime(input: {
       contentSignature: await referencedSourceContentSignature(entry.localPath, ignoreResolution),
     })),
   );
-  // Referenced-project workspace hints exposed to the agent through PAPERCLIP_WORKSPACES_JSON. The
+  // Referenced-project workspace hints exposed to the agent through PILIBALA_WORKSPACES_JSON. The
   // list joins the anchor project's alternative workspaces with the referenced (mentioned) projects.
   // On the confined sandbox lane the run repoints each referenced hint at its staged directory after
   // staging below. Empty unless run prep resolved referenced projects or alternative workspaces.
-  const workspaceHints = Array.isArray(context.paperclipWorkspaces)
-    ? context.paperclipWorkspaces.filter(
+  const workspaceHints = Array.isArray(context.pilibalaWorkspaces)
+    ? context.pilibalaWorkspaces.filter(
         (value): value is Record<string, unknown> => typeof value === "object" && value !== null,
       )
     : [];
@@ -1961,7 +1961,7 @@ async function buildRuntime(input: {
     batch: STARTUP_BRIDGE_BATCH,
     criticalPath: false,
   };
-  const shapedWorkspaceEnv = shapePaperclipWorkspaceEnvForExecution({
+  const shapedWorkspaceEnv = shapePilibalaWorkspaceEnvForExecution({
     workspaceCwd: effectiveWorkspaceCwd,
     workspaceWorktreePath,
     executionTargetIsRemote,
@@ -2008,7 +2008,7 @@ async function buildRuntime(input: {
   await fs.mkdir(stateDir, { recursive: true });
 
   const envConfig = parseObject(config.env);
-  const env: Record<string, string> = { ...buildPaperclipEnv(agent, input.ctx.agentIdentity), PAPERCLIP_RUN_ID: runId };
+  const env: Record<string, string> = { ...buildPilibalaEnv(agent, input.ctx.agentIdentity), PILIBALA_RUN_ID: runId };
   const wakeTaskId =
     (typeof context.taskId === "string" && context.taskId.trim()) ||
     (typeof context.issueId === "string" && context.issueId.trim()) ||
@@ -2023,15 +2023,15 @@ async function buildRuntime(input: {
   const linkedIssueIds = Array.isArray(context.issueIds)
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
-  const issueWorkMode = readPaperclipIssueWorkModeFromContext(context);
-  if (wakeTaskId) env.PAPERCLIP_TASK_ID = wakeTaskId;
-  if (issueWorkMode) env.PAPERCLIP_ISSUE_WORK_MODE = issueWorkMode;
-  if (wakeReason) env.PAPERCLIP_WAKE_REASON = wakeReason;
-  if (wakeCommentId) env.PAPERCLIP_WAKE_COMMENT_ID = wakeCommentId;
-  if (approvalId) env.PAPERCLIP_APPROVAL_ID = approvalId;
-  if (approvalStatus) env.PAPERCLIP_APPROVAL_STATUS = approvalStatus;
-  if (linkedIssueIds.length > 0) env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
-  applyPaperclipWorkspaceEnv(env, {
+  const issueWorkMode = readPilibalaIssueWorkModeFromContext(context);
+  if (wakeTaskId) env.PILIBALA_TASK_ID = wakeTaskId;
+  if (issueWorkMode) env.PILIBALA_ISSUE_WORK_MODE = issueWorkMode;
+  if (wakeReason) env.PILIBALA_WAKE_REASON = wakeReason;
+  if (wakeCommentId) env.PILIBALA_WAKE_COMMENT_ID = wakeCommentId;
+  if (approvalId) env.PILIBALA_APPROVAL_ID = approvalId;
+  if (approvalStatus) env.PILIBALA_APPROVAL_STATUS = approvalStatus;
+  if (linkedIssueIds.length > 0) env.PILIBALA_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
+  applyPilibalaWorkspaceEnv(env, {
     workspaceCwd: shapedWorkspaceEnv.workspaceCwd,
     workspaceSource,
     workspaceStrategy,
@@ -2052,33 +2052,33 @@ async function buildRuntime(input: {
   // forward to the spawned agent process. Captured so a stable hash of it can be
   // folded into the session fingerprint below — a change here must invalidate a
   // warm/resumable session so the next launch picks up the latest env. Only
-  // user/adapter-configured env flows through this loop; per-wake PAPERCLIP_*
-  // runtime vars (PAPERCLIP_RUN_ID, wake/approval ids, ...) were assigned to
+  // user/adapter-configured env flows through this loop; per-wake PILIBALA_*
+  // runtime vars (PILIBALA_RUN_ID, wake/approval ids, ...) were assigned to
   // `env` above and are never present in shapedEnvConfig, so they inherently
   // stay out of the hash and don't reset the session every heartbeat.
   const resolvedAdapterEnv: Record<string, string> = {};
-  const scratch = parseObject(context.paperclipScratch);
+  const scratch = parseObject(context.pilibalaScratch);
   const scratchKeys = scratch.type === "heartbeat_run" && typeof scratch.dir === "string"
-    ? new Set(["PAPERCLIP_RUN_SCRATCH_DIR", "PAPERCLIP_TASK_SCRATCH_DIR", "PAPERCLIP_SCRATCH_DIR", "PAPERCLIP_TMPDIR",
+    ? new Set(["PILIBALA_RUN_SCRATCH_DIR", "PILIBALA_TASK_SCRATCH_DIR", "PILIBALA_SCRATCH_DIR", "PILIBALA_TMPDIR",
       ...(Array.isArray(scratch.tempKeysApplied) ? scratch.tempKeysApplied.filter((key): key is string =>
         typeof key === "string" && ["TMPDIR", "TEMP", "TMP"].includes(key)) : [])])
     : new Set<string>();
   for (const [key, value] of Object.entries(shapedEnvConfig)) {
     if (typeof value !== "string") continue;
-    // Runtime PAPERCLIP_* always wins over config: skip a PAPERCLIP_* key that
-    // Paperclip has already assigned this run. PAPERCLIP_API_KEY is never
+    // Runtime PILIBALA_* always wins over config: skip a PILIBALA_* key that
+    // Pilibala has already assigned this run. PILIBALA_API_KEY is never
     // accepted from config — the harness-minted run token is the only source.
-    // A PAPERCLIP_* key Paperclip did NOT set is stable per-run config, so it
+    // A PILIBALA_* key Pilibala did NOT set is stable per-run config, so it
     // applies and feeds the fingerprint hash below.
     if (isForbiddenConfigEnvKey(key)) continue;
-    if (isPaperclipRuntimeEnvKey(key) && key in env) continue;
+    if (isPilibalaRuntimeEnvKey(key) && key in env) continue;
     env[key] = value;
     // The server rotates run-owned scratch paths on every wake. Still forward
     // them, but only hash actual adapter settings. User-supplied temp overrides
     // are absent from tempKeysApplied and keep their compatibility protection.
     if (!scratchKeys.has(key) || value !== scratch.dir) resolvedAdapterEnv[key] = value;
   }
-  if (authToken) env.PAPERCLIP_API_KEY = authToken;
+  if (authToken) env.PILIBALA_API_KEY = authToken;
   // For the claude agent, set model via ANTHROPIC_MODEL at startup rather than
   // via session/set_config_option — the ACP server's set_config_option handler
   // validates the value against its internal available-models list and rejects
@@ -2104,10 +2104,10 @@ async function buildRuntime(input: {
       existingConfig: env.CODEX_CONFIG,
       ...(input.ctx.agentIdentity ? { identityEnvironmentKeys: [...new Set([
         "PATH", "HOME", "LANG", "TMPDIR", "CODEX_HOME",
-        "PAPERCLIP_AGENT_KEY_ID", "PAPERCLIP_AGENT_PUBLIC_KEY", "PAPERCLIP_AGENT_PRIVATE_KEY",
+        "PILIBALA_AGENT_KEY_ID", "PILIBALA_AGENT_PUBLIC_KEY", "PILIBALA_AGENT_PRIVATE_KEY",
         // Preserve Codex's default secret-name exclusions. The short-lived
-        // Paperclip API token is required by the agent skill's Bash/curl calls.
-        ...Object.keys(env).filter(key => key === "PAPERCLIP_API_KEY" || !/key|secret|token/i.test(key)),
+        // Pilibala API token is required by the agent skill's Bash/curl calls.
+        ...Object.keys(env).filter(key => key === "PILIBALA_API_KEY" || !/key|secret|token/i.test(key)),
       ])] } : {}),
       requestedModel,
       requestedThinkingEffort,
@@ -2116,7 +2116,7 @@ async function buildRuntime(input: {
     if (codexStartupConfig.invalidExistingConfig) {
       await input.ctx.onLog(
         "stderr",
-        "[paperclip] Ignoring invalid user CODEX_CONFIG while applying runtime Codex settings; expected a JSON object.\n",
+        "[pilibala] Ignoring invalid user CODEX_CONFIG while applying runtime Codex settings; expected a JSON object.\n",
       );
     }
     if (codexStartupConfig.value) env.CODEX_CONFIG = codexStartupConfig.value;
@@ -2131,7 +2131,7 @@ async function buildRuntime(input: {
   // below, after `placeWorkspace` returns). This field is `null` for every
   // non-Claude agent, and for a Claude run with no skill selected.
   let claudeSkillsBundleDir: string | null = null;
-  let paperclipClaudeSettings: PaperclipClaudeSettingsResult | null = null;
+  let pilibalaClaudeSettings: PilibalaClaudeSettingsResult | null = null;
   if (acpxAgent === "claude") {
     const preparedSkills = await prepareClaudeSkillRuntime({
       stateDir,
@@ -2143,7 +2143,7 @@ async function buildRuntime(input: {
     skillsIdentity = preparedSkills.identity;
     skillCommandNotes.push(...preparedSkills.commandNotes);
     claudeSkillsBundleDir = preparedSkills.bundleDir;
-    paperclipClaudeSettings = await writePaperclipClaudeSettings({
+    pilibalaClaudeSettings = await writePilibalaClaudeSettings({
       cwd,
       stateDir,
       // A run's writable AGENT_HOME moves, but the existing permission root
@@ -2154,9 +2154,9 @@ async function buildRuntime(input: {
       companyId: agent.companyId,
     });
     skillCommandNotes.push(
-      `Wrote Paperclip-managed Claude settings to ${paperclipClaudeSettings.filePath} (defaultMode=${paperclipClaudeSettings.defaultMode}${
-        paperclipClaudeSettings.overrodeDontAsk ? "; overrode user dontAsk" : ""
-      }, +${paperclipClaudeSettings.additionalDirectories.length} read root(s), +${paperclipClaudeSettings.allow.length} allow rule(s)).`,
+      `Wrote Pilibala-managed Claude settings to ${pilibalaClaudeSettings.filePath} (defaultMode=${pilibalaClaudeSettings.defaultMode}${
+        pilibalaClaudeSettings.overrodeDontAsk ? "; overrode user dontAsk" : ""
+      }, +${pilibalaClaudeSettings.additionalDirectories.length} read root(s), +${pilibalaClaudeSettings.allow.length} allow rule(s)).`,
     );
   } else if (acpxAgent === "codex") {
     // Step 2 — codex-home.seed: the codex managed-home + skills preparation.
@@ -2195,13 +2195,13 @@ async function buildRuntime(input: {
     if (acpxAgent === "grok" && !config.managedAiConnection) {
       env.GROK_HOME = resolveManagedGrokHomeDir(agent.companyId);
     }
-    const desired = resolveLegacyPaperclipDesiredSkillNames(
+    const desired = resolveLegacyPilibalaDesiredSkillNames(
       config,
-      await readPaperclipRuntimeSkillEntries(config, input.engine.moduleDir),
+      await readPilibalaRuntimeSkillEntries(config, input.engine.moduleDir),
     );
     skillsIdentity = { mode: "custom_unsupported", desiredSkillNames: desired };
     if (desired.length > 0) {
-      skillCommandNotes.push("Selected Paperclip skills are tracked only; ACPX custom commands do not expose a runtime skill contract yet.");
+      skillCommandNotes.push("Selected Pilibala skills are tracked only; ACPX custom commands do not expose a runtime skill contract yet.");
     }
   }
 
@@ -2291,11 +2291,11 @@ async function buildRuntime(input: {
     additionalSourcesIdentity: additionalSourcesIdentity as unknown as Record<string, unknown>,
     skillsIdentity,
     skillPromptInstructions,
-    paperclipClaudeSettings: paperclipClaudeSettings
+    pilibalaClaudeSettings: pilibalaClaudeSettings
       ? {
-          allow: paperclipClaudeSettings.allow,
-          additionalDirectories: paperclipClaudeSettings.additionalDirectories,
-          defaultMode: paperclipClaudeSettings.defaultMode,
+          allow: pilibalaClaudeSettings.allow,
+          additionalDirectories: pilibalaClaudeSettings.additionalDirectories,
+          defaultMode: pilibalaClaudeSettings.defaultMode,
         }
       : null,
     // Qualified built-in ACP harnesses reconnect to the supplied MCP servers
@@ -2303,14 +2303,14 @@ async function buildRuntime(input: {
     mcpServers: ["claude", "codex", "grok", "gemini", "kimi"].includes(acpxAgent) ? [] : mcpIdentity,
     secretManifestHash: shortHash(secretManifest),
     // Fold the resolved adapter env (all applied user-configured values —
-    // plain, secret_ref, and stable PAPERCLIP_* config such as an explicit
-    // PAPERCLIP_API_KEY) into the fingerprint so a change to any forwarded value
+    // plain, secret_ref, and stable PILIBALA_* config such as an explicit
+    // PILIBALA_API_KEY) into the fingerprint so a change to any forwarded value
     // invalidates a warm handle / resumable session and forces a fresh launch
     // that sources the latest env. secretManifestHash alone misses plain-value
     // edits and same-version secret rotations. Per-wake runtime vars never enter
     // resolvedAdapterEnv, so they don't churn the fingerprint every heartbeat.
     adapterEnvHash: shortHash(resolvedAdapterEnv),
-    // PAPERCLIP_API_KEY is a run-scoped credential injected by the harness, not
+    // PILIBALA_API_KEY is a run-scoped credential injected by the harness, not
     // adapter configuration. It must NOT enter the session fingerprint: the
     // token rotates every run, so hashing it would orphan the resumable session
     // after every run (the interrupted-continuation contract requires the next
@@ -2320,7 +2320,7 @@ async function buildRuntime(input: {
     // freshly spawned agent process carrying only its own token, while the
     // session record (conversation) resumes via acpx. Never put the credential
     // itself in the fingerprint or logs.
-    ...(process.env.PAPERCLIP_PROBE_FALLBACK ? {} : {}),
+    ...(process.env.PILIBALA_PROBE_FALLBACK ? {} : {}),
   };
   const fingerprint = buildSessionFingerprint(fingerprintIdentity);
   const taskKey = asString(input.ctx.runtime.taskKey, "") || wakeTaskId || workspaceId || "default";
@@ -2451,7 +2451,7 @@ async function buildRuntime(input: {
         }),
       measureStageStep: (run) => measureStartupStep(input.ctx, nowMs, "stage.sync", run, stepMetrics),
       publishStagedProjectHints: (stagedProjectDirs) => {
-        const shapedHints = shapePaperclipWorkspaceEnvForExecution({
+        const shapedHints = shapePilibalaWorkspaceEnvForExecution({
           workspaceCwd: effectiveWorkspaceCwd,
           workspaceWorktreePath,
           workspaceHints,
@@ -2460,22 +2460,22 @@ async function buildRuntime(input: {
           stagedProjectDirs,
         }).workspaceHints;
         if (shapedHints.length > 0) {
-          env.PAPERCLIP_WORKSPACES_JSON = JSON.stringify(shapedHints);
+          env.PILIBALA_WORKSPACES_JSON = JSON.stringify(shapedHints);
         }
       },
       onReuseLog: () =>
         input.ctx.onLog(
           "stdout",
-          "[paperclip] Reusing the staged in-sandbox runtime for this resumed session (no workspace re-ship / managed-home re-seed).\n",
+          "[pilibala] Reusing the staged in-sandbox runtime for this resumed session (no workspace re-ship / managed-home re-seed).\n",
         ),
-      startPaperclipBridge: (runtimeRootDir) =>
-        startAdapterExecutionTargetPaperclipBridge({
+      startPilibalaBridge: (runtimeRootDir) =>
+        startAdapterExecutionTargetPilibalaBridge({
           runId,
           target: { ...remoteTarget, streamRunLogs: false },
           runtimeRootDir,
           adapterKey: input.engine.adapterType,
           timeoutSec,
-          hostApiToken: env.PAPERCLIP_API_KEY,
+          hostApiToken: env.PILIBALA_API_KEY,
           enableSandboxDuplexBridge: adapterExecutionTargetEnablesSandboxDuplexBridge(remoteTarget),
           duplexObservabilityRecorder: adapterExecutionTargetDuplexObservabilityRecorder(remoteTarget),
           onLog: input.ctx.onLog,
@@ -2505,8 +2505,8 @@ async function buildRuntime(input: {
           acpxAgent,
           inheritHostEnvironment: !useRemoteProcessSession,
         }).env,
-      onPaperclipBridgeLog: () =>
-        input.ctx.onLog("stdout", "[paperclip] Sandbox ACP API callback bridge enabled for this run.\n"),
+      onPilibalaBridgeLog: () =>
+        input.ctx.onLog("stdout", "[pilibala] Sandbox ACP API callback bridge enabled for this run.\n"),
       stopBridges: async ({ controlBridge, agentBridge }) => {
         await Promise.allSettled([agentBridge?.stop(), controlBridge?.stop()]);
         if (remoteManagedHomeTeardown) {
@@ -2542,7 +2542,7 @@ async function buildRuntime(input: {
       stagedRuntime.assetDirs.skills ??
       path.posix.join(
         stagedRuntime.runtimeRootDir ??
-          path.posix.join(stagedRuntime.workspaceRemoteDir ?? cwd, ".paperclip-runtime", acpxAgent),
+          path.posix.join(stagedRuntime.workspaceRemoteDir ?? cwd, ".pilibala-runtime", acpxAgent),
         "skills",
       );
     const rebaseToSandbox = (value: string) => value.split(claudeSkillsBundleDir!).join(inSandboxSkillsRoot);
@@ -2558,24 +2558,24 @@ async function buildRuntime(input: {
     }
   }
   // Both bridge starts run under one try so a failure at EITHER — including the
-  // paperclip callback bridge — fires the same abandon-path cleanup. The
-  // paperclip bridge starts after the workspace + managed home were already
+  // pilibala callback bridge — fires the same abandon-path cleanup. The
+  // pilibala bridge starts after the workspace + managed home were already
   // staged and the per-session staging lease is already held, so leaving it
   // outside the catch would strand the lease (and the staged temp) on a
   // start failure and deadlock the next run of this session.
-  let paperclipBridge: AdapterExecutionTargetPaperclipBridgeHandle | null = null;
+  let pilibalaBridge: AdapterExecutionTargetPilibalaBridgeHandle | null = null;
   let processSessionBridge: AdapterExecutionTargetProcessSessionBridgeHandle | null = null;
   let runtimeEnv: Record<string, string> = {};
   const startTransportStart = nowMs();
   try {
     if (useRemoteProcessSession && sandboxSite) {
       // The sandbox run site brings up both host-side bridges concurrently, keeps
-      // the one paperclip-env → process-session-launch dependency at a single
+      // the one pilibala-env → process-session-launch dependency at a single
       // sequencing point, settles both starts, and returns the started handles
       // plus the finalized launch env. On a partial failure it stops nothing and
       // rethrows; the catch below stops whichever bridge the site started.
       const transport = await sandboxSite.startTransport({ sessionKey } as unknown as AcpRunContext);
-      paperclipBridge = transport.controlBridge;
+      pilibalaBridge = transport.controlBridge;
       processSessionBridge = transport.agentBridge;
       runtimeEnv = transport.launchEnv;
       await emitRunPhaseTiming(input.ctx, "start_transport", nowMs() - startTransportStart, "ok");
@@ -2594,7 +2594,7 @@ async function buildRuntime(input: {
     // bridge leaks (mirrors the settlement `stopTransport` step). The site sets its
     // started bridges before it rethrows, so read them from the site here (the
     // local handles stay null when `startTransport` throws before it returns).
-    const startedControl = sandboxSite?.controlBridge ?? paperclipBridge;
+    const startedControl = sandboxSite?.controlBridge ?? pilibalaBridge;
     const startedAgent = sandboxSite?.agentBridge ?? processSessionBridge;
     await Promise.allSettled([startedControl?.stop(), startedAgent?.stop()]);
     // The staged home / copy-back teardown must run even if a bridge fails to
@@ -2634,13 +2634,13 @@ async function buildRuntime(input: {
     // remember a previous home's skill paths; supply the current root on every
     // turn, after the remote launch environment has rebased CODEX_HOME.
     skillPromptInstructions = [
-      `Paperclip has materialized selected runtime skills for this ACPX ${acpxAgent === "codex" ? "Codex" : "Gemini"} run.`,
+      `Pilibala has materialized selected runtime skills for this ACPX ${acpxAgent === "codex" ? "Codex" : "Gemini"} run.`,
       `Skill root for this run: ${currentSkillRoot}`,
       `Selected skills: ${skillsIdentity.selectedSkills.join(", ")}`,
       "When a task calls for one of these skills, read its SKILL.md from this root and follow it. Resolve referenced scripts and files relative to that skill. Use this run's root even when an earlier turn used a different path.",
-      ...(acpxAgent === "gemini" && skillsIdentity.selectedSkills.includes("paperclip")
+      ...(acpxAgent === "gemini" && skillsIdentity.selectedSkills.includes("pilibala")
         ? [
-          "Before calling Paperclip APIs or delivering task artifacts, read the selected paperclip skill's SKILL.md and its referenced artifact workflow. A completion comment does not upload an artifact or change task status.",
+          "Before calling Pilibala APIs or delivering task artifacts, read the selected pilibala skill's SKILL.md and its referenced artifact workflow. A completion comment does not upload an artifact or change task status.",
           "Gemini's shell tool rejects command substitution. Write JSON request bodies to a workspace file and use curl --data-binary @file, or use the selected skill's helpers, instead of constructing a body with command substitution.",
         ]
         : []),
@@ -2691,7 +2691,7 @@ async function buildRuntime(input: {
     agentCommand,
     agentRegistry,
     processSessionBridge,
-    paperclipBridge,
+    pilibalaBridge,
     stagedRuntime,
     remoteManagedHomeTeardown,
     remoteStagingDispose,
@@ -2704,7 +2704,7 @@ async function buildRuntime(input: {
       commandNotes: skillCommandNotes,
     },
     childStderrLogPath,
-    paperclipClaudeSettings,
+    pilibalaClaudeSettings,
     mcpServers,
     mcpIdentity,
     stepMetrics,
@@ -2750,7 +2750,7 @@ async function applySessionConfigOptions(input: {
   if (!input.runtime.setConfigOption) {
     const message =
       "ACPX runtime does not expose session config controls; upgrade ACPX or remove configured model, effort, and fast mode overrides.";
-    await input.onLog("stderr", `[paperclip] ${message}\n`);
+    await input.onLog("stderr", `[pilibala] ${message}\n`);
     throw new Error(message);
   }
   for (const option of options) {
@@ -2767,7 +2767,7 @@ async function applySessionConfigOptions(input: {
       });
       await input.onLog(
         "stdout",
-        `[paperclip] Applied ACPX ${input.prepared.acpxAgent} model=${option.value} via session model control\n`,
+        `[pilibala] Applied ACPX ${input.prepared.acpxAgent} model=${option.value} via session model control\n`,
       );
       continue;
     }
@@ -2778,7 +2778,7 @@ async function applySessionConfigOptions(input: {
     });
     await input.onLog(
       "stdout",
-      `[paperclip] Applied ACPX ${input.prepared.acpxAgent} config ${option.key}=${option.value}\n`,
+      `[pilibala] Applied ACPX ${input.prepared.acpxAgent} config ${option.key}=${option.value}\n`,
     );
   }
 }
@@ -2870,7 +2870,7 @@ function mergeRuntimeEnvironment(
 async function stopRunTransport(prepared: AcpxPreparedRuntime): Promise<void> {
   await Promise.allSettled([
     prepared.processSessionBridge?.stop(),
-    prepared.paperclipBridge?.stop(),
+    prepared.pilibalaBridge?.stop(),
   ]);
 }
 
@@ -3079,32 +3079,32 @@ function guardEnsureSession(params: {
   });
 }
 
-function renderPaperclipEnvNote(env: Record<string, string>): string {
-  const paperclipKeys = Object.keys(env)
-    .filter((key) => key.startsWith("PAPERCLIP_"))
+function renderPilibalaEnvNote(env: Record<string, string>): string {
+  const pilibalaKeys = Object.keys(env)
+    .filter((key) => key.startsWith("PILIBALA_"))
     .sort();
-  if (paperclipKeys.length === 0) return "";
+  if (pilibalaKeys.length === 0) return "";
   return [
-    "Paperclip runtime note:",
-    `The following PAPERCLIP_* environment variables are available in this run: ${paperclipKeys.join(", ")}`,
+    "Pilibala runtime note:",
+    `The following PILIBALA_* environment variables are available in this run: ${pilibalaKeys.join(", ")}`,
     "Do not assume these variables are missing without checking your shell environment.",
   ].join("\n");
 }
 
 function renderApiAccessNote(env: Record<string, string>): string {
-  if (!env.PAPERCLIP_API_URL || !env.PAPERCLIP_API_KEY) return "";
+  if (!env.PILIBALA_API_URL || !env.PILIBALA_API_KEY) return "";
   const lines = [
-    "Paperclip API access note:",
-    "Use terminal commands with curl to make Paperclip API requests.",
+    "Pilibala API access note:",
+    "Use terminal commands with curl to make Pilibala API requests.",
     "Normalize the base URL before adding API paths:",
-    `  PAPERCLIP_API_BASE="\${PAPERCLIP_API_URL%/}"; PAPERCLIP_API_BASE="\${PAPERCLIP_API_BASE%/api}"`,
+    `  PILIBALA_API_BASE="\${PILIBALA_API_URL%/}"; PILIBALA_API_BASE="\${PILIBALA_API_BASE%/api}"`,
     "GET example:",
-    `  curl -s -H "Authorization: Bearer $PAPERCLIP_API_KEY" "$PAPERCLIP_API_BASE/api/agents/me"`,
+    `  curl -s -H "Authorization: Bearer $PILIBALA_API_KEY" "$PILIBALA_API_BASE/api/agents/me"`,
   ];
-  if (env.PAPERCLIP_TASK_ID) {
+  if (env.PILIBALA_TASK_ID) {
     lines.push(
       "Scoped issue comment example:",
-      `  curl -s -X POST -H "Authorization: Bearer $PAPERCLIP_API_KEY" -H "Content-Type: application/json" -H "X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID" -d '{"body":"Status update from agent."}' "$PAPERCLIP_API_BASE/api/issues/$PAPERCLIP_TASK_ID/comments"`,
+      `  curl -s -X POST -H "Authorization: Bearer $PILIBALA_API_KEY" -H "Content-Type: application/json" -H "X-Pilibala-Run-Id: $PILIBALA_RUN_ID" -d '{"body":"Status update from agent."}' "$PILIBALA_API_BASE/api/issues/$PILIBALA_TASK_ID/comments"`,
     );
   } else {
     lines.push("Use a real issue id from the current context before making issue write requests.");
@@ -3123,8 +3123,8 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
   const promptTemplate = hasCustomPromptTemplate
     ? configuredPromptTemplate
     : context.conversationMode === true
-      ? DEFAULT_PAPERCLIP_CONVERSATION_PROMPT_TEMPLATE
-      : DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE;
+      ? DEFAULT_PILIBALA_CONVERSATION_PROMPT_TEMPLATE
+      : DEFAULT_PILIBALA_AGENT_PROMPT_TEMPLATE;
   const instructionsFilePath = asString(config.instructionsFilePath, "").trim();
   const instructionsDir = instructionsFilePath ? `${path.dirname(instructionsFilePath)}/` : "";
   let instructionsPrefix = "";
@@ -3144,7 +3144,7 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
       const reason = err instanceof Error ? err.message : String(err);
       await onLog(
         "stderr",
-        `[paperclip] Warning: could not read agent instructions file "${instructionsFilePath}": ${reason}\n`,
+        `[pilibala] Warning: could not read agent instructions file "${instructionsFilePath}": ${reason}\n`,
       );
       commandNotes.push(`Configured instructionsFilePath ${instructionsFilePath}, but file could not be read.`);
     }
@@ -3165,16 +3165,16 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
       ? renderTemplate(bootstrapPromptTemplate, templateData).trim()
       : "";
   await hydrateFreshSessionHandoff(ctx, { resumedSession });
-  const { taskContextNote, wakePrompt } = selectPaperclipPromptSections(context, { resumedSession, includeCommunicationGuidance: false });
-  const externalChatTurn = isPaperclipExternalChatTurn(context.paperclipWake);
+  const { taskContextNote, wakePrompt } = selectPilibalaPromptSections(context, { resumedSession, includeCommunicationGuidance: false });
+  const externalChatTurn = isPilibalaExternalChatTurn(context.pilibalaWake);
   const shouldUseResumeDeltaPrompt = resumedSession && wakePrompt.length > 0;
   const promptInstructionsPrefix = shouldUseResumeDeltaPrompt ? "" : instructionsPrefix;
   const renderedPrompt =
     shouldUseResumeDeltaPrompt || (externalChatTurn && !hasCustomPromptTemplate)
       ? ""
       : renderTemplate(promptTemplate, templateData);
-  const sessionHandoffNote = asString(context.paperclipSessionHandoffMarkdown, "").trim();
-  const paperclipEnvNote = externalChatTurn ? "" : renderPaperclipEnvNote(env);
+  const sessionHandoffNote = asString(context.pilibalaSessionHandoffMarkdown, "").trim();
+  const pilibalaEnvNote = externalChatTurn ? "" : renderPilibalaEnvNote(env);
   const apiAccessNote = externalChatTurn ? "" : renderApiAccessNote(env);
   const prompt = joinPromptSections([
     promptInstructionsPrefix,
@@ -3183,7 +3183,7 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
     wakePrompt,
     sessionHandoffNote,
     taskContextNote,
-    paperclipEnvNote,
+    pilibalaEnvNote,
     apiAccessNote,
     renderedPrompt,
   ]);
@@ -3198,7 +3198,7 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
       wakePromptChars: wakePrompt.length,
       sessionHandoffChars: sessionHandoffNote.length,
       taskContextChars: taskContextNote.length,
-      runtimeNoteChars: paperclipEnvNote.length + apiAccessNote.length,
+      runtimeNoteChars: pilibalaEnvNote.length + apiAccessNote.length,
       heartbeatPromptChars: renderedPrompt.length,
     },
   };
@@ -3209,7 +3209,7 @@ async function emitAcpxLog(ctx: AdapterExecutionContext, payload: Record<string,
 }
 
 /**
- * Build the short run summary that Paperclip may auto-post as an issue comment
+ * Build the short run summary that Pilibala may auto-post as an issue comment
  * when the agent leaves no comment of its own.
  *
  * Prefer the last non-empty *output* segment after a tool call. Intermediate
@@ -3671,7 +3671,7 @@ async function emitAcpxFailure(input: {
   if (childStderrTail) {
     await ctx.onLog(
       "stderr",
-      `[paperclip] ACPX child stderr tail (${phase}):\n${childStderrTail}\n`,
+      `[pilibala] ACPX child stderr tail (${phase}):\n${childStderrTail}\n`,
     );
   }
   await emitAcpxLog(ctx, {
@@ -3971,11 +3971,11 @@ const TURN_SPAN_NAME = "agent.turn";
 /** The attribute prefix for the run root span. It groups the run-level span
  * attributes under one namespace, the same shape as the sandbox startup
  * prefix. */
-const RUN_ROOT_SPAN_ATTR_PREFIX = "paperclip.task.run.";
+const RUN_ROOT_SPAN_ATTR_PREFIX = "pilibala.task.run.";
 
 /** The attribute prefix for the agent turn span. It groups the turn-level span
  * attributes under one namespace, the same shape as the run root prefix. */
-const TURN_SPAN_ATTR_PREFIX = "paperclip.agent.turn.";
+const TURN_SPAN_ATTR_PREFIX = "pilibala.agent.turn.";
 
 /** Map a run id to a non-reversible 12-hex hash for a span attribute. The raw
  * run id never rides a span; only this hash does. This mirrors the id-hash rule
@@ -4135,7 +4135,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
       idleMs: warmIdleMs,
       closeWarmEntry: async (entry) => {
         await entry.runtime
-          .close({ handle: entry.handle, reason: "paperclip idle cleanup", discardPersistentState: false })
+          .close({ handle: entry.handle, reason: "pilibala idle cleanup", discardPersistentState: false })
           .catch(() => {});
         flushChildStderr(entry.childStderrState);
       },
@@ -4343,7 +4343,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               ? teardownErr.message
               : String(teardownErr);
         await withAdapterExecutionPhase(ctx, "phase_reporting", () => ctx
-          .onLog("stderr", `[paperclip] ACPX teardown step "${step}" failed: ${reason}\n`)
+          .onLog("stderr", `[pilibala] ACPX teardown step "${step}" failed: ${reason}\n`)
           .catch(() => {}));
       };
       // Emit one per-phase timing run-log event. It is not an OpenTelemetry
@@ -4472,7 +4472,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         for (const failure of referencedProjectStagingFailures) {
           await ctx.onLog(
             "stderr",
-            `[paperclip] Referenced project ${failure.projectId} failed to stage; the run continues without it: ${failure.error}\n`,
+            `[pilibala] Referenced project ${failure.projectId} failed to stage; the run continues without it: ${failure.error}\n`,
           );
         }
         // State the effective wall-clock timeout and its source up front so a
@@ -4481,7 +4481,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         // stay machine-parseable line by line.
         await ctx.onLog(
           "stderr",
-          `[paperclip] ${formatAdapterExecutionTimeoutStartLogLine(prepared.timeoutResolution)}\n`,
+          `[pilibala] ${formatAdapterExecutionTimeoutStartLogLine(prepared.timeoutResolution)}\n`,
         );
         await hostStore.evictIdle(now());
 
@@ -4515,7 +4515,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         // Resume with this run's launch environment; keep it out of the saved
         // conversation record without mutating the live runtime's options.
         const runtimeStore = createEphemeralSessionEnvironmentStore(persistedRuntimeStore, prepared.env);
-        const runtimeOptions: PaperclipAcpRuntimeOptions = {
+        const runtimeOptions: PilibalaAcpRuntimeOptions = {
           cwd: prepared.cwd,
           // Host-only spawn cwd for the relay proxy on the remote process-session
           // lane; `undefined` elsewhere so acpx falls back to `cwd` (byte-identical).
@@ -4534,7 +4534,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           // benefit from doubling the log volume.
           verbose: prepared.acpxAgent === "claude",
           // The engine passes a complete, sanitized launch environment. ACPX
-          // must not merge the Paperclip server's ambient environment back in
+          // must not merge the Pilibala server's ambient environment back in
           // when it spawns the provider child.
           inheritProcessEnv: false,
           // Observe permission requests without deciding them: returning
@@ -4600,7 +4600,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         if (!canResume && asString(previousParams.runtimeSessionName, "")) {
           await ctx.onLog(
             "stdout",
-            `[paperclip] ACPX session "${asString(previousParams.runtimeSessionName, "")}" does not match the current agent/cwd/mode/runtime identity; starting fresh in "${prepared.cwd}".\n`,
+            `[pilibala] ACPX session "${asString(previousParams.runtimeSessionName, "")}" does not match the current agent/cwd/mode/runtime identity; starting fresh in "${prepared.cwd}".\n`,
           );
         }
 
@@ -4610,7 +4610,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         const ensureSessionPhaseStart = now();
         resumedSession = Boolean(handle ?? resumeSessionId);
         const isHandshakeTransportLost = (): boolean =>
-          prepared.paperclipBridge?.readRunDisposition?.().failed ?? false;
+          prepared.pilibalaBridge?.readRunDisposition?.().failed ?? false;
         // The fence's own close, for a real handle that resolves after
         // `endSession` already sealed. `endSession` closed the synthetic
         // placeholder by then (or skipped closing because the channel was
@@ -4627,14 +4627,14 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           void runtime
             .close({
               handle: lateHandle,
-              reason: "paperclip late handshake cleanup",
+              reason: "pilibala late handshake cleanup",
               discardPersistentState: false,
             })
             .catch(() =>
               ctx
                 .onLog(
                   "stderr",
-                  "[paperclip] ACPX handshake late close failed: acpx_handshake_late_close_failed\n",
+                  "[pilibala] ACPX handshake late close failed: acpx_handshake_late_close_failed\n",
                 )
                 .catch(() => {}),
             );
@@ -4644,7 +4644,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         // the result, or a classification: log the fixed closed code only.
         const recordLateHandshakeRejection = (): void => {
           void ctx
-            .onLog("stderr", "[paperclip] ACPX handshake late rejection: acpx_handshake_late_rejection\n")
+            .onLog("stderr", "[pilibala] ACPX handshake late rejection: acpx_handshake_late_rejection\n")
             .catch(() => {});
         };
 
@@ -4689,7 +4689,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               resumedSession = false;
               await ctx.onLog(
                 "stdout",
-                `[paperclip] ACPX resume session "${resumeSessionId}" is unavailable; retrying with a fresh session.\n`,
+                `[pilibala] ACPX resume session "${resumeSessionId}" is unavailable; retrying with a fresh session.\n`,
               );
               // Fresh-session retry: the runtime was already constructed on the
               // first attempt (never re-created), so this event reports only its
@@ -4767,7 +4767,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           runtimeSettlement = {
             mode: "direct",
             handle: handle ?? syntheticCloseHandle(),
-            reason: "paperclip handshake cleanup",
+            reason: "pilibala handshake cleanup",
             discardPersistentState: false,
             dropWarmEntry: true,
             recordCloseError: true,
@@ -4814,7 +4814,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           runtimeSettlement = {
             mode: "direct",
             handle: syntheticCloseHandle(),
-            reason: "paperclip missing-handle cleanup",
+            reason: "pilibala missing-handle cleanup",
             discardPersistentState: false,
             dropWarmEntry: false,
             recordCloseError: true,
@@ -4898,7 +4898,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         runtimeSettlement = {
           mode: "direct",
           handle: sessionHandle,
-          reason: "paperclip config cleanup",
+          reason: "pilibala config cleanup",
           discardPersistentState: false,
           dropWarmEntry: true,
           recordCloseError: true,
@@ -5025,7 +5025,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
             command: prepared.agentCommand ?? prepared.acpxAgent,
             cwd: prepared.cwd,
             commandNotes: [
-              `ACPX runtime embedded in Paperclip with ${prepared.mode} session mode.`,
+              `ACPX runtime embedded in Pilibala with ${prepared.mode} session mode.`,
               `Effective ACPX permission mode: ${prepared.permissionMode}.`,
               ...(prepared.requestedModel
                 ? [
@@ -5114,10 +5114,10 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
             }, duplexLossCancelDeadlineMs);
           }
         };
-        const bridge = prepared.paperclipBridge;
+        const bridge = prepared.pilibalaBridge;
         if (bridge?.onLoss) {
           const cancelForLoss = (reason: DuplexLossReason) => {
-            void turn.cancel({ reason: `paperclip sandbox duplex channel lost (${reason})` }).catch(() => {});
+            void turn.cancel({ reason: `pilibala sandbox duplex channel lost (${reason})` }).catch(() => {});
             armCancelDeadline();
           };
           removeLossListener = bridge.onLoss(cancelForLoss);
@@ -5173,9 +5173,9 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
             pendingToolsAtStop = [...interruptionTools.values()].filter(isPendingAcpTool);
             void ctx.onLog(
               "stderr",
-              `[paperclip] A pending tool call (kind ${stalledTool.kind}) had no update for ${Math.round(stalledTool.silentMs / 1000)}s; ending the turn. Its permission request ${stalledTool.permissionRequested ? "reached" : "did not reach"} Paperclip.\n`,
+              `[pilibala] A pending tool call (kind ${stalledTool.kind}) had no update for ${Math.round(stalledTool.silentMs / 1000)}s; ending the turn. Its permission request ${stalledTool.permissionRequested ? "reached" : "did not reach"} Pilibala.\n`,
             ).catch(() => {});
-            void turn.cancel({ reason: "paperclip stalled tool watchdog" }).catch(() => {});
+            void turn.cancel({ reason: "pilibala stalled tool watchdog" }).catch(() => {});
             armCancelDeadline();
           }, stalledToolCheckIntervalMs);
           stalledToolTimer.unref?.();
@@ -5213,7 +5213,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
       // to build the reported failure and its message.
       const cancelDeadlineTerminal = (): AcpRuntimeTurnResult => ({
         status: "cancelled",
-        stopReason: stalledTool ? "paperclip_stalled_tool_deadline" : "paperclip_duplex_loss_deadline",
+        stopReason: stalledTool ? "pilibala_stalled_tool_deadline" : "pilibala_duplex_loss_deadline",
       });
       const stepEventRelay = async (): Promise<AcpRuntimeTurnResult> => {
         const turn = activeTurn as AcpRuntimeTurn;
@@ -5273,7 +5273,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           // both the close call and the drain it unblocks before this step
           // returns, so no late runtime event can still mutate shared state
           // (output segments, tool inventory) after finalization reads it.
-          await turn.closeStream({ reason: stalledTool ? "paperclip stalled tool cancel deadline" : "paperclip duplex loss cancel deadline" }).catch(() => {});
+          await turn.closeStream({ reason: stalledTool ? "pilibala stalled tool cancel deadline" : "pilibala duplex loss cancel deadline" }).catch(() => {});
           await drainEvents.catch(() => {});
           flushOutputSegment();
           return cancelDeadlineTerminal();
@@ -5319,7 +5319,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         // nominally completed terminal. The file bridge path never sets this
         // method, so the optional call no-ops there.
         let duplexLossReason: DuplexLossReason | null = null;
-        const disposition = prepared.paperclipBridge?.settleRunDisposition?.() ?? null;
+        const disposition = prepared.pilibalaBridge?.settleRunDisposition?.() ?? null;
         if (disposition?.failed) {
           duplexLossReason = disposition.lossReason ?? "other";
         }
@@ -5337,7 +5337,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         // only the closed ACP tool kind and the silent time.
         const toolStalled = stalledTool !== null && !timedOut && !channelLost && terminal.status !== "completed";
         const toolStalledMessage = stalledTool
-          ? `A pending tool call (kind ${stalledTool.kind}) received no update for ${Math.round(stalledTool.silentMs / 60_000)} minutes, so Paperclip ended the turn instead of waiting for the execution timeout.`
+          ? `A pending tool call (kind ${stalledTool.kind}) received no update for ${Math.round(stalledTool.silentMs / 60_000)} minutes, so Pilibala ended the turn instead of waiting for the execution timeout.`
           : null;
         // A completed, non-timed-out turn whose channel stayed live is the one
         // success path. Every other outcome — a failed, cancelled, or timed-out
@@ -5397,14 +5397,14 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           mode: "warm_or_close",
           handle: sessionHandle,
           reason: timedOut
-            ? "paperclip timeout cleanup"
+            ? "pilibala timeout cleanup"
             : channelLost
-              ? "paperclip duplex channel lost cleanup"
+              ? "pilibala duplex channel lost cleanup"
               : toolStalled
-                ? "paperclip stalled tool cleanup"
+                ? "pilibala stalled tool cleanup"
                 : failedTurn
-                  ? `paperclip turn ${terminal.status}`
-                  : "paperclip completed turn cleanup",
+                  ? `pilibala turn ${terminal.status}`
+                  : "pilibala completed turn cleanup",
           discardPersistentState: sessionUnavailable || (terminal.status === "cancelled" && !preserveInterruptedSession) || timedOut || channelLost,
           dropWarmEntry: false,
           recordCloseError: false,
@@ -5438,7 +5438,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           clearSession = true;
           await ctx.onLog(
             "stderr",
-            "[paperclip] ACPX resumed session produced a silent refusal (stopReason=refusal, no output, no error); the agent likely fabricated a new session on resume. Clearing session params so the next run bootstraps fresh.\n",
+            "[pilibala] ACPX resumed session produced a silent refusal (stopReason=refusal, no output, no error); the agent likely fabricated a new session on resume. Clearing session params so the next run bootstraps fresh.\n",
           );
         }
         const classifiedFailure = !timedOut && !channelLost && !toolStalled && terminal.status === "failed"
@@ -5606,7 +5606,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         runtimeSettlement = {
           mode: "direct",
           handle: sessionHandle,
-          reason: timedOut ? "paperclip timeout cleanup" : "paperclip error cleanup",
+          reason: timedOut ? "pilibala timeout cleanup" : "pilibala error cleanup",
           discardPersistentState: timedOut,
           dropWarmEntry: true,
           recordCloseError: true,
@@ -5675,7 +5675,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
       // run-minted API key is never revoked, so it stays valid and forces a
       // close-and-relaunch. It is a non-secret marker; the settlement reads only its
       // presence, and no report or reuse payload carries it.
-      const LIVE_RUN_SCOPED_API_KEY = "paperclip-run-scoped-api-key";
+      const LIVE_RUN_SCOPED_API_KEY = "pilibala-run-scoped-api-key";
       // Record the final per-resource disposition report where a test can observe
       // it. The engine never reads it back.
       const recordDispositionReport = (report: SettlementDispositionReport): void => {
@@ -5722,7 +5722,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           const baseSettlement: RuntimeSettlementPlan = runtimeSettlement ?? {
             mode: "direct",
             handle: syntheticCloseHandle(),
-            reason: "paperclip cleanup",
+            reason: "pilibala cleanup",
             discardPersistentState: false,
             dropWarmEntry: false,
             recordCloseError: true,
@@ -5748,7 +5748,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           // channel that is dead by now. The read is non-mutating and only
           // adds a later-observed loss; it never clears the snapshot's `true`.
           const remoteChannelLost =
-            settlement.skipRemoteClose || (prepared.paperclipBridge?.readRunDisposition?.().failed ?? false);
+            settlement.skipRemoteClose || (prepared.pilibalaBridge?.readRunDisposition?.().failed ?? false);
           // The control channel is already known lost, so no remote call can
           // reach the backend. Release the local bookkeeping only and place no
           // `runtime.close(...)` call — that call has no deadline of its own

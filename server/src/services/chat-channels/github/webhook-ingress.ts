@@ -29,7 +29,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatActions,
@@ -38,11 +38,11 @@ import {
   chatEndpoints,
   chatSdkState,
   toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   ChatEndpointSetupState,
   ToolCredentialSecretRef,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import {
   conflict,
@@ -74,7 +74,7 @@ import type { EndpointRecord } from "../runtime-types.js";
     | { kind: "ignored" }
     | { actionId: string; kind: "staged" };
 
-export const GITHUB_RECOVERY_STATE_KEY = "paperclip:github-webhook-recovery:v1";
+export const GITHUB_RECOVERY_STATE_KEY = "pilibala:github-webhook-recovery:v1";
 export const GITHUB_RECOVERY_INTERVAL_MS = 60_000;
 export const GITHUB_RECOVERY_WINDOW_MS = 60 * 60_000;
 export const GITHUB_RECOVERY_SCAN_LEASE_MS = 5 * 60_000;
@@ -512,7 +512,7 @@ export function createGitHubWebhookIngress(db: Db, options: GitHubWebhookIngress
                   eventKind,
                   state: "filtered",
                   processedAt: new Date(),
-                  redactedError: "Destination is not enabled in Paperclip",
+                  redactedError: "Destination is not enabled in Pilibala",
                   normalizedEvent: {
                     providerEventId,
                     kind: eventKind,
@@ -869,7 +869,7 @@ export function createGitHubWebhookIngress(db: Db, options: GitHubWebhookIngress
         record.endpoint.publicId,
         "github",
         new Request(
-          `https://paperclip.internal/api/chat-webhooks/${record.endpoint.publicId}/github`,
+          `https://pilibala.internal/api/chat-webhooks/${record.endpoint.publicId}/github`,
           {
             method: "POST",
             headers: {

@@ -13,7 +13,7 @@ const meta = {
           "Design review of the full agent settings. Uses the existing navigation and functional tab components with isolated, mutable Storybook fixtures. No production data is changed.",
       },
     },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "agents/lifecycle",
         "agents/instructions"
@@ -46,7 +46,7 @@ const meta = {
         "codex_local",
         "opencode_local",
         "pi_local",
-        "paperclip_runner",
+        "pilibala_runner",
       ],
     },
     testOutcome: { control: "select", options: ["pass", "fail"] },
@@ -75,8 +75,8 @@ export const PiRuntime: Story = {
   args: { initialTab: "runtime", adapterType: "pi_local" },
 };
 export const RunnerRuntime: Story = {
-  name: "Codex · Existing Paperclip Runner",
-  args: { initialTab: "runtime", adapterType: "paperclip_runner" },
+  name: "Codex · Existing Pilibala Runner",
+  args: { initialTab: "runtime", adapterType: "pilibala_runner" },
 };
 export const CodexLegacyLight: Story = { ...CodexRuntime, globals: { theme: "light" } };
 export const CodexNativeLight: Story = { ...RunnerRuntime, globals: { theme: "light" } };

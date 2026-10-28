@@ -13,7 +13,7 @@ const meta = {
   title: "Tasks and conversations/Documents, attachments, and work products/Explorations/Artifact cards/Commit",
   component: CommitCard,
   decorators,
-  parameters: { ...parameters, paperclip: {
+  parameters: { ...parameters, pilibala: {
       "capabilities": [
         "documents-artifacts/work-products"
       ],
@@ -42,11 +42,11 @@ export const Commit: Story = {
     author: "Codie",
     updatedAt: "Sep 26, 2026",
     sha: "1c3c9ddfddc755a4c45b3644d3d4b21abcdde43c",
-    repository: "paperclipai/paperclip",
+    repository: "pilibalaai/pilibala",
     branch: "fix/personal-keyboard-shortcut-preference",
     additions: 12,
     deletions: 8,
     filesChanged: 1,
-    url: "https://github.com/paperclipai/paperclip/commit/1c3c9ddfddc755a4c45b3644d3d4b21abcdde43c",
+    url: "https://github.com/pilibalaai/pilibala/commit/1c3c9ddfddc755a4c45b3644d3d4b21abcdde43c",
   },
 };

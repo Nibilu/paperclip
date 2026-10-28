@@ -1,16 +1,16 @@
 import fs from "node:fs/promises";
 import { execFile as execFileCallback } from "node:child_process";
 import { promisify } from "node:util";
-import * as gitWorkspaceSync from "@paperclipai/adapter-utils/git-workspace-sync";
+import * as gitWorkspaceSync from "@pilibalaai/adapter-utils/git-workspace-sync";
 import { DatabaseSync } from "node:sqlite";
-import { captureDirectorySnapshot } from "@paperclipai/adapter-utils/workspace-restore-merge";
+import { captureDirectorySnapshot } from "@pilibalaai/adapter-utils/workspace-restore-merge";
 const execFile = promisify(execFileCallback);
 import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
-import { agents, companies, authUsers, companyMemberships, principalPermissionGrants, heartbeatRuns, agentInstructionWorkingCopies, createDb } from "@paperclipai/db";
+import { agents, companies, authUsers, companyMemberships, principalPermissionGrants, heartbeatRuns, agentInstructionWorkingCopies, createDb } from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { agentInstructionRevisionService } from "../services/agent-instruction-revisions.js";
 import { agentInstructionWorkingCopyService } from "../services/agent-instruction-working-copies.js";
@@ -23,7 +23,7 @@ describe("registered run instruction copies", () => {
   let db: ReturnType<typeof createDb>;
   let copies: ReturnType<typeof agentInstructionWorkingCopyService>;
   let revisions: ReturnType<typeof agentInstructionRevisionService>;
-  const previousHome = process.env.PAPERCLIP_HOME;
+  const previousHome = process.env.PILIBALA_HOME;
   let home: string;
   let companyId: string, agentId: string, userId: string, root: string;
   const entryFile = "policy/INSTRUCTIONS.txt";
@@ -37,14 +37,14 @@ describe("registered run instruction copies", () => {
   }
   beforeAll(async () => {
     home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "instruction-working-copies-")));
-    process.env.PAPERCLIP_HOME = home;
+    process.env.PILIBALA_HOME = home;
     database = await startEmbeddedPostgresTestDatabase("instruction-copies-db-");
     db = createDb(database.connectionString);
     copies = agentInstructionWorkingCopyService(db);
     revisions = agentInstructionRevisionService(db);
   }, 90_000);
   afterAll(async () => {
-    if (previousHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = previousHome;
+    if (previousHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = previousHome;
     await database?.cleanup();
     if (home) {
       const writable = async (dir: string) => {
@@ -329,7 +329,7 @@ describe("registered run instruction copies", () => {
     const runId = randomUUID();
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, invocationSource: "on_demand", responsibleUserId: userId });
     const copy = (await copies.prepare({ legacy: true, ...target(), runId, cwd: workspace }))!;
-    expect(copy.localRoot).toBe(path.join(workspace, ".paperclip-runtime", `instruction-edits-${runId}`, "instructions"));
+    expect(copy.localRoot).toBe(path.join(workspace, ".pilibala-runtime", `instruction-edits-${runId}`, "instructions"));
     await fs.writeFile(path.join(workspace, "deliverable.txt"), "public work");
     await execFile("git", ["-C", workspace, "add", "."]);
     const staged = await execFile("git", ["-C", workspace, "diff", "--cached", "--name-only"]);
@@ -355,7 +355,7 @@ describe("registered run instruction copies", () => {
         await gitWorkspaceSync.disposeGitWorkspaceSnapshot(snapshot);
       }
     }
-    const files = await captureDirectorySnapshot(workspace, { exclude: [".git", ".paperclip-runtime"] });
+    const files = await captureDirectorySnapshot(workspace, { exclude: [".git", ".pilibala-runtime"] });
     expect([...files.entries].map(([relative]) => relative)).toEqual(["deliverable.txt"]);
     await expect(copies.prepare({ legacy: true, ...target(), runId, cwd: home })).rejects.toThrow("different run workspace");
   });

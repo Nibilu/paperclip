@@ -31,7 +31,7 @@ Ask for project work in Agent Chat and follow its created project/task links.
 
 Open `/board-chat` only when its conference-room gate is enabled.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Enable the applicable chat feature, use a configured test agent, and distinguish model replies from a mocked conversation fixture.
 

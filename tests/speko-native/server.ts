@@ -8,31 +8,31 @@ import { resolve } from "node:path";
 import { randomBytes } from "node:crypto";
 import { once } from "node:events";
 
-const home = await mkdtemp(resolve(tmpdir(), "paperclip-speko-native-"));
+const home = await mkdtemp(resolve(tmpdir(), "pilibala-speko-native-"));
 const port = Number(process.env.SPEKO_NATIVE_PORT ?? 3449);
 const origin = `http://127.0.0.1:${port}`;
 const callbackOrigin = process.env.SPEKO_NATIVE_CALLBACK_ORIGIN;
 if (!callbackOrigin || new URL(callbackOrigin).protocol !== "https:") throw new Error("Explicit HTTPS callback origin required");
-// Set isolation before importing anything that reads Paperclip configuration.
+// Set isolation before importing anything that reads Pilibala configuration.
 Object.assign(process.env, {
-  NODE_ENV: "test", PAPERCLIP_HOME: home, PAPERCLIP_INSTANCE_ID: "speko-native-acceptance",
-  PAPERCLIP_CONFIG: resolve(home, "config.json"), PAPERCLIP_DISABLE_CWD_ENV_FILE: "true",
-  PAPERCLIP_AGENT_JWT_SECRET: randomBytes(32).toString("hex"),
-  PAPERCLIP_DECISION_SIGNING_SECRET: randomBytes(32).toString("hex"),
-  PAPERCLIP_TOOL_ACTION_SIGNING_SECRET: randomBytes(32).toString("hex"),
-  PAPERCLIP_SECRETS_MASTER_KEY_FILE: resolve(home, "master.key"),
-  PAPERCLIP_API_URL: origin, PAPERCLIP_CHAT_WEBHOOK_PUBLIC_URL: callbackOrigin,
-  PAPERCLIP_DEPLOYMENT_MODE: process.env.SPEKO_NATIVE_AUTH === "1" ? "authenticated" : "local_trusted",
-  PAPERCLIP_AUTH_PUBLIC_BASE_URL: origin, PAPERCLIP_AUTH_BASE_URL_MODE: "explicit", PAPERCLIP_DEPLOYMENT_EXPOSURE: "private",
-  PAPERCLIP_VITE_CACHE_DIR: resolve(home, "vite-cache"), PAPERCLIP_OPEN_ON_LISTEN: "false",
-  PAPERCLIP_TELEMETRY_ENABLED: "false",
+  NODE_ENV: "test", PILIBALA_HOME: home, PILIBALA_INSTANCE_ID: "speko-native-acceptance",
+  PILIBALA_CONFIG: resolve(home, "config.json"), PILIBALA_DISABLE_CWD_ENV_FILE: "true",
+  PILIBALA_AGENT_JWT_SECRET: randomBytes(32).toString("hex"),
+  PILIBALA_DECISION_SIGNING_SECRET: randomBytes(32).toString("hex"),
+  PILIBALA_TOOL_ACTION_SIGNING_SECRET: randomBytes(32).toString("hex"),
+  PILIBALA_SECRETS_MASTER_KEY_FILE: resolve(home, "master.key"),
+  PILIBALA_API_URL: origin, PILIBALA_CHAT_WEBHOOK_PUBLIC_URL: callbackOrigin,
+  PILIBALA_DEPLOYMENT_MODE: process.env.SPEKO_NATIVE_AUTH === "1" ? "authenticated" : "local_trusted",
+  PILIBALA_AUTH_PUBLIC_BASE_URL: origin, PILIBALA_AUTH_BASE_URL_MODE: "explicit", PILIBALA_DEPLOYMENT_EXPOSURE: "private",
+  PILIBALA_VITE_CACHE_DIR: resolve(home, "vite-cache"), PILIBALA_OPEN_ON_LISTEN: "false",
+  PILIBALA_TELEMETRY_ENABLED: "false",
 });
 delete process.env.DATABASE_URL;
-delete process.env.PAPERCLIP_IN_WORKTREE;
-delete process.env.PAPERCLIP_MANAGED_CONFIG;
+delete process.env.PILIBALA_IN_WORKTREE;
+delete process.env.PILIBALA_MANAGED_CONFIG;
 await mkdir(resolve(home, "storage"));
 const { startEmbeddedPostgresTestDatabase, applyPendingMigrations } = await import("../../packages/db/src/index.js");
-const database = await startEmbeddedPostgresTestDatabase("paperclip-speko-native-db-");
+const database = await startEmbeddedPostgresTestDatabase("pilibala-speko-native-db-");
 const { spawn } = await import("node:child_process");
 // The supervisor owns the temporary database. Restarting app code preserves
 // calls, credentials and delivery receipts so recovery can be qualified.

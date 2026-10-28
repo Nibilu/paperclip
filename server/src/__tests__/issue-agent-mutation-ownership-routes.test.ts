@@ -167,7 +167,7 @@ const mockResumeWorkspaceFinalization = vi.hoisted(() => vi.fn());
 function registerRouteMocks() {
   vi.doMock("../services/native-runtime/native-workspace-owner-recovery.js", () => ({ resumeNativeWorkspaceAfterOwnerStop: mockResumeWorkspaceFinalization }));
   vi.doMock("../services/native-runtime/native-workspace-export-retry.js", () => ({ retryNativeWorkspaceExport: mockRetryWorkspaceExport }));
-  vi.doMock("@paperclipai/shared/telemetry", () => ({
+  vi.doMock("@pilibalaai/shared/telemetry", () => ({
     trackAgentTaskCompleted: vi.fn(),
     trackErrorHandlerCrash: vi.fn(),
   }));
@@ -1091,7 +1091,7 @@ describe("agent issue mutation checkout ownership", () => {
 
   it("rejects the checked-out owner without a run id on attachment upload (401)", async () => {
     // Regression: an agent-authenticated client (e.g. the CLI's attachment:upload)
-    // that fails to send X-Paperclip-Run-Id must be rejected — mutating your own
+    // that fails to send X-Pilibala-Run-Id must be rejected — mutating your own
     // in-progress checkout requires proving run ownership.
     const app = await createApp({
       type: "agent",
@@ -1144,8 +1144,8 @@ describe("agent issue mutation checkout ownership", () => {
       type: "pull_request",
       provider: "github",
       title: "PR 42",
-      url: "https://github.com/paperclipai/paperclip/pull/42",
-      metadata: { repo: "paperclipai/paperclip", number: 42 },
+      url: "https://github.com/pilibalaai/pilibala/pull/42",
+      metadata: { repo: "pilibalaai/pilibala", number: 42 },
     }).expect(201);
 
     expect(mockWorkProductService.latestRunDiffSummary).toHaveBeenCalledWith(ownerRunId);
@@ -1175,8 +1175,8 @@ describe("agent issue mutation checkout ownership", () => {
       type: "commit",
       provider: "github",
       title: "Commit 9c12ae7",
-      url: "https://github.com/paperclipai/paperclip/commit/9c12ae7b41e5",
-      metadata: { repo: "paperclipai/paperclip", sha: "9c12ae7b41e5" },
+      url: "https://github.com/pilibalaai/pilibala/commit/9c12ae7b41e5",
+      metadata: { repo: "pilibalaai/pilibala", sha: "9c12ae7b41e5" },
     }).expect(201);
 
     expect(mockWorkProductService.resolveCommitDiffSummary).toHaveBeenCalledWith(

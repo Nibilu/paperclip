@@ -10,8 +10,8 @@ import {
   loadDraftSubmission,
 } from "@/lib/composer-draft";
 import { expect, userEvent, within, waitFor } from "storybook/test";
-const first = "paperclip:storybook:gap-draft-a",
-  second = "paperclip:storybook:gap-draft-b";
+const first = "pilibala:storybook:gap-draft-a",
+  second = "pilibala:storybook:gap-draft-b";
 function resetFixtureDraft(key: string) {
   clearDraft(key, loadDraftSubmission(key)?.attemptId);
 }
@@ -38,7 +38,7 @@ const meta = {
   title: "Tasks and conversations/Steering and queued messages/Draft recovery",
   component: Drafts,
   parameters: { layout: "padded",
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "steering/drafts"
       ],

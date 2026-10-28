@@ -1,6 +1,6 @@
 import { logger } from "../middleware/logger.js";
 import { and, asc, eq, gt, isNull, lte } from "drizzle-orm";
-import { museAgentBindings as bindings, mcpOauthGrants, type Db } from "@paperclipai/db";
+import { museAgentBindings as bindings, mcpOauthGrants, type Db } from "@pilibalaai/db";
 import { museRunnerBroker } from "./muse-runner-broker.js";
 import { museReceiver } from "./muse-receiver.js";
 /** Deadline authority lives in the database; every fresh process recovers it. */

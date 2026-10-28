@@ -253,7 +253,7 @@ export async function stageTrustedHistoryAssets(
 }
 
 interface BundleManifest {
-  schema: "paperclip.runner-e2e.bundle/v1";
+  schema: "pilibala.runner-e2e.bundle/v1";
   campaignId: string;
   bundleDigest: string;
   files: Array<{ path: string; sha256: string; bytes: number }>;
@@ -346,7 +346,7 @@ export async function createBundleManifest(
     .update(JSON.stringify(files))
     .digest("hex");
   return {
-    schema: "paperclip.runner-e2e.bundle/v1",
+    schema: "pilibala.runner-e2e.bundle/v1",
     campaignId,
     bundleDigest,
     files,
@@ -370,7 +370,7 @@ export function buildHistoryPointers(history: RunnerE2EHistoryIndex) {
   };
   return {
     latest: {
-      schema: "paperclip.runner-e2e.pointer/v1",
+      schema: "pilibala.runner-e2e.pointer/v1",
       updatedAt: history.updatedAt,
       overall: pointer(history.latestCampaignId),
       suites: Object.fromEntries(
@@ -381,7 +381,7 @@ export function buildHistoryPointers(history: RunnerE2EHistoryIndex) {
       ),
     },
     latestGreen: {
-      schema: "paperclip.runner-e2e.pointer/v1",
+      schema: "pilibala.runner-e2e.pointer/v1",
       updatedAt: history.updatedAt,
       overall: pointer(history.latestGreenCampaignId),
       suites: Object.fromEntries(
@@ -508,7 +508,7 @@ async function uploadImmutableBundle(
 
 async function main() {
   const reportRoot = path.resolve(
-    process.env.PAPERCLIP_RUNNER_E2E_REPORT_DIR ??
+    process.env.PILIBALA_RUNNER_E2E_REPORT_DIR ??
       "runner-e2e-merged-report/normalized",
   );
   const bucket = process.env.RUNNER_E2E_HISTORY_S3_BUCKET ?? "";
@@ -521,7 +521,7 @@ async function main() {
     await readFile(path.join(reportRoot, "normalized-results.json"), "utf8"),
   ) as RunnerE2ECampaign;
   for (const result of campaign.results ?? []) validateRetainedRunnerResult(result);
-  if (campaign.schema !== "paperclip.runner-e2e.campaign/v2") {
+  if (campaign.schema !== "pilibala.runner-e2e.campaign/v2") {
     throw new Error("Historical publishing requires a v2 normalized campaign");
   }
 

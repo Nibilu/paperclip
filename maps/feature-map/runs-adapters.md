@@ -37,7 +37,7 @@ Inspect `native.controller.<phase>` for backend construction, assigned-tool
 discovery and post-turn cleanup. Compare those intervals with the actual model
 turn; do not count a nested discovery interval twice.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Record adapter, model, account, native/legacy runtime, and environment. Capabilities vary; one harness result is not a matrix-wide qualification.
 
@@ -48,16 +48,16 @@ Automated: [adapter validation routes](../../server/src/__tests__/agent-adapter-
 Manual: Select the intended adapter and account, refresh model choices, and run its environment test. Save, reload, then execute a small task. Repeat with a deliberately unavailable account and verify the failure remains visible.
 
 Choose Codex as the harness; the UI displays its name/icon for both runners.
-Advanced identifies the automatic default and offers Paperclip Runner or Legacy.
+Advanced identifies the automatic default and offers Pilibala Runner or Legacy.
 Only new Codex agents default to the native runner on supported macOS or GNU/Linux
 targets; the [shared selection contract](../../packages/shared/src/agent-runner.ts)
-and [runtime prerequisites](../../packages/paperclip-runner/README.md) define the
+and [runtime prerequisites](../../packages/pilibala-runner/README.md) define the
 platform/libc boundary. Windows and Alpine/musl remain Legacy; other harness
 defaults are unchanged. Disabled adapters, external overrides, and selected-target
 qualification also affect availability.
 On a fresh forced-Kubernetes instance without an environment row, inspect discovery
 and create with automatic selection. Both must retain Legacy without provisioning;
-an explicit Paperclip request must give target-qualification guidance. Begin the
+an explicit Pilibala request must give target-qualification guidance. Begin the
 ordinary task to exercise the existing lazy environment path. This live journey
 remains separate from the resolver's source controls.
 
@@ -141,7 +141,7 @@ revised-source live onboarding and follow-up proof.
 - Use [recovery](./recovery.md) for interrupted runs and [execution environments](./execution-environments.md) for local/SSH/sandbox differences.
 
 Native setup retirement joins owned startup before cleanup can be confirmed.
-[Transport ownership controls](../../packages/paperclip-runner/src/live/runnerd-codex-transport.test.ts)
+[Transport ownership controls](../../packages/pilibala-runner/src/live/runnerd-codex-transport.test.ts)
 hold preparation or registration without launching a provider, then check bounded
 close, rejected duplicate requests, no later launch and retention of unconfirmed
 state. Readiness observes shutdown; resumed startup cannot reactivate ingress

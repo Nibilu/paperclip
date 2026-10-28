@@ -22,7 +22,7 @@ import {
   issues,
   userSecretDeclarations,
   userSecretDefinitions,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { conflict } from "../errors.js";
 import { errorHandler } from "../middleware/error-handler.js";
 import { secretRoutes } from "../routes/secrets.js";
@@ -44,12 +44,12 @@ const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : 
 describeEmbeddedPostgres("secret proposal routes", () => {
   let stopDb: (() => Promise<void>) | null = null;
   let db!: ReturnType<typeof createDb>;
-  const previousKeyFile = process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
-  const secretsTmpDir = path.join(os.tmpdir(), `paperclip-secret-proposals-${randomUUID()}`);
+  const previousKeyFile = process.env.PILIBALA_SECRETS_MASTER_KEY_FILE;
+  const secretsTmpDir = path.join(os.tmpdir(), `pilibala-secret-proposals-${randomUUID()}`);
 
   beforeAll(async () => {
     mkdirSync(secretsTmpDir, { recursive: true });
-    process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE = path.join(secretsTmpDir, "master.key");
+    process.env.PILIBALA_SECRETS_MASTER_KEY_FILE = path.join(secretsTmpDir, "master.key");
     const started = await startEmbeddedPostgresTestDatabase("secret-proposal-routes");
     stopDb = started.cleanup;
     db = createDb(started.connectionString);
@@ -75,8 +75,8 @@ describeEmbeddedPostgres("secret proposal routes", () => {
 
   afterAll(async () => {
     await stopDb?.();
-    if (previousKeyFile === undefined) delete process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
-    else process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE = previousKeyFile;
+    if (previousKeyFile === undefined) delete process.env.PILIBALA_SECRETS_MASTER_KEY_FILE;
+    else process.env.PILIBALA_SECRETS_MASTER_KEY_FILE = previousKeyFile;
     rmSync(secretsTmpDir, { recursive: true, force: true });
   });
 
@@ -295,7 +295,7 @@ describeEmbeddedPostgres("secret proposal routes", () => {
       config: { region: "us-east-1", namespace: "prod-use1" },
     });
     const externalRef =
-      "arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/proposed-token";
+      "arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/proposed-token";
     const createSecret = vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue({
       material: {
         scheme: "aws_secrets_manager_v1",
@@ -368,7 +368,7 @@ describeEmbeddedPostgres("secret proposal routes", () => {
     const [registeredRun] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, fixture.heartbeatRunId));
     expect(JSON.stringify(registeredRun.contextSnapshot)).not.toContain("top-secret");
     expect(registeredRun.contextSnapshot).toMatchObject({
-      paperclipSecretRedactions: [expect.objectContaining({ fingerprintSha256: expect.any(String), material: expect.any(Object) })],
+      pilibalaSecretRedactions: [expect.objectContaining({ fingerprintSha256: expect.any(String), material: expect.any(Object) })],
     });
 
     const bindingResponse = await request(createAgentApp(fixture))
@@ -1369,7 +1369,7 @@ describeEmbeddedPostgres("secret proposal routes", () => {
 
     const advisoryLockKey = 147460186;
     await db.execute(sql.raw(`
-      CREATE OR REPLACE FUNCTION paperclip_test_pause_binding_proposal()
+      CREATE OR REPLACE FUNCTION pilibala_test_pause_binding_proposal()
       RETURNS trigger
       LANGUAGE plpgsql
       AS $function$
@@ -1381,9 +1381,9 @@ describeEmbeddedPostgres("secret proposal routes", () => {
         RETURN NEW;
       END
       $function$;
-      CREATE TRIGGER paperclip_test_pause_binding_proposal
+      CREATE TRIGGER pilibala_test_pause_binding_proposal
       BEFORE INSERT ON company_secret_proposals
-      FOR EACH ROW EXECUTE FUNCTION paperclip_test_pause_binding_proposal();
+      FOR EACH ROW EXECUTE FUNCTION pilibala_test_pause_binding_proposal();
     `));
 
     try {
@@ -1433,8 +1433,8 @@ describeEmbeddedPostgres("secret proposal routes", () => {
       expect(rejection.status).toBe(200);
     } finally {
       await db.execute(sql.raw(`
-        DROP TRIGGER IF EXISTS paperclip_test_pause_binding_proposal ON company_secret_proposals;
-        DROP FUNCTION IF EXISTS paperclip_test_pause_binding_proposal();
+        DROP TRIGGER IF EXISTS pilibala_test_pause_binding_proposal ON company_secret_proposals;
+        DROP FUNCTION IF EXISTS pilibala_test_pause_binding_proposal();
       `));
     }
 
@@ -1521,7 +1521,7 @@ describeEmbeddedPostgres("secret proposal routes", () => {
 
     const advisoryLockKey = 147460185;
     await db.execute(sql.raw(`
-      CREATE OR REPLACE FUNCTION paperclip_test_pause_secret_approval()
+      CREATE OR REPLACE FUNCTION pilibala_test_pause_secret_approval()
       RETURNS trigger
       LANGUAGE plpgsql
       AS $function$
@@ -1531,9 +1531,9 @@ describeEmbeddedPostgres("secret proposal routes", () => {
         RETURN NEW;
       END
       $function$;
-      CREATE TRIGGER paperclip_test_pause_secret_approval
+      CREATE TRIGGER pilibala_test_pause_secret_approval
       BEFORE INSERT ON company_secrets
-      FOR EACH ROW EXECUTE FUNCTION paperclip_test_pause_secret_approval();
+      FOR EACH ROW EXECUTE FUNCTION pilibala_test_pause_secret_approval();
     `));
 
     try {
@@ -1577,8 +1577,8 @@ describeEmbeddedPostgres("secret proposal routes", () => {
       expect(approval.body.error).toContain("chain-of-command policy");
     } finally {
       await db.execute(sql.raw(`
-        DROP TRIGGER IF EXISTS paperclip_test_pause_secret_approval ON company_secrets;
-        DROP FUNCTION IF EXISTS paperclip_test_pause_secret_approval();
+        DROP TRIGGER IF EXISTS pilibala_test_pause_secret_approval ON company_secrets;
+        DROP FUNCTION IF EXISTS pilibala_test_pause_secret_approval();
       `));
     }
 

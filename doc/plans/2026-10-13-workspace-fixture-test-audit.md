@@ -35,7 +35,7 @@ installed dependencies are required):
 ```sh
 base=1108f714ef42b0c59fea6916647e132e414c7cab
 candidate=fa7bc838926164781a1f1170c382819ba86e5a9d
-git fetch https://github.com/paperclipai/paperclip.git "$base" "$candidate"
+git fetch https://github.com/pilibalaai/pilibala.git "$base" "$candidate"
 replay_dir=$(mktemp -d)
 git diff "$base" "$candidate" -- server/src/__tests__/execution-workspaces-service.test.ts > "$replay_dir/candidate.patch"
 git diff --numstat "$base" "$candidate" -- server/src/__tests__/execution-workspaces-service.test.ts

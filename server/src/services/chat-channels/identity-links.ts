@@ -3,9 +3,9 @@ import { createSlackIdentityLinks, type SlackIdentityEffectStager } from "./slac
 import { createHash, randomBytes } from "node:crypto";
 import { and, asc, eq, gt, inArray, ne, sql } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
-import { authUsers, chatEndpoints, chatExternalPrincipals, chatIdentityLinks, companies, companyMemberships } from "@paperclipai/db";
+import { authUsers, chatEndpoints, chatExternalPrincipals, chatIdentityLinks, companies, companyMemberships } from "@pilibalaai/db";
 
 import { conflict, forbidden, notFound, unprocessable } from "../../errors.js";
 
@@ -48,7 +48,7 @@ export function createChatIdentityLinks(db: Db, options: ChatIdentityLinkOptions
     const connects = record.endpoint.provider === "slack" ? await slackIdentityLinks.listConnects(record.endpoint) : [];
     const connectByPrincipal = new Map(connects.map((row) => [row.principalId, new Date(row.lastConnectAt).toISOString()]));
     const userIds = links.flatMap((link) =>
-      link.paperclipUserId ? [link.paperclipUserId] : [],
+      link.pilibalaUserId ? [link.pilibalaUserId] : [],
     );
     const users = userIds.length
       ? await db
@@ -67,8 +67,8 @@ export function createChatIdentityLinks(db: Db, options: ChatIdentityLinkOptions
     const userById = new Map(users.map((user) => [user.id, user]));
     return principals.map((principal) => {
       const link = linkByPrincipal.get(principal.id);
-      const user = link?.paperclipUserId
-        ? userById.get(link.paperclipUserId)
+      const user = link?.pilibalaUserId
+        ? userById.get(link.pilibalaUserId)
         : null;
       return {
         id: link?.id ?? principal.id,
@@ -79,9 +79,9 @@ export function createChatIdentityLinks(db: Db, options: ChatIdentityLinkOptions
         externalDetail: principal.handle
           ? `@${principal.handle.replace(/^@/, "")}`
           : principal.externalId,
-        paperclipUserId: link?.paperclipUserId ?? null,
-        paperclipUserLabel: user?.name ?? user?.email ?? null,
-        paperclipUserImage: user?.image ?? null,
+        pilibalaUserId: link?.pilibalaUserId ?? null,
+        pilibalaUserLabel: user?.name ?? user?.email ?? null,
+        pilibalaUserImage: user?.image ?? null,
         status: link?.status ?? "pending",
         lastConnectAt: connectByPrincipal.get(principal.id) ?? null,
       };
@@ -150,7 +150,7 @@ export function createChatIdentityLinks(db: Db, options: ChatIdentityLinkOptions
         .onConflictDoUpdate({
           target: [chatIdentityLinks.endpointId, chatIdentityLinks.principalId],
           set: {
-            paperclipUserId: null,
+            pilibalaUserId: null,
             status: "pending",
             confirmationTokenHash: tokenHash,
             expiresAt,
@@ -229,7 +229,7 @@ export function createChatIdentityLinks(db: Db, options: ChatIdentityLinkOptions
     };
   }
 
-  async function confirmIdentityLink(token: string, paperclipUserId: string) {
+  async function confirmIdentityLink(token: string, pilibalaUserId: string) {
     const tokenHash = createHash("sha256").update(token).digest("hex");
     const link = await db
       .select()
@@ -285,20 +285,20 @@ export function createChatIdentityLinks(db: Db, options: ChatIdentityLinkOptions
           and(
             eq(companyMemberships.companyId, currentLink.companyId),
             eq(companyMemberships.principalType, "user"),
-            eq(companyMemberships.principalId, paperclipUserId),
+            eq(companyMemberships.principalId, pilibalaUserId),
           ),
         )
         .for("update")
         .then((rows) => rows[0] ?? null);
       if (membership?.status !== "active") {
         throw forbidden(
-          "The signed-in Paperclip account is not a member of this company",
+          "The signed-in Pilibala account is not a member of this company",
         );
       }
       const conflictingLink = await tx
         .select({
           id: chatIdentityLinks.id,
-          paperclipUserId: chatIdentityLinks.paperclipUserId,
+          pilibalaUserId: chatIdentityLinks.pilibalaUserId,
         })
         .from(chatIdentityLinks)
         .where(
@@ -306,14 +306,14 @@ export function createChatIdentityLinks(db: Db, options: ChatIdentityLinkOptions
             eq(chatIdentityLinks.companyId, link.companyId),
             eq(chatIdentityLinks.principalId, link.principalId),
             eq(chatIdentityLinks.status, "linked"),
-            ne(chatIdentityLinks.paperclipUserId, paperclipUserId),
+            ne(chatIdentityLinks.pilibalaUserId, pilibalaUserId),
           ),
         )
         .limit(1)
         .then((rows) => rows[0] ?? null);
       if (conflictingLink) {
         throw conflict(
-          "This provider identity is linked to a different Paperclip account",
+          "This provider identity is linked to a different Pilibala account",
           {
             code: "chat_identity_link_conflict",
           },
@@ -322,7 +322,7 @@ export function createChatIdentityLinks(db: Db, options: ChatIdentityLinkOptions
       const confirmedLink = await tx
         .update(chatIdentityLinks)
         .set({
-          paperclipUserId,
+          pilibalaUserId,
           status: "linked",
           confirmationTokenHash: null,
           confirmedAt: now,
@@ -376,7 +376,7 @@ export function createChatIdentityLinks(db: Db, options: ChatIdentityLinkOptions
       return tx
         .update(chatIdentityLinks)
         .set({
-          paperclipUserId: null,
+          pilibalaUserId: null,
           status: "revoked",
           confirmationTokenHash: null,
           revokedAt: new Date(),

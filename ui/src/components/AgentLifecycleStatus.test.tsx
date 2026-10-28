@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { AgentLifecycleState } from "@paperclipai/shared";
+import type { AgentLifecycleState } from "@pilibalaai/shared";
 import { expect, it, vi } from "vitest";
 import { AgentLifecycleStatus, agentLifecycleRefetchInterval } from "./AgentLifecycleStatus";
 
@@ -35,7 +35,7 @@ it("retries a failed step once while pending and removes the failure after recov
     await act(async () => root.render(<AgentLifecycleStatus agent={agent} onRetry={retry} retryPending={false} />));
     expect(container.textContent).toContain(agent.lifecycleError);
     expect(container.textContent).toContain("Agent cleanup failed");
-    expect(container.textContent).toContain("Paperclip retries automatically");
+    expect(container.textContent).toContain("Pilibala retries automatically");
     expect(container.textContent).not.toContain("Required resources are being removed");
     await act(async () => container.querySelector("button")!.click());
     expect(retry).toHaveBeenCalledOnce();

@@ -2,14 +2,14 @@ import { createHash } from "node:crypto";
 
 import { and, desc, eq, inArray, lt } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   heartbeatRunEvents,
   heartbeatRuns,
   issues,
   nativeRunFinalizations,
   nativeRunResults,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   NativeSessionProtocolIntegrityError,
   type PrpEvent,
@@ -17,7 +17,7 @@ import {
   type PrpTerminalState,
   validatePrpEvent,
   validatePrpStructuredRunResult,
-} from "../../vendor/paperclip-runner/index.js";
+} from "../../vendor/pilibala-runner/index.js";
 
 export interface NativeRunStoreBinding {
   readonly companyId: string;
@@ -62,7 +62,7 @@ function assertTerminal(value: unknown): asserts value is PrpTerminalState {
     typeof value !== "object" ||
     terminal === null ||
     Array.isArray(value) ||
-    terminal.schema !== "paperclip.prp.terminal.v1" ||
+    terminal.schema !== "pilibala.prp.terminal.v1" ||
     typeof terminal.turnTerminalState !== "string" ||
     !["completed", "failed", "interrupted", "cancelled"].includes(
       terminal.turnTerminalState,

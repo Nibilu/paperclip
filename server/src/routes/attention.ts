@@ -1,6 +1,6 @@
 import { Router } from "express";
-import type { Db } from "@paperclipai/db";
-import type { AttentionSortMode } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import type { AttentionSortMode } from "@pilibalaai/shared";
 import { attentionService } from "../services/attention.js";
 import { badRequest } from "../errors.js";
 import { assertBoard, assertCompanyAccess } from "./authz.js";

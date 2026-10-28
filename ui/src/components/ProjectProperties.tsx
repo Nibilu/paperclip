@@ -6,7 +6,7 @@ import { useState, type ReactNode } from "react";
 import { environmentDisplayLabel, filterManagedSandboxSelectableEnvironments } from "@/lib/managed-sandbox-environment";
 import { Link } from "@/lib/router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Project, SharedWorkspaceConcurrency } from "@paperclipai/shared";
+import type { Project, SharedWorkspaceConcurrency } from "@pilibalaai/shared";
 import { ProjectRepositories } from "./ProjectRepositories";
 import { cn, formatDate } from "../lib/utils";
 import { environmentsApi } from "../api/environments";
@@ -573,7 +573,7 @@ export function ProjectProperties({ project, repositories, onUpdate, onFieldUpda
             */}
             {hideHostPaths ? (
               codebase.origin === "managed_checkout" ? (
-                <div className="text-(length:--text-micro) text-muted-foreground">Paperclip-managed folder.</div>
+                <div className="text-(length:--text-micro) text-muted-foreground">Pilibala-managed folder.</div>
               ) : null
             ) : (
               <div className="space-y-1">
@@ -584,7 +584,7 @@ export function ProjectProperties({ project, repositories, onUpdate, onFieldUpda
                       {codebase.effectiveLocalFolder}
                     </div>
                     {codebase.origin === "managed_checkout" && (
-                      <div className="text-(length:--text-micro) text-muted-foreground">Paperclip-managed folder.</div>
+                      <div className="text-(length:--text-micro) text-muted-foreground">Pilibala-managed folder.</div>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
@@ -617,7 +617,7 @@ export function ProjectProperties({ project, repositories, onUpdate, onFieldUpda
 
             {hasAdditionalLegacyWorkspaces && (
               <div className="text-(length:--text-micro) text-muted-foreground">
-                Additional legacy workspace records exist on this project. Paperclip is using the primary workspace as the codebase view.
+                Additional legacy workspace records exist on this project. Pilibala is using the primary workspace as the codebase view.
               </div>
             )}
 
@@ -959,7 +959,7 @@ export function ProjectProperties({ project, repositories, onUpdate, onFieldUpda
                               })}
                             immediate
                             className="w-full rounded border border-border bg-transparent px-2 py-1 text-xs font-mono outline-none"
-                            placeholder=".paperclip/worktrees"
+                            placeholder=".pilibala/worktrees"
                           />
                         </div>
                         <div>

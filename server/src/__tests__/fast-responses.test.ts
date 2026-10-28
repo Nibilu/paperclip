@@ -20,8 +20,8 @@ import {
   heartbeatRuns,
   issues,
   issueComments,
-} from "@paperclipai/db";
-import { startEmbeddedPostgresTestDatabase } from "@paperclipai/db/test-embedded-postgres";
+} from "@pilibalaai/db";
+import { startEmbeddedPostgresTestDatabase } from "@pilibalaai/db/test-embedded-postgres";
 import { aiConnectionService } from "../services/ai-connections.js";
 import {
   enqueueFastResponse,
@@ -41,12 +41,12 @@ let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>,
   home: string;
 beforeAll(async () => {
   home = await realpath(
-    await mkdtemp(path.join(os.tmpdir(), "paperclip-fast-response-")),
+    await mkdtemp(path.join(os.tmpdir(), "pilibala-fast-response-")),
   );
-  vi.stubEnv("PAPERCLIP_HOME", home);
-  vi.stubEnv("PAPERCLIP_INSTANCE_ID", "fast-response-fixture");
+  vi.stubEnv("PILIBALA_HOME", home);
+  vi.stubEnv("PILIBALA_INSTANCE_ID", "fast-response-fixture");
   database = await startEmbeddedPostgresTestDatabase(
-    "paperclip-fast-response-db-",
+    "pilibala-fast-response-db-",
   );
   db = createDb(database.connectionString);
 }, 90000);

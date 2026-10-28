@@ -16,7 +16,7 @@ import {
   approvals, issueApprovals, issueThreadInteractions, chatConversations, chatEndpoints, toolApplications, toolConnections,
   agentWakeupRequests, agents, companies, createDb, heartbeatRunEvents, heartbeatRuns, issueComments, issueRecoveryActions,
   issues, nativeRunFinalizations, nativeRunResults, completionContracts, environmentLeases, environments, issueRelations, issueTreeHolds, issueTreeHoldMembers,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase, getEmbeddedPostgresTestSupport } from "../__tests__/helpers/embedded-postgres.js";
 import { admitExplicitNativeContinuation } from "./explicit-native-continuation.js";
 import { adapterExecutionControls, createAdapterExecutionControl } from "./adapter-execution-control.js";
@@ -37,7 +37,7 @@ const support = await getEmbeddedPostgresTestSupport();
     const sourceRunId = randomUUID(), successorRunId = randomUUID();
     const commentId: string = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Explicit turn", defaultResponsibleUserId: "board", issuePrefix: `E${companyId.replaceAll("-", "")}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Native", role: "engineer", adapterType: "paperclip_runner", status: "idle", runtimeConfig: { heartbeat: { maxConcurrentRuns: 1 } } });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Native", role: "engineer", adapterType: "pilibala_runner", status: "idle", runtimeConfig: { heartbeat: { maxConcurrentRuns: 1 } } });
     await db.insert(issues).values({ id: issueId, companyId, title: "Deploy", status: "blocked", assigneeAgentId: agentId });
     await db.insert(heartbeatRuns).values({ id: sourceRunId, companyId, agentId,
       nativeIssueId: issueId, runtimeMode: "native", status: "failed", processPid: 999999999,
@@ -58,7 +58,7 @@ const support = await getEmbeddedPostgresTestSupport();
     const f = await seed(), nextAgentId = randomUUID(), queueId = randomUUID();
     await db.delete(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, f.issueId));
     await db.delete(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, f.sourceRunId));
-    await db.insert(agents).values({ id: nextAgentId, companyId: f.companyId, name: "Replacement", role: "engineer", adapterType: "paperclip_runner", runtimeConfig: { heartbeat: { maxConcurrentRuns: 1 } } });
+    await db.insert(agents).values({ id: nextAgentId, companyId: f.companyId, name: "Replacement", role: "engineer", adapterType: "pilibala_runner", runtimeConfig: { heartbeat: { maxConcurrentRuns: 1 } } });
     await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: nextAgentId, status: "running" });
     await db.update(issues).set({ status: "in_progress", assigneeAgentId: kind === "different_owner" ? f.agentId : nextAgentId }).where(eq(issues.id, f.issueId));
     await db.update(heartbeatRuns).set({ status: kind === "running_source" ? "running" : "cancelled", errorCode: "issue_reassigned",
@@ -69,7 +69,7 @@ const support = await getEmbeddedPostgresTestSupport();
     await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: f.agentId,
       source: "automation", reason: "issue_execution_deferred", status: "deferred_issue_execution",
       requestedByActorType: "user", requestedByActorId: "board", idempotencyKey: kind === "chat" ? "chat-inbound:handoff-test" : null,
-      payload: { issueId: f.issueId, commentId: secondId, _paperclipWakeContext: { issueId: f.issueId,
+      payload: { issueId: f.issueId, commentId: secondId, _pilibalaWakeContext: { issueId: f.issueId,
         wakeReason: kind === "mention" ? "issue_comment_mentioned" : "issue_commented", wakeCommentIds: [f.commentId, secondId],
         ...(kind === "interaction" ? { interactionId: randomUUID(), wakeReason: "connection_intent.resolved" } : {}),
       } },
@@ -98,7 +98,7 @@ const support = await getEmbeddedPostgresTestSupport();
     const [source] = await db.update(heartbeatRuns).set({ status: "cancelled",
       processPid: gate === "process_running" ? process.pid : gate === "identity_missing" ? null : 999999999, resultJson: {
       cancelledByActorType: "user", cancelledByUserId: "board", nativeCancellation: {
-        schema: "paperclip.native-cancellation.v1", runId: f.sourceRunId, companyId: f.companyId,
+        schema: "pilibala.native-cancellation.v1", runId: f.sourceRunId, companyId: f.companyId,
         issueId: f.issueId, scope: "run", reasonCode: "cancellation_run_only", dispatched: true,
         dispatchState: gate === "unacknowledged" ? "requested" : "acknowledged",
         intentAuditId: randomUUID(), acknowledgementAuditId: randomUUID(),
@@ -128,7 +128,7 @@ const support = await getEmbeddedPostgresTestSupport();
     await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: f.agentId,
       source: "automation", triggerDetail: "system", reason: "issue_execution_deferred", status: "deferred_issue_execution",
       requestedByActorType: "user", requestedByActorId: "board", payload: {
-        issueId: f.issueId, commentId: queuedIds.at(-1), _paperclipWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentId: queuedIds.at(-1), wakeCommentIds: queuedIds },
+        issueId: f.issueId, commentId: queuedIds.at(-1), _pilibalaWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentId: queuedIds.at(-1), wakeCommentIds: queuedIds },
       },
     });
     if (gate.startsWith("remote_")) {
@@ -168,7 +168,7 @@ const support = await getEmbeddedPostgresTestSupport();
     await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: f.agentId,
       source: "automation", reason: "issue_commented", status: "deferred_issue_execution",
       requestedByActorType: "system", payload: { issueId: f.issueId, commentId: f.commentId,
-        _paperclipWakeContext: { wakeCommentIds: [f.commentId] },
+        _pilibalaWakeContext: { wakeCommentIds: [f.commentId] },
         queuedCommentInterrupt: { actorId: "board", requestedAt: new Date().toISOString() } },
     });
     const identities = [f, other].map(fixture => ({ id: randomUUID(), companyId: fixture.companyId,
@@ -225,7 +225,7 @@ const support = await getEmbeddedPostgresTestSupport();
     await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: f.agentId,
       source: "on_demand", reason: "issue_commented", status: "deferred_issue_execution",
       requestedByActorType: "user", requestedByActorId: "original-author",
-      payload: { issueId: f.issueId, _paperclipWakeContext: { wakeCommentIds: [f.commentId] },
+      payload: { issueId: f.issueId, _pilibalaWakeContext: { wakeCommentIds: [f.commentId] },
         queuedCommentInterrupt: { actorId: "board", requestedAt: new Date().toISOString() } },
     });
     const attempt = (queue = queueId) => db.transaction(async tx => {
@@ -257,7 +257,7 @@ const support = await getEmbeddedPostgresTestSupport();
     await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: f.agentId,
       source: "automation", reason: "issue_commented", status: "deferred_issue_execution",
       requestedByActorType: "system", payload: { issueId: f.issueId, commentId: f.commentId,
-        _paperclipWakeContext: { wakeCommentIds: [f.commentId] },
+        _pilibalaWakeContext: { wakeCommentIds: [f.commentId] },
         queuedCommentInterrupt: { actorId: "board", requestedAt: new Date().toISOString() } },
     });
     await heartbeatService(db).resumeQueuedCommentInterrupt(f.companyId, queueId);
@@ -276,7 +276,7 @@ const support = await getEmbeddedPostgresTestSupport();
       { status: "cancelled" }, { runId: f.sourceRunId },
       { payload: { ...receipt.payload, issueId: randomUUID() } },
       { payload: { ...receipt.payload, queuedCommentInterrupt: { actorId: "someone-else" } } },
-      { payload: { ...receipt.payload, _paperclipWakeContext: { wakeCommentIds: [] }, commentId: undefined } },
+      { payload: { ...receipt.payload, _pilibalaWakeContext: { wakeCommentIds: [] }, commentId: undefined } },
     ]) {
       await db.update(agentWakeupRequests).set(patch).where(eq(agentWakeupRequests.id, queueId));
       await expect(dispatch()).rejects.toThrow("continuation_user_authorization_missing");
@@ -303,7 +303,7 @@ const support = await getEmbeddedPostgresTestSupport();
     await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: f.agentId,
       status: "running", contextSnapshot: { issueId: randomUUID() } });
     const queueId = randomUUID();
-    const payload = { issueId: f.issueId, _paperclipWakeContext: { wakeCommentIds: [f.commentId] },
+    const payload = { issueId: f.issueId, _pilibalaWakeContext: { wakeCommentIds: [f.commentId] },
       queuedCommentInterrupt: { actorId: "board", requestedAt: new Date().toISOString() } };
     await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: f.agentId,
       source: "automation", reason: "issue_commented", status: "deferred_issue_execution",
@@ -352,7 +352,7 @@ const support = await getEmbeddedPostgresTestSupport();
     await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: f.agentId,
       source: "automation", reason: "issue_commented", status: kind === "consumed" ? "coalesced" : "deferred_issue_execution",
       requestedByActorType: "system", payload: { issueId: kind === "foreign_queue" ? randomUUID() : f.issueId,
-        _paperclipWakeContext: { wakeCommentIds: [f.commentId] } },
+        _pilibalaWakeContext: { wakeCommentIds: [f.commentId] } },
     });
     if (kind.startsWith("unstarted_cancelled")) {
       await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: f.agentId,
@@ -368,7 +368,7 @@ const support = await getEmbeddedPostgresTestSupport();
       await db.update(heartbeatRuns).set({ contextSnapshot: { issueId: f.issueId, wakeCommentIds: [earlierId] } })
         .where(eq(heartbeatRuns.id, f.sourceRunId));
       await db.update(agentWakeupRequests).set({ payload: { issueId: f.issueId,
-        _paperclipWakeContext: { wakeCommentIds: [earlierId, f.commentId] } } })
+        _pilibalaWakeContext: { wakeCommentIds: [earlierId, f.commentId] } } })
         .where(eq(agentWakeupRequests.id, queueId));
     }
     const result = await db.transaction(async tx => {
@@ -435,7 +435,7 @@ const support = await getEmbeddedPostgresTestSupport();
       await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: f.agentId,
         source: "automation", reason: "issue_execution_deferred", status: "deferred_issue_execution",
         requestedByActorType: "user", requestedByActorId: gate === "wrong_actor" ? "other-user" : "board",
-        payload: { issueId: f.issueId, commentId: f.commentId, _paperclipWakeContext: {
+        payload: { issueId: f.issueId, commentId: f.commentId, _pilibalaWakeContext: {
           issueId: f.issueId, wakeReason: "issue_commented", wakeCommentId: f.commentId, wakeCommentIds: [f.commentId] } },
       });
       const result = await db.transaction(async tx => {
@@ -689,7 +689,7 @@ const support = await getEmbeddedPostgresTestSupport();
       source: "automation", reason: "issue_commented", status: "deferred_issue_execution",
       requestedByActorType: "user", requestedByActorId: f.actorId, updatedAt: new Date(0),
       payload: { issueId: f.issueId, commentId: f.commentId, executionWait: { reason: "execution_recovery" },
-        _paperclipWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentIds: [f.commentId], wakeCommentId: f.commentId } },
+        _pilibalaWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentIds: [f.commentId], wakeCommentId: f.commentId } },
     });
     expect(await getExecutionBlocker(db, f.companyId, f.issueId)).toMatchObject({ savedMessageCount: 1, canContinue: true });
     await Promise.all([heartbeatService(db).resumeExecutionWaitComments(), heartbeatService(db).resumeExecutionWaitComments()]);
@@ -710,7 +710,7 @@ const support = await getEmbeddedPostgresTestSupport();
       await db.update(heartbeatRuns).set({ errorCode: "native_session_cleanup_quarantined" }).where(eq(heartbeatRuns.id, f.sourceRunId));
       const retire = vi.fn(() => mode !== "changed");
       const verify = vi.spyOn(nativeExecutor, "verifyStoppedNativeSessionForContinuation").mockResolvedValue(
-        mode === "unproven" ? null : { evidence: { runId: f.sourceRunId, schema: "paperclip.stopped_native_conversation.v1" }, retire });
+        mode === "unproven" ? null : { evidence: { runId: f.sourceRunId, schema: "pilibala.stopped_native_conversation.v1" }, retire });
       try {
         const result = mode === "retry"
           ? await db.transaction(tx => admitExplicitNativeContinuation({ ...f, db: tx as unknown as typeof db,
@@ -734,17 +734,17 @@ const support = await getEmbeddedPostgresTestSupport();
     "recovers a historical run without process metadata only from exact suspended state (%s)", async kind => {
       const f = await seed();
       const stateBase = await mkdtemp(join(tmpdir(), "historical-native-followup-"));
-      const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-      process.env.PAPERCLIP_RUNNER_STATE_DIR = stateBase;
+      const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+      process.env.PILIBALA_RUNNER_STATE_DIR = stateBase;
       try {
         const nativeSessionId = randomUUID(), runnerInstanceId = randomUUID();
         const execution = {
-          schema: "paperclip.native-execution-input.v1", provider: { kind: "codex", model: null },
+          schema: "pilibala.native-execution-input.v1", provider: { kind: "codex", model: null },
           binding: { companyId: f.companyId, issueId: f.issueId, agentId: f.agentId, runId: f.sourceRunId, executionWorkspaceId: "workspace" },
           task: { identifier: "TEST", title: "Continue", description: null, prompt: "Continue", workMode: "standard" },
           workspace: { cwd: stateBase, repoUrl: null, repoRef: null, branchName: null },
           session: { normalizedSessionId: nativeSessionId, driverKind: "codex_app_server", protocolVersion: 1, lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null } },
-          completionContract: { id: "contract", sha256: "sha", schemaVersion: "paperclip.completion-contract.v1",
+          completionContract: { id: "contract", sha256: "sha", schemaVersion: "pilibala.completion-contract.v1",
             contract: { revision: "1", objective: "Continue", criteria: [{ id: "objective", requirement: "Continue" }] } },
           interactionResponses: [], credentialBindings: [],
         };
@@ -756,7 +756,7 @@ const support = await getEmbeddedPostgresTestSupport();
           ? `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, entry]) => `${JSON.stringify(key)}:${canonical(entry)}`).join(",")}}`
           : JSON.stringify(value);
         const root = join(stateBase, createHash("sha256").update(canonical({
-          schema: "paperclip.native-session-scope.v2", companyId: f.companyId, agentId: f.agentId,
+          schema: "pilibala.native-session-scope.v2", companyId: f.companyId, agentId: f.agentId,
           workspace: { kind: "managed", executionWorkspaceId: "workspace" },
           provider: { driverKind: "codex_app_server", identity: { kind: "codex" } }, normalizedSessionId: nativeSessionId,
         })).digest("hex"));
@@ -765,11 +765,11 @@ const support = await getEmbeddedPostgresTestSupport();
           await mkdir(join(root, "runner"), { recursive: true });
           const identity = { runId: kind === "wrong_run" ? randomUUID() : f.sourceRunId, runnerInstanceId,
             normalizedSessionId: nativeSessionId, environmentLeaseId: "workspace" };
-          await writeFile(join(root, "control-plane/control-plane-state.json"), JSON.stringify({ schema: "paperclip.runner.durable.control-plane-state.v1", identity }));
-          await writeFile(join(root, "runner/runner-state.json"), JSON.stringify({ schema: "paperclip.runner.durable.state.v1",
+          await writeFile(join(root, "control-plane/control-plane-state.json"), JSON.stringify({ schema: "pilibala.runner.durable.control-plane-state.v1", identity }));
+          await writeFile(join(root, "runner/runner-state.json"), JSON.stringify({ schema: "pilibala.runner.durable.state.v1",
             ...identity, lifecycle: kind === "ready" ? "ready" : "suspended", outbox: kind === "pending_output" ? [{}] : [] }));
           await writeFile(join(root, "runner/codex-provider-state.json"), JSON.stringify({
-            schema: "paperclip.runner.codex-provider-state.v1", lifecycle: "prepared",
+            schema: "pilibala.runner.codex-provider-state.v1", lifecycle: "prepared",
             threadId: kind === "wrong_thread" ? "another-thread" : "exact-thread", providerSessionId: "backend-account",
             activeProviderTurnId: kind === "active_provider" ? "unfinished-turn" : null, ambiguousTurnStartPending: false,
             config: { provider: "codex", driver: "codex_app_server" }, pendingEvents: [], queuedEvents: [],
@@ -802,8 +802,8 @@ const support = await getEmbeddedPostgresTestSupport();
         expect(action.evidence.automaticRecovery).toMatchObject({ actionOutcome: "unknown", replay: "explicit_user_continuation" });
         expect(await hasNativeLocalProcessStop(db, f.companyId, f.sourceRunId)).toBe(false);
       } finally {
-        if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
-        else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+        if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR;
+        else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
         await rm(stateBase, { recursive: true, force: true });
       }
     },
@@ -844,7 +844,7 @@ const support = await getEmbeddedPostgresTestSupport();
     const f = await seedCancelledStartup();
     await db.delete(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, f.sourceRunId));
     await db.update(heartbeatRuns).set({ runtimeMode: "legacy", runtimeModeResolvedAt: null, nativeIssueId: null,
-      runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+      runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
       resultJson: { startupCancellation: { beforeNativeSelection: true }, startupPreparationSettledAt: new Date().toISOString() },
     }).where(eq(heartbeatRuns.id, f.sourceRunId));
     expect(await admit(f)).toMatchObject({ previousRunId: f.sourceRunId });
@@ -856,7 +856,7 @@ const support = await getEmbeddedPostgresTestSupport();
     await db.delete(environmentLeases).where(eq(environmentLeases.heartbeatRunId, f.sourceRunId));
     await db.update(heartbeatRuns).set({ runtimeMode: "legacy", runtimeModeResolvedAt: null,
       nativeIssueId: null, nativeSessionId: null, executionStage: "preparing", errorCode: "operator_interrupted",
-      runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+      runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
       resultJson: retainedReceipt ? { operatorInterrupted: true, stopReason: "cancelled",
         startupCancellation: { beforeNativeSelection: true, requestedAt: "2026-09-11T10:00:00Z" } } : null,
     }).where(eq(heartbeatRuns.id, f.sourceRunId));
@@ -1001,7 +1001,7 @@ const support = await getEmbeddedPostgresTestSupport();
         startedAt: new Date("2026-09-11T12:00:00Z"), finishedAt: new Date("2026-09-11T12:01:00Z"),
         contextSnapshot: { issueId: f.issueId, wakeCommentIds: [deliveredId] } });
       await db.update(agentWakeupRequests).set({ payload: { ...waiting.payload,
-        _paperclipWakeContext: { wakeCommentIds: kind === "earlier_delivered" ? [deliveredId, f.commentId] : [f.commentId, deliveredId] } },
+        _pilibalaWakeContext: { wakeCommentIds: kind === "earlier_delivered" ? [deliveredId, f.commentId] : [f.commentId, deliveredId] } },
       }).where(eq(agentWakeupRequests.id, waiting.id));
     }
     await db.update(heartbeatRuns).set({ controllerLeaseExpiresAt: new Date(0) })
@@ -1031,7 +1031,7 @@ const support = await getEmbeddedPostgresTestSupport();
       if (Object.keys(patch).length) await db.update(heartbeatRuns).set(patch).where(eq(heartbeatRuns.id, f.sourceRunId));
       if (kind === "launch" || kind === "invoked") await db.insert(heartbeatRunEvents).values({ companyId: f.companyId,
         agentId: f.agentId, runId: f.sourceRunId, seq: 1,
-        eventType: kind === "launch" ? PROCESS_START_REQUESTED : "adapter.invoke", payload: { adapterType: "paperclip_runner" } });
+        eventType: kind === "launch" ? PROCESS_START_REQUESTED : "adapter.invoke", payload: { adapterType: "pilibala_runner" } });
       if (kind === "coordinator") {
         await db.update(heartbeatRuns).set({ nativeIssueId: f.issueId }).where(eq(heartbeatRuns.id, f.sourceRunId));
         await db.insert(nativeRunFinalizations).values({ companyId: f.companyId,
@@ -1560,7 +1560,7 @@ const support = await getEmbeddedPostgresTestSupport();
       source: "automation", status: "deferred_issue_execution", reason: "issue_commented",
       requestedByActorType: "user", requestedByActorId: "board", updatedAt: new Date(0),
       payload: { issueId: f.issueId, commentId: queuedIds.at(-1), executionWait: { reason: "execution_recovery" },
-        _paperclipWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentIds: queuedIds, wakeCommentId: queuedIds.at(-1) } },
+        _pilibalaWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentIds: queuedIds, wakeCommentId: queuedIds.at(-1) } },
     });
     const service = heartbeatService(db);
     await service.resumeExecutionWaitComments();
@@ -1586,7 +1586,7 @@ const support = await getEmbeddedPostgresTestSupport();
     if (phase === "before_selection") {
       await db.delete(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, f.sourceRunId));
       await db.update(heartbeatRuns).set({ runtimeMode: "legacy", runtimeModeResolvedAt: null, nativeIssueId: null,
-        runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+        runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
         resultJson: { startupCancellation: { beforeNativeSelection: true }, startupPreparationSettledAt: new Date().toISOString() },
       }).where(eq(heartbeatRuns.id, f.sourceRunId));
     }
@@ -1603,7 +1603,7 @@ const support = await getEmbeddedPostgresTestSupport();
     "requires a fully committed failed result and verified stop for a new turn (%s)", async scenario => {
       const f = await seed(), contractId = randomUUID(), resultId = randomUUID();
       await db.insert(completionContracts).values({ id: contractId, companyId: f.companyId, issueId: f.issueId,
-        revision: 1, schemaVersion: "paperclip.completion-contract.v1", policyVersion: "test",
+        revision: 1, schemaVersion: "pilibala.completion-contract.v1", policyVersion: "test",
         risk: "standard", completionAuthority: "server_arbiter", incompleteCriteriaPolicy: "preserve_non_terminal",
         contractJson: {}, canonicalSha256: contractId, createdByActorType: "system", createdByActorId: "test" });
       await db.update(heartbeatRuns).set({ completionContractId: contractId,
@@ -1632,7 +1632,7 @@ const support = await getEmbeddedPostgresTestSupport();
   async function seedResultBeforeTerminalFailure(f: Fixture) {
     const contractId = randomUUID(), resultId = randomUUID();
     await db.insert(completionContracts).values({ id: contractId, companyId: f.companyId, issueId: f.issueId,
-      revision: 1, schemaVersion: "paperclip.completion-contract.v1", policyVersion: "test",
+      revision: 1, schemaVersion: "pilibala.completion-contract.v1", policyVersion: "test",
       risk: "standard", completionAuthority: "server_arbiter", incompleteCriteriaPolicy: "preserve_non_terminal",
       contractJson: {}, canonicalSha256: contractId, createdByActorType: "system", createdByActorId: "test" });
     await db.update(heartbeatRuns).set({ completionContractId: contractId, errorCode: "provider_transport_failed" })
@@ -1709,7 +1709,7 @@ const support = await getEmbeddedPostgresTestSupport();
           source: "on_demand", triggerDetail: "manual", reason: "issue_commented", status: "deferred_issue_execution",
           requestedByActorType: "user", requestedByActorId: "board", payload: {
             issueId: f.issueId, commentId: nextCommentId,
-            _paperclipWakeContext: { source: "issue.comment", issueId: f.issueId, wakeCommentId: nextCommentId, wakeReason: "issue_commented" },
+            _pilibalaWakeContext: { source: "issue.comment", issueId: f.issueId, wakeCommentId: nextCommentId, wakeReason: "issue_commented" },
           },
         });
       }
@@ -1774,7 +1774,7 @@ const support = await getEmbeddedPostgresTestSupport();
     await db.insert(environmentLeases).values({ ...lease, status: "active", leasePolicy: "ephemeral" });
     const [run] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.sourceRunId));
     await db.update(heartbeatRuns).set({ runnerProfileJson: { ...run.runnerProfileJson,
-      nativeWorkspaceSync: { schema: "paperclip.native-workspace-sync/v1", state: "prepared",
+      nativeWorkspaceSync: { schema: "pilibala.native-workspace-sync/v1", state: "prepared",
         descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
         workspaceId: randomUUID(), leaseId: lease.id, providerLeaseId: lease.providerLeaseId,
         remoteCwd: "/work", resourceDisposition: "destroy" },

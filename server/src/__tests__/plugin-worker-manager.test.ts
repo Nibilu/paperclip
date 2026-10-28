@@ -1,14 +1,14 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
-import type { PaperclipPluginManifestV1 } from "@paperclipai/shared";
+import type { PilibalaPluginManifestV1 } from "@pilibalaai/shared";
 import {
   createHostClientHandlers,
   JsonRpcCallError,
   PLUGIN_RPC_ERROR_CODES,
   type HostServices,
   type HostToWorkerMethods,
-} from "@paperclipai/plugin-sdk";
+} from "@pilibalaai/plugin-sdk";
 
 // Mock the shared logger, so a test reads the exact calls the manager makes
 // when it logs a route event. The child logger returns the same mock object,
@@ -45,13 +45,13 @@ const INVOCATION_SCOPE_WORKER_ENTRYPOINT = path.join(
 const TERMINATED_WORKER_ENTRYPOINT = path.join(FIXTURES_DIR, "plugin-worker-terminated.cjs");
 const EXECUTE_LOG_WORKER_ENTRYPOINT = path.join(FIXTURES_DIR, "plugin-worker-execute-log.cjs");
 
-const TEST_MANIFEST: PaperclipPluginManifestV1 = {
+const TEST_MANIFEST: PilibalaPluginManifestV1 = {
   id: "test.plugin",
   apiVersion: 1,
   version: "1.0.0",
   displayName: "Test plugin",
   description: "Test plugin",
-  author: "Paperclip",
+  author: "Pilibala",
   categories: ["automation"],
   capabilities: [],
   entrypoints: { worker: "dist/worker.js" },
@@ -617,7 +617,7 @@ describe("plugin host company context guards", () => {
 describe("plugin proactive company scope (LOOA-629)", () => {
   // A proactive plugin (e.g. the chat gateway) makes company-scoped worker→host
   // calls from its own timers/loops — outside any host-issued invocation, so
-  // those calls carry no paperclipInvocationId (the fixture's "omit" mode). The
+  // those calls carry no pilibalaInvocationId (the fixture's "omit" mode). The
   // host authorizes a bounded set of companies for such proactive work; calls
   // referencing an authorized company resolve to that scope, all others stay
   // denied. Each case drives a real worker so the nested call flows through the
@@ -1140,7 +1140,7 @@ function makeLoginPtyHandle(extra?: Record<string, unknown>) {
 }
 
 // One valid session home. The shape is the fixed root, one slash, and one UUID.
-const PTY_SESSION_HOME = "/tmp/paperclip-adapter-login/11111111-2222-4333-8444-555555555555";
+const PTY_SESSION_HOME = "/tmp/pilibala-adapter-login/11111111-2222-4333-8444-555555555555";
 
 function ptyOpenInput(directive: unknown) {
   return {
@@ -1200,7 +1200,7 @@ describe("plugin worker manager setup-token pty route gate", () => {
           environmentId: "env-1",
           providerLeaseId: JSON.stringify({ mode: "normal" }),
           loginCommandKey: "claude" as const,
-          sessionHome: "/tmp/paperclip-adapter-login/../etc",
+          sessionHome: "/tmp/pilibala-adapter-login/../etc",
         }),
       ).rejects.toThrow("LOGIN_PTY_INVALID_SESSION_HOME");
       // The rejected open never consumed the single route.

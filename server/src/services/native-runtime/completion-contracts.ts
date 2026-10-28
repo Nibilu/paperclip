@@ -1,13 +1,13 @@
 import { createHash } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
-import { completionContracts } from "@paperclipai/db";
-import type { NativeCompletionSource, StrictCompletionContractInput } from "../../vendor/paperclip-runner/index.js";
+import type { Db } from "@pilibalaai/db";
+import { completionContracts } from "@pilibalaai/db";
+import type { NativeCompletionSource, StrictCompletionContractInput } from "../../vendor/pilibala-runner/index.js";
 
 import { nativeSha256 } from "./canonical.js";
 
-export const NATIVE_COMPLETION_CONTRACT_SCHEMA = "paperclip.completion-contract.v1";
+export const NATIVE_COMPLETION_CONTRACT_SCHEMA = "pilibala.completion-contract.v1";
 export const NATIVE_COMPLETION_POLICY_VERSION = "phase6-v4";
 
 /** Canonical persisted receipt includes the policy that governs the contract. */
@@ -152,7 +152,7 @@ export async function ensureNativeCompletionContract(input: {
 }) {
   return input.db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${[
-      "paperclip:native-completion-contract",
+      "pilibala:native-completion-contract",
       input.companyId,
       input.issue.id,
     ].join(":")}, 0))`);

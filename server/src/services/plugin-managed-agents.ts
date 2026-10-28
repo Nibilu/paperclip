@@ -1,6 +1,6 @@
 import { createAgentLifecycle } from "./agent-lifecycle.js";
 import { and, eq, isNull, ne } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   companies,
@@ -8,14 +8,14 @@ import {
   pluginManagedResources,
   plugins,
   activityLog,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   Agent,
-  PaperclipPluginManifestV1,
+  PilibalaPluginManifestV1,
   PluginManagedAgentDeclaration,
   PluginManagedAgentResolution,
-} from "@paperclipai/shared";
-import { agentHarnessType, agentRunner, isUuidLike } from "@paperclipai/shared";
+} from "@pilibalaai/shared";
+import { agentHarnessType, agentRunner, isUuidLike } from "@pilibalaai/shared";
 import { conflict, forbidden, notFound } from "../errors.js";
 import { agentService } from "./agents.js";
 import { resolveNewAgentRunnerForCompany } from "./agent-runner-selection.js";
@@ -34,7 +34,7 @@ function managedAgentPauseReason(pluginKey: string) {
 interface PluginManagedAgentServiceOptions {
   pluginId: string;
   pluginKey: string;
-  manifest?: PaperclipPluginManifestV1 | null;
+  manifest?: PilibalaPluginManifestV1 | null;
   instructionTemplateVariables?: (companyId: string) => Promise<Record<string, string | null | undefined>>;
 }
 
@@ -50,7 +50,7 @@ function managedMetadata(
 ) {
   return {
     ...(existing ?? {}),
-    paperclipManagedResource: {
+    pilibalaManagedResource: {
       pluginId,
       pluginKey,
       resourceKind: "agent",
@@ -170,7 +170,7 @@ function rowIsManagedAgent(
 ) {
   const metadata = row.metadata;
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return false;
-  const marker = (metadata as Record<string, unknown>).paperclipManagedResource;
+  const marker = (metadata as Record<string, unknown>).pilibalaManagedResource;
   if (!marker || typeof marker !== "object" || Array.isArray(marker)) return false;
   const record = marker as Record<string, unknown>;
   return (
@@ -329,7 +329,7 @@ export function pluginManagedAgentService(
         || !plugin.manifestJson.agents?.some((entry) => entry.agentKey === declaration.agentKey)) {
         throw forbidden("Plugin relink is limited to its registered managed agent declaration");
       }
-      const marker = agent.metadata!.paperclipManagedResource as Record<string, unknown>;
+      const marker = agent.metadata!.pilibalaManagedResource as Record<string, unknown>;
       const previousPluginId = marker.pluginId;
       if (typeof previousPluginId !== "string" || !isUuidLike(previousPluginId)) throw forbidden("Managed agent has no plugin owner");
       if (previousPluginId !== options.pluginId) {
@@ -648,7 +648,7 @@ export function pluginManagedAgentService(
       const adapterType = await resolveManagedAdapterType(companyId, declaration);
       const defaults = declarationPatch(declaration, { adapterType });
       const sameCodexHarness = adapterType === "codex_local" && agentHarnessType(reconciled.agent.adapterType, reconciled.agent.adapterConfig) === adapterType;
-      const retainedNative = sameCodexHarness && reconciled.agent.adapterType === "paperclip_runner";
+      const retainedNative = sameCodexHarness && reconciled.agent.adapterType === "pilibala_runner";
       const resetAdapterConfig = { ...defaults.adapterConfig };
       if (retainedNative) {
         for (const field of ["provider", "acpxAgent", "acpxMode"]) {

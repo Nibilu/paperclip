@@ -122,14 +122,14 @@ describe("WorkspaceServiceControlBar", () => {
     // issue surfaces. The href must be the verified tailnet HTTPS URL including
     // its non-standard port, and an unverified exposure must render no anchor at
     // all — an `http://` fallback link is the failure this feature prevents.
-    const httpsUrl = "https://paperclip-dev.tail29c1aa.ts.net:42010";
+    const httpsUrl = "https://pilibala-dev.tail29c1aa.ts.net:42010";
     const renderExposed = async (url: string | null, exposureState: "ready" | "pending") => {
       await act(() => {
         root.render(
           <WorkspaceServiceControlBar
             services={[{
-              key: "paperclip-dev",
-              name: "paperclip-dev",
+              key: "pilibala-dev",
+              name: "pilibala-dev",
               state: "running",
               healthStatus: "healthy",
               url,
@@ -147,7 +147,7 @@ describe("WorkspaceServiceControlBar", () => {
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) expect(link.getAttribute("href")).toBe(httpsUrl);
     // The port is what makes a preview reachable, so it must stay visible.
-    expect(container.textContent).toContain("paperclip-dev.tail29c1aa.ts.net:42010");
+    expect(container.textContent).toContain("pilibala-dev.tail29c1aa.ts.net:42010");
     // Scoped to hrefs, titles, and text: an SVG `xmlns` is not a launch link.
     const advertisedUrls = () => [
       ...Array.from(container.querySelectorAll("a[href]"), (el) => el.getAttribute("href")),

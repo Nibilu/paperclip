@@ -3,15 +3,15 @@ import { randomUUID } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AdapterExecutionContext, AdapterInvocationMeta } from "@paperclipai/adapter-utils";
-import { runChildProcess } from "@paperclipai/adapter-utils/server-utils";
+import type { AdapterExecutionContext, AdapterInvocationMeta } from "@pilibalaai/adapter-utils";
+import { runChildProcess } from "@pilibalaai/adapter-utils/server-utils";
 
 // Every test in this file needs a real teardown, so the mock below delegates
 // to the actual factory by default. Only the wiring test further down reads
 // the call arguments; it does not change this behavior.
 const mockCreateWorkspaceRestoreTeardown = vi.hoisted(() => vi.fn());
 
-vi.mock("@paperclipai/adapter-utils/workspace-restore-teardown", async (importOriginal) => {
+vi.mock("@pilibalaai/adapter-utils/workspace-restore-teardown", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   mockCreateWorkspaceRestoreTeardown.mockImplementation(
     actual.createWorkspaceRestoreTeardown as (...args: unknown[]) => unknown,
@@ -83,8 +83,8 @@ type FakeRuntimeTurn = {
 
 const tempRoots: string[] = [];
 const originalNodeVersion = process.version;
-const originalPaperclipHome = process.env.PAPERCLIP_HOME;
-const originalPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
+const originalPilibalaHome = process.env.PILIBALA_HOME;
+const originalPilibalaInstanceId = process.env.PILIBALA_INSTANCE_ID;
 const originalCodexHome = process.env.CODEX_HOME;
 const originalOpenAiApiKey = process.env.OPENAI_API_KEY;
 
@@ -112,11 +112,11 @@ function subscriptionAuthJson(accountId: string, lastRefresh: string, marker: st
 }
 
 // Enumerate the host staged-home temp dirs `stageCodexHomeForSync` created for a
-// given runId (`paperclip-codex-home-sync-<runId>-<random>` under os.tmpdir()).
+// given runId (`pilibala-codex-home-sync-<runId>-<random>` under os.tmpdir()).
 // A unique per-test runId scopes the match to this run's staging dirs only, so
 // the assertion is not disturbed by other tests/processes sharing the tmp dir.
 async function listCodexHomeSyncDirs(runId: string): Promise<string[]> {
-  const prefix = `paperclip-codex-home-sync-${runId}-`;
+  const prefix = `pilibala-codex-home-sync-${runId}-`;
   const entries = await fs.readdir(os.tmpdir());
   return entries.filter((name) => name.startsWith(prefix)).map((name) => path.join(os.tmpdir(), name));
 }
@@ -131,10 +131,10 @@ function setNodeVersion(version: string): void {
 
 afterEach(async () => {
   setNodeVersion(originalNodeVersion);
-  if (originalPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-  else process.env.PAPERCLIP_HOME = originalPaperclipHome;
-  if (originalPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-  else process.env.PAPERCLIP_INSTANCE_ID = originalPaperclipInstanceId;
+  if (originalPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+  else process.env.PILIBALA_HOME = originalPilibalaHome;
+  if (originalPilibalaInstanceId === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+  else process.env.PILIBALA_INSTANCE_ID = originalPilibalaInstanceId;
   if (originalCodexHome === undefined) delete process.env.CODEX_HOME;
   else process.env.CODEX_HOME = originalCodexHome;
   if (originalOpenAiApiKey === undefined) delete process.env.OPENAI_API_KEY;
@@ -233,8 +233,8 @@ class FakeRuntime {
 async function makeTempRoot(prefix: string) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
   tempRoots.push(root);
-  process.env.PAPERCLIP_HOME = path.join(root, "paperclip-home");
-  process.env.PAPERCLIP_INSTANCE_ID = "test";
+  process.env.PILIBALA_HOME = path.join(root, "pilibala-home");
+  process.env.PILIBALA_INSTANCE_ID = "test";
   return root;
 }
 
@@ -276,8 +276,8 @@ function buildContext(root: string, overrides: Partial<AdapterExecutionContext> 
     },
     context: {
       issueId: "issue-1",
-      paperclipTaskMarkdown: "Task context",
-      paperclipWorkspace: {
+      pilibalaTaskMarkdown: "Task context",
+      pilibalaWorkspace: {
         cwd: root,
         source: "project_workspace",
         workspaceId: "workspace-1",
@@ -290,7 +290,7 @@ function buildContext(root: string, overrides: Partial<AdapterExecutionContext> 
 
 describe("codex_local ACP lane", () => {
   it("keeps ACP selected and reports unavailable prerequisites for default and explicit engines", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-default-");
+    const root = await makeTempRoot("pilibala-codex-acp-default-");
     const commandPath = path.join(root, "bin", "codex-acp");
     await fs.mkdir(path.dirname(commandPath), { recursive: true });
     await fs.writeFile(commandPath, "#!/usr/bin/env sh\n", "utf8");
@@ -467,19 +467,19 @@ describe("codex_local ACP lane", () => {
 
   it("enables workspace networking for ACP without changing other env settings", () => {
     expect(buildCodexAcpConfig({ env: { CUSTOM: "kept" } })).toMatchObject({
-      env: { CUSTOM: "kept", PAPERCLIP_CODEX_ACP_NETWORK_ACCESS: "true" },
+      env: { CUSTOM: "kept", PILIBALA_CODEX_ACP_NETWORK_ACCESS: "true" },
     });
   });
 
   it.each([
-    { env: { PAPERCLIP_CODEX_ACP_NETWORK_ACCESS: "false" } },
+    { env: { PILIBALA_CODEX_ACP_NETWORK_ACCESS: "false" } },
     { extraArgs: ["-c", "sandbox_workspace_write.network_access=false"] },
     { extraArgs: ["--config=sandbox_workspace_write.network_access=false"] },
     { args: ["-csandbox_workspace_write.network_access=false"] },
     { extraArgs: ["-c", "sandbox_workspace_write.network_access=true", "-c", "sandbox_workspace_write.network_access=false"] },
   ])("preserves explicit ACP network denial %j", (config) => {
     expect(buildCodexAcpConfig(config)).toMatchObject({
-      env: { PAPERCLIP_CODEX_ACP_NETWORK_ACCESS: "false" },
+      env: { PILIBALA_CODEX_ACP_NETWORK_ACCESS: "false" },
     });
   });
 
@@ -535,7 +535,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("reports ACP prerequisites for the ACP lane", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-env-");
+    const root = await makeTempRoot("pilibala-codex-acp-env-");
     const commandPath = path.join(root, "bin", "codex-acp");
     await fs.mkdir(path.dirname(commandPath), { recursive: true });
     await fs.writeFile(commandPath, "#!/usr/bin/env sh\n", "utf8");
@@ -574,12 +574,12 @@ describe("codex_local ACP lane", () => {
   });
 
   it("detects shared managed Codex auth in ACP environment tests", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-managed-auth-");
+    const root = await makeTempRoot("pilibala-codex-acp-managed-auth-");
     const commandPath = path.join(root, "bin", "codex-acp");
     const sharedCodexHome = path.join(root, "shared-codex-home");
     const managedAgentHome = path.join(
       root,
-      "paperclip-home",
+      "pilibala-home",
       "instances",
       "test",
       "companies",
@@ -622,13 +622,13 @@ describe("codex_local ACP lane", () => {
     );
   });
 
-  it("explains the Paperclip server credential boundary when ACP auth is missing", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-missing-auth-");
+  it("explains the Pilibala server credential boundary when ACP auth is missing", async () => {
+    const root = await makeTempRoot("pilibala-codex-acp-missing-auth-");
     const commandPath = path.join(root, "bin", "codex-acp");
     const sharedCodexHome = path.join(root, "shared-codex-home");
     const managedAgentHome = path.join(
       root,
-      "paperclip-home",
+      "pilibala-home",
       "instances",
       "test",
       "companies",
@@ -660,18 +660,18 @@ describe("codex_local ACP lane", () => {
       expect.objectContaining({
         code: "codex_acp_credentials_missing",
         level: "warn",
-        message: expect.stringContaining("Paperclip server"),
+        message: expect.stringContaining("Pilibala server"),
         hint: expect.stringContaining("separate Codex/chat session"),
       }),
     );
   });
 
   it("emits the canonical adapter_auth_missing check for a missing-auth sandbox target", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-sandbox-missing-auth-");
+    const root = await makeTempRoot("pilibala-codex-acp-sandbox-missing-auth-");
     const sharedCodexHome = path.join(root, "shared-codex-home");
     const managedAgentHome = path.join(
       root,
-      "paperclip-home",
+      "pilibala-home",
       "instances",
       "test",
       "companies",
@@ -726,7 +726,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("executes through ACPX with Codex session config and ephemeral skills", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-exec-");
+    const root = await makeTempRoot("pilibala-codex-acp-exec-");
     const skill = await createRuntimeSkill(root);
     const runtimes: FakeRuntime[] = [];
     const meta: AdapterInvocationMeta[] = [];
@@ -750,8 +750,8 @@ describe("codex_local ACP lane", () => {
         modelReasoningEffort: "high",
         fastMode: true,
         promptTemplate: "Do the assigned work.",
-        paperclipRuntimeSkills: [skill],
-        paperclipSkillSync: { desiredSkills: [skill.key] },
+        pilibalaRuntimeSkills: [skill],
+        pilibalaSkillSync: { desiredSkills: [skill.key] },
       },
       onMeta: async (payload: AdapterInvocationMeta) => {
         meta.push(payload);
@@ -789,7 +789,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("sends assignment-owned markdown and ordered distinct wake comments at the ACP boundary", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-context-owner-");
+    const root = await makeTempRoot("pilibala-codex-acp-context-owner-");
     const runtimes: FakeRuntime[] = [];
     const execute = createCodexAcpExecutor({
       createRuntime: (options: FakeRuntimeOptions) => {
@@ -811,7 +811,7 @@ describe("codex_local ACP lane", () => {
     // The adapter receives server-rendered fields. Keep the server builder's
     // own tests in the server package; adapter packages compile independently.
     const assignmentMarkdown = [
-      "Paperclip task context:",
+      "Pilibala task context:",
       `- Issue: ${JSON.stringify(issue.identifier)}`,
       `- Title: ${JSON.stringify(issue.title)}`,
       "", "Issue description:", "```text", issue.description, "```",
@@ -823,9 +823,9 @@ describe("codex_local ACP lane", () => {
     const result = await execute(buildContext(root, {
       context: {
         issueId: issue.id,
-        paperclipTaskMarkdown: historicalMarkdown,
-        paperclipTaskMarkdownAssignment: assignmentMarkdown,
-        paperclipWake: {
+        pilibalaTaskMarkdown: historicalMarkdown,
+        pilibalaTaskMarkdownAssignment: assignmentMarkdown,
+        pilibalaWake: {
           reason: "issue_commented",
           issue: { ...issue, status: "in_progress" },
           comments: comments.map((comment, index) => ({
@@ -836,7 +836,7 @@ describe("codex_local ACP lane", () => {
           commentWindow: { requestedCount: 2, includedCount: 2, missingCount: 0 },
           fallbackFetchNeeded: false,
         },
-        paperclipTurnContext: {
+        pilibalaTurnContext: {
           version: 1,
           assignment: { owner: "task_markdown" },
           events: {
@@ -847,7 +847,7 @@ describe("codex_local ACP lane", () => {
             ],
           },
         },
-        paperclipWorkspace: { cwd: root, source: "project_workspace", workspaceId: "workspace-1" },
+        pilibalaWorkspace: { cwd: root, source: "project_workspace", workspaceId: "workspace-1" },
       },
     }));
     expect(result.exitCode).toBe(0);
@@ -858,7 +858,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("creates the ACP session on the in-sandbox workspace cwd for runner-backed remote runs", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-remote-cwd-");
+    const root = await makeTempRoot("pilibala-codex-acp-remote-cwd-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     await fs.mkdir(localCwd, { recursive: true });
@@ -888,8 +888,8 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipTaskMarkdown: "Task context",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          pilibalaTaskMarkdown: "Task context",
+          pilibalaWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -911,7 +911,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("seeds the managed Codex home into the sandbox and repoints CODEX_HOME to the in-sandbox path", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-home-seed-");
+    const root = await makeTempRoot("pilibala-codex-acp-home-seed-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const sourceHome = path.join(root, "codex-home");
@@ -946,7 +946,7 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          pilibalaWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -968,7 +968,7 @@ describe("codex_local ACP lane", () => {
     // the host managed home; it is NOT the host CODEX_HOME.
     expect(remappedCodexHome).not.toBe(sourceHome);
     expect(remappedCodexHome).not.toBe(sharedHostHome);
-    expect(remappedCodexHome).toContain(".paperclip-runtime");
+    expect(remappedCodexHome).toContain(".pilibala-runtime");
     // Seeded: the credential materialized into the in-sandbox home (the local
     // runner uses the host FS, so the in-sandbox path is a real host path).
     await expect(fs.readFile(path.join(remappedCodexHome, "auth.json"), "utf8")).resolves.toContain(
@@ -979,7 +979,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("copies a strictly-newer sandbox Codex auth back to the shared host on teardown", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-copyback-newer-");
+    const root = await makeTempRoot("pilibala-codex-acp-copyback-newer-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const sourceHome = path.join(root, "codex-home");
@@ -1018,7 +1018,7 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          pilibalaWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -1043,7 +1043,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("does not copy an API-key run's sandbox auth into the shared subscription home", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-key-copyback-");
+    const root = await makeTempRoot("pilibala-codex-acp-key-copyback-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const keyHome = path.join(root, "api-key-home");
@@ -1074,7 +1074,7 @@ describe("codex_local ACP lane", () => {
       },
       context: {
         issueId: "issue-1",
-        paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+        pilibalaWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
       },
       executionTarget: {
         kind: "remote",
@@ -1091,7 +1091,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("keeps the shared host Codex auth when the sandbox copy is not strictly newer", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-copyback-older-");
+    const root = await makeTempRoot("pilibala-codex-acp-copyback-older-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const sourceHome = path.join(root, "codex-home");
@@ -1130,7 +1130,7 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          pilibalaWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -1156,7 +1156,7 @@ describe("codex_local ACP lane", () => {
     // turn the engine caches the staged runtime warm and its host staged home is
     // still on disk for the next compatible resume to reuse.
     const runId = `run-keep-staged-home-${randomUUID()}`;
-    const root = await makeTempRoot("paperclip-codex-acp-keep-staged-");
+    const root = await makeTempRoot("pilibala-codex-acp-keep-staged-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const sourceHome = path.join(root, "codex-home");
@@ -1198,7 +1198,7 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          pilibalaWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -1234,7 +1234,7 @@ describe("codex_local ACP lane", () => {
     // staged-home temp dir — while the per-run copy-back (`teardown`) STILL fires
     // on the unclean exit path, so a rotated sandbox credential is never lost.
     const runId = `run-drop-staged-home-${randomUUID()}`;
-    const root = await makeTempRoot("paperclip-codex-acp-drop-staged-");
+    const root = await makeTempRoot("pilibala-codex-acp-drop-staged-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const sourceHome = path.join(root, "codex-home");
@@ -1276,7 +1276,7 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          pilibalaWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -1309,7 +1309,7 @@ describe("codex_local ACP lane", () => {
     // Clear the shared, hoisted mock first: earlier tests in this file also
     // call through it, and a leftover call could hide a real wiring bug.
     mockCreateWorkspaceRestoreTeardown.mockClear();
-    const root = await makeTempRoot("paperclip-codex-acp-teardown-wiring-");
+    const root = await makeTempRoot("pilibala-codex-acp-teardown-wiring-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     await fs.mkdir(localCwd, { recursive: true });
@@ -1332,7 +1332,7 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          pilibalaWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -1348,8 +1348,8 @@ describe("codex_local ACP lane", () => {
     expect(result.exitCode).toBe(0);
     expect(mockCreateWorkspaceRestoreTeardown).toHaveBeenCalledWith(
       expect.objectContaining({
-        startMessage: "[paperclip] Restoring workspace changes and Codex auth from the sandbox.\n",
-        failurePrefix: "[paperclip] Codex ACP teardown restore/copy-back failed",
+        startMessage: "[pilibala] Restoring workspace changes and Codex auth from the sandbox.\n",
+        failurePrefix: "[pilibala] Codex ACP teardown restore/copy-back failed",
       }),
     );
   });
@@ -1377,7 +1377,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("classifies ACP refresh-token auth failures", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-refresh-token-");
+    const root = await makeTempRoot("pilibala-codex-acp-refresh-token-");
     const execute = createCodexAcpExecutor({
       createRuntime: (options: FakeRuntimeOptions) => new FakeRuntime(
         options,
@@ -1399,7 +1399,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("resumes compatible ACP sessions on later Codex ACP runs", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-resume-");
+    const root = await makeTempRoot("pilibala-codex-acp-resume-");
     const runtimes: FakeRuntime[] = [];
     const execute = createCodexAcpExecutor({
       createRuntime: (options: FakeRuntimeOptions) => {
@@ -1429,7 +1429,7 @@ describe("resolveCodexAcpBillingIdentity", () => {
   it.each([["openrouter", "api_key", "openrouter"], ["custom", "api_key", "unknown"], ["local", "none", "unknown"]])("classifies managed %s/%s independently of host authentication", (kind, auth, biller) => {
     expect(resolveCodexAcpBillingIdentity({ config: {
       managedAiRouting: { kind, auth },
-      env: { OPENAI_API_KEY: "", PAPERCLIP_AI_PROVIDER_KEY: auth === "none" ? "" : "fixture" },
+      env: { OPENAI_API_KEY: "", PILIBALA_AI_PROVIDER_KEY: auth === "none" ? "" : "fixture" },
     } })).toEqual({ provider: "openai", biller, billingType: "api" });
   });
   const originalOpenAiKey = process.env.OPENAI_API_KEY;

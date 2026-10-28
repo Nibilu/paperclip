@@ -53,7 +53,7 @@ describeEmbeddedPostgres("agent capability upgrade request schema", () => {
   let observationB!: { id: string };
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-capability-upgrade-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-capability-upgrade-");
     db = createDb(tempDb.connectionString);
 
     [companyA, companyB] = await db

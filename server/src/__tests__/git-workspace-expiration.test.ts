@@ -7,7 +7,7 @@ import { pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq, sql } from "drizzle-orm";
-import { companies, projects, projectWorkspaces, issues, executionWorkspaces, agents, heartbeatRuns, nativeRunFinalizations, workspaceRuntimeServices, createDb } from "@paperclipai/db";
+import { companies, projects, projectWorkspaces, issues, executionWorkspaces, agents, heartbeatRuns, nativeRunFinalizations, workspaceRuntimeServices, createDb } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { resolveManagedProjectWorkspaceDir } from "../home-paths.js";
 import { materializeManagedProjectWorkspace } from "../services/managed-repository-checkout.js";
@@ -31,19 +31,19 @@ describeEmbeddedPostgres("reconstructable Git expiration", () => {
   let db: ReturnType<typeof createDb>;
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let root: string;
-  const previousHome = process.env.PAPERCLIP_HOME;
-  const previousInstance = process.env.PAPERCLIP_INSTANCE_ID;
+  const previousHome = process.env.PILIBALA_HOME;
+  const previousInstance = process.env.PILIBALA_INSTANCE_ID;
   beforeAll(async () => {
     database = await startEmbeddedPostgresTestDatabase("git-cache-expiration-");
     db = createDb(database.connectionString);
-    root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-git-expiration-"));
-    process.env.PAPERCLIP_HOME = path.join(root, "home");
-    process.env.PAPERCLIP_INSTANCE_ID = "default";
+    root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-git-expiration-"));
+    process.env.PILIBALA_HOME = path.join(root, "home");
+    process.env.PILIBALA_INSTANCE_ID = "default";
   });
   afterEach(async () => { vi.restoreAllMocks(); await db.execute(sql`TRUNCATE TABLE companies CASCADE`); });
   afterAll(async () => {
-    if (previousHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = previousHome;
-    if (previousInstance === undefined) delete process.env.PAPERCLIP_INSTANCE_ID; else process.env.PAPERCLIP_INSTANCE_ID = previousInstance;
+    if (previousHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = previousHome;
+    if (previousInstance === undefined) delete process.env.PILIBALA_INSTANCE_ID; else process.env.PILIBALA_INSTANCE_ID = previousInstance;
     await db.$client.end({ timeout: 1 }); await database.cleanup(); await fs.rm(root, { recursive: true, force: true });
   });
 
@@ -67,11 +67,11 @@ describeEmbeddedPostgres("reconstructable Git expiration", () => {
       : await materializeIsolatedRemoteWorkspaceSource({ companyId, issueId, repoUrl, resolveGitAuth: async () => null });
     const base = { baseCwd, source: "task_session" as const, projectId: null, workspaceId: null, repoUrl, repoRef: "origin/main" };
     const workspace = await realizeExecutionWorkspace({ base, issue: { id: issueId, identifier: "GC-1", title: "Fixture" }, agent: { id: null, name: "Fixture", companyId },
-      config: { workspaceStrategy: { type: "git_worktree", branchTemplate: "fixture-task", worktreeParentDir: nested ? path.join(baseCwd, ".paperclip", "worktrees") : path.join(location, "worktrees"), baseRef: "origin/main" } }, skipHostProvision: true });
+      config: { workspaceStrategy: { type: "git_worktree", branchTemplate: "fixture-task", worktreeParentDir: nested ? path.join(baseCwd, ".pilibala", "worktrees") : path.join(location, "worktrees"), baseRef: "origin/main" } }, skipHostProvision: true });
     await db.insert(executionWorkspaces).values({ id: workspaceId, companyId, projectId, sourceIssueId: issueId, mode: "isolated_workspace", strategyType: "git_worktree", name: "Fixture", status: "active",
       providerType: "local_fs", cwd: workspace.cwd, providerRef: workspace.cwd, repoUrl, baseRef: "origin/main", branchName: workspace.branchName,
       metadata: { createdByRuntime: workspace.branchCreatedByRuntime, gitBranchOwnershipVersion: 1, baseRefSha: workspace.baseRefSha,
-        ...(managed ? {} : { isolatedRemoteSource: { schema: "paperclip.isolated-remote-source.v1", companyId, issueId, repoUrl } }) } });
+        ...(managed ? {} : { isolatedRemoteSource: { schema: "pilibala.isolated-remote-source.v1", companyId, issueId, repoUrl } }) } });
     await db.update(issues).set({ executionWorkspaceId: workspaceId }).where(eq(issues.id, issueId));
     const row = () => db.select().from(executionWorkspaces).where(eq(executionWorkspaces.id, workspaceId)).then(rows => rows[0]!);
     const expire = async (options: Partial<Parameters<typeof expireReconstructableGitWorkspace>[2]> = {}) =>
@@ -255,7 +255,7 @@ describeEmbeddedPostgres("reconstructable Git expiration", () => {
     for (const location of locations) expect(await exists(path.join(location.root, location.relativePath))).toBe(false);
     expect(await f.reopen()).toMatchObject({ ok: true });
     const firstAdmin = path.dirname(path.join(locations[0]!.root, locations[0]!.relativePath));
-    expect((await fs.readdir(firstAdmin)).filter(name => name.startsWith(".paperclip-expiration-"))).toEqual([]);
+    expect((await fs.readdir(firstAdmin)).filter(name => name.startsWith(".pilibala-expiration-"))).toEqual([]);
 
     const g = await nestedFixture();
     const remaining = await crashWithExpirationLocks(g);
@@ -445,7 +445,7 @@ describeEmbeddedPostgres("reconstructable Git expiration", () => {
     expect(prepared).toEqual([f.nested]);
     expect(git(f.nested.cwd, "rev-parse", "HEAD")).toBe(f.nestedA);
     expect(await fs.readFile(f.nestedSettingsPath)).toEqual(f.settings);
-    expect(await exists(path.join(f.cwd, ".paperclip-runtime", "detached-repositories"))).toBe(false);
+    expect(await exists(path.join(f.cwd, ".pilibala-runtime", "detached-repositories"))).toBe(false);
     await db.update(executionWorkspaces).set({ metadata: { ...row.metadata, reopenPendingConsumption: false } })
       .where(eq(executionWorkspaces.id, f.workspaceId));
     expect(await f.expire()).toMatchObject({ expired: true });

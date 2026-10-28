@@ -450,7 +450,7 @@ describe("chat setup and identity-link clipboard actions", () => {
   it("resumes event configuration on the saved app and clears the retry token", async () => {
     const endpoint = await render("slack");
     const saved: ChatEndpoint = { ...endpoint, status: "draft", setup: {
-      ...endpoint.setup!, slackSetupMethod: "automatic", slackOAuthCallbackUri: "https://paperclip.example/api/chat-slack/oauth/callback",
+      ...endpoint.setup!, slackSetupMethod: "automatic", slackOAuthCallbackUri: "https://pilibala.example/api/chat-slack/oauth/callback",
       slackRegistration: { status: "install", appId: "ATEST", errorCode: "slack_manifest_update_pending" },
     } };
     mocks.get.mockResolvedValue(saved);
@@ -478,7 +478,7 @@ describe("chat setup and identity-link clipboard actions", () => {
     const saved: ChatEndpoint = { ...endpoint, status: "verifying", providerAccountId: "workspace-a", setup: {
       ...endpoint.setup!, step: "test", slackSetupMethod: "automatic",
       slackRegistration: { status: "configured", appId: "ATEST", managementUrl: "https://api.slack.com/apps/ATEST" },
-      slackAccount: { externalUserId: "UPERSON", paperclipUserId: "owner-user", status: "linked", welcomeStatus: "sent", dmChannelId: "DTEST" },
+      slackAccount: { externalUserId: "UPERSON", pilibalaUserId: "owner-user", status: "linked", welcomeStatus: "sent", dmChannelId: "DTEST" },
       slackAvatar: status === "uploaded" ? { status, uploadedAt: "2026-10-07T12:00:00Z" } : status === "failed" ? { status, errorCode: "slack_avatar_upload_failed" } : { status },
     } };
     mocks.get.mockResolvedValue(saved);
@@ -550,7 +550,7 @@ describe("chat setup and identity-link clipboard actions", () => {
     expect(container.textContent).toContain("Owner");
     expect(mocks.confirmIdentityLink).not.toHaveBeenCalled();
     mocks.confirmIdentityLink.mockImplementationOnce(async () => {
-      mocks.listPrincipals.mockResolvedValue([{ ...identity, status: "linked", paperclipUserId: "owner-user" }]);
+      mocks.listPrincipals.mockResolvedValue([{ ...identity, status: "linked", pilibalaUserId: "owner-user" }]);
       return { ok: true };
     });
     await click("This is my Slack account");
@@ -591,7 +591,7 @@ describe("chat setup and identity-link clipboard actions", () => {
   });
 
   it("does not offer to claim a Slack identity linked to someone else", async () => {
-    mocks.listPrincipals.mockResolvedValue([{ id: "link-a", principalId: "principal-a", externalLabel: "Someone else", status: "linked", paperclipUserId: "another-user", paperclipUserLabel: "Another Person", lastConnectAt: "2026-09-18T20:01:00Z" }]);
+    mocks.listPrincipals.mockResolvedValue([{ id: "link-a", principalId: "principal-a", externalLabel: "Someone else", status: "linked", pilibalaUserId: "another-user", pilibalaUserLabel: "Another Person", lastConnectAt: "2026-09-18T20:01:00Z" }]);
     await renderSlackIdentityStep();
     expect(container.textContent).toContain("Linked to Another Person");
     expect(container.textContent).not.toContain("This is my Slack account");
@@ -605,7 +605,7 @@ describe("chat setup and identity-link clipboard actions", () => {
     expect(warning.textContent).toContain("Public HTTPS URL required");
     const link = warning.querySelector("a")!;
     expect(link.textContent).toBe("Learn how to set up HTTPS");
-    expect(link.href).toBe("https://docs.paperclip.ing/reference/deploy/https/");
+    expect(link.href).toBe("https://docs.pilibala.ing/reference/deploy/https/");
   });
 
   it("cancels the delayed Slack advance when returning to the agent step", async () => {

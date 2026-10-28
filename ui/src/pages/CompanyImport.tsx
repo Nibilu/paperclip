@@ -8,8 +8,8 @@ import type {
   CompanyPortabilityPreviewResult,
   CompanyPortabilitySource,
   CompanyPortabilityAdapterOverride,
-} from "@paperclipai/shared";
-import { agentHarnessType, agentRunner } from "@paperclipai/shared";
+} from "@pilibalaai/shared";
+import { agentHarnessType, agentRunner } from "@pilibalaai/shared";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useToastActions } from "../context/ToastContext";
@@ -42,8 +42,8 @@ import { Field, adapterLabels } from "../components/agent-config-primitives";
 import { getAdapterLabel } from "../adapters/adapter-display-registry";
 import { defaultCreateValues } from "../components/agent-config-defaults";
 import { getUIAdapter, listUIAdapters } from "../adapters";
-import { isPaperclipRunnerProvider, PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES, type CreateConfigValues } from "@paperclipai/adapter-utils";
-import { resolveCodexLocalCliPolicy } from "@paperclipai/adapter-codex-local";
+import { isPilibalaRunnerProvider, PILIBALA_RUNNER_PERMISSION_CAPABILITIES, type CreateConfigValues } from "@pilibalaai/adapter-utils";
+import { resolveCodexLocalCliPolicy } from "@pilibalaai/adapter-codex-local";
 import {
   type FileTreeNode,
   type FrontmatterData,
@@ -56,7 +56,7 @@ import {
 } from "../components/FileTree";
 import { readZipArchive } from "../lib/zip";
 import { formatMegabytes } from "../lib/import-preflight";
-import { buildAlreadyImportedMessage, type CompanyImportTransferDeclaration } from "@paperclipai/shared/company-import-transfer";
+import { buildAlreadyImportedMessage, type CompanyImportTransferDeclaration } from "@pilibalaai/shared/company-import-transfer";
 import {
   CHUNKED_IMPORT_THRESHOLD_BYTES,
   IMPORT_TRANSFER_PART_ATTEMPTS,
@@ -576,20 +576,20 @@ function importAdapterValues(
   sourceAdapterType?: string,
   runner?: AgentRunnerChoice,
 ): CreateConfigValues {
-  const nativeCodex = sourceAdapterType === "paperclip_runner" && choice === "codex_local";
+  const nativeCodex = sourceAdapterType === "pilibala_runner" && choice === "codex_local";
   const savedBypass = sourceConfig?.dangerouslyBypassApprovalsAndSandbox
     ?? (nativeCodex ? undefined : sourceConfig?.dangerouslyBypassSandbox);
   return {
     ...defaultCreateValues,
-    adapterType: choice === "openai_dot" || choice === "muse" ? "paperclip_runner" : choice,
-    ...(runner !== undefined ? { runner } : nativeCodex ? { runner: agentRunner("paperclip_runner") } : {}),
+    adapterType: choice === "openai_dot" || choice === "muse" ? "pilibala_runner" : choice,
+    ...(runner !== undefined ? { runner } : nativeCodex ? { runner: agentRunner("pilibala_runner") } : {}),
     ...(sourceConfig && choice === "codex_local" ? {
       model: typeof sourceConfig.model === "string" ? sourceConfig.model : "",
       thinkingEffort: String(sourceConfig.modelReasoningEffort ?? sourceConfig.reasoningEffort ?? ""),
       ...(typeof savedBypass === "boolean" ? { codexLegacySandboxBypass: savedBypass } : {}),
       dangerouslyBypassSandbox: typeof savedBypass === "boolean" ? savedBypass
         : nativeCodex
-          ? (sourceConfig.codexPermissionMode ?? PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES.codex.defaultMode) === "never"
+          ? (sourceConfig.codexPermissionMode ?? PILIBALA_RUNNER_PERMISSION_CAPABILITIES.codex.defaultMode) === "never"
           : resolveCodexLocalCliPolicy(sourceConfig).bypass,
     } : {}),
     ...(nativeCodex && sourceConfig ? {
@@ -601,10 +601,10 @@ function importAdapterValues(
       workspaceBranchTemplate: String(asObject(sourceConfig.workspaceStrategy).branchTemplate ?? ""),
       worktreeParentDir: String(asObject(sourceConfig.workspaceStrategy).worktreeParentDir ?? ""),
       runtimeServicesJson: sourceConfig.workspaceRuntime ? JSON.stringify(sourceConfig.workspaceRuntime) : "",
-      ...(sourceConfig.lifecycleMode === "warm" || sourceConfig.lifecycleMode === "per_turn" ? { paperclipRunnerLifecycleMode: sourceConfig.lifecycleMode } : {}),
-      ...(typeof sourceConfig.idleTimeoutMs === "number" ? { paperclipRunnerIdleTimeoutMs: sourceConfig.idleTimeoutMs } : {}),
+      ...(sourceConfig.lifecycleMode === "warm" || sourceConfig.lifecycleMode === "per_turn" ? { pilibalaRunnerLifecycleMode: sourceConfig.lifecycleMode } : {}),
+      ...(typeof sourceConfig.idleTimeoutMs === "number" ? { pilibalaRunnerIdleTimeoutMs: sourceConfig.idleTimeoutMs } : {}),
     } : {}),
-    ...(sourceAdapterType === "paperclip_runner" && choice !== "openai_dot"
+    ...(sourceAdapterType === "pilibala_runner" && choice !== "openai_dot"
       ? { adapterSchemaValues: { ...sourceConfig } } : {}),
     ...(choice === "openai_dot" ? {
       adapterSchemaValues: {
@@ -1100,20 +1100,20 @@ export function CompanyImport() {
     queryFn: () => instanceSettingsApi.getExperimental(),
     retry: false,
   });
-  const runnerInstalled = availableAdapterTypes?.has("paperclip_runner") === true;
+  const runnerInstalled = availableAdapterTypes?.has("pilibala_runner") === true;
   const nativeRunnerAvailable = runnerInstalled && experimentalSettings?.enableNativeRunner === true;
   const dotAvailable = runnerInstalled && experimentalSettings?.enableOpenAiDot === true;
   const museAvailable = nativeRunnerAvailable && experimentalSettings?.enableMuse === true;
   const importAdapterOptions = useMemo(
     () => IMPORT_ADAPTER_OPTIONS.filter((option) =>
-      option.value === "paperclip_runner" ? nativeRunnerAvailable
+      option.value === "pilibala_runner" ? nativeRunnerAvailable
         : option.value === "openai_dot" ? dotAvailable : option.value === "muse" ? museAvailable : true,
     ),
     [nativeRunnerAvailable, dotAvailable, museAvailable],
   );
 
   const localZipHelpText =
-    "Upload a .zip exported directly from Paperclip. Re-zipped archives created by Finder, Explorer, or other zip tools may not import correctly.";
+    "Upload a .zip exported directly from Pilibala. Re-zipped archives created by Finder, Explorer, or other zip tools may not import correctly.";
 
   useEffect(() => {
     setBreadcrumbs([
@@ -1596,7 +1596,7 @@ export function CompanyImport() {
     // Reset config values when adapter type changes
     setAdapterConfigValues((prev) => {
       const next = { ...prev };
-      if (adapterType === "openai_dot" || adapterType === "muse" || adapterType === "paperclip_runner") {
+      if (adapterType === "openai_dot" || adapterType === "muse" || adapterType === "pilibala_runner") {
         next[slug] = importAdapterValues(adapterType);
       } else {
         delete next[slug];
@@ -1677,25 +1677,25 @@ export function CompanyImport() {
   const adapterAgents = useMemo<AdapterPickerItem[]>(() => {
     if (!importPreview) return [];
     return importPreview.manifest.agents.map((a) => {
-      const nativeCodex = a.adapterType === "paperclip_runner"
+      const nativeCodex = a.adapterType === "pilibala_runner"
         && (a.adapterConfig?.provider === "codex" || a.adapterConfig?.provider === undefined);
-      const adapterChoice = a.adapterType === "paperclip_runner" && a.adapterConfig?.provider === "openai_dot"
-        ? "openai_dot" : a.adapterType === "paperclip_runner" && a.adapterConfig?.provider === "muse" ? "muse" : nativeCodex ? agentHarnessType(a.adapterType, a.adapterConfig) : a.adapterType;
+      const adapterChoice = a.adapterType === "pilibala_runner" && a.adapterConfig?.provider === "openai_dot"
+        ? "openai_dot" : a.adapterType === "pilibala_runner" && a.adapterConfig?.provider === "muse" ? "muse" : nativeCodex ? agentHarnessType(a.adapterType, a.adapterConfig) : a.adapterType;
       let fallbackAdapterType: string | null = null;
       let availabilityWarning: string | undefined;
-      if (a.adapterType === "paperclip_runner") {
+      if (a.adapterType === "pilibala_runner") {
         const available = nativeCodex ? runnerInstalled : adapterChoice === "openai_dot" ? dotAvailable : adapterChoice === "muse" ? museAvailable : nativeRunnerAvailable;
         if (!available && (availableAdapterTypes || !nativeCodex)) {
           availabilityWarning = nativeCodex
-            ? "Paperclip Runner is unavailable here. Choose a runner or another harness explicitly."
-            : `Paperclip Runner provider ${String(a.adapterConfig?.provider)} requires its experimental feature to be enabled. This import keeps its saved harness until you choose another one.`;
+            ? "Pilibala Runner is unavailable here. Choose a runner or another harness explicitly."
+            : `Pilibala Runner provider ${String(a.adapterConfig?.provider)} requires its experimental feature to be enabled. This import keeps its saved harness until you choose another one.`;
         }
       } else if (availableAdapterTypes && !availableAdapterTypes.has(a.adapterType)) {
         // The fallback must itself be installed: the CEO's adapter when it is,
         // else any installed adapter, else null so the manifest adapter stands
         // and the server's unknown-adapter rejection is the backstop.
         const selectableTypes = [...availableAdapterTypes].filter((type) =>
-          type !== "paperclip_runner" || nativeRunnerAvailable,
+          type !== "pilibala_runner" || nativeRunnerAvailable,
         );
         fallbackAdapterType = selectableTypes.includes(ceoAdapterType)
           ? ceoAdapterType
@@ -1730,13 +1730,13 @@ export function CompanyImport() {
       const selectedType = effectiveAdapterType(agent);
       const configVals = adapterConfigValues[agent.slug];
       if (selectedType === agent.adapterChoice && !configVals) continue;
-      const apiType = selectedType === "openai_dot" || selectedType === "muse" ? "paperclip_runner" : selectedType;
+      const apiType = selectedType === "openai_dot" || selectedType === "muse" ? "pilibala_runner" : selectedType;
       const override: CompanyPortabilityAdapterOverride = { adapterType: apiType };
       if (configVals?.runner !== undefined) override.runner = configVals.runner;
       if (configVals && (selectedType !== agent.adapterChoice || adapterConfigEditedSlugs.has(agent.slug))) {
         const provider = configVals.adapterSchemaValues?.provider;
-        if (configVals.adapterType === "paperclip_runner" && provider !== undefined && !isPaperclipRunnerProvider(provider)) {
-          throw new Error(`Unknown Paperclip Runner provider ${String(provider)}. Keep the package configuration or explicitly choose another harness.`);
+        if (configVals.adapterType === "pilibala_runner" && provider !== undefined && !isPilibalaRunnerProvider(provider)) {
+          throw new Error(`Unknown Pilibala Runner provider ${String(provider)}. Keep the package configuration or explicitly choose another harness.`);
         }
         if (selectedType === "openai_dot" && configVals.adapterSchemaValues?.allowUnmeteredProvider !== true) {
           throw new Error("OpenAI Dot requires acknowledgement of external billing. Configure the Dot adapter and enable Allow externally billed provider.");
@@ -1746,9 +1746,9 @@ export function CompanyImport() {
         }
         const build = getUIAdapter(configVals.adapterType).buildAdapterConfig;
         const edited = build(configVals);
-        if (agent.adapterType === "paperclip_runner" && selectedType === agent.adapterChoice
+        if (agent.adapterType === "pilibala_runner" && selectedType === agent.adapterChoice
           && selectedType === "codex_local" && configVals.adapterType === "codex_local"
-          && agentHarnessType("paperclip_runner", configVals.adapterSchemaValues) === "codex_local") {
+          && agentHarnessType("pilibala_runner", configVals.adapterSchemaValues) === "codex_local") {
           const original = importAdapterValues(selectedType, agent.adapterConfig, agent.adapterType, configVals.runner);
           const baseline = build(original);
           const retained = { ...agent.adapterConfig };
@@ -1977,7 +1977,7 @@ export function CompanyImport() {
         <div>
           <h2 className="text-base font-semibold">Import source</h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Choose a GitHub repo or upload a local Paperclip zip package.
+            Choose a GitHub repo or upload a local Pilibala zip package.
           </p>
         </div>
 

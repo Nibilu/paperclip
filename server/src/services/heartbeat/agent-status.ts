@@ -1,6 +1,6 @@
-import { agents, heartbeatRuns, type Db } from "@paperclipai/db";
+import { agents, heartbeatRuns, type Db } from "@pilibalaai/db";
 import { and, asc, desc, eq, lte, sql } from "drizzle-orm";
-import { trackAgentFirstHeartbeat } from "@paperclipai/shared/telemetry";
+import { trackAgentFirstHeartbeat } from "@pilibalaai/shared/telemetry";
 import { getTelemetryClient } from "../../telemetry.js";
 import { logActivity, publishActivity, type ActivityPublication } from "../activity-log.js";
 import { publishLiveEvent } from "../live-events.js";

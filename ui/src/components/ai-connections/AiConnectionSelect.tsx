@@ -4,7 +4,7 @@ import {
   aiConnectionCatalogSlug,
   isAiConnectionCompatible,
   type AiConnectionBinding,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   Select,
   SelectContent,

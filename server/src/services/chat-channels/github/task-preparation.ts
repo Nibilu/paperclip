@@ -1,6 +1,6 @@
-import { agents, chatDeliveries, chatGitHubReviews } from "@paperclipai/db";
+import { agents, chatDeliveries, chatGitHubReviews } from "@pilibalaai/db";
 import { and, eq, sql } from "drizzle-orm";
-import { LOW_TRUST_REVIEW_PRESET, type GitHubReviewEventContext, type GitHubIssueEventContext, type GitHubReviewPolicy } from "@paperclipai/shared";
+import { LOW_TRUST_REVIEW_PRESET, type GitHubReviewEventContext, type GitHubIssueEventContext, type GitHubReviewPolicy } from "@pilibalaai/shared";
 import type { DbOrTransaction, EndpointRow } from "../runtime-types.js";
 import { githubManualMessagePrompt } from "../../chat-github-review-policy.js";
 

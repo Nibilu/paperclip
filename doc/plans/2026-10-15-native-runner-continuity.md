@@ -72,7 +72,7 @@ starting harnesses; past passing evidence does not qualify this change.
 ## Current state
 
 - Branch: `codex/native-runner-recovery`, based on `afe5b3418d`.
-- PR: https://github.com/paperclipai/paperclip/pull/16451 (draft, unmerged).
+- PR: https://github.com/pilibalaai/pilibala/pull/16451 (draft, unmerged).
 - Normal warm turns retain their processes. The previous suspend-every-turn
   implementation is withdrawn. Earlier suspension tests are historical only.
 - The base includes #16432 (idle expiry serialized with admission) and #16441

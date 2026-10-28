@@ -10,7 +10,7 @@ import {
   executionWorkspaces,
   issues,
   projects,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -91,7 +91,7 @@ describeEmbeddedPostgres("execution workspace runtime control lease enforcement"
   let competingIssueId = "";
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-runtime-lease-route-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-runtime-lease-route-");
     db = createDb(tempDb.connectionString);
   }, 30_000);
 

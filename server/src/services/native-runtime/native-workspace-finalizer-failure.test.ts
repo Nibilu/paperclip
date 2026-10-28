@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 const sync = vi.hoisted(() => ({ resume: vi.fn() }));
 vi.mock("./native-workspace-finalization-ownership.js", () => ({

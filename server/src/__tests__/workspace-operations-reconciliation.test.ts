@@ -9,7 +9,7 @@ import {
   executionWorkspaces,
   projects,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
 import { getWorkspaceOperationLogStore } from "../services/workspace-operation-log-store.js";
 import {
@@ -81,9 +81,9 @@ describeEmbeddedPostgres("workspace operation reconciliation", () => {
   let previousLogRoot: string | undefined;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-workspace-operation-reconcile-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-workspace-operation-reconcile-");
     db = createDb(tempDb.connectionString);
-    logRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-workspace-operation-logs-"));
+    logRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-workspace-operation-logs-"));
     previousLogRoot = process.env.WORKSPACE_OPERATION_LOG_BASE_PATH;
     process.env.WORKSPACE_OPERATION_LOG_BASE_PATH = logRoot;
   }, 20_000);

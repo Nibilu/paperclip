@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents, agentSessionGoalActions, agentTaskSessions, companies, createDb,
   EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRuns, issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
@@ -78,7 +78,7 @@ describe.skipIf(!postgres.supported)("heartbeat scheduling database boundary", (
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: Db;
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-heartbeat-scheduling-module");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-heartbeat-scheduling-module");
     db = createDb(database.connectionString);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
   afterAll(async () => {
@@ -91,7 +91,7 @@ describe.skipIf(!postgres.supported)("heartbeat scheduling database boundary", (
 
   async function fixture() {
     const [company] = await db.insert(companies).values({ name: "Scheduling", issuePrefix: "SCH" }).returning();
-    const [agent] = await db.insert(agents).values({ companyId: company.id, name: "Scheduled agent", adapterType: "paperclip_runner", createdAt: dueAt }).returning();
+    const [agent] = await db.insert(agents).values({ companyId: company.id, name: "Scheduled agent", adapterType: "pilibala_runner", createdAt: dueAt }).returning();
     const [issue] = await db.insert(issues).values({
       companyId: company.id, title: "Check deployment", status: "in_progress", assigneeAgentId: agent.id,
       monitorNextCheckAt: dueAt, monitorAttemptCount: 0, createdAt: dueAt,

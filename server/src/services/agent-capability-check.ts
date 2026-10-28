@@ -1,14 +1,14 @@
 import { and, desc, eq } from "drizzle-orm";
-import { agentCapabilityObservations, agents, type Db } from "@paperclipai/db";
+import { agentCapabilityObservations, agents, type Db } from "@pilibalaai/db";
 import {
   type AgentCapabilityDiffEntry,
   type AgentCapabilityObservation,
   capabilityDiffRequiresUpgradeTask,
   agentCapabilityObservationSchema,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import type {
   HermesCapabilityDiscoveryResult,
-} from "@paperclipai/hermes-paperclip-adapter/gateway/server";
+} from "@pilibalaai/hermes-pilibala-adapter/gateway/server";
 
 import { logActivity } from "./activity-log.js";
 import { secretService } from "./secrets.js";
@@ -189,7 +189,7 @@ export function capabilityCheckService(db: Db) {
       );
 
       // Dynamic import keeps the probe module out of the server startup path.
-      const { discoverCapabilities } = await import("@paperclipai/hermes-paperclip-adapter/gateway/server");
+      const { discoverCapabilities } = await import("@pilibalaai/hermes-pilibala-adapter/gateway/server");
       const result: HermesCapabilityDiscoveryResult = await discoverCapabilities({ config });
 
       const [row] = await db

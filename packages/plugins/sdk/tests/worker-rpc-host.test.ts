@@ -34,7 +34,7 @@ describe("isWorkerEntrypoint", () => {
   });
 
   function createTempRoot(): string {
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-sdk-worker-"));
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pilibala-sdk-worker-"));
     tempRoots.push(tempRoot);
     return tempRoot;
   }
@@ -152,12 +152,12 @@ describe("worker performAction context", () => {
     try {
       await expect(callWorker("initialize", {
         manifest: {
-          id: "paperclip.test-worker-context",
+          id: "pilibala.test-worker-context",
           apiVersion: 1,
           version: "1.0.0",
           displayName: "Worker Context Test",
           description: "Test plugin",
-          author: "Paperclip",
+          author: "Pilibala",
           categories: ["automation"],
           capabilities: [],
           entrypoints: {},
@@ -227,7 +227,7 @@ describe("worker invocation scope propagation", () => {
       const id = `host-${nextRequestId++}`;
       const request = {
         ...createRequest(method, params, id),
-        ...(invocation ? { paperclipInvocation: invocation } : {}),
+        ...(invocation ? { pilibalaInvocation: invocation } : {}),
       };
       const result = new Promise<unknown>((resolve, reject) => {
         pending.set(id, (response) => {
@@ -253,7 +253,7 @@ describe("worker invocation scope propagation", () => {
       if (!isJsonRpcRequest(message)) return;
       if (message.method !== "companies.get") return;
 
-      const invocationId = (message as { paperclipInvocationId?: string }).paperclipInvocationId ?? "";
+      const invocationId = (message as { pilibalaInvocationId?: string }).pilibalaInvocationId ?? "";
       const requestedCompanyId = (message.params as { companyId?: string }).companyId;
       const allowedCompanyId = invocationCompanies.get(invocationId);
       nestedInvocationIds.push(invocationId);
@@ -278,12 +278,12 @@ describe("worker invocation scope propagation", () => {
     try {
       await callWorker("initialize", {
         manifest: {
-          id: "paperclip.scope-test",
+          id: "pilibala.scope-test",
           apiVersion: 1,
           version: "1.0.0",
           displayName: "Scope test",
           description: "Scope test",
-          author: "Paperclip",
+          author: "Pilibala",
           categories: ["automation"],
           capabilities: ["companies.read"],
           entrypoints: { worker: "dist/worker.js" },
@@ -376,12 +376,12 @@ describe("worker configChanged cross-tenant guard", () => {
     async function initialize() {
       return await callWorker("initialize", {
         manifest: {
-          id: "paperclip.config-guard-test",
+          id: "pilibala.config-guard-test",
           apiVersion: 1,
           version: "1.0.0",
           displayName: "Config Guard Test",
           description: "Test plugin",
-          author: "Paperclip",
+          author: "Pilibala",
           categories: ["automation"],
           capabilities: [],
           entrypoints: {},
@@ -581,9 +581,9 @@ describe("worker provider tracer", () => {
       async setup(ctx) {
         ctx.data.register("probe", async () => {
           const span = ctx.tracer.startSpan("pack", {
-            attributes: { "paperclip.sandbox.startup.pack.wall_ms": 12 },
+            attributes: { "pilibala.sandbox.startup.pack.wall_ms": 12 },
           });
-          span.setAttribute("paperclip.sandbox.startup.provider", "daytona");
+          span.setAttribute("pilibala.sandbox.startup.provider", "daytona");
           span.end();
           return { ok: true };
         });
@@ -596,7 +596,7 @@ describe("worker provider tracer", () => {
       const id = `host-${nextRequestId++}`;
       const request = {
         ...createRequest(method, params, id),
-        ...(inv ? { paperclipInvocation: inv } : {}),
+        ...(inv ? { pilibalaInvocation: inv } : {}),
       };
       const result = new Promise<unknown>((resolve, reject) => {
         pending.set(id, (response) => {
@@ -622,7 +622,7 @@ describe("worker provider tracer", () => {
       if (message.method === "span.record") {
         spanRecords.push({
           params: message.params,
-          invocationId: (message as { paperclipInvocationId?: string }).paperclipInvocationId,
+          invocationId: (message as { pilibalaInvocationId?: string }).pilibalaInvocationId,
         });
         hostToWorker.write(serializeMessage(createSuccessResponse(message.id, null)));
       }
@@ -631,12 +631,12 @@ describe("worker provider tracer", () => {
     try {
       await callWorker("initialize", {
         manifest: {
-          id: "paperclip.tracer-test",
+          id: "pilibala.tracer-test",
           apiVersion: 1,
           version: "1.0.0",
           displayName: "Tracer test",
           description: "Tracer test",
-          author: "Paperclip",
+          author: "Pilibala",
           categories: ["automation"],
           capabilities: ["environment.drivers.register"],
           entrypoints: { worker: "dist/worker.js" },
@@ -669,8 +669,8 @@ describe("worker provider tracer", () => {
     expect(record.params).toMatchObject({
       name: "pack",
       attributes: {
-        "paperclip.sandbox.startup.pack.wall_ms": 12,
-        "paperclip.sandbox.startup.provider": "daytona",
+        "pilibala.sandbox.startup.pack.wall_ms": 12,
+        "pilibala.sandbox.startup.provider": "daytona",
       },
     });
   });
@@ -731,7 +731,7 @@ describe("worker execute.log emitter", () => {
       const id = `host-${nextRequestId++}`;
       const request = {
         ...createRequest(method, params, id),
-        ...(inv ? { paperclipInvocation: inv } : {}),
+        ...(inv ? { pilibalaInvocation: inv } : {}),
       };
       const result = new Promise<unknown>((resolve, reject) => {
         pending.set(id, (response) => {
@@ -758,7 +758,7 @@ describe("worker execute.log emitter", () => {
       if ((message as { method?: string }).method === "execute.log") {
         logRecords.push({
           params: (message as { params?: unknown }).params,
-          invocationId: (message as { paperclipInvocationId?: string }).paperclipInvocationId,
+          invocationId: (message as { pilibalaInvocationId?: string }).pilibalaInvocationId,
         });
       }
     });
@@ -766,12 +766,12 @@ describe("worker execute.log emitter", () => {
     try {
       await callWorker("initialize", {
         manifest: {
-          id: "paperclip.execute-log-test",
+          id: "pilibala.execute-log-test",
           apiVersion: 1,
           version: "1.0.0",
           displayName: "Execute log test",
           description: "Execute log test",
-          author: "Paperclip",
+          author: "Pilibala",
           categories: ["automation"],
           capabilities: ["environment.drivers.register"],
           entrypoints: { worker: "dist/worker.js" },
@@ -855,7 +855,7 @@ describe("worker setup-token pseudo-terminal dispatch", () => {
         expect(params.hostRouteId).toBe("route-1");
         expect(params.loginCommandKey).toBe("claude");
         expect(params.sessionHome).toBe(
-          "/tmp/paperclip-adapter-login/11111111-2222-4333-8444-555555555555",
+          "/tmp/pilibala-adapter-login/11111111-2222-4333-8444-555555555555",
         );
         expect(params.providerLeaseId).toBe("lease-1");
         return { workerSessionId: "ws-1" };
@@ -910,12 +910,12 @@ describe("worker setup-token pseudo-terminal dispatch", () => {
       await expect(
         callWorker("initialize", {
           manifest: {
-            id: "paperclip.login-pty",
+            id: "pilibala.login-pty",
             apiVersion: 1,
             version: "1.0.0",
             displayName: "Login PTY Test",
             description: "Test plugin",
-            author: "Paperclip",
+            author: "Pilibala",
             categories: ["automation"],
             capabilities: [],
             entrypoints: {},
@@ -941,7 +941,7 @@ describe("worker setup-token pseudo-terminal dispatch", () => {
           environmentId: "env-1",
           providerLeaseId: "lease-1",
           loginCommandKey: "claude",
-          sessionHome: "/tmp/paperclip-adapter-login/11111111-2222-4333-8444-555555555555",
+          sessionHome: "/tmp/pilibala-adapter-login/11111111-2222-4333-8444-555555555555",
         }),
       ).resolves.toEqual({ workerSessionId: "ws-1" });
 
@@ -997,7 +997,7 @@ describe("worker duplex channel dispatch", () => {
       async setup() {},
       async onDuplexChannelOpen(params) {
         expect(params.hostRouteId).toBe("route-1");
-        expect(params.command).toEqual(["paperclip-bridge"]);
+        expect(params.command).toEqual(["pilibala-bridge"]);
         expect(params.providerLeaseId).toBe("lease-1");
         return { workerSessionId: "ws-1" };
       },
@@ -1046,12 +1046,12 @@ describe("worker duplex channel dispatch", () => {
       await expect(
         callWorker("initialize", {
           manifest: {
-            id: "paperclip.duplex-channel",
+            id: "pilibala.duplex-channel",
             apiVersion: 1,
             version: "1.0.0",
             displayName: "Duplex Channel Test",
             description: "Test plugin",
-            author: "Paperclip",
+            author: "Pilibala",
             categories: ["automation"],
             capabilities: [],
             entrypoints: {},
@@ -1076,7 +1076,7 @@ describe("worker duplex channel dispatch", () => {
           companyId: "company-1",
           environmentId: "env-1",
           providerLeaseId: "lease-1",
-          command: ["paperclip-bridge"],
+          command: ["pilibala-bridge"],
         }),
       ).resolves.toEqual({ workerSessionId: "ws-1" });
 
@@ -1141,12 +1141,12 @@ describe("worker duplex channel dispatch", () => {
     try {
       const result = (await callWorker("initialize", {
         manifest: {
-          id: "paperclip.bare",
+          id: "pilibala.bare",
           apiVersion: 1,
           version: "1.0.0",
           displayName: "Bare Test",
           description: "Test plugin",
-          author: "Paperclip",
+          author: "Pilibala",
           categories: ["automation"],
           capabilities: [],
           entrypoints: {},

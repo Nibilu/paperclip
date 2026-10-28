@@ -18,7 +18,7 @@ describe("buildAgentSkillSourceMeta", () => {
   it("does not surface long filesystem labels for local skills", () => {
     expect(source({
       sourceBadge: "local",
-      sourceLabel: "/Users/dev/work/paperclip/skills/private-review",
+      sourceLabel: "/Users/dev/work/pilibala/skills/private-review",
       sourceLocator: null,
       sourceType: "local_path",
     })).toBe("Local folder");
@@ -27,16 +27,16 @@ describe("buildAgentSkillSourceMeta", () => {
   it("keeps human-readable project scan labels for local skills", () => {
     expect(source({
       sourceBadge: "local",
-      sourceLabel: "Paperclip App / Engineering workspace",
+      sourceLabel: "Pilibala App / Engineering workspace",
       sourceLocator: null,
       sourceType: "local_path",
-    })).toBe("Paperclip App / Engineering workspace");
+    })).toBe("Pilibala App / Engineering workspace");
   });
 
   it("does not surface long filesystem labels for catalog skills", () => {
     expect(source({
       sourceBadge: "catalog",
-      sourceLabel: "/srv/paperclip/home/.paperclip/instances/default/skills/company-id/__catalog__/briefs-discover-cards--68f7e3ad47",
+      sourceLabel: "/srv/pilibala/home/.pilibala/instances/default/skills/company-id/__catalog__/briefs-discover-cards--68f7e3ad47",
       sourceLocator: null,
       sourceType: "catalog",
     })).toBe("Catalog");

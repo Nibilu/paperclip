@@ -7,14 +7,14 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, companies, companyMemberships, companySkills, createDb, heartbeatRunEvents, heartbeatRuns, issues, projects } from "@paperclipai/db";
+import { agents, companies, companyMemberships, companySkills, createDb, heartbeatRunEvents, heartbeatRuns, issues, projects } from "@pilibalaai/db";
 import { companySkillService } from "../services/company-skills.js";
 import { withSkillVersionCacheLock } from "../services/skill-version-cache.js";
 import { registerServerAdapter, unregisterServerAdapter, type AdapterExecutionContext } from "../adapters/index.js";
 import { HttpError } from "../errors.js";
 import { heartbeatService } from "../services/heartbeat.js";
 import { bindHeartbeatRunnerHomeMode, prepareHeartbeatExecutionConfiguration, type HeartbeatExecutionConfigurationInput } from "../services/heartbeat/execution-configuration.js";
-import { aiRuntimeConnectionBindingSchema } from "@paperclipai/shared";
+import { aiRuntimeConnectionBindingSchema } from "@pilibalaai/shared";
 import { secretService } from "../services/secrets.js";
 import { instanceSettingsService } from "../services/instance-settings.js";
 import { aiConnectionService } from "../services/ai-connections.js";
@@ -27,9 +27,9 @@ const skillFailures = vi.hoisted(() => new Map<string, string>());
 
 describe("Runner home mode during recovery preparation", () => {
   it.each([
-    ["preconfigured", { schema: "paperclip.native-execution-input.v5" }, "isolated"],
-    ["preconfigured", { schema: "paperclip.native-execution-input.v7", homeMode: "isolated" }, "isolated"],
-    ["isolated", { schema: "paperclip.native-execution-input.v7", homeMode: "preconfigured" }, "preconfigured"],
+    ["preconfigured", { schema: "pilibala.native-execution-input.v5" }, "isolated"],
+    ["preconfigured", { schema: "pilibala.native-execution-input.v7", homeMode: "isolated" }, "isolated"],
+    ["isolated", { schema: "pilibala.native-execution-input.v7", homeMode: "preconfigured" }, "preconfigured"],
   ])("prepares the saved mode after current configuration changes to %s", (current, saved, expected) => {
     const config = { homeMode: current, model: "current-model", env: { TASK_VALUE: "kept" } };
     // Called before router selection and again after mutable task overrides.
@@ -70,14 +70,14 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
   const captured = new Map<string, AdapterExecutionContext>();
   const inspect = new Map<string, (input: AdapterExecutionContext) => Promise<void>>();
   const adapterType = "codex_local";
-  const oldHome = process.env.PAPERCLIP_HOME;
+  const oldHome = process.env.PILIBALA_HOME;
   let home: string;
 
   beforeAll(async () => {
     temporary = await startEmbeddedPostgresTestDatabase("heartbeat-execution-config-");
     db = createDb(temporary.connectionString);
-    home = await mkdtemp(path.join(tmpdir(), "paperclip-execution-skills-"));
-    process.env.PAPERCLIP_HOME = home;
+    home = await mkdtemp(path.join(tmpdir(), "pilibala-execution-skills-"));
+    process.env.PILIBALA_HOME = home;
     heartbeat = heartbeatService(db);
     // Exercise real preparation for a managed-capable adapter without calling a provider.
     registerServerAdapter({
@@ -97,7 +97,7 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
     unregisterServerAdapter(adapterType);
     await db?.$client.end({ timeout: 0 });
     await temporary?.cleanup();
-    if (oldHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = oldHome;
+    if (oldHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = oldHome;
     if (home) await rm(home, { recursive: true, force: true });
   });
 
@@ -121,8 +121,8 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
 
   async function execute(f: Awaited<ReturnType<typeof seed>>) {
     const run = await heartbeat.wakeup(f.agentId, { source: "on_demand", triggerDetail: "manual", reason: "manual", payload: { issueId: f.issueId }, contextSnapshot: {
-      issueId: f.issueId, paperclipSecrets: { manifest: [{ secretKey: "untrusted-wake-value" }] },
-      paperclipWake: { connectorSkillInstructions: "untrusted wake instructions" },
+      issueId: f.issueId, pilibalaSecrets: { manifest: [{ secretKey: "untrusted-wake-value" }] },
+      pilibalaWake: { connectorSkillInstructions: "untrusted wake instructions" },
     } });
     expect(run).not.toBeNull();
     await heartbeat.drainActiveRunExecutions();
@@ -138,7 +138,7 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
     { saved: null, managed: true, failure: "saved managed login required" },
   ] as const)("retains $saved preparation after configuration changes (managed: $managed)", async ({ saved, managed, failure }) => {
     const f = await seed(managed);
-    const [agent] = await db.update(agents).set({ adapterType: "paperclip_runner", adapterConfig: {
+    const [agent] = await db.update(agents).set({ adapterType: "pilibala_runner", adapterConfig: {
       provider: "codex", model: "gpt-6.1-sol", homeMode: saved === "isolated" ? "preconfigured" : "isolated",
     } }).where(eq(agents.id, f.agentId)).returning();
     const [run] = await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: f.agentId,
@@ -147,7 +147,7 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
     const prepare = vi.spyOn(aiRuntime, "prepareManagedAiRuntime").mockRejectedValue(new Error("saved managed login required"));
     skillFailures.set(f.companyId, "saved isolated skills required");
     // Preparation only reads the persisted mode and whether recovery is active.
-    const persisted = saved === null ? null : { schema: saved === "isolated" ? "paperclip.native-execution-input.v5" : "paperclip.native-execution-input.v7",
+    const persisted = saved === null ? null : { schema: saved === "isolated" ? "pilibala.native-execution-input.v5" : "pilibala.native-execution-input.v7",
       ...(saved === "preconfigured" ? { homeMode: saved } : {}),
     } as unknown as HeartbeatExecutionConfigurationInput["environment"]["persistedNativeExecutionInput"];
     const opening = prepareHeartbeatExecutionConfiguration(db, {
@@ -173,11 +173,11 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
 
   it.each(["agent", "stored task override"] as const)("uses operator preconfigured mode despite %s configuration", async source => {
     const f = await seed(true);
-    const nativeHome = await mkdtemp(path.join(tmpdir(), "paperclip-preconfigured-preparation-"));
+    const nativeHome = await mkdtemp(path.join(tmpdir(), "pilibala-preconfigured-preparation-"));
     const workspace = path.join(nativeHome, "workspace");
     await mkdir(workspace);
-    process.env.PAPERCLIP_HOME = nativeHome;
-    await db.update(agents).set({ adapterType: "paperclip_runner", adapterConfig: {
+    process.env.PILIBALA_HOME = nativeHome;
+    await db.update(agents).set({ adapterType: "pilibala_runner", adapterConfig: {
       provider: "codex", model: "gpt-6.1-sol", homeMode: "preconfigured", cwd: workspace,
     } }).where(eq(agents.id, f.agentId));
     if (source === "stored task override") {
@@ -201,7 +201,7 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
       expect(saved?.contextSnapshot?.aiConnection).toBeUndefined();
     } finally {
       await nativeHeartbeat.drainActiveRunExecutions();
-      process.env.PAPERCLIP_HOME = home;
+      process.env.PILIBALA_HOME = home;
       // Native preparation seals context bundles; release only this test's tree.
       const release = async (directory: string): Promise<void> => {
         await chmod(directory, 0o700);
@@ -214,7 +214,7 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
     }
   });
 
-  async function configuration(f: Awaited<ReturnType<typeof seed>>, config: Record<string, unknown>, snapshot: Record<string, unknown> = {}, type = "paperclip_runner") {
+  async function configuration(f: Awaited<ReturnType<typeof seed>>, config: Record<string, unknown>, snapshot: Record<string, unknown> = {}, type = "pilibala_runner") {
     const [agent] = await db.update(agents).set({ adapterType: type, adapterConfig: config }).where(eq(agents.id, f.agentId)).returning();
     const [run] = await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: f.agentId, issueId: f.issueId, scopeKind: "issue", status: "running", contextSnapshot: snapshot }).returning();
     const resolvedInstanceSettings = await instanceSettingsService(db).get();
@@ -235,7 +235,7 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
   it.each(["fresh", "saved empty"])("prepares a %s native skill selection while another run holds the company cache lock", async kind => {
     const f = await seed();
     const selected = kind === "saved empty" ? await companySkillService(db).createLocalSkill(f.companyId, { name: "Later assignment" }) : null;
-    const input = await configuration(f, selected ? { paperclipSkillSync: { desiredSkills: [selected.key] } } : {},
+    const input = await configuration(f, selected ? { pilibalaSkillSync: { desiredSkills: [selected.key] } } : {},
       kind === "saved empty" ? { skillVersions: {}, skillSelectionSnapshot: true } : {});
     let release!: () => void;
     let acquired!: () => void;
@@ -265,7 +265,7 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
   it.each(["selected native", "legacy operational"])("retains the cache exclusion for %s skills", async kind => {
     const f = await seed();
     const selected = await companySkillService(db).createLocalSkill(f.companyId, { name: "Selected lock control" });
-    const input = await configuration(f, { paperclipSkillSync: { desiredSkills: kind === "selected native" ? [selected.key] : [] } }, {}, kind === "selected native" ? "paperclip_runner" : "codex_local");
+    const input = await configuration(f, { pilibalaSkillSync: { desiredSkills: kind === "selected native" ? [selected.key] : [] } }, {}, kind === "selected native" ? "pilibala_runner" : "codex_local");
     let release!: () => void;
     let acquired!: () => void;
     const ready = new Promise<void>(resolve => { acquired = resolve; });
@@ -280,7 +280,7 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
     } finally { release(); await holder; }
     const result = await pending;
     expect(result.prepared).toBe(true);
-    if (result.prepared) expect(result.runtimeSkillEntries.some(entry => entry.key === (kind === "selected native" ? selected.key : "paperclipai/paperclip/paperclip"))).toBe(true);
+    if (result.prepared) expect(result.runtimeSkillEntries.some(entry => entry.key === (kind === "selected native" ? selected.key : "pilibalaai/pilibala/pilibala"))).toBe(true);
   });
 
   it("applies project environment and issue overrides and replaces caller-supplied runtime fields", async () => {
@@ -288,8 +288,8 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
     const { finished, input } = await execute(f);
     expect(finished.status, finished.error ?? undefined).toBe("succeeded");
     expect(input?.config).toMatchObject({ model: "issue-model", env: { SHARED_VALUE: "project", AGENT_ONLY: "agent-only", PROJECT_ONLY: "project-only" } });
-    expect(input?.context.paperclipSecrets).toBeUndefined();
-    expect(JSON.stringify(input?.context.paperclipWake)).not.toContain("untrusted wake instructions");
+    expect(input?.context.pilibalaSecrets).toBeUndefined();
+    expect(JSON.stringify(input?.context.pilibalaWake)).not.toContain("untrusted wake instructions");
   });
 
   it("delivers the selected credential in an isolated home and removes it after completion", async () => {
@@ -319,7 +319,7 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
       await provider.forceFlush();
       const runIdHash = createHash("sha256").update(finished.id).digest("hex").slice(0, 12);
       const steps = exporter.getFinishedSpans().filter(span => span.name.startsWith("heartbeat.prepare.configuration_")
-        && span.attributes["paperclip.task.run.run_id"] === runIdHash);
+        && span.attributes["pilibala.task.run.run_id"] === runIdHash);
       expect(steps.map(span => span.name)).toEqual([
         "configuration_mentions", "configuration_github_identity", "configuration_secrets", "configuration_ai_runtime",
         "configuration_skills", "configuration_connector_assignments", "configuration_connector_skills",
@@ -327,7 +327,7 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
       ].map(step => `heartbeat.prepare.${step}`));
       for (const span of steps) {
         expect(span.status).toEqual({ code: 0 });
-        expect(span.attributes).toEqual({ "paperclip.task.run.run_id": runIdHash });
+        expect(span.attributes).toEqual({ "pilibala.task.run.run_id": runIdHash });
         expect(span.events).toEqual([]);
       }
     } finally {
@@ -366,12 +366,12 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
       await provider.forceFlush();
       const runIdHash = createHash("sha256").update(finished.id).digest("hex").slice(0, 12);
       const steps = exporter.getFinishedSpans().filter(span => span.name.startsWith("heartbeat.prepare.configuration_")
-        && span.attributes["paperclip.task.run.run_id"] === runIdHash);
+        && span.attributes["pilibala.task.run.run_id"] === runIdHash);
       expect(steps.find(span => span.name === "heartbeat.prepare.configuration_ai_runtime")?.status.code).toBe(0);
       expect(steps.find(span => span.name === "heartbeat.prepare.configuration_skills")?.status).toEqual({ code: 2 });
       expect(steps.some(span => span.name === "heartbeat.prepare.configuration_connector_assignments")).toBe(false);
       for (const span of steps) {
-        expect(span.attributes).toEqual({ "paperclip.task.run.run_id": runIdHash });
+        expect(span.attributes).toEqual({ "pilibala.task.run.run_id": runIdHash });
         expect(span.events).toEqual([]);
       }
       expect(JSON.stringify(steps.map(span => ({ name: span.name, status: span.status, attributes: span.attributes, events: span.events })))).not.toContain(f.credential);
@@ -398,11 +398,11 @@ describePostgres("heartbeat execution configuration through adapter dispatch", (
     const unused = await skills.createLocalSkill(f.companyId, { name: "Unused workflow" });
     const restricted = await skills.createLocalSkill(f.companyId, { name: "Restricted workflow" });
     await db.update(companySkills).set({ accessSourceId: randomUUID() }).where(eq(companySkills.id, restricted.id));
-    await db.update(agents).set({ adapterConfig: { paperclipSkillSync: { desiredSkills: [restricted.key] } } }).where(eq(agents.id, f.agentId));
+    await db.update(agents).set({ adapterConfig: { pilibalaSkillSync: { desiredSkills: [restricted.key] } } }).where(eq(agents.id, f.agentId));
     await db.update(issues).set({ description: "Use [/selected](skill://" + selected.id + "?s=selected-workflow)." }).where(eq(issues.id, f.issueId));
     const { finished, input } = await execute(f);
     expect(finished.status, finished.error ?? undefined).toBe("succeeded");
-    const inventory = input?.config.paperclipRuntimeSkills as Array<{ key: string; source: string; versionId: string }>;
+    const inventory = input?.config.pilibalaRuntimeSkills as Array<{ key: string; source: string; versionId: string }>;
     expect(inventory.some(entry => entry.key === unused.key || entry.key === restricted.key)).toBe(false);
     const delivered = inventory.find(entry => entry.key === selected.key)!;
     expect(delivered.versionId).toBe(selected.currentVersionId);

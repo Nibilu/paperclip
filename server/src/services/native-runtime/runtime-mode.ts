@@ -4,9 +4,9 @@ import {
   type NativeStatusDecision,
 } from "./status-arbiter.js";
 import {
-  PaperclipRunnerProviderProfileError,
-  resolvePaperclipRunnerProviderProfile,
-  type PaperclipRunnerProviderProfile,
+  PilibalaRunnerProviderProfileError,
+  resolvePilibalaRunnerProviderProfile,
+  type PilibalaRunnerProviderProfile,
 } from "./provider-profile.js";
 
 /**
@@ -14,7 +14,7 @@ import {
  * original heartbeat selection seam and must remain stable for existing runs
  * and downstream importers.
  */
-export const NATIVE_RUNTIME_RESOLVER_VERSION = "paperclip-runner-v1" as const;
+export const NATIVE_RUNTIME_RESOLVER_VERSION = "pilibala-runner-v1" as const;
 
 /** Resolver version for the richer native runtime profile used by runnerd. */
 export const NATIVE_RUNTIME_PROFILE_RESOLVER_VERSION = "phase6-v1" as const;
@@ -28,8 +28,8 @@ export type HeartbeatRuntimeResolution =
   | {
       kind: "native";
       resolverVersion: typeof NATIVE_RUNTIME_RESOLVER_VERSION;
-      reason: "explicit_paperclip_runner" | "persisted_native_selection";
-      provider: PaperclipRunnerProviderProfile["provider"];
+      reason: "explicit_pilibala_runner" | "persisted_native_selection";
+      provider: PilibalaRunnerProviderProfile["provider"];
     };
 
 export type NativeRuntimeResolution =
@@ -109,7 +109,7 @@ export function resolveNativeRuntimeMode(input: {
   target: { kind?: string } | null | undefined;
   workspaceId: string | null;
 }): NativeRuntimeResolution {
-  const runnerAdapterSelected = input.agent.adapterType === "paperclip_runner";
+  const runnerAdapterSelected = input.agent.adapterType === "pilibala_runner";
   // Fresh direct-adapter runs never enter the native control plane, even if an
   // obsolete runtimeConfig.nativeRunner value is still present. Persisted
   // native runs are handled by resolveHeartbeatNativeRuntimeMode above this
@@ -121,43 +121,43 @@ export function resolveNativeRuntimeMode(input: {
       reason: "direct_adapter",
     };
   }
-  let runnerProfile: PaperclipRunnerProviderProfile;
+  let runnerProfile: PilibalaRunnerProviderProfile;
   try {
-    runnerProfile = resolvePaperclipRunnerProviderProfile(input.adapterConfig);
+    runnerProfile = resolvePilibalaRunnerProviderProfile(input.adapterConfig);
   } catch (error) {
-    if (error instanceof PaperclipRunnerProviderProfileError) {
+    if (error instanceof PilibalaRunnerProviderProfileError) {
       throw ineligible(error.code, error.message);
     }
     throw error;
   }
   // Dot has its own rollout; enabling it does not opt in other Runner providers.
   if (runnerProfile.provider === "muse") {
-    if (!input.enabled) throw ineligible("paperclip_runner_rollout_disabled", "Paperclip Runner is experimental and disabled on this instance.");
-    if (input.museEnabled !== true) throw ineligible("paperclip_runner_muse_disabled", "Enable Muse personal-agent connections in experimental settings before assigning new work.");
+    if (!input.enabled) throw ineligible("pilibala_runner_rollout_disabled", "Pilibala Runner is experimental and disabled on this instance.");
+    if (input.museEnabled !== true) throw ineligible("pilibala_runner_muse_disabled", "Enable Muse personal-agent connections in experimental settings before assigning new work.");
   } else if (runnerProfile.provider === "openai_dot") {
-    if (input.dotEnabled !== true) throw ineligible("paperclip_runner_dot_disabled", "Enable OpenAI Dot and Assistant connections (MCP) in experimental settings before assigning new work.");
+    if (input.dotEnabled !== true) throw ineligible("pilibala_runner_dot_disabled", "Enable OpenAI Dot and Assistant connections (MCP) in experimental settings before assigning new work.");
   } else if (runnerProfile.provider === "grok_bot" && (input.grokEnabled !== true || !input.enabled)) {
-    throw ineligible("paperclip_runner_grok_disabled", "Enable Grok Bot, Paperclip Runner, and Assistant connections (MCP) before assigning new work.");
+    throw ineligible("pilibala_runner_grok_disabled", "Enable Grok Bot, Pilibala Runner, and Assistant connections (MCP) before assigning new work.");
   } else if (runnerProfile.provider !== "codex" && !input.enabled) {
     throw ineligible(
-      "paperclip_runner_rollout_disabled",
-      "Paperclip Runner is experimental and disabled on this instance.",
+      "pilibala_runner_rollout_disabled",
+      "Pilibala Runner is experimental and disabled on this instance.",
     );
   }
   if (
-    input.agent.adapterType !== "paperclip_runner"
+    input.agent.adapterType !== "pilibala_runner"
     || input.agent.status !== "active" && input.agent.status !== "running"
   ) {
     throw ineligible(
-      "paperclip_runner_agent_ineligible",
-      "Paperclip Runner requires an active agent.",
+      "pilibala_runner_agent_ineligible",
+      "Pilibala Runner requires an active agent.",
     );
   }
   const allowedWorkModes = ["standard", "planning", "ask"];
   if (!input.issue || !allowedWorkModes.includes(input.issue.workMode)) {
     throw ineligible(
-      "paperclip_runner_issue_ineligible",
-      "Paperclip Runner requires a standard, planning, or ask task.",
+      "pilibala_runner_issue_ineligible",
+      "Pilibala Runner requires a standard, planning, or ask task.",
     );
   }
   const rollout = resolveNativeMigrationStatus({
@@ -167,7 +167,7 @@ export function resolveNativeRuntimeMode(input: {
   });
   if (!rollout.effects.some((effect) => effect.kind === "record_mode_native")) {
     throw ineligible(
-      "paperclip_runner_rollout_policy_rejected",
+      "pilibala_runner_rollout_policy_rejected",
       "Native rollout policy did not select native mode.",
     );
   }
@@ -255,7 +255,7 @@ export function resolveHeartbeatRuntimeMode(input: {
   return {
     kind: "native",
     resolverVersion: NATIVE_RUNTIME_RESOLVER_VERSION,
-    reason: "explicit_paperclip_runner",
+    reason: "explicit_pilibala_runner",
     provider: resolution.profile.backend === "opencode_server"
       ? "opencode"
       : resolution.profile.backend === "claude_managed_agents_api"
@@ -296,10 +296,10 @@ export function resolveHeartbeatNativeRuntimeMode(input: {
 }): NativeRuntimeResolution {
   if (input.persisted.runtimeModeResolvedAt) {
     if (input.persisted.runtimeMode === "native") {
-      if (input.agent.adapterType !== "paperclip_runner") {
+      if (input.agent.adapterType !== "pilibala_runner") {
         throw ineligible(
-          "paperclip_runner_adapter_binding_mismatch",
-          "A persisted native run must remain bound to the Paperclip Runner adapter.",
+          "pilibala_runner_adapter_binding_mismatch",
+          "A persisted native run must remain bound to the Pilibala Runner adapter.",
         );
       }
       if (
@@ -307,8 +307,8 @@ export function resolveHeartbeatNativeRuntimeMode(input: {
         input.agent.status !== "running"
       ) {
         throw ineligible(
-          "paperclip_runner_agent_ineligible",
-          "A persisted Paperclip Runner run cannot recover through a non-invokable agent.",
+          "pilibala_runner_agent_ineligible",
+          "A persisted Pilibala Runner run cannot recover through a non-invokable agent.",
         );
       }
       const driverKind = input.persisted.driverKind;
@@ -331,8 +331,8 @@ export function resolveHeartbeatNativeRuntimeMode(input: {
             : null;
       if (backend === null) {
         throw ineligible(
-          "paperclip_runner_driver_unsupported",
-          `Persisted Paperclip Runner driver is unsupported: ${driverKind}`,
+          "pilibala_runner_driver_unsupported",
+          `Persisted Pilibala Runner driver is unsupported: ${driverKind}`,
         );
       }
       return {

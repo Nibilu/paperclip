@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { agents, companies, createDb, heartbeatRunEvents, heartbeatRuns } from "@paperclipai/db";
+import { agents, companies, createDb, heartbeatRunEvents, heartbeatRuns } from "@pilibalaai/db";
 import { appendHeartbeatRunEvent } from "../services/heartbeat-run-events.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 
@@ -29,7 +29,7 @@ describeEmbeddedPostgres("atomic ordinary run events", () => {
     .where(eq(heartbeatRunEvents.runId, id)).orderBy(heartbeatRunEvents.seq);
 
   beforeAll(async () => {
-    temporary = await startEmbeddedPostgresTestDatabase("paperclip-atomic-events-");
+    temporary = await startEmbeddedPostgresTestDatabase("pilibala-atomic-events-");
     db = createDb(temporary.connectionString);
     otherDb = createDb(temporary.connectionString);
     await db.insert(companies).values([
@@ -50,7 +50,7 @@ describeEmbeddedPostgres("atomic ordinary run events", () => {
       schema: db._.fullSchema,
       logger: { logQuery: query => statements.push(query) },
     }) as typeof db;
-    const payload = { nested: ["before\u0000after"], $paperclipRunEventJsonV1: "literal" };
+    const payload = { nested: ["before\u0000after"], $pilibalaRunEventJsonV1: "literal" };
     const receipt = await appendHeartbeatRunEvent(recorded, {
       companyId, agentId, runId, eventType: "run.performance.span", stream: "system",
       level: "info", color: "green", message: "runner span", payload,

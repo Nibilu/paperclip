@@ -1,15 +1,15 @@
 import { CAPABILITIES } from "../provider-catalog.js";
 
 import { and, eq } from "drizzle-orm";
-import { chatEndpoints, toolConnections } from "@paperclipai/db";
+import { chatEndpoints, toolConnections } from "@pilibalaai/db";
 import { readRegisteredDiscordCommandRegistration } from "../../chat-discord-command-registration-store.js";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import type { EndpointRow, EndpointRecord, RuntimeContext } from "../runtime-types.js";
 import type { ChatRuntime } from "../../chat-runtime.js";
 import type { ChatEndpointRuntime } from "../../voice/voice-runtime.js";
 import type { createDiscordCommands } from "./commands.js";
 import type { createChatMessageLifecycle } from "../inbound/lifecycle.js";
-import type { ToolCredentialSecretRef } from "@paperclipai/shared";
+import type { ToolCredentialSecretRef } from "@pilibalaai/shared";
 type ReconciliationOptions = {
   reconcileDiscordCommands: ReturnType<typeof createDiscordCommands>["reconcileDiscordCommands"];
   endpointRecord: (endpointId: string) => Promise<EndpointRecord | null>;

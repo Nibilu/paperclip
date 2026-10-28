@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 
 import type { ReactNode } from "react";
-import type { IssueAttachment } from "@paperclipai/shared";
+import type { IssueAttachment } from "@pilibalaai/shared";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { IssueGalleryContext } from "@/context/IssueGalleryContext";
 import { TaskChatBubble } from "./TaskChatBubble";
-import { paperclipHumanAvatarUrl } from "@/lib/issue-chat-human-author";
+import { pilibalaHumanAvatarUrl } from "@/lib/issue-chat-human-author";
 import type { TaskChatMessageItem } from "./task-chat-model";
 
 describe("TaskChatBubble attachment chips", () => {
@@ -59,7 +59,7 @@ describe("TaskChatBubble attachment chips", () => {
     const bubble = container.querySelector('[data-testid="task-chat-human-bubble"]');
     expect(bubble?.className).toContain("bg-transparent");
     expect(bubble?.className).not.toContain("bg-(--liveness-blue)");
-    expect(bubble?.querySelector(".paperclip-markdown")?.className).not.toContain("paperclip-markdown-on-accent");
+    expect(bubble?.querySelector(".pilibala-markdown")?.className).not.toContain("pilibala-markdown-on-accent");
     render(true);
     expect(bubble?.parentElement?.classList.contains("items-end")).toBe(true);
     expect(bubble?.className).toContain("bg-(--liveness-blue)");
@@ -77,9 +77,9 @@ describe("TaskChatBubble attachment chips", () => {
     const identity = container.querySelector('[data-testid="task-chat-human-identity"]');
     expect(identity?.querySelector("img")).toBeNull();
     expect(identity?.querySelector('[data-slot="avatar-fallback"]')?.textContent).toBe("SR");
-    expect(paperclipHumanAvatarUrl("/api/assets/sam/content")).toBe("/api/assets/sam/content");
-    expect(paperclipHumanAvatarUrl("https://example.com/track.png")).toBeNull();
-    expect(paperclipHumanAvatarUrl("//example.com/track.png")).toBeNull();
+    expect(pilibalaHumanAvatarUrl("/api/assets/sam/content")).toBe("/api/assets/sam/content");
+    expect(pilibalaHumanAvatarUrl("https://example.com/track.png")).toBeNull();
+    expect(pilibalaHumanAvatarUrl("//example.com/track.png")).toBeNull();
   });
 
   it("shows persistent iMessage attribution only on inbound human bubbles", () => {
@@ -293,7 +293,7 @@ function attachment(overrides: Partial<IssueAttachment>): IssueAttachment {
     issueId: "issue",
     issueCommentId: "m1",
     assetId: `asset-${id}`,
-    provider: "paperclip",
+    provider: "pilibala",
     objectKey: id,
     contentType: "application/octet-stream",
     byteSize: 1,
@@ -338,17 +338,17 @@ describe("TaskChatBubble accent-bubble text color", () => {
 
   it("marks the own-message markdown as on-accent so prose text follows text-white", () => {
     render({ id: "m1", kind: "message", author: "human", isCurrentUser: true, text: "when a new task is created…" });
-    const body = container.querySelector(".paperclip-markdown");
+    const body = container.querySelector(".pilibala-markdown");
     expect(body).not.toBeNull();
     // Without this class the light-mode prose body color reads as black on blue.
-    expect(body?.className).toContain("paperclip-markdown-on-accent");
+    expect(body?.className).toContain("pilibala-markdown-on-accent");
   });
 
   it("leaves the neutral agent bubble on default prose colors", () => {
     render({ id: "m1", kind: "message", author: "agent", authorName: "CEO", text: "Final reply." });
-    const body = container.querySelector(".paperclip-markdown");
+    const body = container.querySelector(".pilibala-markdown");
     expect(body).not.toBeNull();
-    expect(body?.className).not.toContain("paperclip-markdown-on-accent");
+    expect(body?.className).not.toContain("pilibala-markdown-on-accent");
   });
 });
 

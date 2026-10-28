@@ -11,7 +11,7 @@ import {
 } from "./index.js";
 import { createServerAdapter as createGatewayServerAdapterFromSubpath } from "./gateway/index.js";
 
-test("root package export exposes Paperclip external adapter entrypoint", () => {
+test("root package export exposes Pilibala external adapter entrypoint", () => {
   const adapter = createServerAdapter();
 
   expect(adapter.type).toBe("hermes_local");
@@ -53,7 +53,7 @@ test("gateway subpath export exposes the Hermes Gateway adapter entrypoint", () 
   expect(typeof adapter.getConfigSchema).toBe("function");
 });
 
-test("Hermes adapter exposes bundled Paperclip task bridge skill", async () => {
+test("Hermes adapter exposes bundled Pilibala task bridge skill", async () => {
   const adapter = createServerAdapter();
   const snapshot = await adapter.listSkills?.({
     adapterType: "hermes_local",
@@ -62,15 +62,15 @@ test("Hermes adapter exposes bundled Paperclip task bridge skill", async () => {
     config: {},
   });
 
-  expect(snapshot?.entries.some((entry) => entry.runtimeName === "paperclip-task-bridge")).toBe(true);
+  expect(snapshot?.entries.some((entry) => entry.runtimeName === "pilibala-task-bridge")).toBe(true);
 });
 
-test("Hermes keeps the operational Paperclip skill linked after an empty replacement", async () => {
-  const home = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-hermes-core-skill-"));
+test("Hermes keeps the operational Pilibala skill linked after an empty replacement", async () => {
+  const home = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-hermes-core-skill-"));
   try {
-    const source = path.join(home, "runtime-skills", "paperclip");
+    const source = path.join(home, "runtime-skills", "pilibala");
     await fs.mkdir(source, { recursive: true });
-    await fs.writeFile(path.join(source, "SKILL.md"), "# Paperclip\n", "utf8");
+    await fs.writeFile(path.join(source, "SKILL.md"), "# Pilibala\n", "utf8");
     const adapter = createServerAdapter();
     const snapshot = await adapter.syncSkills?.({
       adapterType: "hermes_local",
@@ -78,29 +78,29 @@ test("Hermes keeps the operational Paperclip skill linked after an empty replace
       companyId: "22222222-2222-4222-8222-222222222222",
       config: {
         env: { HOME: home },
-        paperclipRuntimeSkills: [{
-          key: "paperclipai/paperclip/paperclip",
-          runtimeName: "paperclip",
+        pilibalaRuntimeSkills: [{
+          key: "pilibalaai/pilibala/pilibala",
+          runtimeName: "pilibala",
           source,
         }],
-        paperclipSkillSync: { desiredSkills: [] },
+        pilibalaSkillSync: { desiredSkills: [] },
       },
     }, []);
 
-    expect(snapshot?.desiredSkills).toContain("paperclipai/paperclip/paperclip");
-    expect((await fs.lstat(path.join(home, ".hermes", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
+    expect(snapshot?.desiredSkills).toContain("pilibalaai/pilibala/pilibala");
+    expect((await fs.lstat(path.join(home, ".hermes", "skills", "pilibala"))).isSymbolicLink()).toBe(true);
   } finally {
     await fs.rm(home, { recursive: true, force: true });
   }
 });
 
 test("Hermes rejects a conflicting operational skill target", async () => {
-  const home = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-hermes-core-conflict-"));
+  const home = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-hermes-core-conflict-"));
   try {
-    const source = path.join(home, "runtime-skills", "paperclip");
-    const target = path.join(home, ".hermes", "skills", "paperclip");
+    const source = path.join(home, "runtime-skills", "pilibala");
+    const target = path.join(home, ".hermes", "skills", "pilibala");
     await fs.mkdir(source, { recursive: true });
-    await fs.writeFile(path.join(source, "SKILL.md"), "# Paperclip\n", "utf8");
+    await fs.writeFile(path.join(source, "SKILL.md"), "# Pilibala\n", "utf8");
     await fs.mkdir(target, { recursive: true });
     await fs.writeFile(path.join(target, "SKILL.md"), "# Conflicting skill\n", "utf8");
     const adapter = createServerAdapter();
@@ -111,9 +111,9 @@ test("Hermes rejects a conflicting operational skill target", async () => {
       companyId: "22222222-2222-4222-8222-222222222222",
       config: {
         env: { HOME: home },
-        paperclipRuntimeSkills: [{
-          key: "paperclipai/paperclip/paperclip",
-          runtimeName: "paperclip",
+        pilibalaRuntimeSkills: [{
+          key: "pilibalaai/pilibala/pilibala",
+          runtimeName: "pilibala",
           source,
         }],
       },
@@ -124,13 +124,13 @@ test("Hermes rejects a conflicting operational skill target", async () => {
 });
 
 test("Hermes quarantines a live symlink owned by another operational skill (AMB-108)", async () => {
-  const home = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-hermes-core-link-conflict-"));
+  const home = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-hermes-core-link-conflict-"));
   try {
-    const source = path.join(home, "runtime-skills", "paperclip");
-    const conflictingSource = path.join(home, "external-skills", "paperclip");
-    const target = path.join(home, ".hermes", "skills", "paperclip");
+    const source = path.join(home, "runtime-skills", "pilibala");
+    const conflictingSource = path.join(home, "external-skills", "pilibala");
+    const target = path.join(home, ".hermes", "skills", "pilibala");
     await fs.mkdir(source, { recursive: true });
-    await fs.writeFile(path.join(source, "SKILL.md"), "# Paperclip\n", "utf8");
+    await fs.writeFile(path.join(source, "SKILL.md"), "# Pilibala\n", "utf8");
     await fs.mkdir(conflictingSource, { recursive: true });
     await fs.writeFile(path.join(conflictingSource, "SKILL.md"), "# External skill\n", "utf8");
     await fs.mkdir(path.dirname(target), { recursive: true });
@@ -145,9 +145,9 @@ test("Hermes quarantines a live symlink owned by another operational skill (AMB-
       companyId: "22222222-2222-4222-8222-222222222222",
       config: {
         env: { HOME: home },
-        paperclipRuntimeSkills: [{
-          key: "paperclipai/paperclip/paperclip",
-          runtimeName: "paperclip",
+        pilibalaRuntimeSkills: [{
+          key: "pilibalaai/pilibala/pilibala",
+          runtimeName: "pilibala",
           source,
         }],
       },
@@ -156,12 +156,12 @@ test("Hermes quarantines a live symlink owned by another operational skill (AMB-
     const relinked = await fs.readlink(target);
     expect(path.resolve(path.dirname(target), relinked)).toBe(path.resolve(source));
     const linkedContent = await fs.readFile(path.join(target, "SKILL.md"), "utf8");
-    expect(linkedContent).toBe("# Paperclip\n");
+    expect(linkedContent).toBe("# Pilibala\n");
     // The foreign link survives in the quarantine archive.
     const archiveDir = path.join(home, ".hermes", "skills", ".archive");
     const archived = await fs.readdir(archiveDir);
     expect(archived.length).toBe(1);
-    expect(archived[0]).toMatch(/^paperclip\.foreign-/);
+    expect(archived[0]).toMatch(/^pilibala\.foreign-/);
     const archivedTarget = await fs.readlink(path.join(archiveDir, archived[0]));
     expect(path.resolve(archiveDir, archivedTarget)).toBe(path.resolve(conflictingSource));
   } finally {

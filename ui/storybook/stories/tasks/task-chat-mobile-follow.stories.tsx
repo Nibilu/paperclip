@@ -50,7 +50,7 @@ const meta = {
   parameters: {
     layout: "fullscreen",
     docs: { description: { component: "Controlled output in the production thread and composer. At the bottom, updates stay visible. Scroll up to hold your reading position, then return to the bottom to resume following. Stop pauses the fixture; send a message to resume. No agent or provider calls." } },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "tasks/discussion"
       ],

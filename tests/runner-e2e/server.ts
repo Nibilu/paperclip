@@ -12,7 +12,7 @@ import { prepareRunnerE2EServerConfig } from "./server-config.js";
 import { installedReleaseEnvironment, installedReleaseLaunch } from "./installed-release.js";
 import {
   assertIsolatedServerEnvironment,
-  buildPaperclipServerEnvironment,
+  buildPilibalaServerEnvironment,
   runnerE2EServerControlPaths,
 } from "./harness-env.js";
 
@@ -22,14 +22,14 @@ function required(name: string) {
   return value;
 }
 
-const logPath = required("PAPERCLIP_RUNNER_E2E_SERVER_LOG");
-const temporaryRoot = required("PAPERCLIP_RUNNER_E2E_TEMP_ROOT");
-const paperclipHome = required("PAPERCLIP_HOME");
-const configPath = required("PAPERCLIP_CONFIG");
-const port = required("PAPERCLIP_RUNNER_E2E_PORT");
+const logPath = required("PILIBALA_RUNNER_E2E_SERVER_LOG");
+const temporaryRoot = required("PILIBALA_RUNNER_E2E_TEMP_ROOT");
+const pilibalaHome = required("PILIBALA_HOME");
+const configPath = required("PILIBALA_CONFIG");
+const port = required("PILIBALA_RUNNER_E2E_PORT");
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
-const paperclipCli = path.join(repositoryRoot, "tests/runner-e2e/server-entry.ts");
-const executionIds: string[] = JSON.parse(process.env.PAPERCLIP_RUNNER_E2E_EXECUTION_IDS ?? "[]");
+const pilibalaCli = path.join(repositoryRoot, "tests/runner-e2e/server-entry.ts");
+const executionIds: string[] = JSON.parse(process.env.PILIBALA_RUNNER_E2E_EXECUTION_IDS ?? "[]");
 const selectedExecutions = usesInstalledCli(process.env) ? executionIds.map(id => {
   const execution = runnerMatrix.find(row => row.id === id);
   if (!execution) throw new Error("Unknown installed CLI proof execution");
@@ -42,9 +42,9 @@ const {
 } = runnerE2EServerControlPaths(temporaryRoot);
 const restartTimeoutMs = 180_000;
 const gracefulStopTimeoutMs = 30_000;
-const installedRelease = process.env.PAPERCLIP_RUNNER_E2E_INSTALLED_CLI
-  ? installedReleaseLaunch(process.env.PAPERCLIP_RUNNER_E2E_INSTALLED_CLI) : null;
-const serverEnvironment = buildPaperclipServerEnvironment(installedRelease
+const installedRelease = process.env.PILIBALA_RUNNER_E2E_INSTALLED_CLI
+  ? installedReleaseLaunch(process.env.PILIBALA_RUNNER_E2E_INSTALLED_CLI) : null;
+const serverEnvironment = buildPilibalaServerEnvironment(installedRelease
   ? installedReleaseEnvironment(process.env, repositoryRoot, path.join(temporaryRoot, "provider-bin"))
   : process.env, {
   NODE_ENV: "test",
@@ -52,44 +52,44 @@ const serverEnvironment = buildPaperclipServerEnvironment(installedRelease
   // Keep provider caches attempt-private without changing Playwright's browser
   // cache lookup in the parent process.
   XDG_CACHE_HOME: path.join(temporaryRoot, "xdg-cache"),
-  PAPERCLIP_HOME: paperclipHome,
-  PAPERCLIP_CONFIG: configPath,
-  PAPERCLIP_INSTANCE_ID: required("PAPERCLIP_INSTANCE_ID"),
-  PAPERCLIP_AGENT_JWT_SECRET: required("PAPERCLIP_AGENT_JWT_SECRET"),
-  PAPERCLIP_DECISION_SIGNING_SECRET: required(
-    "PAPERCLIP_DECISION_SIGNING_SECRET",
+  PILIBALA_HOME: pilibalaHome,
+  PILIBALA_CONFIG: configPath,
+  PILIBALA_INSTANCE_ID: required("PILIBALA_INSTANCE_ID"),
+  PILIBALA_AGENT_JWT_SECRET: required("PILIBALA_AGENT_JWT_SECRET"),
+  PILIBALA_DECISION_SIGNING_SECRET: required(
+    "PILIBALA_DECISION_SIGNING_SECRET",
   ),
-  PAPERCLIP_TOOL_ACTION_SIGNING_SECRET: required(
-    "PAPERCLIP_TOOL_ACTION_SIGNING_SECRET",
+  PILIBALA_TOOL_ACTION_SIGNING_SECRET: required(
+    "PILIBALA_TOOL_ACTION_SIGNING_SECRET",
   ),
   BETTER_AUTH_SECRET: required("BETTER_AUTH_SECRET"),
-  PAPERCLIP_BIND: "loopback",
-  PAPERCLIP_BIND_HOST: "127.0.0.1",
-  PAPERCLIP_DEPLOYMENT_MODE: process.env.PAPERCLIP_RUNNER_E2E_PUBLIC_MCP === "1" ? "authenticated" : "local_trusted",
-  ...(process.env.PAPERCLIP_RUNNER_E2E_PUBLIC_MCP === "1" ? {
-    PAPERCLIP_PUBLIC_URL: `http://127.0.0.1:${port}`,
-    PAPERCLIP_AUTH_PUBLIC_BASE_URL: `http://127.0.0.1:${port}`,
-    PAPERCLIP_AUTH_BASE_URL_MODE: "explicit",
+  PILIBALA_BIND: "loopback",
+  PILIBALA_BIND_HOST: "127.0.0.1",
+  PILIBALA_DEPLOYMENT_MODE: process.env.PILIBALA_RUNNER_E2E_PUBLIC_MCP === "1" ? "authenticated" : "local_trusted",
+  ...(process.env.PILIBALA_RUNNER_E2E_PUBLIC_MCP === "1" ? {
+    PILIBALA_PUBLIC_URL: `http://127.0.0.1:${port}`,
+    PILIBALA_AUTH_PUBLIC_BASE_URL: `http://127.0.0.1:${port}`,
+    PILIBALA_AUTH_BASE_URL_MODE: "explicit",
     // Use empty provider configuration as the managed homes' seed. A local
     // operator's installed plugins, MCP connections and auth are not fixtures.
     CODEX_HOME: path.join(temporaryRoot, "provider-config", "codex"),
     CLAUDE_CONFIG_DIR: path.join(temporaryRoot, "provider-config", "claude"),
   } : {}),
-  PAPERCLIP_DEPLOYMENT_EXPOSURE: "private",
+  PILIBALA_DEPLOYMENT_EXPOSURE: "private",
   SERVE_UI: "true",
-  PAPERCLIP_STORAGE_PROVIDER: "local_disk",
-  PAPERCLIP_STORAGE_LOCAL_DIR: path.join(temporaryRoot, "storage"),
-  PAPERCLIP_SECRETS_PROVIDER: "local_encrypted",
-  PAPERCLIP_SECRETS_STRICT_MODE: "true",
-  PAPERCLIP_DB_BACKUP_ENABLED: "false",
-  PAPERCLIP_DB_BACKUP_DIR: path.join(temporaryRoot, "backups"),
+  PILIBALA_STORAGE_PROVIDER: "local_disk",
+  PILIBALA_STORAGE_LOCAL_DIR: path.join(temporaryRoot, "storage"),
+  PILIBALA_SECRETS_PROVIDER: "local_encrypted",
+  PILIBALA_SECRETS_STRICT_MODE: "true",
+  PILIBALA_DB_BACKUP_ENABLED: "false",
+  PILIBALA_DB_BACKUP_DIR: path.join(temporaryRoot, "backups"),
   // Onboarding normally opens the app after listen. Browser ownership belongs
   // to Playwright in this harness, so never create a developer desktop tab.
-  PAPERCLIP_OPEN_ON_LISTEN: "false",
+  PILIBALA_OPEN_ON_LISTEN: "false",
 });
 assertIsolatedServerEnvironment(serverEnvironment, {
   temporaryRoot,
-  paperclipHome,
+  pilibalaHome,
   configPath,
 });
 const definedServerEnvironment = Object.fromEntries(
@@ -101,7 +101,7 @@ const definedServerEnvironment = Object.fromEntries(
 await Promise.all([
   mkdir(path.dirname(logPath), { recursive: true }),
   mkdir(controlDirectory, { recursive: true, mode: 0o700 }),
-  ...(process.env.PAPERCLIP_RUNNER_E2E_PUBLIC_MCP === "1" ? [
+  ...(process.env.PILIBALA_RUNNER_E2E_PUBLIC_MCP === "1" ? [
     mkdir(path.join(temporaryRoot, "provider-config", "codex"), { recursive: true, mode: 0o700 }),
     mkdir(path.join(temporaryRoot, "provider-config", "claude"), { recursive: true, mode: 0o700 }),
   ] : []),
@@ -135,13 +135,13 @@ function describeChildExit(candidate: ChildProcess) {
 
 async function startServer() {
   if (shutdownRequested()) {
-    throw new Error("Refusing to start Paperclip after wrapper shutdown");
+    throw new Error("Refusing to start Pilibala after wrapper shutdown");
   }
   // Recheck bytes and dependency resolution on every controller restart.
   const installed = await verifyInstalledCli(process.env, selectedExecutions);
   const candidate = spawn(
     process.execPath,
-    installed ? [installed.entry, "onboard", "--yes", "--run"] : runnerE2ETypeScriptProcessArgs(repositoryRoot, paperclipCli, ["onboard", "--yes", "--run"]),
+    installed ? [installed.entry, "onboard", "--yes", "--run"] : runnerE2ETypeScriptProcessArgs(repositoryRoot, pilibalaCli, ["onboard", "--yes", "--run"]),
     {
       cwd: installedRelease?.cwd ?? repositoryRoot,
       env: definedServerEnvironment,
@@ -165,7 +165,7 @@ async function startServer() {
     childErrors.set(candidate, error);
     if (!expectedStops.has(candidate) && !shutdownRequested()) {
       unexpectedChildFailure = new Error(
-        `Paperclip server spawn failed: ${error.message}`,
+        `Pilibala server spawn failed: ${error.message}`,
       );
     }
   });
@@ -173,7 +173,7 @@ async function startServer() {
     appendLog(`\n${describeChildExit(candidate)}\n`);
     if (!expectedStops.has(candidate) && !shutdownRequested()) {
       unexpectedChildFailure = new Error(
-        `Paperclip server stopped unexpectedly: ${describeChildExit(candidate)}`,
+        `Pilibala server stopped unexpectedly: ${describeChildExit(candidate)}`,
       );
     }
   });
@@ -205,11 +205,11 @@ async function waitForHealth(candidate: ChildProcess) {
   const healthUrl = `http://127.0.0.1:${port}/api/health`;
   while (Date.now() < deadline) {
     if (shutdownRequested()) {
-      throw new Error("Wrapper shutdown interrupted the Paperclip restart");
+      throw new Error("Wrapper shutdown interrupted the Pilibala restart");
     }
     if (childErrors.has(candidate) || childExited(candidate)) {
       throw new Error(
-        `Replacement Paperclip server could not start: ${describeChildExit(candidate)}`,
+        `Replacement Pilibala server could not start: ${describeChildExit(candidate)}`,
       );
     }
     try {
@@ -223,7 +223,7 @@ async function waitForHealth(candidate: ChildProcess) {
     await delay(250);
   }
   throw new Error(
-    `Replacement Paperclip server did not become healthy within ${restartTimeoutMs}ms`,
+    `Replacement Pilibala server did not become healthy within ${restartTimeoutMs}ms`,
   );
 }
 
@@ -232,7 +232,7 @@ async function waitForHealthToStop() {
   const deadline = Date.now() + gracefulStopTimeoutMs;
   while (Date.now() < deadline) {
     if (shutdownRequested()) {
-      throw new Error("Wrapper shutdown interrupted the Paperclip restart");
+      throw new Error("Wrapper shutdown interrupted the Pilibala restart");
     }
     try {
       await fetch(healthUrl, { signal: AbortSignal.timeout(500) });
@@ -242,7 +242,7 @@ async function waitForHealthToStop() {
     await delay(100);
   }
   throw new Error(
-    "The old Paperclip server remained healthy after its launcher exited",
+    "The old Pilibala server remained healthy after its launcher exited",
   );
 }
 
@@ -299,9 +299,9 @@ async function writeRestartAck(
 
 async function restartServer({ requestId, preserveRunner }: RestartRequest) {
   activeRestartRequestId = requestId;
-  appendLog(`\nRestart request ${requestId}: stopping Paperclip\n`);
+  appendLog(`\nRestart request ${requestId}: stopping Pilibala\n`);
   const previous = child;
-  if (!previous) throw new Error("No Paperclip server is available to restart");
+  if (!previous) throw new Error("No Pilibala server is available to restart");
   if (preserveRunner) await stopServer.forRestart(previous, preserveRunner);
   else await stopServer(previous);
   if (child === previous) child = null;
@@ -309,17 +309,17 @@ async function restartServer({ requestId, preserveRunner }: RestartRequest) {
   // must stop answering before the next launcher is allowed to start.
   await waitForHealthToStop();
   if (shutdownRequested()) {
-    throw new Error("Wrapper shutdown interrupted the Paperclip restart");
+    throw new Error("Wrapper shutdown interrupted the Pilibala restart");
   }
 
-  appendLog(`Restart request ${requestId}: starting Paperclip\n`);
+  appendLog(`Restart request ${requestId}: starting Pilibala\n`);
   const replacement = await startServer();
   await waitForHealth(replacement);
   if (shutdownRequested()) {
-    throw new Error("Wrapper shutdown interrupted the Paperclip restart");
+    throw new Error("Wrapper shutdown interrupted the Pilibala restart");
   }
   await writeRestartAck(requestId, "ready");
-  appendLog(`Restart request ${requestId}: Paperclip is healthy\n`);
+  appendLog(`Restart request ${requestId}: Pilibala is healthy\n`);
   activeRestartRequestId = null;
 }
 
@@ -335,7 +335,7 @@ for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
 }
 
 async function supervise() {
-  const executionIds: string[] = JSON.parse(process.env.PAPERCLIP_RUNNER_E2E_EXECUTION_IDS ?? "[]");
+  const executionIds: string[] = JSON.parse(process.env.PILIBALA_RUNNER_E2E_EXECUTION_IDS ?? "[]");
   if (executionIds.some(id => id.includes(".legacy-claude.local.") || /\.assistant-claude-(?:haiku|sonnet)\.local\./.test(id))) {
     definedServerEnvironment.PATH = await qualifyLegacyClaudeCli(temporaryRoot, definedServerEnvironment);
   }
@@ -367,7 +367,7 @@ try {
 } catch (error) {
   exitCode = 1;
   const message = error instanceof Error ? error.message : String(error);
-  appendLog(`\nPaperclip E2E server supervisor failed: ${message}\n`);
+  appendLog(`\nPilibala E2E server supervisor failed: ${message}\n`);
   if (activeRestartRequestId) {
     try {
       await writeRestartAck(activeRestartRequestId, "failed", message);
@@ -380,7 +380,7 @@ try {
   try {
     await stopServer.stopAll();
   } catch (stopError) {
-    appendLog(`Failed to stop Paperclip after supervisor failure: ${stopError instanceof Error ? stopError.message : String(stopError)}\n`);
+    appendLog(`Failed to stop Pilibala after supervisor failure: ${stopError instanceof Error ? stopError.message : String(stopError)}\n`);
   }
 }
 

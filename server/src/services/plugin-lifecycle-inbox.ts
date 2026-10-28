@@ -1,5 +1,5 @@
-import { pluginCompanySettings, pluginLifecycleAcknowledgments, plugins, resourceLifecycleEvents, type Db } from "@paperclipai/db";
-import type { ResourceLifecycleEvent } from "@paperclipai/plugin-sdk";
+import { pluginCompanySettings, pluginLifecycleAcknowledgments, plugins, resourceLifecycleEvents, type Db } from "@pilibalaai/db";
+import type { ResourceLifecycleEvent } from "@pilibalaai/plugin-sdk";
 import { z } from "zod";
 import { and, asc, eq, gt, inArray, sql } from "drizzle-orm";
 import { badRequest, conflict, forbidden, notFound } from "../errors.js";

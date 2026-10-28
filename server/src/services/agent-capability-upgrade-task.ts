@@ -1,14 +1,14 @@
 import { and, eq } from "drizzle-orm";
-import { agentCapabilityObservations, agentCapabilityUpgradeRequests, agents, type Db } from "@paperclipai/db";
+import { agentCapabilityObservations, agentCapabilityUpgradeRequests, agents, type Db } from "@pilibalaai/db";
 import {
   CAPABILITY_UPGRADE_ADMISSION_GATE_REASON,
   capabilityUpgradeRequestKey,
   type AgentCapabilityDiffEntry,
   type CapabilityUpgradeTaskProvenance,
   type CreateCapabilityUpgradeTaskInput,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
-import { issues } from "@paperclipai/db";
+import { issues } from "@pilibalaai/db";
 import { sql } from "drizzle-orm";
 
 import { logActivity } from "./activity-log.js";

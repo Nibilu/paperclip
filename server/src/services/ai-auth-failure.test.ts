@@ -11,16 +11,16 @@ describe("AI authentication failure recovery", () => {
   it.each([
     ["codex_local", {}, "openai"],
     ["claude_local", {}, "anthropic"],
-    ["paperclip_runner", { provider: "codex" }, "openai"],
-    ["paperclip_runner", { provider: "acpx", acpxAgent: "claude" }, "anthropic"],
-    ["paperclip_runner", { provider: "acpx", acpxAgent: "grok" }, "xai"],
+    ["pilibala_runner", { provider: "codex" }, "openai"],
+    ["pilibala_runner", { provider: "acpx", acpxAgent: "claude" }, "anthropic"],
+    ["pilibala_runner", { provider: "acpx", acpxAgent: "grok" }, "xai"],
     ["opencode_local", { model: "openrouter/model" }, "openrouter"],
   ] as const)("maps %s %j to %s", (adapter, config, provider) => {
     expect(aiBindingForAuthRecovery(adapter, config)).toMatchObject({ provider, mode: "responsible_user" });
   });
   it("does not guess a provider for unsupported harnesses or routes", () => {
     expect(aiBindingForAuthRecovery("opencode_local", { model: "anthropic/claude" })).toBeUndefined();
-    expect(aiBindingForAuthRecovery("paperclip_runner", { provider: "acpx", acpxAgent: "custom" })).toBeUndefined();
+    expect(aiBindingForAuthRecovery("pilibala_runner", { provider: "acpx", acpxAgent: "custom" })).toBeUndefined();
   });
   it("offers Google's supported API-key method for Gemini recovery", () => {
     expect(aiBindingForAuthRecovery("gemini_local", {})).toEqual({ provider: "google", method: "api_key", mode: "responsible_user" });

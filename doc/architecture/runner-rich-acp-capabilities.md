@@ -153,14 +153,14 @@ provider sequence remains permission-first.
 Historical source checkpoint (2026-09-30): **Cursor v9, Copilot v8 and Pi v10
 remain unqualified**. All three declarations bind shared ACPX patch SHA-256
 `bd5393058a218040d217fa85449d59a6f30507de54cd645bf0ef21422823f85e`.
-Cursor additionally binds newly materialized `paperclip-cursor-usage-v4` closures;
+Cursor additionally binds newly materialized `pilibala-cursor-usage-v4` closures;
 Copilot and Pi native distribution bytes are unchanged. The new identities reject
 retained 7/7/9 sessions, plus Cursor v8 sessions. Claude, Codex and Grok profile declarations stay unchanged.
 The metadata is observation-only: native counters always remain partial, absent
 fields stay absent, and no token totals or dollar costs are inferred. A supported
 schema does not prove native counter aggregation semantics. No new paid pass,
 build, publication or production qualification is claimed for these identities.
-External eval definitions for 8/8/10 merged in [#35](https://github.com/paperclipai/paperclip-evals/pull/35)
+External eval definitions for 8/8/10 merged in [#35](https://github.com/pilibalaai/pilibala-evals/pull/35)
 as `25303cf84953985b961b95f89aff0bdb864b2d65`, from head
 `b4ef1aa1296f8897714325d189e5a6f51dad9e01`: 136 deterministic tests,
 21 validated cells, passing CI and Apex 5/5. Models, pricing and graders are
@@ -169,7 +169,7 @@ Cursor v8 checkpoint and require a separate reviewed Cursor v9 update.
 
 Historical checkpoint (2026-09-30): **Cursor v9, Copilot v8 and Pi v10 remain unqualified.** The frozen runtime is `5c69b69ef2aeab8d8a367b25a8d894cc5308befa`; controller candidate is `a8df2064d68f40fbf4dec670c4b8478c4b1b1b3f`. All profiles bind shared ACPX patch SHA-256 `bd5393058a218040d217fa85449d59a6f30507de54cd645bf0ef21422823f85e`. No profile is promoted and no prior grade is changed.
 
-Current-profile protocol eval definitions merged in [paperclip-evals #36](https://github.com/paperclipai/paperclip-evals/pull/36) as `d987357461933baca0d4c10cc081f40e7eae5c1b`: 136 deterministic tests and 21 validated cells. These definitions do not supply paid qualification evidence.
+Current-profile protocol eval definitions merged in [pilibala-evals #36](https://github.com/pilibalaai/pilibala-evals/pull/36) as `d987357461933baca0d4c10cc081f40e7eae5c1b`: 136 deterministic tests and 21 validated cells. These definitions do not supply paid qualification evidence.
 
 | Profile | Latest status |
 | --- | --- |
@@ -177,21 +177,21 @@ Current-profile protocol eval definitions merged in [paperclip-evals #36](https:
 | Copilot v8 | Current warm attempt passed all 9 Product matchers and daemon invariants; overall supervisor failed final-pack cleanup on an extra executable. That exact orphan was later retired safely; the original grade stays failed. Daytona denial observed no write, but normal provider completion failed the original cancellation fixture; later checks were not graded. Database timestamps do not establish visibility before Stop; the earlier ordering inference is withdrawn. The 5c69 warm-PID failure is a separate historical grade. |
 | Pi v10 | Capped-key/login access remains blocked. Native USD is unknown; fresh exact-runtime qualification remains pending. |
 
-Shutdown ownership [#14730](https://github.com/paperclipai/paperclip/pull/14730), head `d09ed62b6`, has Apex 5/5 and all 52 checks green. Denial settlement [#14733](https://github.com/paperclipai/paperclip/pull/14733), head `1b47b30be`, passes 220 focused tests and E2E typecheck; fresh review and CI are pending. Suite v4 retains exact API evidence before dispatching Stop; database timestamps are descriptive only, and neither accepted settlement branch proves active-turn cancellation. Final-source verification and fresh paid qualification remain pending. Sidecars rotate by `attach_run`, a separate ACPX authority behavior from daemon continuity.
+Shutdown ownership [#14730](https://github.com/pilibalaai/pilibala/pull/14730), head `d09ed62b6`, has Apex 5/5 and all 52 checks green. Denial settlement [#14733](https://github.com/pilibalaai/pilibala/pull/14733), head `1b47b30be`, passes 220 focused tests and E2E typecheck; fresh review and CI are pending. Suite v4 retains exact API evidence before dispatching Stop; database timestamps are descriptive only, and neither accepted settlement branch proves active-turn cancellation. Final-source verification and fresh paid qualification remain pending. Sidecars rotate by `attach_run`, a separate ACPX authority behavior from daemon continuity.
 
 Cursor's verified fixed $25 account-cycle cap resets October 28 and applies to account on-demand fees, not per-cell costs. Its separate 15-test helper proposal is unintegrated and grants no launch authority. Pi's capped-key prerequisite remains unresolved; the optional helper is not integrated. Account-control review SHA-256: `0b661e38043759b5569a586dea57160926a361367c779bfe0fb0080c122f3bdd`.
 
 Latest Copilot attempt references: warm result `effadec7b6b134e3b31148cf7eea3c2b24d37ee0fc6ce36dbc90ec420b171560`, reconciliation `1ad1788161e34abf7ddcda15e08134a4c80d1f0af176d7b5397ea6dd810dace0`; Daytona denial result `050a239b6d86754d0f0045979b7c343c007729528546b49f069e7396cd167b38`, reconciliation `2ef9834cd53345c03c04bbfec1ad0bba24a2de1d7096d9225acdfa185241b82a`.
 
-Earlier current-profile case evidence (grades retained) is tied to Paperclip source `5c69b69ef2aeab8d8a367b25a8d894cc5308befa` and eval definitions `e4989bae1cedc36835da199826bf207d86b75761`. Copilot v8 protocol coverage totals seven cells: six passed and one behavior failure. The earlier `get_task_context` cell passed (result SHA-256 `7a30ad3de932f7e1bc3c3c3c766d8aa128c7003b35447ac0c73ef5f1f36914c0`); the remaining-batch reconciliation records five passes and one failure (SHA-256 `0e746a85e529a2fd45da4e553062753eabc1d8cb37d701529c5bc030a200cb81`). The `context-before-action` failure called `report_progress` before `get_task_context` and generated two comments. No native per-run USD was available; estimated model cost is separate. In local warm continuity, all nine matchers across three turns matched, but the candidate failed the stable-process requirement after observing three runner PIDs (result SHA-256 `e05e1af41a0c43396e8297ca0ac670065ff1f20bf3ce343930d5f45139277ed6`). For the Daytona permission-denial attempt, the recorded sandbox state was `building_snapshot` when the fixture lease wait expired, before the native permission operation or lease. That state can include queueing or image pulling; the evidence does not prove a snapshot was actually being built (result SHA-256 `fb928929a578403943707544e770ddc6ababe358c344a33c4af9028406804407`; state receipt SHA-256 `e32e5bf9b6ee18e8c2a4cb97436ceac7974b0fe1ed7cce02dae4ad2d3d58d875`). The later a8df attempt is recorded in the current checkpoint above; these earlier artifact grades remain unchanged and do not establish complete provider qualification.
+Earlier current-profile case evidence (grades retained) is tied to Pilibala source `5c69b69ef2aeab8d8a367b25a8d894cc5308befa` and eval definitions `e4989bae1cedc36835da199826bf207d86b75761`. Copilot v8 protocol coverage totals seven cells: six passed and one behavior failure. The earlier `get_task_context` cell passed (result SHA-256 `7a30ad3de932f7e1bc3c3c3c766d8aa128c7003b35447ac0c73ef5f1f36914c0`); the remaining-batch reconciliation records five passes and one failure (SHA-256 `0e746a85e529a2fd45da4e553062753eabc1d8cb37d701529c5bc030a200cb81`). The `context-before-action` failure called `report_progress` before `get_task_context` and generated two comments. No native per-run USD was available; estimated model cost is separate. In local warm continuity, all nine matchers across three turns matched, but the candidate failed the stable-process requirement after observing three runner PIDs (result SHA-256 `e05e1af41a0c43396e8297ca0ac670065ff1f20bf3ce343930d5f45139277ed6`). For the Daytona permission-denial attempt, the recorded sandbox state was `building_snapshot` when the fixture lease wait expired, before the native permission operation or lease. That state can include queueing or image pulling; the evidence does not prove a snapshot was actually being built (result SHA-256 `fb928929a578403943707544e770ddc6ababe358c344a33c4af9028406804407`; state receipt SHA-256 `e32e5bf9b6ee18e8c2a4cb97436ceac7974b0fe1ed7cce02dae4ad2d3d58d875`). The later a8df attempt is recorded in the current checkpoint above; these earlier artifact grades remain unchanged and do not establish complete provider qualification.
 
 Cursor v9's current `get_task_context` cell passed four behavior checks, only one of which asserts a semantic operation. Root reconciliation classifies the attempt as `accounting_failure_account_bounded`, but the capture did not retain the bounded v4 usage envelope: the usage ledger was empty, the retained artifact records `provider_did_not_report_usage`, and native counters were not inspected. There is no usable provider aggregate or estimated cost, so this capture cannot live-qualify partial v4 diagnostics. The case and provider remain unqualified, and no native per-run USD is inferred. Result SHA-256 `7968dc62496feca03a7def6ee20b95ba825d42e9a98f1b6b763ccb8a263b35f4`; root reconciliation SHA-256 `3558c09a839a8aaf9a34970fb793e9c84ff8ca3c125f9543da9c208d4323c54f`.
-A later live-eval recorder review found that generic mapping and evidence fallback drop `paperclip/canonicalProviderEvent`. This identifies a recorder loss path; the prior artifact does not prove that the provider emitted the diagnostic, so the existing `accounting_failure_account_bounded` result and its accounting failure remain unchanged. Draft Paperclip PR [#14724](https://github.com/paperclipai/paperclip/pull/14724), targeting #14699, is at head `3adee6f3fc652d5f5ee40b2061a16cea0c7341f5`. Its non-native suite passed 73 tests with one explicit native exclusion. The initial Apex review identified two P1 issues, subsequently repaired and re-reviewed at the current head above. Evidence `cursor-eval-notice-fix/APEX-REPAIR-01.json` records `nativeExecuted: false` and `oldPaidFailuresRegraded: false` (SHA-256 `a792c3979e4a33801d44974b32fa9078294ec650641ca4e23b1b28212a62659e`). This TS-only repair does not establish deploy-pack or native-runtime reusability: the whole provider deploy pack includes live/eval files and its digest would change; native equalities remain unproven.
+A later live-eval recorder review found that generic mapping and evidence fallback drop `pilibala/canonicalProviderEvent`. This identifies a recorder loss path; the prior artifact does not prove that the provider emitted the diagnostic, so the existing `accounting_failure_account_bounded` result and its accounting failure remain unchanged. Draft Pilibala PR [#14724](https://github.com/pilibalaai/pilibala/pull/14724), targeting #14699, is at head `3adee6f3fc652d5f5ee40b2061a16cea0c7341f5`. Its non-native suite passed 73 tests with one explicit native exclusion. The initial Apex review identified two P1 issues, subsequently repaired and re-reviewed at the current head above. Evidence `cursor-eval-notice-fix/APEX-REPAIR-01.json` records `nativeExecuted: false` and `oldPaidFailuresRegraded: false` (SHA-256 `a792c3979e4a33801d44974b32fa9078294ec650641ca4e23b1b28212a62659e`). This TS-only repair does not establish deploy-pack or native-runtime reusability: the whole provider deploy pack includes live/eval files and its digest would change; native equalities remain unproven.
 
 Startup preparation on controller `a8df2064d68f40fbf4dec670c4b8478c4b1b1b3f` with frozen runtime `5c69b69ef2aeab8d8a367b25a8d894cc5308befa` first failed because the frozen offline install recreated `node_modules` without the excluded Daytona workspace plugin-SDK link. The narrow `link-plugin-dev-sdk` export restored one symlink and its owned parent. The subsequent preparation digest is `b824a5dde48c94a7c64f2be273b1b03508bdbbd55dbc7cfe63a45a19371b0fd7`; readiness receipt `product-readiness.pending.json` SHA-256 `60fa994d929851670ce29d2dfb2cb773a06ee9e0c037142ccda44fb6e522a9d9` passed health, recovery, UI and plugin checks, retired 32 owned PIDs and observed clear IPC. Root review digest is `4be4f8ce295457b50c69683417bd3883b101089a994bae59be518fe781bf97ce`. This is setup evidence only: zero provider or cloud calls, not provider qualification.
 
 
-The preceding PR workflow on candidate `a027895ea66ac74578ff677d4c555c263773c0a7` ended with nine jobs reporting the same runner shutdown signal at approximately 13:50 UTC, followed by cancellation. Bounded job logs show no explicit failed-test summary, so this is recorded as runner interruption evidence, not a product qualification result or source-test failure. Final PR review snapshot (2026-09-30): paperclip/paperclip #14696 at exact head `9dbf9ae0d030d837a9a4d9241967ff5d3d5c974e` has 52/52 checks green. Greptile Apex reviewed that exact head at 5/5 with no new findings; all eight existing Greptile review threads are resolved. This confirms the PR review state only; provider production qualification remains pending. The preparation review itself records that no paid authority was granted (receipt `protocol-preparation/root-preparation-review.json`, SHA-256 `a716c6bb1d31a7c5bd6547d9295ac8b133f4ad86ab8fccf53683c3b92cab5dac`).
+The preceding PR workflow on candidate `a027895ea66ac74578ff677d4c555c263773c0a7` ended with nine jobs reporting the same runner shutdown signal at approximately 13:50 UTC, followed by cancellation. Bounded job logs show no explicit failed-test summary, so this is recorded as runner interruption evidence, not a product qualification result or source-test failure. Final PR review snapshot (2026-09-30): pilibala/pilibala #14696 at exact head `9dbf9ae0d030d837a9a4d9241967ff5d3d5c974e` has 52/52 checks green. Greptile Apex reviewed that exact head at 5/5 with no new findings; all eight existing Greptile review threads are resolved. This confirms the PR review state only; provider production qualification remains pending. The preparation review itself records that no paid authority was granted (receipt `protocol-preparation/root-preparation-review.json`, SHA-256 `a716c6bb1d31a7c5bd6547d9295ac8b133f4ad86ab8fccf53683c3b92cab5dac`).
 
 Cursor's native-question report has a [public upstream review finding](https://forum.cursor.com/t/agent-acp-never-offers-the-askquestion-tool-so-cursor-ask-question-is-never-sent/172976): the reported missing AskQuestion behavior was attributed to server-side ACP session identification, with no missing initialize capability identified and no verified fix release in the visible thread. This is diagnostic evidence, not confirmation that the pinned Cursor distribution supports the callback in every mode or proof that it is universally absent. Evidence identity: `root-findings.json`, SHA-256 `2fc34c1942e85ab58577b7cfa8ccdeafe520cc7c539aa67a7eef5a474848ad73`.
 
@@ -220,7 +220,7 @@ have complete token-price coverage, while native billed dollars remain unknown.
 The failed orientation case is a model-behavior result, not an infrastructure
 retry candidate. The five final independent cases passed 35 checks in total.
 
-The remote observer fix in [#14696](https://github.com/paperclipai/paperclip/pull/14696)
+The remote observer fix in [#14696](https://github.com/pilibalaai/pilibala/pull/14696)
 sends a small nonce-bound snapshot request instead of forwarding its source code
 over an 8 KiB control socket. The exact latest source `a1145db4d8dbde17e624f8a14ef2726b33d09083`
 passes Apex 5/5 and CI. Its 41 deterministic tests include generated install,
@@ -234,7 +234,7 @@ AGENT_HOME, stale first-lease callbacks during handoff and compact receipts losi
 the original materialization root. The corrected source passed 541 pure tests, direct server typecheck and all 63
 selected database-backed cases (49 directory-service and 14 composed remote
 scenarios), with owned process/IPC/temporary-root cleanup verified. These repairs
-are awaiting a fresh commit review in [#14695](https://github.com/paperclipai/paperclip/pull/14695). Earlier failing DB and
+are awaiting a fresh commit review in [#14695](https://github.com/pilibalaai/pilibala/pull/14695). Earlier failing DB and
 paid attempts remain retained; neither source tests nor session-ID reuse alone
 prove paid warm process continuity.
 
@@ -247,7 +247,7 @@ cleanup completed. Fresh Apex and CI are pending. This adds no paid warm proof.
 
 Cursor's pinned native `TurnEndedUpdate` has optional input, output, cache-read,
 cache-write and reasoning counters. Its vendor ACP prompt response does not
-project them. No evidence shows Paperclip dropped a supplied ACP usage receipt in
+project them. No evidence shows Pilibala dropped a supplied ACP usage receipt in
 the failed attempt. The new candidate records bounded per-invocation observations
 as explicitly partial diagnostics. It must not sum parent/child totals, invent
 missing zeros or claim billing until the backend's aggregation/cache/reasoning
@@ -281,7 +281,7 @@ the dated qualification checkpoint above states the current result.
 
 Updated: 2026-09-30 UTC. **Cursor v7, Copilot v7 and Pi v9 remain unqualified.** Paid controller and Product harness source is recorded per case: `40064d28522de25fea85c1297f35b41bb8a8897a` or `3d21d375de2b6249d9f5322bf001ce0ce0e052aa`. Native runtime source remains `5b8e4454ef0bf12d0bb068c2e41d8c9df9356a1c`. Runtime builds for macOS ARM64, macOS x64 and Linux x64 are complete. The corrected 3d21 controller uses unchanged compiled UI/package outputs built on 40064; it executes the controller TypeScript from 3d21. These distinct source roles do not relabel the runtime or older failures.
 
-Exact-head CI and Greptile now pass for Cursor `c58a8881f2cb771b35e19e1bf56e08cb89397e83` (53 successful checks, two skips, Greptile 5/5) and Copilot `3d21d375de2b6249d9f5322bf001ce0ce0e052aa` (54 successes, four skips, Greptile 5/5). Copilot's first server-shard run timed out in an unchanged legacy Cursor test; an isolated reproduction and one failed-job rerun passed. Superseded cancelled checks are not failures. The new warm-directory fix needs its own full checks and live proof. Foundation [#14430](https://github.com/paperclipai/paperclip/pull/14430) and Runner Eval definitions [#33](https://github.com/paperclipai/paperclip-evals/pull/33) are merged. The v7/v7/v9 definition update [#34](https://github.com/paperclipai/paperclip-evals/pull/34) merged as `52f6e897c08d236776a21723257e12c909d71137`, with 136 deterministic tests and 21 validated cells. These definitions are not paid proof. Provider PRs remain drafts.
+Exact-head CI and Greptile now pass for Cursor `c58a8881f2cb771b35e19e1bf56e08cb89397e83` (53 successful checks, two skips, Greptile 5/5) and Copilot `3d21d375de2b6249d9f5322bf001ce0ce0e052aa` (54 successes, four skips, Greptile 5/5). Copilot's first server-shard run timed out in an unchanged legacy Cursor test; an isolated reproduction and one failed-job rerun passed. Superseded cancelled checks are not failures. The new warm-directory fix needs its own full checks and live proof. Foundation [#14430](https://github.com/pilibalaai/pilibala/pull/14430) and Runner Eval definitions [#33](https://github.com/pilibalaai/pilibala-evals/pull/33) are merged. The v7/v7/v9 definition update [#34](https://github.com/pilibalaai/pilibala-evals/pull/34) merged as `52f6e897c08d236776a21723257e12c909d71137`, with 136 deterministic tests and 21 validated cells. These definitions are not paid proof. Provider PRs remain drafts.
 
 | Current-profile paid case | Exact outcome and evidence limit |
 | --- | --- |
@@ -308,16 +308,16 @@ The [prior evidence checkpoint](runner-rich-acp-validation-2026-09-30-current.js
 | Pi v9 | Obtain an enforced provider spending bound, then run the unchanged required local/Daytona cases against the exact model and final runtime. Historical controls, question and hello passes do not qualify v9. |
 | All providers | Bind every required case to exact controller/runtime/profile and platform evidence, retain failures, complete source/dependency/pack end audits and owned cleanup, and reconcile actual spend within the $100 ceiling. CI and packaging do not substitute for this paid evidence; native Cursor/Copilot per-run USD remains unknown. |
 
-The field inventories and [prioritized follow-ups](#historical-gaps-and-follow-ups--october-2-2026) distinguish native SDK/RPC capability, ACP exposure and Paperclip projection. Image inputs, structured tool diffs/media/raw arguments, secondary locations and typed exit codes remain partial or unused in the common path. Cursor's richer child details and discovery/configuration fields, Copilot's session-scoped files/assets and uncorrelated native notices, and Pi's queue-delivery/configuration fields remain explicit follow-ups. These optional surfaces are not silently claimed as supported or treated as new blockers for unrelated declared cases. Copilot native steering/fork/ask-user APIs do not imply ACP responders; Pi native fork/clone/export likewise have no mapped runner controls. Pi confirm reports `negative_or_cancelled` because No and dismissal are indistinguishable; accepted empty or whitespace-only input/editor responses are not representable by the current canonical form.
+The field inventories and [prioritized follow-ups](#historical-gaps-and-follow-ups--october-2-2026) distinguish native SDK/RPC capability, ACP exposure and Pilibala projection. Image inputs, structured tool diffs/media/raw arguments, secondary locations and typed exit codes remain partial or unused in the common path. Cursor's richer child details and discovery/configuration fields, Copilot's session-scoped files/assets and uncorrelated native notices, and Pi's queue-delivery/configuration fields remain explicit follow-ups. These optional surfaces are not silently claimed as supported or treated as new blockers for unrelated declared cases. Copilot native steering/fork/ask-user APIs do not imply ACP responders; Pi native fork/clone/export likewise have no mapped runner controls. Pi confirm reports `negative_or_cancelled` because No and dismissal are indistinguishable; accepted empty or whitespace-only input/editor responses are not representable by the current canonical form.
 
 | Retained paid observation | Outcome and limit |
 | --- | --- |
 | Cursor v6 Daytona hello, runtime/controller e822 | Six Product matchers passed. Root reconciled the original supervisor cleanup-tail failure using the retained absent sandbox, retired processes and passing integrity audit. Infrastructure upper bound: $0.086931; analytics are provisional. This proves one cell. |
 | Copilot v6 local native denial, controller415/runtimee822 | Ten Product checks passed: delivered denial, correlated native failure, zero target mutations, explicit Stop, cancellation and owned cleanup. An additive screenshot-reader correction used the original evidence without a model retry. This historical v6 case passed; it does not qualify v7. |
-| Cursor v6 local native plan, controller415/runtimee822 | All 21 native bridge checks passed, including reject, feedback, revision, exact acceptance and reconnect. The case failed because a normal planning stop had no semantic task-completion result. [Draft #14669](https://github.com/paperclipai/paperclip/pull/14669) adds a passive in-progress wait for the next user message. Its later paid attempt is recorded below. |
+| Cursor v6 local native plan, controller415/runtimee822 | All 21 native bridge checks passed, including reject, feedback, revision, exact acceptance and reconnect. The case failed because a normal planning stop had no semantic task-completion result. [Draft #14669](https://github.com/pilibalaai/pilibala/pull/14669) adds a passive in-progress wait for the next user message. Its later paid attempt is recorded below. |
 | Cursor v6 local native plan, controllerca702/runtimee822 | All 21 native bridge checks passed again. The case failed because the plan's own tool started after its input callback, while the runner had dropped the tool identity needed to distinguish it from unrelated work. Workspace snapshots stayed empty; no second run was observed. Native completion succeeded, but controller settlement failed. All owned processes retired and the full integrity audit passed. Cursor v7 binds the exact tool lifecycle; its later paid settlement failure is recorded above. This failed case is not regraded. |
 | Copilot v6 attached-command settlement, controller415/runtimee822 | Failed supervision: incomplete IPC observation stopped an accepted turn. A later scanner match was a static UI demo string. The owned processes retired; an exact temporary executable copy was separately removed and the full pack audit passed. The original failed observation remains failed. |
-| Copilot v6 attached-command settlement, controller81/runtimee822 | A new authenticated attempt reached task Done, but one leading ASCII space changed the native command digest. A fixture-only correction now permits a bounded leading SPACE/TAB prefix and retains both digests. The original case remains failed: independent settlement observations were not captured before that assertion, and two provider text bursts produced a doubled final marker. The source investigation confirmed that the pinned ACP mapper drops native message IDs. [Draft #14676](https://github.com/paperclipai/paperclip/pull/14676) preserves them in a separately versioned Copilot v7 candidate; no equal-text deduplication is applied. Cleanup, complete IPC observation and the full end integrity audit passed. Included-credit observations changed 15→16; extra usage stayed disabled at $0. A visible Done status alone does not qualify command settlement. |
+| Copilot v6 attached-command settlement, controller81/runtimee822 | A new authenticated attempt reached task Done, but one leading ASCII space changed the native command digest. A fixture-only correction now permits a bounded leading SPACE/TAB prefix and retains both digests. The original case remains failed: independent settlement observations were not captured before that assertion, and two provider text bursts produced a doubled final marker. The source investigation confirmed that the pinned ACP mapper drops native message IDs. [Draft #14676](https://github.com/pilibalaai/pilibala/pull/14676) preserves them in a separately versioned Copilot v7 candidate; no equal-text deduplication is applied. Cleanup, complete IPC observation and the full end integrity audit passed. Included-credit observations changed 15→16; extra usage stayed disabled at $0. A visible Done status alone does not qualify command settlement. |
 
 Fresh source81 controller startup, recovery, static UI/plugin admission and local/remote credential-free preflights passed. Native builds retain e822 provenance on macOS ARM64, macOS x64 (Rosetta), and Linux x64. Exact restoration of seven missing empty Cursor directories recovered the original ARM64 and Linux pack digests without changing files or expected inventories. Analogous omissions in the retained Linux build stage and macOS-x64 pack/stage still need restoration and verification before their next use; the actor is unknown. No additional platform qualification is inferred.
 
@@ -331,7 +331,7 @@ Copilot v7 source `70b186b3c` preserves real native message identity through the
 
 Cursor native AskQuestion remains unverified for the inspected exact models/modes. Pi v9 needs a verifiable OpenRouter spending bound before further paid runs. Its optional transport-budget candidate remains frozen: production allocation, launch scope, warm rotation, packaging and Daytona transport are incomplete. The provider-capped key remains the immediate path. Native Cursor/Copilot per-run USD remains unknown. Included usage and a disabled overage budget are billing coverage, not a native price receipt. The first 53 attempt records are closed. The table above separates corrected Cursor plan and Copilot hello passes from retained failed plan, warm and launcher attempts. The $100 campaign authorization remains in force, including failed attempts and infrastructure.
 
-Current profile identities bind shared runtime contract `paperclip.acpx-runtime-contract.v1`. All ACPX warm owners include that revision in their configuration fingerprint; incompatible owners retire without approval replay. Other transports retain their previous configuration digest. Legacy Cursor and Pi adapters remain unchanged.
+Current profile identities bind shared runtime contract `pilibala.acpx-runtime-contract.v1`. All ACPX warm owners include that revision in their configuration fingerprint; incompatible owners retire without approval replay. Other transports retain their previous configuration digest. Legacy Cursor and Pi adapters remain unchanged.
 
 ## Historical v5/v5/v8 evidence
 
@@ -357,7 +357,7 @@ exposed final-message aggregation of earlier narration.
 These passes retain earlier failures and do not qualify native interactions,
 all required platforms or the remaining remote journeys.
 
-The [harness priorities report](https://pages.paperclip.ing/2026-09-25-harness-priorities/)
+The [harness priorities report](https://pages.pilibala.ing/2026-09-25-harness-priorities/)
 recommends Cursor and Copilot, followed by Pi, using the existing qualified ACPX
 path. Codex app-server is the richness benchmark. The legacy Cursor and Pi
 adapters are outside this change.
@@ -390,7 +390,7 @@ left no owned semaphores and passed post-run authority checks. Screenshots,
 durable events and original receipts are retained. All cases used zero automatic
 retries. Native priced USD remains unavailable for Cursor and Copilot; included
 usage is account billing coverage, not a fabricated native token price.
-Paperclip semantic questions and plans do not qualify native provider callbacks.
+Pilibala semantic questions and plans do not qualify native provider callbacks.
 The campaign remains provisional until its full end audit and required cases
 pass.
 
@@ -488,7 +488,7 @@ The most recent paid macOS ARM64 pack is
 The rebuilt Linux x64 pack is
 `sha256:83702fae11105f5b9ee8f9731b86dc06becb12075f68bdc98dcdfe9f9c842473`,
 published and independently verified in
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:16c8be9c512c28cd9b16fe9ad5331f3fd7b58c42c382d3ebbe5897f658de0bea`.
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:16c8be9c512c28cd9b16fe9ad5331f3fd7b58c42c382d3ebbe5897f658de0bea`.
 The first Daytona setup attempt failed before browser fixture initialization,
 provider inference or sandbox creation because the isolated HOME lacked a
 Playwright browser-cache binding. Its failure remains retained. The explicit
@@ -500,7 +500,7 @@ Cursor's initialize probes needed forced cleanup after EOF, retained as a
 settlement limitation rather than reported as graceful exit.
 
 Current profile pins and prelaunch rejection checks are merged in
-[paperclip-evals #32](https://github.com/paperclipai/paperclip-evals/pull/32),
+[pilibala-evals #32](https://github.com/pilibalaai/pilibala-evals/pull/32),
 with 142 deterministic tests and 21 selected cells across all three explicit
 lanes. These definitions remain separate from authenticated qualification.
 
@@ -529,12 +529,12 @@ passed. No provider is exposed as qualified on this evidence.
 ## Historical production checkpoint (2026-09-29)
 
 The basic eval definitions and then-current profile pin follow-up merged in
-`paperclip-evals` PRs [#29](https://github.com/paperclipai/paperclip-evals/pull/29)
-and [#30](https://github.com/paperclipai/paperclip-evals/pull/30). The latter passed
+`pilibala-evals` PRs [#29](https://github.com/pilibalaai/pilibala-evals/pull/29)
+and [#30](https://github.com/pilibalaai/pilibala-evals/pull/30). The latter passed
 134 unit tests, CI and Greptile 5/5 at `4a15550d16ced37c6edbafa91a11783a64e4e649`;
 its merge commit is `0ad9c5a4275fbfbed3b32f261d3e603d9761a07c`. The Cursor/Copilot v4 and Pi v7 pin
 update, including prelaunch profile admission, merged in
-[PR #31](https://github.com/paperclipai/paperclip-evals/pull/31) at
+[PR #31](https://github.com/pilibalaai/pilibala-evals/pull/31) at
 `0b4b3932e95fe1685df5d523edff18c824fd3d54`. It passed 135 deterministic tests,
 all three explicit lanes, current-head CI and Apex 5/5. These definitions
 are not paid qualification results. Versioned config IDs separate current
@@ -627,7 +627,7 @@ at file-edit startup timeout. No automatic retries occurred. All campaign
 processes retired and post-run runtime/dependency checks passed. Additional
 GitHub usage remained disabled at $0/$0; these account counters do not supply a
 native per-run dollar receipt. The plan and question journeys use authenticated
-Paperclip semantic tools; they do not establish a native Copilot ask-user
+Pilibala semantic tools; they do not establish a native Copilot ask-user
 responder.
 
 Pi Daytona attempt 01 used the previous `807feaecf` image and never reached
@@ -730,12 +730,12 @@ These checks do not by themselves qualify provider-specific native file tools.
 
 | Branch | Deliverable |
 | --- | --- |
-| [`codex/runner-rich-acp` / #14430](https://github.com/paperclipai/paperclip/pull/14430) | Shared ACPX extension boundary, durable permissions, canonical display events, provider pack infrastructure, configuration and UI |
-| [`codex/runner-cursor-acp` / #14435](https://github.com/paperclipai/paperclip/pull/14435) | Cursor native distribution, questions/plans, child activity, policy admission, wire fixtures |
-| [`codex/runner-copilot-acp` / #14434](https://github.com/paperclipai/paperclip/pull/14434) | Copilot native distribution, event inventory/projections, permission and settlement probes |
-| [`codex/runner-acp-inputs` / #14591](https://github.com/paperclipai/paperclip/pull/14591) | Shared editable drafts, native question compatibility, bounded image builds and authenticated continuation fixes |
-| [`codex/runner-pi-acp` / #14436](https://github.com/paperclipai/paperclip/pull/14436) | Patched wrapper, owned extension, MCP/tools, permissions/input, portable dependency closure |
-| [`codex/rich-acp-extended-harness-evals` / evals #29](https://github.com/paperclipai/paperclip-evals/pull/29) | Explicit 21-cell Runner Eval campaign, semantic assertions, provenance and fail-closed budget accounting |
+| [`codex/runner-rich-acp` / #14430](https://github.com/pilibalaai/pilibala/pull/14430) | Shared ACPX extension boundary, durable permissions, canonical display events, provider pack infrastructure, configuration and UI |
+| [`codex/runner-cursor-acp` / #14435](https://github.com/pilibalaai/pilibala/pull/14435) | Cursor native distribution, questions/plans, child activity, policy admission, wire fixtures |
+| [`codex/runner-copilot-acp` / #14434](https://github.com/pilibalaai/pilibala/pull/14434) | Copilot native distribution, event inventory/projections, permission and settlement probes |
+| [`codex/runner-acp-inputs` / #14591](https://github.com/pilibalaai/pilibala/pull/14591) | Shared editable drafts, native question compatibility, bounded image builds and authenticated continuation fixes |
+| [`codex/runner-pi-acp` / #14436](https://github.com/pilibalaai/pilibala/pull/14436) | Patched wrapper, owned extension, MCP/tools, permissions/input, portable dependency closure |
+| [`codex/rich-acp-extended-harness-evals` / evals #29](https://github.com/pilibalaai/pilibala-evals/pull/29) | Explicit 21-cell Runner Eval campaign, semantic assertions, provenance and fail-closed budget accounting |
 
 The provider branches were implemented in parallel from the foundation. Final
 shared registration and packaging conflicts are resolved in dependency order:
@@ -749,9 +749,9 @@ pending qualification. Source reports on the provider branches are
 `doc/architecture/runner-pi-capabilities.md`. Those reports retain versioned
 source references, per-field dispositions, fixture paths, and narrower claims.
 The Copilot inventory enumerates all 150 pinned native event types. Read the
-[Cursor inventory](https://github.com/paperclipai/paperclip/blob/codex/runner-cursor-acp/doc/architecture/runner-cursor-capabilities.md),
-[Copilot inventory](https://github.com/paperclipai/paperclip/blob/codex/runner-copilot-acp/doc/architecture/runner-copilot-capabilities.md),
-and [Pi inventory](https://github.com/paperclipai/paperclip/blob/codex/runner-pi-acp/doc/architecture/runner-pi-capabilities.md)
+[Cursor inventory](https://github.com/pilibalaai/pilibala/blob/codex/runner-cursor-acp/doc/architecture/runner-cursor-capabilities.md),
+[Copilot inventory](https://github.com/pilibalaai/pilibala/blob/codex/runner-copilot-acp/doc/architecture/runner-copilot-capabilities.md),
+and [Pi inventory](https://github.com/pilibalaai/pilibala/blob/codex/runner-pi-acp/doc/architecture/runner-pi-capabilities.md)
 for the complete per-provider source audit.
 
 [Retained browser evidence](../../ui/storybook/fixtures/evidence/rich-acp-browser-proof.darwin-arm64.json)
@@ -772,7 +772,7 @@ The provider reports above are the method/event and field inventories. Paid
 observations in the matrix refer to retained historical versions unless an
 explicit profile is named; the current checkpoint above controls qualification. In the
 table below, a method that is absent from a pinned implementation is distinct
-from an exposed method with no Paperclip control. Shared surfaces and their
+from an exposed method with no Pilibala control. Shared surfaces and their
 deterministic evidence are mapped separately after the comparison.
 
 | Capability | Codex app-server benchmark | Cursor ACP candidate | Copilot ACP candidate | Pi ACP candidate |
@@ -785,7 +785,7 @@ deterministic evidence are mapped separately after the comparison.
 | Session continuity | Read/load/history/fork and durable identity | Session load/list observed; paid semantic warm continuation passed; native history replay unverified and fork absent in tested methods | Session load plus native history events; semantic pending-question controller recovery passed | Private Pi JSONL mapping/load; native RPC `fork`, `clone`, `get_fork_messages` are not mapped through this ACP wrapper; unresolved UI promises cannot survive provider death |
 | Questions | Typed input requests and response correlation | `cursor/ask_question`, option identity and multiple selection preserved | Native ask-user capability exists, but pinned ACP does not wire its responder; do not display a false answerable form | `select`, `confirm`, `input`, `editor` through typed form elicitation |
 | Permissions | Durable typed approvals | Standard ACP permission options; denied shell write had no observed side effects; separately labeled exact-correlation assessment | Standard ACP; real native reject_once prevented marker creation; session decision scope inspected | Native pre-tool gate; allow once, exact-operation session grant, deny; paths rechecked after wait |
-| Plans | Typed plan and collaboration mode | `cursor/create_plan` includes full plan and revision-bound accept/reject/cancel; todo activity separate | Native plan events displayed; native plan-decision callback not exposed in ACP | No native structured plan event; authenticated Paperclip planning tools available |
+| Plans | Typed plan and collaboration mode | `cursor/create_plan` includes full plan and revision-bound accept/reject/cancel; todo activity separate | Native plan events displayed; native plan-decision callback not exposed in ACP | No native structured plan event; authenticated Pilibala planning tools available |
 | Authenticated tools | Runner bridge and governed operations | ACP HTTP MCP binding; paid context/history reads passed | ACP HTTP MCP binding; paid context read passed | Owned extension registers exact bound MCP tools; profile-13 paid Product completion/questions and seeded Runner context pass; no ambient servers |
 | Delegation | Typed agent roles and lifecycle | Opt-in subagent lifecycle, nested ownership and bounded child activity; never parent transcript flattening | Native session details retain agent/model fields with unknown originating turn; typed turn-owned delegation is not inferred | No built-in ACP delegation protocol; arbitrary extensions are excluded |
 | Files/diffs | Typed file changes and artifact references | Standard tool changes plus validated image references | Correlated ACP tool events remain available; native session file/workspace details are session notices, not attributed task file changes | Wrapper-retained read/write/edit diffs; common typed/UI projection remains partial; semantic artifact tools |
@@ -807,7 +807,7 @@ deterministic evidence are mapped separately after the comparison.
 | Session list/fork, generic configuration and commands | No added operator surface; exact owned session recovery and configured model remain available | Provider inventories identify native-only, ACP-exposed, confirmed-absent and unverified methods with follow-ups |
 
 Paths starting with `src/` or `runner/` in this evidence table are relative to
-`packages/paperclip-runner/`; other paths are repository-relative. Deterministic
+`packages/pilibala-runner/`; other paths are repository-relative. Deterministic
 fixtures establish contract behavior, not successful paid provider execution.
 
 ## Shared event and interaction contract
@@ -895,7 +895,7 @@ qualification gates, not claims that a JavaScript path check confines a shell.
 | P0 | Cursor project and remote hooks; native shell boundaries | The verified v4 patch disables native ambient MCP/hooks at their actual initialization points on all three platforms. Retain real paid/remote isolation and command cleanup qualification before promotion. |
 | P1 | Native Pi queue selection in the product UI | The runner API exposes negotiated `follow_up` separately from active steering. The current composer has no native queue selector; add one without confusing it with controller-scheduled later turns. |
 | P1 | Pi `queue_update` contents and delivery state | RPC acknowledgment proves acceptance, not model consumption. Add bounded queued/delivered events and durable message correlation with explicit retention rules for user content; preserve this distinction on reconnect. The selected live marker-order probe proves its own consumed messages only. |
-| P1 | Pi retry/compaction field completeness and end-to-end evidence | The wrapper now emits bounded `paperclip/pi_notice` activity instead of assistant text. The adapter preserves source provenance, retry counters/delay, outcome flags and bounded reason/error text; package tests cover retry success/failure/unknown and compaction usage. `finalError` is not forwarded, and summarization retry currently has summary-only data. Extend field-by-field wrapper/canonical/UI coverage; these deterministic checks do not qualify live behavior or give notices terminal authority. |
+| P1 | Pi retry/compaction field completeness and end-to-end evidence | The wrapper now emits bounded `pilibala/pi_notice` activity instead of assistant text. The adapter preserves source provenance, retry counters/delay, outcome flags and bounded reason/error text; package tests cover retry success/failure/unknown and compaction usage. `finalError` is not forwarded, and summarization retry currently has summary-only data. Extend field-by-field wrapper/canonical/UI coverage; these deterministic checks do not qualify live behavior or give notices terminal authority. |
 | P1 | Native Cursor/Copilot active steering and queues | ACP prompt replacement is not steering; native SDK capabilities may be richer. Require a dedicated bound method plus acknowledgment before advertising. |
 | P1 | Child tool media/diff/raw payloads | Bounded delegation summaries preserve lifecycle and identity. Large nested payloads need a child-owned canonical item model; current omission is a visible notice and provider report entry. |
 | P1 | Standard ACP parent tool `content` diffs/images, secondary locations and raw input bodies | The existing common normalizer projects bounded output text, input-presence, and the first safe relative location. Raw argument bodies can contain secrets; richer content needs bounded typed blocks and a separately validated workspace binding for each file. Provider-specific image/file notices do not close this standard-tool gap. |
@@ -926,12 +926,12 @@ does not establish Runner projection or a usable product control.
 | Priority / category | Meaningful gap and reason | Follow-up and source boundary |
 | --- | --- | --- |
 | P0 / qualification | Native decisions, denial, attached-command settlement and callback recovery still need the required current-profile cases. Semantic question/plan/restart evidence is a different path. | Complete the existing local/Daytona cases and retain failed attempts; no new feature is implied by this row. The [capability matrix](#capability-matrix) and versioned qualification receipts govern claims. |
-| P1 / Runner input | Native image input is available on the inspected surfaces, but Runner turns forward text only. | Add bounded, validated attachment conversion and exact-model admission, then qualify actual image prompts. [`AcpxRuntimeTurnInput`](https://github.com/paperclipai/paperclip/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/paperclip-runner/src/drivers/acpx/runtime-host.ts#L111), [text forwarding](https://github.com/paperclipai/paperclip/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/paperclip-runner/src/drivers/acpx/codex-runtime-adapter.ts#L1404). |
-| P1 / Runner output and UI | Structured tool diffs/media, raw arguments and secondary locations are not carried into canonical tool details; exit code remains null, including where Pi retains a structured native result. | Add typed, redacted fields and workspace validation with local/sidecar/UI parity tests. File-byte or artifact-card checks do not prove rich diff or exit-code presentation. [Common mapper](https://github.com/paperclipai/paperclip/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/paperclip-runner/src/provider-events.ts#L1131), [sidecar boundary](https://github.com/paperclipai/paperclip/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/paperclip-runner/src/cli/acpx-runtime-sidecar.ts#L917), [Pi result fixture](https://github.com/paperclipai/paperclip/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/paperclip-runner/test/pi-acp-package-contract.test.mjs#L279). |
-| P1 / native queue and UI | Pi exposes distinct `follow_up`, but native queue contents/consumption are not durably projected and the product queue has no native follow-up selector. Acknowledgment is acceptance, not consumption. | Add negotiated selection and occurrence-bound queued/consumed/dropped evidence with retention rules; keep controller scheduling distinct. [Control contract](https://github.com/paperclipai/paperclip/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/paperclip-runner/src/drivers/acpx/turn-controls.ts#L1), [current UI actions](https://github.com/paperclipai/paperclip/blob/41503eb38f03c436b1569f9f0204625bb4d58782/ui/src/components/task-chat/TaskChatQueuedMessages.tsx#L39). |
-| P1 / child and session attribution | Cursor child tools have attributed summaries, not nested rich details. Copilot native notices lack originating-turn identity and therefore remain session-scoped; provider-session files/assets still require retrieval and registration. | Add a child-owned detail model; require a native origin contract before assigning Copilot notices to turns, and separately authorize artifact retrieval. [Cursor summary boundary](https://github.com/paperclipai/paperclip/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/paperclip-runner/src/drivers/acpx/cursor-extensions.ts#L401), [Copilot provenance boundary](https://github.com/paperclipai/paperclip/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/paperclip-runner/src/drivers/acpx/copilot-extension-adapter.ts#L19). |
+| P1 / Runner input | Native image input is available on the inspected surfaces, but Runner turns forward text only. | Add bounded, validated attachment conversion and exact-model admission, then qualify actual image prompts. [`AcpxRuntimeTurnInput`](https://github.com/pilibalaai/pilibala/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/pilibala-runner/src/drivers/acpx/runtime-host.ts#L111), [text forwarding](https://github.com/pilibalaai/pilibala/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/pilibala-runner/src/drivers/acpx/codex-runtime-adapter.ts#L1404). |
+| P1 / Runner output and UI | Structured tool diffs/media, raw arguments and secondary locations are not carried into canonical tool details; exit code remains null, including where Pi retains a structured native result. | Add typed, redacted fields and workspace validation with local/sidecar/UI parity tests. File-byte or artifact-card checks do not prove rich diff or exit-code presentation. [Common mapper](https://github.com/pilibalaai/pilibala/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/pilibala-runner/src/provider-events.ts#L1131), [sidecar boundary](https://github.com/pilibalaai/pilibala/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/pilibala-runner/src/cli/acpx-runtime-sidecar.ts#L917), [Pi result fixture](https://github.com/pilibalaai/pilibala/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/pilibala-runner/test/pi-acp-package-contract.test.mjs#L279). |
+| P1 / native queue and UI | Pi exposes distinct `follow_up`, but native queue contents/consumption are not durably projected and the product queue has no native follow-up selector. Acknowledgment is acceptance, not consumption. | Add negotiated selection and occurrence-bound queued/consumed/dropped evidence with retention rules; keep controller scheduling distinct. [Control contract](https://github.com/pilibalaai/pilibala/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/pilibala-runner/src/drivers/acpx/turn-controls.ts#L1), [current UI actions](https://github.com/pilibalaai/pilibala/blob/41503eb38f03c436b1569f9f0204625bb4d58782/ui/src/components/task-chat/TaskChatQueuedMessages.tsx#L39). |
+| P1 / child and session attribution | Cursor child tools have attributed summaries, not nested rich details. Copilot native notices lack originating-turn identity and therefore remain session-scoped; provider-session files/assets still require retrieval and registration. | Add a child-owned detail model; require a native origin contract before assigning Copilot notices to turns, and separately authorize artifact retrieval. [Cursor summary boundary](https://github.com/pilibalaai/pilibala/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/pilibala-runner/src/drivers/acpx/cursor-extensions.ts#L401), [Copilot provenance boundary](https://github.com/pilibalaai/pilibala/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/pilibala-runner/src/drivers/acpx/copilot-extension-adapter.ts#L19). |
 | P1 / accounting qualification | Token/compaction receipts, catalog price estimates and actual account billing have different authority; missing usage/cost fields remain unknown. | Preserve partial coverage and verify campaign totals against actual spend evidence. Never promote an estimate or model multiplier into a bill. [Usage distinctions](#capability-matrix) and the provider inventories remain authoritative. |
-| P2 / optional discovery and controls | Commands, configuration/title updates and plan priority lack complete product projection. Pi native fork/export first require wrapper mapping; extension widgets and private invocation provenance are separate optional surfaces. | Add company-scoped controls and bounded fields only where useful, preserving acknowledgments and lineage. These are future features, not new qualification blockers. [Explicitly skipped status tags](https://github.com/paperclipai/paperclip/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/paperclip-runner/src/provider-events.ts#L1195), [plan projection](https://github.com/paperclipai/paperclip/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/paperclip-runner/src/provider-events.ts#L1097), [Pi remaining work](runner-pi-capabilities.md#remaining-event-and-qualification-work). |
+| P2 / optional discovery and controls | Commands, configuration/title updates and plan priority lack complete product projection. Pi native fork/export first require wrapper mapping; extension widgets and private invocation provenance are separate optional surfaces. | Add company-scoped controls and bounded fields only where useful, preserving acknowledgments and lineage. These are future features, not new qualification blockers. [Explicitly skipped status tags](https://github.com/pilibalaai/pilibala/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/pilibala-runner/src/provider-events.ts#L1195), [plan projection](https://github.com/pilibalaai/pilibala/blob/41503eb38f03c436b1569f9f0204625bb4d58782/packages/pilibala-runner/src/provider-events.ts#L1097), [Pi remaining work](runner-pi-capabilities.md#remaining-event-and-qualification-work). |
 
 Pi retry/compaction notices are already surfaced as bounded activity. Remaining
 field completeness and renderer parity are narrower follow-ups, not an entirely
@@ -1003,10 +1003,10 @@ Separate paid Product E2E evidence now records:
 | Copilot / file edit and validation | `ee9536001fbe733b2386dd3379730a4e0be59488` | 7/7 assertions and cleanup passed; independent bytes validated; GitHub biller and unpriced receipt verified |
 | Copilot / question continuation | `ee9536001fbe733b2386dd3379730a4e0be59488` | Question/answer and warm session reuse worked; 4/6 terminal assertions passed because the provider returned a literal placeholder instead of the required marker; failed attempt retained |
 | Cursor / controller restart | `d35b83074a018537f5475568d7410e3b1d676789` | 6/6 assertions in 57.865 seconds; pending semantic question survived server restart, Cobalt answer continued to Done, cleanup passed; earlier failed attempts retained |
-| Pi / completion | `dd78df1ef8b279c30c710c9b7a7f9fda22e321d6` | 6/6 assertions and cleanup passed in 32.668 seconds; one authenticated `paperclip_finish`, `turn.completed` and `run.terminal`; exclusive-key delta $0.000654767 |
+| Pi / completion | `dd78df1ef8b279c30c710c9b7a7f9fda22e321d6` | 6/6 assertions and cleanup passed in 32.668 seconds; one authenticated `pilibala_finish`, `turn.completed` and `run.terminal`; exclusive-key delta $0.000654767 |
 | Copilot / semantic plan approval | `c06fc5fccc88f5816450434493451b9d2d339125` | 6/6 assertions in 45.625 seconds; accepted decision bound to displayed revision 1, exact marker and Done; both paused/completed receipts are GitHub/unpriced; cleanup passed |
 | Copilot / controller restart | `19ca0f558` (final runtime remains `8aa867b64d5fc2fd62cff110bd000addf5dc54de`) | 6/6 assertions in 50.875 seconds; same pending interaction survived restart and same persisted provider session continued; exact marker once, Done and cleanup passed |
-| Pi / file edit and validation | Runtime `dd78df1ef8b279c30c710c9b7a7f9fda22e321d6` | Failed at the 120-second active deadline after five rejected `paperclip_finish` calls; cleanup passed. The extension discarded validation details. Final bytes and completion arguments cannot be reconstructed from the retained projection. |
+| Pi / file edit and validation | Runtime `dd78df1ef8b279c30c710c9b7a7f9fda22e321d6` | Failed at the 120-second active deadline after five rejected `pilibala_finish` calls; cleanup passed. The extension discarded validation details. Final bytes and completion arguments cannot be reconstructed from the retained projection. |
 | Pi / file edit and validation, v3 | Pack source `7710736ca3924c655c5b0efd172cfd3c0173766a`; execution fix `06cf356a8bc94f709fcd15606fe05e17933fe3b2` | 7/7 assertions in 49.427 seconds, exact file bytes and cleanup passed. One rejected completion exposed the missing registered deliverable; Pi corrected it, registered the artifact and finished. Exclusive-key delta $0.003324737. |
 | Pi / semantic question, v3 | Pack source `7710736ca3924c655c5b0efd172cfd3c0173766a` | 6/6 assertions in 158.388 seconds across two bounded turns; exact question/option IDs, Cobalt answer, warm continuation, final marker and cleanup passed. First waiting run has no usage receipt; exclusive-key delta covers both runs ($0.001413697). |
 | Pi / semantic plan, v3 first attempt | Pack source `7710736ca3924c655c5b0efd172cfd3c0173766a` | Failed the native write-boundary UI assertion in 119.553 seconds. The saved two-step plan, matching revision and confirmation controls were visible, but all retained DOM snapshots showed the fallback Plan card. Rust lost the MCP display name/namespace used for placement. Cleanup passed; exclusive-key delta $0.003090504. Matcher remains unchanged. |
@@ -1040,7 +1040,7 @@ These narrow native probes do not replace durable Product interaction, restart,
 or Daytona coverage. Their private wire evidence remains separate from sanitized
 public summaries. A private durable retention manifest also records hashes for the
 logs, screenshots, wire evidence and failed attempts; no credentials are published. The semantic Cursor question and plan cases above exercise
-Paperclip tools, not the native `cursor/ask_question` or `cursor/create_plan` RPCs.
+Pilibala tools, not the native `cursor/ask_question` or `cursor/create_plan` RPCs.
 The failed Pi file case exposed two wrapper losses. Profile version 3 at
 `06cf356a8bc94f709fcd15606fe05e17933fe3b2` preserves bounded, redacted MCP validation
 errors and bounded Bash arguments/output; oversized values have an explicit
@@ -1318,8 +1318,8 @@ v1–v4 version, digest and paired identity. Cases, model, scoring, budgets and
 deadlines remain unchanged.
 
 Current Linux image identities and exact-head CI/review status are recorded in
-the [Pi PR verification](https://github.com/paperclipai/paperclip/pull/14436) and
-[foundation PR verification](https://github.com/paperclipai/paperclip/pull/14430).
+the [Pi PR verification](https://github.com/pilibalaai/pilibala/pull/14436) and
+[foundation PR verification](https://github.com/pilibalaai/pilibala/pull/14430).
 Their immutable source and dependency identities remain distinct from the
 historical packaging proofs above. Image initialization does not certify paid
 Daytona execution. Those were historical blockers at that checkpoint. The current production

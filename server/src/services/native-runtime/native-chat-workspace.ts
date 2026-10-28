@@ -1,8 +1,8 @@
 import { lstat, mkdir, realpath } from "node:fs/promises";
 import path from "node:path";
 import { and, eq, sql } from "drizzle-orm";
-import { chatConversations, issues, executionWorkspaces, projectWorkspaces, type Db } from "@paperclipai/db";
-import { resolvePaperclipInstanceRoot } from "../../home-paths.js";
+import { chatConversations, issues, executionWorkspaces, projectWorkspaces, type Db } from "@pilibalaai/db";
+import { resolvePilibalaInstanceRoot } from "../../home-paths.js";
 
 export type NativeChatWorkspaceScope = {
   companyId: string;
@@ -34,7 +34,7 @@ export async function findNativeChatWorkspaceScope(
   },
 ): Promise<NativeChatWorkspaceScope | null> {
   if (
-    input.adapterType !== "paperclip_runner" ||
+    input.adapterType !== "pilibala_runner" ||
     input.environmentDriver !== "local" ||
     !input.issueId
   )
@@ -74,7 +74,7 @@ export async function findNativeChatWorkspaceScope(
   if (issue.originKind !== "chat_channel" && !issue.hasConversation)
     return null;
   const instanceRoot = await realpath(
-    input.instanceRoot ?? resolvePaperclipInstanceRoot(),
+    input.instanceRoot ?? resolvePilibalaInstanceRoot(),
   );
   return {
     companyId: input.companyId,

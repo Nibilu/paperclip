@@ -2,10 +2,10 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { open } from "node:fs/promises";
 import { constants } from "node:fs";
 import path from "node:path";
-import { runSetupTokenLogin } from "@paperclipai/adapter-claude-local/server";
-import { runDeviceLogin } from "@paperclipai/adapter-codex-local/server";
-import { ensureCommandResolvable, resolveCommandForLogs } from "@paperclipai/adapter-utils/server-utils";
-import { resolveCodexCommand } from "../vendor/paperclip-runner/index.js";
+import { runSetupTokenLogin } from "@pilibalaai/adapter-claude-local/server";
+import { runDeviceLogin } from "@pilibalaai/adapter-codex-local/server";
+import { ensureCommandResolvable, resolveCommandForLogs } from "@pilibalaai/adapter-utils/server-utils";
+import { resolveCodexCommand } from "../vendor/pilibala-runner/index.js";
 
 export type LocalBrowserLoginState = {
   authorizationUrl?: string;
@@ -67,8 +67,8 @@ export function startLocalBrowserLogin(provider: "anthropic" | "openai", home: s
           }
         } catch {
           state.error = legacyPlatform
-            ? "Codex browser sign-in requires the Codex CLI on this platform. Install Codex on this execution host and ensure codex is on Paperclip's PATH, then start sign-in again."
-            : "Codex browser sign-in requires an installed Codex CLI. Install Codex on this execution host or restore Paperclip's runtime dependencies, then start sign-in again.";
+            ? "Codex browser sign-in requires the Codex CLI on this platform. Install Codex on this execution host and ensure codex is on Pilibala's PATH, then start sign-in again."
+            : "Codex browser sign-in requires an installed Codex CLI. Install Codex on this execution host or restore Pilibala's runtime dependencies, then start sign-in again.";
           throw new Error("Browser login runtime unavailable");
         }
       }

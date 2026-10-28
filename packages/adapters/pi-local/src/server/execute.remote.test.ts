@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createPromptContextFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
+import { createPromptContextFixture } from "@pilibalaai/adapter-utils/test-fixtures/prompt-context";
 
 const {
   runChildProcess,
@@ -12,7 +12,7 @@ const {
   restoreWorkspaceFromSshExecution,
   runSshCommand,
   syncDirectoryToSsh,
-  startAdapterExecutionTargetPaperclipBridge,
+  startAdapterExecutionTargetPilibalaBridge,
 } = vi.hoisted(() => ({
   runChildProcess: vi.fn(async () => ({
     exitCode: 0,
@@ -46,19 +46,19 @@ const {
     exitCode: 0,
   })),
   syncDirectoryToSsh: vi.fn(async () => undefined),
-  startAdapterExecutionTargetPaperclipBridge: vi.fn(async () => ({
+  startAdapterExecutionTargetPilibalaBridge: vi.fn(async () => ({
     env: {
-      PAPERCLIP_API_URL: "http://127.0.0.1:4310",
-      PAPERCLIP_API_KEY: "bridge-token",
-      PAPERCLIP_API_BRIDGE_MODE: "queue_v1",
+      PILIBALA_API_URL: "http://127.0.0.1:4310",
+      PILIBALA_API_KEY: "bridge-token",
+      PILIBALA_API_BRIDGE_MODE: "queue_v1",
     },
     stop: async () => {},
   })),
 }));
 
-vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/server-utils")>(
-    "@paperclipai/adapter-utils/server-utils",
+vi.mock("@pilibalaai/adapter-utils/server-utils", async () => {
+  const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/server-utils")>(
+    "@pilibalaai/adapter-utils/server-utils",
   );
   return {
     ...actual,
@@ -68,9 +68,9 @@ vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
   };
 });
 
-vi.mock("@paperclipai/adapter-utils/ssh", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/ssh")>(
-    "@paperclipai/adapter-utils/ssh",
+vi.mock("@pilibalaai/adapter-utils/ssh", async () => {
+  const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/ssh")>(
+    "@pilibalaai/adapter-utils/ssh",
   );
   return {
     ...actual,
@@ -81,13 +81,13 @@ vi.mock("@paperclipai/adapter-utils/ssh", async () => {
   };
 });
 
-vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/execution-target")>(
-    "@paperclipai/adapter-utils/execution-target",
+vi.mock("@pilibalaai/adapter-utils/execution-target", async () => {
+  const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/execution-target")>(
+    "@pilibalaai/adapter-utils/execution-target",
   );
   return {
     ...actual,
-    startAdapterExecutionTargetPaperclipBridge,
+    startAdapterExecutionTargetPilibalaBridge,
   };
 });
 
@@ -116,11 +116,11 @@ describe("pi remote execution", () => {
   });
 
   it("prepares the workspace, syncs Pi skills, and restores workspace changes for remote SSH execution", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-remote-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-pi-remote-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     const alternateWorkspaceDir = path.join(rootDir, "workspace-other");
-    const managedRemoteWorkspace = "/remote/workspace/.paperclip-runtime/runs/run-1/workspace";
+    const managedRemoteWorkspace = "/remote/workspace/.pilibala-runtime/runs/run-1/workspace";
     await mkdir(workspaceDir, { recursive: true });
     await mkdir(alternateWorkspaceDir, { recursive: true });
 
@@ -144,21 +144,21 @@ describe("pi remote execution", () => {
         model: "openai/gpt-5.4-mini",
       },
       context: {
-        paperclipWorkspace: {
+        pilibalaWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
-        paperclipWorkspaces: [
+        pilibalaWorkspaces: [
           {
             workspaceId: "workspace-1",
             cwd: workspaceDir,
-            repoUrl: "https://github.com/paperclipai/paperclip.git",
+            repoUrl: "https://github.com/pilibalaai/pilibala.git",
             repoRef: "main",
           },
           {
             workspaceId: "workspace-2",
             cwd: alternateWorkspaceDir,
-            repoUrl: "https://github.com/paperclipai/paperclip.git",
+            repoUrl: "https://github.com/pilibalaai/pilibala.git",
             repoRef: "feature/other",
           },
         ],
@@ -188,16 +188,16 @@ describe("pi remote execution", () => {
         remoteCwd: managedRemoteWorkspace,
       },
     });
-    expect(String(result.sessionId)).toContain(`${managedRemoteWorkspace}/.paperclip-runtime/pi/sessions/`);
+    expect(String(result.sessionId)).toContain(`${managedRemoteWorkspace}/.pilibala-runtime/pi/sessions/`);
     expect(prepareWorkspaceForSshExecution).toHaveBeenCalledTimes(1);
     expect(syncDirectoryToSsh).toHaveBeenCalledTimes(1);
     expect(syncDirectoryToSsh).toHaveBeenCalledWith(expect.objectContaining({
-      remoteDir: `${managedRemoteWorkspace}/.paperclip-runtime/pi/skills`,
+      remoteDir: `${managedRemoteWorkspace}/.pilibala-runtime/pi/skills`,
       followSymlinks: true,
     }));
     expect(runSshCommand).toHaveBeenCalledWith(
       expect.anything(),
-      expect.stringContaining(".paperclip-runtime/pi/sessions"),
+      expect.stringContaining(".pilibala-runtime/pi/sessions"),
       expect.anything(),
     );
     const call = runChildProcess.mock.calls[0] as unknown as
@@ -205,33 +205,33 @@ describe("pi remote execution", () => {
       | undefined;
     expect(call?.[2]).toContain("--session");
     expect(call?.[2]).toContain("--skill");
-    expect(call?.[2]).toContain(`${managedRemoteWorkspace}/.paperclip-runtime/pi/skills`);
-    expect(call?.[3].env.PAPERCLIP_WORKSPACE_CWD).toBe(managedRemoteWorkspace);
-    expect(JSON.parse(call?.[3].env.PAPERCLIP_WORKSPACES_JSON ?? "[]")).toEqual([
+    expect(call?.[2]).toContain(`${managedRemoteWorkspace}/.pilibala-runtime/pi/skills`);
+    expect(call?.[3].env.PILIBALA_WORKSPACE_CWD).toBe(managedRemoteWorkspace);
+    expect(JSON.parse(call?.[3].env.PILIBALA_WORKSPACES_JSON ?? "[]")).toEqual([
       {
         workspaceId: "workspace-1",
         cwd: managedRemoteWorkspace,
-        repoUrl: "https://github.com/paperclipai/paperclip.git",
+        repoUrl: "https://github.com/pilibalaai/pilibala.git",
         repoRef: "main",
       },
       {
         workspaceId: "workspace-2",
-        repoUrl: "https://github.com/paperclipai/paperclip.git",
+        repoUrl: "https://github.com/pilibalaai/pilibala.git",
         repoRef: "feature/other",
       },
     ]);
-    expect(call?.[3].env.PAPERCLIP_API_URL).toBe("http://127.0.0.1:4310");
-    expect(call?.[3].env.PAPERCLIP_API_BRIDGE_MODE).toBe("queue_v1");
+    expect(call?.[3].env.PILIBALA_API_URL).toBe("http://127.0.0.1:4310");
+    expect(call?.[3].env.PILIBALA_API_BRIDGE_MODE).toBe("queue_v1");
     expect(call?.[3].remoteExecution?.remoteCwd).toBe(managedRemoteWorkspace);
-    expect(startAdapterExecutionTargetPaperclipBridge).toHaveBeenCalledTimes(1);
+    expect(startAdapterExecutionTargetPilibalaBridge).toHaveBeenCalledTimes(1);
     expect(restoreWorkspaceFromSshExecution).toHaveBeenCalledTimes(1);
   });
 
-  it("ships the managed Pi agent config and repoints PI_CODING_AGENT_DIR when PAPERCLIP_PI_PROVIDERS is set", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-remote-providers-"));
+  it("ships the managed Pi agent config and repoints PI_CODING_AGENT_DIR when PILIBALA_PI_PROVIDERS is set", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-pi-remote-providers-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
-    const managedRemoteWorkspace = "/remote/workspace/.paperclip-runtime/runs/run-providers/workspace";
+    const managedRemoteWorkspace = "/remote/workspace/.pilibala-runtime/runs/run-providers/workspace";
     await mkdir(workspaceDir, { recursive: true });
 
     const providers = {
@@ -262,12 +262,12 @@ describe("pi remote execution", () => {
         command: "pi",
         model: "tensorix/deepseek/deepseek-chat-v3.1",
         env: {
-          PAPERCLIP_PI_PROVIDERS: JSON.stringify(providers),
+          PILIBALA_PI_PROVIDERS: JSON.stringify(providers),
           ANTHROPIC_API_KEY: "sk-bf-REALVK",
         },
       },
       context: {
-        paperclipWorkspace: {
+        pilibalaWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -288,13 +288,13 @@ describe("pi remote execution", () => {
     });
 
     expect(syncDirectoryToSsh).toHaveBeenCalledWith(expect.objectContaining({
-      remoteDir: `${managedRemoteWorkspace}/.paperclip-runtime/pi/agentConfig`,
+      remoteDir: `${managedRemoteWorkspace}/.pilibala-runtime/pi/agentConfig`,
     }));
     const call = runChildProcess.mock.calls[0] as unknown as
       | [string, string, string[], { env: Record<string, string> }]
       | undefined;
     expect(call?.[3].env.PI_CODING_AGENT_DIR).toBe(
-      `${managedRemoteWorkspace}/.paperclip-runtime/pi/agentConfig`,
+      `${managedRemoteWorkspace}/.pilibala-runtime/pi/agentConfig`,
     );
     expect(call?.[2]).toContain("--provider");
     expect(call?.[2]).toContain("tensorix");
@@ -303,10 +303,10 @@ describe("pi remote execution", () => {
   });
 
   it("resumes saved Pi sessions for remote SSH execution only when the identity matches", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-remote-resume-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-pi-remote-resume-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
-    const managedRemoteWorkspace = "/remote/workspace/.paperclip-runtime/runs/run-ssh-resume/workspace";
+    const managedRemoteWorkspace = "/remote/workspace/.pilibala-runtime/runs/run-ssh-resume/workspace";
     await mkdir(workspaceDir, { recursive: true });
 
     runSshCommand.mockImplementation(async (...args: unknown[]) => {
@@ -335,9 +335,9 @@ describe("pi remote execution", () => {
         adapterConfig: {},
       },
       runtime: {
-        sessionId: `${managedRemoteWorkspace}/.paperclip-runtime/pi/sessions/session-123.jsonl`,
+        sessionId: `${managedRemoteWorkspace}/.pilibala-runtime/pi/sessions/session-123.jsonl`,
         sessionParams: {
-          sessionId: `${managedRemoteWorkspace}/.paperclip-runtime/pi/sessions/session-123.jsonl`,
+          sessionId: `${managedRemoteWorkspace}/.pilibala-runtime/pi/sessions/session-123.jsonl`,
           cwd: managedRemoteWorkspace,
           remoteExecution: {
             transport: "ssh",
@@ -355,7 +355,7 @@ describe("pi remote execution", () => {
         model: "openai/gpt-5.4-mini",
       },
       context: {
-        paperclipWorkspace: {
+        pilibalaWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -377,11 +377,11 @@ describe("pi remote execution", () => {
 
     const call = runChildProcess.mock.calls[0] as unknown as [string, string, string[]] | undefined;
     expect(call?.[2]).toContain("--session");
-    expect(call?.[2]).toContain(`${managedRemoteWorkspace}/.paperclip-runtime/pi/sessions/session-123.jsonl`);
+    expect(call?.[2]).toContain(`${managedRemoteWorkspace}/.pilibala-runtime/pi/sessions/session-123.jsonl`);
   });
 
   it("starts a fresh remote Pi session when the saved session header cwd points at a different workspace", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-remote-stale-session-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-pi-remote-stale-session-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     await mkdir(workspaceDir, { recursive: true });
@@ -412,9 +412,9 @@ describe("pi remote execution", () => {
         adapterConfig: {},
       },
       runtime: {
-        sessionId: "/remote/workspace/.paperclip-runtime/pi/sessions/session-123.jsonl",
+        sessionId: "/remote/workspace/.pilibala-runtime/pi/sessions/session-123.jsonl",
         sessionParams: {
-          sessionId: "/remote/workspace/.paperclip-runtime/pi/sessions/session-123.jsonl",
+          sessionId: "/remote/workspace/.pilibala-runtime/pi/sessions/session-123.jsonl",
           cwd: "/remote/workspace",
           remoteExecution: {
             transport: "ssh",
@@ -432,7 +432,7 @@ describe("pi remote execution", () => {
         model: "openai/gpt-5.4-mini",
       },
       context: {
-        paperclipWorkspace: {
+        pilibalaWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -452,17 +452,17 @@ describe("pi remote execution", () => {
       onLog: async () => {},
     });
 
-    const managedRemoteWorkspaceFresh = "/remote/workspace/.paperclip-runtime/runs/run-ssh-stale-session/workspace";
+    const managedRemoteWorkspaceFresh = "/remote/workspace/.pilibala-runtime/runs/run-ssh-stale-session/workspace";
     const call = runChildProcess.mock.calls[0] as unknown as [string, string, string[]] | undefined;
     const sessionIndex = call?.[2].indexOf("--session") ?? -1;
     expect(sessionIndex).toBeGreaterThanOrEqual(0);
     const usedSession = sessionIndex >= 0 ? call?.[2][sessionIndex + 1] : null;
-    expect(usedSession).toContain(`${managedRemoteWorkspaceFresh}/.paperclip-runtime/pi/sessions/`);
-    expect(usedSession).not.toBe("/remote/workspace/.paperclip-runtime/pi/sessions/session-123.jsonl");
+    expect(usedSession).toContain(`${managedRemoteWorkspaceFresh}/.pilibala-runtime/pi/sessions/`);
+    expect(usedSession).not.toBe("/remote/workspace/.pilibala-runtime/pi/sessions/session-123.jsonl");
   });
 
   it("starts a fresh remote Pi session when the saved session header is empty or unreadable", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-remote-empty-header-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-pi-remote-empty-header-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     await mkdir(workspaceDir, { recursive: true });
@@ -485,9 +485,9 @@ describe("pi remote execution", () => {
         adapterConfig: {},
       },
       runtime: {
-        sessionId: "/remote/workspace/.paperclip-runtime/pi/sessions/session-123.jsonl",
+        sessionId: "/remote/workspace/.pilibala-runtime/pi/sessions/session-123.jsonl",
         sessionParams: {
-          sessionId: "/remote/workspace/.paperclip-runtime/pi/sessions/session-123.jsonl",
+          sessionId: "/remote/workspace/.pilibala-runtime/pi/sessions/session-123.jsonl",
           cwd: "/remote/workspace",
           remoteExecution: {
             transport: "ssh",
@@ -502,7 +502,7 @@ describe("pi remote execution", () => {
       },
       config: { command: "pi", model: "openai/gpt-5.4-mini" },
       context: {
-        paperclipWorkspace: { cwd: workspaceDir, source: "project_primary" },
+        pilibalaWorkspace: { cwd: workspaceDir, source: "project_primary" },
       },
       executionTransport: {
         remoteExecution: {
@@ -523,11 +523,11 @@ describe("pi remote execution", () => {
     const sessionIndex = call?.[2].indexOf("--session") ?? -1;
     expect(sessionIndex).toBeGreaterThanOrEqual(0);
     const usedSession = sessionIndex >= 0 ? call?.[2][sessionIndex + 1] : null;
-    expect(usedSession).not.toBe("/remote/workspace/.paperclip-runtime/pi/sessions/session-123.jsonl");
+    expect(usedSession).not.toBe("/remote/workspace/.pilibala-runtime/pi/sessions/session-123.jsonl");
   });
 
   it("starts a fresh remote Pi session when the remote head command fails", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-remote-head-failure-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-pi-remote-head-failure-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     await mkdir(workspaceDir, { recursive: true });
@@ -554,9 +554,9 @@ describe("pi remote execution", () => {
         adapterConfig: {},
       },
       runtime: {
-        sessionId: "/remote/workspace/.paperclip-runtime/pi/sessions/session-123.jsonl",
+        sessionId: "/remote/workspace/.pilibala-runtime/pi/sessions/session-123.jsonl",
         sessionParams: {
-          sessionId: "/remote/workspace/.paperclip-runtime/pi/sessions/session-123.jsonl",
+          sessionId: "/remote/workspace/.pilibala-runtime/pi/sessions/session-123.jsonl",
           cwd: "/remote/workspace",
           remoteExecution: {
             transport: "ssh",
@@ -572,7 +572,7 @@ describe("pi remote execution", () => {
       config: { command: "pi", model: "openai/gpt-5.4-mini", bootstrapPromptTemplate: "BOOTSTRAP {{run.id}}" },
       context: {
         ...createPromptContextFixture(),
-        paperclipWorkspace: { cwd: workspaceDir, source: "project_primary" },
+        pilibalaWorkspace: { cwd: workspaceDir, source: "project_primary" },
       },
       executionTransport: {
         remoteExecution: {
@@ -593,7 +593,7 @@ describe("pi remote execution", () => {
     const sessionIndex = call?.[2].indexOf("--session") ?? -1;
     expect(sessionIndex).toBeGreaterThanOrEqual(0);
     const usedSession = sessionIndex >= 0 ? call?.[2][sessionIndex + 1] : null;
-    expect(usedSession).not.toBe("/remote/workspace/.paperclip-runtime/pi/sessions/session-123.jsonl");
+    expect(usedSession).not.toBe("/remote/workspace/.pilibala-runtime/pi/sessions/session-123.jsonl");
     const prompt = String(call?.[2].at(-1) ?? "");
     expect(prompt).toContain("## Owned assignment");
     expect(prompt).toContain("BOOTSTRAP run-ssh-head-failure");
@@ -601,7 +601,7 @@ describe("pi remote execution", () => {
   });
 
   it("delivers the owned assignment and ordered wake comments through Pi's prompt", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-context-ownership-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-pi-context-ownership-"));
     cleanupDirs.push(rootDir);
     await mkdir(rootDir, { recursive: true });
     const fixture = createPromptContextFixture();
@@ -618,13 +618,13 @@ describe("pi remote execution", () => {
       },
       runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
       config: { command: "pi", model: "openai/gpt-5.4-mini", cwd: rootDir },
-      context: { ...fixture, paperclipWorkspace: { cwd: rootDir, source: "project_primary" } },
+      context: { ...fixture, pilibalaWorkspace: { cwd: rootDir, source: "project_primary" } },
       onLog: async () => {},
     } as never);
 
     const call = runChildProcess.mock.calls.at(-1) as unknown as [string, string, string[]] | undefined;
     deliveredPrompt = String(call?.[2].at(-1) ?? "");
-    expect(deliveredPrompt).toContain(fixture.paperclipTaskMarkdownAssignment);
+    expect(deliveredPrompt).toContain(fixture.pilibalaTaskMarkdownAssignment);
     expect(deliveredPrompt.indexOf("Append the same ledger entry.")).toBeLessThan(
       deliveredPrompt.lastIndexOf("Append the same ledger entry."),
     );
@@ -637,8 +637,8 @@ describe("pi remote execution", () => {
     expect(deliveredPrompt).toContain("Change the final scope to the launch checklist.");
   });
 
-  it("keeps the default Paperclip policy in the system carrier without duplicating it in user input", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-default-policy-"));
+  it("keeps the default Pilibala policy in the system carrier without duplicating it in user input", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-pi-default-policy-"));
     cleanupDirs.push(rootDir);
 
     await execute({
@@ -665,7 +665,7 @@ describe("pi remote execution", () => {
   });
 
   it("preserves custom prompt templates in both configured carriers", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-custom-policy-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-pi-custom-policy-"));
     cleanupDirs.push(rootDir);
 
     await execute({
@@ -697,7 +697,7 @@ describe("pi remote execution", () => {
   });
 
   it("keeps resumed default identity and connection guidance in the system carrier", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-resumed-policy-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-pi-resumed-policy-"));
     cleanupDirs.push(rootDir);
     const sessionPath = path.join(rootDir, "session.jsonl");
     await writeFile(sessionPath, `${JSON.stringify({ type: "session", cwd: rootDir })}\n`, "utf8");
@@ -733,7 +733,7 @@ describe("pi remote execution", () => {
   });
 
   it("keeps default identity in system input when custom prompt uses loaded instructions", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-instructions-policy-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-pi-instructions-policy-"));
     cleanupDirs.push(rootDir);
     const sessionPath = path.join(rootDir, "session.jsonl");
     const instructionsPath = path.join(rootDir, "AGENTS.md");
@@ -779,7 +779,7 @@ describe("pi remote execution", () => {
   });
 
   it("compacts streamed chunks while parsing the untouched raw stdout result", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-remote-log-boundary-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "pilibala-pi-remote-log-boundary-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     await mkdir(workspaceDir, { recursive: true });
@@ -856,7 +856,7 @@ describe("pi remote execution", () => {
         stdoutLogMode: "compact",
       },
       context: {
-        paperclipWorkspace: { cwd: workspaceDir, source: "project_primary" },
+        pilibalaWorkspace: { cwd: workspaceDir, source: "project_primary" },
       },
       executionTransport: {
         remoteExecution: {

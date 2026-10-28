@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildAgentMentionHref,
   buildSkillMentionHref,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { parseRunnerGoalCommand, TaskChatComposer } from "./TaskChatComposer";
 import { ComposerAddMenu } from "./ComposerAddMenu";
 import { QuestionForm } from "./QuestionForm";
@@ -821,7 +821,7 @@ describe("TaskChatComposer", () => {
       reassignOptions: [{ id: "agent:runner", label: "Runner" }],
     });
 
-    const composer = container.querySelector<HTMLElement>(".paperclip-task-chat-composer")!;
+    const composer = container.querySelector<HTMLElement>(".pilibala-task-chat-composer")!;
     const mode = container.querySelector<HTMLElement>(
       '[data-testid="task-chat-composer-mode"]',
     )!;
@@ -848,7 +848,7 @@ describe("TaskChatComposer", () => {
     render(<TaskChatComposer onAdd={vi.fn()} workMode="standard" />);
 
     expect(container.querySelector("[data-testid='task-chat-composer-input']")?.parentElement?.classList).toContain(
-      "paperclip-task-chat-composer",
+      "pilibala-task-chat-composer",
     );
   });
 
@@ -2132,7 +2132,7 @@ describe("TaskChatComposer", () => {
           ?.textContent,
       ).toContain("Which environment should receive this?");
       const card = container.querySelector('[data-testid="task-chat-composer-takeover"]')!;
-      const composer = container.querySelector('.paperclip-task-chat-composer')!;
+      const composer = container.querySelector('.pilibala-task-chat-composer')!;
       expect(card.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
       expect(container.querySelector('[data-testid="mdx-editor"]')).not.toBeNull();
       expect(container.querySelector<HTMLButtonElement>('[data-testid="task-chat-composer-send"]')).not.toBeNull();
@@ -2197,7 +2197,7 @@ describe("TaskChatComposer", () => {
               <QuestionForm
                 id="release-decisions"
                 questionSet={{
-                  schema: "paperclip.question_set.v1",
+                  schema: "pilibala.question_set.v1",
                   questions: [
                     {
                       id: "scope",
@@ -2257,7 +2257,7 @@ describe("TaskChatComposer", () => {
               <QuestionForm
                 id="first-task-opening"
                 questionSet={{
-                  schema: "paperclip.question_set.v1",
+                  schema: "pilibala.question_set.v1",
                   submitLabel: "Continue",
                   questions: [
                     {
@@ -2326,7 +2326,7 @@ describe("TaskChatComposer", () => {
               <QuestionForm
                 id="interview"
                 questionSet={{
-                  schema: "paperclip.question_set.v1",
+                  schema: "pilibala.question_set.v1",
                   questions: [
                     {
                       id: "env",
@@ -2410,7 +2410,7 @@ describe("TaskChatComposer", () => {
       render(<QuestionForm
         id="selection-modes"
         questionSet={{
-          schema: "paperclip.question_set.v1",
+          schema: "pilibala.question_set.v1",
           questions: [
             { id: "storage", prompt: "Storage?", required: true, answerMode: "single_select",
               options: [{ id: "sqlite", label: "SQLite" }], customAnswer: { enabled: true } },
@@ -2419,7 +2419,7 @@ describe("TaskChatComposer", () => {
             { id: "notes", prompt: "Notes?", required: false, answerMode: "text" },
           ],
         }}
-        initialResponse={{ schema: "paperclip.question_response.v1", answers: { storage: { selectedOptionIds: ["sqlite"] } } }}
+        initialResponse={{ schema: "pilibala.question_response.v1", answers: { storage: { selectedOptionIds: ["sqlite"] } } }}
         onSubmit={onSubmit}
       />);
       const byLabel = (label: string) => Array.from(container.querySelectorAll<HTMLButtonElement>("button"))
@@ -2459,14 +2459,14 @@ describe("TaskChatComposer", () => {
       flushSync(() => byLabel("Submit answers").click());
       await flushAsync();
       expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
-        schema: "paperclip.question_response.v1",
+        schema: "pilibala.question_response.v1",
         answers: { storage: { selectedOptionIds: ["sqlite"] }, features: { selectedOptionIds: ["auth", "search"] } },
       });
     });
 
     describe("single-choice selection stays on the page", () => {
       const questionSet = {
-        schema: "paperclip.question_set.v1" as const,
+        schema: "pilibala.question_set.v1" as const,
         questions: ["First", "Second", "Third"].map((prompt) => ({
           id: prompt, prompt, required: true, answerMode: "single_select" as const,
           options: [{ id: "yes", label: "Yes" }, { id: "no", label: "No" }],
@@ -2533,7 +2533,7 @@ describe("TaskChatComposer", () => {
           <QuestionForm
             id="failed-send"
             questionSet={{
-              schema: "paperclip.question_set.v1" as const,
+              schema: "pilibala.question_set.v1" as const,
               questions: [{
                 id: "only", prompt: "Only", required: true,
                 answerMode: "single_select" as const,
@@ -2561,7 +2561,7 @@ describe("TaskChatComposer", () => {
           <QuestionForm
             id="missing-answer"
             questionSet={{
-              schema: "paperclip.question_set.v1" as const,
+              schema: "pilibala.question_set.v1" as const,
               questions: [
                 {
                   id: "First", prompt: "First", required: true,
@@ -2605,7 +2605,7 @@ describe("TaskChatComposer", () => {
               <QuestionForm
                 id="optional-tail"
                 questionSet={{
-                  schema: "paperclip.question_set.v1",
+                  schema: "pilibala.question_set.v1",
                   questions: [
                     {
                       id: "env",
@@ -2661,7 +2661,7 @@ describe("TaskChatComposer", () => {
               <QuestionForm
                 id="walked-past"
                 questionSet={{
-                  schema: "paperclip.question_set.v1",
+                  schema: "pilibala.question_set.v1",
                   questions: [
                     {
                       id: "env",
@@ -2724,7 +2724,7 @@ describe("TaskChatComposer", () => {
               <QuestionForm
                 id="cancelable"
                 questionSet={{
-                  schema: "paperclip.question_set.v1",
+                  schema: "pilibala.question_set.v1",
                   questions: [
                     {
                       id: "env",
@@ -2767,7 +2767,7 @@ describe("TaskChatComposer", () => {
               <QuestionForm
                 id="deployment-target"
                 questionSet={{
-                  schema: "paperclip.question_set.v1",
+                  schema: "pilibala.question_set.v1",
                   questions: [
                     {
                       id: "environment",

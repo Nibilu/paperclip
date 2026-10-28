@@ -8,7 +8,7 @@ import {
   statusDecisions,
   workAssessments,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   persistActivity,
   publishActivity,

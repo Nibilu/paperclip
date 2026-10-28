@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, isNull, ne, or } from "drizzle-orm";
-import { companySecrets, companySecretProposals, managedAgentProfiles, routineTriggers, userSecretDefinitions, type connectionGrants, type toolConnections } from "@paperclipai/db";
-import type { ToolCredentialSecretRef } from "@paperclipai/shared";
-import { connectionCredentialConfigPath } from "@paperclipai/shared";
+import { companySecrets, companySecretProposals, managedAgentProfiles, routineTriggers, userSecretDefinitions, type connectionGrants, type toolConnections } from "@pilibalaai/db";
+import type { ToolCredentialSecretRef } from "@pilibalaai/shared";
+import { connectionCredentialConfigPath } from "@pilibalaai/shared";
 import { unprocessable } from "../errors.js";
 import { secretService } from "./secrets.js";
 
-export { connectionCredentialConfigPath } from "@paperclipai/shared";
+export { connectionCredentialConfigPath } from "@pilibalaai/shared";
 
 type CredentialDb = Parameters<typeof secretService>[0];
 type SecretActor = Parameters<ReturnType<typeof secretService>["create"]>[2];
@@ -88,7 +88,7 @@ export async function writeConnectionCredential(
     if (input.definitionKey) {
       [definition] = await db.insert(userSecretDefinitions).values({
         ...metadata, key: input.definitionKey, companyId: input.companyId,
-        managedMode: "paperclip_managed", createdByUserId: input.actor?.userId, createdByAgentId: input.actor?.agentId,
+        managedMode: "pilibala_managed", createdByUserId: input.actor?.userId, createdByAgentId: input.actor?.agentId,
       }).onConflictDoNothing().returning();
       if (definition) createdDefinitionId = definition.id;
       else [definition] = await db.select().from(userSecretDefinitions).where(and(

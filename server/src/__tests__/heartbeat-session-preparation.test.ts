@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { agents, agentTaskSessions, authUsers, companies, companyMemberships, createDb, heartbeatRuns, issues } from "@paperclipai/db";
+import { agents, agentTaskSessions, authUsers, companies, companyMemberships, createDb, heartbeatRuns, issues } from "@pilibalaai/db";
 import { registerServerAdapter, unregisterServerAdapter, type AdapterExecutionContext } from "../adapters/index.js";
 import { heartbeatService } from "../services/heartbeat.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
@@ -70,14 +70,14 @@ describePostgres("heartbeat session preparation through adapter dispatch", () =>
     const first = await execute(f);
     expect(first.input.runtime.sessionId).toBeNull();
     const stored = await db.select().from(agentTaskSessions).where(eq(agentTaskSessions.agentId, f.agentId)).then(rows => rows[0]);
-    expect(stored?.sessionParamsJson).toHaveProperty("__paperclipConfigFingerprint");
-    const resumed = await execute(f, { paperclipSessionHandoffMarkdown: "stale handoff", paperclipSessionRotationReason: "stale reason", paperclipPreviousSessionId: "stale session" });
+    expect(stored?.sessionParamsJson).toHaveProperty("__pilibalaConfigFingerprint");
+    const resumed = await execute(f, { pilibalaSessionHandoffMarkdown: "stale handoff", pilibalaSessionRotationReason: "stale reason", pilibalaPreviousSessionId: "stale session" });
     expect(resumed.input.runtime).toMatchObject({ sessionId: "saved-session", sessionDisplayId: "saved-session", taskKey: f.issueId });
     expect(resumed.input.runtime.sessionParams).toMatchObject({ sessionId: "saved-session", adapterState: "preserved" });
-    expect(resumed.input.runtime.sessionParams).not.toHaveProperty("__paperclipConfigFingerprint");
-    expect(resumed.input.context.paperclipSessionHandoffMarkdown).toBeUndefined();
-    expect(resumed.input.context.paperclipSessionRotationReason).toBeUndefined();
-    expect(resumed.input.context.paperclipPreviousSessionId).toBeUndefined();
+    expect(resumed.input.runtime.sessionParams).not.toHaveProperty("__pilibalaConfigFingerprint");
+    expect(resumed.input.context.pilibalaSessionHandoffMarkdown).toBeUndefined();
+    expect(resumed.input.context.pilibalaSessionRotationReason).toBeUndefined();
+    expect(resumed.input.context.pilibalaPreviousSessionId).toBeUndefined();
     expect(resumed.finished.sessionIdBefore).toBe("saved-session");
   });
 
@@ -108,9 +108,9 @@ describePostgres("heartbeat session preparation through adapter dispatch", () =>
     const next = await execute(f);
     expect(next.input.runtime.sessionId).toBeNull();
     expect(next.input.runtime.sessionParams).toBeNull();
-    expect(next.input.context.paperclipPreviousSessionId).toBe("saved-session");
-    expect(next.input.context.paperclipSessionRotationReason).toBe("session exceeded 1 runs");
-    expect(next.input.context.paperclipSessionHandoffMarkdown).toEqual(expect.any(String));
+    expect(next.input.context.pilibalaPreviousSessionId).toBe("saved-session");
+    expect(next.input.context.pilibalaSessionRotationReason).toBe("session exceeded 1 runs");
+    expect(next.input.context.pilibalaSessionHandoffMarkdown).toEqual(expect.any(String));
     expect(next.finished.sessionIdBefore).toBeNull();
   });
 });

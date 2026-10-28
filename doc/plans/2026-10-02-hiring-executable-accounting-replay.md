@@ -4,7 +4,7 @@
 
 ## Current stricter executable replay
 
-Code revision: `e4077ade1818d98b9862ae79ee1d49a007dcf9c1`. Hiring grader: `paperclip.hiring-templates.v3`; turn accounting: `paperclip.hiring-template-turn-accounting.v2`. The separately versioned [v2 JSON receipt](2026-10-02-hiring-executable-accounting-replay.v2.json) pins exact source hashes and unchanged original inputs.
+Code revision: `e4077ade1818d98b9862ae79ee1d49a007dcf9c1`. Hiring grader: `pilibala.hiring-templates.v3`; turn accounting: `pilibala.hiring-template-turn-accounting.v2`. The separately versioned [v2 JSON receipt](2026-10-02-hiring-executable-accounting-replay.v2.json) pins exact source hashes and unchanged original inputs.
 
 | Profile | Original machine grades | Limited sidecar v1 / initial executable v2 | Stricter executable accounting | Source-read coverage |
 | --- | --- | --- | --- | --- |
@@ -35,7 +35,7 @@ Both executable count guards use the shared helper: the hiring scorer and the hi
 
 ## Preserved measurement
 
-The immutable [original and bounded sidecar report](https://github.com/paperclipai/paperclip/blob/8eb517ca1497687237163bdef4dfc4d3332ea916/doc/plans/2026-10-02-hiring-template-live-comparison.md) retains candidate `9f5404ad3aacbe76777952759414d34fd381e674` and historical `296a4df85e8bcc97a160fc78c291b17adb828196`, the identical original fixture digest, 28 actual successful runs, eight automatic completion turns, four successful cleanups and unknown actual charges. It calibrates sidecar v1 with 69 passing tests and records exact original input/grader hashes. The executable repair is a new source/grader revision; it cannot rewrite those measurements or prove performance equivalence.
+The immutable [original and bounded sidecar report](https://github.com/pilibalaai/pilibala/blob/8eb517ca1497687237163bdef4dfc4d3332ea916/doc/plans/2026-10-02-hiring-template-live-comparison.md) retains candidate `9f5404ad3aacbe76777952759414d34fd381e674` and historical `296a4df85e8bcc97a160fc78c291b17adb828196`, the identical original fixture digest, 28 actual successful runs, eight automatic completion turns, four successful cleanups and unknown actual charges. It calibrates sidecar v1 with 69 passing tests and records exact original input/grader hashes. The executable repair is a new source/grader revision; it cannot rewrite those measurements or prove performance equivalence.
 
 ## Provider-free verification
 

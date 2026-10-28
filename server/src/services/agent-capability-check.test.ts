@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { diffObservations } from "./agent-capability-check.js";
-import type { AgentCapabilityObservation } from "@paperclipai/shared";
+import type { AgentCapabilityObservation } from "@pilibalaai/shared";
 
 function obs(overrides: Partial<AgentCapabilityObservation> = {}): AgentCapabilityObservation {
   return {

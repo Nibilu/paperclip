@@ -21,7 +21,7 @@ const meta = {
           "Shipped Learnings with isolated API receipts. Guards, durable transitions, automation execution and learning provenance require production tests.",
       },
     },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "pipelines/learnings"
       ],

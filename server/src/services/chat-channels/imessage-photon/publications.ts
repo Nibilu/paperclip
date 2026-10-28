@@ -13,18 +13,18 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   chatActions,
   chatEndpointResources,
   chatMessageLinks,
   heartbeatRuns,
   issueThreadInteractions,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   ChatEndpointSetupState,
   SafeChatPublicationPayload,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import {
   type ChatSdkRuntime,

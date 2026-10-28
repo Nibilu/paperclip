@@ -3,14 +3,14 @@ import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promis
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { heartbeatRuns, type Db } from "@paperclipai/db";
-import type { EnvironmentLease } from "@paperclipai/shared";
-import type { AdapterSandboxExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
-import * as restoreMerge from "@paperclipai/adapter-utils/workspace-restore-merge";
-import * as workspaceSeedCache from "@paperclipai/adapter-utils/workspace-seed-cache";
-import * as gitWorkspaceSync from "@paperclipai/adapter-utils/git-workspace-sync";
-import { runLocalGit } from "@paperclipai/adapter-utils/git-workspace-sync";
+import { heartbeatRuns, type Db } from "@pilibalaai/db";
+import type { EnvironmentLease } from "@pilibalaai/shared";
+import type { AdapterSandboxExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
+import * as restoreMerge from "@pilibalaai/adapter-utils/workspace-restore-merge";
+import * as workspaceSeedCache from "@pilibalaai/adapter-utils/workspace-seed-cache";
+import * as gitWorkspaceSync from "@pilibalaai/adapter-utils/git-workspace-sync";
+import { runLocalGit } from "@pilibalaai/adapter-utils/git-workspace-sync";
 import { prepareNativeWorkspaceSync, nativeWorkspaceSyncInternals } from "../services/native-runtime/native-workspace-sync.js";
 
 const runner: CommandManagedRuntimeRunner = {
@@ -36,15 +36,15 @@ async function git(cwd: string, ...args: string[]) {
 }
 
 describe("native warm workspace Git history", () => {
-  const oldHome = process.env.PAPERCLIP_HOME;
-  const oldInstance = process.env.PAPERCLIP_INSTANCE_ID;
+  const oldHome = process.env.PILIBALA_HOME;
+  const oldInstance = process.env.PILIBALA_INSTANCE_ID;
   const roots: string[] = [];
   afterEach(async () => {
     vi.restoreAllMocks();
-    if (oldHome === undefined) delete process.env.PAPERCLIP_HOME;
-    else process.env.PAPERCLIP_HOME = oldHome;
-    if (oldInstance === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-    else process.env.PAPERCLIP_INSTANCE_ID = oldInstance;
+    if (oldHome === undefined) delete process.env.PILIBALA_HOME;
+    else process.env.PILIBALA_HOME = oldHome;
+    if (oldInstance === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+    else process.env.PILIBALA_INSTANCE_ID = oldInstance;
     await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true })));
   });
 
@@ -54,24 +54,24 @@ describe("native warm workspace Git history", () => {
       const cacheRefused = change === "remote_commit_cache_refused" || change === "host_bytes_cache_refused" || invalidRunSeed;
       const snapshotWorker = vi.spyOn(restoreMerge, "captureDirectorySnapshotOffThread");
       const packClone = vi.spyOn(gitWorkspaceSync, "withShallowGitWorkspaceClone");
-      const root = await mkdtemp(path.join(os.tmpdir(), "paperclip-warm-history-"));
+      const root = await mkdtemp(path.join(os.tmpdir(), "pilibala-warm-history-"));
       roots.push(root);
-      process.env.PAPERCLIP_HOME = path.join(root, "home");
-      process.env.PAPERCLIP_INSTANCE_ID = "test";
+      process.env.PILIBALA_HOME = path.join(root, "home");
+      process.env.PILIBALA_INSTANCE_ID = "test";
       const host = path.join(root, "host");
       const remote = path.join(root, "remote");
       async function initRepo(dir: string) {
         await mkdir(dir, { recursive: true });
         await git(dir, "init", "-b", "work");
         await git(dir, "config", "user.name", "Test");
-        await git(dir, "config", "user.email", "test@paperclip.dev");
+        await git(dir, "config", "user.email", "test@pilibala.dev");
         await writeFile(path.join(dir, "file.txt"), "unchanged contents\n");
         await git(dir, "add", ".");
         await git(dir, "commit", "-m", "base");
       }
       if (change === "plain_nested_commit") await mkdir(host, { recursive: true });
       else await initRepo(host);
-      const nestedPath = path.join(".paperclip-repositories", "nested");
+      const nestedPath = path.join(".pilibala-repositories", "nested");
       if (change === "nested_commit" || change === "plain_nested_commit") await initRepo(path.join(host, nestedPath));
       const lease = { id: "lease", providerLeaseId: "sandbox", metadata: {} } as EnvironmentLease;
       let runnerProfileJson: Record<string, unknown> = {};
@@ -104,7 +104,7 @@ describe("native warm workspace Git history", () => {
       const first = (await prepareNativeWorkspaceSync({ ...input, runId: "first" }))!;
       expect(first.mode).toBe("host_current");
       expect(snapshotWorker).toHaveBeenCalled();
-      expect(first.reference.schema).toBe("paperclip.native-workspace-sync/v3");
+      expect(first.reference.schema).toBe("pilibala.native-workspace-sync/v3");
       if (change === "plain_nested_commit") {
         const recovered = await nativeWorkspaceSyncInternals.readDescriptor({ runId: "first", reference: first.reference });
         expect(recovered.descriptor.gitSnapshot).toBeNull();
@@ -118,15 +118,15 @@ describe("native warm workspace Git history", () => {
       } else if (change === "host_branch") {
         await git(host, "checkout", "-b", "other");
       } else if (change === "host_origin") {
-        await git(host, "remote", "add", "origin", "https://github.com/paperclipai/new-source.git");
+        await git(host, "remote", "add", "origin", "https://github.com/pilibalaai/new-source.git");
       } else if (change === "host_bytes_cache_refused") {
         await writeFile(path.join(host, "file.txt"), "updated host content\n");
         await writeFile(path.join(host, "extra.txt"), "new host file\n");
       } else if (change.startsWith("remote_commit")) {
-        await git(remote, "-c", "user.name=Test", "-c", "user.email=test@paperclip.dev", "commit", "--allow-empty", "-m", "remote only");
+        await git(remote, "-c", "user.name=Test", "-c", "user.email=test@pilibala.dev", "commit", "--allow-empty", "-m", "remote only");
       }
       if (change === "remote_commit_corrupt_seed" || change === "remote_commit_missing_seed") {
-        const cache = path.join(process.env.PAPERCLIP_HOME!, "instances", "test", "native-workspace-sync", "generations", "company", "workspace");
+        const cache = path.join(process.env.PILIBALA_HOME!, "instances", "test", "native-workspace-sync", "generations", "company", "workspace");
         const [generation] = (await readdir(cache)).filter(name => /^[a-f0-9]{64}$/.test(name));
         expect(generation).toBeDefined();
         const archive = path.join(cache, generation!, "workspace.tar");
@@ -134,7 +134,7 @@ describe("native warm workspace Git history", () => {
         if (change === "remote_commit_corrupt_seed") await writeFile(archive, "invalid cached archive");
       }
       if (cacheRefused) {
-        await rm(path.join(process.env.PAPERCLIP_HOME!, "instances", "test", "native-workspace-sync", "generations", "company", "workspace"), { recursive: true, force: true });
+        await rm(path.join(process.env.PILIBALA_HOME!, "instances", "test", "native-workspace-sync", "generations", "company", "workspace"), { recursive: true, force: true });
         vi.spyOn(workspaceSeedCache, "publishWorkspaceSeedGeneration").mockResolvedValue(false);
       }
       const hostRepo = change === "plain_nested_commit" ? path.join(host, nestedPath) : host;
@@ -171,7 +171,7 @@ describe("native warm workspace Git history", () => {
         if (change === "host_bytes_cache_refused") expect(await readFile(path.join(remote, "extra.txt"), "utf8")).toBe("new host file\n");
         expect(await git(remoteRepo, "rev-parse", "HEAD")).toBe(expectedHead);
         expect(await git(remoteRepo, "symbolic-ref", "--short", "HEAD")).toBe(expectedBranch);
-        if (change === "host_origin") expect(await git(remote, "remote", "get-url", "origin")).toBe("https://github.com/paperclipai/new-source.git");
+        if (change === "host_origin") expect(await git(remote, "remote", "get-url", "origin")).toBe("https://github.com/pilibalaai/new-source.git");
         await second.restoreWorkspace();
         expect(await readFile(path.join(hostRepo, "file.txt"), "utf8")).toBe(expectedContents);
         expect(await git(hostRepo, "rev-parse", "HEAD")).toBe(expectedHead);

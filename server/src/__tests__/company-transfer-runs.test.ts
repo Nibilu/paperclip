@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createDb } from "@paperclipai/db";
-import { sha256HexOfBytes } from "@paperclipai/shared/portability-hash";
+import { createDb } from "@pilibalaai/db";
+import { sha256HexOfBytes } from "@pilibalaai/shared/portability-hash";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -35,7 +35,7 @@ describeEmbeddedPostgres("companyTransferRunService", () => {
   let db!: ReturnType<typeof createDb>;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-transfer-runs-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-transfer-runs-");
     db = createDb(tempDb.connectionString);
   });
 

@@ -3,7 +3,7 @@ import { verifyAppWebhook } from "./app-webhook.js";
 import crypto from "node:crypto";
 import { verifyFirefliesWebhook } from "./fireflies-webhook.js";
 import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, lte, ne, not, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   activityLog,
@@ -29,7 +29,7 @@ import {
   routines,
   routineTriggers,
   routineWebhookTestReceipts,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   CreateRoutine,
   CreateRoutineTrigger,
@@ -47,7 +47,7 @@ import type {
   RunRoutine,
   UpdateRoutine,
   UpdateRoutineTrigger,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   WORKSPACE_BRANCH_ROUTINE_VARIABLE,
   getBuiltinRoutineVariableValues,
@@ -59,8 +59,8 @@ import {
   routineRevisionSnapshotSchema,
   stringifyRoutineVariableValue,
   syncRoutineVariablesWithTemplate,
-} from "@paperclipai/shared";
-import { trackRoutineRun } from "@paperclipai/shared/telemetry";
+} from "@pilibalaai/shared";
+import { trackRoutineRun } from "@pilibalaai/shared/telemetry";
 import { conflict, forbidden, notFound, unauthorized, unprocessable } from "../errors.js";
 import { logger } from "../middleware/logger.js";
 import { getTelemetryClient } from "../telemetry.js";
@@ -108,8 +108,8 @@ const WEEKDAY_INDEX: Record<string, number> = {
 };
 
 export function routineWebhookUrl(publicId: string): string {
-  const baseUrl = runtimePublicOrigin() ?? process.env.PAPERCLIP_API_URL?.trim();
-  if (!baseUrl) throw new Error("PAPERCLIP_API_URL is required to create a routine webhook");
+  const baseUrl = runtimePublicOrigin() ?? process.env.PILIBALA_API_URL?.trim();
+  if (!baseUrl) throw new Error("PILIBALA_API_URL is required to create a routine webhook");
   return `${baseUrl.replace(/\/+$/, "")}/api/routine-triggers/public/${publicId}/fire`;
 }
 
@@ -470,7 +470,7 @@ function resolveRoutineVariableValues(
 
   for (const variable of variables) {
     // Workspace-derived automatic values are authoritative for variables that
-    // Paperclip manages from execution context, so callers cannot override them.
+    // Pilibala manages from execution context, so callers cannot override them.
     const candidate = automaticVariables[variable.name] !== undefined
       ? automaticVariables[variable.name]
       : provided[variable.name] !== undefined
@@ -1288,7 +1288,7 @@ export function routineService(
     routine: typeof routines.$inferSelect,
     activation?: WorktreeRunExecutionActivationState,
   ) {
-    if (!isTruthyRuntimeEnvValue(runtimeEnv.PAPERCLIP_IN_WORKTREE)) return { eligible: true };
+    if (!isTruthyRuntimeEnvValue(runtimeEnv.PILIBALA_IN_WORKTREE)) return { eligible: true };
 
     const resolvedActivation = activation ?? await resolveWorktreeRunExecutionActivationState({
       getExperimental: instanceSettings.getExperimental,
@@ -1636,7 +1636,7 @@ export function routineService(
           name: input.name,
           provider: input.provider,
           status: "active",
-          managedMode: "paperclip_managed",
+          managedMode: "pilibala_managed",
           externalRef: prepared.externalRef,
           providerMetadata: null,
           latestVersion: 1,
@@ -2312,7 +2312,7 @@ export function routineService(
       const env = input.env === undefined || input.env === null
         ? null
         : await secretsSvc.normalizeEnvBindingsForPersistence(companyId, input.env, {
-            strictMode: process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true",
+            strictMode: process.env.PILIBALA_SECRETS_STRICT_MODE === "true",
             fieldPath: "env",
           });
       const variables = syncRoutineVariablesWithTemplate(
@@ -2383,7 +2383,7 @@ export function routineService(
         : patch.env === null
           ? null
           : await secretsSvc.normalizeEnvBindingsForPersistence(existing.companyId, patch.env, {
-              strictMode: process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true",
+              strictMode: process.env.PILIBALA_SECRETS_STRICT_MODE === "true",
               fieldPath: "env",
             });
       const requestedStatus = patch.status ?? existing.status;
@@ -3075,7 +3075,7 @@ export function routineService(
             const secretValue = await resolveTriggerSecret(trigger, routine.companyId);
             const rawBody = input.rawBody ?? Buffer.from(JSON.stringify(input.payload ?? {}));
             // Accept X-Hub-Signature-256 (GitHub/Sentry) or fall back to the
-            // generic X-Paperclip-Signature header so operators can use github_hmac
+            // generic X-Pilibala-Signature header so operators can use github_hmac
             // mode with either header convention.
             const providedSignature = (input.hubSignatureHeader ?? input.signatureHeader)?.trim() ?? "";
             if (!providedSignature) throw unauthorized();
@@ -3286,7 +3286,7 @@ export function routineService(
     },
 
     tickScheduledTriggers: async (now: Date = new Date()) => {
-      const worktreeActivation = isTruthyRuntimeEnvValue(runtimeEnv.PAPERCLIP_IN_WORKTREE)
+      const worktreeActivation = isTruthyRuntimeEnvValue(runtimeEnv.PILIBALA_IN_WORKTREE)
         ? await resolveWorktreeRunExecutionActivationState({
           getExperimental: instanceSettings.getExperimental,
           runtimeEnv,

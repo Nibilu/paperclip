@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import type { Db, agents, agentTaskSessions, heartbeatRuns, issueComments } from "@paperclipai/db";
-import { FAST_RESPONSE_AGENT_GUIDANCE, fastResponseHistoryBody } from "@paperclipai/shared";
-import type { PaperclipTurnContext } from "@paperclipai/adapter-utils/server-utils";
+import type { Db, agents, agentTaskSessions, heartbeatRuns, issueComments } from "@pilibalaai/db";
+import { FAST_RESPONSE_AGENT_GUIDANCE, fastResponseHistoryBody } from "@pilibalaai/shared";
+import type { PilibalaTurnContext } from "@pilibalaai/adapter-utils/server-utils";
 import { parseObject } from "../../adapters/utils.js";
 import { isConversation } from "../agent-conversations.js";
 import { chatCompletionInstruction } from "../chat-completion-delivery.js";
@@ -14,8 +14,8 @@ import { redactQuarantinedBodyForHigherTrust, sanitizeQuarantinedCommentForHighe
 import { getTaskPlanContext } from "../task-plan-context.js";
 import type { TrustPresetResolution } from "../trust-preset-resolver.js";
 import { liveVoiceExecutionGuidance } from "../voice/voice-execution-guidance.js";
-import { buildPaperclipWakePayload, PAPERCLIP_WAKE_PAYLOAD_KEY, type createHeartbeatRunPreparation } from "./run-preparation.js";
-import { buildPaperclipTaskMarkdown } from "./task-markdown.js";
+import { buildPilibalaWakePayload, PILIBALA_WAKE_PAYLOAD_KEY, type createHeartbeatRunPreparation } from "./run-preparation.js";
+import { buildPilibalaTaskMarkdown } from "./task-markdown.js";
 
 type RunPreparation = ReturnType<typeof createHeartbeatRunPreparation>;
 type IssueContext = NonNullable<Awaited<ReturnType<RunPreparation["getIssueExecutionContext"]>>>;
@@ -70,7 +70,7 @@ export async function prepareHeartbeatTaskContext(db: Db, input: HeartbeatTaskCo
     ? await issuesSvc.getAncestors(issueRef.id)
     : [];
   if (continuationSummary) {
-    context.paperclipContinuationSummary = {
+    context.pilibalaContinuationSummary = {
       key: safeContinuationSummary!.key,
       title: safeContinuationSummary!.title,
       body: safeContinuationSummary!.body,
@@ -78,15 +78,15 @@ export async function prepareHeartbeatTaskContext(db: Db, input: HeartbeatTaskCo
       updatedAt: safeContinuationSummary!.updatedAt.toISOString(),
     };
   } else {
-    delete context.paperclipContinuationSummary;
+    delete context.pilibalaContinuationSummary;
   }
-  const admittedScope = parseObject(context.paperclipAgentJwtScope);
+  const admittedScope = parseObject(context.pilibalaAgentJwtScope);
   if (!input.policy.recovering || (admittedScope.kind !== "standard" && admittedScope.kind !== "skill_test")) {
-    const savedIssue = parseObject(context.paperclipIssue);
+    const savedIssue = parseObject(context.pilibalaIssue);
     const skillTest = input.policy.recovering
-      ? savedIssue.workMode === "skill_test" || Boolean(context.paperclipSkillTest)
+      ? savedIssue.workMode === "skill_test" || Boolean(context.pilibalaSkillTest)
       : issueRef?.workMode === "skill_test";
-    context.paperclipAgentJwtScope = skillTest && issueRef
+    context.pilibalaAgentJwtScope = skillTest && issueRef
       ? { kind: "skill_test", issueId: issueRef.id }
       : { kind: "standard" };
   }
@@ -95,13 +95,13 @@ export async function prepareHeartbeatTaskContext(db: Db, input: HeartbeatTaskCo
       ? await getPinnedSkillTestContext(agent.companyId, issueRef.id)
       : null;
   if (pinnedSkillTestContext) {
-    context.paperclipSkillTest = {
+    context.pilibalaSkillTest = {
       ...pinnedSkillTestContext,
       directive:
         "Use this pinned file inventory as the exact skill revision under test, regardless of synced runtime skills.",
     };
   } else {
-    delete context.paperclipSkillTest;
+    delete context.pilibalaSkillTest;
   }
   const executionContinuation =
     issueRef && !isConversation(issueContext) && issueContext?.assigneeAgentId === agent.id
@@ -118,7 +118,7 @@ export async function prepareHeartbeatTaskContext(db: Db, input: HeartbeatTaskCo
         })
       : null;
   context.executionContinuation = executionContinuation;
-  const paperclipWakePayload = await buildPaperclipWakePayload({
+  const pilibalaWakePayload = await buildPilibalaWakePayload({
     db,
     companyId: agent.companyId,
     agentId: agent.id,
@@ -143,12 +143,12 @@ export async function prepareHeartbeatTaskContext(db: Db, input: HeartbeatTaskCo
       experimentalInstanceSettings.enableSimplifiedEnglishInteractions ===
       true,
   });
-  if (paperclipWakePayload) {
-    context[PAPERCLIP_WAKE_PAYLOAD_KEY] = paperclipWakePayload;
+  if (pilibalaWakePayload) {
+    context[PILIBALA_WAKE_PAYLOAD_KEY] = pilibalaWakePayload;
   } else {
-    delete context[PAPERCLIP_WAKE_PAYLOAD_KEY];
+    delete context[PILIBALA_WAKE_PAYLOAD_KEY];
   }
-  const safeWakeComments = (paperclipWakePayload?.comments ?? []).flatMap(
+  const safeWakeComments = (pilibalaWakePayload?.comments ?? []).flatMap(
     (comment) =>
       typeof comment.id === "string" && typeof comment.body === "string"
         ? [
@@ -195,7 +195,7 @@ export async function prepareHeartbeatTaskContext(db: Db, input: HeartbeatTaskCo
   const liveVoiceGuidance = issueContext?.chatAssignedAgentId === agent.id && issueContext.chatProvider === "speko"
     ? await liveVoiceExecutionGuidance(db, { companyId: agent.companyId, issueId: issueContext.id, agentId: agent.id })
     : null;
-  context.paperclipTaskCommunicationGuidance =
+  context.pilibalaTaskCommunicationGuidance =
     issueContext?.chatAssignedAgentId === agent.id
       ? issueContext.chatCommunicationGuidance
       : null;
@@ -217,20 +217,20 @@ export async function prepareHeartbeatTaskContext(db: Db, input: HeartbeatTaskCo
     ancestors: issueAncestors,
     wakeComment: safeWakeCommentContext,
     wakeComments: safeWakeComments,
-    attachmentOmissions: paperclipWakePayload?.attachmentOmissions,
-    externalChatProvider: paperclipWakePayload?.externalChatProvider,
+    attachmentOmissions: pilibalaWakePayload?.attachmentOmissions,
+    externalChatProvider: pilibalaWakePayload?.externalChatProvider,
     slackCommand: issueContext?.chatAssignedAgentId === agent.id
       ? issueContext.chatSlackCommand
       : null,
-    nativeRunner: agent.adapterType === "paperclip_runner",
+    nativeRunner: agent.adapterType === "pilibala_runner",
     interaction: {
       kind: readNonEmptyString(context.interactionKind),
       status: readNonEmptyString(context.interactionStatus),
     },
-    planReview: paperclipWakePayload?.planReviewContext?.interaction
+    planReview: pilibalaWakePayload?.planReviewContext?.interaction
       ? {
-          status: paperclipWakePayload.planReviewContext.interaction.status,
-          reason: paperclipWakePayload.planReviewContext.interaction.result?.reason,
+          status: pilibalaWakePayload.planReviewContext.interaction.status,
+          reason: pilibalaWakePayload.planReviewContext.interaction.result?.reason,
         }
       : null,
     acceptedPlanContinuation:
@@ -268,25 +268,25 @@ export async function prepareHeartbeatTaskContext(db: Db, input: HeartbeatTaskCo
   const analysisInstructions = typeof context.reconciliationAnalysisPrompt === "string"
     && context.wakeReason === "reconciliation_analysis" ? context.reconciliationAnalysisPrompt + "\n\n" : "";
   const liveVoiceTaskPrefix = analysisInstructions + (liveVoiceGuidance ? `${liveVoiceGuidance}\n\n` : "");
-  let taskMarkdown = liveVoiceTaskPrefix + buildPaperclipTaskMarkdown({ ...taskMarkdownInput, taskPlan }) + chatCompletionInstruction(context);
-  let taskMarkdownAssignment = liveVoiceTaskPrefix + buildPaperclipTaskMarkdown({
+  let taskMarkdown = liveVoiceTaskPrefix + buildPilibalaTaskMarkdown({ ...taskMarkdownInput, taskPlan }) + chatCompletionInstruction(context);
+  let taskMarkdownAssignment = liveVoiceTaskPrefix + buildPilibalaTaskMarkdown({
     ...taskMarkdownInput,
     taskPlan,
     includeWakeComments: false,
   }) + chatCompletionInstruction(context);
-  const taskMarkdownCompact = liveVoiceTaskPrefix + buildPaperclipTaskMarkdown({
+  const taskMarkdownCompact = liveVoiceTaskPrefix + buildPilibalaTaskMarkdown({
     ...taskMarkdownInput,
     taskPlan,
     includeDescription: false,
   }) + chatCompletionInstruction(context);
-  const taskMarkdownAssignmentCompact = liveVoiceTaskPrefix + buildPaperclipTaskMarkdown({
+  const taskMarkdownAssignmentCompact = liveVoiceTaskPrefix + buildPilibalaTaskMarkdown({
     ...taskMarkdownInput,
     taskPlan,
     includeDescription: false,
     includeWakeComments: false,
   }) + chatCompletionInstruction(context);
   if (issueRef) {
-    context.paperclipIssue = {
+    context.pilibalaIssue = {
       id: issueRef.id,
       identifier: issueRef.identifier,
       title: issueRef.title,
@@ -294,67 +294,67 @@ export async function prepareHeartbeatTaskContext(db: Db, input: HeartbeatTaskCo
       workMode: issueRef.workMode,
     };
   } else {
-    delete context.paperclipIssue;
+    delete context.pilibalaIssue;
   }
   if (wakeCommentContext) {
-    context.paperclipWakeComment = safeWakeCommentContext;
+    context.pilibalaWakeComment = safeWakeCommentContext;
   } else {
-    delete context.paperclipWakeComment;
+    delete context.pilibalaWakeComment;
   }
   if (taskMarkdown) {
-    context.paperclipTaskMarkdown = taskMarkdown;
+    context.pilibalaTaskMarkdown = taskMarkdown;
   } else {
-    delete context.paperclipTaskMarkdown;
+    delete context.pilibalaTaskMarkdown;
   }
   if (taskMarkdownAssignment) {
-    context.paperclipTaskMarkdownAssignment = taskMarkdownAssignment;
+    context.pilibalaTaskMarkdownAssignment = taskMarkdownAssignment;
   } else {
-    delete context.paperclipTaskMarkdownAssignment;
+    delete context.pilibalaTaskMarkdownAssignment;
   }
   if (taskMarkdownCompact && taskMarkdownCompact !== taskMarkdown) {
-    context.paperclipTaskMarkdownCompact = taskMarkdownCompact;
+    context.pilibalaTaskMarkdownCompact = taskMarkdownCompact;
   } else {
-    delete context.paperclipTaskMarkdownCompact;
+    delete context.pilibalaTaskMarkdownCompact;
   }
   if (taskMarkdownAssignmentCompact && taskMarkdownAssignmentCompact !== taskMarkdownAssignment) {
-    context.paperclipTaskMarkdownAssignmentCompact = taskMarkdownAssignmentCompact;
+    context.pilibalaTaskMarkdownAssignmentCompact = taskMarkdownAssignmentCompact;
   } else {
-    delete context.paperclipTaskMarkdownAssignmentCompact;
+    delete context.pilibalaTaskMarkdownAssignmentCompact;
   }
-  context.paperclipTaskCommunicationGuidance = [context.paperclipTaskCommunicationGuidance, FAST_RESPONSE_AGENT_GUIDANCE].filter(Boolean).join("\n\n");
+  context.pilibalaTaskCommunicationGuidance = [context.pilibalaTaskCommunicationGuidance, FAST_RESPONSE_AGENT_GUIDANCE].filter(Boolean).join("\n\n");
   if (issueRef) {
     const redactedWakeContext = await createRunSecretRedactionRegistry(
       db,
     ).redactForIssue(agent.companyId, issueRef.id, {
-      paperclipIssue: context.paperclipIssue,
-      paperclipWakeComment: context.paperclipWakeComment,
-      paperclipTaskCommunicationGuidance: context.paperclipTaskCommunicationGuidance,
-      paperclipTaskMarkdown: context.paperclipTaskMarkdown,
-      paperclipTaskMarkdownCompact: context.paperclipTaskMarkdownCompact,
-      paperclipTaskMarkdownAssignment: context.paperclipTaskMarkdownAssignment,
-      paperclipTaskMarkdownAssignmentCompact: context.paperclipTaskMarkdownAssignmentCompact,
+      pilibalaIssue: context.pilibalaIssue,
+      pilibalaWakeComment: context.pilibalaWakeComment,
+      pilibalaTaskCommunicationGuidance: context.pilibalaTaskCommunicationGuidance,
+      pilibalaTaskMarkdown: context.pilibalaTaskMarkdown,
+      pilibalaTaskMarkdownCompact: context.pilibalaTaskMarkdownCompact,
+      pilibalaTaskMarkdownAssignment: context.pilibalaTaskMarkdownAssignment,
+      pilibalaTaskMarkdownAssignmentCompact: context.pilibalaTaskMarkdownAssignmentCompact,
     });
-    context.paperclipIssue = redactedWakeContext.paperclipIssue;
-    context.paperclipTaskCommunicationGuidance = redactedWakeContext.paperclipTaskCommunicationGuidance;
-    if (redactedWakeContext.paperclipWakeComment) {
-      context.paperclipWakeComment =
-        redactedWakeContext.paperclipWakeComment;
+    context.pilibalaIssue = redactedWakeContext.pilibalaIssue;
+    context.pilibalaTaskCommunicationGuidance = redactedWakeContext.pilibalaTaskCommunicationGuidance;
+    if (redactedWakeContext.pilibalaWakeComment) {
+      context.pilibalaWakeComment =
+        redactedWakeContext.pilibalaWakeComment;
     }
-    if (redactedWakeContext.paperclipTaskMarkdown) {
-      context.paperclipTaskMarkdown =
-        redactedWakeContext.paperclipTaskMarkdown;
+    if (redactedWakeContext.pilibalaTaskMarkdown) {
+      context.pilibalaTaskMarkdown =
+        redactedWakeContext.pilibalaTaskMarkdown;
     }
-    if (redactedWakeContext.paperclipTaskMarkdownCompact) {
-      context.paperclipTaskMarkdownCompact =
-        redactedWakeContext.paperclipTaskMarkdownCompact;
+    if (redactedWakeContext.pilibalaTaskMarkdownCompact) {
+      context.pilibalaTaskMarkdownCompact =
+        redactedWakeContext.pilibalaTaskMarkdownCompact;
     }
-    if (redactedWakeContext.paperclipTaskMarkdownAssignment) {
-      context.paperclipTaskMarkdownAssignment =
-        redactedWakeContext.paperclipTaskMarkdownAssignment;
+    if (redactedWakeContext.pilibalaTaskMarkdownAssignment) {
+      context.pilibalaTaskMarkdownAssignment =
+        redactedWakeContext.pilibalaTaskMarkdownAssignment;
     }
-    if (redactedWakeContext.paperclipTaskMarkdownAssignmentCompact) {
-      context.paperclipTaskMarkdownAssignmentCompact =
-        redactedWakeContext.paperclipTaskMarkdownAssignmentCompact;
+    if (redactedWakeContext.pilibalaTaskMarkdownAssignmentCompact) {
+      context.pilibalaTaskMarkdownAssignmentCompact =
+        redactedWakeContext.pilibalaTaskMarkdownAssignmentCompact;
     }
   }
   if (issueRef) {
@@ -364,8 +364,8 @@ export async function prepareHeartbeatTaskContext(db: Db, input: HeartbeatTaskCo
             .update(value.trim().replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, ""))
             .digest("hex")
         : null;
-    const redactedIssue = parseObject(context.paperclipIssue);
-    context.paperclipTurnContext = {
+    const redactedIssue = parseObject(context.pilibalaIssue);
+    context.pilibalaTurnContext = {
       version: 1,
       assignment: {
         owner: "task_markdown",
@@ -381,9 +381,9 @@ export async function prepareHeartbeatTaskContext(db: Db, input: HeartbeatTaskCo
           revision: digest(comment.body),
         })),
       },
-    } satisfies PaperclipTurnContext;
+    } satisfies PilibalaTurnContext;
   } else {
-    delete context.paperclipTurnContext;
+    delete context.pilibalaTurnContext;
   }
-  return { continuationSummary, executionContinuation, paperclipWakePayload, safeWakeComments, safeWakeCommentContext };
+  return { continuationSummary, executionContinuation, pilibalaWakePayload, safeWakeComments, safeWakeCommentContext };
 }

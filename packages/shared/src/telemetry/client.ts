@@ -9,10 +9,10 @@ import type {
   TelemetryState,
 } from "./types.js";
 import { type ResolvedTelemetryCaps, resolveCaps } from "./config.js";
-import { PAPERCLIP_EVENTS } from "./generated/paperclip-telemetry.js";
+import { PILIBALA_EVENTS } from "./generated/pilibala-telemetry.js";
 
 const DEFAULT_ENDPOINTS = [
-  "https://telemetry.paperclip.ing/ingest",
+  "https://telemetry.pilibala.ing/ingest",
   "https://rusqrrg391.execute-api.us-east-1.amazonaws.com/ingest",
 ] as const;
 // Queue-pressure valve: auto-flush once this many events are buffered. This is
@@ -112,7 +112,7 @@ export class TelemetryClient {
   }
 
   /**
-   * Tracks first-party Paperclip telemetry events registered in the generated
+   * Tracks first-party Pilibala telemetry events registered in the generated
    * backend event schema.
    */
   track<K extends TelemetryEventName>(eventName: K, ...args: TrackArgs<K>): void {
@@ -128,7 +128,7 @@ export class TelemetryClient {
    * client would discard anyway.
    */
   isRegisteredEventName(eventName: string): boolean {
-    return Object.hasOwn(PAPERCLIP_EVENTS, eventName);
+    return Object.hasOwn(PILIBALA_EVENTS, eventName);
   }
 
   /**
@@ -212,7 +212,7 @@ export class TelemetryClient {
   private buildEnvelope(events: TelemetryEvent[], batchId?: string): TelemetryEventEnvelope {
     const state = this.getState();
     return {
-      app: this.config.app ?? "paperclip",
+      app: this.config.app ?? "pilibala",
       schemaVersion: this.config.schemaVersion ?? "1",
       installId: state.installId,
       version: this.version,

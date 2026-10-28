@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import { AlertTriangle, ArrowUpRight, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, CircleDashed, Clock, ExternalLink, FileText, GitBranch, ImagePlus, KeyRound, Loader2, MessageSquareQuote, MinusCircle, ShieldAlert, ThumbsUp, TriangleAlert, Wrench, X, XCircle } from "lucide-react";
 import { Link } from "@/lib/router";
 import { formatAssigneeUserLabel } from "../lib/assignees";
@@ -48,7 +48,7 @@ import { AppLogo } from "@/pages/apps/AppLogo";
 import { ConnectionIntentInteractionBody } from "@/features/connections/ConnectionIntentInteractionBody";
 import { QuestionForm } from "./task-chat/QuestionForm";
 
-const OTHER_ANSWER_ID = "__paperclip_other__";
+const OTHER_ANSWER_ID = "__pilibala_other__";
 
 /**
  * The card's server-evaluated audience, shared with the per-kind subcards below
@@ -1204,7 +1204,7 @@ function AskUserQuestionsCard({
           draftKey={`issue-question:${interaction.companyId}:${interaction.id}`}
           disabled={!onSubmitInteractionAnswers}
           initialResponse={interaction.result?.answers ? {
-            schema: "paperclip.question_response.v1",
+            schema: "pilibala.question_response.v1",
             answers: Object.fromEntries(interaction.result.answers.map((answer) => [
               answer.questionId,
               interaction.payload.questionSet!.questions.find((question) => question.id === answer.questionId)?.answerMode === "text"
@@ -1576,8 +1576,8 @@ function RequestConfirmationResolution({
             </div>
             <p className="mt-1 leading-6">
               {resumeFailure.status === "retrying"
-                ? `Paperclip is retrying the agent resume after approval (attempt ${resumeFailure.attempt}/${resumeFailure.maxAttempts}).`
-                : "Paperclip needs attention before the agent can resume this approved work."}
+                ? `Pilibala is retrying the agent resume after approval (attempt ${resumeFailure.attempt}/${resumeFailure.maxAttempts}).`
+                : "Pilibala needs attention before the agent can resume this approved work."}
             </p>
             {resumeFailure.errorCode ? (
               <p className="mt-1 leading-6">
@@ -1925,7 +1925,7 @@ function SecretProposalResolution({
         <div>
           <div className="font-medium">Approved by {who} — creating the binding</div>
           <p className="mt-1 text-amber-900/80 dark:text-amber-100/80">
-            Paperclip is re-checking authority and the proposal snapshot before writing.
+            Pilibala is re-checking authority and the proposal snapshot before writing.
           </p>
         </div>
       </div>
