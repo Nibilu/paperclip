@@ -2,6 +2,8 @@
   <img src="doc/assets/banner.jpg" alt="Pilibala is the app people use to manage AI agents for work." width="720" />
 </p>
 
+> **`v0.3.1-pilibala.1`** — the first version rebranded to the **Pilibala** brand (from Paperclip v0.3.1). 本版本为 Pilibala 品牌首个版本（基于 Paperclip v0.3.1 改名而来）。
+
 <p align="center">
   <a href="#quickstart"><strong>Quickstart</strong></a> &middot;
   <a href="https://docs.pilibala.in"><strong>Docs</strong></a> &middot;

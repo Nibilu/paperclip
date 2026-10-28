@@ -2,7 +2,10 @@
 set -a
 . /home/amber/pilibala/.env
 set +a
-export DATABASE_URL='postgres://paperclip:pilibala@127.0.0.1:54329/paperclip_dev'
+# DATABASE_URL is derived at runtime from the dev unit (source of truth) — no credentials in the repo.
+DATABASE_URL="$(systemctl --user cat paperclip-dev.service 2>/dev/null | sed -n 's/^Environment="DATABASE_URL=\(.*\)"$/\1/p')"
+[ -n "$DATABASE_URL" ] || echo "WARNING: DATABASE_URL not found in paperclip-dev.service; set it manually." >&2
+export DATABASE_URL
 export PORT=3104
 export HOST=0.0.0.0
 export PILIBALA_BIND=lan
