@@ -180,6 +180,21 @@ describe("LiveUpdatesProvider issue invalidation", () => {
     });
   });
 
+  it("refreshes issue approval cards when an approval event arrives", () => {
+    const invalidations: unknown[] = [];
+    const queryClient = {
+      invalidateQueries: (input: unknown) => { invalidations.push(input); },
+      getQueryData: () => undefined,
+    };
+    __liveUpdatesTestUtils.invalidateActivityQueries(
+      queryClient as never,
+      "company-1",
+      { entityType: "approval", entityId: "approval-1", action: "approval.created", details: null },
+      { userId: null, agentId: null },
+    );
+    expect(invalidations).toContainEqual({ queryKey: ["issues", "approvals"] });
+  });
+
   it("still refreshes comments when a comment activity event arrives", () => {
     const invalidations: unknown[] = [];
     const queryClient = {

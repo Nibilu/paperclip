@@ -1048,6 +1048,13 @@ describe("gateway connection failure reporting", () => {
       if (url.endsWith("/v1/runs")) {
         return new Response(JSON.stringify({ run_id: "run-approval-1", status: "started" }), { status: 200 });
       }
+      if (url.endsWith("/v1/runs/run-approval-1")) {
+        return new Response(JSON.stringify({
+          status: "waiting_for_approval",
+          execution_generation: 17,
+          pending_controls: [{ prompt_id: "appr-1", kind: "approval" }],
+        }), { status: 200 });
+      }
       if (url.endsWith("/approval")) {
         return new Response(JSON.stringify({ object: "hermes.run.approval_response", resolved: 1 }), { status: 200 });
       }
@@ -1091,7 +1098,11 @@ describe("gateway connection failure reporting", () => {
     expect(approvalCall).toBeTruthy();
     const approvalInit = approvalCall?.[1] as RequestInit;
     expect(approvalInit.method).toBe("POST");
-    expect(JSON.parse(String(approvalInit.body))).toEqual({ choice: "once", request_id: "appr-1" });
+    expect(JSON.parse(String(approvalInit.body))).toEqual({
+      request_id: "appr-1",
+      execution_generation: 17,
+      choice: "once",
+    });
     expect(ctx.onLog).toHaveBeenCalledWith("stdout", expect.stringContaining("approval resolved: once"));
   });
 
@@ -1100,6 +1111,13 @@ describe("gateway connection failure reporting", () => {
       const url = String(input);
       if (url.endsWith("/v1/runs")) {
         return new Response(JSON.stringify({ run_id: "run-approval-2", status: "started" }), { status: 200 });
+      }
+      if (url.endsWith("/v1/runs/run-approval-2")) {
+        return new Response(JSON.stringify({
+          status: "waiting_for_approval",
+          execution_generation: 23,
+          pending_controls: [{ prompt_id: "appr-2", kind: "approval" }],
+        }), { status: 200 });
       }
       if (url.endsWith("/approval")) {
         return new Response(JSON.stringify({ object: "hermes.run.approval_response", resolved: 1 }), { status: 200 });
@@ -1129,8 +1147,58 @@ describe("gateway connection failure reporting", () => {
     const approvalCall = (fetchMock.mock.calls as Array<[RequestInfo | URL, RequestInit?]>).find(
       ([input]) => String(input).endsWith("/approval"),
     );
-    expect(JSON.parse(String(approvalCall?.[1]?.body))).toEqual({ choice: "deny", request_id: "appr-2" });
+    expect(JSON.parse(String(approvalCall?.[1]?.body))).toEqual({
+      request_id: "appr-2",
+      execution_generation: 23,
+      choice: "deny",
+    });
     expect(result.errorCode).toBe("hermes_gateway_run_failed");
+  });
+
+  it.each([
+    ["missing pending prompt", []],
+    ["mismatched pending prompt", [{ prompt_id: "another-request", kind: "approval" }]],
+  ])("does not post an approval when the authority status has a %s", async (_caseName, pendingControls) => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/v1/runs")) {
+        return new Response(JSON.stringify({ run_id: "run-approval-3", status: "started" }), { status: 200 });
+      }
+      if (url.endsWith("/v1/runs/run-approval-3")) {
+        return new Response(JSON.stringify({
+          status: "waiting_for_approval",
+          execution_generation: 31,
+          pending_controls: pendingControls,
+        }), { status: 200 });
+      }
+      if (url.endsWith("/events")) {
+        return new Response(
+          sseStream([
+            "event: approval.request",
+            'data: {"request_id":"appr-3","command":"echo safe","choices":["once","deny"]}',
+            "",
+            "event: run.completed",
+            'data: {"status":"completed","output":"done"}',
+            "",
+          ].join("\n")),
+          { status: 200, headers: { "content-type": "text/event-stream" } },
+        );
+      }
+      return new Response(JSON.stringify({ status: "completed", output: "done" }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const ctx = makeCtx({ apiBaseUrl: "http://127.0.0.1:8642", apiKey: "secret-key", timeoutSec: 5 });
+    ctx.onToolApproval = vi.fn(async () => ({ choice: "once" }));
+
+    await execute(ctx);
+
+    expect(fetchMock.mock.calls.some(([input, init]) =>
+      String(input).endsWith("/approval") && init?.method === "POST",
+    )).toBe(false);
+    expect(ctx.onLog).toHaveBeenCalledWith(
+      "stderr",
+      expect.stringContaining("no matching active approval (request appr-3)"),
+    );
   });
 });
 

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { agents, agentWakeupRequests, approvals, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRuns, issues, nativeRunFinalizations, runUsageReceipts, workspaceOperations, type Db } from "@paperclipai/db";
+import { agents, agentWakeupRequests, approvals, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRuns, issueApprovals, issues, nativeRunFinalizations, runUsageReceipts, workspaceOperations, type Db } from "@paperclipai/db";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { trace } from "@opentelemetry/api";
@@ -410,21 +410,25 @@ describe("awaitBoardToolApproval", () => {
     async function seed() {
       const [company] = await db.insert(companies).values({ name: "Approvals", issuePrefix: "APR" }).returning();
       const [agent] = await db.insert(agents).values({ companyId: company.id, name: "Gateway agent", adapterType: "hermes_gateway" }).returning();
+      const [issue] = await db.insert(issues).values({ companyId: company.id, title: "Tool approval issue", issueNumber: 1, identifier: "APR-1" }).returning();
       const [wake] = await db.insert(agentWakeupRequests).values({ companyId: company.id, agentId: agent.id, source: "on_demand", status: "claimed" }).returning();
       const [run] = await db.insert(heartbeatRuns).values({ companyId: company.id, agentId: agent.id, wakeupRequestId: wake.id, status: "running", runtimeMode: "legacy" }).returning();
-      return { company, agent, run };
+      return { company, agent, issue, run };
     }
 
     it("creates a board approval with the tool payload and resolves approved → once", async () => {
-      const { company, agent, run } = await seed();
+      const { company, agent, issue, run } = await seed();
       const pending = awaitBoardToolApproval(db, {
-        companyId: company.id, agentId: agent.id, agentName: agent.name, runId: run.id,
+        companyId: company.id, agentId: agent.id, agentName: agent.name, runId: run.id, issueId: issue.id,
       }, { toolName: "terminal", command: "systemctl status", requestId: "appr-9", choices: ["once", "deny"] });
       // Give the row a moment to land, then resolve it as the board would.
       await new Promise((resolve) => setTimeout(resolve, 2_600));
       const [row] = await db.select().from(approvals).limit(1);
       expect(row).toMatchObject({ type: "request_board_approval", status: "pending", requestedByAgentId: agent.id });
       expect(row.payload).toMatchObject({ toolName: "terminal", command: "systemctl status", requestId: "appr-9", gateway: "hermes_gateway" });
+      await expect(db.select().from(issueApprovals)).resolves.toMatchObject([
+        { companyId: company.id, issueId: issue.id, approvalId: row.id, linkedByAgentId: agent.id },
+      ]);
       await db.update(approvals).set({ status: "approved", decidedAt: new Date() }).where(eq(approvals.id, row.id));
       await expect(pending).resolves.toEqual({ choice: "once" });
     });

@@ -612,9 +612,29 @@ async function handleEvent(
         })
       : null;
     if (resolution && !state.terminal) {
-      const body: Record<string, unknown> = { choice: resolution.choice };
-      if (requestId) body.request_id = requestId;
       try {
+        const runStatus = asRecord(await fetchJson(
+          apiUrl(state.gatewayBaseUrl, `/v1/runs/${encodeURIComponent(state.runId)}`),
+          { method: "GET", headers: state.gatewayHeaders },
+        ));
+        const executionGeneration = runStatus?.execution_generation;
+        const pendingControls = Array.isArray(runStatus?.pending_controls) ? runStatus.pending_controls : [];
+        const matchingApproval = requestId !== null && pendingControls.some((control) => {
+          const pendingControl = asRecord(control);
+          return pendingControl?.kind === "approval" && pendingControl.prompt_id === requestId;
+        });
+        if (typeof executionGeneration !== "number" || !Number.isInteger(executionGeneration) || !matchingApproval) {
+          await ctx.onLog(
+            "stderr",
+            `[hermes-gateway] approval resolution failed: run status has no matching active approval (request ${requestId ?? "unknown"})\n`,
+          );
+          return;
+        }
+        const body = {
+          request_id: requestId,
+          execution_generation: executionGeneration,
+          choice: resolution.choice,
+        };
         await fetchJson(
           apiUrl(state.gatewayBaseUrl, `/v1/runs/${encodeURIComponent(state.runId)}/approval`),
           { method: "POST", headers: state.gatewayHeaders, body: JSON.stringify(body) },

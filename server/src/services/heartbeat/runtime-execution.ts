@@ -39,7 +39,7 @@ import { remoteExecutionHasStopped } from "../remote-execution-termination.js";
 import { registerAdapterExecutionControl } from "../adapter-execution-control.js";
 import { resolveManagedOpenAiBilling } from "@paperclipai/adapter-utils";
 import { and, eq, isNull, sql } from "drizzle-orm";
-import { approvals, heartbeatRuns, nativeRunFinalizations, workspaceOperations } from "@paperclipai/db";
+import { approvals, heartbeatRuns, issueApprovals, nativeRunFinalizations, workspaceOperations } from "@paperclipai/db";
 import { conflict } from "../../errors.js";
 import { getStartupTraceContext } from "../../instrumentation.js";
 import { logger } from "../../middleware/logger.js";
@@ -241,28 +241,40 @@ export async function awaitBoardToolApproval(
     agentId: string;
     agentName: string;
     runId: string;
+    issueId?: string | null;
   },
   request: ToolApprovalRequest,
 ): Promise<{ choice: string } | null> {
-  const [row] = await db
-    .insert(approvals)
-    .values({
-      companyId: input.companyId,
-      type: "request_board_approval",
-      requestedByAgentId: input.agentId,
-      status: "pending",
-      payload: {
-        title: `Tool approval: ${request.toolName}`,
-        gateway: "hermes_gateway",
-        toolName: request.toolName,
-        command: request.command,
-        requestId: request.requestId,
-        runId: input.runId,
-        agentName: input.agentName,
-        choices: request.choices,
-      },
-    })
-    .returning();
+  const row = await db.transaction(async (tx) => {
+    const [approval] = await tx
+      .insert(approvals)
+      .values({
+        companyId: input.companyId,
+        type: "request_board_approval",
+        requestedByAgentId: input.agentId,
+        status: "pending",
+        payload: {
+          title: `Tool approval: ${request.toolName}`,
+          gateway: "hermes_gateway",
+          toolName: request.toolName,
+          command: request.command,
+          requestId: request.requestId,
+          runId: input.runId,
+          agentName: input.agentName,
+          choices: request.choices,
+        },
+      })
+      .returning();
+    if (approval && input.issueId) {
+      await tx.insert(issueApprovals).values({
+        companyId: input.companyId,
+        issueId: input.issueId,
+        approvalId: approval.id,
+        linkedByAgentId: input.agentId,
+      });
+    }
+    return approval;
+  });
   if (!row) return null;
   // Bounded by the run lifecycle: once the run is no longer running (timeout,
   // cancellation, crash) stop waiting — the gateway side is already settled.
@@ -912,6 +924,7 @@ export async function executeHeartbeatRuntime(db: Db, input: HeartbeatRuntimeExe
                   agentId: agent.id,
                   agentName: agent.name,
                   runId: run.id,
+                  issueId: issueRef?.id ?? null,
                 }, request),
               onExternalRunCreated: async (info) => {
                 // AMB-16: persist the provider-side run id as soon as it

@@ -1528,6 +1528,7 @@ function invalidateActivityQueries(
     queryClient.invalidateQueries({
       queryKey: queryKeys.approvals.list(companyId),
     });
+    queryClient.invalidateQueries({ queryKey: ["issues", "approvals"] });
     return;
   }
 

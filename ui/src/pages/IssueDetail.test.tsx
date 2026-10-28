@@ -7,6 +7,7 @@ import { RichWorkProductCard } from "../components/task-chat/RichWorkProductCard
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type {
   Agent,
+  Approval,
   Issue,
   IssueAttachment,
   IssueComment,
@@ -57,6 +58,7 @@ const mockIssuesApi = vi.hoisted(() => ({
   listComments: vi.fn(),
   listAttachments: vi.fn(),
   listWorkProducts: vi.fn(),
+  listApprovals: vi.fn(),
   checkMonitorNow: vi.fn(),
   listFeedbackVotes: vi.fn(),
   listInteractions: vi.fn(),
@@ -586,7 +588,24 @@ vi.mock("../components/PriorityIcon", () => ({
 }));
 
 vi.mock("../components/ApprovalCard", () => ({
-  ApprovalCard: () => <div>Approval</div>,
+  ApprovalCard: ({
+    approval,
+    detailLink,
+    onApprove,
+    onReject,
+  }: {
+    approval: Approval;
+    detailLink?: string;
+    onApprove?: () => void;
+    onReject?: () => void;
+  }) => (
+    <div data-testid="approval-card">
+      {String(approval.payload?.title ?? approval.type)}
+      {detailLink ? <a href={detailLink}>View details</a> : null}
+      {onApprove ? <button onClick={onApprove}>Approve</button> : null}
+      {onReject ? <button onClick={onReject}>Reject</button> : null}
+    </div>
+  ),
 }));
 
 vi.mock("../components/Identity", () => ({
@@ -1341,6 +1360,7 @@ describe("IssueDetail", () => {
     mockIssuesApi.listComments.mockResolvedValue([]);
     mockIssuesApi.listAttachments.mockResolvedValue([]);
     mockIssuesApi.listWorkProducts.mockResolvedValue([]);
+    mockIssuesApi.listApprovals.mockResolvedValue([]);
     mockIssuesApi.checkMonitorNow.mockReset();
     mockIssuesApi.listFeedbackVotes.mockResolvedValue([]);
     mockIssuesApi.listInteractions.mockResolvedValue([]);
@@ -1430,6 +1450,39 @@ describe("IssueDetail", () => {
     mockLocation.state = null;
     mockRouteParams.issueId = "PAP-1";
     mockRouteParams.companyPrefix = "PAP";
+  });
+
+  it("shows linked pending approvals in the chat view", async () => {
+    const issue = createIssue();
+    mockIssuesApi.get.mockResolvedValue(issue);
+    mockIssuesApi.listApprovals.mockResolvedValue([
+      {
+        id: "approval-tool-1",
+        companyId: issue.companyId,
+        type: "request_board_approval",
+        requestedByUserId: null,
+        requestedByAgentId: null,
+        decidedByUserId: null,
+        status: "pending",
+        payload: {
+          title: "Tool approval: terminal",
+          toolName: "terminal",
+          command: "systemctl status",
+        },
+        decisionNote: null,
+        decidedAt: null,
+        createdAt: new Date("2026-04-21T00:00:00.000Z"),
+        updatedAt: new Date("2026-04-21T00:00:00.000Z"),
+      } as Approval,
+    ]);
+
+    await act(async () => renderIssueView());
+    await waitForAssertion(() => {
+      expect(mockIssuesApi.listApprovals).toHaveBeenCalledWith(issue.id);
+      expect(container.querySelector('[data-testid="chat-linked-approvals"]')).not.toBeNull();
+      expect(container.textContent).toContain("Tool approval: terminal");
+      expect(container.querySelector('a[href="/approvals/approval-tool-1"]')).not.toBeNull();
+    });
   });
 
   it("clears only the monitor after confirmation and refreshes the task", async () => {

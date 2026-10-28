@@ -1202,6 +1202,11 @@ type IssueDetailChatTabProps = {
   companyId: string;
   projectId: string | null;
   issueStatus: Issue["status"];
+  pendingApprovalAction: {
+    approvalId: string;
+    action: "approve" | "reject";
+  } | null;
+  onApprovalAction: (approvalId: string, action: "approve" | "reject") => void;
   /** Marks cross-issue agent comments in the thread (the open cross-task write design (attribution)). */
   issueAssigneeAgentId: Issue["assigneeAgentId"];
   issueWorkMode: IssueWorkMode;
@@ -1361,6 +1366,8 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
   projectId,
   issueWorkMode,
   issueStatus,
+  pendingApprovalAction,
+  onApprovalAction,
   issueAssigneeAgentId,
   executionRunId,
   blockedBy,
@@ -1466,6 +1473,18 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
   const scrollLocation = useLocation();
   const scrollNavigationType = useNavigationType();
   const { pushToast } = useToastActions();
+  const { data: linkedApprovals } = useQuery({
+    queryKey: queryKeys.issues.approvals(issueId),
+    queryFn: () => issuesApi.listApprovals(issueId),
+    enabled: !!issueId,
+    // The approval event may precede its issue link; polling closes that race
+    // while chat is open, including on mobile where Activity is hidden.
+    refetchInterval: 5_000,
+    placeholderData:
+      keepPreviousDataForSameQueryTail<
+        Awaited<ReturnType<typeof issuesApi.listApprovals>>
+      >(issueId),
+  });
   const {
     data: activity,
     isPending: activityPending,
@@ -2501,6 +2520,32 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
           }}
         >
           <EmailThreadProvider companyId={companyId} issueId={issueId}>
+          {linkedApprovals?.some((approval) => approval.status === "pending") ? (
+            <div className="mb-3 space-y-3" data-testid="chat-linked-approvals">
+              {linkedApprovals
+                .filter((approval) => approval.status === "pending")
+                .map((approval) => (
+                  <ApprovalCard
+                    key={approval.id}
+                    approval={approval}
+                    requesterAgent={
+                      approval.requestedByAgentId
+                        ? (agentMap.get(approval.requestedByAgentId) ?? null)
+                        : null
+                    }
+                    onApprove={() => onApprovalAction(approval.id, "approve")}
+                    onReject={() => onApprovalAction(approval.id, "reject")}
+                    detailLink={`/approvals/${approval.id}`}
+                    isPending={pendingApprovalAction?.approvalId === approval.id}
+                    pendingAction={
+                      pendingApprovalAction?.approvalId === approval.id
+                        ? pendingApprovalAction.action
+                        : null
+                    }
+                  />
+                ))}
+            </div>
+          ) : null}
           <ThreadComponent
             key={conversationMode ? draftKey : issueId}
             {...(!classicTaskInterfaceEnabled ? { creationActivity: resolvedActivity } : {})}
@@ -8140,6 +8185,10 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
                   companyId={issue.companyId}
                   projectId={issue.projectId ?? null}
                   issueStatus={issue.status}
+                  pendingApprovalAction={pendingApprovalAction}
+                  onApprovalAction={(approvalId, action) => {
+                    approvalDecision.mutate({ approvalId, action });
+                  }}
                   issueAssigneeAgentId={issue.assigneeAgentId}
                   assigneeAdapterOverrides={issue.assigneeAdapterOverrides}
                   issueWorkMode={issue.workMode ?? "standard"}
