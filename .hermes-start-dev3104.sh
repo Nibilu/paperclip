@@ -2,7 +2,7 @@
 set -a
 . /home/amber/pilibala/.env
 set +a
-export DATABASE_URL='postgres://pilibala:pilibala@127.0.0.1:54329/pilibala_dev'
+export DATABASE_URL='postgres://paperclip:pilibala@127.0.0.1:54329/paperclip_dev'
 export PORT=3104
 export HOST=0.0.0.0
 export PILIBALA_BIND=lan

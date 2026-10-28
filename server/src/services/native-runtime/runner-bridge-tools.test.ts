@@ -55,8 +55,8 @@ describe("Runner workspace bridge", () => {
     const directory = await root();
     await mkdir(join(directory, ".pilibala"));
     await writeFile(join(directory, ".pilibala", ".env"), "SYNTHETIC_INSTANCE_SECRET");
-    await mkdir(join(directory, "nested", ".PaPeRcLiP"), { recursive: true });
-    for (const path of [".pilibala/.env", "nested/.PaPeRcLiP/config.json"]) {
+    await mkdir(join(directory, "nested", ".PiLiBaLa"), { recursive: true });
+    for (const path of [".pilibala/.env", "nested/.PiLiBaLa/config.json"]) {
       await expect(executeWorkspaceTool(directory, "workspace_read", { path }, authorize)).rejects.toThrow("instance_state_denied");
       await expect(executeWorkspaceTool(directory, "workspace_write", { path, text: "overwrite", expectedSha256: null }, authorize)).rejects.toThrow("instance_state_denied");
       await expect(readWorkspaceUploadFile(directory, path)).rejects.toThrow("instance_state_denied");
@@ -70,8 +70,8 @@ describe("Runner workspace bridge", () => {
     const directory = join(await root(), "project.[safe]");
     await mkdir(directory);
     await mkdir(join(directory, ".pilibala"));
-    await mkdir(join(directory, "nested", ".PaPeRcLiP"), { recursive: true });
-    const keys = [".pilibala/.env", "nested/.PaPeRcLiP/config.json"];
+    await mkdir(join(directory, "nested", ".PiLiBaLa"), { recursive: true });
+    const keys = [".pilibala/.env", "nested/.PiLiBaLa/config.json"];
     for (const key of keys) await writeFile(join(directory, key), "SYNTHETIC_INSTANCE_SECRET");
     for (const key of keys) {
       const read = await executeWorkspaceTool(directory, "workspace_run", { program: "/bin/cat", args: [key] }, authorize) as any;
