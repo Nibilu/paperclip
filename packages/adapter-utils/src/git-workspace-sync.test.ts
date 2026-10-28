@@ -666,7 +666,7 @@ describe("git workspace sync", () => {
     const parents = (await git(repo, ["rev-list", "--parents", "-1", "HEAD"])).split(" ");
     expect(parents.slice(1)).toEqual([currentHead, importedHead]);
     expect(await git(repo, ["log", "-1", "--format=%an|%ae|%cn|%ce"]))
-      .toBe("Pilibala|noreply@pilibala.ing|Pilibala|noreply@pilibala.ing");
+      .toBe("Pilibala|noreply@pilibala.in|Pilibala|noreply@pilibala.in");
     expect(await git(repo, ["log", "-1", "--format=%s"]))
       .toBe(`Pilibala remote git sync merge ${importedHead.slice(0, 12)}`);
     const mergedTree = await git(repo, ["ls-tree", "--name-only", "HEAD"]);

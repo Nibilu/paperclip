@@ -99,7 +99,7 @@ identity-service documentation or re-deriving it.
 
 | Plane | Question | Lives where | Token profile |
 | --- | --- | --- | --- |
-| **P1. Sign-in methods** | *Who are you?* | `pilibala-id` (id.pilibala.ing → Account) | Minimal-scope provider tokens (`openid email profile`), used once to authenticate, encrypted at rest, never exported |
+| **P1. Sign-in methods** | *Who are you?* | `pilibala-id` (id.pilibala.in → Account) | Minimal-scope provider tokens (`openid email profile`), used once to authenticate, encrypted at rest, never exported |
 | **P2. Connections (Apps)** | *What may your agents touch?* | Pilibala App instances (`tool_connections`), acquired via the **connect broker** for hosted + self-hosted | Rich-scope, long-lived resource tokens in the **instance's** encrypted vault; per-agent grants; risk-tier policy defaults |
 | **P3. Login with Pilibala** | *Who may authenticate against us?* | `pilibala-id` OIDC provider + DB-backed client registry | Our ES256 ID/access tokens issued *by* us to registered RPs (instances, the broker, future third parties) |
 
@@ -113,17 +113,17 @@ Adopted as a standing rule (decision D7) with the identity-model plan. State it
 verbatim in any P2 design so the app-store work cannot drift into merging the
 planes:
 
-> Sign-in tokens are never reused as resource tokens; id.pilibala.ing never
+> Sign-in tokens are never reused as resource tokens; id.pilibala.in never
 > stores resource tokens; no connections hub on the ID service.
 
-P2 tokens flow broker → instance vault as pass-through only; the id.pilibala.ing
+P2 tokens flow broker → instance vault as pass-through only; the id.pilibala.in
 Account page therefore must **not** grow a "Connections" hub. The reasons to
 hold the planes apart (from the plan §3):
 
 - **Scope discipline.** Sign-in wants the narrowest grant; connections want
   deliberately broad ones. One button that does both is how you grant repo
   access just to log in.
-- **Blast radius.** id.pilibala.ing holding every customer's Vercel/Slack/GitHub
+- **Blast radius.** id.pilibala.in holding every customer's Vercel/Slack/GitHub
   resource tokens would make it the single juiciest target in the fleet; the
   broker is intentionally pass-through.
 - **Self-hosted symmetry.** Instances own their vaults, so self-hosters don't
@@ -134,7 +134,7 @@ hold the planes apart (from the plan §3):
 
 The explicit Vercel Connect exception does not change D7 or merge P1 and P2.
 The operator chooses Vercel as the P2 credential authority for an individual
-connection. `id.pilibala.ing` is not involved, and neither sign-in tokens nor
+connection. `id.pilibala.in` is not involved, and neither sign-in tokens nor
 provider tokens pass through it. The deployment's Vercel access token or
 workload OIDC identity is bootstrap authority for that external vault, not a
 provider resource credential.
@@ -146,8 +146,8 @@ Use the surface-correct name for each plane; they intentionally differ:
 | Surface | Plane | Name to use |
 | --- | --- | --- |
 | Pilibala App instances | P2 | **"Connections"** |
-| id.pilibala.ing Account | P1 | **"Ways to sign in"** |
-| id.pilibala.ing admin | P3 | **"OIDC clients"** (until the app store productizes it) |
+| id.pilibala.in Account | P1 | **"Ways to sign in"** |
+| id.pilibala.in admin | P3 | **"OIDC clients"** (until the app store productizes it) |
 
 ## Packaging Rule
 

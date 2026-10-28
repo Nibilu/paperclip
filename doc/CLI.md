@@ -160,8 +160,8 @@ pnpm pilibalaai --help
 Recommended installation and interactive onboarding:
 
 ```sh
-curl -fsSLO https://pilibala.ing/install.sh
-curl -fsSLO https://pilibala.ing/install.sh.sha256
+curl -fsSLO https://pilibala.in/install.sh
+curl -fsSLO https://pilibala.in/install.sh.sha256
 if command -v sha256sum >/dev/null 2>&1; then
   sha256sum -c install.sh.sha256
 else

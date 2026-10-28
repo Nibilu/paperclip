@@ -414,6 +414,6 @@ export function loadConfig(): Config {
     companyDeletionEnabled,
     telemetryEnabled: fileConfig?.telemetry?.enabled ?? true,
     announcementsEnabled: process.env.PILIBALA_ANNOUNCEMENTS_ENABLED !== "false",
-    announcementsFeedUrl: process.env.PILIBALA_ANNOUNCEMENTS_FEED_URL?.trim() || "https://pages.pilibala.ing/announcements/v1/current.json",
+    announcementsFeedUrl: process.env.PILIBALA_ANNOUNCEMENTS_FEED_URL?.trim() || "https://pages.pilibala.in/announcements/v1/current.json",
   };
 }

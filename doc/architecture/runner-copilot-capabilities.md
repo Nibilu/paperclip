@@ -413,7 +413,7 @@ Primary external references: [ACP server documentation](https://docs.github.com/
 [denial bypass report #4537](https://github.com/github/copilot-cli/issues/4537),
 and [background completion report #4743](https://github.com/github/copilot-cli/issues/4743).
 The exact pinned implementation takes precedence over moving documentation.
-The [harness priorities report](https://pages.pilibala.ing/2026-09-25-harness-priorities/)
+The [harness priorities report](https://pages.pilibala.in/2026-09-25-harness-priorities/)
 defines the requested product outcome. Existing Codex app-server contracts and
 conformance tests are the comparison baseline, especially `turn/steer`,
 `turn/interrupt`, `thread/read`, file changes, user input, and scoped approvals.

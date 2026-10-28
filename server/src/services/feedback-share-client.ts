@@ -4,7 +4,7 @@ import type { Config } from "../config.js";
 
 export const FEEDBACK_UPLOAD_TIMEOUT_MS = 30_000;
 
-const DEFAULT_FEEDBACK_EXPORT_BACKEND_URL = "https://telemetry.pilibala.ing";
+const DEFAULT_FEEDBACK_EXPORT_BACKEND_URL = "https://telemetry.pilibala.in";
 
 function buildFeedbackShareObjectKey(bundle: FeedbackTraceBundle, exportedAt: Date) {
   const year = String(exportedAt.getUTCFullYear());

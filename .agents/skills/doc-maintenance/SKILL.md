@@ -127,7 +127,7 @@ git commit -m "docs: update documentation for accuracy
 
 - [list each fix briefly]
 
-Co-Authored-By: Pilibala <noreply@pilibala.ing>"
+Co-Authored-By: Pilibala <noreply@pilibala.in>"
 
 git push -u origin "$BRANCH"
 

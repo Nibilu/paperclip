@@ -221,7 +221,7 @@ describe("chat connector UI contract", () => {
     expect(setup).toContain("not Microsoft Graph permissions in Entra");
     expect(setup).toContain("does not use Teams single sign-on");
     expect(setup).toContain("webApplicationInfo");
-    expect(setup).toContain('resource: "https://pilibala.ing"');
+    expect(setup).toContain('resource: "https://pilibala.in"');
     expect(setup).toContain("only associates the RSC");
     expect(setup).toContain("you do not need to register an Entra");
     expect(setup).toContain("receive every message");

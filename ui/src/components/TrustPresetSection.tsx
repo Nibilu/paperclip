@@ -215,7 +215,7 @@ export function TrustPresetSection({
                 Want to set more than one containment boundary?{" "}
                 <a
                   className="underline underline-offset-2 hover:text-foreground"
-                  href="https://pilibala.ing/ee"
+                  href="https://pilibala.in/ee"
                   target="_blank"
                   rel="noreferrer"
                 >

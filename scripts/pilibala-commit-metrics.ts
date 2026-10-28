@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-const DEFAULT_QUERY = "\"Co-Authored-By: Pilibala <noreply@pilibala.ing>\"";
+const DEFAULT_QUERY = "\"Co-Authored-By: Pilibala <noreply@pilibala.in>\"";
 const DEFAULT_CACHE_FILE = path.resolve("data/pilibala-commit-metrics-cache.json");
 const DEFAULT_SEARCH_START = "2008-01-01T00:00:00Z";
 const SEARCH_WINDOW_LIMIT = 900;
@@ -15,7 +15,7 @@ const MIN_WINDOW_MS = 60_000;
 const DEFAULT_STATS_FETCH_LIMIT = 250;
 const DEFAULT_STATS_CONCURRENCY = 4;
 const DEFAULT_SEARCH_FIELD = "committer-date";
-const PILIBALA_EMAIL = "noreply@pilibala.ing";
+const PILIBALA_EMAIL = "noreply@pilibala.in";
 const PILIBALA_NAME = "pilibala";
 
 interface CliOptions {

@@ -115,7 +115,7 @@ export async function fetchProviderDailyCosts(
           "OpenAI-Organization": parsed.accountId,
         }
       : { "x-api-key": credential, "anthropic-version": "2023-06-01" };
-  headers["User-Agent"] = "Pilibala/1.0 (https://pilibala.ing)";
+  headers["User-Agent"] = "Pilibala/1.0 (https://pilibala.in)";
   const totals = new Map<string, bigint>();
   const seen = new Set<string>();
   const days = new Set<number>();

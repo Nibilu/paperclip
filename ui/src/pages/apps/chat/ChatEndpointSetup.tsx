@@ -911,7 +911,7 @@ function ProviderConnectStep({
       ],
       webApplicationInfo: {
         id: teamsClientId,
-        resource: "https://pilibala.ing",
+        resource: "https://pilibala.in",
       },
       authorization: {
         permissions: {
@@ -1580,7 +1580,7 @@ function ProviderConnectStep({
               Configure one for this instance before creating or connecting your Slack app.
             </p>
             <a
-              href="https://docs.pilibala.ing/reference/deploy/https/"
+              href="https://docs.pilibala.in/reference/deploy/https/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm underline underline-offset-4"

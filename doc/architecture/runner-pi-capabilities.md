@@ -656,7 +656,7 @@ package tests; do not preserve an old qualified command hash after changing byte
 
 Primary references reviewed:
 
-- [Harness priorities report](https://pages.pilibala.ing/2026-09-25-harness-priorities/report.md)
+- [Harness priorities report](https://pages.pilibala.in/2026-09-25-harness-priorities/report.md)
 - [pi-acp source](https://github.com/svkozak/pi-acp)
 - [Pi RPC protocol](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/rpc.md)
 - [Pi extensions](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/extensions.md)

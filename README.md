@@ -4,11 +4,11 @@
 
 <p align="center">
   <a href="#quickstart"><strong>Quickstart</strong></a> &middot;
-  <a href="https://docs.pilibala.ing"><strong>Docs</strong></a> &middot;
+  <a href="https://docs.pilibala.in"><strong>Docs</strong></a> &middot;
   <a href="https://github.com/pilibalaai/pilibala"><strong>GitHub</strong></a> &middot;
   <a href="https://discord.gg/m4HZY7xNG3"><strong>Discord</strong></a> &middot;
   <a href="https://x.com/pilibalaing"><strong>Twitter</strong></a> &middot;
-  <a href="https://pilibala.ing"><strong>Website</strong></a>
+  <a href="https://pilibala.in"><strong>Website</strong></a>
 </p>
 
 <p align="center">
@@ -29,7 +29,7 @@
 </div>
 
 <p align="center">
-  <a href="https://pilibala.ing/waitlist/"><strong>Sign up for the Pilibala Cloud waitlist →</strong></a>
+  <a href="https://pilibala.in/waitlist/"><strong>Sign up for the Pilibala Cloud waitlist →</strong></a>
 </p>
 
 <br/>
@@ -77,7 +77,7 @@ It looks like a task manager. Under the hood: org charts, budgets, governance, g
 
 </div>
 
-Custom processes, HTTP endpoints, and external adapter packages extend the roster. See the [adapter overview](https://docs.pilibala.ing/reference/adapters/overview/) for setup and capabilities.
+Custom processes, HTTP endpoints, and external adapter packages extend the roster. See the [adapter overview](https://docs.pilibala.in/reference/adapters/overview/) for setup and capabilities.
 
 <br/>
 
@@ -132,7 +132,7 @@ Agents wake for assigned work, follow-up messages, or configured schedules. Dele
 <tr>
 <td align="center">
 <h3>💰 Cost Control</h3>
-Company, agent, and project <a href="https://docs.pilibala.ing/guides/day-to-day/costs/">budgets</a>. Track reported spend, get threshold alerts, and pause work at configured limits.
+Company, agent, and project <a href="https://docs.pilibala.in/guides/day-to-day/costs/">budgets</a>. Track reported spend, get threshold alerts, and pause work at configured limits.
 </td>
 <td align="center">
 <h3>🏢 Multi-Organization</h3>
@@ -146,7 +146,7 @@ Keep conversations, plans, blockers, files, and run history attached to the work
 <tr>
 <td align="center">
 <h3>🛡️ Governance</h3>
-Configure <a href="https://docs.pilibala.ing/guides/day-to-day/approvals/">review and approval stages</a>, approve hires, and pause, reassign, or stop work when needed.
+Configure <a href="https://docs.pilibala.in/guides/day-to-day/approvals/">review and approval stages</a>, approve hires, and pause, reassign, or stop work when needed.
 </td>
 <td align="center">
 <h3>📊 Org Chart</h3>
@@ -160,29 +160,29 @@ Monitor and manage your autonomous businesses from anywhere.
 <tr>
 <td align="center">
 <h3>🔗 Apps & Connections</h3>
-<a href="https://docs.pilibala.ing/connectors/">Connect services</a> such as GitHub, Notion, and Railway, or your own MCP server. Set gateway actions to Allowed, Ask first, or Off.
+<a href="https://docs.pilibala.in/connectors/">Connect services</a> such as GitHub, Notion, and Railway, or your own MCP server. Set gateway actions to Allowed, Ask first, or Off.
 </td>
 <td align="center">
 <h3>👥 Shared Agents, Personal Accounts</h3>
-Choose <a href="https://docs.pilibala.ing/connectors/access-model/">who can use a connection and which agents can access it</a>. Managed GitHub operations can use the account of the person directing the work.
+Choose <a href="https://docs.pilibala.in/connectors/access-model/">who can use a connection and which agents can access it</a>. Managed GitHub operations can use the account of the person directing the work.
 </td>
 <td align="center">
 <h3>🧠 Skills & Skill Studio</h3>
-Install or write <a href="https://docs.pilibala.ing/guides/org/skills/">shared skills</a>, test them with saved inputs, inspect results, and restore earlier versions.
+Install or write <a href="https://docs.pilibala.in/guides/org/skills/">shared skills</a>, test them with saved inputs, inspect results, and restore earlier versions.
 </td>
 </tr>
 <tr>
 <td align="center">
 <h3>📅 Scheduled Routines</h3>
-Run <a href="https://docs.pilibala.ing/guides/projects-workflow/routines/">recurring work</a> on a schedule or trigger it through an API or webhook. Each run has a task, an owner, and a history.
+Run <a href="https://docs.pilibala.in/guides/projects-workflow/routines/">recurring work</a> on a schedule or trigger it through an API or webhook. Each run has a task, an owner, and a history.
 </td>
 <td align="center">
 <h3>📎 Artifacts & Feedback</h3>
-Find the <a href="https://docs.pilibala.ing/guides/day-to-day/artifacts/">files and documents agents produce</a>. Preview supported formats and leave comments on specific passages in documents.
+Find the <a href="https://docs.pilibala.in/guides/day-to-day/artifacts/">files and documents agents produce</a>. Preview supported formats and leave comments on specific passages in documents.
 </td>
 <td align="center">
 <h3>📦 Ready-Made Teams</h3>
-Preview and install <a href="https://docs.pilibala.ing/guides/org/team-catalog/">teams</a> with roles, skills, projects, and routines. Choose their runtimes and make the setup your own.
+Preview and install <a href="https://docs.pilibala.in/guides/org/team-catalog/">teams</a> with roles, skills, projects, and routines. Choose their runtimes and make the setup your own.
 </td>
 </tr>
 </table>
@@ -305,7 +305,7 @@ Pilibala is a full control plane, not a wrapper. Before you build any of this yo
 <tr>
 <td>
 
-**[Plugins](https://docs.pilibala.ing/administration/plugins/)** — Instance-wide plugin system with out-of-process workers, capability-gated host services, job scheduling, tool exposure, and UI contributions. Extend Pilibala without forking it.
+**[Plugins](https://docs.pilibala.in/administration/plugins/)** — Instance-wide plugin system with out-of-process workers, capability-gated host services, job scheduling, tool exposure, and UI contributions. Extend Pilibala without forking it.
 
 </td>
 <td>
@@ -322,7 +322,7 @@ Pilibala is a full control plane, not a wrapper. Before you build any of this yo
 </td>
 <td>
 
-**[Company Portability](https://docs.pilibala.ing/guides/power/export-import/)** — Preview, export, and import organization packages with agents, skills, and optional projects, routines, tasks, and attachments. Referenced secret values are omitted; review packages before sharing because plain environment values and local paths can remain. Packages share an operating setup; full-instance recovery uses backups.
+**[Company Portability](https://docs.pilibala.in/guides/power/export-import/)** — Preview, export, and import organization packages with agents, skills, and optional projects, routines, tasks, and attachments. Referenced secret values are omitted; review packages before sharing because plain environment values and local paths can remain. Packages share an operating setup; full-instance recovery uses backups.
 
 </td>
 </tr>
@@ -345,11 +345,11 @@ Pilibala is a full control plane, not a wrapper. Before you build any of this yo
 
 ## Quickstart
 
-Open source. Self-hosted. No Pilibala account required. Follow the [guided quickstart](https://docs.pilibala.ing/guides/getting-started/five-minute-path/) to set up your first agent.
+Open source. Self-hosted. No Pilibala account required. Follow the [guided quickstart](https://docs.pilibala.in/guides/getting-started/five-minute-path/) to set up your first agent.
 
 ### Just ask your agent to install Pilibala
 
-Share the [installation guide](https://docs.pilibala.ing/reference/cli/installation/) with your agent.
+Share the [installation guide](https://docs.pilibala.in/reference/cli/installation/) with your agent.
 
 ### Or install it yourself
 
@@ -361,7 +361,7 @@ npx pilibalaai@latest onboard --yes
 
 The CLI runs from npm's cache; your instance configuration and data persist locally.
 
-See the [installation guide](https://docs.pilibala.ing/reference/cli/installation/) for managed installs, pinned versions, canary and git-ref installs, updates, rollback, service management, and uninstalling.
+See the [installation guide](https://docs.pilibala.in/reference/cli/installation/) for managed installs, pinned versions, canary and git-ref installs, updates, rollback, service management, and uninstalling.
 
 For an isolated manual test instance that is already initialized with a CEO
 agent, use `test-drive`. It stays in the foreground, never installs a service
@@ -379,7 +379,7 @@ Each run without `--data-dir` gets a unique, retained temporary directory; its
 absolute path is printed at startup. Pass `--data-dir` to reuse one, or
 `--no-browser` to leave the initialized instance unopened. When invoked from a
 linked Git worktree, `test-drive` also enables task execution in that worktree.
-See the [test-drive guide](https://docs.pilibala.ing/reference/cli/test-drive/) for credential and
+See the [test-drive guide](https://docs.pilibala.in/reference/cli/test-drive/) for credential and
 reuse behavior.
 
 > **Troubleshooting: private npm registry `.npmrc`**
@@ -432,7 +432,7 @@ Source development also builds the native Pilibala Runner when enabled (the self
 
 **Q: Is this project maintained or just slop?**
 
-**A:** Pilibala is maintained by the [Pilibala team](https://pilibala.ing). We've merged [over 2,700 pull requests](https://github.com/pilibalaai/pilibala/pulls?q=is%3Apr+is%3Amerged).
+**A:** Pilibala is maintained by the [Pilibala team](https://pilibala.in). We've merged [over 2,700 pull requests](https://github.com/pilibalaai/pilibala/pulls?q=is%3Apr+is%3Amerged).
 
 <br/>
 
@@ -440,7 +440,7 @@ Source development also builds the native Pilibala Runner when enabled (the self
 
 **A:** Locally, a single Node.js process manages an embedded Postgres and local file storage. For production, point it at your own Postgres and deploy however you like. Configure projects, agents, and goals — the agents take care of the rest.
 
-For remote access, use authenticated mode with a private-network bind such as Tailscale, or deploy the persistent server with Docker. See [deployment modes](https://docs.pilibala.ing/reference/deploy/deployment-modes/) and the [Docker guide](https://docs.pilibala.ing/reference/deploy/docker/).
+For remote access, use authenticated mode with a private-network bind such as Tailscale, or deploy the persistent server with Docker. See [deployment modes](https://docs.pilibala.in/reference/deploy/deployment-modes/) and the [Docker guide](https://docs.pilibala.in/reference/deploy/docker/).
 
 <br/>
 
@@ -564,7 +564,7 @@ Telemetry is **enabled by default** and can be disabled with any of the followin
 
 We welcome contributions. See the [contributing guide](CONTRIBUTING.md) for details.
 
-**[We're hiring](https://pilibala.ing/about/#careers)**
+**[We're hiring](https://pilibala.in/about/#careers)**
 
 <br/>
 
@@ -579,7 +579,7 @@ We welcome contributions. See the [contributing guide](CONTRIBUTING.md) for deta
 
 ## License
 
-MIT &copy; 2026 [Pilibala Labs, Inc](https://pilibala.ing)
+MIT &copy; 2026 [Pilibala Labs, Inc](https://pilibala.in)
 
 ## Star History
 

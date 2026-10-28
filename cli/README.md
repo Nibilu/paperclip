@@ -4,11 +4,11 @@
 
 <p align="center">
   <a href="#quickstart"><strong>Quickstart</strong></a> &middot;
-  <a href="https://docs.pilibala.ing"><strong>Docs</strong></a> &middot;
+  <a href="https://docs.pilibala.in"><strong>Docs</strong></a> &middot;
   <a href="https://github.com/pilibalaai/pilibala"><strong>GitHub</strong></a> &middot;
   <a href="https://discord.gg/m4HZY7xNG3"><strong>Discord</strong></a> &middot;
   <a href="https://x.com/pilibalaing"><strong>Twitter</strong></a> &middot;
-  <a href="https://pilibala.ing"><strong>Website</strong></a>
+  <a href="https://pilibala.in"><strong>Website</strong></a>
 </p>
 
 <p align="center">
@@ -427,7 +427,7 @@ We welcome contributions. See the [contributing guide](https://github.com/piliba
 
 ## License
 
-MIT &copy; 2026 [Pilibala Labs, Inc](https://pilibala.ing)
+MIT &copy; 2026 [Pilibala Labs, Inc](https://pilibala.in)
 
 ## Star History
 

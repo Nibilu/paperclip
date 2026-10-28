@@ -10,8 +10,8 @@ rollback, git-ref installs, and a stable entrypoint for the background service.
 On macOS, Linux, or WSL2:
 
 ```sh
-curl -fsSLO https://pilibala.ing/install.sh
-curl -fsSLO https://pilibala.ing/install.sh.sha256
+curl -fsSLO https://pilibala.in/install.sh
+curl -fsSLO https://pilibala.in/install.sh.sha256
 if command -v sha256sum >/dev/null 2>&1; then
   sha256sum -c install.sh.sha256
 else
@@ -30,7 +30,7 @@ The bootstrap script:
 The script prints and confirms any command that requires elevated privileges.
 Third-party Node.js bootstrap scripts are pinned and SHA-256 verified before
 execution; the installer stops if a published script changes unexpectedly.
-The `pilibala.ing` checksum detects transfer or publishing mistakes, but it is
+The `pilibala.in` checksum detects transfer or publishing mistakes, but it is
 served from the same origin as the script and is not an independent
 authenticity proof. For an independently hosted source, download a release-tag
 or commit-pinned copy from GitHub, review it, and run that local file.
@@ -41,7 +41,7 @@ installed; if Node.js bootstrap is required, download the script first so the
 privileged commands are inspectable before execution:
 
 ```sh
-curl -fsSL https://pilibala.ing/install.sh | bash -s -- --no-prompt --no-onboard
+curl -fsSL https://pilibala.in/install.sh | bash -s -- --no-prompt --no-onboard
 pilibalaai onboard --yes
 ```
 
@@ -55,7 +55,7 @@ curl -fsSL "$raw_base/master/scripts/install.sh" | bash
 
 For audits or incident response, pin the raw URL to a release tag or commit SHA
 instead of `master` and download it first. That immutable GitHub URL provides a
-separate delivery path from `pilibala.ing`; do not treat a checksum served by
+separate delivery path from `pilibala.in`; do not treat a checksum served by
 the same origin as the artifact as an independent trust anchor.
 
 Each installer flag also has a `PILIBALA_INSTALL_*` environment-variable

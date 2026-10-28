@@ -9,7 +9,7 @@ description: >
 # Pilibala Page
 
 Use this skill to publish a static directory to the configured Pilibala pages
-host, for example `https://pages.pilibala.ing/<slug>/`.
+host, for example `https://pages.pilibala.in/<slug>/`.
 
 ## Requirements
 

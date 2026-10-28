@@ -12,7 +12,7 @@ import { type ResolvedTelemetryCaps, resolveCaps } from "./config.js";
 import { PILIBALA_EVENTS } from "./generated/pilibala-telemetry.js";
 
 const DEFAULT_ENDPOINTS = [
-  "https://telemetry.pilibala.ing/ingest",
+  "https://telemetry.pilibala.in/ingest",
   "https://rusqrrg391.execute-api.us-east-1.amazonaws.com/ingest",
 ] as const;
 // Queue-pressure valve: auto-flush once this many events are buffered. This is

@@ -108,7 +108,7 @@ const KINDS: CardKind[] = [
     type: "preview_url",
     provider: "custom",
     title: "Rich cards preview",
-    url: "https://preview.pilibala.ing/rich-cards",
+    url: "https://preview.pilibala.in/rich-cards",
     metadata: {},
   },
   {

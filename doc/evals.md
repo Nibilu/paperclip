@@ -270,7 +270,7 @@ Existing public histories are available at
 [Runner protocol history](https://d1p6rlowie26tp.cloudfront.net/runner-protocol-evals/index.html)
 and [Runner Product E2E history](https://d1p6rlowie26tp.cloudfront.net/runner-e2e/).
 The consolidated eval hub is at
-[pages.pilibala.ing/evals](https://pages.pilibala.ing/evals/).
+[pages.pilibala.in/evals](https://pages.pilibala.in/evals/).
 
 For a repeatable workflow, use the matching skill: [pilibala-evals](../.agents/skills/pilibala-evals/SKILL.md),
 [add-runner-eval](../.agents/skills/add-runner-eval/SKILL.md), or
@@ -393,8 +393,8 @@ system Bash 3 cannot run this helper. On macOS with Homebrew Bash installed,
 put `$(brew --prefix bash)/bin` first in `PATH` before these commands:
 
 ```sh
-export PILIBALA_PAGE_BUCKET=pages.pilibala.ing
-export PILIBALA_PAGE_BASE_URL=https://pages.pilibala.ing
+export PILIBALA_PAGE_BUCKET=pages.pilibala.in
+export PILIBALA_PAGE_BASE_URL=https://pages.pilibala.in
 export AWS_REGION=us-east-1
 bash .agents/skills/pilibala-page/scripts/publish.sh .pilibala/evals-hub --slug evals --dry-run
 bash .agents/skills/pilibala-page/scripts/publish.sh .pilibala/evals-hub --slug evals

@@ -567,7 +567,7 @@ describe("EnvironmentVariablesEditor", () => {
   it("renders name warnings as a row spanning the name and value columns", () => {
     render(
       <EnvironmentVariablesEditor
-        value={{ PILIBALA_PAGE_BASE_URL: { type: "plain", value: "https://pages.pilibala.ing" } }}
+        value={{ PILIBALA_PAGE_BASE_URL: { type: "plain", value: "https://pages.pilibala.in" } }}
         secrets={secrets}
         onChange={() => {}}
         onCreateSecret={async () => secrets[0]}

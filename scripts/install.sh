@@ -35,9 +35,9 @@ usage() {
 Install Pilibala on macOS, Linux, or WSL2.
 
 Usage:
-  curl -fsSLO https://pilibala.ing/install.sh
+  curl -fsSLO https://pilibala.in/install.sh
   bash install.sh [options]
-  curl -fsSL https://pilibala.ing/install.sh | bash -s -- --no-prompt [options]
+  curl -fsSL https://pilibala.in/install.sh | bash -s -- --no-prompt [options]
 
 Options:
   --canary                 Install the canary channel

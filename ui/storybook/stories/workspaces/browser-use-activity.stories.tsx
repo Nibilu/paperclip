@@ -52,9 +52,9 @@ export const Failed: Story = { args: { browser: browserState("failed") } };
 export const InlineHistory: Story = {
   render: () => (
     <TaskChatThreadView scroll={false} onOpenBrowser={() => {}} items={[
-      { id: "request-1", kind: "message", author: "human", text: "Open pilibala.ing", timestamp: "11:00 AM" },
+      { id: "request-1", kind: "message", author: "human", text: "Open pilibala.in", timestamp: "11:00 AM" },
       { id: "browser-1", kind: "browser", browser: browserState("closed"), label: "Browser 1", timestamp: "2026-09-29T16:00:10Z" },
-      { id: "reply-1", kind: "message", author: "agent", authorName: "Browser Agent", text: "Opened pilibala.ing.", timestamp: "11:00 AM" },
+      { id: "reply-1", kind: "message", author: "agent", authorName: "Browser Agent", text: "Opened pilibala.in.", timestamp: "11:00 AM" },
       { id: "request-2", kind: "message", author: "human", text: "Now open Hacker News", timestamp: "11:15 AM" },
       { id: "browser-2", kind: "browser", browser: { ...browserFixture, id: "second", sessionId: "second" }, label: "Browser 2", timestamp: "2026-09-29T16:15:10Z" },
       { id: "reply-2", kind: "message", author: "agent", authorName: "Browser Agent", text: "The browser is ready for you.", timestamp: "11:15 AM" },

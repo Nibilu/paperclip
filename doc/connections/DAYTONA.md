@@ -5,7 +5,7 @@ agent installation, action policy, gateway, revocation and audit paths. The API
 key stays in the instance vault. The connector does not borrow sandbox-provider
 environment credentials or another connection's credential.
 
-Sign-in tokens are never reused as resource tokens; id.pilibala.ing never
+Sign-in tokens are never reused as resource tokens; id.pilibala.in never
 stores resource tokens; no connections hub on the ID service.
 
 ## Connect and test

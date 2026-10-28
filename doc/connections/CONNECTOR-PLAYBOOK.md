@@ -57,7 +57,7 @@ connector, read [Identity vs. connections](./README.md#identity-vs-connections)
 for background. The boundary is mandatory: sign-in authenticates a person;
 a resource connection authorizes external work; Login with Pilibala issues
 first-party identity tokens to registered clients. Sign-in tokens are never
-reused as resource tokens, and `id.pilibala.ing` never stores resource tokens
+reused as resource tokens, and `id.pilibala.in` never stores resource tokens
 or hosts a connections hub. Keep company-scoped connection credentials and
 agent access under the instance's connection governance.
 
@@ -1796,8 +1796,8 @@ or hold their credentials.
 Each instance registers its own public client with the vendor and uses its own
 `/api/tools/oauth/callback` redirect. **Cloud-hosted and self-hosted instances
 use the SAME path** — the only per-instance difference is the hostname inside
-the redirect URI. `id.pilibala.ing` authenticates operators only and never
-holds resource tokens; `connect.pilibala.ing` is a fallback only for
+the redirect URI. `id.pilibala.in` authenticates operators only and never
+holds resource tokens; `connect.pilibala.in` is a fallback only for
 providers that genuinely require a pre-registered public redirect, which a DCR
 provider by definition does not.
 

@@ -991,7 +991,7 @@ export function GitHubChatPreview({
                         </p>
                         <a
                           className="mt-2 inline-block underline"
-                          href="https://pilibala.ing/docs"
+                          href="https://pilibala.in/docs"
                           target="_blank"
                           rel="noreferrer"
                         >

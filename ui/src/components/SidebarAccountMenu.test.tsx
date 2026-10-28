@@ -302,7 +302,7 @@ describe("SidebarAccountMenu", () => {
     const feedbackButton = container.querySelector<HTMLAnchorElement>(
       'a[aria-label="Share feedback"]',
     );
-    expect(feedbackButton?.getAttribute("href")).toBe("https://pilibala.ing/feedback");
+    expect(feedbackButton?.getAttribute("href")).toBe("https://pilibala.in/feedback");
     expect(feedbackButton?.getAttribute("target")).toBe("_blank");
     expect(feedbackButton?.classList).toContain("text-muted-foreground/50");
     expect(feedbackButton?.classList).not.toContain("text-border");
@@ -341,7 +341,7 @@ describe("SidebarAccountMenu", () => {
     const feedbackButton = container.querySelector<HTMLAnchorElement>(
       'a[aria-label="Share feedback"]',
     );
-    expect(feedbackButton?.getAttribute("href")).toBe("https://pilibala.ing/feedback");
+    expect(feedbackButton?.getAttribute("href")).toBe("https://pilibala.in/feedback");
     expect(feedbackButton?.getAttribute("target")).toBe("_blank");
     expect(feedbackButton?.classList).toContain("text-muted-foreground/50");
     expect(feedbackButton?.classList).not.toContain("text-border");
@@ -357,7 +357,7 @@ describe("SidebarAccountMenu", () => {
 
     const popover = document.body.querySelector('[data-slot="popover-content"]');
     expect(popover?.textContent).not.toContain("Feedback");
-    expect(popover?.querySelector('a[href="https://pilibala.ing/feedback"]')).toBeNull();
+    expect(popover?.querySelector('a[href="https://pilibala.in/feedback"]')).toBeNull();
 
     await act(async () => root.unmount());
   });
@@ -402,7 +402,7 @@ describe("SidebarAccountMenu", () => {
 
     const popover = document.body.querySelector('[data-slot="popover-content"]');
     expect(popover?.textContent).not.toContain("Feedback");
-    expect(popover?.querySelector('a[href="https://pilibala.ing/feedback"]')).toBeNull();
+    expect(popover?.querySelector('a[href="https://pilibala.in/feedback"]')).toBeNull();
 
     // Profile access moved off the action list: the header links to the
     // profile, and the separate view/edit rows are gone. Editing lives on the

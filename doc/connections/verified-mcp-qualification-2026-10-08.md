@@ -55,7 +55,7 @@ execution through an actual agent adapter.
 
 ## PR UI retest
 
-The PR checkout UI was previewed on a separate loopback port against the existing, authorized local qualification server. This retest covers frontend behavior; it is not a new live proof of the revised server OAuth recovery path. Calendly appeared connected in the catalog and its setup screen displayed before authorization. The Firecrawl scrape tester succeeded after expanding More options, entering only the public `https://pilibala.ing` URL, and leaving nested optional inputs untouched. No new provider authorization or agent heartbeat was started.
+The PR checkout UI was previewed on a separate loopback port against the existing, authorized local qualification server. This retest covers frontend behavior; it is not a new live proof of the revised server OAuth recovery path. Calendly appeared connected in the catalog and its setup screen displayed before authorization. The Firecrawl scrape tester succeeded after expanding More options, entering only the public `https://pilibala.in` URL, and leaving nested optional inputs untouched. No new provider authorization or agent heartbeat was started.
 
 - [Calendly catalog](verified-mcp-qualification-2026-10-08/calendly-catalog.jpg)
 - [Calendly setup before authorization](verified-mcp-qualification-2026-10-08/calendly-setup.jpg)

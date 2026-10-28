@@ -177,7 +177,7 @@ The live test-drive used a fresh
 database with one company, one agent and one task; it contains no cloned inbox or
 task history. The connection was configured through the normal setup wizard and
 given a $1 per-run limit with fresh browsers. Browser Use completed a real v4 run
-that explored `pilibala.ing`, visited About and returned to the homepage. The
+that explored `pilibala.in`, visited About and returned to the homepage. The
 recorded run cost was $0.01. The completed browser was visible in Pilibala's
 Browser tab, and manual address-bar navigation and Back worked inside the iframe.
 Keep open renewed the idle countdown. The initial blank viewer recovered after a
@@ -344,7 +344,7 @@ browser** if another live session exists, without starting another paid run.
 On 2026-09-29 the same provider iframe rendered successfully in Chrome, while
 Codex's embedded browser left both the provider and a plain example.com iframe
 at about:blank. After reconnecting to the updated test-drive, the embedded viewer
-also loaded and displayed pilibala.ing. The new-session selection and automatic
+also loaded and displayed pilibala.in. The new-session selection and automatic
 presence renewal were verified there with the same hosted session; no replacement
 paid run was needed.
 
@@ -355,7 +355,7 @@ renewed the deadline automatically. Closing/reopening the tab selected and rende
 that same session. Proof was captured in the isolated test-drive.
 
 Second hands-on pass reproduced a stale closed tab and a viewer that required
-manual reconnect. A fresh composer request then opened pilibala.ing automatically
+manual reconnect. A fresh composer request then opened pilibala.in automatically
 and stayed visible after completion, switching tabs and reloading the task. The
 original stalled-navigation cause remains unproven; the bounded automatic retry
 and closed-tab recovery cover those observed failure paths. Recovery was exercised

@@ -88,7 +88,7 @@ export const GIT_SYNC_COMMIT_IDENTITY_ARGS = [
   "-c",
   "user.name=Pilibala",
   "-c",
-  "user.email=noreply@pilibala.ing",
+  "user.email=noreply@pilibala.in",
 ] as const;
 
 function shellQuote(value: string) {

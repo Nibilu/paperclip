@@ -159,7 +159,7 @@
         "surface": "Pilibala browser action Test dialog",
         "actor_label": "Connector Tester",
         "tool": "firecrawl_scrape",
-        "url": "https://pilibala.ing",
+        "url": "https://pilibala.in",
         "expected": "Pilibala public site markdown; title and sourceURL; HTTP 200",
         "latency_seconds": 0.6,
         "reload": "persisted",

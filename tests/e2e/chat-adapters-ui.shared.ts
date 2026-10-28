@@ -1008,7 +1008,7 @@ export async function fillProviderSetup(page: Page, provider: ProviderCase) {
     ) as { webApplicationInfo?: { id?: string; resource?: string } };
     expect(manifest.webApplicationInfo).toEqual({
       id: clientId,
-      resource: "https://pilibala.ing",
+      resource: "https://pilibala.in",
     });
     await expect(
       page.getByRole("button", { name: "Copy manifest settings" }),
@@ -1142,7 +1142,7 @@ export async function expectMinimumProviderSetup(page: Page, provider: ProviderC
       ],
       webApplicationInfo: {
         id: "<application-client-id>",
-        resource: "https://pilibala.ing",
+        resource: "https://pilibala.in",
       },
     });
     expect(manifest).not.toContain("api://pilibala-chat/");

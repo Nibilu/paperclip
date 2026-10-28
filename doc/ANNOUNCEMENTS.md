@@ -1,7 +1,7 @@
 # In-app announcements
 
 Pilibala displays one optional announcement card in the board UI. Its feed is
-`https://pages.pilibala.ing/announcements/v1/current.json`. The instance fetches
+`https://pages.pilibala.in/announcements/v1/current.json`. The instance fetches
 JSON on demand and renders it with native components.
 
 ## Operator configuration
@@ -27,7 +27,7 @@ The shared `announcementManifestSchema` defines the format:
     "eyebrow": "New in Pilibala",
     "title": "Your next idea starts here",
     "description": "Bring your agents and work together in a project.",
-    "secondaryLink": { "kind": "external", "label": "Learn more", "url": "https://pilibala.ing" },
+    "secondaryLink": { "kind": "external", "label": "Learn more", "url": "https://pilibala.in" },
     "primaryAction": { "kind": "route", "label": "Open projects", "path": "/projects" }
   }
 }

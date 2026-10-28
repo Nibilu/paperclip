@@ -162,7 +162,7 @@
   --pilibala-doc-annotation-highlight-y-outset: 0.125rem;
   --pilibala-doc-annotation-highlight-radius: 0.1875rem;
 
-  /* Brand agent-capsule gradient stops (pilibala.ing/brand/).
+  /* Brand agent-capsule gradient stops (pilibala.in/brand/).
      "The capsule is the agent" — each agent gets a 2-stop gradient,
      --agent-Na (top) → --agent-Nb (bottom). Brand-fixed hex, identical
      across themes. Indices 1–10; consumed by AgentCapsule. */

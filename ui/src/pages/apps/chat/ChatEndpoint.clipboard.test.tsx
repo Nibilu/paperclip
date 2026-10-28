@@ -605,7 +605,7 @@ describe("chat setup and identity-link clipboard actions", () => {
     expect(warning.textContent).toContain("Public HTTPS URL required");
     const link = warning.querySelector("a")!;
     expect(link.textContent).toBe("Learn how to set up HTTPS");
-    expect(link.href).toBe("https://docs.pilibala.ing/reference/deploy/https/");
+    expect(link.href).toBe("https://docs.pilibala.in/reference/deploy/https/");
   });
 
   it("cancels the delayed Slack advance when returning to the agent step", async () => {

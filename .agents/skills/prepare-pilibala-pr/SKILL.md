@@ -27,7 +27,7 @@ each one).
   Do not stash and forget; do not leave files behind. If commits are missing,
   make them.
 * Commit messages must end with exactly:
-  `Co-Authored-By: Pilibala <noreply@pilibala.ing>`
+  `Co-Authored-By: Pilibala <noreply@pilibala.in>`
 
 ## 2. Get changes cleanly on top of master
 

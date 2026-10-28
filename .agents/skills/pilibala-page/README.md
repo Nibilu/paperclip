@@ -72,7 +72,7 @@ Required for live publishes:
 ```bash
 export AWS_REGION=us-east-1
 export PILIBALA_PAGE_BUCKET=pilibala-pages-prod
-export PILIBALA_PAGE_BASE_URL=https://pages.pilibala.ing
+export PILIBALA_PAGE_BASE_URL=https://pages.pilibala.in
 export PILIBALA_PAGE_AWS_ACCESS_KEY_ID=...
 export PILIBALA_PAGE_AWS_SECRET_ACCESS_KEY=...
 ```
@@ -122,7 +122,7 @@ create buckets, mutate IAM, change DNS, or manage CloudFront.
 export AWS_PROFILE=pilibala-admin
 export AWS_REGION=us-east-1
 export BUCKET=pilibala-pages-prod
-export DOMAIN=pages.pilibala.ing
+export DOMAIN=pages.pilibala.in
 export UPLOADER_USER=pilibala-page-uploader
 export CLOUDFRONT_COMMENT="Pilibala pages"
 
@@ -457,7 +457,7 @@ endpoint.
 
 Cloudflare UI:
 
-- Open the `pilibala.ing` zone.
+- Open the `pilibala.in` zone.
 - Add `CNAME`:
   - Name: `pages`
   - Target: the CloudFront domain, for example `d111111abcdef8.cloudfront.net`
@@ -467,7 +467,7 @@ Cloudflare UI:
 API equivalent:
 
 ```bash
-export CF_ZONE_ID=<pilibala.ing-zone-id>
+export CF_ZONE_ID=<pilibala.in-zone-id>
 export CF_API_TOKEN=<token-with-zone-dns-edit>
 
 curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records" \
@@ -522,7 +522,7 @@ host `AWS_PROFILE` identity for the entire agent run:
   },
   "AWS_REGION": { "type": "plain", "value": "us-east-1" },
   "PILIBALA_PAGE_BUCKET": { "type": "plain", "value": "pilibala-pages-prod" },
-  "PILIBALA_PAGE_BASE_URL": { "type": "plain", "value": "https://pages.pilibala.ing" },
+  "PILIBALA_PAGE_BASE_URL": { "type": "plain", "value": "https://pages.pilibala.in" },
   "PILIBALA_PAGE_DEFAULT_PREFIX": { "type": "plain", "value": "" }
 }
 ```

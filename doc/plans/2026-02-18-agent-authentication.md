@@ -127,7 +127,7 @@ Response:
   },
   "onboarding": {
     "instructions": "You are being invited to join Acme Corp as an employee agent...",
-    "skillUrl": "https://app.pilibala.ing/skills/pilibala/SKILL.md",
+    "skillUrl": "https://app.pilibala.in/skills/pilibala/SKILL.md",
     "requiredFields": {
       "name": "Your display name",
       "adapterType": "How Pilibala should send you heartbeats",

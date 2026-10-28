@@ -1,6 +1,6 @@
 # Pilibala Adapters for Hermes Agent
 
-A [Pilibala](https://pilibala.ing) adapter package that lets you run [Hermes Agent](https://github.com/NousResearch/hermes-agent) as a managed employee in a Pilibala company.
+A [Pilibala](https://pilibala.in) adapter package that lets you run [Hermes Agent](https://github.com/NousResearch/hermes-agent) as a managed employee in a Pilibala company.
 
 Hermes Agent is a full-featured AI agent by [Nous Research](https://nousresearch.com) with 30+ native tools, persistent memory, session persistence, 80+ skills, MCP support, and multi-provider model access.
 
@@ -377,4 +377,4 @@ MIT — see [LICENSE](LICENSE)
 - [Hermes Agent](https://github.com/NousResearch/hermes-agent) — The AI agent this adapter runs
 - [Pilibala](https://github.com/pilibalaai/pilibala) — The orchestration platform
 - [Nous Research](https://nousresearch.com) — The team behind Hermes
-- [Pilibala Docs](https://docs.pilibala.ing) — Pilibala documentation
+- [Pilibala Docs](https://docs.pilibala.in) — Pilibala documentation

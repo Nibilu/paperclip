@@ -443,7 +443,7 @@ function generateReadmeFromSelection(
 
   lines.push("## What's Inside");
   lines.push("");
-  lines.push("This is an [Agent Company](https://pilibala.ing) package.");
+  lines.push("This is an [Agent Company](https://pilibala.in) package.");
   lines.push("");
 
   const counts: Array<[string, number]> = [];
@@ -490,10 +490,10 @@ function generateReadmeFromSelection(
   lines.push("npx pilibalaai company import this-github-url-or-folder");
   lines.push("```");
   lines.push("");
-  lines.push("See [Pilibala](https://pilibala.ing) for more information.");
+  lines.push("See [Pilibala](https://pilibala.in) for more information.");
   lines.push("");
   lines.push("---");
-  lines.push(`Exported from [Pilibala](https://pilibala.ing) on ${new Date().toISOString().split("T")[0]}`);
+  lines.push(`Exported from [Pilibala](https://pilibala.in) on ${new Date().toISOString().split("T")[0]}`);
   lines.push("");
 
   return lines.join("\n");

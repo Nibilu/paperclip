@@ -8,7 +8,7 @@ export const announcementPreview: Announcement = {
   title: "Give your next idea a team",
   description: "Bring agents, projects, and work together. Set the direction, then follow your team’s progress in Pilibala.",
   image: { path: `assets/${"0".repeat(64)}.png`, alt: "Pilibala — ideas become work" },
-  secondaryLink: { kind: "external", label: "Learn more", url: "https://pilibala.ing" },
+  secondaryLink: { kind: "external", label: "Learn more", url: "https://pilibala.in" },
   primaryAction: { kind: "route", label: "Explore your projects", path: "/projects" },
 };
 

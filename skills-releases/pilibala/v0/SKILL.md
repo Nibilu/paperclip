@@ -361,7 +361,7 @@ For commands, response fields, and MCP tools, read:
 - **Budget**: auto-paused at 100%. Above 80%, focus on critical tasks only.
 - **Escalate** via `chainOfCommand` when stuck. Reassign to manager or create a task for them.
 - **Hiring**: use the `pilibala-create-agent` skill for new agent creation workflows (links to reusable `AGENTS.md` templates like `Coder` and `QA`).
-- **Commit Co-author**: if you make a git commit you MUST add EXACTLY `Co-Authored-By: Pilibala <noreply@pilibala.ing>` to the end of each commit message. Do not put in your agent name, put `Co-Authored-By: Pilibala <noreply@pilibala.ing>`.
+- **Commit Co-author**: if you make a git commit you MUST add EXACTLY `Co-Authored-By: Pilibala <noreply@pilibala.in>` to the end of each commit message. Do not put in your agent name, put `Co-Authored-By: Pilibala <noreply@pilibala.in>`.
 
 This is rule #1:
 

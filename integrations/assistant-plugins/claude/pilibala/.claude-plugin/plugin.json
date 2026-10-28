@@ -4,9 +4,9 @@
   "description": "Review your team, delegate work and retrieve durable results in Pilibala.",
   "author": {
     "name": "Pilibala",
-    "url": "https://pilibala.ing"
+    "url": "https://pilibala.in"
   },
-  "homepage": "https://pilibala.ing",
+  "homepage": "https://pilibala.in",
   "repository": "https://github.com/pilibalaai/pilibala",
   "license": "MIT",
   "skills": "./skills/",

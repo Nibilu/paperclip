@@ -136,7 +136,7 @@ async function seedValidWorktreeSource(
     VALUES (
       ${userId},
       ${userId === "local-board" ? "Board" : "Existing User"},
-      ${userId === "local-board" ? "local@pilibala.local" : "existing@pilibala.ing"},
+      ${userId === "local-board" ? "local@pilibala.local" : "existing@pilibala.in"},
       true, ${now.toISOString()}, ${now.toISOString()}
     )
   `;
@@ -145,7 +145,7 @@ async function seedValidWorktreeSource(
       id: "credential-existing",
       // The issuer Better Auth stamps on an email/password account.
       issuer: "local:credential",
-      accountId: "existing@pilibala.ing",
+      accountId: "existing@pilibala.in",
       providerId: "credential",
       userId,
       password: "fixture-password-hash",
@@ -1821,7 +1821,7 @@ describe("worktree helpers", () => {
         `postgres://pilibala:pilibala@127.0.0.1:${targetConfig.database.embeddedPostgresPort}/pilibala`,
       );
       const seededUsers = await targetDb.select().from(authUsers);
-      expect(seededUsers.some((row) => row.email === "existing@pilibala.ing")).toBe(true);
+      expect(seededUsers.some((row) => row.email === "existing@pilibala.in")).toBe(true);
       const restoredEvents = await targetDb.$client`
         SELECT id, action FROM resource_lifecycle_events WHERE resource_id = ${legacyAgentId} AND resource_type = 'agent' ORDER BY id
       `;

@@ -104,12 +104,12 @@ test("accepts only credential-free HTTPS destinations and the dedicated prefix",
     validateProtocolEvalHistoryDestination({
       bucket: "pilibala-public-reports",
       prefix: "/runner-protocol-evals/",
-      publicBaseUrl: "https://reports.pilibala.ing/",
+      publicBaseUrl: "https://reports.pilibala.in/",
     }),
     {
       bucket: "pilibala-public-reports",
       prefix: "runner-protocol-evals",
-      publicBaseUrl: "https://reports.pilibala.ing",
+      publicBaseUrl: "https://reports.pilibala.in",
     },
   );
   assert.throws(

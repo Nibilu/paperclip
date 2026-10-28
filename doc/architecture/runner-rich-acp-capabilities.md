@@ -357,7 +357,7 @@ exposed final-message aggregation of earlier narration.
 These passes retain earlier failures and do not qualify native interactions,
 all required platforms or the remaining remote journeys.
 
-The [harness priorities report](https://pages.pilibala.ing/2026-09-25-harness-priorities/)
+The [harness priorities report](https://pages.pilibala.in/2026-09-25-harness-priorities/)
 recommends Cursor and Copilot, followed by Pi, using the existing qualified ACPX
 path. Codex app-server is the richness benchmark. The legacy Cursor and Pi
 adapters are outside this change.

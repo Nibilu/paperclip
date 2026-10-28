@@ -37,7 +37,7 @@ const videos = [...media, ["Motion concept — Sep 21", manila], ["Motion concep
 }));
 const files = [
   product("Style exploration notes.txt", 20, { metadata: { contentType: "text/plain", byteSize: 2400, downloadPath: "data:text/plain,Five%20Pilibala%20Ships%20style%20directions", contentPath: "data:text/plain,Five%20Pilibala%20Ships%20style%20directions" } }),
-  product("Preview the daily ships page", 21, { type: "preview_url", url: "https://pilibala.ing", metadata: null }),
+  product("Preview the daily ships page", 21, { type: "preview_url", url: "https://pilibala.in", metadata: null }),
   product("Source package is still being prepared", 22, { status: "pending" }),
 ];
 const images = [manilaImage, nightImage].map((src, index) => product(index ? "Night Pills — cover image" : "Manila Ledger — cover image", index + 10, {

@@ -27,8 +27,8 @@ import { ThemeToggle } from "./ThemeToggle";
 import { SidebarServerInfo } from "./SidebarServerInfo";
 
 const INVITES_PATH = "/company/settings/members?tab=invites";
-const DOCS_URL = "https://docs.pilibala.ing/";
-const FEEDBACK_URL = "https://pilibala.ing/feedback";
+const DOCS_URL = "https://docs.pilibala.in/";
+const FEEDBACK_URL = "https://pilibala.in/feedback";
 
 interface SidebarAccountMenuProps {
   deploymentMode?: DeploymentMode;
