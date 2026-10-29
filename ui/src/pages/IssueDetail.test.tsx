@@ -85,6 +85,7 @@ const mockIssuesApi = vi.hoisted(() => ({
   deleteAttachment: vi.fn(),
   upsertDocument: vi.fn(),
   getDocument: vi.fn(),
+  listDocuments: vi.fn(),
   rejectInteraction: vi.fn(),
 }));
 
@@ -1426,6 +1427,7 @@ describe("IssueDetail", () => {
     });
     mockIssuesApi.listAcceptedPlanDecompositions.mockResolvedValue([]);
     mockIssuesApi.getDocument.mockResolvedValue(null);
+    mockIssuesApi.listDocuments.mockResolvedValue([]);
     mockOpenPanel.mockClear();
     mockClosePanel.mockClear();
     mockSetPanelVisible.mockClear();
@@ -4468,6 +4470,8 @@ describe("IssueDetail", () => {
         workMode: "planning",
       }),
     );
+    // Plan existence resolves from the documents list (5c3c41da0).
+    mockIssuesApi.listDocuments.mockResolvedValue([{ id: "doc-1", key: "plan" }]);
     mockIssuesApi.getDocument.mockResolvedValue({ id: "doc-1", key: "plan" });
 
     await act(async () => {
@@ -4536,7 +4540,8 @@ describe("IssueDetail", () => {
     mockIssuesApi.get.mockResolvedValue(
       createIssue({ originKind: ONBOARDING_FIRST_TASK_ORIGIN_KIND }),
     );
-    mockIssuesApi.getDocument.mockResolvedValue({ id: "doc-1", key: "plan" });
+    // Plan existence resolves from the documents list (5c3c41da0).
+    mockIssuesApi.listDocuments.mockResolvedValue([{ id: "doc-1", key: "plan" }]);
 
     await act(async () => {
       renderIssueView();
