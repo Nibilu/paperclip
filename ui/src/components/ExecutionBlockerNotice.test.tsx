@@ -160,6 +160,22 @@ describe("stopped task recovery notice", () => {
     expect(container.textContent).not.toContain("stopped automatic retries");
     expect(container.querySelector("a")?.textContent).toBe("Inspect run");
   });
+  it("keeps a human-settled hold read-only instead of offering a doomed form", async () => {
+    vi.mocked(issuesApi.recoveryActions).mockResolvedValue({ active: null, actions: [{
+      id: "recovery", status: "resolved", outcome: "handed_back",
+      evidence: { runId: "failed-run", automaticRecovery: { replay: "blocked" } },
+    }] as never });
+    await act(async () => root.render(<QueryClientProvider client={client}>
+      <ExecutionBlockerNotice companyId="company" issueId="settled-task" issueStatus="todo" canManage onRetried={onRetried} blocker={{
+        recoveryActionId: "recovery", runId: "failed-run", agentId: "agent",
+        cause: "legacy_execution_requires_reconciliation", replayDisposition: "blocked_reconciliation",
+        nextAction: "Automatic recovery stopped. Recorded work is preserved; actions with unverified outcomes will not be repeated.",
+      }} />
+    </QueryClientProvider>));
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)); });
+    expect(container.querySelector('[data-testid="execution-reconciliation-panel"]')).toBeNull();
+    expect(container.querySelector('[data-testid="reconciliation-settled"]')?.textContent).toContain("already been settled");
+  });
   it("keeps workspace repair guidance and inspection without offering the legacy Retry fallback", async () => {
     await act(async () => root.render(<QueryClientProvider client={client}>
       <ExecutionBlockerNotice companyId="company" issueId="task" issueStatus="blocked" canManage onRetried={onRetried} blocker={{

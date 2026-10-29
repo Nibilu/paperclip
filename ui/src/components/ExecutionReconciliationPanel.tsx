@@ -58,6 +58,8 @@ export function ExecutionReconciliationPanel({
       resolutionNote: resolutionNote.trim() || null,
       executionReconciliation: {
         runId: sourceRunId!,
+        // Server contract (resolve schema) attests `true`: the checkbox above
+        // gates submission, so a submission always records a verified stop.
         providerStopped: true,
         actionOutcome,
         outcomeEvidence: outcomeEvidence.trim(),
@@ -78,7 +80,8 @@ export function ExecutionReconciliationPanel({
   }.</p>;
 
   const evidenceReady = outcomeEvidence.trim().length >= 20;
-  const draftReviewed = !draft || (["providerStopped", "actionOutcome", "evidenceSummary", "operatorNote"] as Field[]).every(field => reviewed[field]);
+  // operatorNote is optional content: accepting its draft must not gate the submit.
+  const draftReviewed = !draft || (["providerStopped", "actionOutcome", "evidenceSummary"] as Field[]).every(field => reviewed[field]);
   const canSubmit = providerStopped && evidenceReady && draftReviewed && !mutation.isPending;
   return (
     <section
@@ -97,6 +100,11 @@ export function ExecutionReconciliationPanel({
       </div>
       {draft && <p className="mt-3 text-muted-foreground" data-testid="reconciliation-agent-draft">
         Agent draft: review or edit each field before submitting. Outcome confidence: {Math.round(draft.actionOutcome.confidence * 100)}%.
+      </p>}
+      {!draft && <p className="mt-3 text-muted-foreground" data-testid="reconciliation-diagnosis-state">
+        {(action.evidence.reconciliationAnalysis as { status?: string } | undefined)?.status === "unavailable"
+          ? "Agent diagnosis is unavailable for this hold. Record the outcome manually."
+          : "Agent diagnosis is in progress; the prefilled draft will appear here when it completes. You can also record the outcome manually."}
       </p>}
       <div className="mt-3 space-y-3">
         <label className="flex items-start gap-2">

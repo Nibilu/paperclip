@@ -68,7 +68,13 @@ export function ExecutionBlockerNotice({ companyId, issueId, issueStatus, canMan
   if (recovering) return null;
   // When the reconciliation panel renders below, it already owns the no-replay
   // and fresh-continuation guidance; the notice keeps only heading + nextAction.
-  const reconciliationPanelVisible = Boolean(canManage && hold && replayBlocked &&
+  // A hold auto-settled with outcome "blocked" still awaits the operator's
+  // reconciliation (the automatic recovery stood down; no human decided yet),
+  // so it stays submittable. Only holds a human or escalation already settled
+  // (handed_back, restored, false_positive, …) are audit history and must not
+  // render as a form the resolve endpoint would only reject.
+  const holdAwaitingDecision = !hold?.outcome || hold.outcome === "blocked";
+  const reconciliationPanelVisible = Boolean(canManage && hold && holdAwaitingDecision && replayBlocked &&
     blocker.replayDisposition === "blocked_reconciliation" && blocker.runId &&
     ["todo", "blocked"].includes(issueStatus ?? "") &&
     requiresExecutionReconciliation(blocker.cause) && !blocker.workspaceRepairRequired);
@@ -105,7 +111,12 @@ export function ExecutionBlockerNotice({ companyId, issueId, issueStatus, canMan
             Reconciliation unavailable: {!canManage ? "requires an operator role" : recoveryError ? "recovery action could not be loaded" : !hold ? "matching recovery action is not available yet" : "this action has no no-replay hold"}.
           </p>
         )}
-        {canManage && hold && replayBlocked && blocker.replayDisposition === "blocked_reconciliation" && (
+        {canManage && hold && !holdAwaitingDecision && replayBlocked && (
+          <p className="text-xs text-muted-foreground" data-testid="reconciliation-settled">
+            This recovery record has already been settled (outcome: {hold.outcome ?? "unknown"}); no further reconciliation is needed.
+          </p>
+        )}
+        {canManage && hold && holdAwaitingDecision && replayBlocked && blocker.replayDisposition === "blocked_reconciliation" && (
           <ExecutionReconciliationPanel key={hold.id} issueId={issueId} issueStatus={issueStatus}
             blocker={blocker} action={hold} onResolved={onRetried} />
         )}

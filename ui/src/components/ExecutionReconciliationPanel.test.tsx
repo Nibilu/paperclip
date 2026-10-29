@@ -123,7 +123,7 @@ describe("ExecutionReconciliationPanel", () => {
     }));
   });
 
-  it("prefills the draft but requires review of every field before human submission", async () => {
+  it("prefills the draft but requires review of every non-optional field before human submission", async () => {
     const draftAction = { ...action, agentDraft: {
       providerStopped: { value: true, evidence: ["run-1#seq:385 stop receipt"] },
       actionOutcome: { value: "mixed" as const, confidence: 0.8, evidence: ["run-1#seq:240 deployment"] },
@@ -139,11 +139,31 @@ describe("ExecutionReconciliationPanel", () => {
     expect(container.querySelector<HTMLTextAreaElement>("textarea")!.value).toContain("deployment succeeded");
     const submit = container.querySelector<HTMLButtonElement>("[data-testid=execution-reconciliation-submit]")!;
     expect(submit.disabled).toBe(true);
-    for (const field of ["providerStopped", "actionOutcome", "evidenceSummary", "operatorNote"]) {
+    // The optional operatorNote stays unreviewed: it must not gate the submit.
+    for (const field of ["providerStopped", "actionOutcome", "evidenceSummary"]) {
       await act(async () => container.querySelector<HTMLButtonElement>(`[data-testid=accept-draft-${field}]`)!.click());
     }
+    expect(container.querySelector<HTMLButtonElement>("[data-testid=accept-draft-operatorNote]")!.disabled).toBe(false);
     expect(submit.disabled).toBe(false);
     expect(issuesApi.resolveRecoveryAction).not.toHaveBeenCalled();
+  });
+
+  it("shows the diagnosis state while the agent draft is missing and when diagnosis is unavailable", async () => {
+    const pendingAction = { ...action, evidence: { runId: "run-1", reconciliationAnalysis: { status: "requested" } } } as unknown as IssueRecoveryAction;
+    await act(async () => root.render(<QueryClientProvider client={client}>
+      <ExecutionReconciliationPanel issueId="issue-1" issueStatus="todo"
+        blocker={blocker} action={pendingAction} onResolved={onResolved} />
+    </QueryClientProvider>));
+    expect(container.querySelector("[data-testid=reconciliation-agent-draft]")).toBeNull();
+    expect(container.querySelector("[data-testid=reconciliation-diagnosis-state]")!.textContent)
+      .toContain("Agent diagnosis is in progress");
+
+    await act(async () => root.render(<QueryClientProvider client={client}>
+      <ExecutionReconciliationPanel issueId="issue-1" issueStatus="todo"
+        blocker={blocker} onResolved={onResolved} action={{ ...action, evidence: { runId: "run-1", reconciliationAnalysis: { status: "unavailable" } } } as unknown as IssueRecoveryAction} />
+    </QueryClientProvider>));
+    expect(container.querySelector("[data-testid=reconciliation-diagnosis-state]")!.textContent)
+      .toContain("Agent diagnosis is unavailable");
   });
 
 });
