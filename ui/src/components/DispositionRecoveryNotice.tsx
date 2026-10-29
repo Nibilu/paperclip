@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/timeAgo";
 
-export type DispositionRecoverySnapshot = NonNullable<IssueCommentMetadata["recovery"]>;
+// This notice renders the escalated repair snapshot only; the queued repair
+// variant (R11/S17) has no UI consumer and lacks the fields used below.
+export type DispositionRecoverySnapshot = Extract<NonNullable<IssueCommentMetadata["recovery"]>, { kind: "disposition_repair_escalated" }>;
 export type DispositionRecoveryContextValue = {
   issue: Pick<Issue, "status" | "assigneeAgentId" | "executionRunId" | "checkoutRunId" | "executionState" | "blockedBy"> & {
     activeRecoveryAction?: Pick<IssueRecoveryAction, "id" | "status" | "kind" | "ownerType" | "returnOwnerAgentId" | "wakePolicy"> & { evidence?: IssueRecoveryAction["evidence"] } | null;
