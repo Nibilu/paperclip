@@ -195,8 +195,18 @@ export async function getExecutionBlocker(db: Db, companyId: string, issueId: st
   }
 
   const canContinue = eligibleContinuation && !chatBinding;
+  // A deliberate human stop (board stop, or a comment interrupt making room
+  // for fresh user input) never demands reconciliation before a new
+  // instruction: the operator already decided, mirroring the classifier's
+  // operator-stop exemption in legacy-execution-recovery.ts.
+  const runCancellation = run ? readRunCancellation(run.resultJson) : null;
+  const operatorStoppedRun = run?.status === "cancelled" && (
+    run.errorCode === "operator_interrupted" ||
+    (runCancellation?.expected === true && ["operator", "queued_message"].includes(runCancellation.source)) ||
+    run.resultJson?.cancelledByActorType === "user" ||
+    run.resultJson?.cancelledByActorType === "board");
   const replayDisposition = canContinue ? "allowed" : "blocked_reconciliation" as const;
-  const freshContinuationDisposition = canContinue
+  const freshContinuationDisposition = canContinue || operatorStoppedRun
     ? "allowed" as const
     : runAgent?.adapterType === "hermes_gateway"
       ? "unsupported" as const

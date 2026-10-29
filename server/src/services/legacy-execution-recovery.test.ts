@@ -42,6 +42,38 @@ it("allows a confirmed interrupted checkpoint without treating ordinary cancella
 });
 
 it.each([
+  ["board stop attribution", { cancelledByActorType: "user", cancelledByUserId: "u1" }],
+  ["board stop via cancellation evidence", { cancellation: { source: "operator", expected: true, initiator: { type: "user" }, reason: "Cancelled by a board operator", recordedAt: "2026-10-29T01:47:10.595Z" } }],
+  ["comment interrupt via operator_interrupted code", { cancellation: { source: "queued_message", expected: true, initiator: { type: "user" }, reason: "Interrupted to send queued messages", recordedAt: "2026-10-29T01:54:24.176Z" } }],
+])("stands down for a deliberate human stop: %s", (_label, resultJson) => {
+  expect(legacyExecutionNeedsReconciliation({
+    runtimeMode: "legacy", status: "cancelled", errorCode: "operator_interrupted",
+    resultJson: resultJson as Record<string, unknown>,
+  })).toBe(false);
+  expect(legacyExecutionNeedsReconciliation({
+    runtimeMode: "legacy", status: "cancelled", errorCode: "cancelled",
+    resultJson: resultJson as Record<string, unknown>,
+  })).toBe(false);
+});
+
+it("does not let an operator stop excuse an unsafe workspace archive", () => {
+  expect(legacyExecutionNeedsReconciliation({
+    runtimeMode: "legacy", status: "cancelled", errorCode: "cancelled",
+    resultJson: { cancelledByActorType: "user", workspaceRestoreFailure: "restore_unsafe_archive" },
+  })).toBe(true);
+});
+
+it("still holds unattributed cancellations with no stop evidence", () => {
+  expect(legacyExecutionNeedsReconciliation({
+    runtimeMode: "legacy", status: "cancelled", errorCode: "cancelled", resultJson: {},
+  })).toBe(true);
+  expect(legacyExecutionNeedsReconciliation({
+    runtimeMode: "legacy", status: "cancelled", errorCode: "cancelled",
+    resultJson: { cancellation: { source: "provider", expected: false, initiator: { type: "provider" }, reason: "Provider cancelled execution", recordedAt: "2026-10-29T01:00:00.000Z" } },
+  })).toBe(true);
+});
+
+it.each([
   { providerStopped: false }, { sessionPreserved: false }, { actionOutcomes: "unknown" },
 ])("retains the hold for incomplete interruption evidence: %j", (missing) => {
   expect(legacyExecutionNeedsReconciliation({ ...stopped, resultJson: {
