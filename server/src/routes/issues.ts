@@ -9772,7 +9772,7 @@ export function issueRoutes(
               assertBoard(req);
               if (
                 activeRecoveryAction ||
-                sourceIssueStatus !== "todo" ||
+                (sourceIssueStatus !== "todo" && sourceIssueStatus !== "done") ||
                 outcome !== "restored"
               ) {
                 throw conflict(
