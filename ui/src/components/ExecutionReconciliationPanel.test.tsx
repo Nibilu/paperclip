@@ -51,6 +51,9 @@ describe("ExecutionReconciliationPanel", () => {
 
     await act(async () => {
       container.querySelector<HTMLInputElement>("input[type=checkbox]")!.click();
+      const select = container.querySelector<HTMLSelectElement>("select")!;
+      select.value = "not_performed";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
       const evidence = container.querySelector<HTMLTextAreaElement>("textarea")!;
       const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!;
       setValue.call(evidence, "Verified the provider stopped and no pending external action remains.");
@@ -123,7 +126,7 @@ describe("ExecutionReconciliationPanel", () => {
     }));
   });
 
-  it("prefills the draft but requires review of every non-optional field before human submission", async () => {
+  it("enables submit once the three required fields hold, draft accept buttons staying optional", async () => {
     const draftAction = { ...action, agentDraft: {
       providerStopped: { value: true, evidence: ["run-1#seq:385 stop receipt"] },
       actionOutcome: { value: "mixed" as const, confidence: 0.8, evidence: ["run-1#seq:240 deployment"] },
@@ -138,14 +141,37 @@ describe("ExecutionReconciliationPanel", () => {
     expect(container.querySelector<HTMLSelectElement>("select")!.value).toBe("mixed");
     expect(container.querySelector<HTMLTextAreaElement>("textarea")!.value).toContain("deployment succeeded");
     const submit = container.querySelector<HTMLButtonElement>("[data-testid=execution-reconciliation-submit]")!;
-    expect(submit.disabled).toBe(true);
-    // The optional operatorNote stays unreviewed: it must not gate the submit.
-    for (const field of ["providerStopped", "actionOutcome", "evidenceSummary"]) {
-      await act(async () => container.querySelector<HTMLButtonElement>(`[data-testid=accept-draft-${field}]`)!.click());
-    }
-    expect(container.querySelector<HTMLButtonElement>("[data-testid=accept-draft-operatorNote]")!.disabled).toBe(false);
+    // All three required fields hold via the draft: the button is live without
+    // any "Accept draft" click (the manual fallback must never grey out here).
     expect(submit.disabled).toBe(false);
     expect(issuesApi.resolveRecoveryAction).not.toHaveBeenCalled();
+    // Accepting the optional operatorNote stays possible without gating anything.
+    await act(async () => container.querySelector<HTMLButtonElement>("[data-testid=accept-draft-operatorNote]")!.click());
+    expect(container.querySelector<HTMLButtonElement>("[data-testid=accept-draft-operatorNote]")!.disabled).toBe(true);
+    expect(submit.disabled).toBe(false);
+  });
+
+  it("keeps the submit gated until the outcome is explicitly chosen", async () => {
+    vi.mocked(issuesApi.resolveRecoveryAction).mockResolvedValue({} as never);
+    await act(async () => root.render(<QueryClientProvider client={client}>
+      <ExecutionReconciliationPanel issueId="issue-1" issueStatus="blocked"
+        blocker={blocker} action={action} onResolved={onResolved} />
+    </QueryClientProvider>));
+    await act(async () => {
+      container.querySelector<HTMLInputElement>("input[type=checkbox]")!.click();
+      const evidence = container.querySelector<HTMLTextAreaElement>("textarea")!;
+      const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!;
+      setValue.call(evidence, "Verified the provider stopped and no pending external action remains.");
+      evidence.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: "evidence" }));
+    });
+    const submit = container.querySelector<HTMLButtonElement>("[data-testid=execution-reconciliation-submit]")!;
+    expect(submit.disabled).toBe(true);
+    await act(async () => {
+      const select = container.querySelector<HTMLSelectElement>("select")!;
+      select.value = "not_performed";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(submit.disabled).toBe(false);
   });
 
   it("shows the diagnosis state while the agent draft is missing and when diagnosis is unavailable", async () => {

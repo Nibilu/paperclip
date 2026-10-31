@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ExecutionBlocker, Issue, IssueRecoveryAction } from "@pilibalaai/shared";
 import { requiresExecutionReconciliation } from "@pilibalaai/shared";
 import { issuesApi } from "../api/issues";
@@ -27,20 +27,27 @@ export function ExecutionReconciliationPanel({
   onResolved: () => void;
 }) {
   const [providerStopped, setProviderStopped] = useState(false);
-  const [actionOutcome, setActionOutcome] = useState<ActionOutcome>("not_performed");
+  // "" = the operator has not chosen yet; the three required fields are the
+  // verified-stop checkbox, this explicit outcome choice, and the evidence.
+  const [actionOutcome, setActionOutcome] = useState<ActionOutcome | "">("");
   const [outcomeEvidence, setOutcomeEvidence] = useState("");
   const [resolutionNote, setResolutionNote] = useState("");
   const draft = action.agentDraft;
   type Field = "providerStopped" | "actionOutcome" | "evidenceSummary" | "operatorNote";
   const [reviewed, setReviewed] = useState<Partial<Record<Field, boolean>>>({});
   const review = (field: Field) => setReviewed(previous => ({ ...previous, [field]: true }));
+  // Prefill exactly once per draft. The previous effect re-ran on every
+  // `reviewed` change and overwrote any not-yet-accepted field with the draft
+  // value - the reported "items 2-4 blank / edits snap back" bug.
+  const prefilledDraftRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!draft) return;
-    if (!reviewed.providerStopped) setProviderStopped(draft.providerStopped.value);
-    if (!reviewed.actionOutcome) setActionOutcome(draft.actionOutcome.value);
-    if (!reviewed.evidenceSummary) setOutcomeEvidence(draft.evidenceSummary);
-    if (!reviewed.operatorNote) setResolutionNote(draft.operatorNote);
-  }, [draft, reviewed]);
+    if (!draft || prefilledDraftRef.current === action.id) return;
+    prefilledDraftRef.current = action.id;
+    setProviderStopped(draft.providerStopped.value);
+    setActionOutcome(draft.actionOutcome.value);
+    setOutcomeEvidence(draft.evidenceSummary);
+    setResolutionNote(draft.operatorNote);
+  }, [action.id, draft]);
   const accept = (field: Field) => draft && (
     <Button type="button" variant="outline" size="sm" disabled={Boolean(reviewed[field])}
       data-testid={`accept-draft-${field}`} onClick={() => review(field)}>
@@ -54,14 +61,20 @@ export function ExecutionReconciliationPanel({
     mutationFn: () => issuesApi.resolveRecoveryAction(issueId, {
       actionId: action.id,
       outcome: "restored",
-      sourceIssueStatus: "todo",
+      // Outcome-aware follow-up: an operator-attested "completed" external
+      // action finishes the task (done; the continuation delivery worker
+      // invalidates a pending continuation on a done issue). "not_performed"
+      // and "mixed" continue the task on the normal todo admission path with
+      // the recorded evidence.
+      sourceIssueStatus: actionOutcome === "completed" ? "done" : "todo",
       resolutionNote: resolutionNote.trim() || null,
       executionReconciliation: {
         runId: sourceRunId!,
         // Server contract (resolve schema) attests `true`: the checkbox above
         // gates submission, so a submission always records a verified stop.
         providerStopped: true,
-        actionOutcome,
+        // canSubmit guarantees the operator chose an outcome before this runs.
+        actionOutcome: actionOutcome as ActionOutcome,
         outcomeEvidence: outcomeEvidence.trim(),
       },
     }),
@@ -80,9 +93,12 @@ export function ExecutionReconciliationPanel({
   }.</p>;
 
   const evidenceReady = outcomeEvidence.trim().length >= 20;
-  // operatorNote is optional content: accepting its draft must not gate the submit.
-  const draftReviewed = !draft || (["providerStopped", "actionOutcome", "evidenceSummary"] as Field[]).every(field => reviewed[field]);
-  const canSubmit = providerStopped && evidenceReady && draftReviewed && !mutation.isPending;
+  // Exactly THREE required fields gate the submit: the verified-stop checkbox,
+  // the explicit outcome choice, and evidence. Draft "accept" buttons are a
+  // review affordance, never a gate - the manual fallback must be submittable
+  // without them (AMB-133/135: grey button with every required field filled).
+  const outcomeChosen = actionOutcome !== "";
+  const canSubmit = providerStopped && outcomeChosen && evidenceReady && !mutation.isPending;
   return (
     <section
       className="w-full rounded-md border border-amber-400/40 bg-amber-500/5 p-3 text-sm"
@@ -92,8 +108,8 @@ export function ExecutionReconciliationPanel({
       <div className="space-y-1">
         <h3 className="font-medium">Verify the stopped execution before continuing</h3>
         <p className="text-muted-foreground">
-          The previous execution will not be replayed. Confirm the provider stopped and record what happened;
-          Pilibala will create a fresh continuation only after the server rechecks the recovery gates.
+          The previous execution will not be replayed. Confirm the provider stopped, choose what happened, and record the evidence.
+          Recording "Completed" finishes the task; "Not performed" or "Partially completed" continues it with a fresh run after the server rechecks the recovery gates.
           {issueStatus === "blocked" ? " Submitting this decision restores the task to the normal todo admission path." : ""}
         </p>
         <p className="text-xs text-muted-foreground">Source run: <code>{sourceRunId}</code></p>
@@ -126,6 +142,7 @@ export function ExecutionReconciliationPanel({
             onChange={(event) => { setActionOutcome(event.target.value as ActionOutcome); review("actionOutcome"); }}
             data-testid="execution-reconciliation-outcome"
           >
+            <option value="" disabled>Select the observed external outcome</option>
             {OUTCOMES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>

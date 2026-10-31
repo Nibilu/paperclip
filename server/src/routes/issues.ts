@@ -9925,7 +9925,7 @@ export function issueRoutes(
         }
 
         if (
-          sourceIssueStatus === "todo" &&
+          (sourceIssueStatus === "todo" || sourceIssueStatus === "done") &&
           requiresExecutionReconciliation(activeRecoveryAction.cause)
         ) {
           assertBoard(req);
