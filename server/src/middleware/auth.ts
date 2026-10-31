@@ -65,6 +65,7 @@ function pruneCloudTenantWriteDebounce(
 import { instanceSettingsService } from "../services/instance-settings.js";
 import { ensureHumanRoleDefaultGrants } from "../services/principal-access-compatibility.js";
 import { forbidden, unauthorized, unprocessable } from "../errors.js";
+import { reconciliationAnalysisWriteAllowed } from "../services/reconciliation-analysis-policy.js";
 
 export { isCloudManagedInstance } from "../services/cloud-instance.js";
 import { cloudTenantPrimaryCompanyId } from "../services/cloud-instance.js";
@@ -479,6 +480,22 @@ export function actorMiddleware(db: Db, opts: ActorMiddlewareOptions): RequestHa
         onBehalfOfMemberships,
         source: "agent_jwt",
       };
+      // Run-bound diagnostics carry their scope inside the token: a
+      // reconciliation-analysis run may only read evidence and submit the one
+      // advisory draft. Enforced at the actor boundary so no route-level opt-in
+      // can widen it (this closes the previously dead
+      // reconciliationAnalysisWriteAllowed policy — it had no call sites).
+      if (claims.wake_context?.wake_reason === "reconciliation_analysis"
+        && !reconciliationAnalysisWriteAllowed(
+          { wakeReason: claims.wake_context.wake_reason, analysisSourceIssueId: claims.wake_context.analysis_source_issue_id },
+          req.method,
+          req.path,
+        )) {
+        next(forbidden("Run-bound diagnostics cannot mutate task state; only the advisory draft submission is allowed", {
+          code: "reconciliation_analysis_write_blocked",
+        }));
+        return;
+      }
       next();
       return;
     }

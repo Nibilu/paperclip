@@ -15,6 +15,10 @@ export interface LocalAgentJwtClaims {
   responsible_user_id?: string | null;
   authorizing_user_id?: string;
   key_scope?: AgentApiKeyScope | null;
+  /** Per-run RESTRICTION context (never an authority): a reconciliation-analysis
+   * run token narrows the run's writable surface to the advisory draft
+   * submission; middleware/auth enforces the policy from this claim. */
+  wake_context?: { wake_reason: string; analysis_source_issue_id?: string };
   iat: number;
   exp: number;
   iss?: string;
@@ -120,6 +124,14 @@ function safeCompare(a: string, b: string) {
   return timingSafeEqual(left, right);
 }
 
+/** True when a run JWT can actually be minted (signing secret configured).
+ * Selection-time preflight uses this to avoid dispatching a diagnostic run
+ * whose credential would come back null (the runtime then logs
+ * "running without injected PILIBALA_API_KEY" and proceeds identity-less). */
+export function agentJwtSigningConfigured(): boolean {
+  return jwtConfig() !== null;
+}
+
 export function createLocalAgentJwt(
   agentId: string,
   companyId: string,
@@ -128,6 +140,7 @@ export function createLocalAgentJwt(
   responsibleUserId?: string | null,
   keyScope: AgentApiKeyScope = { kind: "standard" },
   authorizingUserId?: string,
+  wakeContext?: { wakeReason: string; analysisSourceIssueId?: string } | null,
 ) {
   const config = jwtConfig();
   if (!config) return null;
@@ -141,6 +154,14 @@ export function createLocalAgentJwt(
     responsible_user_id: responsibleUserId?.trim() || null,
     ...(authorizingUserId?.trim() ? { authorizing_user_id: authorizingUserId.trim() } : {}),
     ...(keyScope.kind === "standard" ? {} : { key_scope: keyScope }),
+    ...(wakeContext
+      ? {
+          wake_context: {
+            wake_reason: wakeContext.wakeReason,
+            ...(wakeContext.analysisSourceIssueId ? { analysis_source_issue_id: wakeContext.analysisSourceIssueId } : {}),
+          },
+        }
+      : {}),
     iat: now,
     exp: now + config.ttlSeconds,
     iss: config.issuer,
@@ -222,6 +243,20 @@ export function verifyLocalAgentJwt(token: string, options: { strictRunAuthority
   const keyScopeClaim = Object.hasOwn(claims, "key_scope")
     ? normalizeAgentApiKeyScope(claims.key_scope)
     : undefined;
+  // The wake context rides as a RESTRICTION, never an authority. A malformed
+  // claim drops the restriction to today's behavior (absent) instead of
+  // invalidating the token.
+  const rawWakeContext = Object.hasOwn(claims, "wake_context") ? claims.wake_context : undefined;
+  const wakeContextRecord = rawWakeContext && typeof rawWakeContext === "object" && !Array.isArray(rawWakeContext)
+    ? (rawWakeContext as Record<string, unknown>)
+    : null;
+  const wakeReasonClaim = typeof wakeContextRecord?.wake_reason === "string" ? wakeContextRecord.wake_reason : null;
+  const wakeSourceIssueClaim = typeof wakeContextRecord?.analysis_source_issue_id === "string"
+    ? wakeContextRecord.analysis_source_issue_id
+    : undefined;
+  const wakeContextClaim = wakeReasonClaim
+    ? { wake_reason: wakeReasonClaim, ...(wakeSourceIssueClaim ? { analysis_source_issue_id: wakeSourceIssueClaim } : {}) }
+    : undefined;
   const iat = typeof claims.iat === "number" ? claims.iat : null;
   const exp = typeof claims.exp === "number" ? claims.exp : null;
   if (!sub || !adapterType || !runId || !iat || !exp) return null;
@@ -261,6 +296,7 @@ export function verifyLocalAgentJwt(token: string, options: { strictRunAuthority
     ...(responsibleUserClaim !== undefined ? { responsible_user_id: responsibleUserClaim } : {}),
     ...(authorizingUserClaim ? { authorizing_user_id: authorizingUserClaim } : {}),
     ...(keyScopeClaim !== undefined ? { key_scope: keyScopeClaim } : {}),
+    ...(wakeContextClaim ? { wake_context: wakeContextClaim } : {}),
     iat,
     exp,
     ...(issuer ? { iss: issuer } : {}),
