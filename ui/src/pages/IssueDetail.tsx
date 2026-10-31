@@ -7810,7 +7810,16 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
               action={issue.activeRecoveryAction ?? null} />
           )}
           {resolvedDetailTab === "chat" && issue.executionBlocker && (
-            <ExecutionBlockerNotice className={shellSectionClass} companyId={issue.companyId} issueId={issue.id}
+            <ExecutionBlockerNotice
+              className={cn(shellSectionClass,
+                // Desktop chat shell fills the viewport and the thread viewport
+                // is the only scroll surface (flex-1 min-h-0). Without a cap,
+                // the tall reconciliation form squeezes the thread to zero and
+                // the operator loses the message history (mobile scrolls the
+                // document, which is why it never reproduced there). Bound the
+                // notice and scroll it internally instead.
+                isMobile ? undefined : "max-h-[45vh] overflow-y-auto")}
+              companyId={issue.companyId} issueId={issue.id}
               issueStatus={issue.status} canManage={canManageBoardRuntime && canResolveBoardRecoveryAction}
               blocker={issue.executionBlocker} onRetried={invalidateIssueDetail} />
           )}

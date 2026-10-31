@@ -86,6 +86,18 @@ test.describe("execution reconciliation form", () => {
 
     // The draft-less fallback renders the placeholder outcome: nothing chosen.
     await expect(submit).toBeDisabled();
+    // Desktop chat shell: the notice must never squeeze the message history
+    // away (the reported PC regression) - it is capped at 45vh and scrolls
+    // internally, leaving the thread viewport alive below it. The notice ROOT
+    // carries the cap (a child's layout box is not clipped by overflow
+    // ancestors), so assert on it and on its internal scrollability.
+    const notice = page.getByRole("status", { name: "Task recovery" });
+    const noticeBox = await notice.boundingBox();
+    const viewport = page.viewportSize()!;
+    expect(noticeBox).toBeTruthy();
+    expect(noticeBox!.height).toBeLessThanOrEqual(viewport.height * 0.5 + 2);
+    const scrollable = await notice.evaluate((element) => element.scrollHeight > element.clientHeight);
+    expect(scrollable).toBe(true);
     await checkbox.click();
     await expect(submit).toBeDisabled(); // outcome still unchosen
     await select.selectOption("not_performed");
