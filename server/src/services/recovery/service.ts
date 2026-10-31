@@ -3994,6 +3994,20 @@ export function recoveryService(
     return rows.some(deliveryCommentCountsAsDisposition);
   }
 
+  /** Any successor still in flight behind the delivered run: a continuation
+   * or scheduled retry must never be parked into review by the delivery
+   * acceptance. Reuses the canonical execution-path status set. */
+  async function hasUnsettledSuccessorRun(companyId: string, issueId: string): Promise<boolean> {
+    const [row] = await db.select({ id: heartbeatRuns.id }).from(heartbeatRuns)
+      .where(and(
+        eq(heartbeatRuns.companyId, companyId),
+        eq(heartbeatRuns.issueId, issueId),
+        inArray(heartbeatRuns.status, [...EXECUTION_PATH_HEARTBEAT_RUN_STATUSES]),
+      ))
+      .limit(1);
+    return Boolean(row);
+  }
+
   async function reconcileDispositionRepair(
     issue: typeof issues.$inferSelect,
     latestRun: LatestIssueRun,
@@ -4021,6 +4035,16 @@ export function recoveryService(
     if (latestRun && latestRun.status === "succeeded"
       && await hasDeliberateDeliveryComment(current.companyId, current.id, latestRun.id)) {
       await resolveDispositionRepairActionAsCovered(current, "delivery_evidence_recorded");
+      // Gap-closer: park delivered work in review instead of leaving it
+      // dangling in in_progress. in_review ("delivered, awaiting acceptance")
+      // is exactly what the evidence supports; done stays a reviewer/human
+      // decision (review policies, plus the AMB-2 precedent of machine-set
+      // done confusing operators). Skipped while any successor run is still
+      // queued/running - a continuation in flight must not be parked.
+      if (current.status === "in_progress"
+        && !(await hasUnsettledSuccessorRun(current.companyId, current.id))) {
+        await issuesSvc.update(current.id, { status: "in_review" });
+      }
       return "covered";
     }
 
