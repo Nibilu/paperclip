@@ -92,6 +92,15 @@ export function ExecutionReconciliationPanel({
     !sourceRunId ? "source run is missing" : "this recovery cause requires a different action"
   }.</p>;
 
+  const analysis = action.evidence.reconciliationAnalysis as { status?: string } | undefined;
+  const diagnosisUnavailable = analysis?.status === "unavailable";
+  // The diagnostic agent goes FIRST: while its analysis is still pending or
+  // running, this panel only reports progress and the manual fallback stays
+  // hidden - the human path is the last resort after automatic diagnosis, not
+  // a race against the doctor run.
+  const diagnosisInProgress = !draft && !diagnosisUnavailable &&
+    ["pending", "dispatching", "requested"].includes(analysis?.status ?? "");
+
   const evidenceReady = outcomeEvidence.trim().length >= 20;
   // Exactly THREE required fields gate the submit: the verified-stop checkbox,
   // the explicit outcome choice, and evidence. Draft "accept" buttons are a
@@ -118,11 +127,13 @@ export function ExecutionReconciliationPanel({
         Agent draft: review or edit each field before submitting. Outcome confidence: {Math.round(draft.actionOutcome.confidence * 100)}%.
       </p>}
       {!draft && <p className="mt-3 text-muted-foreground" data-testid="reconciliation-diagnosis-state">
-        {(action.evidence.reconciliationAnalysis as { status?: string } | undefined)?.status === "unavailable"
+        {diagnosisUnavailable
           ? "Agent diagnosis is unavailable for this hold. Record the outcome manually."
-          : "Agent diagnosis is in progress; the prefilled draft will appear here when it completes. You can also record the outcome manually."}
+          : diagnosisInProgress
+            ? "Agent diagnosis is in progress; the prefilled draft will appear here when it completes. The manual form becomes available if the diagnosis cannot complete."
+            : "Agent diagnosis is not scheduled for this hold. Record the outcome manually."}
       </p>}
-      <div className="mt-3 space-y-3">
+      {!diagnosisInProgress && <div className="mt-3 space-y-3">
         <label className="flex items-start gap-2">
           <input
             type="checkbox"
@@ -180,7 +191,7 @@ export function ExecutionReconciliationPanel({
           {mutation.isPending ? "Recording…" : "Record outcome and continue"}
         </Button>
         {mutation.isError && <p role="alert" className="text-destructive">{mutation.error.message}</p>}
-      </div>
+      </div>}
     </section>
   );
 }

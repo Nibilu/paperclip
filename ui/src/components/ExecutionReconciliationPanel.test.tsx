@@ -183,6 +183,10 @@ describe("ExecutionReconciliationPanel", () => {
     expect(container.querySelector("[data-testid=reconciliation-agent-draft]")).toBeNull();
     expect(container.querySelector("[data-testid=reconciliation-diagnosis-state]")!.textContent)
       .toContain("Agent diagnosis is in progress");
+    // The diagnostic agent goes first: while its analysis runs, the manual
+    // fallback form is hidden entirely (the human path is the last resort).
+    expect(container.querySelector("[data-testid=execution-reconciliation-submit]")).toBeNull();
+    expect(container.querySelector("[data-testid=execution-reconciliation-provider-stopped]")).toBeNull();
 
     await act(async () => root.render(<QueryClientProvider client={client}>
       <ExecutionReconciliationPanel issueId="issue-1" issueStatus="todo"
@@ -190,6 +194,8 @@ describe("ExecutionReconciliationPanel", () => {
     </QueryClientProvider>));
     expect(container.querySelector("[data-testid=reconciliation-diagnosis-state]")!.textContent)
       .toContain("Agent diagnosis is unavailable");
+    // Once the diagnosis budget is exhausted the manual fallback appears.
+    expect(container.querySelector("[data-testid=execution-reconciliation-submit]")).not.toBeNull();
   });
 
 });
