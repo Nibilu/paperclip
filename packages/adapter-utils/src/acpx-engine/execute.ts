@@ -5228,7 +5228,14 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               killCapturedLocalProcess(processIdentitySink.localProcess);
             } else {
               void runtime.close({ handle: sessionHandle, reason: "operator stop deadline", discardPersistentState: true })
-                .catch(() => {});
+                .catch((stopErr: unknown) => {
+                  // Fire-and-forget, but never silent: the settlement's
+                  // session-discard gate re-verifies the persisted record
+                  // later; this keeps the early close's failure attributable
+                  // in the run log instead of swallowed.
+                  void ctx.onLog("stderr", `[pilibala] ACPX operator-stop discard close failed: ${stopErr instanceof Error ? stopErr.message : String(stopErr)}\n`)
+                    .catch(() => {});
+                });
             }
           }, Math.max(1, asNumber(ctx.config.graceSec, 15)) * 1000);
         };
