@@ -7361,6 +7361,152 @@ describe("ACPX engine run lifecycle corrections (F3: one teardown error policy)"
     }
   });
 
+  // Regression for the AMB-132/133 resume loop: a backend without
+  // session/close (the Hermes gateway advertises only { resume, list, fork })
+  // makes acpx 0.12.0 close({ discardPersistentState: true }) throw BEFORE
+  // persisting reset_on_next_ensure. The gate must remediate the persisted
+  // record itself and the close error must be recorded, never swallowed.
+  it("remediates the persisted record when close rejects session/close on a discard path", async () => {
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const recordId = "local-gate-record";
+    const store = createRuntimeStore({ stateDir });
+    await store.save({
+      acpxRecordId: recordId,
+      acpSessionId: "backend-dead-session",
+      agentSessionId: "agent-session",
+      agentCommand: "node ./fake-acp.js",
+      cwd: "/tmp/discard-gate-cwd",
+      createdAt: "2026-10-31T00:00:00.000Z",
+      lastUsedAt: "2026-10-31T00:00:00.000Z",
+      lastSeq: 3,
+      lastRequestId: "req-1",
+      messages: [],
+      updated_at: "2026-10-31T00:00:00.000Z",
+      closed: false,
+      acpx: {},
+    } as never);
+    // Fail fast when the seeded shape stops round-tripping through the real
+    // store parser: the remediation assertion below is only meaningful for a
+    // record the next run would actually load.
+    expect(await store.load(recordId)).toBeDefined();
+
+    const closeSpy = vi.fn(async () => {
+      throw new Error("Agent does not support session/close for local-gate-record.");
+    });
+    const logs: string[] = [];
+    const gateHandle = { ...okHandle, acpxRecordId: recordId };
+    const execute = createAcpxEngineExecutor({
+      createRuntime: () =>
+        ({
+          ensureSession: async () => gateHandle,
+          startTurn: () => ({
+            events: (async function* () {
+              yield { type: "done", stopReason: "end_turn" };
+            })(),
+            // Message-only resume failure (the Hermes wrapper shape): no
+            // detailCode survives the terminal wrapper.
+            result: Promise.resolve({
+              status: "failed",
+              error: new Error("Persistent ACP session local-gate-record could not be resumed: Internal error"),
+            }),
+            cancel: async () => {},
+          }),
+          close: closeSpy,
+        }) as never,
+    });
+
+    const result = await execute({
+      runId: "discard-gate-remediation",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: {},
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir },
+      context: {},
+      onLog: async (_stream: string, line: string) => {
+        logs.push(line);
+      },
+      onMeta: async () => {},
+    } as never);
+
+    // The close error is recorded, not silently swallowed.
+    expect(logs.join("\n")).toContain('teardown step "runtime-close" failed');
+    // The gate remediated the poisoned record despite the close throw: the
+    // next run bootstraps a fresh session instead of resuming the dead one.
+    const healed = await store.load(recordId);
+    expect(healed?.acpx?.reset_on_next_ensure).toBe(true);
+    expect(logs.join("\n")).toContain("persisted reset marker for record local-gate-record");
+    expect(result.exitCode).toBe(1);
+  });
+
+  it("reports acpx_session_discard_unconfirmed when the reset cannot be persisted", async () => {
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const recordId = "local-gate-record";
+    const store = createRuntimeStore({ stateDir });
+    await store.save({
+      acpxRecordId: recordId,
+      acpSessionId: "backend-dead-session",
+      agentSessionId: "agent-session",
+      agentCommand: "node ./fake-acp.js",
+      cwd: "/tmp/discard-gate-cwd",
+      createdAt: "2026-10-31T00:00:00.000Z",
+      lastUsedAt: "2026-10-31T00:00:00.000Z",
+      lastSeq: 3,
+      lastRequestId: "req-1",
+      messages: [],
+      updated_at: "2026-10-31T00:00:00.000Z",
+      closed: false,
+      acpx: {},
+    } as never);
+    expect(await store.load(recordId)).toBeDefined();
+
+    // Make every persist fail after the seed: the gate must surface a hard,
+    // typed signal instead of pretending the discard succeeded.
+    const sessionsDir = path.join(stateDir, "sessions");
+    await fs.chmod(sessionsDir, 0o500);
+    try {
+      const logs: string[] = [];
+      const gateHandle = { ...okHandle, acpxRecordId: recordId };
+      const execute = createAcpxEngineExecutor({
+        createRuntime: () =>
+          ({
+            ensureSession: async () => gateHandle,
+            startTurn: () => ({
+              events: (async function* () {
+                yield { type: "done", stopReason: "end_turn" };
+              })(),
+              result: Promise.resolve({
+                status: "failed",
+                error: new Error("Persistent ACP session local-gate-record could not be resumed: Internal error"),
+              }),
+              cancel: async () => {},
+            }),
+            close: vi.fn(async () => {
+              throw new Error("Agent does not support session/close for local-gate-record.");
+            }),
+          }) as never,
+      });
+
+      const result = await execute({
+        runId: "discard-gate-unconfirmed",
+        agent: { id: "agent-1", companyId: "company-1" },
+        runtime: {},
+        config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir },
+        context: {},
+        onLog: async (_stream: string, line: string) => {
+          logs.push(line);
+        },
+        onMeta: async () => {},
+      } as never);
+
+      expect(result.exitCode).toBe(1);
+      expect(logs.join("\n")).toContain("acpx_session_discard_unconfirmed");
+      expect(logs.join("\n")).toContain("local-gate-record");
+    } finally {
+      await fs.chmod(sessionsDir, 0o700);
+    }
+  });
+
 
   it("collects instructions after confirmed close on a thrown provider turn, before workspace restore", async () => {
     const { stateDir, localCwd, executionTarget } = await setupRemoteSandbox();
