@@ -12,7 +12,7 @@ import { escalateExhaustedIssueReviewPathRecovery } from "./review-path-recovery
 import { executionRetryAccounting } from "../execution-recovery-attempt.js";
 import { isExplicitContinuationRetryClaim } from "../explicit-continuation-retry-claim.js";
 import {
-  decideLegacyContinuation, legacyDispositionEpisode, legacyDispositionFingerprint,
+  decideLegacyContinuation, deliveryCommentCountsAsDisposition, legacyDispositionEpisode, legacyDispositionFingerprint,
   LEGACY_DISPOSITION_REPAIR_INSTRUCTION, type LegacyDispositionEpisode,
 } from "./legacy-continuation.js";
 import { CONTROLLER_LEASE_LOST_FAILURE_CODE, hasLiveLegacyController } from "../legacy-controller-lease.js";
@@ -3975,6 +3975,25 @@ export function recoveryService(
     return result;
   }
 
+  /**
+   * Deliberate board writes by one run on one issue (bounded recent window).
+   * The authorization reason rides in the comment metadata: allow_self marks a
+   * deliberate agent write, internal_agent_write marks the run-final auto
+   * mirror every run produces.
+   */
+  async function hasDeliberateDeliveryComment(companyId: string, issueId: string, runId: string): Promise<boolean> {
+    const rows = await db.select({
+      authorType: issueComments.authorType,
+      deletedAt: issueComments.deletedAt,
+      authorizationReason: sql<string | null>`${issueComments.metadata}->>'authorizationReason'`,
+    }).from(issueComments).where(and(
+      eq(issueComments.companyId, companyId),
+      eq(issueComments.issueId, issueId),
+      eq(issueComments.createdByRunId, runId),
+    )).orderBy(desc(issueComments.createdAt)).limit(5);
+    return rows.some(deliveryCommentCountsAsDisposition);
+  }
+
   async function reconcileDispositionRepair(
     issue: typeof issues.$inferSelect,
     latestRun: LatestIssueRun,
@@ -3990,6 +4009,20 @@ export function recoveryService(
       .then((rows) => rows[0] ?? null);
     if (!current || current.status === "done" || current.status === "cancelled")
       return "skipped";
+
+    // Delivery-acceptance (control-plane side): a succeeded run that
+    // deliberately addressed the board about THIS task has recorded a durable
+    // delivery disposition — the disposition-repair ladder (repair runs →
+    // deliberate_wait hold → watchdog block → doctor dispatch) must not fire
+    // for work the board already shows as delivered (AMB-133: delivered
+    // analysis; AMB-135: a one-line answered question). When no such comment
+    // exists the machinery proceeds exactly as before, so this can only
+    // suppress repair, never delay a genuine one.
+    if (latestRun && latestRun.status === "succeeded"
+      && await hasDeliberateDeliveryComment(current.companyId, current.id, latestRun.id)) {
+      await resolveDispositionRepairActionAsCovered(current, "delivery_evidence_recorded");
+      return "covered";
+    }
 
     const episode = options.legacyEpisode ?? (
       parseObject(parseObject(latestRun?.contextSnapshot).legacyDispositionEpisode).id && latestRun

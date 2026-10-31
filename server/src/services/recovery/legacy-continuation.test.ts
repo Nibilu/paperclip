@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideLegacyContinuation, legacyDispositionEpisode, type LegacyContinuationInput } from "./legacy-continuation.js";
+import { decideLegacyContinuation, deliveryCommentCountsAsDisposition, legacyDispositionEpisode, type LegacyContinuationInput } from "./legacy-continuation.js";
 const input: LegacyContinuationInput = {
   run: { id: "run", companyId: "company", agentId: "agent", status: "succeeded", runtimeMode: "legacy" },
   issue: { id: "issue", companyId: "company", status: "in_progress", assigneeAgentId: "agent" },
@@ -48,5 +48,22 @@ describe("legacy continuation authority", () => {
   });
   it("leaves native finalization to its own authority", () => {
     expect(decideLegacyContinuation({ ...input, run: { ...input.run, runtimeMode: "native" } }).kind).toBe("skip");
+  });
+});
+
+describe("delivery disposition acceptance", () => {
+  const delivered = { authorType: "agent", deletedAt: null, authorizationReason: "allow_self" };
+  it("counts a deliberate agent-authored comment as recorded delivery (no length threshold)", () => {
+    expect(deliveryCommentCountsAsDisposition(delivered)).toBe(true);
+  });
+  it("never counts the run-final auto mirror as delivery", () => {
+    expect(deliveryCommentCountsAsDisposition({ ...delivered, authorizationReason: "internal_agent_write" })).toBe(false);
+  });
+  it("rejects deleted, non-agent, and unattributed comments", () => {
+    expect(deliveryCommentCountsAsDisposition({ ...delivered, deletedAt: new Date() })).toBe(false);
+    expect(deliveryCommentCountsAsDisposition({ ...delivered, authorType: "user" })).toBe(false);
+    expect(deliveryCommentCountsAsDisposition({ ...delivered, authorizationReason: null })).toBe(false);
+    expect(deliveryCommentCountsAsDisposition(null)).toBe(false);
+    expect(deliveryCommentCountsAsDisposition(undefined)).toBe(false);
   });
 });
