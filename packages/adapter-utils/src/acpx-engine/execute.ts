@@ -103,6 +103,7 @@ import {
   type AcpRuntimeTurnResult,
   type AcpRuntimeUsageBreakdown,
   type AcpRuntimeUsageCost,
+  type AcpSessionRecord,
 } from "acpx/runtime";
 import {
   ACP_TOOL_KINDS,
@@ -137,6 +138,7 @@ import type {
 import { createRunResourceLedger } from "./run-resource-ledger.js";
 import { acpxAccountingModel } from "./accounting-model.js";
 import { settleAcpRun, type SettlementSteps } from "./settlement-sequence.js";
+import { confirmDiscardedPersistentRecord } from "./session-discard-gate.js";
 import {
   runAttempt,
   type RunPlan,
@@ -2911,7 +2913,9 @@ interface RuntimeSettlementPlan {
   readonly dropWarmEntry: boolean;
   // Record a direct-close error to the run log; a warm_or_close error is
   // swallowed. This keeps today's split (the failure paths log, the turn path
-  // swallows).
+  // swallows). The session-discard gate additionally records every
+  // direct-close error when `discardPersistentState` is set — a discarded
+  // record must never fail silently.
   readonly recordCloseError: boolean;
   // Cancel the running turn with this reason before the close (the turn-error
   // path cancels before it closes). Null on every other path.
@@ -4346,6 +4350,38 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           .onLog("stderr", `[pilibala] ACPX teardown step "${step}" failed: ${reason}\n`)
           .catch(() => {}));
       };
+      // The session-discard gate (see session-discard-gate.ts). Every
+      // settlement path that requested `discardPersistentState` must confirm
+      // the persisted record before the run ends: gone, or carrying
+      // `reset_on_next_ensure`. acpx 0.12.0 orders close() wrong for backends
+      // without session/close (Hermes gateway advertises { resume, list,
+      // fork }), so the reset flag was never persisted and the close error
+      // was swallowed here — the dead record then poisoned every later
+      // resume. The gate verifies the disk independently of the close call
+      // and remediates by persisting the flag itself; an unconfirmable
+      // record throws into the Phase 3 error policy (recorded, never silent).
+      const ensurePersistentDiscardConfirmed = async (plan: RuntimeSettlementPlan): Promise<void> => {
+        if (!plan.discardPersistentState) return;
+        const recordId = plan.handle.acpxRecordId ?? prepared.sessionKey;
+        const gateStore = createRuntimeStore({ stateDir: prepared.stateDir });
+        const outcome = await confirmDiscardedPersistentRecord({
+          store: {
+            loadRecord: () => gateStore.load(recordId),
+            persistRecord: (record) => gateStore.save(record as AcpSessionRecord),
+          },
+        });
+        if (outcome.remediated && outcome.confirmed) {
+          await withAdapterExecutionPhase(ctx, "phase_reporting", () => ctx
+            .onLog("stderr", `[pilibala] ACPX session-discard gate: persisted reset marker for record ${recordId} (close did not persist it)\n`)
+            .catch(() => {}));
+        }
+        if (!outcome.confirmed) {
+          throw new Error(
+            `acpx_session_discard_unconfirmed: persistent ACPX record ${recordId} could not be confirmed reset or removed`
+            + ` (${outcome.error ?? "unknown"}); the next run must not resume the same dead backend session`,
+          );
+        }
+      };
       // Emit one per-phase timing run-log event. It is not an OpenTelemetry
       // export and it is not a Telemetry event: it carries the phase name
       // (from the closed allowlist), the wall time, and the outcome, and
@@ -5759,6 +5795,10 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               warmHandles.delete(prepared.sessionKey);
               flushChildStderr(existing.childStderrState);
             }
+            // No close call runs on a dead channel, so the discard request
+            // would silently do nothing at all — the gate is the only thing
+            // that persists the reset marker here.
+            await ensurePersistentDiscardConfirmed(settlement);
             return;
           }
           // The handshake guard abandoned this `ensureSession` call and no late
@@ -5768,7 +5808,12 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           // hook (armed at the `ensureSession` call site) closes it once,
           // whenever it shows up. A guarded call only ever runs on a cold
           // start, so there is no matching warm entry here to drop.
-          if (handshakeAbandoned && !lateHandle) return;
+          if (handshakeAbandoned && !lateHandle) {
+            // The runtime never produced a handle; the gate confirms the
+            // persisted record (if any) is gone or reset before the run ends.
+            await ensurePersistentDiscardConfirmed(settlement);
+            return;
+          }
           if (
             settlement.mode === "warm_or_close" &&
             warmHandleMatches(existing, runtime, settlement.handle) &&
@@ -5783,9 +5828,13 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               reason: settlement.reason,
               discardPersistentState: settlement.discardPersistentState,
             }));
+            await ensurePersistentDiscardConfirmed(settlement);
             return;
           }
-          const onCloseError = settlement.recordCloseError || ctx.signal?.aborted
+          // A discarded record must never fail silently: on every
+          // `discardPersistentState` path the close error is recorded (the
+          // gate below independently verifies the persisted outcome).
+          const onCloseError = settlement.recordCloseError || ctx.signal?.aborted || settlement.discardPersistentState
             ? (closeErr: unknown) => recordTeardownError("runtime-close", closeErr)
             : () => {};
           await withAdapterExecutionPhase(ctx, "close_session", () => runtime
@@ -5796,6 +5845,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
             })
             .then(() => { runtimeStopConfirmed = true; })
             .catch(onCloseError));
+          await ensurePersistentDiscardConfirmed(settlement);
           if (settlement.dropWarmEntry && warmHandleMatches(existing, runtime, settlement.handle) && existing) {
             clearWarmHandleTimer(existing);
             warmHandles.delete(prepared.sessionKey);
