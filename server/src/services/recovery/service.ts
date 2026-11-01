@@ -12,7 +12,7 @@ import { escalateExhaustedIssueReviewPathRecovery } from "./review-path-recovery
 import { executionRetryAccounting } from "../execution-recovery-attempt.js";
 import { isExplicitContinuationRetryClaim } from "../explicit-continuation-retry-claim.js";
 import {
-  decideLegacyContinuation, deliveryCommentCountsAsDisposition, legacyDispositionEpisode, legacyDispositionFingerprint,
+  decideLegacyContinuation, deliveredTerminalStatus, deliveryCommentCountsAsDisposition, legacyDispositionEpisode, legacyDispositionFingerprint,
   LEGACY_DISPOSITION_REPAIR_INSTRUCTION, type LegacyDispositionEpisode,
 } from "./legacy-continuation.js";
 import { CONTROLLER_LEASE_LOST_FAILURE_CODE, hasLiveLegacyController } from "../legacy-controller-lease.js";
@@ -4035,15 +4035,17 @@ export function recoveryService(
     if (latestRun && latestRun.status === "succeeded"
       && await hasDeliberateDeliveryComment(current.companyId, current.id, latestRun.id)) {
       await resolveDispositionRepairActionAsCovered(current, "delivery_evidence_recorded");
-      // Gap-closer: park delivered work in review instead of leaving it
-      // dangling in in_progress. in_review ("delivered, awaiting acceptance")
-      // is exactly what the evidence supports; done stays a reviewer/human
-      // decision (review policies, plus the AMB-2 precedent of machine-set
-      // done confusing operators). Skipped while any successor run is still
+      // Gap-closer: give accepted deliveries a real terminal. A review policy
+      // makes "delivered, awaiting acceptance" (in_review) a maintainable
+      // state; without one, parking in review creates a review state nothing
+      // can accept — the review-path-lost detector then fires a repair wake
+      // against it (AMB-136). Skipped while any successor run is still
       // queued/running - a continuation in flight must not be parked.
       if (current.status === "in_progress"
         && !(await hasUnsettledSuccessorRun(current.companyId, current.id))) {
-        await issuesSvc.update(current.id, { status: "in_review" });
+        await issuesSvc.update(current.id, {
+          status: deliveredTerminalStatus(current.reviewPolicy),
+        });
       }
       return "covered";
     }

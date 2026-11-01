@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideLegacyContinuation, deliveryCommentCountsAsDisposition, legacyDispositionEpisode, type LegacyContinuationInput } from "./legacy-continuation.js";
+import { decideLegacyContinuation, deliveredTerminalStatus, deliveryCommentCountsAsDisposition, legacyDispositionEpisode, type LegacyContinuationInput } from "./legacy-continuation.js";
 const input: LegacyContinuationInput = {
   run: { id: "run", companyId: "company", agentId: "agent", status: "succeeded", runtimeMode: "legacy" },
   issue: { id: "issue", companyId: "company", status: "in_progress", assigneeAgentId: "agent" },
@@ -65,5 +65,17 @@ describe("delivery disposition acceptance", () => {
     expect(deliveryCommentCountsAsDisposition({ ...delivered, authorizationReason: null })).toBe(false);
     expect(deliveryCommentCountsAsDisposition(null)).toBe(false);
     expect(deliveryCommentCountsAsDisposition(undefined)).toBe(false);
+  });
+});
+
+describe("delivered terminal status (Layer-1, AMB-136)", () => {
+  it("completes plain delivered work when no review policy exists", () => {
+    expect(deliveredTerminalStatus(null)).toBe("done");
+    expect(deliveredTerminalStatus(undefined)).toBe("done");
+  });
+  it("keeps a review-policy task in review where the state is maintainable", () => {
+    expect(deliveredTerminalStatus("human_only")).toBe("in_review");
+    expect(deliveredTerminalStatus("anyone")).toBe("in_review");
+    expect(deliveredTerminalStatus("not_creator")).toBe("in_review");
   });
 });

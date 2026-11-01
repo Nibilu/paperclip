@@ -700,6 +700,62 @@ export function createHeartbeatRunControl(db: Db, dependencies: HeartbeatRunCont
         logger.warn({ err, runId: run.id }, "failed to resume saved execution-wait message");
       });
     }
+
+    // Layer-1 (AMB-136): a SYSTEM repair/continuation wake that hit a transient
+    // blocker (the previous run's environment lease still mid-release) was
+    // recorded as a TERMINAL 'skipped' execution-wait (recordExecutionWait).
+    // Once the blocker cleared nothing ever re-evaluated it, so the repair
+    // chain - hold, diagnosis, reconciliation form - never started and the
+    // task stranded. Revive terminal waits whose blocker is GONE by replaying
+    // the original wake; its idempotency key keeps the replay deterministic
+    // and admission re-checks every gate. One revival per recorded wait.
+    const terminalWaits = await db.select({ wake: agentWakeupRequests })
+      .from(agentWakeupRequests)
+      .innerJoin(issues, and(eq(issues.companyId, agentWakeupRequests.companyId),
+        sql`${issues.id}::text = ${agentWakeupRequests.payload}->>'issueId'`,
+        eq(issues.assigneeAgentId, agentWakeupRequests.agentId)))
+      .innerJoin(companies, and(eq(companies.id, issues.companyId), eq(companies.status, "active")))
+      .where(and(eq(agentWakeupRequests.status, "skipped"),
+        sql`${agentWakeupRequests.payload}->'executionWait'->>'requestedIdempotencyKey' is not null`,
+        sql`${agentWakeupRequests.payload}->'executionWait'->>'revivedAt' is null`,
+        sql`${agentWakeupRequests.payload}->'queuedCommentInterrupt' is null`,
+        lte(agentWakeupRequests.updatedAt, new Date(Date.now() - 30_000)),
+        notInArray(issues.status, ["done", "cancelled"])))
+      .orderBy(asc(agentWakeupRequests.updatedAt)).limit(25);
+    const revivedIssues = new Set<string>();
+    for (const { wake } of terminalWaits) {
+      const issueId = String(wake.payload?.issueId);
+      if (!issueId || revivedIssues.has(issueId)) continue;
+      revivedIssues.add(issueId);
+      const requestedKey = readNonEmptyString(
+        parseObject(wake.payload?.executionWait).requestedIdempotencyKey);
+      if (!requestedKey) continue;
+      const [claimed] = await db.update(agentWakeupRequests).set({ updatedAt: new Date() }).where(and(
+        eq(agentWakeupRequests.id, wake.id), eq(agentWakeupRequests.companyId, wake.companyId),
+        eq(agentWakeupRequests.status, "skipped"),
+        lte(agentWakeupRequests.updatedAt, new Date(Date.now() - 30_000)),
+      )).returning({ id: agentWakeupRequests.id });
+      if (!claimed) continue;
+      const blocker = await getExecutionBlocker(db, wake.companyId, issueId);
+      if (blocker) continue; // still blocked - the recorded wait stays accurate
+      await db.update(agentWakeupRequests).set({
+        payload: sql`jsonb_set(coalesce(${agentWakeupRequests.payload}, '{}'::jsonb),
+          '{executionWait,revivedAt}', to_jsonb(${new Date().toISOString()}::text))`,
+      }).where(eq(agentWakeupRequests.id, wake.id));
+      const replayPayload = { ...(wake.payload ?? {}) };
+      delete replayPayload.executionWait;
+      await enqueueWakeup(wake.agentId, {
+        source: (wake.source ?? "automation") as WakeupOptions["source"],
+        triggerDetail: (wake.triggerDetail ?? undefined) as WakeupOptions["triggerDetail"],
+        reason: (wake.reason ?? "execution_wait_cleared") as WakeupOptions["reason"],
+        payload: replayPayload,
+        requestedByActorType: (wake.requestedByActorType ?? "system") as WakeupOptions["requestedByActorType"],
+        requestedByActorId: wake.requestedByActorId ?? undefined,
+        idempotencyKey: requestedKey,
+      }, wake.id).catch(err => {
+        logger.warn({ err, queueId: wake.id }, "failed to revive a cleared execution wait");
+      });
+    }
   }
 
   async function releaseIssueExecutionAndPromote(

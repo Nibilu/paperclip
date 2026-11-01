@@ -26,6 +26,17 @@ export interface LegacyContinuationInput {
  * don't match keep the repair machinery running exactly as before. */
 export const DELIVERY_AUTHORIZATION_REASON = "allow_self";
 
+/** Layer-1 terminal rule for accepted deliveries: a review policy makes
+ * "delivered, awaiting acceptance" a real, maintainable state; without one the
+ * review state has no participant to accept it — the review-path-lost detector
+ * immediately fires a repair wake for it (AMB-136). Plain delivered work
+ * completes: done is the evidence-supported terminal. */
+export function deliveredTerminalStatus(
+  reviewPolicy: string | null | undefined,
+): "in_review" | "done" {
+  return reviewPolicy ? "in_review" : "done";
+}
+
 export interface DeliveryCommentEvidence {
   authorType: string | null;
   deletedAt: Date | string | null;
