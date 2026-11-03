@@ -579,7 +579,7 @@ describe("composed ACPX run fault matrix", () => {
     expect(ensureInputs[1]?.resumeSessionId).toBeUndefined();
     expect(started).toBe(1);
     expect(second.clearSession).toBe(true);
-    expect(logs.some((text) => text.includes("is unavailable; retrying with a fresh session"))).toBe(true);
+    expect(logs.some((text) => text.includes("is unavailable; discarded the dead session and retrying with a fresh one"))).toBe(true);
     // The host lane acquires only the runtime, and it appears once.
     assertDispositionReport(capture.last(), { acquired: ["acp_runtime"] });
   });

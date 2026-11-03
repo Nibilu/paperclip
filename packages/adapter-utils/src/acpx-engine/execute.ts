@@ -4330,6 +4330,13 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
       let processIdentitySink!: AcpxProcessIdentitySink;
       let resumedSession = false;
       let clearSession = false;
+      // Path A in-run repair audit (AMB-156): set when the handshake catch
+      // discarded a dead resumed session and retried fresh. Threads into the
+      // run result's resultJson so first-error recovery is inspectable.
+      let sessionRepairAudit:
+        | { attempted: true; discardedSessionId: string; recoveredWithFreshSession: true }
+        | { attempted: false }
+        = { attempted: false };
       let referencedProjectStagingFailuresField:
         | { referencedProjectStagingFailures: Array<{ projectId: string; error: string }> }
         | Record<string, never> = {};
@@ -4733,9 +4740,48 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               if (!resumeSessionId || !isResumeFailure(err)) throw err;
               clearSession = true;
               resumedSession = false;
+              // Path A in-run repair (AMB-156): the fresh retry below must not
+              // reuse the dead persisted record. acpx's
+              // shouldReuseExistingRecord passes for a retry without a resume
+              // id unless the record carries `reset_on_next_ensure`, so the
+              // retry would re-resume the same dead backend session. Persist
+              // the discard marker through the session-discard gate BEFORE
+              // retrying (close errors are recorded, never fatal to the
+              // repair — the gate is the persisted guarantee).
+              await runtime
+                .close({
+                  handle: handle ?? syntheticCloseHandle(),
+                  reason: "pilibala resume repair",
+                  discardPersistentState: true,
+                })
+                .catch((closeError: unknown) => {
+                  return ctx
+                    .onLog(
+                      "stderr",
+                      `[pilibala] resume-repair close failed (recorded, the gate still confirms the discard): ${
+                        closeError instanceof Error ? closeError.message : String(closeError)
+                      }\n`,
+                    )
+                    .catch(() => {});
+                });
+              await ensurePersistentDiscardConfirmed({
+                mode: "direct",
+                handle: handle ?? syntheticCloseHandle(),
+                reason: "pilibala resume repair",
+                discardPersistentState: true,
+                dropWarmEntry: false,
+                recordCloseError: true,
+                cancelTurnReason: null,
+                skipRemoteClose: false,
+              });
+              sessionRepairAudit = {
+                attempted: true,
+                discardedSessionId: resumeSessionId,
+                recoveredWithFreshSession: true,
+              };
               await ctx.onLog(
                 "stdout",
-                `[pilibala] ACPX resume session "${resumeSessionId}" is unavailable; retrying with a fresh session.\n`,
+                `[pilibala] ACPX resume session "${resumeSessionId}" is unavailable; discarded the dead session and retrying with a fresh one.\n`,
               );
               // Fresh-session retry: the runtime was already constructed on the
               // first attempt (never re-created), so this event reports only its
@@ -5546,6 +5592,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           resultJson: {
             status: channelLost || toolStalled ? "failed" : terminal.status,
             ...activityDiagnostics,
+            ...(sessionRepairAudit.attempted ? { sessionRepair: sessionRepairAudit } : {}),
             ...(toolStalled && stalledTool
               ? {
                   acpStalledToolKind: stalledTool.kind,
