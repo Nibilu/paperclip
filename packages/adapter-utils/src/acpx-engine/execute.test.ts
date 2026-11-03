@@ -10,7 +10,7 @@ import {
   startAdapterExecutionTargetPilibalaBridge,
   startAdapterExecutionTargetProcessSessionBridge,
 } from "@pilibalaai/adapter-utils/execution-target";
-import { isAcpSessionResumeFailure } from "@pilibalaai/adapter-utils/acpx-engine/execute";
+import { isAcpSessionResumeFailure, isAcpSessionResumeFailureError } from "@pilibalaai/adapter-utils/acpx-engine/execute";
 
 // Wrap the staging seam + both sandbox bridges in call-recording spies that
 // still delegate to the real implementations (a runner-backed sandbox test
@@ -9019,6 +9019,14 @@ describe("isAcpSessionResumeFailure", () => {
         message: "Persistent ACP session local-abc123 could not be resumed: Internal error",
       },
     })).toBe(true);
+  });
+
+  it("matches a thrown resume error from the turn promise", () => {
+    expect(isAcpSessionResumeFailureError(new Error(
+      "Persistent ACP session local-abc123 could not be resumed: Internal error",
+    ))).toBe(true);
+    expect(isAcpSessionResumeFailureError({ detailCode: "SESSION_RESUME_REQUIRED" })).toBe(true);
+    expect(isAcpSessionResumeFailureError(new Error("provider disconnected"))).toBe(false);
   });
 
   it("does not match unrelated turn failures", () => {
