@@ -4329,6 +4329,15 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
       let childStderrState!: ChildStderrState;
       let processIdentitySink!: AcpxProcessIdentitySink;
       let resumedSession = false;
+      // The configure-phase resume repair re-runs the guarded ensure outside
+      // the handshake block's scope, so the block publishes its guard helpers
+      // here once constructed (the repair must guard identically: a late
+      // handle after the seal is still abandoned, never adopted silently).
+      let handshakeGuardHelpers: {
+        isTransportLost: () => boolean;
+        onLateHandleAfterSeal: (handle: AcpRuntimeHandle) => void;
+        onLateRejection: () => void;
+      } | null = null;
       let clearSession = false;
       // Path A in-run repair audit (AMB-156): set when the handshake catch
       // discarded a dead resumed session and retried fresh. Threads into the
@@ -4700,6 +4709,15 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
             .onLog("stderr", "[pilibala] ACPX handshake late rejection: acpx_handshake_late_rejection\n")
             .catch(() => {});
         };
+        // Publish the guard helpers for the configure-phase resume repair: it
+        // re-runs the guarded ensure outside this block's scope and must guard
+        // identically (a late handle after the seal is abandoned, never
+        // silently adopted).
+        handshakeGuardHelpers = {
+          isTransportLost: isHandshakeTransportLost,
+          onLateHandleAfterSeal: closeLateHandshakeHandle,
+          onLateRejection: recordLateHandshakeRejection,
+        };
 
         try {
           if (!handle) {
@@ -4993,6 +5011,118 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         // retry deterministically re-resume the same dead backend session
         // (AMB-90: three consecutive failures on one session id).
         const sessionResumeFailure = isAcpSessionResumeFailureError(err);
+        let configureRepaired = false;
+        if (sessionResumeFailure) {
+          // Path A completion (AMB-156): configure_session is pre-turn — no
+          // agent work has executed — so a dead backend session discovered
+          // here is safe to repair in-run, exactly like the handshake path.
+          // Live evidence (issue 319b2463, run 2f1bb613): a retained warm
+          // owner passes the handshake WITHOUT backend verification; its
+          // wrapper process may have died and evicted the session since, so
+          // the refusal first surfaces at setConfigOption — one phase after
+          // the handshake repair window. Repair: persist the discard gate,
+          // fresh-ensure, re-run configure, continue to the turn. Only a
+          // repair that cannot establish a working session settles typed.
+          configureRepaired = await (async () => {
+            try {
+              clearSession = true;
+              resumedSession = false;
+              // The dead id is the backend session the failed configure ran on
+              // (the warm owner's session in the live warm-gap case; the
+              // params' resume id in the cold-reuse case — same value).
+              const repairDiscardId = sessionHandle?.backendSessionId ?? "unknown";
+              await runtime
+                .close({
+                  handle: sessionHandle ?? syntheticCloseHandle(),
+                  reason: "pilibala configure resume repair",
+                  discardPersistentState: true,
+                })
+                .catch((closeError: unknown) => {
+                  return ctx
+                    .onLog(
+                      "stderr",
+                      `[pilibala] configure-repair close failed (recorded, the gate still confirms the discard): ${
+                        closeError instanceof Error ? closeError.message : String(closeError)
+                      }\n`,
+                    )
+                    .catch(() => {});
+                });
+              await ensurePersistentDiscardConfirmed({
+                mode: "direct",
+                handle: sessionHandle ?? syntheticCloseHandle(),
+                reason: "pilibala configure resume repair",
+                discardPersistentState: true,
+                dropWarmEntry: true,
+                recordCloseError: true,
+                cancelTurnReason: null,
+                skipRemoteClose: false,
+              });
+              sessionRepairAudit = {
+                attempted: true,
+                discardedSessionId: repairDiscardId,
+                recoveredWithFreshSession: true,
+              };
+              await ctx
+                .onLog(
+                  "stdout",
+                  `[pilibala] ACPX resume session "${repairDiscardId}" is unavailable; discarded the dead session and retrying with a fresh one.\n`,
+                )
+                .catch(() => {});
+              let repairEnsureSessionMs: number | undefined;
+              const guard = handshakeGuardHelpers;
+              if (!guard) {
+                throw new Error("ACPX handshake guard helpers were not published for the configure resume repair.");
+              }
+              const repairedHandle = await measureStartupStep(ctx, now, "acp.handshake", async () => {
+                const ensureSessionStart = now();
+                const established = await guardEnsureSession({
+                  call: () =>
+                    runtime.ensureSession({
+                      sessionKey: prepared.sessionKey,
+                      agent: prepared.acpxAgent,
+                      mode: prepared.mode,
+                      cwd: prepared.cwd,
+                      sessionOptions: { env: prepared.env },
+                    }),
+                  fence: handshakeFence,
+                  isTransportLost: guard.isTransportLost,
+                  onLateHandleAfterSeal: guard.onLateHandleAfterSeal,
+                  onLateRejection: guard.onLateRejection,
+                });
+                repairEnsureSessionMs = now() - ensureSessionStart;
+                return established;
+              }, {
+                ...prepared.stepMetrics,
+                // The repair reuses the runtime from the first attempt, so it
+                // reports only its own ensure-session sub-time on the span.
+                spanWallTimes: () => ({ ensureSession: repairEnsureSessionMs }),
+              });
+              if (!repairedHandle) {
+                throw new Error("ACPX did not return a runtime session handle during the configure resume repair.");
+              }
+              sessionHandle = repairedHandle;
+              await applySessionConfigOptions({
+                runtime,
+                handle: sessionHandle,
+                prepared,
+                onLog: ctx.onLog,
+              });
+              await emitPhase("configure_session", configureSessionStart, "ok");
+              return true;
+            } catch (repairError) {
+              await ctx
+                .onLog(
+                  "stderr",
+                  `[pilibala] configure resume repair failed; settling as the typed configure failure: ${
+                    repairError instanceof Error ? repairError.message : String(repairError)
+                  }\n`,
+                )
+                .catch(() => {});
+              return false;
+            }
+          })();
+        }
+        if (!configureRepaired) {
         if (sessionResumeFailure) clearSession = true;
         // Record a direct close that drops the matching warm entry for the
         // settlement `endSession` step. The settlement stops the bridges, discards
@@ -5035,6 +5165,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           summary: message,
         };
         return settleFor("session_configuration", err);
+        }
       }
       // Startup succeeded: seal the ledger (promotes the startup_rollback entries
       // that survived to `per_run`) and hand the ready resources to the turn. The
