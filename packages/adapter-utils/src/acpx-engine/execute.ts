@@ -3381,6 +3381,7 @@ function isAcpSessionResumeFailureMessage(message: unknown): boolean {
 }
 
 export function isAcpSessionResumeFailureError(error: unknown): boolean {
+  if (error instanceof Error) return isAcpSessionResumeFailureMessage(error.message);
   if (typeof error !== "object" || error === null) return false;
   const candidate = error as { message?: unknown; detailCode?: unknown };
   return candidate.detailCode === "SESSION_RESUME_REQUIRED"
