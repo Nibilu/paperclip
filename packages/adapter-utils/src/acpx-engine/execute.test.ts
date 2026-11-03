@@ -7516,6 +7516,112 @@ describe("ACPX engine run lifecycle corrections (F3: one teardown error policy)"
     expect(result.errorCode).toBe("acpx_session_resume_failed");
   });
 
+  // Path A (AMB-156) — first-error elimination: with the acpx cold-reuse
+  // eager-load patch, a dead backend session surfaces at the HANDSHAKE
+  // (ensureSession) instead of mid-turn. The handshake catch must repair
+  // in-run: persist the discard marker (the gate) BEFORE the fresh retry —
+  // without it shouldReuseExistingRecord reuses the dead record and the
+  // retry re-resumes the same dead id — and the run must SUCCEED on the
+  // fresh session, carrying a sessionRepair audit marker.
+  it("repairs in-run when the resume failure surfaces at the handshake", async () => {
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const store = createRuntimeStore({ stateDir });
+    const closeSpy = vi.fn(async () => {});
+    const logs: string[] = [];
+    let ensureCalls: Array<{ resumeSessionId?: string }> = [];
+    const execute = createAcpxEngineExecutor({
+      createRuntime: () =>
+        ({
+          ensureSession: async (input: { resumeSessionId?: string }) => {
+            ensureCalls.push({ resumeSessionId: input.resumeSessionId });
+            if (input.resumeSessionId) {
+              // Mirror the live acpx cold-reuse refusal: canonical
+              // SessionResumeRequiredError shape (name + message). ANY
+              // resumed id is dead in this fixture — only a fresh
+              // bootstrap (no resume id) succeeds.
+              const resumeError = new Error(
+                `Persistent ACP session ${input.resumeSessionId} could not be resumed: Internal error`,
+              );
+              resumeError.name = "SessionResumeRequiredError";
+              throw resumeError;
+            }
+            return { ...okHandle, backendSessionId: "backend-fresh-session" };
+          },
+          startTurn: () => ({
+            events: (async function* () {
+              yield { type: "done", stopReason: "end_turn" };
+            })(),
+            result: Promise.resolve({ status: "completed", stopReason: "end_turn" }),
+            cancel: async () => {},
+          }),
+          close: closeSpy,
+        }) as never,
+    });
+
+    const bootstrap = await execute({
+      runId: "handshake-repair-bootstrap",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: {},
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir },
+      context: {},
+      onLog: async () => {},
+      onMeta: async () => {},
+    } as never);
+    expect(bootstrap.exitCode).toBe(0);
+    const sessionKey = String(bootstrap.sessionParams?.sessionKey ?? "");
+    const deadSessionId = String(bootstrap.sessionParams?.acpSessionId ?? "");
+
+    // Seed the dead persisted record under the session key the repair gate
+    // will target (handle-less catch falls back to prepared.sessionKey).
+    await store.save({
+      acpxRecordId: sessionKey,
+      acpSessionId: deadSessionId,
+      agentSessionId: "agent-session",
+      agentCommand: "node ./fake-acp.js",
+      cwd: "/tmp/handshake-repair-cwd",
+      createdAt: "2026-11-03T00:00:00.000Z",
+      lastUsedAt: "2026-11-03T00:00:00.000Z",
+      lastSeq: 3,
+      lastRequestId: "req-1",
+      messages: [],
+      updated_at: "2026-11-03T00:00:00.000Z",
+      closed: false,
+      acpx: {},
+    } as never);
+
+    ensureCalls = [];
+    const result = await execute({
+      runId: "handshake-repair-run",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: { sessionParams: bootstrap.sessionParams },
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir },
+      context: {},
+      onLog: async (_stream: string, line: string) => {
+        logs.push(line);
+      },
+      onMeta: async () => {},
+    } as never);
+
+    // First-error elimination: the run SUCCEEDS on the fresh session.
+    expect(result.exitCode).toBe(0);
+    // Two ensure calls: the dead resume first, then the fresh bootstrap
+    // (no resume id) — never a third.
+    expect(ensureCalls).toHaveLength(2);
+    expect(ensureCalls[0]).toMatchObject({ resumeSessionId: deadSessionId });
+    expect(ensureCalls[1]!.resumeSessionId).toBeUndefined();
+    // The gate persisted the reset marker BEFORE the retry, so the dead
+    // record cannot be reused by this or any later run.
+    const healed = await store.load(sessionKey);
+    expect(healed?.acpx?.reset_on_next_ensure).toBe(true);
+    expect(logs.join("\n")).toContain(`ACPX resume session "${deadSessionId}" is unavailable`);
+    // The repair is auditable on the succeeded result.
+    expect((result.resultJson as Record<string, unknown>).sessionRepair).toMatchObject({
+      discardedSessionId: deadSessionId,
+      recoveredWithFreshSession: true,
+    });
+  });
+
   it("reports acpx_session_discard_unconfirmed when the reset cannot be persisted", async () => {
     const root = await makeTempRoot();
     const stateDir = path.join(root, "state");
