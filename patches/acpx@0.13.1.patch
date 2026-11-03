@@ -995,7 +995,7 @@ index e8102acb03c4c38830ad5ec22f356125eb0423b7..377c5d83830640cde0119d77bafbb469
      text: string;
      attachments?: AcpRuntimeTurnAttachment[];
 diff --git a/dist/runtime.js b/dist/runtime.js
-index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608d3fe3edb 100644
+index a1f4a70a003792c6eacf68b6b038f37bfec1db53..aa74fc80cd511323f9b281290c2edc1ebe297716 100644
 --- a/dist/runtime.js
 +++ b/dist/runtime.js
 @@ -153,7 +153,7 @@ function resolveTextChunk(params) {
@@ -1060,7 +1060,30 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  function normalizeUsageCost(value) {
  	if (!isRecord(value)) return;
  	const amount = asOptionalFiniteNumber(value.amount);
-@@ -812,7 +840,22 @@ var AcpRuntimeManager = class {
+@@ -775,6 +803,22 @@ function applyDesiredConfigOptionToRecord(record, configId, value) {
+ }
+ async function createOrLoadRuntimeSession(client, resumeSessionId, cwd) {
+ 	if (resumeSessionId) {
++		// PATCH (pilibala first-error elimination): a backend that advertises
++		// BOTH session/resume and session/load may implement resume lazily
++		// (hermes-acp accepts the resume and defers the storage restore to the
++		// first session use), which pushes dead-session refusals past the
++		// ensure phase into configure/turn where no in-run repair exists.
++		// Prefer session/load — the forcing operation — so the restore happens
++		// here and a refusal throws at ensure, where the engine's
++		// fresh-session retry lives. Resume-only backends keep resume.
++		if (typeof client.supportsLoadSession === "function" && client.supportsLoadSession()) {
++			const loaded = await client.loadSession(resumeSessionId, cwd);
++			return {
++				sessionId: resumeSessionId,
++				agentSessionId: loaded.agentSessionId,
++				sessionResult: loaded
++			};
++		}
+ 		if (client.supportsResumeSession()) {
+ 			const resumed = await client.resumeSession(resumeSessionId, cwd);
+ 			return {
+@@ -812,7 +856,22 @@ var AcpRuntimeManager = class {
  		this.deps = deps;
  	}
  	createClient(options) {
@@ -1084,7 +1107,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  	}
  	createSessionOwner(input) {
  		const owner = {
-@@ -821,12 +864,16 @@ var AcpRuntimeManager = class {
+@@ -821,12 +880,16 @@ var AcpRuntimeManager = class {
  			pendingSessionUpdates: []
  		};
  		input.client.setEventHandlers({
@@ -1101,7 +1124,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  		const active = owner.activeTurn;
  		if (active) {
  			const { task, turn } = active;
-@@ -863,6 +910,9 @@ var AcpRuntimeManager = class {
+@@ -863,6 +926,9 @@ var AcpRuntimeManager = class {
  		projection.checkpoint.request();
  	}
  	routeOwnedClientOperation(owner, operation) {
@@ -1111,7 +1134,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  		const active = owner.activeTurn;
  		if (!active) return;
  		const { task, turn } = active;
-@@ -1008,6 +1058,8 @@ var AcpRuntimeManager = class {
+@@ -1008,6 +1074,8 @@ var AcpRuntimeManager = class {
  		record.closedAt = void 0;
  		record.protocolVersion = owner.client.initializeResult?.protocolVersion;
  		record.agentCapabilities = owner.client.initializeResult?.agentCapabilities;
@@ -1120,7 +1143,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  		applyLifecycleSnapshotToRecord(record, owner.client.getAgentLifecycleSnapshot());
  	}
  	async finishBufferedOwnerControl(owner, record) {
-@@ -1053,10 +1105,61 @@ var AcpRuntimeManager = class {
+@@ -1053,10 +1121,61 @@ var AcpRuntimeManager = class {
  			agentArgv
  		};
  		const existing = await this.loadExistingRuntimeSession(input);
@@ -1183,7 +1206,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  	async loadExistingRuntimeSession(input) {
  		const existingRecordId = input.mode === "persistent" ? input.sessionKey : this.pendingOneShotRecordIds.get(input.sessionKey);
  		if (!existingRecordId) return;
-@@ -1086,6 +1189,11 @@ var AcpRuntimeManager = class {
+@@ -1086,6 +1205,11 @@ var AcpRuntimeManager = class {
  		record.closed = false;
  		record.closedAt = void 0;
  		this.closingActiveRecords.delete(record.acpxRecordId);
@@ -1195,7 +1218,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  		await this.options.sessionStore.save(record);
  		return record;
  	}
-@@ -1149,6 +1257,8 @@ var AcpRuntimeManager = class {
+@@ -1149,6 +1273,8 @@ var AcpRuntimeManager = class {
  		this.closingActiveRecords.delete(record.acpxRecordId);
  		record.protocolVersion = client.initializeResult?.protocolVersion;
  		record.agentCapabilities = client.initializeResult?.agentCapabilities;
@@ -1204,7 +1227,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  		applyConfigOptionsToRecord(record, session.sessionResult);
  		const modelApplication = await applyRequestedModelIfAdvertised({
  			client,
-@@ -1301,9 +1411,11 @@ var AcpRuntimeManager = class {
+@@ -1301,9 +1427,11 @@ var AcpRuntimeManager = class {
  				client: turn.client,
  				sessionId,
  				prompt: task.promptInput,
@@ -1216,7 +1239,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  				onPromptRequestStarted: () => task.promptStarted.resolve(),
  				onElicitation: task.input.onElicitation
  			});
-@@ -1469,6 +1581,10 @@ var AcpRuntimeManager = class {
+@@ -1469,6 +1597,10 @@ var AcpRuntimeManager = class {
  			setSessionConfigOption: async (configId, value) => {
  				return (await task.state.activeController.setResolvedSessionConfigOption(configId, value)).response;
  			},
@@ -1227,7 +1250,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  			setResolvedSessionConfigOption: async (configId, value) => await this.setRuntimeResolvedSessionConfigOption(task, turn, configId, value)
  		};
  	}
-@@ -1575,6 +1691,8 @@ var AcpRuntimeManager = class {
+@@ -1575,6 +1707,8 @@ var AcpRuntimeManager = class {
  		reconcileAgentSessionId(turn.record, turn.record.agentSessionId);
  		turn.record.protocolVersion = turn.client.initializeResult?.protocolVersion;
  		turn.record.agentCapabilities = turn.client.initializeResult?.agentCapabilities;
@@ -1236,7 +1259,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  		turn.record.acpx = turn.acpxState;
  		applyConversation(turn.record, turn.conversation);
  		applyLifecycleSnapshotToRecord(turn.record, turn.client.getAgentLifecycleSnapshot());
-@@ -1707,6 +1825,17 @@ var AcpRuntimeManager = class {
+@@ -1707,6 +1841,17 @@ var AcpRuntimeManager = class {
  		});
  		await this.options.sessionStore.save(result.record);
  	}
@@ -1254,7 +1277,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  	async cancel(handle) {
  		await this.activeControllers.get(handle.acpxRecordId ?? handle.sessionKey)?.requestCancelActivePrompt();
  	}
-@@ -2055,6 +2184,7 @@ var AcpxRuntime = class {
+@@ -2055,6 +2200,7 @@ var AcpxRuntime = class {
  		const turnPromise = this.getManager().then((manager) => manager.startTurn({
  			handle,
  			text: input.text,
@@ -1262,7 +1285,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  			attachments: input.attachments,
  			mode: input.mode,
  			sessionMode: state.mode,
-@@ -2087,6 +2217,7 @@ var AcpxRuntime = class {
+@@ -2087,6 +2233,7 @@ var AcpxRuntime = class {
  		yield* (await this.getManager()).runTurn({
  			handle,
  			text: input.text,
@@ -1270,7 +1293,7 @@ index a1f4a70a003792c6eacf68b6b038f37bfec1db53..a406ae811b79117c1cddcd84079f0608
  			attachments: input.attachments,
  			mode: input.mode,
  			sessionMode: state.mode,
-@@ -2119,6 +2250,14 @@ var AcpxRuntime = class {
+@@ -2119,6 +2266,14 @@ var AcpxRuntime = class {
  		const { handle, state } = this.resolveManagerHandle(input.handle);
  		await (await this.getManager()).setConfigOption(handle, input.key, input.value, state.mode);
  	}
