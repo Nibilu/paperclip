@@ -7438,6 +7438,84 @@ describe("ACPX engine run lifecycle corrections (F3: one teardown error policy)"
     expect(result.exitCode).toBe(1);
   });
 
+  // Regression for the AMB-90 configure-phase resume loop: a resume failure
+  // thrown while acpx CONFIGURES the session (set_session_model seam) must
+  // reset the continuity state exactly like the turn-thrown path — clear the
+  // session params and discard the dead persisted record — or every bounded
+  // retry deterministically re-resumes the same dead backend session.
+  it("clears and discards the dead session when the resume failure surfaces at configure_session", async () => {
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const recordId = "local-config-resume";
+    const store = createRuntimeStore({ stateDir });
+    await store.save({
+      acpxRecordId: recordId,
+      acpSessionId: "backend-dead-config-session",
+      agentSessionId: "agent-session",
+      agentCommand: "node ./fake-acp.js",
+      cwd: "/tmp/configure-resume-cwd",
+      createdAt: "2026-11-03T00:00:00.000Z",
+      lastUsedAt: "2026-11-03T00:00:00.000Z",
+      lastSeq: 3,
+      lastRequestId: "req-1",
+      messages: [],
+      updated_at: "2026-11-03T00:00:00.000Z",
+      closed: false,
+      acpx: {},
+    } as never);
+    expect(await store.load(recordId)).toBeDefined();
+
+    const closeSpy = vi.fn(async () => {
+      throw new Error("Agent does not support session/close for local-config-resume.");
+    });
+    const logs: string[] = [];
+    const configureHandle = { ...okHandle, acpxRecordId: recordId };
+    const execute = createAcpxEngineExecutor({
+      createRuntime: () =>
+        ({
+          ensureSession: async () => configureHandle,
+          // applySessionConfigOptions pre-checks setConfigOption before the
+          // per-option loop; without it the generic capability error fires
+          // before setSessionModel can throw the resume failure.
+          setConfigOption: async () => {},
+          // The model option is the configure-phase seam for agent "custom":
+          // setSessionModel throws the resume failure before any turn starts.
+          // Shape mirrors the live acpx error (name survives; AMB-90 runs
+          // recorded errorCode acpx_session_resume_failed for exactly this).
+          setSessionModel: async () => {
+            const resumeError = new Error("Persistent ACP session local-config-resume could not be resumed: Internal error");
+            resumeError.name = "SessionResumeRequiredError";
+            throw resumeError;
+          },
+          startTurn: () => {
+            throw new Error("turn must not start when configure_session fails");
+          },
+          close: closeSpy,
+        }) as never,
+    });
+
+    const result = await execute({
+      runId: "configure-resume-discard",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: {},
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir, model: "test-model" },
+      context: {},
+      onLog: async (_stream: string, line: string) => {
+        logs.push(line);
+      },
+      onMeta: async () => {},
+    } as never);
+
+    // The continuity state resets: the run result tells the control plane to
+    // forget the session params, and the settlement discards the dead record
+    // (close rejected, so the gate remediation persists the reset marker).
+    expect(result.clearSession).toBe(true);
+    expect((closeSpy.mock.calls[0]! as unknown[])[0]).toMatchObject({ discardPersistentState: true });
+    const healed = await store.load(recordId);
+    expect(healed?.acpx?.reset_on_next_ensure).toBe(true);
+    expect(result.errorCode).toBe("acpx_session_resume_failed");
+  });
+
   it("reports acpx_session_discard_unconfirmed when the reset cannot be persisted", async () => {
     const root = await makeTempRoot();
     const stateDir = path.join(root, "state");

@@ -3382,8 +3382,9 @@ function isAcpSessionResumeFailureMessage(message: unknown): boolean {
 
 export function isAcpSessionResumeFailureError(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
-  const candidate = error as { message?: unknown; detailCode?: unknown };
+  const candidate = error as { message?: unknown; detailCode?: unknown; name?: unknown };
   return candidate.detailCode === "SESSION_RESUME_REQUIRED"
+    || candidate.name === "SessionResumeRequiredError"
     || isAcpSessionResumeFailureMessage(candidate.message);
 }
 
@@ -4936,6 +4937,17 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         });
         await emitPhase("configure_session", configureSessionStart, "ok");
       } catch (err) {
+        // A resume failure can also surface at configure_session (observed on
+        // the hermes engine=acp lane: the backend's load_session raises while
+        // acpx configures the resumed session). The failure is classified as
+        // the transient `acpx_session_resume_failed`, so the continuity state
+        // must reset exactly like the turn-thrown path: forget the session
+        // params (the bounded retry bootstraps fresh) and discard the dead
+        // persisted record. Leaving the record intact makes every bounded
+        // retry deterministically re-resume the same dead backend session
+        // (AMB-90: three consecutive failures on one session id).
+        const sessionResumeFailure = isAcpSessionResumeFailureError(err);
+        if (sessionResumeFailure) clearSession = true;
         // Record a direct close that drops the matching warm entry for the
         // settlement `endSession` step. The settlement stops the bridges, discards
         // the staged runtime, releases the staging lease, and flushes the child
@@ -4944,7 +4956,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           mode: "direct",
           handle: sessionHandle,
           reason: "pilibala config cleanup",
-          discardPersistentState: false,
+          discardPersistentState: sessionResumeFailure,
           dropWarmEntry: true,
           recordCloseError: true,
           cancelTurnReason: null,
