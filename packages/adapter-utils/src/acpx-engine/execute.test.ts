@@ -7443,7 +7443,128 @@ describe("ACPX engine run lifecycle corrections (F3: one teardown error policy)"
   // reset the continuity state exactly like the turn-thrown path — clear the
   // session params and discard the dead persisted record — or every bounded
   // retry deterministically re-resumes the same dead backend session.
-  it("clears and discards the dead session when the resume failure surfaces at configure_session", async () => {
+  it("repairs in-run when the resume failure surfaces at configure_session (warm-owner gap)", async () => {
+    // Live evidence (issue 319b2463, run 2f1bb613): a retained warm owner
+    // passes the handshake WITHOUT backend verification; its wrapper process
+    // may have died and evicted the session since, so the resume refusal
+    // first surfaces at set_config_option — phase configure_session, after
+    // the handshake repair window. configure_session is pre-turn (no agent
+    // work has executed), so the engine must repair in-run exactly like the
+    // handshake path: persist the discard gate, fresh-ensure, re-run
+    // configure, and continue to the turn. Turn-phase failures stay typed.
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const store = createRuntimeStore({ stateDir });
+    const closeSpy = vi.fn(async () => {});
+    const logs: string[] = [];
+    let ensureCalls: Array<{ resumeSessionId?: string }> = [];
+    let turnStarted = false;
+    // backend-session-v1 is healthy during the bootstrap run and dies before
+    // run 2 (offscreen); the repair's fresh bootstrap creates v2.
+    let sessionDied = false;
+    const execute = createAcpxEngineExecutor({
+      createRuntime: () =>
+        ({
+          ensureSession: async (input: { resumeSessionId?: string }) => {
+            ensureCalls.push({ resumeSessionId: input.resumeSessionId });
+            if (input.resumeSessionId) {
+              // Warm-owner gap: the resumed (warm) ensure succeeds WITHOUT any
+              // backend verification and serves the SAME backend session id the
+              // params carry. The dead session is only discovered when
+              // configure touches it. No acpxRecordId — the discard gate falls
+              // through to prepared.sessionKey.
+              return { ...okHandle, backendSessionId: input.resumeSessionId };
+            }
+            // The bootstrap created backend-session-v1 (dies offscreen); the
+            // repair's fresh bootstrap creates backend-session-v2.
+            return { ...okHandle, backendSessionId: sessionDied ? "backend-session-v2" : "backend-session-v1" };
+          },
+          setConfigOption: async () => {},
+          setSessionModel: async (input: { handle?: { backendSessionId?: string } }) => {
+            if (sessionDied && input.handle?.backendSessionId !== "backend-session-v2") {
+              const resumeError = new Error(
+                `Persistent ACP session ${input.handle?.backendSessionId ?? "unknown"} could not be resumed: Internal error`,
+              );
+              resumeError.name = "SessionResumeRequiredError";
+              throw resumeError;
+            }
+          },
+          startTurn: () => {
+            turnStarted = true;
+            return {
+              events: (async function* () {
+                yield { type: "done", stopReason: "end_turn" };
+              })(),
+              result: Promise.resolve({ status: "completed", stopReason: "end_turn" }),
+              cancel: async () => {},
+            };
+          },
+          close: closeSpy,
+        }) as never,
+    });
+
+    const bootstrap = await execute({
+      runId: "configure-repair-bootstrap",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: {},
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir, model: "test-model" },
+      context: {},
+      onLog: async () => {},
+      onMeta: async () => {},
+    } as never);
+    expect(bootstrap.exitCode).toBe(0);
+    const sessionKey = String(bootstrap.sessionParams?.sessionKey ?? "");
+    const deadSessionId = String(bootstrap.sessionParams?.acpSessionId ?? "");
+    expect(deadSessionId).toBe("backend-session-v1");
+    sessionDied = true;
+
+    await store.save({
+      acpxRecordId: sessionKey,
+      acpSessionId: deadSessionId,
+      agentSessionId: "agent-session",
+      agentCommand: "node ./fake-acp.js",
+      cwd: "/tmp/configure-repair-cwd",
+      createdAt: "2026-11-03T00:00:00.000Z",
+      lastUsedAt: "2026-11-03T00:00:00.000Z",
+      lastSeq: 3,
+      lastRequestId: "req-1",
+      messages: [],
+      updated_at: "2026-11-03T00:00:00.000Z",
+      closed: false,
+      acpx: {},
+    } as never);
+
+    ensureCalls = [];
+    const result = await execute({
+      runId: "configure-repair-run",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: { sessionParams: bootstrap.sessionParams },
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir, model: "test-model" },
+      context: {},
+      onLog: async (_stream: string, line: string) => {
+        logs.push(line);
+      },
+      onMeta: async () => {},
+    } as never);
+
+    // First-error elimination at configure: the run SUCCEEDS in-run.
+    expect(result.exitCode).toBe(0);
+    expect(turnStarted).toBe(true);
+    expect(ensureCalls).toHaveLength(2);
+    expect(ensureCalls[0]).toMatchObject({ resumeSessionId: deadSessionId });
+    expect(ensureCalls[1]!.resumeSessionId).toBeUndefined();
+    // The gate persisted the reset marker BEFORE the fresh retry.
+    const healed = await store.load(sessionKey);
+    expect(healed?.acpx?.reset_on_next_ensure).toBe(true);
+    expect(logs.join("\n")).toContain(`ACPX resume session "${deadSessionId}" is unavailable`);
+    expect((result.resultJson as Record<string, unknown>).sessionRepair).toMatchObject({
+      discardedSessionId: deadSessionId,
+      recoveredWithFreshSession: true,
+    });
+    expect(result.clearSession).toBe(true);
+  });
+
+  it("clears and discards the dead session when the configure repair also fails", async () => {
     const root = await makeTempRoot();
     const stateDir = path.join(root, "state");
     const recordId = "local-config-resume";
@@ -7463,17 +7584,34 @@ describe("ACPX engine run lifecycle corrections (F3: one teardown error policy)"
       closed: false,
       acpx: {},
     } as never);
-    expect(await store.load(recordId)).toBeDefined();
-
     const closeSpy = vi.fn(async () => {
       throw new Error("Agent does not support session/close for local-config-resume.");
     });
     const logs: string[] = [];
-    const configureHandle = { ...okHandle, acpxRecordId: recordId };
+    let ensureCalls: Array<{ resumeSessionId?: string }> = [];
+    // The session is healthy during the bootstrap run and dies before run 2
+    // (offscreen). After `sessionDied`, EVERY setSessionModel call fails —
+    // on the warm handle AND on the repair's fresh handle — so the repair
+    // cannot establish a working session and the run settles typed.
+    let sessionDied = false;
     const execute = createAcpxEngineExecutor({
       createRuntime: () =>
         ({
-          ensureSession: async () => configureHandle,
+          ensureSession: async (input: { resumeSessionId?: string }) => {
+            ensureCalls.push({ resumeSessionId: input.resumeSessionId });
+            // Warm-owner gap shape: the resumed (warm) ensure succeeds without
+            // backend verification; the repair's fresh ensure returns a new
+            // handle. setSessionModel then fails on BOTH — the repair cannot
+            // establish a working session, so the run settles typed. No
+            // acpxRecordId — the discard gate falls through to the sessionKey.
+            if (input.resumeSessionId) {
+              return { ...okHandle, backendSessionId: "backend-dead-config-session" };
+            }
+            return {
+              ...okHandle,
+              backendSessionId: sessionDied ? "backend-fresh-config-retry" : "backend-dead-config-session",
+            };
+          },
           // applySessionConfigOptions pre-checks setConfigOption before the
           // per-option loop; without it the generic capability error fires
           // before setSessionModel can throw the resume failure.
@@ -7483,21 +7621,63 @@ describe("ACPX engine run lifecycle corrections (F3: one teardown error policy)"
           // Shape mirrors the live acpx error (name survives; AMB-90 runs
           // recorded errorCode acpx_session_resume_failed for exactly this).
           setSessionModel: async () => {
+            if (!sessionDied) return;
             const resumeError = new Error("Persistent ACP session local-config-resume could not be resumed: Internal error");
             resumeError.name = "SessionResumeRequiredError";
             throw resumeError;
           },
           startTurn: () => {
-            throw new Error("turn must not start when configure_session fails");
+            turnStarted = true;
+            return {
+              events: (async function* () {
+                yield { type: "done", stopReason: "end_turn" };
+              })(),
+              result: Promise.resolve({ status: "completed", stopReason: "end_turn" }),
+              cancel: async () => {},
+            };
           },
           close: closeSpy,
         }) as never,
     });
+    let turnStarted = false;
 
+    const bootstrap = await execute({
+      runId: "configure-repair-fails-bootstrap",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: {},
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir, model: "test-model" },
+      context: {},
+      onLog: async () => {},
+      onMeta: async () => {},
+    } as never);
+    expect(bootstrap.exitCode).toBe(0);
+    const sessionKey = String(bootstrap.sessionParams?.sessionKey ?? "");
+    const deadSessionId = String(bootstrap.sessionParams?.acpSessionId ?? "");
+    expect(deadSessionId).toBe("backend-dead-config-session");
+    sessionDied = true;
+
+    await store.save({
+      acpxRecordId: sessionKey,
+      acpSessionId: deadSessionId,
+      agentSessionId: "agent-session",
+      agentCommand: "node ./fake-acp.js",
+      cwd: "/tmp/configure-resume-cwd",
+      createdAt: "2026-11-03T00:00:00.000Z",
+      lastUsedAt: "2026-11-03T00:00:00.000Z",
+      lastSeq: 3,
+      lastRequestId: "req-1",
+      messages: [],
+      updated_at: "2026-11-03T00:00:00.000Z",
+      closed: false,
+      acpx: {},
+    } as never);
+
+    ensureCalls = [];
+    turnStarted = false;
     const result = await execute({
       runId: "configure-resume-discard",
       agent: { id: "agent-1", companyId: "company-1" },
-      runtime: {},
+      runtime: { sessionParams: bootstrap.sessionParams },
       config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir, model: "test-model" },
       context: {},
       onLog: async (_stream: string, line: string) => {
@@ -7509,9 +7689,24 @@ describe("ACPX engine run lifecycle corrections (F3: one teardown error policy)"
     // The continuity state resets: the run result tells the control plane to
     // forget the session params, and the settlement discards the dead record
     // (close rejected, so the gate remediation persists the reset marker).
+    // The repair was ATTEMPTED in-run first (two ensure calls: the warm
+    // resume, then the fresh retry); only after the fresh configure also
+    // failed does the run settle as the typed bounded-retry failure.
+    expect(ensureCalls).toHaveLength(2);
+    expect(ensureCalls[0]).toMatchObject({ resumeSessionId: deadSessionId });
+    expect(ensureCalls[1]!.resumeSessionId).toBeUndefined();
+    // The typed settle happens only because even the repair's fresh session
+    // could not be configured — and the turn never started.
+    expect(turnStarted).toBe(false);
     expect(result.clearSession).toBe(true);
-    expect((closeSpy.mock.calls[0]! as unknown[])[0]).toMatchObject({ discardPersistentState: true });
-    const healed = await store.load(recordId);
+    // The repair's close (and the settlement's) discard the dead persisted
+    // record; the bootstrap's own settlement close does not.
+    expect(
+      closeSpy.mock.calls.some(
+        (call) => ((call as unknown[])[0] as { discardPersistentState?: boolean } | undefined)?.discardPersistentState === true,
+      ),
+    ).toBe(true);
+    const healed = await store.load(sessionKey);
     expect(healed?.acpx?.reset_on_next_ensure).toBe(true);
     expect(result.errorCode).toBe("acpx_session_resume_failed");
   });
