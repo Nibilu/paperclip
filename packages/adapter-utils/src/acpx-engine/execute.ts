@@ -3376,12 +3376,21 @@ export function summarizeAcpStopActivity(
 // also match that canonical message. Detecting the failure lets the caller
 // forget the dead session so the next bounded turn bootstraps a fresh one
 // instead of deterministically re-failing every retry on the same checkpoint.
+function isAcpSessionResumeFailureMessage(message: unknown): boolean {
+  return typeof message === "string" && /persistent acp session .+ could not be resumed/i.test(message);
+}
+
+export function isAcpSessionResumeFailureError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const candidate = error as { message?: unknown; detailCode?: unknown };
+  return candidate.detailCode === "SESSION_RESUME_REQUIRED"
+    || isAcpSessionResumeFailureMessage(candidate.message);
+}
+
 export function isAcpSessionResumeFailure(terminal: AcpRuntimeTurnResult): boolean {
   if (terminal.status !== "failed") return false;
   if (terminal.error.detailCode === "SESSION_RESUME_REQUIRED") return true;
-  return /persistent acp session .+ could not be resumed/i.test(
-    terminal.error.message,
-  );
+  return isAcpSessionResumeFailureMessage(terminal.error.message);
 }
 
 function resultErrorMessage(result: AcpRuntimeTurnResult): string | null {
@@ -5646,11 +5655,13 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         // running turn first (cancel-before-close), then close the runtime and drop
         // a matching warm entry. The settlement discards the staged runtime, stops
         // the bridges, releases the staging lease, and flushes the child stderr.
+        const sessionResumeFailure = isAcpSessionResumeFailureError(err);
+        if (sessionResumeFailure) clearSession = true;
         runtimeSettlement = {
           mode: "direct",
           handle: sessionHandle,
           reason: timedOut ? "pilibala timeout cleanup" : "pilibala error cleanup",
-          discardPersistentState: timedOut,
+          discardPersistentState: timedOut || sessionResumeFailure,
           dropWarmEntry: true,
           recordCloseError: true,
           cancelTurnReason: preEmitMessage,
