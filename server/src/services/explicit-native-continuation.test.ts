@@ -240,6 +240,43 @@ const support = await getEmbeddedPostgresTestSupport();
     await db.update(agentWakeupRequests).set({ status: "cancelled" }).where(eq(agentWakeupRequests.id, queueId));
     expect(await attempt()).toBeNull();
   });
+  it("admits a follow-up message after a disposition-repair-cancelled unstarted run (error-code tag drift)", async () => {
+    // Live evidence (AMB-156 acceptance, issue 551e0f92 run 058de19c): the
+    // fork's disposition repair cancels an admitted-but-unstarted run with
+    // errorCode legacy_disposition_repair_suppressed, while the gate's
+    // unusedAdmission exemption only recognizes execution_reconciliation_required
+    // — so every later message parked in deferred_issue_execution forever.
+    const f = await seed();
+    await db.update(heartbeatRuns).set({
+      status: "cancelled", startedAt: null,
+      errorCode: "legacy_disposition_repair_suppressed",
+      processPid: null, processGroupId: null, nativeSessionId: null,
+    }).where(eq(heartbeatRuns.id, f.sourceRunId));
+    const attempt = () => db.transaction(async tx =>
+      admitExplicitNativeContinuation({ ...f, db: tx as unknown as typeof db, dryRun: true }));
+    expect(await attempt()).toMatchObject({ previousRunId: f.sourceRunId, commentId: f.commentId });
+  });
+  it("admits a follow-up message after a cancelled legacy run without a native stop record", async () => {
+    // Live evidence (same issue): a legacy-mode run that started and was then
+    // cancelled carries no native process identity and can never produce a
+    // native stop record — demanding one blocks all future messages on the
+    // issue. The control-plane cancellation is the terminal proof for legacy.
+    const f = await seed();
+    // Mirror the live shape: the blocked run sat on a conversation adapter
+    // (hermes_local). Non-conversation legacy runs keep their own
+    // reconciliation contract and are out of scope for this exemption.
+    await db.update(agents).set({ adapterType: "claude_local" }).where(eq(agents.id, f.agentId));
+    await db.delete(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, f.sourceRunId));
+    await db.update(heartbeatRuns).set({
+      status: "cancelled", runtimeMode: "legacy", nativeIssueId: null,
+      nativeSessionId: null, processPid: null, processGroupId: null,
+    }).where(eq(heartbeatRuns.id, f.sourceRunId));
+    await db.update(issueRecoveryActions).set({ cause: "legacy_execution_requires_reconciliation" })
+      .where(eq(issueRecoveryActions.sourceIssueId, f.issueId));
+    const attempt = () => db.transaction(async tx =>
+      admitExplicitNativeContinuation({ ...f, db: tx as unknown as typeof db, dryRun: true }));
+    expect(await attempt()).toMatchObject({ previousRunId: f.sourceRunId, commentId: f.commentId });
+  });
   it("dispatches another user's queued legacy message using the consumed board interrupt receipt", async () => {
     const f = await seed();
     await db.update(agents).set({ adapterType: "claude_local" }).where(eq(agents.id, f.agentId));
