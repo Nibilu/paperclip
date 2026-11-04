@@ -4738,7 +4738,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
                   ["forcing-load", runtimeSource.includes("forcing operation")],
                   ["suppress-replay", runtimeSource.includes("suppressReplayUpdates: true")],
                 ].filter(([, present]) => present).map(([name]) => name).join("+") || "none";
-                const acpxVersion = runtimeModuleUrl.match(/acpx@(\d+\.\d+\.\d+)/)?.[1] ?? "unknown";
+                const acpxVersion = runtimeModulePath.match(/acpx@(\d+\.\d+\.\d+)/)?.[1] ?? "unknown";
                 await ctx.onLog("stderr", `[pilibala] ACPX runtime: acpx@${acpxVersion} patches=${patchMarkers} resume=${resumeSessionId ? `${resumeSessionId.slice(0, 18)}…` : "none(fresh)"}\n`);
               } catch (identifyError) {
                 // identification is diagnostic only — but never silent: an
