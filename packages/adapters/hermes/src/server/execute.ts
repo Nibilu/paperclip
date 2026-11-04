@@ -236,9 +236,34 @@ const SESSION_ID_REGEX = /^session_id:\s*(\S+)/m;
 /** Regex for legacy session output format */
 const SESSION_ID_REGEX_LEGACY = /session[_ ](?:id|saved)[:\s]+([a-zA-Z0-9_-]+)/i;
 
+/**
+ * Modern classic-CLI display: the final answer sits between two ──── separator
+ * lines, the upper one followed by the "☤ Hermes" banner. Take the LAST such
+ * block (later blocks beat earlier ones, e.g. retried renders).
+ */
+const BANNER_ANSWER_REGEX = /─{8,}[ \t]*\r?\n[ \t]*☤[ \t]*Hermes[ \t]*\r?\n([\s\S]*?)\r?\n─{8,}/g;
+
+/** Modern resume hint printed after the answer: "hermes --resume <id>". */
+const RESUME_HINT_REGEX = /--resume[ \t]+([a-zA-Z0-9_.-]+)/;
+
+/** The composed-prompt echo the CLI prints under "Query:" before running. */
+const QUERY_ECHO_PREFIX = /^Query:[ \t]/;
+
 /** Regex to extract token usage from Hermes output. */
 const TOKEN_USAGE_REGEX =
   /tokens?[:\s]+(\d+)\s*(?:input|in)\b.*?(\d+)\s*(?:output|out)\b/i;
+
+/** Take the LAST ──── / ☤ Hermes / ──── block from the raw stdout. */
+function extractLastBannerAnswer(stdout: string): string | null {
+  const bannerRegex = new RegExp(BANNER_ANSWER_REGEX.source, "g");
+  let last: RegExpExecArray | null = null;
+  for (let match = bannerRegex.exec(stdout); match; match = bannerRegex.exec(stdout)) {
+    last = match;
+  }
+  if (!last) return null;
+  const answer = last[1].replace(/\r/g, "").trim();
+  return answer.length > 0 ? answer : null;
+}
 
 /** Regex to extract cost from Hermes output. */
 const COST_REGEX = /(?:cost|spent)[:\s]*\$?([\d.]+)/i;
@@ -284,16 +309,25 @@ function cleanResponse(raw: string): string {
 // Output parsing
 // ---------------------------------------------------------------------------
 
-function parseHermesOutput(stdout: string, stderr: string): ParsedOutput {
+export function parseHermesOutput(stdout: string, stderr: string): ParsedOutput {
   const combined = stdout + "\n" + stderr;
   const result: ParsedOutput = {};
+
+  // Modern classic-CLI display: the answer lives in the ──── / ☤ Hermes / ────
+  // banner block. This is authoritative when present — the prompt echo and
+  // tool-activity noise printed before the banner are never part of the reply
+  // (live evidence: the runner submitted the 24KB "Query:" echo as the agent's
+  // reply because the echo survives cleanResponse's noise filters).
+  const bannerAnswer = extractLastBannerAnswer(stdout);
 
   // In quiet mode, Hermes outputs:
   //   <response text>
   //
   //   session_id: <id>
   const sessionMatch = stdout.match(SESSION_ID_REGEX);
-  if (sessionMatch?.[1]) {
+  if (bannerAnswer) {
+    result.response = bannerAnswer;
+  } else if (sessionMatch?.[1]) {
     result.sessionId = sessionMatch?.[1] ?? null;
     // The response is everything before the session_id line
     const sessionLineIdx = stdout.lastIndexOf("\nsession_id:");
@@ -311,6 +345,36 @@ function parseHermesOutput(stdout: string, stderr: string): ParsedOutput {
     const cleaned = cleanResponse(stdout);
     if (cleaned.length > 0) {
       result.response = cleaned;
+    }
+  }
+
+  // Echo guard (fail safe): the CLI echoes the composed prompt under "Query:"
+  // before running; when the banner block is missing (unknown future display
+  // format) and the cleaned output is that echo, submitting it would post the
+  // runner's own prompt as the agent's reply. Return no response instead —
+  // the raw stdout stays in the run log for diagnosis.
+  if (
+    result.response &&
+    QUERY_ECHO_PREFIX.test(result.response) &&
+    result.response.includes("Pilibala runtime identity:")
+  ) {
+    result.response = undefined;
+  }
+
+  // Session id precedence: quiet-mode line → legacy format → modern resume
+  // hint ("hermes --resume <id>"). Without the hint, the CLI lane never
+  // captures its session id and every run loses cross-run session continuity.
+  if (sessionMatch?.[1]) {
+    result.sessionId = sessionMatch[1];
+  } else {
+    const legacyMatch = combined.match(SESSION_ID_REGEX_LEGACY);
+    if (legacyMatch?.[1]) {
+      result.sessionId = legacyMatch[1];
+    } else {
+      const resumeHintMatch = combined.match(RESUME_HINT_REGEX);
+      if (resumeHintMatch?.[1]) {
+        result.sessionId = resumeHintMatch[1];
+      }
     }
   }
 
