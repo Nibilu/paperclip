@@ -1,5 +1,5 @@
 diff --git a/dist/live-checkpoint-ClPCSdrW.js b/dist/live-checkpoint-ClPCSdrW.js
-index 243c9d13bcba520923b63adfddad75cf2d94362d..414cbfed663dbded847e7e84df913921ae422224 100644
+index 243c9d13bcba520923b63adfddad75cf2d94362d..d70162413916c7bc7112698e9e2e9b9a824d764f 100644
 --- a/dist/live-checkpoint-ClPCSdrW.js
 +++ b/dist/live-checkpoint-ClPCSdrW.js
 @@ -1532,7 +1532,7 @@ const ZED_TAG_KEYS = /* @__PURE__ */ new Set([
@@ -106,7 +106,22 @@ index 243c9d13bcba520923b63adfddad75cf2d94362d..414cbfed663dbded847e7e84df913921
  			throw error;
  		}
  	}
-@@ -6070,6 +6093,27 @@ async function withConnectedSession(options) {
+@@ -5884,8 +5907,13 @@ async function loadOrCreateRuntimeSession(params) {
+ 		resumed: true,
+ 		createdFreshSession: false
+ 	};
+-	if (params.client.supportsResumeSession()) return await resumeRuntimeSession(params);
++	// AMB-156: prefer session/load over session/resume. The hermes gateway's
++	// session/resume fails intermittently with storage_unavailable (observed
++	// 2026-11-04 13:24/16:09/18:46), while the spec-compliant load path exists
++	// whenever the agent advertises loadSession. Load also replays via
++	// loadRuntimeSession which natively suppresses replay updates.
+ 	if (params.client.supportsLoadSession()) return await loadRuntimeSession(params);
++	if (params.client.supportsResumeSession()) return await resumeRuntimeSession(params);
+ 	if (params.sameSessionOnly) throw makeSessionResumeRequiredError({
+ 		record: params.record,
+ 		reason: "agent does not support session/resume or session/load"
+@@ -6070,6 +6098,27 @@ async function withConnectedSession(options) {
  //#region src/runtime/engine/prompt-turn.ts
  const SESSION_REPLY_IDLE_MS = 1e3;
  const SESSION_REPLY_DRAIN_TIMEOUT_MS = 5e3;
@@ -134,7 +149,7 @@ index 243c9d13bcba520923b63adfddad75cf2d94362d..414cbfed663dbded847e7e84df913921
  async function runPromptTurn(params) {
  	try {
  		const promptPromise = params.client.prompt(params.sessionId, params.prompt);
-@@ -6079,6 +6123,20 @@ async function runPromptTurn(params) {
+@@ -6079,6 +6128,20 @@ async function runPromptTurn(params) {
  			idleMs: SESSION_REPLY_IDLE_MS,
  			timeoutMs: SESSION_REPLY_DRAIN_TIMEOUT_MS
  		}).catch(() => {});
