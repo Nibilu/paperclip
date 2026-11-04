@@ -4736,7 +4736,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
                 const runtimeSource = fsSync.readFileSync(runtimeModulePath, "utf8");
                 const patchMarkers = [
                   ["forcing-load", runtimeSource.includes("forcing operation")],
-                  ["suppress-replay", runtimeSource.includes("suppressReplayUpdates: true")],
+                  ["suppress-replay", runtimeSource.includes('loadSessionWithOptions(resumeSessionId, cwd, { suppressReplayUpdates: true })')],
                 ].filter(([, present]) => present).map(([name]) => name).join("+") || "none";
                 const acpxVersion = runtimeModulePath.match(/acpx@(\d+\.\d+\.\d+)/)?.[1] ?? "unknown";
                 await ctx.onLog("stderr", `[pilibala] ACPX runtime: acpx@${acpxVersion} patches=${patchMarkers} resume=${resumeSessionId ? `${resumeSessionId.slice(0, 18)}…` : "none(fresh)"}\n`);
