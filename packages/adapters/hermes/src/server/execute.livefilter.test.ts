@@ -102,4 +102,31 @@ describe("createCliLiveStreamFilter edge cases", () => {
     // And a later structural line ends suppression normally.
     expect(filter("[hermes] Starting Hermes Agent\n")).toContain("[hermes]");
   });
+
+  it("drops the newer session-summary footer block line by line", () => {
+    const filter = createCliLiveStreamFilter();
+    const out = filter(
+      [
+        "今天是 2026 年 11 月 4 日，星期三。",
+        "Resume this session with:",
+        "  hermes --resume local-2601d1ce",
+        '  hermes -c "Acknowledge AMB-143 comment"',
+        "",
+        "Session:        local-2601d1ce",
+        "Title:          Acknowledge AMB-143 comment",
+        "Duration:       51s",
+        "Messages:       4 (1 user, 2 tool calls)",
+        "Total cost:     $0.0042",
+        "Total tokens:   12,345",
+      ].join("\n") + "\n",
+    );
+    expect(out).toContain("今天是 2026 年 11 月 4 日，星期三。");
+    expect(out).not.toContain("hermes --resume");
+    expect(out).not.toContain("Session:");
+    expect(out).not.toContain("Title:");
+    expect(out).not.toContain("Duration:");
+    expect(out).not.toContain("Messages:");
+    expect(out).not.toContain("Total cost");
+    expect(out).not.toContain("Total tokens");
+  });
 });
