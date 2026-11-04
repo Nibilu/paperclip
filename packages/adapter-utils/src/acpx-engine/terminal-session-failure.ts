@@ -135,8 +135,8 @@ export function formatSessionResumeRefusalFailure(
 ): string {
   const detail = [...new Set([message, diagnostic?.title, diagnostic?.details].filter(Boolean))].join("\n");
   return [
-    "会话恢复失败（agent 网关拒绝续传已有会话）。系统已自动重置会话：重新发送消息即可继续，新会话会重发完整任务对话，不会丢失任务上下文。",
-    "Session restore was refused by the agent gateway. The session has been reset — resend your message to continue (the full task conversation is replayed into the new session).",
+    "会话恢复失败（agent 网关拒绝续传已有会话；已知诱因：网关会话 lineage 策略状态在多次重置/迁移后错位，与对话积累状态相关，与本次消息内容无关）。系统已自动重置会话：重新发送消息即可继续。新会话注入有界的任务历史摘要（上限 24KB），详细历史不会全部重发——需要时用 get_task_history / get_task_context / read_document 按 source ID 检索。",
+    "Session restore was refused by the agent gateway (known trigger: session-lineage policy state drifting after repeated resets/migrations — accumulation-related, unrelated to this message). The session has been reset; resend to continue. The new session receives a bounded handoff digest (24KB cap), with on-demand detail retrieval via get_task_history / get_task_context / read_document.",
     detail,
   ].filter(Boolean).join("\n");
 }

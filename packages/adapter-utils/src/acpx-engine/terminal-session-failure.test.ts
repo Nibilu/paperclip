@@ -159,6 +159,8 @@ describe("terminal session failure diagnostics", () => {
     );
     expect(formatted).toContain("系统已自动重置会话");
     expect(formatted).toContain("重新发送消息即可继续");
+    expect(formatted).toContain("有界的任务历史摘要");
+    expect(formatted).toContain("get_task_history");
     expect(formatted).toContain("Persistent ACP session local-abc could not be resumed: Internal error");
     expect(formatted).toContain("gateway refused");
     expect(formatted).toContain("storage_unavailable");
