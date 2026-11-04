@@ -4733,10 +4733,18 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
                 // file:// URL) — passing it through fileURLToPath throws
                 // ERR_INVALID_URL. Use it directly.
                 const runtimeModulePath = createRequire(import.meta.url).resolve("acpx/runtime");
-                const runtimeSource = fsSync.readFileSync(runtimeModulePath, "utf8");
+                // The two patch targets live in different dist files: the
+                // load/resume preference in live-checkpoint-*.js, the
+                // loadSessionWithOptions call in runtime.js. Scan the whole
+                // dist directory so the markers stay truthful across builds.
+                const acpxDistDir = path.dirname(runtimeModulePath);
+                const distSources = fsSync.readdirSync(acpxDistDir)
+                  .filter((f) => f.endsWith(".js"))
+                  .map((f) => fsSync.readFileSync(path.join(acpxDistDir, f), "utf8"))
+                  .join("\n");
                 const patchMarkers = [
-                  ["forcing-load", runtimeSource.includes("supportsLoadSession()) return await loadRuntimeSession")],
-                  ["suppress-replay", runtimeSource.includes("loadSessionWithOptions(params.record.acpSessionId, params.record.cwd, { suppressReplayUpdates: true })")],
+                  ["forcing-load", distSources.includes("supportsLoadSession()) return await loadRuntimeSession")],
+                  ["suppress-replay", distSources.includes("loadSessionWithOptions(params.record.acpSessionId, params.record.cwd, { suppressReplayUpdates: true })")],
                 ].filter(([, present]) => present).map(([name]) => name).join("+") || "none";
                 const acpxVersion = runtimeModulePath.match(/acpx@(\d+\.\d+\.\d+)/)?.[1] ?? "unknown";
                 await ctx.onLog("stderr", `[pilibala] ACPX runtime: acpx@${acpxVersion} patches=${patchMarkers} resume=${resumeSessionId ? `${resumeSessionId.slice(0, 18)}…` : "none(fresh)"}\n`);
