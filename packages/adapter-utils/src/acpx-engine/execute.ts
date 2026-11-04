@@ -4740,8 +4740,14 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
                 ].filter(([, present]) => present).map(([name]) => name).join("+") || "none";
                 const acpxVersion = runtimeModuleUrl.match(/acpx@(\d+\.\d+\.\d+)/)?.[1] ?? "unknown";
                 await ctx.onLog("stderr", `[pilibala] ACPX runtime: acpx@${acpxVersion} patches=${patchMarkers} resume=${resumeSessionId ? `${resumeSessionId.slice(0, 18)}…` : "none(fresh)"}\n`);
-              } catch {
-                // identification is diagnostic only
+              } catch (identifyError) {
+                // identification is diagnostic only — but never silent: an
+                // unidentified runtime is exactly what this line exists to prevent.
+                try {
+                  await ctx.onLog("stderr", `[pilibala] ACPX runtime identification failed: ${identifyError}\n`);
+                } catch {
+                  /* nothing more we can do */
+                }
               }
           // Step 7 — acp.handshake: ACP session establishment (session/new or
               // resume). A throwing handshake still reports its duration before the
