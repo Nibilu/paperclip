@@ -174,7 +174,11 @@ export async function admitExplicitNativeContinuation(input: {
     if (!queuedInterrupt && !queuedRequest && authorizedAt <= run.finishedAt) return blocked("message_predates_stop", "This message arrived before the previous run stopped. Send a new message to continue.");
     if (adapterExecutionControls.has(run.id)) return blocked("execution_settling", "Waiting for the previous run to stop. Your message will start automatically.");
     const unusedAdmission = run.status === "cancelled" && !run.startedAt &&
-      run.errorCode === "execution_reconciliation_required" &&
+      (run.errorCode === "execution_reconciliation_required" ||
+        // The fork's disposition repair cancels admitted-but-unstarted runs
+        // with this code; the semantics are identical (never started, no
+        // provider work, nothing to reconcile against a stop proof).
+        run.errorCode === "legacy_disposition_repair_suppressed") &&
       !run.processPid && !run.processGroupId && !run.nativeSessionId;
     const legacyUserTurn = run.runtimeMode === "legacy" &&
       action.cause === "legacy_execution_requires_reconciliation" &&
@@ -258,12 +262,23 @@ export async function admitExplicitNativeContinuation(input: {
     } else {
       if (leases.some(lease => !lease.releasedAt || lease.cleanupStatus === "failed")) return blocked("local_cleanup", "Waiting for the previous environment to finish cleanup. Your message will start automatically.");
       if (!unusedAdmission && !cancelledStartup) {
+        // A cancelled legacy-mode run has no native stop-record system to
+        // prove against: the control-plane cancellation already terminated
+        // its non-native execution, and no native process record can ever
+        // exist for it. Demanding one here would block every future message
+        // on the issue forever (live evidence: AMB-156 acceptance, issue
+        // 551e0f92 run 058de19c). A legacy run still holding a pid keeps the
+        // process-running check below.
+        const legacyCancelledWithoutProcess = run.runtimeMode === "legacy" &&
+          run.status === "cancelled" && !run.processPid && !run.processGroupId;
+        if (!legacyCancelledWithoutProcess) {
         // A missing process identity is not evidence that a provider exited.
         if (!run.processPid && !run.processGroupId &&
             !await hasNativeLocalProcessStop(db, companyId, run.id) &&
             !await hasHistoricalSuspendedNativeSession(db, run)) return blocked("process_identity_missing", "The previous run has no verified stop record. Pilibala cannot start this message yet.");
         if (run.processPid && !processStopped(run.processPid)) return blocked("process_running", "Waiting for the previous process to stop. Your message will start automatically.");
         if (run.processGroupId && !processStopped(-run.processGroupId)) return blocked("process_running", "Waiting for the previous process to stop. Your message will start automatically.");
+        }
       }
     }
     if (!remote && run.runtimeMode === "native" && run.errorCode === "native_session_cleanup_quarantined") {
