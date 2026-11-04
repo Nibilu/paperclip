@@ -135,8 +135,8 @@ export function formatSessionResumeRefusalFailure(
 ): string {
   const detail = [...new Set([message, diagnostic?.title, diagnostic?.details].filter(Boolean))].join("\n");
   return [
-    "会话恢复失败（agent 网关拒绝续传已有会话；已知诱因：网关会话 lineage 策略状态在多次重置/迁移后错位，与对话积累状态相关，与本次消息内容无关）。系统已自动重置会话：重新发送消息即可继续。新会话注入有界的任务历史摘要（上限 24KB），详细历史不会全部重发——需要时用 get_task_history / get_task_context / read_document 按 source ID 检索。",
-    "Session restore was refused by the agent gateway (known trigger: session-lineage policy state drifting after repeated resets/migrations — accumulation-related, unrelated to this message). The session has been reset; resend to continue. The new session receives a bounded handoff digest (24KB cap), with on-demand detail retrieval via get_task_history / get_task_context / read_document.",
+    "会话恢复失败——已知为 Hermes Agent v0.22.x 的网关会话续传缺陷（实测基线 2026.9.24；诱因：多次重置/迁移后网关 lineage 策略状态错位，随对话积累出现，与本次消息内容无关）。处理：系统已自动重置会话，重新发送消息即可继续。代价：本次执行需重发；新会话仅注入有界任务历史摘要（24KB 上限），agent 的会话内推理状态不逐字延续——详细历史按需用 get_task_history / get_task_context / read_document 检索。若你的 Hermes 已升级到修复版本仍出现本提示，请反馈。",
+    "Session restore failed — known Hermes Agent v0.22.x gateway resume defect (baseline 2026.9.24; trigger: gateway lineage-policy state drift after repeated resets/migrations — accumulation-related, unrelated to this message). Remediation: the session was reset; resend to continue. Cost: this attempt must be resent; the new session receives only a bounded 24KB handoff digest, and in-session reasoning state is not carried over verbatim — retrieve details on demand via get_task_history / get_task_context / read_document. If your Hermes is newer than the fixed version and you still see this, please report it.",
     detail,
   ].filter(Boolean).join("\n");
 }
