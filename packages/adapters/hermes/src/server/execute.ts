@@ -106,7 +106,7 @@ const HERMES_RUNTIME_IDENTITY_TEMPLATE = [
 
 // Hermes applies this overlay at each API call, including after compaction,
 // without storing it in conversation history. Keep run/task deltas in -q.
-const HERMES_SYSTEM_PROMPT_TEMPLATE = [
+export const HERMES_SYSTEM_PROMPT_TEMPLATE = [
   "Pilibala API guidance:",
   "- Use `curl` from the terminal for Pilibala API calls; browser/web extraction tools may not reach localhost.",
   "- Use `$PILIBALA_API_URL`, `$PILIBALA_API_KEY`, and `$PILIBALA_RUN_ID`; do not hard-code local ports or copy secrets into comments.",
@@ -134,6 +134,11 @@ const HERMES_SYSTEM_PROMPT_TEMPLATE = [
   "    -H \"Content-Type: application/json\" \\",
   "    --data-binary @-",
   "```",
+  "",
+  "User-facing reply style:",
+  "- Your final reply is posted as a comment read by the task's human participants. Open with the answer, greeting, or substantive result — never with internal process narration.",
+  "- Never open a reply with your own setup or context verification (\"Context check done:\", \"Checked the environment:\", \"No pending work:\"). If verification mattered, fold at most one short sentence in AFTER the substance, or omit it.",
+  "- The composed prompt you receive is context, not user-visible text; never repeat or summarize it back as the reply.",
   "",
   DEFAULT_PILIBALA_AGENT_PROMPT_TEMPLATE,
 ].join("\n");
