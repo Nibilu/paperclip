@@ -7,6 +7,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createHash, randomUUID } from "node:crypto";
+import { createRequire } from "node:module";
 import { parseFrontmatterMarkdown } from "@pilibalaai/shared";
 import { fileURLToPath } from "node:url";
 import type {
@@ -4722,7 +4723,24 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         try {
           if (!handle) {
             try {
-              // Step 7 — acp.handshake: ACP session establishment (session/new or
+              // AMB-161 A1: self-identify the executing acpx copy in every run log.
+              // Three "merged but not live" incidents (10-23 patch never installed;
+              // fix authored against the wrong version's patch file; wrong lane
+              // attributed) all came from verifying dist files instead of runtime
+              // evidence. Best-effort only — must never block the handshake.
+              try {
+                const runtimeModuleUrl = createRequire(import.meta.url).resolve("acpx/runtime");
+                const runtimeSource = fsSync.readFileSync(fileURLToPath(runtimeModuleUrl), "utf8");
+                const patchMarkers = [
+                  ["forcing-load", runtimeSource.includes("forcing operation")],
+                  ["suppress-replay", runtimeSource.includes("suppressReplayUpdates: true")],
+                ].filter(([, present]) => present).map(([name]) => name).join("+") || "none";
+                const acpxVersion = runtimeModuleUrl.match(/acpx@(\d+\.\d+\.\d+)/)?.[1] ?? "unknown";
+                await ctx.onLog("stderr", `[pilibala] ACPX runtime: acpx@${acpxVersion} patches=${patchMarkers} resume=${resumeSessionId ? `${resumeSessionId.slice(0, 18)}…` : "none(fresh)"}\n`);
+              } catch {
+                // identification is diagnostic only
+              }
+          // Step 7 — acp.handshake: ACP session establishment (session/new or
               // resume). A throwing handshake still reports its duration before the
               // resume-retry path below runs. The createRuntime/ensureSession
               // sub-split rides the step span as fixed, closed keys (Open Q2).
