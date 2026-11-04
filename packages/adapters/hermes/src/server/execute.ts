@@ -258,6 +258,59 @@ const QUERY_ECHO_PREFIX = /^Query:[ \t]/;
 const TOKEN_USAGE_REGEX =
   /tokens?[:\s]+(\d+)\s*(?:input|in)\b.*?(\d+)\s*(?:output|out)\b/i;
 
+/**
+ * Streaming line filter for the CLI lane's live log (the onLog wrapper).
+ *
+ * The classic display echoes the composed prompt after "Query:" before the
+ * run's tool activity, then wraps the answer in ──── / ☤ Hermes / ──── banner
+ * chrome and prints a "Reconciled session ... (--resume <id>)" hint. The UI's
+ * per-line parser falls back to assistant-text entries for unrecognized lines,
+ * so unfiltered, the whole echo streams into the chat as a giant agent message
+ * (live evidence: issue 89ea5cce, AMB-160). Suppression rules:
+ * - A "Query: " line opens suppression; every following line is echo body and
+ *   is dropped until a structural signal ends it (a ┊ tool line, an
+ *   [hermes]/[pilibala]/session_id: line, or the banner's opening ──── rule).
+ * - Banner separators, the ☤ title line, and the resume hint never display.
+ * - Quiet-mode and legacy output have no "Query:" line and pass through.
+ * parseHermesOutput is unaffected: it parses the complete stdout collected by
+ * runChildProcess, not the filtered live stream.
+ */
+export function createCliLiveStreamFilter(): (chunk: string) => string | null {
+  let pending = "";
+  let suppressing = false;
+  return (chunk: string): string | null => {
+    pending += chunk;
+    const lines = pending.split("\n");
+    pending = lines.pop() ?? "";
+    let out = "";
+    for (const rawLine of lines) {
+      const line = rawLine.replace(/\r$/, "");
+      const trimmed = line.trim();
+      if (/^Query:\s/.test(trimmed)) {
+        suppressing = true;
+        continue;
+      }
+      if (suppressing) {
+        if (/^─{8,}$/.test(trimmed)) {
+          suppressing = false;
+        } else if (
+          /^(\[hermes\]|\[pilibala\]|session_id:)/.test(trimmed) ||
+          trimmed.includes("┊") ||
+          /^\[tool\]/.test(trimmed)
+        ) {
+          suppressing = false;
+          out += `${line}\n`;
+        }
+        continue;
+      }
+      if (/^─{8,}$/.test(trimmed) || /^☤/.test(trimmed)) continue;
+      if (/^Reconciled session\b/.test(trimmed)) continue;
+      out += `${line}\n`;
+    }
+    return out.length > 0 ? out : null;
+  };
+}
+
 /** Take the LAST ──── / ☤ Hermes / ──── block from the raw stdout. */
 function extractLastBannerAnswer(stdout: string): string | null {
   const bannerRegex = new RegExp(BANNER_ANSWER_REGEX.source, "g");
@@ -642,6 +695,7 @@ export async function execute(
   // Hermes writes non-error noise to stderr (MCP init, INFO logs, etc).
   // Pilibala renders all stderr as red/error in the UI.
   // Wrap onLog to reclassify benign stderr lines as stdout.
+  const liveStreamFilter = createCliLiveStreamFilter();
   const wrappedOnLog = async (stream: "stdout" | "stderr", chunk: string) => {
     if (stream === "stderr") {
       const trimmed = chunk.trimEnd();
@@ -658,6 +712,11 @@ export async function execute(
       if (isBenign) {
         return ctx.onLog("stdout", chunk);
       }
+    }
+    if (stream === "stdout") {
+      const filtered = liveStreamFilter(chunk);
+      if (filtered === null) return;
+      return ctx.onLog("stdout", filtered);
     }
     return ctx.onLog(stream, chunk);
   };
