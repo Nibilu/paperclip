@@ -1,5 +1,5 @@
 {
-  "commandDigest": "sha256:158166b75bfd9e8a496a94d493c1d4abd218ed96dbfab996ba254e8a47a30856",
+  "commandDigest": "sha256:ae618be3ae342dbe818b0b6f2e48eb81645be4761b360f0d1d15cc1333c92d15",
   "declaration": {
     "schema": "pilibala.acpx_profile_declaration.v1",
     "agent": "pi",
@@ -20,7 +20,7 @@
     "nativeQuestions": "select-confirm-input-editor-v4-root-field-types",
     "pathPolicy": "sdk-normalization-v1",
     "mcpToolNames": "provider-safe-exact-source-v1",
-    "acpxPatchSha256": "44f0effe066b7c968ceaa110a7b927d22849a29f084279dfecd9bece22c2a844",
+    "acpxPatchSha256": "79ef7f6921e4657687cd37526314494c0614d4808e83c96fafd67038c505f344",
     "nativeAssistantMessages": "pi1-rpc-deltas-v3-bound-message-and-tool-receipts",
     "nativeNotices": "session-extension-v2-bounded-runtime-failure",
     "messageProjectionSha256": "17d1e91b948dfa6a56e1905645add52b502041ad843c8d50a13b07956f22aadd",
