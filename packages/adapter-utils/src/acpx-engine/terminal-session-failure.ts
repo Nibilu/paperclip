@@ -120,3 +120,23 @@ export function formatTerminalSessionFailure(
   if (!diagnostic) return message;
   return [...new Set([message, diagnostic.title, diagnostic.details].filter(Boolean))].join("\n");
 }
+
+/** Resume-refusal runs auto-heal on the next attempt: the engine clears the
+ * dead session (`clearSession`) and the retry bootstraps a fresh one with the
+ * full task conversation replayed, so the user-facing message must say what
+ * happens next instead of surfacing the raw gateway refusal (observed
+ * 2026-11-04: "Persistent ACP session … could not be resumed: Internal error"
+ * with no guidance — hermes daemon refuses session.resume with a bare
+ * storage_unavailable for both resume and load). Keep the raw text below the
+ * guidance: the run log and the recovery classification still need it. */
+export function formatSessionResumeRefusalFailure(
+  message: string | null,
+  diagnostic: AcpxTerminalSessionFailureDiagnostic | null,
+): string {
+  const detail = [...new Set([message, diagnostic?.title, diagnostic?.details].filter(Boolean))].join("\n");
+  return [
+    "会话恢复失败（agent 网关拒绝续传已有会话）。系统已自动重置会话：重新发送消息即可继续，新会话会重发完整任务对话，不会丢失任务上下文。",
+    "Session restore was refused by the agent gateway. The session has been reset — resend your message to continue (the full task conversation is replayed into the new session).",
+    detail,
+  ].filter(Boolean).join("\n");
+}

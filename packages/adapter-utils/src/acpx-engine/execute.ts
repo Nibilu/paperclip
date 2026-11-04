@@ -44,6 +44,7 @@ import type { DuplexLossReason } from "../duplex-observability.js";
 import { DUPLEX_CHANNEL_LOST_ERROR_CODE } from "../bridge-transport-contract.js";
 import {
   classifyToolDefinitionFailure,
+  formatSessionResumeRefusalFailure,
   formatTerminalSessionFailure,
   sanitizeTerminalSessionFailure,
   type AcpxTerminalSessionFailure,
@@ -5697,7 +5698,12 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
             ? channelLostMessage
             : toolStalled
               ? toolStalledMessage
-              : formatTerminalSessionFailure(resultErrorMessage(terminal), failureDiagnostic);
+              : sessionUnavailable
+                ? // The dead session is already discarded (`clearSession`) and the
+                  // next attempt replays the full task conversation — tell the
+                  // user that instead of the raw gateway refusal.
+                  formatSessionResumeRefusalFailure(resultErrorMessage(terminal), failureDiagnostic)
+                : formatTerminalSessionFailure(resultErrorMessage(terminal), failureDiagnostic);
         const terminalStopReason = terminal.status === "failed" ? terminal.error.message : terminal.stopReason;
         // Silent session-loss fallback (see `isSilentSessionLossAfterResume`).
         // Runs here, after `errorMessage` and `terminalStopReason` exist.
