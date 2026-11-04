@@ -214,10 +214,10 @@ index ccdbe5b032521518022223733049b8b38793473b..fe10e715f21e5b528ba1b61bff688c39
    close(handle: AcpRuntimeHandle, options?: {
      discardPersistentState?: boolean;
 diff --git a/dist/runtime.js b/dist/runtime.js
-index 6c9cc999e50a11c399c68b3a0f1b7af4bc2317c0..a96817b7966a450cdddbb9921b0ed53cfc85b06b 100644
+index 6c9cc999e50a11c399c68b3a0f1b7af4bc2317c0..8f6bbc400cfacb9516f2bc47ecc24709dd2fe405 100644
 --- a/dist/runtime.js
 +++ b/dist/runtime.js
-@@ -710,6 +710,23 @@ function applyDesiredConfigOptionToRecord(record, configId, value) {
+@@ -710,6 +710,29 @@ function applyDesiredConfigOptionToRecord(record, configId, value) {
  }
  async function createOrLoadRuntimeSession(client, resumeSessionId, cwd) {
  	if (resumeSessionId) {
@@ -231,7 +231,13 @@ index 6c9cc999e50a11c399c68b3a0f1b7af4bc2317c0..a96817b7966a450cdddbb9921b0ed53c
 +		// here and a refusal throws at ensure, where the engine's
 +		// fresh-session retry lives. Resume-only backends keep resume.
 +		if (typeof client.supportsLoadSession === "function" && client.supportsLoadSession()) {
-+			const loaded = await client.loadSession(resumeSessionId, cwd);
++			// Hermes (and every spec-compliant ACP agent) streams the prior conversation via
++			// session/update BEFORE answering session/load (Zed/Codex rely on it). Without
++			// suppression that history replay is re-emitted as live text_delta and pollutes
++			// the transcript/reply (observed 2026-11-04: prior turn replayed in a 39ms burst).
++			const loaded = (typeof client.loadSessionWithOptions === "function")
++				? await client.loadSessionWithOptions(resumeSessionId, cwd, { suppressReplayUpdates: true })
++				: await client.loadSession(resumeSessionId, cwd);
 +			return {
 +				sessionId: resumeSessionId,
 +				agentSessionId: loaded.agentSessionId,
@@ -241,7 +247,7 @@ index 6c9cc999e50a11c399c68b3a0f1b7af4bc2317c0..a96817b7966a450cdddbb9921b0ed53c
  		if (client.supportsResumeSession()) {
  			const resumed = await client.resumeSession(resumeSessionId, cwd);
  			return {
-@@ -744,7 +761,8 @@ var AcpRuntimeManager = class {
+@@ -744,7 +767,8 @@ var AcpRuntimeManager = class {
  		this.deps = deps;
  	}
  	createClient(options) {
@@ -251,7 +257,7 @@ index 6c9cc999e50a11c399c68b3a0f1b7af4bc2317c0..a96817b7966a450cdddbb9921b0ed53c
  	}
  	async readPendingPersistentClient(record, options) {
  		const pendingClient = this.pendingPersistentClients.get(record.acpxRecordId);
-@@ -982,6 +1000,7 @@ var AcpRuntimeManager = class {
+@@ -982,6 +1006,7 @@ var AcpRuntimeManager = class {
  				client: turn.client,
  				sessionId,
  				prompt: task.promptInput,
@@ -259,7 +265,7 @@ index 6c9cc999e50a11c399c68b3a0f1b7af4bc2317c0..a96817b7966a450cdddbb9921b0ed53c
  				timeoutMs: task.input.timeoutMs ?? this.options.timeoutMs,
  				conversation: turn.conversation,
  				promptMessageId: turn.promptMessageId
-@@ -1294,6 +1313,19 @@ var AcpRuntimeManager = class {
+@@ -1294,6 +1319,19 @@ var AcpRuntimeManager = class {
  		});
  		await this.options.sessionStore.save(result.record);
  	}
@@ -279,7 +285,7 @@ index 6c9cc999e50a11c399c68b3a0f1b7af4bc2317c0..a96817b7966a450cdddbb9921b0ed53c
  	async cancel(handle) {
  		await this.activeControllers.get(handle.acpxRecordId ?? handle.sessionKey)?.requestCancelActivePrompt();
  	}
-@@ -1586,6 +1618,7 @@ var AcpxRuntime = class {
+@@ -1586,6 +1624,7 @@ var AcpxRuntime = class {
  		const turnPromise = this.getManager().then((manager) => manager.startTurn({
  			handle,
  			text: input.text,
@@ -287,7 +293,7 @@ index 6c9cc999e50a11c399c68b3a0f1b7af4bc2317c0..a96817b7966a450cdddbb9921b0ed53c
  			attachments: input.attachments,
  			mode: input.mode,
  			sessionMode: state.mode,
-@@ -1614,6 +1647,7 @@ var AcpxRuntime = class {
+@@ -1614,6 +1653,7 @@ var AcpxRuntime = class {
  		yield* (await this.getManager()).runTurn({
  			handle,
  			text: input.text,
@@ -295,7 +301,7 @@ index 6c9cc999e50a11c399c68b3a0f1b7af4bc2317c0..a96817b7966a450cdddbb9921b0ed53c
  			attachments: input.attachments,
  			mode: input.mode,
  			sessionMode: state.mode,
-@@ -1645,6 +1679,10 @@ var AcpxRuntime = class {
+@@ -1645,6 +1685,10 @@ var AcpxRuntime = class {
  		const { handle, state } = this.resolveManagerHandle(input.handle);
  		await (await this.getManager()).setConfigOption(handle, input.key, input.value, state.mode);
  	}
