@@ -304,7 +304,17 @@ export function createCliLiveStreamFilter(): (chunk: string) => string | null {
         continue;
       }
       if (/^─{8,}$/.test(trimmed) || /^☤/.test(trimmed)) continue;
-      if (/^Reconciled session\b/.test(trimmed)) continue;
+      // Session-summary footer (newer CLI builds print this block instead of
+      // a single "Reconciled session" hint line). Parser reads the resume id
+      // from the complete stdout, so the live feed can drop it wholesale.
+      if (
+        /^Reconciled session\b/.test(trimmed) ||
+        /^Resume this session with:/.test(trimmed) ||
+        /^hermes (--resume|-c )/.test(trimmed) ||
+        /^(Session|Title|Duration|Messages|Total cost|Total tokens):/.test(trimmed)
+      ) {
+        continue;
+      }
       out += `${line}\n`;
     }
     return out.length > 0 ? out : null;
