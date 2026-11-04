@@ -4791,9 +4791,32 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
                 }),
               });
             } catch (err) {
-              if (!resumeSessionId || !isResumeFailure(err)) throw err;
+              // AMB-156 Path A extension: the repair previously required a
+              // resumeSessionId, which skipped the fresh-ensure path entirely —
+              // but a FRESH ensure still loads the persisted record
+              // (loadOrCreateRuntimeSession), and that load refuses exactly the
+              // same way (observed: Hermes daemon poisons a session after a
+              // successful turn; the next load of that record fails with
+              // "Persistent ACP session <id> could not be resumed"). Without
+              // this extension the run surfaces a terminal error and the
+              // recovery ladder re-runs it as a separate visible retry; with
+              // it, the same discard+fresh repair runs in-run and the user
+              // sees no failure at all.
+              if (!isResumeFailure(err)) throw err;
               clearSession = true;
               resumedSession = false;
+              // On the fresh path the dead backend id only appears in the
+              // error message ("Persistent ACP session <id> could not be
+              // resumed") — parse it for the audit trail; fall back to the
+              // resume id when present.
+              const deadSessionId =
+                resumeSessionId ??
+                (typeof (err instanceof Error ? err.message : err) === "string"
+                  ? (err instanceof Error ? err.message : String(err)).match(
+                      /persistent acp session (\S+?) could not be resumed/i,
+                    )?.[1]
+                  : undefined) ??
+                "unknown";
               // Path A in-run repair (AMB-156): the fresh retry below must not
               // reuse the dead persisted record. acpx's
               // shouldReuseExistingRecord passes for a retry without a resume
@@ -4830,12 +4853,12 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               });
               sessionRepairAudit = {
                 attempted: true,
-                discardedSessionId: resumeSessionId,
+                discardedSessionId: deadSessionId,
                 recoveredWithFreshSession: true,
               };
               await ctx.onLog(
                 "stdout",
-                `[pilibala] ACPX resume session "${resumeSessionId}" is unavailable; discarded the dead session and retrying with a fresh one.\n`,
+                `[pilibala] ACPX resume session "${deadSessionId}" is unavailable; discarded the dead session and retrying with a fresh one.\n`,
               );
               // Fresh-session retry: the runtime was already constructed on the
               // first attempt (never re-created), so this event reports only its
