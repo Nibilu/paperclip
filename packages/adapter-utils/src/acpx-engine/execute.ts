@@ -4729,8 +4729,11 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               // attributed) all came from verifying dist files instead of runtime
               // evidence. Best-effort only — must never block the handshake.
               try {
-                const runtimeModuleUrl = createRequire(import.meta.url).resolve("acpx/runtime");
-                const runtimeSource = fsSync.readFileSync(fileURLToPath(runtimeModuleUrl), "utf8");
+                // NOTE: require.resolve returns a plain filesystem path (not a
+                // file:// URL) — passing it through fileURLToPath throws
+                // ERR_INVALID_URL. Use it directly.
+                const runtimeModulePath = createRequire(import.meta.url).resolve("acpx/runtime");
+                const runtimeSource = fsSync.readFileSync(runtimeModulePath, "utf8");
                 const patchMarkers = [
                   ["forcing-load", runtimeSource.includes("forcing operation")],
                   ["suppress-replay", runtimeSource.includes("suppressReplayUpdates: true")],
