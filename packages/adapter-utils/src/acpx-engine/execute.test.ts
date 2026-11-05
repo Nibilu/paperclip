@@ -811,6 +811,40 @@ describe("shared ACPX engine runtime behavior", () => {
     expect(promptMetrics?.runtimeNoteChars).toBeGreaterThan(0);
   });
 
+  it("scales the env/API notes to the turn type: conversation turns lose publish teaching, execution turns keep it", async () => {
+    const baseContext = {
+      taskId: "issue-1",
+      wakeReason: "issue_commented",
+      pilibalaWake: {
+        reason: "issue_commented",
+        issue: { id: "issue-1", identifier: "TEST-1" },
+        comments: [],
+      },
+    };
+    const run = async (context: Record<string, unknown>) => {
+      const { meta } = await runExecutor(
+        { agent: "custom", agentCommand: "node ./fake-acp.js" },
+        { authToken: "runtime-secret-token", context },
+      );
+      return String(meta[0]?.prompt ?? "");
+    };
+
+    const executionPrompt = await run({ ...baseContext });
+    expect(executionPrompt).toContain("Pilibala runtime note:");
+    expect(executionPrompt).toContain("Pilibala API access note:");
+    expect(executionPrompt).toContain("Scoped issue comment example");
+    expect(executionPrompt).toContain("PILIBALA_RUN_ENV_FILE");
+
+    const conversationPrompt = await run({ ...baseContext, conversationMode: true });
+    expect(conversationPrompt).toContain("Pilibala conversation note:");
+    expect(conversationPrompt).toContain("delivered to the conversation automatically");
+    expect(conversationPrompt).not.toContain("Scoped issue comment example");
+    expect(conversationPrompt).not.toContain("PILIBALA_RUN_ENV_FILE");
+    expect(conversationPrompt).not.toContain("Pilibala runtime note:");
+    // Read access stays available for fallback fetches and card reads.
+    expect(conversationPrompt).toContain("Read example:");
+  });
+
   it("keeps large continuation history in ACP turns and preserves resume deltas", async () => {
     const root = await makeTempRoot();
     const config = {

@@ -3149,8 +3149,30 @@ function renderPilibalaEnvNote(env: Record<string, string>): string {
   return lines.join("\n");
 }
 
-function renderApiAccessNote(env: Record<string, string>): string {
+function renderApiAccessNote(
+  env: Record<string, string>,
+  options: { conversationTurn?: boolean } = {},
+): string {
   if (!env.PILIBALA_API_URL || !env.PILIBALA_API_KEY) return "";
+  // Conversation turns: the harness posts the agent's final message to the
+  // thread automatically (buildAcpxRunSummary fallback). Teaching the full
+  // curl publish procedure here made models re-enact a publish+verify ritual
+  // on trivial chat turns and pulled real run credentials into the thought
+  // stream (AMB-170/AMB-172). Keep read access, drop publish teaching.
+  if (options.conversationTurn) {
+    const lines = [
+      "Pilibala conversation note:",
+      "Your final message is delivered to the conversation automatically — do not post it via the API.",
+      "Use the Pilibala API only for reads the wake context does not already include (history, documents, cards); never to publish this reply.",
+    ];
+    if (env.PILIBALA_TASK_ID) {
+      lines.push(
+        "Read example:",
+        `  curl -s -H "Authorization: Bearer \${PIL...KEY}" "$PILIBALA_API_BASE/api/issues/$PILIBALA_TASK_ID/comments"`,
+      );
+    }
+    return lines.join("\n");
+  }
   const lines = [
     "Pilibala API access note:",
     "Use terminal commands with curl to make Pilibala API requests.",
@@ -3240,8 +3262,15 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
       ? ""
       : renderTemplate(promptTemplate, templateData);
   const sessionHandoffNote = asString(context.pilibalaSessionHandoffMarkdown, "").trim();
-  const pilibalaEnvNote = externalChatTurn ? "" : renderPilibalaEnvNote(env);
-  const apiAccessNote = externalChatTurn ? "" : renderApiAccessNote(env);
+  // Conversation turns skip the runtime-env note entirely: listing PILIBALA_*
+  // vars plus "check your shell environment" nudges models into environment
+  // hunting on chat turns that never need the API write path (AMB-170/AMB-172).
+  const conversationTurn = context.conversationMode === true;
+  const pilibalaEnvNote =
+    externalChatTurn || conversationTurn ? "" : renderPilibalaEnvNote(env);
+  const apiAccessNote = externalChatTurn
+    ? ""
+    : renderApiAccessNote(env, { conversationTurn });
   const prompt = joinPromptSections([
     promptInstructionsPrefix,
     renderedBootstrapPrompt,
