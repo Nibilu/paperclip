@@ -41,6 +41,7 @@ const support = await getEmbeddedPostgresTestSupport();
 (support.supported ? describe : describe.skip)("handoff history scope", () => {
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: ReturnType<typeof createDb>;
+  let executionIssueId = "";
   const companyId = randomUUID(), agentId = randomUUID(), issueId = randomUUID(), boundaryId = randomUUID(), requestId = randomUUID();
   beforeAll(async () => {
     database = await startEmbeddedPostgresTestDatabase("pilibala-native-handoff-");
@@ -61,6 +62,11 @@ const support = await getEmbeddedPostgresTestSupport();
     ]);
     const { eq } = await import("drizzle-orm");
     await db.update(issues).set({ conversationBoundaryCommentId: boundaryId }).where(eq(issues.id, issueId));
+    executionIssueId = randomUUID();
+    await db.insert(issues).values({ id: executionIssueId, companyId, title: "Execute", status: "in_progress", assigneeAgentId: agentId });
+    await db.insert(heartbeatRuns).values({ companyId, agentId, status: "succeeded", runtimeMode: "legacy",
+      contextSnapshot: { issueId: executionIssueId }, resultJson: { summary: "Execution work record kept verbatim" },
+      createdAt: new Date(16_000), finishedAt: new Date(17_000) });
     await db.insert(issueThreadInteractions).values({ companyId, issueId, kind: "ask_user_questions", status: "answered",
       createdByAgentId: agentId, createdAt: new Date(6_000), resolvedAt: new Date(7_000),
       payload: { version: 1, questions: [] }, result: { version: 1, summaryMarkdown: "Use CODEOWNERS and publish a Storybook per PR" },
@@ -104,8 +110,11 @@ const support = await getEmbeddedPostgresTestSupport();
     expect(result).toContain("CODEOWNERS");
     expect(result).toContain("Repository research complete");
     expect(result).toContain("Saved plan");
-    expect(result).toContain("Waiting for GitHub access");
-    expect(result).toContain("Legacy answer: repository selection is complete");
+    // Conversation run summaries are sanitized to a completion marker: their
+    // narrated procedure must not become the model's turn-completion template.
+    expect(result).toContain("Turn completed (run succeeded); the reply was delivered to this thread.");
+    expect(result).not.toContain("Waiting for GitHub access");
+    expect(result).not.toContain("Legacy answer: repository selection is complete");
     expect(result).not.toContain("UNRELATED TASK ANSWER");
     expect(result).not.toContain("OLD TOPIC");
     expect(result).not.toContain("Deleted private message");
@@ -115,6 +124,12 @@ const support = await getEmbeddedPostgresTestSupport();
     expect(await buildNativeSessionHandoff({ db, companyId: randomUUID(), issueId, agentId, before: new Date(20_000) })).toBeNull();
     expect(await buildNativeSessionHandoff({ db, companyId, issueId, agentId: randomUUID(), before: new Date(20_000) })).toBeNull();
   });
+  it("keeps full run summaries for execution issues while sanitizing conversation ones", async () => {
+    const result = await buildNativeSessionHandoff({ db, companyId, issueId: executionIssueId, agentId, before: new Date(20_000) });
+    expect(result).toContain("Execution work record kept verbatim");
+    expect(result).not.toContain("Turn completed (run succeeded)");
+  });
+
   it("honors the exact wake-comment cutoff when building a fresh replay", async () => {
     const result = await buildNativeSessionHandoff({ db, companyId, issueId, agentId, before: new Date(20_000), throughCommentId: requestId });
     expect(result).toContain("Build a GitHub PR review bot");
