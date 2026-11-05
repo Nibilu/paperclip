@@ -3131,11 +3131,22 @@ function renderPilibalaEnvNote(env: Record<string, string>): string {
     .filter((key) => key.startsWith("PILIBALA_"))
     .sort();
   if (pilibalaKeys.length === 0) return "";
-  return [
+  const lines = [
     "Pilibala runtime note:",
     `The following PILIBALA_* environment variables are available in this run: ${pilibalaKeys.join(", ")}`,
     "Do not assume these variables are missing without checking your shell environment.",
-  ].join("\n");
+  ];
+  if (env.PILIBALA_RUN_ENV_FILE) {
+    lines.push(
+      // AMB-169: terminal tool children may not inherit these variables, and a
+      // reused daemon can carry a PREVIOUS run's stale values. The run env file
+      // is rewritten with the current run's credentials on every run start.
+      "Important: before your FIRST Pilibala API call in a terminal session, load the current run's credentials:",
+      `  source "$PILIBALA_RUN_ENV_FILE"`,
+      "Then verify: [ -n \"$PILIBALA_RUN_ID\" ] && echo \"$PILIBALA_RUN_ID\" — it must be THIS run's id. Never scan /proc or self-mint tokens.",
+    );
+  }
+  return lines.join("\n");
 }
 
 function renderApiAccessNote(env: Record<string, string>): string {
@@ -3145,13 +3156,21 @@ function renderApiAccessNote(env: Record<string, string>): string {
     "Use terminal commands with curl to make Pilibala API requests.",
     "Normalize the base URL before adding API paths:",
     `  PILIBALA_API_BASE="\${PILIBALA_API_URL%/}"; PILIBALA_API_BASE="\${PILIBALA_API_BASE%/api}"`,
-    "GET example:",
-    `  curl -s -H "Authorization: Bearer $PILIBALA_API_KEY" "$PILIBALA_API_BASE/api/agents/me"`,
   ];
+  if (env.PILIBALA_RUN_ENV_FILE) {
+    lines.push(
+      "Load the run credentials before the first API call of each terminal session (the child shell does not reliably inherit them):",
+      `  source "$PILIBALA_RUN_ENV_FILE"`,
+    );
+  }
+  lines.push(
+    "GET example:",
+    `  curl -s -H "Authorization: Bearer \${PILIBALA_API_KEY}" "$PILIBALA_API_BASE/api/agents/me"`,
+  );
   if (env.PILIBALA_TASK_ID) {
     lines.push(
       "Scoped issue comment example:",
-      `  curl -s -X POST -H "Authorization: Bearer $PILIBALA_API_KEY" -H "Content-Type: application/json" -H "X-Pilibala-Run-Id: $PILIBALA_RUN_ID" -d '{"body":"Status update from agent."}' "$PILIBALA_API_BASE/api/issues/$PILIBALA_TASK_ID/comments"`,
+      `  curl -s -X POST -H "Authorization: Bearer \${PILIBALA_API_KEY}" -H "Content-Type: application/json" -H "X-Pilibala-Run-Id: $PILIBALA_RUN_ID" -d '{"body":"Status update from agent."}' "$PILIBALA_API_BASE/api/issues/$PILIBALA_TASK_ID/comments"`,
     );
   } else {
     lines.push("Use a real issue id from the current context before making issue write requests.");
