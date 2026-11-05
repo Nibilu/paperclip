@@ -843,6 +843,23 @@ describe("shared ACPX engine runtime behavior", () => {
     expect(conversationPrompt).not.toContain("Pilibala runtime note:");
     // Read access stays available for fallback fetches and card reads.
     expect(conversationPrompt).toContain("Read example:");
+
+    // Resumed conversation turns use the resume-delta prompt shape; the same
+    // turn-type tiering must hold there.
+    const root = await makeTempRoot();
+    const resumedContext = { ...baseContext, conversationMode: true };
+    const resumedConfig = { agent: "custom", agentCommand: "node ./fake-acp.js", cwd: root, stateDir: path.join(root, "state") };
+    const fresh = await runExecutor(resumedConfig, { authToken: "runtime-secret-token", context: resumedContext });
+    const resumed = await runExecutor(resumedConfig, {
+      authToken: "runtime-secret-token",
+      context: resumedContext,
+      runtime: { sessionParams: fresh.result.sessionParams },
+    });
+    const resumedPrompt = String(resumed.turnInputs[0]?.text ?? "");
+    expect(resumedPrompt).toContain("## Pilibala Resume Delta");
+    expect(resumedPrompt).toContain("delivered to the conversation automatically");
+    expect(resumedPrompt).not.toContain("Scoped issue comment example");
+    expect(resumedPrompt).not.toContain("PILIBALA_RUN_ENV_FILE");
   });
 
   it("keeps large continuation history in ACP turns and preserves resume deltas", async () => {
