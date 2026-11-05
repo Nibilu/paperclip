@@ -5693,26 +5693,6 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         // store (which also flushes its stderr); otherwise the runtime closes
         // directly. The settlement then stops the bridges, saves or discards the
         // staged runtime, releases the staging lease, and flushes the child stderr.
-        // hermes daemon poison mitigation (root-caused 2026-11-05): a
-        // COMPLETED turn makes the persisted record's backend session
-        // unusable for the next load — the daemon stamps live.source.message_id
-        // during the turn and restore_local_session's strict equality refuses
-        // the re-derived source (message_id=None) until the daemon restarts.
-        // With the per-run process lifecycle (Amendment B gate) every run is a
-        // cold ensure that loads that record, so every message after a
-        // successful turn deterministically failed first. The session cannot
-        // survive a turn on this daemon, so settle a completed hermes
-        // persistent turn as one-shot: discard the persistent record and clear
-        // the server session — the next run bootstraps a fresh backend session
-        // with the full bounded handoff instead of failing the load.
-        const completedTurnSessionSettle =
-          terminal.status === "completed" &&
-          prepared.acpxAgent === "hermes" &&
-          prepared.mode === "persistent" &&
-          !prepared.processSessionBridge &&
-          Boolean(sessionHandle.backendSessionId) &&
-          !preserveInterruptedSession;
-        if (completedTurnSessionSettle) clearSession = true;
         runtimeSettlement = {
           mode: "warm_or_close",
           handle: sessionHandle,
@@ -5724,10 +5704,8 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
                 ? "pilibala stalled tool cleanup"
                 : failedTurn
                   ? `pilibala turn ${terminal.status}`
-                  : completedTurnSessionSettle
-                    ? "pilibala completed turn session settle (hermes daemon poisons the record after one turn)"
-                    : "pilibala completed turn cleanup",
-          discardPersistentState: sessionUnavailable || completedTurnSessionSettle || (terminal.status === "cancelled" && !preserveInterruptedSession) || timedOut || channelLost,
+                  : "pilibala completed turn cleanup",
+          discardPersistentState: sessionUnavailable || (terminal.status === "cancelled" && !preserveInterruptedSession) || timedOut || channelLost,
           dropWarmEntry: false,
           recordCloseError: false,
           cancelTurnReason: null,
