@@ -2083,6 +2083,47 @@ async function buildRuntime(input: {
     if (!scratchKeys.has(key) || value !== scratch.dir) resolvedAdapterEnv[key] = value;
   }
   if (authToken) env.PILIBALA_API_KEY = authToken;
+  // Persist the run's Pilibala credentials for the agent's tool children (AMB-169).
+  // The ACP daemon is a persistent process: a fresh session can land on a warm
+  // daemon whose process env carries a PREVIOUS run's credentials (or none), so
+  // bash children cannot rely on inherited env — probes showed both zero vars
+  // and stale-previous-run vars. The engine therefore rewrites a session-stable
+  // 0600 env file at EVERY run start; the agent sources it before API calls.
+  // The path rides the daemon env for freshly spawned daemons; the path is also
+  // deterministic from the per-agent stateDir, so reused daemons work via the
+  // run prompt/agent instructions pointing at the same file.
+  const agentRunEnvDir = path.join(stateDir, "agent-run-env");
+  const agentRunEnvPath = path.join(agentRunEnvDir, `${agent.id}.env`);
+  {
+    const lines: string[] = [];
+    for (const key of [
+      "PILIBALA_API_URL",
+      "PILIBALA_TASK_ID",
+      "PILIBALA_RUN_ID",
+      "PILIBALA_AGENT_ID",
+      "PILIBALA_COMPANY_ID",
+      "PILIBALA_API_KEY",
+    ]) {
+      const value = env[key];
+      if (typeof value === "string" && value.length > 0) {
+        lines.push(`export ${key}=${JSON.stringify(value)}`);
+      }
+    }
+    if (lines.length > 0) {
+      try {
+        await fs.mkdir(agentRunEnvDir, { recursive: true });
+        const tmpPath = `${agentRunEnvPath}.tmp`;
+        await fs.writeFile(tmpPath, `${lines.join("\n")}\n`, { mode: 0o600 });
+        await fs.rename(tmpPath, agentRunEnvPath);
+        env.PILIBALA_RUN_ENV_FILE = agentRunEnvPath;
+      } catch (error) {
+        // The credentials file is a delivery enhancement (AMB-169); a sandboxed
+        // or mocked FS must not fail the run. The daemon env still carries the
+        // same credentials for freshly spawned daemons.
+        input.ctx.onLog("stdout", `[pilibala] agent run-env file unavailable: ${error instanceof Error ? error.message : String(error)}\n`);
+      }
+    }
+  }
   // For the claude agent, set model via ANTHROPIC_MODEL at startup rather than
   // via session/set_config_option — the ACP server's set_config_option handler
   // validates the value against its internal available-models list and rejects
