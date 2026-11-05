@@ -26,6 +26,60 @@ function transcriptEntryVisibleInQuiet(entry: TranscriptEntry): boolean {
   return !(entry.kind === "thinking" || entry.kind === "tool_call" || entry.kind === "tool_result");
 }
 
+/**
+ * Extract complete top-level JSON values from a buffered stdout string.
+ *
+ * ACP-lane runtime events (`acpx.*`) arrive as one compact JSON object per
+ * stdout line, and the persisted log / websocket chunk strips the trailing
+ * newline (it was consumed as the line delimiter). Newline-based buffering
+ * therefore holds the whole event stream as one "incomplete" line until an
+ * unrelated newline-bearing chunk arrives — then flushes the concatenation as
+ * a single unparseable line, collapsing every thought delta into one assistant
+ * entry and hiding tool calls entirely (so the quiet filter has nothing to
+ * hide on ACP transcripts). Returns null when the buffer does not start a JSON
+ * value, so plain-text streams keep the newline-based buffering.
+ */
+function takeBufferedStdoutLines(
+  buffer: string,
+): { lines: string[]; rest: string } | null {
+  const leading = buffer.length - buffer.trimStart().length;
+  const first = buffer[leading];
+  if (first !== "{" && first !== "[") return null;
+  const lines: string[] = [];
+  let depth = 0;
+  let start = leading;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < buffer.length; i++) {
+    const ch = buffer[i];
+    if (inString) {
+      if (escape) escape = false;
+      else if (ch === "\\") escape = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === "{" || ch === "[") depth++;
+    else if (ch === "}" || ch === "]") {
+      depth--;
+      if (depth === 0) {
+        let end = i + 1;
+        while (
+          end < buffer.length &&
+          (buffer[end] === "\n" || buffer[end] === "\r" || buffer[end] === " " || buffer[end] === "\t")
+        ) {
+          end++;
+        }
+        lines.push(buffer.slice(start, end));
+        start = end;
+        const restTrimmed = buffer.slice(start).trimStart();
+        if (restTrimmed && !restTrimmed.startsWith("{") && !restTrimmed.startsWith("[")) break;
+      }
+    }
+  }
+  return { lines, rest: start < buffer.length ? buffer.slice(start) : "" };
+}
+
 function resolveStdoutParser(source: StdoutLineParser | TranscriptParserSource) {
   if (typeof source === "function") {
     return { parseLine: source, reset: null as (() => void) | null };
@@ -181,11 +235,9 @@ export function createTranscriptBuilder(
       lastStdoutTs = chunk.ts;
 
       const combined = stdoutBuffer + chunk.chunk;
-      const lines = combined.split(/\r?\n/);
-      stdoutBuffer = lines.pop() ?? "";
-      for (const line of lines) {
+      const emitLine = (line: string) => {
         const trimmed = line.trim();
-        if (!trimmed) continue;
+        if (!trimmed) return;
         appendParsedTranscriptLine({
           entries,
           line: trimmed,
@@ -195,6 +247,15 @@ export function createTranscriptBuilder(
           redactionOptions,
           quiet,
         });
+      };
+      const bufferedJson = takeBufferedStdoutLines(combined);
+      if (bufferedJson) {
+        stdoutBuffer = bufferedJson.rest;
+        for (const line of bufferedJson.lines) emitLine(line);
+      } else {
+        const lines = combined.split(/\r?\n/);
+        stdoutBuffer = lines.pop() ?? "";
+        for (const line of lines) emitLine(line);
       }
     }
   };
@@ -203,15 +264,27 @@ export function createTranscriptBuilder(
     const trailing = stdoutBuffer.trim();
     stdoutBuffer = "";
     if (!trailing) return;
-    appendParsedTranscriptLine({
-      entries,
-      line: trailing,
-      ts: lastStdoutTs || new Date().toISOString(),
-      parseLine,
-      reset,
-      redactionOptions,
-      quiet,
-    });
+    const ts = lastStdoutTs || new Date().toISOString();
+    const emitTrailing = (line: string) => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      appendParsedTranscriptLine({
+        entries,
+        line: trimmed,
+        ts,
+        parseLine,
+        reset,
+        redactionOptions,
+        quiet,
+      });
+    };
+    const bufferedJson = takeBufferedStdoutLines(trailing);
+    if (bufferedJson) {
+      for (const line of bufferedJson.lines) emitTrailing(line);
+      if (bufferedJson.rest.trim()) emitTrailing(bufferedJson.rest);
+    } else {
+      emitTrailing(trailing);
+    }
   };
 
   const dispose = () => {
@@ -231,6 +304,20 @@ export function buildTranscript(
   const redactionOptions = { enabled: opts?.censorUsernameInLogs ?? false };
   const { parseLine, reset } = resolveStdoutParser(parserSource);
 
+  const emit = (line: string, ts: string) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    appendParsedTranscriptLine({
+      entries,
+      line: trimmed,
+      ts,
+      parseLine,
+      reset,
+      redactionOptions,
+      quiet: opts?.quiet === true,
+    });
+  };
+
   for (const chunk of chunks) {
     if (chunk.stream === "stderr") {
       entries.push({ kind: "stderr", ts: chunk.ts, text: redactHomePathUserSegments(chunk.chunk, redactionOptions) });
@@ -242,35 +329,27 @@ export function buildTranscript(
     }
 
     const combined = stdoutBuffer + chunk.chunk;
-    const lines = combined.split(/\r?\n/);
-    stdoutBuffer = lines.pop() ?? "";
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      appendParsedTranscriptLine({
-        entries,
-        line: trimmed,
-        ts: chunk.ts,
-        parseLine,
-        reset,
-        redactionOptions,
-        quiet: opts?.quiet === true,
-      });
+    const bufferedJson = takeBufferedStdoutLines(combined);
+    if (bufferedJson) {
+      stdoutBuffer = bufferedJson.rest;
+      for (const line of bufferedJson.lines) emit(line, chunk.ts);
+    } else {
+      const lines = combined.split(/\r?\n/);
+      stdoutBuffer = lines.pop() ?? "";
+      for (const line of lines) emit(line, chunk.ts);
     }
   }
 
   const trailing = stdoutBuffer.trim();
   if (trailing) {
     const ts = chunks.length > 0 ? chunks[chunks.length - 1]!.ts : new Date().toISOString();
-    appendParsedTranscriptLine({
-      entries,
-      line: trailing,
-      ts,
-      parseLine,
-      reset,
-      redactionOptions,
-      quiet: opts?.quiet === true,
-    });
+    const bufferedJson = takeBufferedStdoutLines(stdoutBuffer);
+    if (bufferedJson) {
+      for (const line of bufferedJson.lines) emit(line, ts);
+      if (bufferedJson.rest.trim()) emit(bufferedJson.rest, ts);
+    } else {
+      emit(trailing, ts);
+    }
   }
 
   reset?.();

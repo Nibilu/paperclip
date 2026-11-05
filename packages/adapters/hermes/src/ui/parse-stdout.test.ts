@@ -148,3 +148,29 @@ describe("parseHermesStdoutLine — acpx engine JSON events", () => {
     }
   });
 });
+
+describe("parseHermesStdoutLine — corrupted acpx event lines", () => {
+  it("downgrades unparseable acpx events to system notes instead of agent-output kinds", () => {
+    const corrupted = '{"type":"acpx.text_delta","text":"H \\"Authorization:\\"REDACTED\\"channel":"thought","tag":"agent_thought_chunk"}';
+    const entries = parseHermesStdoutLine(corrupted, "2026-11-05T00:00:00.000Z");
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.kind).toBe("system");
+    expect(String(entries[0]?.text)).toContain("[corrupted acpx event]");
+    expect(String(entries[0]?.text)).toContain("acpx.text_delta");
+  });
+
+  it("long corrupted lines are truncated in the preview", () => {
+    // Real broken-line shape: the escaped closing quote around a redacted
+    // value swallows the field separator, leaving invalid JSON.
+    const corrupted = `{"type":"acpx.text_delta","text":"H \\"Authorization: ***","text2":"${"x".repeat(400)}"channel":"thought","tag":"agent_thought_chunk"}`;
+    const entries = parseHermesStdoutLine(corrupted, "2026-11-05T00:00:00.000Z");
+    expect(entries[0]?.kind).toBe("system");
+    expect(String(entries[0]?.text ?? "").length).toBeLessThan(200);
+  });
+
+  it("non-acpx JSON still falls through to the CLI grammar untouched", () => {
+    const entries = parseHermesStdoutLine('{"unrelated":"json"}', "2026-11-05T00:00:00.000Z");
+    // Whatever the CLI grammar does with it, it must not become a corrupted-acpx system note.
+    expect(entries.every((e) => !String(e.text).includes("[corrupted acpx event]"))).toBe(true);
+  });
+});

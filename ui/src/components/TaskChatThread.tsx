@@ -29,6 +29,7 @@ import {
   useLiveRunTranscripts,
   type RunTranscriptSource,
 } from "@/components/transcript/useLiveRunTranscripts";
+import { quietTranscriptFromAdapterConfig } from "@/adapters";
 import { useNativeRunTranscripts } from "@/components/transcript/useNativeRunTranscripts";
 import { TaskChatLiveTail } from "@/components/task-chat/TaskChatLiveTail";
 import { TaskChatRunnerTurn } from "@/components/task-chat/TaskChatRunnerTurn";
@@ -894,6 +895,7 @@ export function TaskChatThread(props: TaskChatThreadProps) {
       map.set(r.runId, {
         id: r.runId,
         status: r.status,
+        agentId: r.agentId,
         adapterType: r.adapterType ?? "",
         runtimeMode: r.runtimeMode,
         hasStoredOutput: r.hasStoredOutput,
@@ -904,6 +906,7 @@ export function TaskChatThread(props: TaskChatThreadProps) {
       map.set(r.id, {
         id: r.id,
         status: r.status,
+        agentId: r.agentId,
         adapterType: r.adapterType,
         runtimeMode: r.runtimeMode,
         hasStoredOutput: map.get(r.id)?.hasStoredOutput,
@@ -915,6 +918,7 @@ export function TaskChatThread(props: TaskChatThreadProps) {
       map.set(activeRun.id, {
         id: activeRun.id,
         status: activeRun.status,
+        agentId: activeRun.agentId,
         adapterType: activeRun.adapterType,
         runtimeMode: activeRun.runtimeMode,
         logBytes: activeRun.logBytes,
@@ -950,7 +954,14 @@ export function TaskChatThread(props: TaskChatThreadProps) {
     hydratedRunIds: hydratedLogRunIds,
     errorsByRun: logErrorsByRun,
     retry: retryLogs,
-  } = useLiveRunTranscripts({ runs: logRuns, companyId });
+  } = useLiveRunTranscripts({
+    runs: logRuns,
+    companyId,
+    quietForRun: (run) => {
+      const agent = run.agentId ? agentMap?.get(run.agentId) : undefined;
+      return agent ? quietTranscriptFromAdapterConfig(agent.adapterConfig) : false;
+    },
+  });
   const fallbackByRunRef = useRef(
     new Map<string, NonNullable<ReturnType<typeof logTranscriptByRun.get>>>(),
   );

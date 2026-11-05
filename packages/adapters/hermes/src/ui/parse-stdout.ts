@@ -212,6 +212,16 @@ export function parseHermesStdoutLine(
         return parseAcpxStdoutLine(trimmed, ts);
       }
     } catch {
+      // Corrupted acpx event line (legacy redaction broke the JSON structure):
+      // surface it as a neutral system note so historical logs never read as
+      // agent message output. The raw line stays in the persisted log.
+      if (trimmed.includes('"type":"acpx.')) {
+        return [{
+          kind: "system" as const,
+          ts,
+          text: `[corrupted acpx event] ${trimmed.length > 160 ? `${trimmed.slice(0, 157)}…` : trimmed}`,
+        }];
+      }
       // Not JSON — fall through to the Hermes CLI line grammar below.
     }
   }
