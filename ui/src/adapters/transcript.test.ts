@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTranscript, createTranscriptBuilder, type RunLogChunk } from "./transcript";
+import { buildTranscript, createTranscriptBuilder, quietTranscriptFromAdapterConfig, type RunLogChunk } from "./transcript";
 import { grokLocalUIAdapter } from "./grok-local";
 import { kimiLocalUIAdapter } from "./kimi-local";
 import type { UIAdapterModule } from "./types";
@@ -326,3 +326,42 @@ describe("createTranscriptBuilder (incremental streaming)", () => {
     expect(builder.entries).toEqual([{ kind: "stdout", ts, text: "completed:task-1" }]);
   });
 });
+
+  describe("quiet output control", () => {
+    const ts = "2026-03-20T13:00:00.000Z";
+    const acpLine = (raw: string) => JSON.stringify({ acpx: { type: raw } });
+    const parser = (line: string, entryTs: string) => {
+      if (line === "THINK") return [{ kind: "thinking", ts: entryTs, text: "hmm" }];
+      if (line === "TOOL") return [{ kind: "tool_call", ts: entryTs, name: "read_file", input: {} }];
+      if (line === "TOOLRES") return [{ kind: "tool_result", ts: entryTs, toolUseId: "t1", content: "ok", isError: false }];
+      if (line === "PERM") return [{ kind: "runtime_request", ts: entryTs, requestId: "r1", requestKind: "permission_approval", turnId: null, requestType: "permission", status: "pending", prompt: "allow edit?", choices: [], fields: [] }];
+      if (line === "SAY") return [{ kind: "assistant", ts: entryTs, text: "hello" }];
+      if (line === "RES") return [{ kind: "result", ts: entryTs, text: "done", inputTokens: 1, outputTokens: 1, cachedTokens: 0, costUsd: 0, subtype: "success", isError: false, errors: [] }];
+      return [];
+    };
+    const chunks = (lines: string[]): RunLogChunk[] => lines.map((l, i) => ({ ts: `${ts.slice(0, -1)}${i}`, stream: "stdout" as const, chunk: `${l}\n` }));
+
+    it("quiet drops thinking/tool entries but keeps assistant, results and permission prompts", () => {
+      const entries = buildTranscript(chunks(["THINK", "TOOL", "TOOLRES", "PERM", "SAY", "RES"]), parser, { quiet: true });
+      expect(entries.map((e) => e.kind)).toEqual(["runtime_request", "assistant", "result"]);
+    });
+
+    it("without quiet everything is kept", () => {
+      const entries = buildTranscript(chunks(["THINK", "TOOL", "SAY"]), parser);
+      expect(entries.map((e) => e.kind)).toEqual(["thinking", "tool_call", "assistant"]);
+    });
+
+    it("verbose overrides quiet", () => {
+      expect(quietTranscriptFromAdapterConfig({ quiet: true, verbose: true })).toBe(false);
+      expect(quietTranscriptFromAdapterConfig({ quiet: true })).toBe(true);
+      expect(quietTranscriptFromAdapterConfig({})).toBe(false);
+      expect(quietTranscriptFromAdapterConfig(null)).toBe(false);
+    });
+
+    it("createTranscriptBuilder honors quiet for appended chunks and the trailing flush", () => {
+      const builder = createTranscriptBuilder(parser, { quiet: true });
+      builder.append(chunks(["THINK", "SAY"]));
+      builder.flush();
+      expect(builder.entries.map((e) => e.kind)).toEqual(["assistant"]);
+    });
+  });

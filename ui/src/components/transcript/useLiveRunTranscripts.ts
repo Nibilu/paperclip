@@ -49,6 +49,8 @@ export interface RunTranscriptSource {
   id: string;
   status: string;
   adapterType: string;
+  /** Owning agent, when known — used for per-agent quiet-output lookup. */
+  agentId?: string;
   runtimeMode?: "legacy" | "native";
   hasStoredOutput?: boolean;
   logBytes?: number | null;
@@ -58,6 +60,12 @@ export interface RunTranscriptSource {
 interface UseLiveRunTranscriptsOptions {
   runs: RunTranscriptSource[];
   companyId?: string | null;
+  /**
+   * Per-run quiet-output control (Agent adapterConfig `quiet`/`verbose`).
+   * When it returns true the transcript hides thinking/tool_call/tool_result
+   * entries; approval prompts are always kept. Omit for full-fidelity output.
+   */
+  quietForRun?: (run: RunTranscriptSource) => boolean;
   /**
    * Compact chunk-count cap for ticker-style consumers (dashboard). When set,
    * trimming is silent — the historical behavior. Full task views omit this and
@@ -98,6 +106,7 @@ export function resolveInitialLogOffset(run: RunTranscriptSource, limitBytes: nu
 export function useLiveRunTranscripts({
   runs,
   companyId,
+  quietForRun,
   maxChunksPerRun,
   maxBytesPerRun = TASK_VIEW_MAX_BYTES_PER_RUN,
   logPollIntervalMs = LOG_POLL_INTERVAL_MS,
@@ -155,11 +164,16 @@ export function useLiveRunTranscripts({
   const reconnectStateRef = useRef<{ companyId: string; attempt: number } | null>(null);
   const prevKnownRunIdsRef = useRef(new Set<string>());
   const [pruneTick, setPruneTick] = useState(0);
+  // Quiet-output control per run (Agent adapterConfig quiet/verbose). Kept in a
+  // ref so callers can pass an inline closure without invalidating the cache.
+  const quietForRunRef = useRef(quietForRun ?? (() => false));
+  quietForRunRef.current = quietForRun ?? quietForRunRef.current;
   const transcriptCacheRef = useRef(new Map<string, {
     adapterType: string;
     /** Chunk array the builder has consumed so far (identity-compared per element). */
     chunks: RunLogChunk[];
     censorUsernameInLogs: boolean;
+    quiet: boolean;
     parserTick: number;
     builder: TranscriptBuilder;
     transcript: TranscriptEntry[];
@@ -567,12 +581,14 @@ export function useLiveRunTranscripts({
     for (const run of normalizedRuns) {
       currentRunIds.add(run.id);
       const chunks = chunksByRun.get(run.id) ?? EMPTY_RUN_LOG_CHUNKS;
+      const quiet = quietForRunRef.current(run);
       const cached = cache.get(run.id);
       if (
         cached &&
         cached.adapterType === run.adapterType &&
         cached.chunks === chunks &&
         cached.censorUsernameInLogs === censorUsernameInLogs &&
+        cached.quiet === quiet &&
         cached.parserTick === parserTick
       ) {
         next.set(run.id, cached.transcript);
@@ -583,6 +599,7 @@ export function useLiveRunTranscripts({
       const canIncrement =
         cached &&
         cached.censorUsernameInLogs === censorUsernameInLogs &&
+        cached.quiet === quiet &&
         cached.parserTick === parserTick &&
         chunks.length > cached.chunks.length;
       if (canIncrement) {
@@ -623,6 +640,7 @@ export function useLiveRunTranscripts({
         // stderr/system handling, same trailing-line flush).
         const builder = createTranscriptBuilder(adapter, {
           censorUsernameInLogs,
+          quiet,
         });
         builder.append(chunks);
         if (isTerminalStatus(run.status)) builder.flush();
@@ -630,6 +648,7 @@ export function useLiveRunTranscripts({
           adapterType: run.adapterType,
           chunks,
           censorUsernameInLogs,
+          quiet,
           parserTick,
           builder,
           transcript: builder.entries,

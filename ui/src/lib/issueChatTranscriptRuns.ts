@@ -34,6 +34,7 @@ export function resolveIssueChatTranscriptRuns(args: {
       id: run.id,
       status: run.status,
       adapterType: run.adapterType,
+      agentId: run.agentId,
       logBytes: run.logBytes,
       lastOutputBytes: run.lastOutputBytes,
     });
@@ -44,6 +45,7 @@ export function resolveIssueChatTranscriptRuns(args: {
       id: activeRun.id,
       status: activeRun.status,
       adapterType: activeRun.adapterType,
+      agentId: activeRun.agentId,
       logBytes: activeRun.logBytes,
       lastOutputBytes: activeRun.lastOutputBytes,
     });
@@ -63,6 +65,7 @@ export function resolveIssueChatTranscriptRuns(args: {
       id: run.runId,
       status: run.status,
       adapterType,
+      agentId: run.agentId,
       hasStoredOutput: run.hasStoredOutput,
       logBytes: run.logBytes,
     });

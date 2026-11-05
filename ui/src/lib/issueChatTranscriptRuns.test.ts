@@ -38,6 +38,7 @@ describe("resolveIssueChatTranscriptRuns", () => {
         id: "run-1",
         status: "succeeded",
         adapterType: "codex_local",
+        agentId: "agent-1",
         hasStoredOutput: true,
       },
     ]);

@@ -45,7 +45,7 @@ import { redactCommandText as redactCommandSecretText } from "@pilibalaai/adapte
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { assetsApi } from "../api/assets";
 import { toolsApi } from "../api/tools";
-import { getUIAdapter, buildTranscript, onAdapterChange } from "../adapters";
+import { getUIAdapter, buildTranscript, onAdapterChange, quietTranscriptFromAdapterConfig } from "../adapters";
 import { StatusBadge } from "../components/StatusBadge";
 import { AgentLifecycleStatus, useAgentLifecycleStatus } from "../components/AgentLifecycleStatus";
 import { MarkdownBody } from "../components/MarkdownBody";
@@ -3992,7 +3992,7 @@ function RunDetail({ run: initialRun, agentRouteId, adapterType, adapterConfig }
       })()}
 
       {/* Log viewer */}
-      <LogViewer run={run} adapterType={adapterType} />
+      <LogViewer run={run} adapterType={adapterType} quiet={quietTranscriptFromAdapterConfig(adapterConfig)} />
       <ScrollToBottom />
       <RunnerInspector
         runId={run.id}
@@ -4011,7 +4011,7 @@ function RunDetail({ run: initialRun, agentRouteId, adapterType, adapterConfig }
 
 /* ---- Log Viewer ---- */
 
-export function LogViewer({ run, adapterType }: { run: HeartbeatRun; adapterType: string }) {
+export function LogViewer({ run, adapterType, quiet }: { run: HeartbeatRun; adapterType: string; quiet?: boolean }) {
   const { visible } = usePageVisibility();
   const [events, setEvents] = useState<HeartbeatRunEvent[]>([]);
   const [logLines, setLogLines] = useState<RunLogChunk[]>([]);
@@ -4462,8 +4462,8 @@ export function LogViewer({ run, adapterType }: { run: HeartbeatRun; adapterType
   }, []);
 
   const transcript = useMemo(
-    () => buildTranscript(logLines, adapter, { censorUsernameInLogs }),
-    [adapter, censorUsernameInLogs, logLines, parserTick],
+    () => buildTranscript(logLines, adapter, { censorUsernameInLogs, quiet }),
+    [adapter, censorUsernameInLogs, logLines, parserTick, quiet],
   );
   const toolDecisionLookup = useQuery({
     queryKey: queryKeys.tools.runDecisions(run.companyId, run.id),

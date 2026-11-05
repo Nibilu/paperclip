@@ -2,8 +2,29 @@ import { redactHomePathUserSegments, redactTranscriptEntryPaths } from "@pilibal
 import type { TranscriptEntry, StdoutLineParser, TranscriptParserSource } from "./types";
 
 export type RunLogChunk = { ts: string; stream: "stdout" | "stderr" | "system"; chunk: string; seq?: number };
-type TranscriptBuildOptions = { censorUsernameInLogs?: boolean };
+type TranscriptBuildOptions = { censorUsernameInLogs?: boolean; quiet?: boolean };
 type RedactionOptions = { enabled: boolean };
+
+/**
+ * Quiet-output control for transcripts, mirroring the Agent adapterConfig
+ * `quiet` / `verbose` toggles (same semantics as the CLI lane's `--quiet`:
+ * cleaner transcripts — response + system + results only). `verbose` wins
+ * over `quiet` when both are set.
+ */
+export function quietTranscriptFromAdapterConfig(config: unknown): boolean {
+  if (!config || typeof config !== "object") return false;
+  const record = config as Record<string, unknown>;
+  if (record.verbose === true) return false;
+  return record.quiet === true;
+}
+
+/**
+ * Entry kinds hidden when quiet output is on. Approval/permission prompts
+ * (`runtime_request`) are always kept — silencing them would block runs.
+ */
+function transcriptEntryVisibleInQuiet(entry: TranscriptEntry): boolean {
+  return !(entry.kind === "thinking" || entry.kind === "tool_call" || entry.kind === "tool_result");
+}
 
 function resolveStdoutParser(source: StdoutLineParser | TranscriptParserSource) {
   if (typeof source === "function") {
@@ -86,12 +107,16 @@ function appendParsedTranscriptLine(args: {
   parseLine: (line: string, ts: string) => TranscriptEntry[];
   reset: (() => void) | null;
   redactionOptions: RedactionOptions;
+  quiet?: boolean;
 }) {
-  const { entries, line, ts, parseLine, reset, redactionOptions } = args;
+  const { entries, line, ts, parseLine, reset, redactionOptions, quiet } = args;
   try {
+    const parsed = parseLine(line, ts);
     appendTranscriptEntries(
       entries,
-      parseLine(line, ts).map((entry) => redactTranscriptEntryPaths(entry, redactionOptions)),
+      (quiet ? parsed.filter(transcriptEntryVisibleInQuiet) : parsed).map((entry) =>
+        redactTranscriptEntryPaths(entry, redactionOptions),
+      ),
     );
   } catch (error) {
     reset?.();
@@ -140,6 +165,7 @@ export function createTranscriptBuilder(
   let stdoutBuffer = "";
   let lastStdoutTs = "";
   const redactionOptions = { enabled: opts?.censorUsernameInLogs ?? false };
+  const quiet = opts?.quiet === true;
   const { parseLine, reset } = resolveStdoutParser(parserSource);
 
   const append = (chunks: readonly RunLogChunk[]) => {
@@ -167,6 +193,7 @@ export function createTranscriptBuilder(
           parseLine,
           reset,
           redactionOptions,
+          quiet,
         });
       }
     }
@@ -183,6 +210,7 @@ export function createTranscriptBuilder(
       parseLine,
       reset,
       redactionOptions,
+      quiet,
     });
   };
 
@@ -226,6 +254,7 @@ export function buildTranscript(
         parseLine,
         reset,
         redactionOptions,
+        quiet: opts?.quiet === true,
       });
     }
   }
@@ -240,6 +269,7 @@ export function buildTranscript(
       parseLine,
       reset,
       redactionOptions,
+      quiet: opts?.quiet === true,
     });
   }
 

@@ -56,6 +56,7 @@ import type {
 } from "@pilibalaai/shared";
 import type { ActiveRunForIssue, LiveRunForIssue } from "../api/heartbeats";
 import { findUIAdapter } from "../adapters/registry";
+import { quietTranscriptFromAdapterConfig } from "../adapters/transcript";
 import { useLiveRunTranscripts } from "./transcript/useLiveRunTranscripts";
 import { useSecondTick } from "../hooks/useSecondTick";
 import {
@@ -5978,6 +5979,10 @@ export function IssueChatThread({
   const { transcriptByRun, hasOutputForRun } = useLiveRunTranscripts({
     runs: enableLiveTranscriptPolling ? transcriptRuns : [],
     companyId,
+    quietForRun: (run) => {
+      const agent = run.agentId ? agentMap?.get(run.agentId) : undefined;
+      return agent ? quietTranscriptFromAdapterConfig(agent.adapterConfig) : false;
+    },
   });
   const resolvedTranscriptByRun = transcriptsByRunId ?? transcriptByRun;
   const resolvedHasOutputForRun = hasOutputForRunOverride ?? hasOutputForRun;
