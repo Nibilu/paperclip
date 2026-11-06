@@ -2109,6 +2109,18 @@ async function buildRuntime(input: {
         lines.push(`export ${key}=${JSON.stringify(value)}`);
       }
     }
+    // AMB-189: the API access note teaches deriving PILIBALA_API_BASE from
+    // PILIBALA_API_URL, but terminal tool calls are fresh shells — a base
+    // derived in one call's shell never reaches the next call, and the sourced
+    // env file carried no resolved value, so curl died with exit 3 (bad URL)
+    // before any request left the machine. Ship the derived base itself,
+    // computed with the exact shell semantics the note teaches: strip one
+    // trailing "/" then one trailing "/api".
+    const apiUrl = env.PILIBALA_API_URL;
+    if (typeof apiUrl === "string" && apiUrl.length > 0) {
+      const apiBase = apiUrl.replace(/\/$/, "").replace(/\/api$/, "");
+      lines.push(`export PILIBALA_API_BASE=${JSON.stringify(apiBase)}`);
+    }
     if (lines.length > 0) {
       try {
         await fs.mkdir(agentRunEnvDir, { recursive: true });

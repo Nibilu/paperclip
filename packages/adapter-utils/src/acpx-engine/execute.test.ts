@@ -813,6 +813,50 @@ describe("shared ACPX engine runtime behavior", () => {
     expect(promptMetrics?.runtimeNoteChars).toBeGreaterThan(0);
   });
 
+  it("writes the derived PILIBALA_API_BASE into the run env file (AMB-189)", async () => {
+    // AMB-189 field failure: the run env file carries PILIBALA_API_URL but the
+    // agent derives PILIBALA_API_BASE in one terminal shell and reuses it in a
+    // later one — every terminal tool call is a fresh shell, so the derived
+    // variable is empty and `curl "$PILIBALA_API_BASE/api/..."` dies with
+    // exit 3 (URL using bad/illegal format) before any HTTP request leaves.
+    // The env file must carry the resolved base itself.
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const prevApiUrl = process.env.PILIBALA_API_URL;
+    process.env.PILIBALA_API_URL = "http://127.0.0.1:3104/api/";
+    try {
+      await runExecutor(
+        { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir },
+        {
+          authToken: "runtime-secret-token",
+          context: {
+            taskId: "issue-1",
+            wakeReason: "issue_assigned",
+            pilibalaWake: {
+              reason: "issue_assigned",
+              issue: { id: "issue-1", identifier: "TEST-1" },
+            },
+          },
+        },
+      );
+    } finally {
+      if (prevApiUrl === undefined) delete process.env.PILIBALA_API_URL;
+      else process.env.PILIBALA_API_URL = prevApiUrl;
+    }
+
+    const envFile = await fs.readFile(
+      path.join(stateDir, "agent-run-env", "agent-1.env"),
+      "utf8",
+    );
+    expect(envFile).toContain('export PILIBALA_API_URL="http://127.0.0.1:3104/api/"');
+    // Derived exactly as the API access note teaches: strip one trailing "/",
+    // then one trailing "/api".
+    expect(envFile).toContain('export PILIBALA_API_BASE="http://127.0.0.1:3104"');
+    expect(envFile).toContain('export PILIBALA_API_KEY="runtime-secret-token"');
+    expect(envFile).toContain('export PILIBALA_TASK_ID="issue-1"');
+    expect(envFile).toContain('export PILIBALA_RUN_ID="run-1"');
+  });
+
   it("scales the env/API notes to the turn type: conversation turns lose publish teaching, execution turns keep it", async () => {
     const baseContext = {
       taskId: "issue-1",
