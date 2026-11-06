@@ -7,9 +7,9 @@ type RedactionOptions = { enabled: boolean };
 
 /**
  * Quiet-output control for transcripts, mirroring the Agent adapterConfig
- * `quiet` / `verbose` toggles (same semantics as the CLI lane's `--quiet`:
- * cleaner transcripts — response + system + results only). `verbose` wins
- * over `quiet` when both are set.
+ * `quiet` / `verbose` toggles. These are presentation-only controls: they
+ * change how much transcript detail the UI shows, never what the agent
+ * executes. `verbose` wins over `quiet` when both are set.
  */
 export function quietTranscriptFromAdapterConfig(config: unknown): boolean {
   if (!config || typeof config !== "object") return false;
@@ -19,11 +19,24 @@ export function quietTranscriptFromAdapterConfig(config: unknown): boolean {
 }
 
 /**
- * Entry kinds hidden when quiet output is on. Approval/permission prompts
+ * Quiet-output transform. Per the presentation contract, quiet output keeps
+ * the progress hints (thinking happened, tools ran) but strips their CONTENT,
+ * so a reader sees that work is advancing without the full log volume:
+ * - thinking → text-less lifecycle row (renders as "Thought"/"Thinking…")
+ * - tool_result → status only (✓/✗ row keeps name + short target, drops the
+ *   output body that floods the transcript)
+ * tool_call entries stay intact — the call's short target (command, file
+ * path) IS the action hint. Approval/permission prompts
  * (`runtime_request`) are always kept — silencing them would block runs.
  */
-function transcriptEntryVisibleInQuiet(entry: TranscriptEntry): boolean {
-  return !(entry.kind === "thinking" || entry.kind === "tool_call" || entry.kind === "tool_result");
+function quietTransformTranscriptEntry(entry: TranscriptEntry): TranscriptEntry {
+  if (entry.kind === "thinking") {
+    return entry.text ? { ...entry, text: "" } : entry;
+  }
+  if (entry.kind === "tool_result") {
+    return entry.content ? { ...entry, content: "" } : entry;
+  }
+  return entry;
 }
 
 /**
@@ -168,7 +181,7 @@ function appendParsedTranscriptLine(args: {
     const parsed = parseLine(line, ts);
     appendTranscriptEntries(
       entries,
-      (quiet ? parsed.filter(transcriptEntryVisibleInQuiet) : parsed).map((entry) =>
+      (quiet ? parsed.map(quietTransformTranscriptEntry) : parsed).map((entry) =>
         redactTranscriptEntryPaths(entry, redactionOptions),
       ),
     );

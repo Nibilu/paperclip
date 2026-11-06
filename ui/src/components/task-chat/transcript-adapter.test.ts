@@ -2855,3 +2855,31 @@ describe("prependIssueBrief (PAP-375)", () => {
     expect(prependIssueBrief(items, false)).toBe(items);
   });
 });
+
+describe("quiet-output hint rendering", () => {
+  const ts = "2026-11-06T12:00:00.000Z";
+
+  it("renders stripped quiet entries as progress hints without content", () => {
+    const entries: TranscriptEntry[] = [
+      { kind: "thinking", ts, text: "", lifecycle: "completed", itemId: "th1" },
+      { kind: "tool_call", ts, name: "Terminal", input: { command: "pnpm test" }, toolUseId: "t1" },
+      { kind: "tool_result", ts, toolUseId: "t1", toolName: "Terminal", content: "", isError: false },
+    ];
+    const items = transcriptToTaskChatItems(entries, {
+      runId: "run-quiet",
+      agentName: "new-acp-hermi",
+      running: false,
+    });
+    const thinking = items.find((item): item is Extract<typeof item, { kind: "thinking" }> => item.kind === "thinking");
+    expect(thinking).toBeDefined();
+    // Text-less reasoning → hint row; the renderer shows "Thought"/"Thinking…".
+    expect(thinking?.lines.join("").trim()).toBe("");
+    expect(thinking?.lifecycleOnly).toBe(true);
+    const tool = items.find((item): item is Extract<typeof item, { kind: "tool" }> => item.kind === "tool");
+    expect(tool?.name).toBe("Terminal");
+    // The call's short target survives (action hint)…
+    expect(tool?.target).toContain("pnpm test");
+    // …the result body does not.
+    expect(tool?.detail).toBeUndefined();
+  });
+});

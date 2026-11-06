@@ -342,9 +342,17 @@ describe("createTranscriptBuilder (incremental streaming)", () => {
     };
     const chunks = (lines: string[]): RunLogChunk[] => lines.map((l, i) => ({ ts: `${ts.slice(0, -1)}${i}`, stream: "stdout" as const, chunk: `${l}\n` }));
 
-    it("quiet drops thinking/tool entries but keeps assistant, results and permission prompts", () => {
+    it("quiet keeps thinking/tool progress hints but strips their content", () => {
       const entries = buildTranscript(chunks(["THINK", "TOOL", "TOOLRES", "PERM", "SAY", "RES"]), parser, { quiet: true });
-      expect(entries.map((e) => e.kind)).toEqual(["runtime_request", "assistant", "result"]);
+      expect(entries.map((e) => e.kind)).toEqual(["thinking", "tool_call", "tool_result", "runtime_request", "assistant", "result"]);
+      const thinking = entries[0] as Extract<TranscriptEntry, { kind: "thinking" }>;
+      expect(thinking.text).toBe("");
+      // The call's identity stays — it IS the action hint.
+      const toolCall = entries[1] as Extract<TranscriptEntry, { kind: "tool_call" }>;
+      expect(toolCall.name).toBe("read_file");
+      const toolResult = entries[2] as Extract<TranscriptEntry, { kind: "tool_result" }>;
+      expect(toolResult.content).toBe("");
+      expect(toolResult.isError).toBe(false);
     });
 
     it("without quiet everything is kept", () => {
@@ -363,7 +371,9 @@ describe("createTranscriptBuilder (incremental streaming)", () => {
       const builder = createTranscriptBuilder(parser, { quiet: true });
       builder.append(chunks(["THINK", "SAY"]));
       builder.flush();
-      expect(builder.entries.map((e) => e.kind)).toEqual(["assistant"]);
+      expect(builder.entries.map((e) => e.kind)).toEqual(["thinking", "assistant"]);
+      const thinking = builder.entries[0] as Extract<TranscriptEntry, { kind: "thinking" }>;
+      expect(thinking.text).toBe("");
     });
 
     // AMB-174 regression: ACP runtime events persist/broadcast as one compact
@@ -372,7 +382,7 @@ describe("createTranscriptBuilder (incremental streaming)", () => {
     // event stream as one "incomplete" line, collapsing all thought deltas
     // into a single unparseable assistant entry — leaving the quiet toggle
     // nothing to hide on ACP transcripts.
-    it("ACP newline-less JSON event chunks parse individually; quiet hides the process entries", async () => {
+    it("ACP newline-less JSON event chunks parse individually; quiet strips thought/tool-result content but keeps the hint rows", async () => {
       const { parseHermesStdoutLine } = await import("@pilibalaai/hermes-pilibala-adapter/ui");
       const event = (obj: Record<string, unknown>, i: number): RunLogChunk => ({
         ts: `${ts.slice(0, -1)}${i}`,
@@ -389,7 +399,12 @@ describe("createTranscriptBuilder (incremental streaming)", () => {
       const off = buildTranscript(acpChunks, parseHermesStdoutLine);
       expect(off.map((e) => e.kind)).toEqual(["thinking", "tool_call", "tool_call", "tool_result", "assistant"]);
       const on = buildTranscript(acpChunks, parseHermesStdoutLine, { quiet: true });
-      expect(on.map((e) => e.kind)).toEqual(["assistant"]);
+      expect(on.map((e) => e.kind)).toEqual(["thinking", "tool_call", "tool_call", "tool_result", "assistant"]);
+      // Hint rows survive; the flooding content does not.
+      const thought = on.find((e): e is Extract<TranscriptEntry, { kind: "thinking" }> => e.kind === "thinking");
+      expect(thought?.text).toBe("");
+      const toolResultEntry = on.find((e): e is Extract<TranscriptEntry, { kind: "tool_result" }> => e.kind === "tool_result");
+      expect(toolResultEntry?.content).toBe("");
 
       // Same stream via the incremental builder (live websocket path).
       const builder = createTranscriptBuilder(parseHermesStdoutLine);
