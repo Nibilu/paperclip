@@ -3128,7 +3128,11 @@ function OnboardingWizardInner({
                         </div>
                       )}
 
-                      {adapterEnvResult && adapterEnvResult.status === "fail" && (
+                      {/* A CLI command the customer could run by hand. The
+                          gateway is not a CLI — its checks name the server-side
+                          fix (URL, API_SERVER_KEY), so a command line here
+                          would only suggest an action that cannot help. */}
+                      {adapterEnvResult && adapterEnvResult.status === "fail" && adapterType !== "hermes_gateway" && (
                         <div className="rounded-md border border-border/70 bg-muted/20 px-2.5 py-2 text-(length:--text-micro) space-y-1.5">
                           <p className="font-medium">Manual debug</p>
                           <p className="text-muted-foreground font-mono break-all">
