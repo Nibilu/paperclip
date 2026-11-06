@@ -424,7 +424,9 @@ describe("shared ACPX engine runtime behavior", () => {
     expect((turnInputs[0]?.text as string).length).toBeGreaterThan(0);
     expect(turnInputs[0]?.signal).toBeInstanceOf(AbortSignal);
     expect((turnInputs[0]?.signal as AbortSignal).aborted).toBe(false);
-    expect(result.summary).toBe("end_turn");
+    // AMB-186: the fixture turn produces no output segments, so the summary
+    // is empty rather than the protocol stop reason.
+    expect(result.summary).toBe("");
     expect(result.sessionParams?.configFingerprint).toBeTypeOf("string");
     expect((result.sessionParams?.configFingerprint as string).length).toBeGreaterThan(0);
     expect(result.sessionParams?.sessionKey).toBe(`pilibala:company-1:agent-1:default:${result.sessionParams?.configFingerprint}`);
@@ -1427,6 +1429,50 @@ describe("shared ACPX engine runtime behavior", () => {
       }),
     ).toBe("final update");
     expect(buildAcpxRunSummary({ outputSegments: ["", "  "], fallback: "end_turn" })).toBe("end_turn");
+    // AMB-186 call-site contract: the engine passes NO fallback, so an empty
+    // output set yields an empty summary instead of the protocol stop reason.
+    expect(buildAcpxRunSummary({ outputSegments: [] })).toBe("");
+  });
+
+  it("returns an empty run summary when a completed turn produced no output segments (AMB-186)", async () => {
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const execute = createAcpxEngineExecutor({
+      createRuntime: () => ({
+        ensureSession: async () => ({
+          backendSessionId: "backend-session",
+          agentSessionId: "agent-session",
+          runtimeSessionName: "runtime-session",
+        }),
+        startTurn: () => ({
+          events: (async function* () {
+            yield {
+              type: "text_delta",
+              text: "chain of thought only, no publishable output",
+              stream: "thought",
+              tag: "agent_thought_chunk",
+            };
+            yield { type: "done", stopReason: "end_turn" };
+          })(),
+          result: Promise.resolve({ status: "completed", stopReason: "end_turn" }),
+          cancel: async () => {},
+        }),
+        close: async () => {},
+      }) as never,
+    });
+
+    const result = await execute({
+      runId: "run-summary-no-output-turn",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: {},
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir },
+      context: {},
+      onLog: async () => {},
+      onMeta: async () => {},
+    } as never);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.summary).toBe("");
   });
 
   it("coalesces placeholder-title tool updates when the adapter opts in", async () => {

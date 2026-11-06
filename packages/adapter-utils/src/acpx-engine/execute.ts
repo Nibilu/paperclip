@@ -5908,9 +5908,16 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               ? { cumulativeCostUsd: turnUsage.cumulativeCostUsd }
               : {}),
           },
+          // AMB-186: a completed or cancelled turn's transport metadata
+          // ("end_turn", "cancelled") is never agent output. With no output
+          // segments the summary stays EMPTY, so the presentation resolver's
+          // legacy-summary path (heartbeat-run-summary.ts
+          // legacy_adapter_summary_compatibility) posts no closing comment
+          // instead of leaking the protocol stop reason as an agent reply.
+          // Genuinely failed turns keep their diagnostic error message.
           summary: buildAcpxRunSummary({
             outputSegments,
-            fallback: terminalStopReason || terminal.status,
+            fallback: terminal.status === "failed" ? terminalStopReason : null,
           }),
           clearSession,
         };
