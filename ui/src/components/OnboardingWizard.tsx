@@ -8,7 +8,7 @@ import { useLocalAiLogin } from "./ai-connections/useLocalAiLogin";
 import { aiConnectionsApi } from "@/api/ai-connections";
 import { aiProviderForAdapter } from "./ai-connections/AiConnectionField";
 import type { AiConnectionBinding } from "@pilibalaai/shared";
-import { storeProviderApiKey } from "../lib/provider-credential";
+import { storeOrganizationApiKey, storeProviderApiKey } from "../lib/provider-credential";
 import { SavedProviderKeySelect, useSavedProviderKeys } from "./onboarding/SavedProviderKeySelect";
 import { randomAgentAppearance, resolveAgentAppearance, agentAppearanceSchema } from "@pilibalaai/shared";
 import { OnboardingCharacter } from "./onboarding/OnboardingCharacter";
@@ -761,6 +761,11 @@ function OnboardingWizardInner({
    * another copy of the same credential.
    */
   const apiKeySecretRef = useRef<{ key: string; companyId: string; envKey: string; binding?: Awaited<ReturnType<typeof storeProviderApiKey>>["binding"]; aiConnection?: AiConnectionBinding } | null>(null);
+  // The gateway's key is a company secret, not a user secret: its schema
+  // secret field accepts only a company `secret_ref` at persistence (a user
+  // secret reference is rejected there), so the API-key card's value is stored
+  // through storeOrganizationApiKey and bound by reference.
+  const gatewaySecretRef = useRef<{ companyId: string; binding: Awaited<ReturnType<typeof storeOrganizationApiKey>>["binding"] } | null>(null);
   const managedSubscriptionRef = useRef<{ companyId: string; binding: AiConnectionBinding } | null>(null);
   const managedProvider = aiProviderForAdapter(adapterType);
   const managedSubscriptionProvider = managedProvider === "anthropic" || managedProvider === "openai" || managedProvider === "xai" ? managedProvider : undefined;
@@ -1151,7 +1156,11 @@ function OnboardingWizardInner({
     adapterType === "kimi_local" ||
     adapterType === "opencode_local" ||
     adapterType === "pi_local" ||
-    adapterType === "cursor";
+    adapterType === "cursor" ||
+    // Not a local harness, but its adapter ships a real testEnvironment
+    // (gateway reachability, key, URL shape). Gating the hire on the probe is
+    // what keeps a mistyped or missing gateway from being hired silently.
+    adapterType === "hermes_gateway";
   // Build adapter grids dynamically from the UI registry + display metadata.
   // External/plugin adapters automatically appear with generic defaults, and
   // server-disabled types are filtered out.
@@ -1406,7 +1415,10 @@ function OnboardingWizardInner({
                 label: "Connect",
                 icon: "arrow",
                 disabled:
-                  !connectStepReady || (credentialMode === "api" && !apiKey.trim() && !selectedApiKey),
+                  !connectStepReady || (credentialMode === "api" && !apiKey.trim() && !selectedApiKey) ||
+                  // The gateway probe cannot pass without an address; the field
+                  // is the step's own question for this source.
+                  (adapterType === "hermes_gateway" && !url.trim()),
               }
           : // Nothing is chosen on arrival, and the row is what chooses. Until
             // it has been answered the button has nothing to do.
@@ -1838,6 +1850,30 @@ function OnboardingWizardInner({
     }
   }
 
+  /**
+   * The gateway's API-key card stores a company secret and keeps only the
+   * reference (see gatewaySecretRef) — the hire must never carry the raw key,
+   * and the persistence layer accepts only a company secret_ref in the
+   * gateway's schema secret field.
+   */
+  async function storeGatewayApiKeyOrgSecret(companyId: string): Promise<boolean> {
+    const key = apiKey.trim();
+    const existing = gatewaySecretRef.current;
+    if (existing?.companyId === companyId && existing.binding && key) return true;
+    try {
+      const stored = await storeOrganizationApiKey(companyId, "API_SERVER_KEY", key);
+      gatewaySecretRef.current = { companyId, binding: stored.binding };
+      return true;
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? `Could not store the API key: ${err.message}`
+          : "Could not store the API key.",
+      );
+      return false;
+    }
+  }
+
   function buildAdapterConfig(bindApiKey = false): Record<string, unknown> {
     const adapter = getUIAdapter(adapterType);
     const config = adapter.buildAdapterConfig({
@@ -1892,12 +1928,26 @@ function OnboardingWizardInner({
     // configuration with no credential — which the hire then blocks on — rather
     // than one that quietly falls back to embedding the value.
     if (!managedBindingForStep() && credentialMode === "api" && (bindApiKey || selectedApiKey)) {
-      const env =
-        typeof config.env === "object" && config.env !== null && !Array.isArray(config.env)
-          ? { ...(config.env as Record<string, unknown>) }
-          : {};
-      env[apiKeyEnvKeyFor(adapterType)] = selectedApiKey?.binding ?? apiKeySecretRef.current?.binding;
-      config.env = env;
+      // The gateway authenticates through a top-level adapterConfig field, not
+      // an environment variable — and its schema secret field accepts only a
+      // company secret_ref, so the reference comes from the org-secret store
+      // (gatewaySecretRef), never from the user-secret saved keys. Everything
+      // else keeps the env mapping below.
+      if (adapterType === "hermes_gateway") {
+        const gatewaySecret = gatewaySecretRef.current;
+        const gatewayBinding = gatewaySecret && gatewaySecret.companyId === createdCompanyId
+          ? gatewaySecret.binding
+          : undefined;
+        if (gatewayBinding) config.apiKey = gatewayBinding;
+      } else {
+        const binding = selectedApiKey?.binding ?? apiKeySecretRef.current?.binding;
+        const env =
+          typeof config.env === "object" && config.env !== null && !Array.isArray(config.env)
+            ? { ...(config.env as Record<string, unknown>) }
+            : {};
+        env[apiKeyEnvKeyFor(adapterType)] = binding;
+        config.env = env;
+      }
     }
     if (credentialMode === "subscription" && savedSubscription?.binding) {
       config.env = { ...((config.env as object) ?? {}), CODEX_HOME: savedSubscription.binding };
@@ -2153,7 +2203,9 @@ function OnboardingWizardInner({
       // hire rather than falling through to a configuration with no credential.
       let apiKeyStored = false;
       if (credentialMode === "api" && !selectedApiKey && apiKey.trim()) {
-        apiKeyStored = await storeApiKeyUserSecret(createdCompanyId);
+        apiKeyStored = adapterType === "hermes_gateway"
+          ? await storeGatewayApiKeyOrgSecret(createdCompanyId)
+          : await storeApiKeyUserSecret(createdCompanyId);
         if (!apiKeyStored || !isCurrent()) return;
       }
       if (credentialMode !== "api" && canUseLocalLogin && managedProvider && !managedBindingForStep() && !savedSubscription && !savedKeys.storedLogin.data) {
@@ -2757,7 +2809,15 @@ function OnboardingWizardInner({
                         autoConnectStartedRef.current = false;
                         setSourcePicked(true);
                         setAdapterType(id);
-                        if (id !== adapterType) setRunner("auto");
+                        if (id !== adapterType) {
+                          setRunner("auto");
+                          // A saved key picked for the previous source binds by
+                          // that source's env key; carrying it across sources
+                          // would bind the wrong credential (and for the
+                          // gateway, hide the key field behind a selection it
+                          // can never use).
+                          setSelectedSavedKey(null);
+                        }
                         if (id === "opencode_local") setModel(DEFAULT_OPENCODE_LOCAL_MODEL);
                         else if (id !== "codex_local") setModel("");
                         setConnectPhase("collapsing");
@@ -2837,14 +2897,17 @@ function OnboardingWizardInner({
                       </p>
                     ) : credentialMode === "api" ? (
                       <OnboardingLoginCard
-                        instruction={savedKeys.options.length ? "Choose a saved API key or enter a new one" : `Provide your ${
+                        instruction={savedKeys.options.length && adapterType !== "hermes_gateway" ? "Choose a saved API key or enter a new one" : `Provide your ${
                           CONNECT_SOURCE_NAMES[adapterType] ?? adapterType
                         } API key to connect`}
                       >
-                        <SavedProviderKeySelect {...savedKeys} disabled={loading || adapterEnvLoading} value={selectedApiKey?.id ?? ""} onChange={(id) => {
+                        {/* Saved keys are user secrets; the gateway's schema
+                            secret field rejects a user-secret reference at
+                            persistence, so this source never offers them. */}
+                        {adapterType !== "hermes_gateway" && <SavedProviderKeySelect {...savedKeys} disabled={loading || adapterEnvLoading} value={selectedApiKey?.id ?? ""} onChange={(id) => {
                           setSelectedSavedKey(createdCompanyId ? { companyId: createdCompanyId, envKey: apiKeyEnvKeyFor(adapterType), id } : null);
                           setApiKey("");
-                        }} />
+                        }} />}
                         {!selectedApiKey && <OnboardingCardField
                           label="API key"
                           placeholder="Enter API key here"
@@ -2961,6 +3024,25 @@ function OnboardingWizardInner({
                       ) : <p className="text-xs text-muted-foreground">This environment does not support browser sign-in. Choose another sign-in environment or connect with an API key.</p>
                     ) : null}
                   </motion.div>
+
+                  {/* The gateway is hired with an address, not a credential:
+                      collect it on the step itself. The probe refuses to pass
+                      without it, so an empty field only delays the hire — but
+                      the button gates on it too, so the failure it would
+                      guarantee never runs. */}
+                  {sourceSelected && adapterType === "hermes_gateway" && (
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">
+                        Gateway URL
+                      </label>
+                      <input
+                        className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm font-mono outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                        placeholder="http://127.0.0.1:8642"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                      />
+                    </div>
+                  )}
 
                   {sourceSelected && adapterType === "codex_local" && <details className="space-y-3">
                     <summary className="cursor-pointer text-sm text-muted-foreground">Advanced</summary>
