@@ -25,6 +25,11 @@ const SOCKET_CONNECTING = 0;
 const SOCKET_OPEN = 1;
 const LOG_POLL_INTERVAL_MS = 2000;
 const LOG_READ_LIMIT_BYTES = 256_000;
+// Upper bound on sequential pages fetched within one readRunLog invocation.
+// A terminal run's full-history hydration of a multi-megabyte log needs
+// several; the bound only guards against a misbehaving server whose nextOffset
+// keeps advancing forever.
+const MAX_LOG_PAGES_PER_READ = 24;
 // When realtime websocket updates are enabled, the frequent log poll is
 // redundant with the live stream; keep only a slow safety-net poll to cover
 // gaps and reconnects instead of polling every couple of seconds.
@@ -152,6 +157,13 @@ export function useLiveRunTranscripts({
   const pendingLogRowsByRunRef = useRef(new Map<string, string>());
   const logOffsetByRunRef = useRef(new Map<string, number>());
   const missingTerminalLogRunIdsRef = useRef(new Set<string>());
+  // Last observed run status per run, so a running→terminal transition (e.g.
+  // the user stopping the run mid-output) can trigger a full-history backfill.
+  const prevStatusByRunRef = useRef(new Map<string, string>());
+  // Offset the run's very first persisted-log read started at. Live hydration
+  // starts at the newest window; when that run later settles, everything before
+  // that offset still needs to be fetched.
+  const firstReadOffsetByRunRef = useRef(new Map<string, number>());
   // PAP-462 B3: buffered runs that dropped out of the `runs` list, mapped to the
   // wall-clock deadline (ms) after which their buffer may be pruned. A run still
   // inside its grace window is retained across the empty poll; `pruneTick` fires
@@ -286,6 +298,16 @@ export function useLiveRunTranscripts({
         logOffsetByRunRef.current.delete(runId);
       }
     }
+    for (const runId of prevStatusByRunRef.current.keys()) {
+      if (!retainedRunIds.has(runId)) {
+        prevStatusByRunRef.current.delete(runId);
+      }
+    }
+    for (const runId of firstReadOffsetByRunRef.current.keys()) {
+      if (!retainedRunIds.has(runId)) {
+        firstReadOffsetByRunRef.current.delete(runId);
+      }
+    }
     for (const runId of trimmedSeqFloorByRunRef.current.keys()) {
       if (!retainedRunIds.has(runId)) {
         trimmedSeqFloorByRunRef.current.delete(runId);
@@ -327,28 +349,78 @@ export function useLiveRunTranscripts({
         return;
       }
       inFlightRunIds.add(run.id);
-      const offset = logOffsetByRunRef.current.get(run.id) ?? resolveInitialLogOffset(run, logReadLimitBytes);
-      try {
-        const result = await readTranscriptRequest(
-          (signal) => heartbeatsApi.log(run.id, offset, logReadLimitBytes, { signal }),
-          controller.signal,
-        );
-        if (cancelled) return;
-
-        setErrorsByRun((previous) => {
-          if (!previous.has(run.id)) return previous;
-          const next = new Map(previous);
-          next.delete(run.id);
-          return next;
-        });
-        appendChunks(run.id, parsePersistedLogContent(run.id, result.content, pendingLogRowsByRunRef.current));
-
-        if (result.nextOffset !== undefined) {
-          logOffsetByRunRef.current.set(run.id, result.nextOffset);
-          return;
+      // Full task views (byte-budget mode) own a run's whole retained history.
+      // Ticker consumers (maxChunksPerRun) keep the old tail-only window.
+      const wantsFullHistory = maxChunksPerRun === undefined;
+      const prevStatus = prevStatusByRunRef.current.get(run.id);
+      prevStatusByRunRef.current.set(run.id, run.status);
+      let offset = logOffsetByRunRef.current.get(run.id);
+      // A run the user stopped while it was being watched live only ever read
+      // its newest window (live hydration starts at the tail). Once it settles,
+      // re-read from the start of its retained history; chunk dedupe keeps the
+      // already-rendered transcript intact.
+      let backfillLimit: number | null = null;
+      if (offset === undefined) {
+        offset =
+          wantsFullHistory && isTerminalStatus(run.status)
+            ? Math.max(0, (runKnownLogBytes(run) ?? 0) - maxBytesPerRun)
+            : resolveInitialLogOffset(run, logReadLimitBytes);
+        firstReadOffsetByRunRef.current.set(run.id, offset);
+      } else if (
+        wantsFullHistory &&
+        prevStatus === "running" &&
+        isTerminalStatus(run.status)
+      ) {
+        // Backfill only the bytes the live watch never delivered: everything
+        // before the run's first read offset. The already-delivered tail stays
+        // untouched (dedupe would absorb it, but skipping the re-read avoids
+        // redundant fetches on every user stop).
+        const firstRead = firstReadOffsetByRunRef.current.get(run.id) ?? 0;
+        if (firstRead > 0 && offset >= firstRead) {
+          backfillLimit = firstRead;
+          offset = 0;
+          logOffsetByRunRef.current.set(run.id, 0);
         }
-        if (result.content.length > 0) {
-          logOffsetByRunRef.current.set(run.id, offset + result.content.length);
+      }
+      const windowStart = offset;
+      try {
+        let pages = 0;
+        while (true) {
+          const result = await readTranscriptRequest(
+            (signal) => heartbeatsApi.log(run.id, offset, logReadLimitBytes, { signal }),
+            controller.signal,
+          );
+          if (cancelled) return;
+
+          setErrorsByRun((previous) => {
+            if (!previous.has(run.id)) return previous;
+            const next = new Map(previous);
+            next.delete(run.id);
+            return next;
+          });
+          appendChunks(run.id, parsePersistedLogContent(run.id, result.content, pendingLogRowsByRunRef.current));
+          pages += 1;
+
+          const endOffset =
+            result.nextOffset !== undefined
+              ? result.nextOffset
+              : offset + result.content.length;
+          logOffsetByRunRef.current.set(run.id, endOffset);
+          if (result.nextOffset === undefined) break;
+          if (endOffset <= offset) break;
+          if (!wantsFullHistory) break;
+          offset = endOffset;
+          // Caught back up to the window the live watch already delivered.
+          if (backfillLimit !== null && endOffset >= backfillLimit) break;
+          // Byte-budget views stop once the retained window is full; a later
+          // poll (running) or reload continues past the cap.
+          if (
+            isTerminalStatus(run.status) &&
+            endOffset - windowStart >= maxBytesPerRun
+          ) {
+            break;
+          }
+          if (pages >= MAX_LOG_PAGES_PER_READ) break;
         }
       } catch (error) {
         if (cancelled) return;
