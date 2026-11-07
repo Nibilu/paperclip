@@ -2,7 +2,10 @@ import { measureRunTransaction } from "./execution-transaction-timing.js";
 import { measureRunPhase } from "./execution-preparation-timing.js";
 import { automaticReadRecoveryCleanupCondition, touchedByUserCondition } from "./issue-participation.js";
 import { HUMAN_TASK_ORIGIN_KINDS } from "@pilibalaai/shared";
-import { resolveProjectDefaultWorkspaceId } from "./project-default-workspace.js";
+import {
+  isHealthyProjectWorkspaceRow,
+  resolveProjectDefaultWorkspaceId,
+} from "./project-default-workspace.js";
 import { type AuthorizationActor, executionWorkspaceReadSqlCondition, projectReadSqlCondition } from "./authorization.js";
 import { assertTaskWorkspaceAccess, assertTaskWorkspaceSourceProjectAccess } from "./task-workspace-source-access.js";
 import { type TaskWorkspaceSelection, type TaskWorkspaceIntent } from "@pilibalaai/shared";
@@ -10086,18 +10089,38 @@ export function issueService(db: Db) {
           // a Pilibala App parent) must fall through to its own project's
           // default workspaces, otherwise the inherited ids fail the
           // project-match assertions below and the create is impossible without
-          // the caller naming the target workspaces explicitly.
+          // the caller naming the target workspaces explicitly. Inheritance is
+          // a weak preference: an inherited binding whose registration row is
+          // gone or points at a dead local path must not poison the new task —
+          // it falls through to the health-gated project default instead.
           const inheritsSourceProject =
             issueData.projectId == null ||
             issueData.projectId === workspaceSource.projectId;
+          let inheritedWorkspaceHealthy = false;
           if (
             inheritsSourceProject &&
             issueData.projectWorkspaceId === undefined &&
             projectWorkspaceId == null &&
             workspaceSource.projectWorkspaceId
           ) {
-            projectWorkspaceId = workspaceSource.projectWorkspaceId;
-            inheritedWorkspaceSelection = true;
+            const inheritedRow = await tx
+              .select({
+                id: projectWorkspaces.id,
+                lifecycle: projectWorkspaces.lifecycle,
+                cwd: projectWorkspaces.cwd,
+                repoUrl: projectWorkspaces.repoUrl,
+                remoteWorkspaceRef: projectWorkspaces.remoteWorkspaceRef,
+              })
+              .from(projectWorkspaces)
+              .where(eq(projectWorkspaces.id, workspaceSource.projectWorkspaceId))
+              .then((rows) => rows[0] ?? null);
+            inheritedWorkspaceHealthy = Boolean(
+              inheritedRow && await isHealthyProjectWorkspaceRow(inheritedRow),
+            );
+            if (inheritedWorkspaceHealthy) {
+              projectWorkspaceId = workspaceSource.projectWorkspaceId;
+              inheritedWorkspaceSelection = true;
+            }
           }
           if (
             inheritsSourceProject &&

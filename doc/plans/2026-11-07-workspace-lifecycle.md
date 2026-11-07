@@ -180,3 +180,28 @@ continuity via its saved task workspace.
   - Follow-up (pre-existing, out of scope): restore the loud-rejection layer
     for dead explicit `configured_source` pins (currently the anchor falls
     back to the isolated directory with only a run-log warning).
+  - Dev E2E (2026-11-07, dev :3104 after 0357 applied live):
+    - Migration: `Migrations complete` at boot; `project_workspaces.lifecycle`
+      + `bound_issue_id` present; brand data rebranded (tool_connections 6 →
+      pilibala_vault, company_secrets 6 → pilibala_managed); journal records
+      0357; environments index rebuilt pilibala-keyed. Two apply failures were
+      hit and fixed inside 0357 before any durable application: the stale
+      rebrand snapshot had already-renamed columns on dev (rename is now a
+      conditional DO block) and the UPDATE ran under the legacy CHECK
+      (constraints now drop before the data rebrand). All statements are
+      drift-robust (IF NOT EXISTS / conditional) so fresh databases and the
+      drifted dev database both converge on the same end state.
+    - U2 live: a run-bound agent registration via the API came back
+      `task_ephemeral` bound to the run's issue, never primary.
+    - U3 live: a service-level create in the debug project bound the healthy
+      standing row (89e2735c) and skipped the dead AMB-93 row.
+    - U4/inheritance: tasks created from an AMB-190 run context inherit that
+      task's shared execution workspace (by design, task-family continuity);
+      the direct project-workspace inheritance branch is now health-gated so a
+      dead inherited registration falls through to the health-gated project
+      default instead of propagating the dead pointer. (0357-adjacent fix in
+      `issues.ts`, verified by direct service create binding 89e2735c.)
+    - U5 live: a bound ephemeral row + managed directory were reaped by the
+      real terminal transition (done), directory deleted under the managed
+      root, activity entry `issue.task_ephemeral_workspace_gc` written, other
+      projects' rows untouched.
