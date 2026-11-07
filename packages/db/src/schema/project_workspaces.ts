@@ -31,6 +31,8 @@ export const projectWorkspaces = pgTable(
     sharedWorkspaceKey: text("shared_workspace_key"),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
     isPrimary: boolean("is_primary").notNull().default(false),
+    lifecycle: text("lifecycle").notNull().default("standing"),
+    boundIssueId: uuid("bound_issue_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
