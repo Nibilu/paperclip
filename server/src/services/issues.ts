@@ -262,12 +262,19 @@ const ISSUE_WAKE_DIAGNOSTICS_ACTIVITY_ACTIONS = [
   "issue.tree_hold_wakeup_deferred",
 ] as const;
 
-export type IssuePostCommitAction = {
-  type: "cancel_native_question_run";
-  runId: string;
-  issueId: string;
-  issueStatus: string;
-};
+export type IssuePostCommitAction =
+  | {
+    type: "cancel_native_question_run";
+    runId: string;
+    issueId: string;
+    issueStatus: string;
+  }
+  | {
+    type: "task_ephemeral_workspace_gc";
+    companyId: string;
+    issueId: string;
+    issueStatus: string;
+  };
 
 /** Execute side effects that must never run before the issue transaction commits. */
 export async function executeIssuePostCommitActions(
@@ -279,6 +286,23 @@ export async function executeIssuePostCommitActions(
   const heartbeat = heartbeatService(db);
   const cancelledRunIds = new Set<string>();
   for (const action of actions) {
+    if (action.type === "task_ephemeral_workspace_gc") {
+      try {
+        const { reapTaskEphemeralWorkspacesForIssue } = await import("./task-workspace-gc.js");
+        await reapTaskEphemeralWorkspacesForIssue(db, {
+          companyId: action.companyId,
+          issueId: action.issueId,
+        });
+      } catch (err) {
+        // The issue transition already committed; the GC rows remain visible
+        // to any later sweep. Do not report the transition as rolled back.
+        logger.warn(
+          { err, issueId: action.issueId },
+          "task-ephemeral workspace gc deferred to a later sweep",
+        );
+      }
+      continue;
+    }
     if (cancelledRunIds.has(action.runId)) continue;
     cancelledRunIds.add(action.runId);
     try {
@@ -11218,6 +11242,25 @@ export function issueService(db: Db) {
           .returning()
           .then((rows: Array<typeof issues.$inferSelect>) => rows[0] ?? null);
         if (!updated) return null;
+        if ((issueData.status === "done" || issueData.status === "cancelled")
+          && updated.status === issueData.status) {
+          // Task-ephemeral workspace registrations are scoped to the issue
+          // lifecycle: on a terminal transition the bound registrations and
+          // their managed directories are reaped post-commit.
+          if (dbOrTx === db || postCommitActions) {
+            queuedPostCommitActions.push({
+              type: "task_ephemeral_workspace_gc",
+              companyId: updated.companyId,
+              issueId: updated.id,
+              issueStatus: updated.status,
+            });
+          } else {
+            logger.warn(
+              { issueId: updated.id },
+              "task-ephemeral workspace gc skipped: terminal update ran in an external transaction without a post-commit action queue",
+            );
+          }
+        }
         if (workspaceSelectionActor && updated.workspaceBindingRevision !== receiptExisting.workspaceBindingRevision) {
           await executionWorkspaceService(db).assertTaskWorkspaceUpdateAccess({
             task: updated, actor: workspaceSelectionActor,

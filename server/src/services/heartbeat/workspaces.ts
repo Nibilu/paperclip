@@ -1470,6 +1470,33 @@ export function prioritizeProjectWorkspaceCandidatesForRun<
 }
 
 /**
+ * A run may consume task-ephemeral registrations only when they are bound to
+ * the run's own issue; another task's ephemeral workspace must never be
+ * selected (or hinted) by this run. When an explicit configured-source pin is
+ * present, the candidate set is narrowed to that pin first — a pin that
+ * resolves to another task's ephemeral registration then reads as "selected
+ * workspace not available" instead of hijacking this run.
+ */
+export function filterRunProjectWorkspaceCandidatesForIssue<
+  T extends ProjectWorkspaceCandidate & {
+    lifecycle?: string | null;
+    boundIssueId?: string | null;
+  },
+>(
+  rows: readonly T[],
+  input: { configuredSourceId: string | null; issueId: string | null },
+): T[] {
+  const narrowed = input.configuredSourceId
+    ? rows.filter((workspace) => workspace.id === input.configuredSourceId)
+    : rows;
+  return narrowed.filter((workspace) =>
+    workspace.lifecycle !== "task_ephemeral" ||
+    (input.issueId !== null &&
+      readNonEmptyString(workspace.boundIssueId) === input.issueId),
+  );
+}
+
+/**
  * Environment flag (kill-switch, default ON) that gates whether run preparation
  * consumes the multi-project referenced-project set produced by
  * {@link resolveRunReferencedProjects}. The feature is live by default: an unset
@@ -3340,7 +3367,10 @@ export function createHeartbeatWorkspaceResolver(db: Db) {
       workspace.projectId ? eq(projectWorkspaces.projectId, workspace.projectId) : sql`false`,
     )).orderBy(asc(projectWorkspaces.createdAt), asc(projectWorkspaces.id));
     const boundProjectWorkspace = projectWorkspaceRows.find(row => row.id === workspace.projectWorkspaceId) ?? null;
-    const configuredSource = prioritizeProjectWorkspaceCandidatesForRun(projectWorkspaceRows, explicitProjectWorkspaceId)[0];
+    const configuredSource = filterRunProjectWorkspaceCandidatesForIssue(
+      projectWorkspaceRows,
+      { configuredSourceId: explicitProjectWorkspaceId, issueId: input.issueId },
+    )[0];
     const managedBase = workspace.repoUrl && workspace.projectId ? resolveManagedProjectWorkspaceDir({
       companyId: agent.companyId,
       projectId: workspace.projectId,
@@ -3458,9 +3488,13 @@ export function createHeartbeatWorkspaceResolver(db: Db) {
       unorderedProjectWorkspaceRows,
       preferredProjectWorkspaceId,
     );
-    const projectWorkspaceRows = configuredSourceId
-      ? prioritizedWorkspaceRows.filter((workspace) => workspace.id === configuredSourceId)
-      : prioritizedWorkspaceRows;
+    // A run may consume task-ephemeral registrations only when they are bound
+    // to this run's own issue; another task's ephemeral workspace must never
+    // be picked up (or hinted) by this run.
+    const projectWorkspaceRows = filterRunProjectWorkspaceCandidatesForIssue(
+      prioritizedWorkspaceRows,
+      { configuredSourceId, issueId },
+    );
 
     const workspaceHints = projectWorkspaceRows.map((workspace) => ({
       workspaceId: workspace.id,
@@ -3559,6 +3593,33 @@ export function createHeartbeatWorkspaceResolver(db: Db) {
 
     const sessionCwd = readNonEmptyString(previousSessionParams?.cwd);
     const sessionCwdLooksUnsafe = isUnsafeSessionWorkspaceCwd(sessionCwd);
+    if (configuredWorkspaceUnavailable && !configuredSourceId && !forceTaskDirectory && sessionCwd && !sessionCwdLooksUnsafe) {
+      // Resume continuity for INHERITED defaults: a dead project default must
+      // not evict this task from its own previous session workspace. An
+      // explicit configured_source pin keeps the strict contract instead — it
+      // fails loudly rather than silently continuing somewhere else. Only this
+      // task's saved session cwd is consulted here — never another task's.
+      const sessionCwdExists = await fs
+        .stat(sessionCwd)
+        .then((stats) => stats.isDirectory())
+        .catch(() => false);
+      if (sessionCwdExists) {
+        return {
+          cwd: sessionCwd,
+          source: "task_session" as const,
+          projectId: resolvedProjectId,
+          workspaceId: readNonEmptyString(previousSessionParams?.workspaceId),
+          repoUrl: readNonEmptyString(previousSessionParams?.repoUrl),
+          repoRef: readNonEmptyString(previousSessionParams?.repoRef),
+          workspaceHints,
+          warnings: [
+            `WARNING: Configured project workspace is unavailable (${configuredWorkspaceUnavailable}). Continuing this task in its previous session workspace "${sessionCwd}" for continuity; the configured project workspace was not used.`,
+          ],
+          baseCwdFallback: false,
+          materializationFailures: fallbackMaterializationFailures,
+        };
+      }
+    }
     if (!configuredWorkspaceUnavailable && !forceTaskDirectory && sessionCwd && !sessionCwdLooksUnsafe) {
       const sessionCwdExists = await fs
         .stat(sessionCwd)

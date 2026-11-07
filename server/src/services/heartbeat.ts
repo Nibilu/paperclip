@@ -172,6 +172,7 @@ export {
   buildAnchorFallbackWorkspaceNotes,
   buildRunWorkspaceHints,
   prioritizeProjectWorkspaceCandidatesForRun,
+  filterRunProjectWorkspaceCandidatesForIssue,
   MULTI_PROJECT_WORKSPACE_SYNC_ENV,
   isMultiProjectWorkspaceSyncEnabled,
   isRemoteExecutionEnvironmentDriver,

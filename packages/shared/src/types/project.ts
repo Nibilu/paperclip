@@ -57,6 +57,8 @@ export interface ProjectWorkspace {
   metadata: Record<string, unknown> | null;
   runtimeConfig: ProjectWorkspaceRuntimeConfig | null;
   isPrimary: boolean;
+  lifecycle?: "standing" | "task_ephemeral";
+  boundIssueId?: string | null;
   runtimeServices?: WorkspaceRuntimeService[];
   createdAt: Date;
   updatedAt: Date;

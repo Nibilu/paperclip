@@ -2532,6 +2532,46 @@ Agents inspect/select workspaces and request contained repository preparation th
 
 See [the layer architecture](plans/2026-10-09-task-workspaces.md) for resolution rules, module ownership, persistence versions, rollout, and verification.
 
+### Workspace lifecycle classes (2026-11-07)
+
+Project workspace registrations carry an explicit lifecycle class: `standing`
+(operator-owned, health-checked, default-eligible) or `task_ephemeral`
+(task-scoped: registered during an agent run, stable for that task's lifetime
+including resume, garbage-collected together with its registration row when the
+owning task reaches a terminal status). Registrations created by a run-bound
+agent default to `task_ephemeral` with the owning issue recorded in
+`bound_issue_id`; board/operator creations default to `standing`. A
+`task_ephemeral` registration is never eligible as a project default binding
+and never resolves as a workspace candidate for a different task's run.
+
+Default binding resolution for new tasks and conversations skips
+`task_ephemeral` rows and skips unavailable standing rows: a local-path
+registration whose directory no longer exists and that carries no repository
+URL cannot become a new task's default. An explicit project policy pin stays
+authoritative. The resolution precedence for a task's run workspace becomes:
+healthy bound/configured workspace, then the task's own prior session workspace
+(the existing compatibility binding with verified provenance), then a healthy
+project standing default, then the managed isolated task directory. This
+amends the dangling-pointer rule: a dead configured source still emits its
+unavailability warning and never silently re-binds to a different configured
+source, but the task's own prior workspace now takes precedence over the
+isolated fallback so new and resumed work keep filesystem continuity. The
+continuity branch applies to inherited defaults (an issue's
+`project_workspace_id` binding); an explicit issue-level `configured_source`
+pin keeps the stricter contract — a dead pin must not silently continue in
+the task's prior session either, it surfaces the unavailability and leaves
+repair to the operator.
+
+On task terminal transition (done/cancelled), garbage collection removes
+`task_ephemeral` registration rows bound to that task and deletes their
+directories only when they live under the instance-managed root; a row still
+referenced by another issue is retained and logged. All rules live at the top
+level — workspace resolver, project default resolution, workspace creation,
+and the terminal hook — and therefore apply to every adapter without
+adapter-specific branches. See
+[the lifecycle plan](plans/2026-11-07-workspace-lifecycle.md) for module
+ownership, migration, and verification.
+
 ## Company fast-response service
 
 Companies may configure an optional shared API connection and model for short acknowledgements of accepted human turns. Fast responses use direct SDK inference alongside normal agent work, with a three-second admission deadline, bounded prompts/output, current authorization and independent `fast_response` accounting. They are server-marked platform receipts attributed to the agent, never completion, interaction or recovery evidence. Company-sponsored unlinked external senders are explicit; linked-user permission denials are never bypassed. See [fast-responses.md](fast-responses.md) for provider, delivery, history and endpoint contracts.

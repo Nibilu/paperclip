@@ -69,6 +69,8 @@ type CreateWorkspaceInput = {
   metadata?: Record<string, unknown> | null;
   runtimeConfig?: Partial<ProjectWorkspaceRuntimeConfig> | null;
   isPrimary?: boolean;
+  lifecycle?: string | null;
+  boundIssueId?: string | null;
 };
 type UpdateWorkspaceInput = Partial<CreateWorkspaceInput>;
 
@@ -251,6 +253,8 @@ function toWorkspace(
     metadata: (row.metadata as Record<string, unknown> | null) ?? null,
     runtimeConfig: readProjectWorkspaceRuntimeConfig((row.metadata as Record<string, unknown> | null) ?? null),
     isPrimary: row.isPrimary,
+    lifecycle: row.lifecycle === "task_ephemeral" ? "task_ephemeral" : "standing",
+    boundIssueId: row.boundIssueId ?? null,
     runtimeServices,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -1133,7 +1137,13 @@ export function projectService(db: Db, options: { captureWorkspaceUpdates?: bool
         .orderBy(asc(projectWorkspaces.createdAt))
         .then((rows) => rows);
 
-      const shouldBePrimary = data.isPrimary === true || existing.length === 0;
+      // Task-ephemeral registrations are task-scoped: they never take (or steal)
+      // the project primary slot and never become the default binding.
+      const lifecycle = data.lifecycle === "task_ephemeral" ? "task_ephemeral" : "standing";
+      const boundIssueId = lifecycle === "task_ephemeral" ? readNonEmptyString(data.boundIssueId) : null;
+      const shouldBePrimary = lifecycle === "task_ephemeral"
+        ? false
+        : data.isPrimary === true || existing.length === 0;
       const created = await db.transaction(async (tx) => {
         if (shouldBePrimary) {
           await tx
@@ -1172,6 +1182,8 @@ export function projectService(db: Db, options: { captureWorkspaceUpdates?: bool
                   )
                 : (data.metadata as Record<string, unknown> | null | undefined) ?? null,
             isPrimary: shouldBePrimary,
+            lifecycle,
+            boundIssueId: boundIssueId ?? null,
           })
           .returning()
           .then((rows) => rows[0] ?? null);

@@ -89,11 +89,21 @@ function validateProjectWorkspace(value: Record<string, unknown>, ctx: z.Refinem
       path: ["cwd"],
     });
   }
+
+  if (value.lifecycle === "task_ephemeral" && value.isPrimary === true) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Task-ephemeral workspaces cannot be the project primary.",
+      path: ["lifecycle"],
+    });
+  }
 }
 
 export const createProjectWorkspaceSchema = z.object({
   ...projectWorkspaceFields,
   isPrimary: z.boolean().optional().default(false),
+  lifecycle: z.enum(["standing", "task_ephemeral"]).optional(),
+  boundIssueId: z.string().guid().optional().nullable(),
 }).superRefine(validateProjectWorkspace);
 
 export type CreateProjectWorkspace = z.infer<typeof createProjectWorkspaceSchema>;
