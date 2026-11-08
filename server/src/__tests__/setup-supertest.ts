@@ -24,6 +24,9 @@ type SupertestTestConstructor = {
 };
 
 // Keep the original home available only for read-only host port-lease checks.
+// R-lane doctor preflight mints real run JWTs; tests must be self-contained.
+process.env.PILIBALA_AGENT_JWT_SECRET ??= "vitest-agent-jwt-secret-0123456789abcdef";
+process.env.PILIBALA_AGENT_JWT_TTL_SECONDS ??= "3600";
 process.env.PILIBALA_TEST_HOST_HOME ??= process.env.PILIBALA_HOME?.trim() || path.join(os.homedir(), ".pilibala");
 
 // Receipt-spool recovery must never scan a developer's instance during tests.
