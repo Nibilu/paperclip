@@ -1,5 +1,5 @@
 import {eq,sql} from "drizzle-orm";
-import {mcpOauthDeviceRequests as devices,mcpOauthGrants as grants,type Db} from "@paperclipai/db";
+import {mcpOauthDeviceRequests as devices,mcpOauthGrants as grants,type Db} from "@pilibalaai/db";
 import type {CompanyDeletionParticipant} from "../../lib/company-deletion.js";
 import {prepareMcpClientMutation} from "./client-mirror-mutations.js";
 

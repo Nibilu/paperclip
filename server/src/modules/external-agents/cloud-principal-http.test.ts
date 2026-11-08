@@ -63,7 +63,7 @@ function fixture(ownerPresent = true) {
       resource: body.canonicalVerifiedResource,
       purpose: "agent",
       agentId: null,
-      scopes: ["paperclip:agent"],
+      scopes: ["pilibala:agent"],
       revokedAt: null,
       revocationRevision: 0,
       revocationIndexReceipt: null,
@@ -148,9 +148,9 @@ function fixture(ownerPresent = true) {
 }
 beforeEach(() => {
   resetCloudControlReplayFenceForTests();
-  vi.stubEnv("PAPERCLIP_CLOUD_STACK_ID", "stack");
+  vi.stubEnv("PILIBALA_CLOUD_STACK_ID", "stack");
   vi.stubEnv(
-    "PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS",
+    "PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS",
     JSON.stringify({
       keys: [
         {

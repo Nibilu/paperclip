@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Company } from "@paperclipai/shared";
+import type { Company } from "@pilibalaai/shared";
 import { sidebarPreferencesApi } from "../api/sidebarPreferences";
 import { queryKeys } from "../lib/queryKeys";
 import { useAccountBoundMutation } from "./useAccountBoundMutation";

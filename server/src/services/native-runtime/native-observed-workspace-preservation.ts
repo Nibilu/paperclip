@@ -1,6 +1,6 @@
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
-import { companies, environmentLeases, executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, workspaceOperations, type Db } from "@paperclipai/db";
-import { remoteWorkspaceAuthoritySchema, remoteWorkspaceRunReferenceSchema } from "@paperclipai/shared";
+import { companies, environmentLeases, executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, workspaceOperations, type Db } from "@pilibalaai/db";
+import { remoteWorkspaceAuthoritySchema, remoteWorkspaceRunReferenceSchema } from "@pilibalaai/shared";
 import { adapterExecutionControls } from "../adapter-execution-control.js";
 import { logActivity } from "../activity-log.js";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "../delivery-work-notifications.js";
@@ -12,7 +12,7 @@ import { hasRequiredWorkspaceRecovery } from "../workspace-restore-recovery-stat
 import { nativeSha256 } from "./canonical.js";
 import { NATIVE_ADOPTED_RUNNER_AUTHENTICATION_TIMEOUT, NATIVE_OWNERSHIP_UNVERIFIED_ERROR_CODE } from "./native-runner-ownership.js";
 
-const SCHEMA = "paperclip.observed-workspace-preservation.v1";
+const SCHEMA = "pilibala.observed-workspace-preservation.v1";
 const FIELD = "observedWorkspacePreservation";
 type Run = typeof heartbeatRuns.$inferSelect;
 type Coordinator = typeof nativeRunFinalizations.$inferSelect;
@@ -146,9 +146,9 @@ function fenceMatches(fence: Fence, source: NonNullable<Awaited<ReturnType<typeo
   const recorded = run.resultJson?.workspaceRestoreRecovery as { schema?: unknown; leaseIds?: unknown } | undefined;
   const action = evidence?.workspaceRestoreRecovery as { schema?: unknown; leaseIds?: unknown } | undefined;
   const retained = lease.metadata?.workspaceRestoreRecovery as { schema?: unknown; runId?: unknown } | undefined;
-  const exact = (value: typeof recorded) => value?.schema === "paperclip.workspace-restore-recovery.v1"
+  const exact = (value: typeof recorded) => value?.schema === "pilibala.workspace-restore-recovery.v1"
     && Array.isArray(value.leaseIds) && value.leaseIds.length === 1 && value.leaseIds[0] === lease.id;
-  return lease.leasePolicy === "retain_on_failure" && exact(recorded) && exact(action) && retained?.schema === "paperclip.workspace-restore-recovery.v1" && retained.runId === run.id
+  return lease.leasePolicy === "retain_on_failure" && exact(recorded) && exact(action) && retained?.schema === "pilibala.workspace-restore-recovery.v1" && retained.runId === run.id
     && fence.runId === run.id && fence.sourceSha256 === sourceSha256(run) && fence.coordinatorSha256 === coordinatorSha256(coordinator)
     && fence.leaseOwner === coordinator.leaseOwner && fence.leaseExpiresAt === coordinator.leaseExpiresAt?.toISOString()
     && fence.controllerGeneration === coordinator.controllerGeneration && fence.providerAttempt === coordinator.attempt

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Db } from '@paperclipai/db';
+import type { Db } from '@pilibalaai/db';
 import { readIdleSkillSourceSchedule, skillSourceIdleSchedule } from './skill-source-idle-schedule.js';
 import { MAX_PROJECT_PENDING_SKILL_IMPORTS, SKILL_IMPORT_CAPACITY_WAIT } from './skill-source-import-queue.js';
 

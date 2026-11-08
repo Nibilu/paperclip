@@ -26,7 +26,7 @@ const meta = {
   parameters: {
     layout: "padded",
     initialEntries: ["/PAP/plugins/plugin-gap/settings"],
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "plugins/configuration"
       ],

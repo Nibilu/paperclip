@@ -1,12 +1,12 @@
 # Supabase
 
-Reviewed 2026-10-22. Paperclip agents can deploy Supabase Edge Functions and
+Reviewed 2026-10-22. Pilibala agents can deploy Supabase Edge Functions and
 configure application Auth and the Data API through a governed native Management
 API connection. Hosted MCP supplies project creation, database migrations and
 other provider tools. These are distinct connection methods and credentials are
 never forwarded from MCP OAuth into the Management API.
 
-Neither Paperclip ID nor Paperclip Connect participates. OAuth discovery,
+Neither Pilibala ID nor Pilibala Connect participates. OAuth discovery,
 registration, credentials and callbacks are instance-local. Cloud and self-hosted
 instances use the same path and the normal connection vault, grants, policies,
 run gateway and audit.
@@ -61,7 +61,7 @@ The supplied entrypoint and optional import map must exist among unique relative
 file names. JWT verification defaults on; callers can explicitly disable it for
 an application that handles authentication itself. The request is bounded to
 2 MiB and 50 files. The connector never reads server filesystem paths, runs a
-shell, or executes source code in Paperclip.
+shell, or executes source code in Pilibala.
 
 Native REST lists Edge Function secret names and update times and accepts
 `{name, secretValue}` to create or replace one environment secret. Secret values
@@ -84,27 +84,27 @@ entitlements and cost handling.
 ```mermaid
 sequenceDiagram
     participant User
-    participant Paperclip
+    participant Pilibala
     participant Vault
     participant Supabase
-    User->>Paperclip: Select Supabase method and agent access
+    User->>Pilibala: Select Supabase method and agent access
     alt Hosted MCP browser sign-in
-        Paperclip->>Supabase: Read protected resource and issuer metadata
-        Paperclip->>Supabase: Register instance OAuth client
-        Paperclip->>User: Open authorization URL
+        Pilibala->>Supabase: Read protected resource and issuer metadata
+        Pilibala->>Supabase: Register instance OAuth client
+        Pilibala->>User: Open authorization URL
         User->>Supabase: Choose organization and consent
-        Supabase->>Paperclip: Instance callback with authorization code
-        Paperclip->>Supabase: Exchange code with PKCE
+        Supabase->>Pilibala: Instance callback with authorization code
+        Pilibala->>Supabase: Exchange code with PKCE
     else Personal access token
-        User->>Paperclip: Enter token and optional or required project reference
+        User->>Pilibala: Enter token and optional or required project reference
     end
-    Paperclip->>Vault: Store selected grant credential
-    Paperclip->>Supabase: MCP discovery or native project probe
-    User->>Paperclip: Set action permissions
-    Paperclip->>Paperclip: Authorize agent run and selected grant
-    Paperclip->>Vault: Resolve selected invocation credential
-    Paperclip->>Supabase: Invoke permitted action
-    Paperclip->>Paperclip: Record bounded result and audit
+    Pilibala->>Vault: Store selected grant credential
+    Pilibala->>Supabase: MCP discovery or native project probe
+    User->>Pilibala: Set action permissions
+    Pilibala->>Pilibala: Authorize agent run and selected grant
+    Pilibala->>Vault: Resolve selected invocation credential
+    Pilibala->>Supabase: Invoke permitted action
+    Pilibala->>Pilibala: Record bounded result and audit
 ```
 
 The editable diagram is also in [supabase-flow.mmd](./supabase-flow.mmd).
@@ -116,7 +116,7 @@ Public metadata observed on 2026-10-22 advertised:
 - Authorization: `https://api.supabase.com/v1/oauth/authorize`
 - Token: `https://api.supabase.com/v1/oauth/token`
 - DCR: `https://api.supabase.com/platform/oauth/apps/register`
-- Paperclip callback: `<instance-origin>/api/tools/oauth/callback`
+- Pilibala callback: `<instance-origin>/api/tools/oauth/callback`
 
 The existing thirteen reviewed MCP scopes match the public metadata. Native PAT
 permissions are separate: `project_admin_read`, `edge_functions_read`,
@@ -242,8 +242,8 @@ approval payloads with the instance tool-action signing secret. Approval summari
 and audit still use redacted values. Existing signed approval records remain
 readable and are not rewritten. Sensitive request identities also use this key
 to distinguish secret replacements without storing guessable secret hashes.
-The configured `PAPERCLIP_TOOL_ACTION_SIGNING_SECRET` takes precedence. When unset,
-Paperclip derives a separate signing key from its persisted secrets master key,
+The configured `PILIBALA_TOOL_ACTION_SIGNING_SECRET` takes precedence. When unset,
+Pilibala derives a separate signing key from its persisted secrets master key,
 using the configured master-key environment value or durable key file. Key rotation
 can invalidate retry matching; back up the configured signing key or master key
 with the database, and share that key across processes serving the same instance.

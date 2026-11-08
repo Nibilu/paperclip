@@ -1,8 +1,8 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { environmentLeases, executionWorkspaces, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import type { NativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+import { environmentLeases, executionWorkspaces, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority } from "@pilibalaai/shared";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import type { NativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 
 export type NativeWarmIngressIdentity = {
   provider: string;

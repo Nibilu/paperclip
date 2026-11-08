@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { HeartbeatRunEvent } from "@paperclipai/shared";
+import type { HeartbeatRunEvent } from "@pilibalaai/shared";
 import { nativeRunEventsToTranscript } from "../transcript/native-run-events";
 import type { TranscriptEntry } from "@/adapters";
-import { buildTurnTimelineRows, paperclipRunnerTimelineItems, transcriptToTaskChatItems } from "./transcript-adapter";
+import { buildTurnTimelineRows, pilibalaRunnerTimelineItems, transcriptToTaskChatItems } from "./transcript-adapter";
 import type { TaskChatSubagentGroupItem } from "./task-chat-model";
 
 const RUN_ID = "10000000-0000-4000-8000-000000000001";
@@ -21,7 +21,7 @@ function event(seq: number, eventType: string, payload: Record<string, unknown>)
     message: null,
     payload: {
       prpEvent: {
-        schema: "paperclip.prp.event.v1",
+        schema: "pilibala.prp.event.v1",
         sourceEventId: `event-${seq}`,
         sourceSeq: seq,
         sourceInstanceId: "runner-1",
@@ -41,7 +41,7 @@ function event(seq: number, eventType: string, payload: Record<string, unknown>)
 
 function delegation(seq: number, id: string, status: string, child: Record<string, unknown>) {
   return event(seq, status === "running" ? (seq < 3 ? "delegation.started" : "delegation.updated") : "delegation.completed", {
-    schema: "paperclip.delegation.v1",
+    schema: "pilibala.delegation.v1",
     delegationId: id,
     action: "spawn",
     status,
@@ -51,7 +51,7 @@ function delegation(seq: number, id: string, status: string, child: Record<strin
 
 function tool(seq: number, id: string, done: boolean, parentItemId?: string) {
   return event(seq, done ? "tool.execution.completed" : "tool.execution.started", {
-    schema: "paperclip.tool.execution.v1",
+    schema: "pilibala.tool.execution.v1",
     executionId: id,
     transport: "builtin",
     operation: "read",
@@ -68,7 +68,7 @@ function tool(seq: number, id: string, done: boolean, parentItemId?: string) {
 
 function rows(events: HeartbeatRunEvent[], running: boolean) {
   const items = transcriptToTaskChatItems(nativeRunEventsToTranscript(events), { runId: RUN_ID, running });
-  return buildTurnTimelineRows(paperclipRunnerTimelineItems(items), running);
+  return buildTurnTimelineRows(pilibalaRunnerTimelineItems(items), running);
 }
 
 describe("subagent timeline rows", () => {
@@ -125,16 +125,16 @@ describe("subagent timeline rows", () => {
       eventType, status: "running", title: "", summary: "", payload,
     });
     const entries: TranscriptEntry[] = [
-      activity("tool.execution.started", { schema: "paperclip.tool.execution.v1", executionId: "toolu_a", name: "Task", status: "running" }),
-      activity("delegation.started", { schema: "paperclip.delegation.v1", delegationId: "toolu_a", action: "spawn", status: "running",
+      activity("tool.execution.started", { schema: "pilibala.tool.execution.v1", executionId: "toolu_a", name: "Task", status: "running" }),
+      activity("delegation.started", { schema: "pilibala.delegation.v1", delegationId: "toolu_a", action: "spawn", status: "running",
         children: [{ childId: "toolu_a", role: "Explore", summary: "Find tests", status: "running" }] }),
-      activity("tool.execution.started", { schema: "paperclip.tool.execution.v1", executionId: "toolu_b", name: "Task", status: "running" }),
-      activity("delegation.started", { schema: "paperclip.delegation.v1", delegationId: "toolu_b", action: "spawn", status: "running",
+      activity("tool.execution.started", { schema: "pilibala.tool.execution.v1", executionId: "toolu_b", name: "Task", status: "running" }),
+      activity("delegation.started", { schema: "pilibala.delegation.v1", delegationId: "toolu_b", action: "spawn", status: "running",
         children: [{ childId: "toolu_b", role: "Explore", summary: "Find docs", status: "running" }] }),
-      activity("tool.execution.started", { schema: "paperclip.tool.execution.v1", executionId: "toolu_a1", name: "Read", status: "running", parentItemId: "toolu_a" }),
+      activity("tool.execution.started", { schema: "pilibala.tool.execution.v1", executionId: "toolu_a1", name: "Read", status: "running", parentItemId: "toolu_a" }),
     ];
     const items = transcriptToTaskChatItems(entries, { runId: RUN_ID, running: true });
-    const timeline = buildTurnTimelineRows(paperclipRunnerTimelineItems(items), true);
+    const timeline = buildTurnTimelineRows(pilibalaRunnerTimelineItems(items), true);
     expect(timeline.map((row) => row.kind)).toEqual(["subagent_group"]);
     const group = timeline[0] as TaskChatSubagentGroupItem;
     expect(group.subagents.map((subagent) => subagent.activity.length)).toEqual([1, 0]);

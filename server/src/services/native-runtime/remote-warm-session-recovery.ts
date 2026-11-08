@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
-import { agents, companies, environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import { parseNativeExecutionInput, type NativeExecutionInput, type PersistedNativeSession, type DurableRecoveryIdentity } from "../../vendor/paperclip-runner/index.js";
+import { agents, companies, environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import { parseNativeExecutionInput, type NativeExecutionInput, type PersistedNativeSession, type DurableRecoveryIdentity } from "../../vendor/pilibala-runner/index.js";
 import { currentNativeControllerIdentity, evaluateNativeControllerTakeover, recordLegacyHostFallbackProof } from "./native-restart-recovery.js";
 import { NativeControllerRecoveryWaitingError, readNativeControllerRecovery } from "./native-controller-recovery.js";
 
@@ -54,7 +54,7 @@ export function isSettledRemoteWarmControlState(control: Record<string, unknown>
         (payload.workingNow !== false || record(payload.goal).status === "active"));
     return !live && matchesSession(event) &&
       Object.entries(identity).every(([key, value]) => envelope[key] === value) &&
-      (notification.schema === "paperclip.prp.event.v1" || notification.schema === "paperclip.prp.event.v2") &&
+      (notification.schema === "pilibala.prp.event.v1" || notification.schema === "pilibala.prp.event.v2") &&
       notification.eventType === eventType &&
       notification.sourceInstanceId === identity.runnerInstanceId && notification.sourceKind === "runner" &&
       notification.runId === identity.runId && notification.normalizedSessionId === identity.normalizedSessionId;
@@ -80,7 +80,7 @@ export function describeOwnFailedAttachment(recoveryHistory: unknown): string {
   return `runner_state_identity_mismatch: prior_attach_failed: ${typeof cause === "string" && cause ? cause : "unknown"}`;
 }
 
-const SETTLEMENT_DOC = "https://github.com/paperclipai/paperclip/blob/master/doc/execution-semantics.md#session-settlement-after-a-run";
+const SETTLEMENT_DOC = "https://github.com/pilibalaai/pilibala/blob/master/doc/execution-semantics.md#session-settlement-after-a-run";
 
 /** Points whoever diagnoses a failed attachment at reviewed docs. The stored
  * failure is already redacted and bounded; other failures produce no pointer. */

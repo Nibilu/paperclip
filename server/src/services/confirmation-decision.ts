@@ -4,7 +4,7 @@ import {
   requestConfirmationPayloadSchema,
   requestConfirmationResultSchema,
   type RequestCheckboxConfirmationOption,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 export function readPersistedConfirmationDecision(row: {
   kind: string;

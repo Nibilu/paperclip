@@ -91,7 +91,7 @@ const shared = {
 };
 
 const meta: Meta<typeof DecisionCard> = {
-  parameters: { paperclip: {
+  parameters: { pilibala: {
       "capabilities": [
         "inbox-search/decisions"
       ],

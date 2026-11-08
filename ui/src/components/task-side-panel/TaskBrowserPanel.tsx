@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { type BrowserUseControl, type TaskBrowser } from "@paperclipai/shared";
+import { type BrowserUseControl, type TaskBrowser } from "@pilibalaai/shared";
 import { browserUseApi } from "@/api/browser-use";
 import { QueryErrorState, QueryStaleHint } from "@/components/QueryView";
 import { Button } from "@/components/ui/button";

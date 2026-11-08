@@ -2,7 +2,7 @@ import type { VerifiedIdleCapabilities } from "./idle-incoming-wake-capability.j
 import { idleApiActivity } from "./idle-api-activity.js";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { idleWorkSnapshot } from "./task-admission.js";
 import type { IdleSleepDiagnosticSink } from "./idle-sleep-diagnostics.js";
 
@@ -15,10 +15,10 @@ export function registerIdleLocalWorkProbe(probe: (options: IdleLocalWorkOptions
   return () => { localWorkProbes.delete(probe); };
 }
 export function registerIdleSpoolDirectory(directory: string): void { spoolDirectories.add(path.resolve(directory)); }
-export const idleAccountingSpoolPath = () => path.join(resolvePaperclipInstanceRoot(), "accounting-receipts");
+export const idleAccountingSpoolPath = () => path.join(resolvePilibalaInstanceRoot(), "accounting-receipts");
 export const idleOrphanSpoolPath = () => process.env.SANDBOX_ORPHAN_CLEANUP_SPOOL_DIR ??
-  path.join(resolvePaperclipInstanceRoot(), "data", "sandbox-orphan-cleanup");
-export const idleQuotaRecoveryPath = () => path.join(resolvePaperclipInstanceRoot(), "quota-credential-recovery");
+  path.join(resolvePilibalaInstanceRoot(), "data", "sandbox-orphan-cleanup");
+export const idleQuotaRecoveryPath = () => path.join(resolvePilibalaInstanceRoot(), "quota-credential-recovery");
 let startupComplete = false;
 let ingressTracked = false;
 let scheduledBackups = false;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { mcpDiscoveryDocuments, parseMcpDiscovery } from "./discovery.js";
 import { createMcpWakeAdmission, parseMcpWakeAdmission } from "./wake-admission.js";
-import { DOT_RUNNER_MCP_SCOPES, PUBLIC_MCP_SCOPES } from "@paperclipai/shared";
+import { DOT_RUNNER_MCP_SCOPES, PUBLIC_MCP_SCOPES } from "@pilibalaai/shared";
 const snapshot = { origin: "https://tenant.example.test", authorizationOrigin: "https://browser.example.test", profiles: ["personal-mcp","dot-mcp"] as ("personal-mcp"|"dot-mcp")[] };
 describe("MCP owner discovery snapshot",()=>{
   it("preserves dedicated issuers, real scope contracts and configured browser authorization origin",()=>{
@@ -11,7 +11,7 @@ describe("MCP owner discovery snapshot",()=>{
     expect(personal).toMatchObject({issuer:snapshot.origin,authorization_endpoint:snapshot.authorizationOrigin+"/mcp/oauth/authorize",token_endpoint:snapshot.origin+"/mcp/oauth/token",scopes_supported:[...PUBLIC_MCP_SCOPES],client_id_metadata_document_supported:true});
     const dot = documents.find(entry=>entry.path==="/.well-known/oauth-authorization-server/mcp/runner/oauth")!.document;
     expect(dot).toMatchObject({issuer:snapshot.origin+"/mcp/runner/oauth",authorization_endpoint:snapshot.authorizationOrigin+"/mcp/runner/oauth/authorize",scopes_supported:[...DOT_RUNNER_MCP_SCOPES]});
-    expect(documents.find(entry=>entry.path==="/.well-known/oauth-protected-resource/mcp/paperclip")!.document.scopes_supported).toEqual(["paperclip:read","paperclip:write","paperclip:configure"]);
+    expect(documents.find(entry=>entry.path==="/.well-known/oauth-protected-resource/mcp/pilibala")!.document.scopes_supported).toEqual(["pilibala:read","pilibala:write","pilibala:configure"]);
     expect(mcpDiscoveryDocuments({...snapshot,profiles:["personal-mcp"]}).some(entry=>entry.path.includes("runner"))).toBe(false);
   });
   it("binds public snapshot changes to the private cycle generation and rejects unfamiliar shapes",()=>{

@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
-import { agents, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { agents, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { evaluateAgentInvokabilityFromDb } from "../agent-invokability.js";
 import { issueService } from "../issues.js";
 import { isAutomaticRecoverySuppressedByPauseHold } from "../recovery/pause-hold-guard.js";

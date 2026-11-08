@@ -2,7 +2,7 @@ import { loadConfig } from "../config.js";
 import { createStorageService } from "../storage/service.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
 import { migrateLocalSkillPackageObjects } from "../services/skill-package-storage-migration.js";
-import { heartbeatRuns, type Db } from "@paperclipai/db";
+import { heartbeatRuns, type Db } from "@pilibalaai/db";
 import { offlineMigrationExecutionWhere } from "../services/offline-migration-execution.js";
 import { getStorageService } from "../storage/index.js";
 import { migrateAgentFiles, verifyAgentFileObjects } from "../services/agent-file-maintenance.js";

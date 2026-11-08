@@ -269,10 +269,10 @@ function sortRunsChronologically(runs: readonly RunRecord[]): RunRecord[] {
   );
 }
 
-async function restartIsolatedPaperclipServer(input: {
+async function restartIsolatedPilibalaServer(input: {
   api: RunnerApi;
   requestId: string;
-  kimiCandidateAdmission?: import("../../packages/paperclip-runner/src/drivers/acpx/candidate-admission.js").AcpxCandidateAdmission;
+  kimiCandidateAdmission?: import("../../packages/pilibala-runner/src/drivers/acpx/candidate-admission.js").AcpxCandidateAdmission;
   deadlineAt: number;
   preserveRunner?: RestartRunnerIdentity;
   discardControllerCache?: boolean;
@@ -340,7 +340,7 @@ async function restartIsolatedPaperclipServer(input: {
 }
 
 const executionIds = (() => {
-  const encoded = process.env.PAPERCLIP_RUNNER_E2E_EXECUTION_IDS;
+  const encoded = process.env.PILIBALA_RUNNER_E2E_EXECUTION_IDS;
   if (encoded) {
     const parsed = JSON.parse(encoded) as unknown;
     if (
@@ -349,24 +349,24 @@ const executionIds = (() => {
       parsed.some((value) => typeof value !== "string")
     ) {
       throw new Error(
-        "PAPERCLIP_RUNNER_E2E_EXECUTION_IDS must be a non-empty JSON string array",
+        "PILIBALA_RUNNER_E2E_EXECUTION_IDS must be a non-empty JSON string array",
       );
     }
     return parsed;
   }
-  const single = process.env.PAPERCLIP_RUNNER_E2E_EXECUTION_ID;
+  const single = process.env.PILIBALA_RUNNER_E2E_EXECUTION_ID;
   if (!single)
-    throw new Error("PAPERCLIP_RUNNER_E2E_EXECUTION_IDS is required");
+    throw new Error("PILIBALA_RUNNER_E2E_EXECUTION_IDS is required");
   return [single];
 })();
 const executions = executionIds.map(runnerExecutionById);
 // Direct Playwright invocation must enforce the same admission boundary as
 // launch.ts before reading any provider credential from the environment.
 assertRunnerE2EPrerequisites(executions);
-const attempt = Number(process.env.PAPERCLIP_RUNNER_E2E_ATTEMPT ?? "1");
-const temporaryRoot = process.env.PAPERCLIP_RUNNER_E2E_TEMP_ROOT;
-const privateRoot = process.env.PAPERCLIP_RUNNER_E2E_PRIVATE_DIR;
-const workspacePath = process.env.PAPERCLIP_RUNNER_E2E_WORKSPACE;
+const attempt = Number(process.env.PILIBALA_RUNNER_E2E_ATTEMPT ?? "1");
+const temporaryRoot = process.env.PILIBALA_RUNNER_E2E_TEMP_ROOT;
+const privateRoot = process.env.PILIBALA_RUNNER_E2E_PRIVATE_DIR;
+const workspacePath = process.env.PILIBALA_RUNNER_E2E_WORKSPACE;
 if (!temporaryRoot || !privateRoot || !workspacePath)
   throw new Error("Runner E2E temporary/private/workspace paths are required");
 
@@ -609,11 +609,11 @@ for (const execution of executions) {
       verifyNativeInstructionPreflight(process.env[NATIVE_INSTRUCTION_PREFLIGHT_ENV]);
     }
     const credentials = credentialValues();
-    const secrets = normalizedSecrets([...Object.values(credentials), ...EVAL_OBSERVABILITY_SECRET_NAMES.map(name => process.env[name]), process.env.PAPERCLIP_E2E_GATEWAY_TOKEN]);
+    const secrets = normalizedSecrets([...Object.values(credentials), ...EVAL_OBSERVABILITY_SECRET_NAMES.map(name => process.env[name]), process.env.PILIBALA_E2E_GATEWAY_TOKEN]);
     const traceConfig = evalBraintrustConfig(process.env);
     const trace = traceConfig ? new EvalAttemptTrace(traceConfig, {
-      campaignId: process.env.PAPERCLIP_E2E_ACCOUNTING_CAMPAIGN_ID ?? "",
-      attemptId: process.env.PAPERCLIP_E2E_ACCOUNTING_ATTEMPT_ID ?? "",
+      campaignId: process.env.PILIBALA_E2E_ACCOUNTING_CAMPAIGN_ID ?? "",
+      attemptId: process.env.PILIBALA_E2E_ACCOUNTING_ATTEMPT_ID ?? "",
       executionId: execution.id, provider: execution.profile.provider, model: execution.profile.model, environment: execution.environment.id,
     }, {
       suiteId: execution.suite.id, suiteDefinitionHash: execution.suiteDefinitionHash,
@@ -623,7 +623,7 @@ for (const execution of executions) {
     const onCompanyCreated = async (id: string) => {
       const admission = kimiCandidateAdmissionForExecution(execution, id);
       if (admission) {
-        await restartIsolatedPaperclipServer({ api, requestId: `kimi-startup-${nonce}`,
+        await restartIsolatedPilibalaServer({ api, requestId: `kimi-startup-${nonce}`,
           kimiCandidateAdmission: admission, deadlineAt: startedAtMs + deadlineMs });
         if (execution.environment.id === "daytona") {
           await waitForFixtureDaytonaProvider(api, { companyId: id, deadlineAt: startedAtMs + deadlineMs });
@@ -917,7 +917,7 @@ for (const execution of executions) {
     try {
       trace?.phase("setup");
       await saveTrace();
-      if (execution.profile.provider === "cursor_cloud") await assertCursorCloudCallbackIngress(process.env.PAPERCLIP_PUBLIC_URL!);
+      if (execution.profile.provider === "cursor_cloud") await assertCursorCloudCallbackIngress(process.env.PILIBALA_PUBLIC_URL!);
       if (execution.task.flow === "public_mcp") publicMcpUserId = await establishPublicMcpSession(api, page, secrets);
       if (execution.suite.id === "stock-harness") {
         const receipt = verifyStockHarnessPreflight(process.env[STOCK_PREFLIGHT_ENV]);
@@ -947,14 +947,14 @@ for (const execution of executions) {
         await setupGitStreamingWorkspace(workspacePath);
       }
       fixtures = execution.task.flow === "first_task"
-        ? await setupFirstTaskFixtures({ page, api, execution, nonce, credentials, daytonaImage: process.env.PAPERCLIP_E2E_DAYTONA_IMAGE, deadlineAt: startedAtMs + deadlineMs, observe: value => { fixtures = value; }, onCompanyCreated })
+        ? await setupFirstTaskFixtures({ page, api, execution, nonce, credentials, daytonaImage: process.env.PILIBALA_E2E_DAYTONA_IMAGE, deadlineAt: startedAtMs + deadlineMs, observe: value => { fixtures = value; }, onCompanyCreated })
         : await setupLiveFixtures({
         api,
         execution,
         executionNonce: nonce,
         workspacePath,
         credentials,
-        daytonaImage: process.env.PAPERCLIP_E2E_DAYTONA_IMAGE,
+        daytonaImage: process.env.PILIBALA_E2E_DAYTONA_IMAGE,
         cleanupDeadlineAt: kimiLifecycleTiming?.cleanupDeadlineAt,
         onCompanyCreated,
       });
@@ -993,9 +993,9 @@ for (const execution of executions) {
         ? createRemoteNativeBootstrap({
           api, daytona: await createRemoteFixtureClient(credentials.DAYTONA_API_KEY ?? ""),
           companyId: fixtures.company.id, environmentId: fixtures.environment.id, agentId: fixtures.agent.id,
-          image: process.env.PAPERCLIP_E2E_DAYTONA_IMAGE ?? "",
-          nodeSha256: process.env.PAPERCLIP_E2E_DAYTONA_NODE_SHA256 ?? "",
-          runnerdSha256: process.env.PAPERCLIP_E2E_DAYTONA_RUNNERD_SHA256 ?? "",
+          image: process.env.PILIBALA_E2E_DAYTONA_IMAGE ?? "",
+          nodeSha256: process.env.PILIBALA_E2E_DAYTONA_NODE_SHA256 ?? "",
+          runnerdSha256: process.env.PILIBALA_E2E_DAYTONA_RUNNERD_SHA256 ?? "",
           deadlineAt: kimiWorkDeadlineAt ?? startedAtMs + deadlineMs,
           requireCopilotTaskContext: execution.profile.qualificationCandidate === "copilot",
           evidence: (name, data) => writeSanitizedJson(snapshotsDir, name, data, secrets),
@@ -1097,7 +1097,7 @@ for (const execution of executions) {
       } else if (execution.task.flow === "finalization_recovery") {
         const journey = await runFinalizationRecoveryFlow({ page, api, fixtures, execution, nonce, temporaryRoot,
           deadlineAt: startedAtMs + deadlineMs - 30_000,
-          restart: binding => restartIsolatedPaperclipServer({ api, requestId: `finalization-${nonce}`, deadlineAt: startedAtMs + deadlineMs, crashAfterResult: binding }),
+          restart: binding => restartIsolatedPilibalaServer({ api, requestId: `finalization-${nonce}`, deadlineAt: startedAtMs + deadlineMs, crashAfterResult: binding }),
           observe: (currentIssue, currentRuns, checks) => {
             issue = currentIssue as IssueRecord; selectedRuns = currentRuns as RunRecord[];
             matcherResults = checks.map(check => ({ matcher: { kind: "json_path" as const, path: `finalizationRecovery.${check.id}`, expected: true }, passed: check.passed, detail: check.detail }));
@@ -1125,7 +1125,7 @@ for (const execution of executions) {
       } else if (execution.task.flow === "task_workspaces") {
         const journey = await runTaskWorkspacesFlow({ page, api, fixtures, execution, nonce, temporaryRoot,
           deadlineAt: startedAtMs + deadlineMs - 30_000,
-          restart: () => restartIsolatedPaperclipServer({ api, requestId: `task-workspaces-${nonce}`, deadlineAt: startedAtMs + deadlineMs }),
+          restart: () => restartIsolatedPilibalaServer({ api, requestId: `task-workspaces-${nonce}`, deadlineAt: startedAtMs + deadlineMs }),
           observe: (currentIssue, currentRuns, checks) => {
             issue = currentIssue as IssueRecord; selectedRuns = currentRuns as RunRecord[];
             matcherResults = checks.map(check => ({ matcher: { kind: "json_path" as const, path: `taskWorkspaces.${check.id}`, expected: true }, passed: check.passed, detail: check.detail }));
@@ -1165,7 +1165,7 @@ for (const execution of executions) {
       } else if (execution.task.flow === "continuation_accounting") {
         const accounting = await runAccountingFlow({
           page, api, fixtures, execution, nonce, deadlineAt: startedAtMs + deadlineMs - 60_000,
-          restart: () => restartIsolatedPaperclipServer({ api, requestId: `accounting-${nonce}`, deadlineAt: startedAtMs + deadlineMs }),
+          restart: () => restartIsolatedPilibalaServer({ api, requestId: `accounting-${nonce}`, deadlineAt: startedAtMs + deadlineMs }),
           observe: (currentIssue, currentRuns, checks) => {
             issue = currentIssue; selectedRuns = currentRuns;
             matcherResults = checks.map(check => ({ matcher: { kind: "json_path" as const, path: `accounting.${check.id}`, expected: true }, passed: check.passed, detail: check.detail }));
@@ -1241,7 +1241,7 @@ for (const execution of executions) {
       } else if (execution.task.flow === "pi_native") {
         const story = await runPiNativeFlow({
           page, api, fixtures, execution, nonce, workspacePath, deadlineAt: startedAtMs + deadlineMs,
-          restart: preserveRunner => restartIsolatedPaperclipServer({ api, requestId: `pi-native-${nonce}`, deadlineAt: startedAtMs + deadlineMs, preserveRunner }),
+          restart: preserveRunner => restartIsolatedPilibalaServer({ api, requestId: `pi-native-${nonce}`, deadlineAt: startedAtMs + deadlineMs, preserveRunner }),
           observe: (currentIssue, currentRuns) => { issue = currentIssue as IssueRecord; selectedRuns = currentRuns as RunRecord[]; },
           capture: captureScreenshot,
           evidence: (name, data) => writeSanitizedJson(snapshotsDir, name, data, secrets),
@@ -1252,7 +1252,7 @@ for (const execution of executions) {
       } else if (execution.task.flow === "instruction_persistence") {
         const story = await runInstructionPersistenceFlow({
           page, api, fixtures, execution, nonce, secrets, deadlineAt: startedAtMs + deadlineMs,
-          restart: () => restartIsolatedPaperclipServer({ api, requestId: `instructions-${nonce}`, deadlineAt: startedAtMs + deadlineMs }),
+          restart: () => restartIsolatedPilibalaServer({ api, requestId: `instructions-${nonce}`, deadlineAt: startedAtMs + deadlineMs }),
           observe: (currentIssue, currentRuns) => { issue = currentIssue as IssueRecord; selectedRuns = currentRuns as RunRecord[]; },
           capture: captureScreenshot,
           evidence: (name, data) => writeSanitizedJson(snapshotsDir, name, data, secrets),
@@ -1262,7 +1262,7 @@ for (const execution of executions) {
       } else if (execution.task.flow === "continuation") {
         const continuation = await runContinuationFlow({
           page, api, fixtures, execution, nonce, secrets, workspacePath, deadlineAt: startedAtMs + deadlineMs - 60_000,
-          restart: () => restartChatServer(page, () => restartIsolatedPaperclipServer({ api, requestId: `continuation-${nonce}`, deadlineAt: startedAtMs + deadlineMs })),
+          restart: () => restartChatServer(page, () => restartIsolatedPilibalaServer({ api, requestId: `continuation-${nonce}`, deadlineAt: startedAtMs + deadlineMs })),
           observe: (currentIssue, currentRuns, checks) => {
             issue = currentIssue; selectedRuns = currentRuns;
             matcherResults = checks.map(check => ({ matcher: { kind: "json_path" as const, path: `continuation.${check.id}`, expected: true }, passed: check.passed, detail: check.detail }));
@@ -1283,7 +1283,7 @@ for (const execution of executions) {
           restart: async (recoveryBinding, controllerDowntimeMs) => {
             let receipt: ControllerReplacementReceipt | undefined;
             restartIndex += 1;
-            await restartIsolatedPaperclipServer({ api, requestId: `story-${nonce}-${restartIndex}`, deadlineAt: startedAtMs + deadlineMs,
+            await restartIsolatedPilibalaServer({ api, requestId: `story-${nonce}-${restartIndex}`, deadlineAt: startedAtMs + deadlineMs,
               discardControllerCache: controllerOutage !== undefined || isRollingWebDeployment(execution),
               ...(isRollingWebDeployment(execution) ? { rollingDeployment: true as const } : {}),
               controllerOutage: controllerOutage && !recoveryBinding ? { ...controllerOutage, holdMs: 1000 } : controllerOutage,
@@ -1326,7 +1326,7 @@ for (const execution of executions) {
         const chat = await runChatFlow({
           page, api, fixtures, execution, nonce, workspacePath,
           deadlineAt: startedAtMs + deadlineMs,
-          restart: () => restartChatServer(page, () => restartIsolatedPaperclipServer({ api, requestId: `chat-${nonce}`, deadlineAt: startedAtMs + deadlineMs })),
+          restart: () => restartChatServer(page, () => restartIsolatedPilibalaServer({ api, requestId: `chat-${nonce}`, deadlineAt: startedAtMs + deadlineMs })),
           observe: (chatIssue, chatRuns) => { issue = chatIssue; selectedRuns = chatRuns; },
           capture: captureScreenshot,
           evidence: completionEvidence,
@@ -1490,7 +1490,7 @@ for (const execution of executions) {
         await captureScreenshot("tool-review-pending", "Connection review awaiting a human", "tool-review-pending.png");
         await page.getByRole("button", { name: "Dismiss Approve tool action" }).click();
         if (execution.task.toolReviewDecision === "restart") {
-          await restartIsolatedPaperclipServer({ api, requestId: `tool-review-${nonce}`, deadlineAt });
+          await restartIsolatedPilibalaServer({ api, requestId: `tool-review-${nonce}`, deadlineAt });
           await page.reload();
         }
         // Open the review card on the document that will act on it: an
@@ -1594,12 +1594,12 @@ for (const execution of executions) {
         );
         if (execution.task.restartServerBeforeQuestionAnswer) {
           const restartRequestId = `question-wait-${nonce}`;
-          await restartIsolatedPaperclipServer({
+          await restartIsolatedPilibalaServer({
             api,
             requestId: restartRequestId,
             deadlineAt,
           });
-          const documentSentinel = `__paperclip_runner_restart_${nonce.replaceAll("-", "_")}`;
+          const documentSentinel = `__pilibala_runner_restart_${nonce.replaceAll("-", "_")}`;
           await page.evaluate(
             (key) => Reflect.set(window, key, true),
             documentSentinel,
@@ -1885,7 +1885,7 @@ for (const execution of executions) {
           }
           const journalEvidence = execution.suite.id === "daytona-journal-continuity" && completedTurn === 1
             ? await largeJournalEvidence({
-                stateRoot: path.join(process.env.PAPERCLIP_HOME!, "instances", process.env.PAPERCLIP_INSTANCE_ID!, "runtime", "paperclip-runner", "durable-sessions"),
+                stateRoot: path.join(process.env.PILIBALA_HOME!, "instances", process.env.PILIBALA_INSTANCE_ID!, "runtime", "pilibala-runner", "durable-sessions"),
                 runId: chronologicalRuns.at(-1)!.id,
                 minimumBytes: 2 * 1024 * 1024,
                 minimumCompletedStimulusCalls: 240,
@@ -1919,7 +1919,7 @@ for (const execution of executions) {
           })).toBeVisible({ timeout: reviewUiTimeout() });
           const turnReply = page.getByTestId("task-chat-thread")
             .getByTestId("task-chat-agent-bubble")
-            .filter({ hasText: `PAPERCLIP_E2E_WARM_T${completedTurn}_${nonce}` }).last();
+            .filter({ hasText: `PILIBALA_E2E_WARM_T${completedTurn}_${nonce}` }).last();
           await expect(turnReply).toBeVisible({ timeout: reviewUiTimeout() });
           const pendingReview = waitingState.interactions.find(isPendingWarmConfirmation)!;
           const reviewCard = page.getByTestId("task-chat-interaction")
@@ -2067,7 +2067,7 @@ for (const execution of executions) {
             ? Date.parse(candidate.finishedAt)
             : Number.NaN;
           const acquisition = record(
-            record(candidate.contextSnapshot).paperclipEnvironment,
+            record(candidate.contextSnapshot).pilibalaEnvironment,
           ).sandboxLeaseAcquisition;
           const acquisitionOutcome = record(acquisition).outcome;
           return {
@@ -2305,15 +2305,15 @@ for (const execution of executions) {
       }
 
       const context = record(run.contextSnapshot);
-      const environmentContext = record(context.paperclipEnvironment);
-      const workspaceContext = record(context.paperclipWorkspace);
+      const environmentContext = record(context.pilibalaEnvironment);
+      const workspaceContext = record(context.pilibalaWorkspace);
       const environmentDriver =
         environmentContext.driver ?? persistedEnvironment.driver;
       const observedEnvironment =
         environmentDriver === "sandbox" ? "daytona" : environmentDriver;
       const observedRuntimeMode =
         run.runtimeMode ??
-        (persistedAgent.adapterType === "paperclip_runner"
+        (persistedAgent.adapterType === "pilibala_runner"
           ? "native"
           : "legacy");
       const matcherObservation = {
@@ -2463,7 +2463,7 @@ for (const execution of executions) {
       }
       if (execution.task.flow === "warm_three_turn") {
         const runEnvironmentContexts = selectedRuns.map((candidate) =>
-          record(record(candidate.contextSnapshot).paperclipEnvironment),
+          record(record(candidate.contextSnapshot).pilibalaEnvironment),
         );
         const leaseIds = runEnvironmentContexts.map((entry) => entry.leaseId);
         const acquisitionOutcomes = runEnvironmentContexts.map(
@@ -2471,7 +2471,7 @@ for (const execution of executions) {
         );
         const projectWorkspaceIds = selectedRuns.map(
           (candidate) =>
-            record(record(candidate.contextSnapshot).paperclipWorkspace)
+            record(record(candidate.contextSnapshot).pilibalaWorkspace)
               .workspaceId,
         );
         const executionWorkspaceIds = selectedRuns.map(
@@ -3097,7 +3097,7 @@ for (const execution of executions) {
                     run.contextSnapshot?.issueId as string | undefined])].filter((id): id is string => Boolean(id)))], secrets });
               } catch {
                 // Supplemental evidence must never prevent owned fixture cleanup.
-                taskChat = { schema: "paperclip.runner-e2e.task-chat/v1", capturedAt: new Date().toISOString(),
+                taskChat = { schema: "pilibala.runner-e2e.task-chat/v1", capturedAt: new Date().toISOString(),
                   status: "unavailable", threads: [], missing: ["capture"] };
               }
               await workerTiming.enter("feedback");
@@ -3209,11 +3209,11 @@ for (const execution of executions) {
         fallbackFinishedAt: new Date(finishedAtMs),
       }), fixtures ?? {});
       const resultWithoutBilling: RunnerE2EResult = {
-        schema: "paperclip.runner-e2e.result/v2",
-        ...(process.env.PAPERCLIP_E2E_ACCOUNTING_CAMPAIGN_ID && process.env.PAPERCLIP_E2E_ACCOUNTING_ATTEMPT_ID ? {
+        schema: "pilibala.runner-e2e.result/v2",
+        ...(process.env.PILIBALA_E2E_ACCOUNTING_CAMPAIGN_ID && process.env.PILIBALA_E2E_ACCOUNTING_ATTEMPT_ID ? {
           accountingIdentity: {
-            campaignId: process.env.PAPERCLIP_E2E_ACCOUNTING_CAMPAIGN_ID,
-            attemptId: process.env.PAPERCLIP_E2E_ACCOUNTING_ATTEMPT_ID,
+            campaignId: process.env.PILIBALA_E2E_ACCOUNTING_CAMPAIGN_ID,
+            attemptId: process.env.PILIBALA_E2E_ACCOUNTING_ATTEMPT_ID,
           },
         } : {}),
         executionId: execution.id,

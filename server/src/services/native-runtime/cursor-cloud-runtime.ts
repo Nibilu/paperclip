@@ -2,10 +2,10 @@ import { createHash, randomUUID } from "node:crypto";
 import { constants, existsSync, lstatSync, mkdirSync, openSync, closeSync, fstatSync, fsyncSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
-import { heartbeatRuns, type Db } from "@paperclipai/db";
+import { heartbeatRuns, type Db } from "@pilibalaai/db";
 import { loadConfig } from "../../config.js";
 import { parseObject } from "../../adapters/utils.js";
-import { archiveCursorCloudSessionCheckpoint, CURSOR_CLOUD_DEFAULT_TIMEOUT_MS, type NativeExecutionInput, type PersistedNativeSession } from "../../vendor/paperclip-runner/index.js";
+import { archiveCursorCloudSessionCheckpoint, CURSOR_CLOUD_DEFAULT_TIMEOUT_MS, type NativeExecutionInput, type PersistedNativeSession } from "../../vendor/pilibala-runner/index.js";
 import { createRemoteMcpRelayToken, registerRemoteMcpRelay, remoteMcpRelayUrl } from "./remote-mcp-relay.js";
 
 /** Normalize Cursor's terminal evidence before shared Stop authority consumes it. */
@@ -72,7 +72,7 @@ export function prepareCursorCloudRuntime(input: {
     finally { rmSync(pending, { force: true }); }
   };
   savePrivate(capabilityPath, capability);
-  const socketRoot = `/tmp/paperclip-cloud-${createHash("sha256").update(input.root).digest("hex").slice(0, 24)}`;
+  const socketRoot = `/tmp/pilibala-cloud-${createHash("sha256").update(input.root).digest("hex").slice(0, 24)}`;
   if (!existsSync(socketRoot)) mkdirSync(socketRoot, { mode: 0o700 });
   privateDirectory(socketRoot);
   const socketPath = join(socketRoot, "mcp.sock");
@@ -107,8 +107,8 @@ export function prepareCursorCloudRuntime(input: {
   };
   const unregister = () => { release?.(); release = undefined; };
   return { register, unregister, archiveCheckpoint, environment: { ...input.environment,
-    PAPERCLIP_CURSOR_CLOUD_ARTIFACT_ROOT: artifactRoot, PAPERCLIP_CURSOR_CLOUD_CONFIG_PATH: configPath, PAPERCLIP_CURSOR_CLOUD_RELAY_SOCKET_PATH: socketPath,
-    PAPERCLIP_CURSOR_CLOUD_RELAY_TOKEN: capability.token, PAPERCLIP_CURSOR_CLOUD_RELAY_URL: url,
-    PAPERCLIP_CURSOR_CLOUD_RELAY_EXPIRES_AT: String(capability.expiresAt),
+    PILIBALA_CURSOR_CLOUD_ARTIFACT_ROOT: artifactRoot, PILIBALA_CURSOR_CLOUD_CONFIG_PATH: configPath, PILIBALA_CURSOR_CLOUD_RELAY_SOCKET_PATH: socketPath,
+    PILIBALA_CURSOR_CLOUD_RELAY_TOKEN: capability.token, PILIBALA_CURSOR_CLOUD_RELAY_URL: url,
+    PILIBALA_CURSOR_CLOUD_RELAY_EXPIRES_AT: String(capability.expiresAt),
   } };
 }

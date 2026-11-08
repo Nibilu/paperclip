@@ -1,6 +1,6 @@
 import { and, asc, eq, exists, inArray, sql } from "drizzle-orm";
-import { environmentLeases, nativeRunFinalizations, nativeRunnerCheckpoints, type Db } from "@paperclipai/db";
-import { inspectDurablePrpCheckpointHeader, type DurablePrpCheckpoint } from "../../vendor/paperclip-runner/index.js";
+import { environmentLeases, nativeRunFinalizations, nativeRunnerCheckpoints, type Db } from "@pilibalaai/db";
+import { inspectDurablePrpCheckpointHeader, type DurablePrpCheckpoint } from "../../vendor/pilibala-runner/index.js";
 
 type Transaction = Parameters<Parameters<Db["transaction"]>[0]>[0];
 const record = (value: unknown): Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -15,7 +15,7 @@ export async function readNativeSourceConsumers(tx: Transaction, companyId: stri
   const retired = exists(tx.select({ runId: nativeRunnerCheckpoints.runId }).from(nativeRunnerCheckpoints).where(and(
     eq(nativeRunnerCheckpoints.companyId, companyId), eq(nativeRunnerCheckpoints.runId, runId),
     eq(nativeRunnerCheckpoints.part, "header"),
-    sql`${nativeRunnerCheckpoints.material}->>'schema' like 'paperclip.native-runner-checkpoint-retirement.%'`)));
+    sql`${nativeRunnerCheckpoints.material}->>'schema' like 'pilibala.native-runner-checkpoint-retirement.%'`)));
   return tx.select({ id: environmentLeases.id, metadata: environmentLeases.metadata, retired }).from(environmentLeases).where(and(
     eq(environmentLeases.companyId, companyId), eq(environmentLeases.heartbeatRunId, runId),
     sql`${environmentLeases.metadata}->'runnerTaskSourceConsumer' is not null`));
@@ -40,7 +40,7 @@ export async function assertNativeSourceCheckpointConsumer(tx: Transaction, owne
   const expected = record(recovery.identity);
   if (!lease || lease.heartbeatRunId !== owner.authorityRunId || lease.status !== "active" || lease.releasedAt ||
       lease.expiresAt && lease.expiresAt.getTime() <= Date.now() ||
-      recovery.schema !== "paperclip.runner.source-recovery.v1" || recovery.sourceLeaseId !== source.id ||
+      recovery.schema !== "pilibala.runner.source-recovery.v1" || recovery.sourceLeaseId !== source.id ||
       recovery.consumerLeaseId !== lease.id || recovery.consumerRunId !== owner.authorityRunId ||
       typeof recovery.accountIdentity !== "string" || recovery.accountIdentity !== consumer.accountIdentity ||
       recovery.controllerBootId !== owner.bootId || recovery.controllerGeneration !== owner.generation ||

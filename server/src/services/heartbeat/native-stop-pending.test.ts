@@ -1,5 +1,5 @@
-import type { Db } from "@paperclipai/db";
-import { heartbeatRuns } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { heartbeatRuns } from "@pilibalaai/db";
 import { describe, expect, it, vi } from "vitest";
 import { HttpError } from "../../errors.js";
 import { cancelNativeSession, NativeCancellationPendingRecoveryError } from "../native-runtime/index.js";
@@ -18,7 +18,7 @@ vi.mock("../native-runtime/index.js", async (importOriginal) => ({
 
 describe.skipIf(!runControlPostgresSupport.supported)("native Stop while the provider session is still starting", () => {
   let db: Db;
-  const { fixture } = setupRunControlDatabase("paperclip-heartbeat-native-stop-pending", value => { db = value; });
+  const { fixture } = setupRunControlDatabase("pilibala-heartbeat-native-stop-pending", value => { db = value; });
 
   async function startingNativeRun() {
     const { company, agent } = await fixture();

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { IssueAttachment, IssueComment, IssueWorkProduct } from "@paperclipai/shared";
+import type { IssueAttachment, IssueComment, IssueWorkProduct } from "@pilibalaai/shared";
 import { expect, userEvent, within } from "storybook/test";
 import { TaskChatThreadView } from "../../../src/components/task-chat/TaskChatThreadView";
 import { TaskChatPresentationProvider } from "../../../src/components/task-chat/presentation-mode";
 import type { TaskChatItem, TaskChatMaterializedResourceItem } from "../../../src/components/task-chat/task-chat-model";
 import { TaskChatThread } from "../../../src/components/TaskChatThread";
-import { storybookAgents } from "../../fixtures/paperclipData";
+import { storybookAgents } from "../../fixtures/pilibalaData";
 import { Button } from "../../../src/components/ui/button";
 
 const meta = {
@@ -14,7 +14,7 @@ const meta = {
   title: "Tasks and conversations/Documents, attachments, and work products/Task Chat/Image grids",
   parameters: {
     layout: "fullscreen",
-    paperclip: {
+    pilibala: {
       capabilities: ["documents-artifacts/work-products", "documents-artifacts/attachments"],
       status: "current", implementation: "production", boundary: "fixtures",
       notes: "Production thread renderer and media gallery. Representative PAP-2525 conversation with seven original sample-account screenshots from its 2026-11-06 turn; no live task or provider actions. Streaming appends saved resources through the same renderer used during execution.",
@@ -37,7 +37,7 @@ const images: TaskChatMaterializedResourceItem[] = screenshots.map(([filename, t
   const attachmentId = `00000000-0000-4000-8000-00000000000${index}`;
   const href = `/api/attachments/${attachmentId}/content`;
   const workProduct = {
-    id: `image-${index}`, companyId: "storybook-company", issueId: "pap-2525", projectId: null, executionWorkspaceId: null, runtimeServiceId: null, externalId: null, isPrimary: false, summary: null, url: null, type: "artifact", provider: "paperclip", title,
+    id: `image-${index}`, companyId: "storybook-company", issueId: "pap-2525", projectId: null, executionWorkspaceId: null, runtimeServiceId: null, externalId: null, isPrimary: false, summary: null, url: null, type: "artifact", provider: "pilibala", title,
     status: "active", reviewState: "none", healthStatus: "unknown",
     createdByRunId: "pap-2525-revised-prototype", createdAt: new Date("2026-11-06T13:31:00Z"), updatedAt: new Date("2026-11-06T13:31:00Z"),
     metadata: { attachmentId, byteSize: 118000, contentType: "image/png", originalFilename: filename, contentPath: href, openPath: href, downloadPath: `${href}?download=1` },
@@ -129,7 +129,7 @@ export const ProductionFeed = { render: () => {
   })) as unknown as IssueAttachment[];
   const comments = products.map((p, n) => ({
     id: `receipt-${n}`, body: `Prepared ${p.title} for this response.`, authorType: "agent", authorAgentId: agent.id, createdByRunId: p.createdByRunId,
-    createdAt: new Date(new Date(p.createdAt).getTime() + 100), updatedAt: p.updatedAt, metadata: { version: 1 as const, sections: [], authorizationReason: "paperclip_runner_protocol" },
+    createdAt: new Date(new Date(p.createdAt).getTime() + 100), updatedAt: p.updatedAt, metadata: { version: 1 as const, sections: [], authorizationReason: "pilibala_runner_protocol" },
   })) as unknown as IssueComment[];
   return <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col bg-background px-4 text-foreground">
     <TaskChatThread comments={comments} workProducts={products} attachments={attachments} issueStatus="done" onAdd={async () => {}}

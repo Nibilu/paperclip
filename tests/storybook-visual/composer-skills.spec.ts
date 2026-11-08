@@ -38,7 +38,7 @@ for (const surface of ["composer-new-task", "composer-skills"]) {
             const menu = page.getByTestId("mention-autocomplete-menu");
             await expect(menu).toBeVisible();
             const bounds = await menu.boundingBox();
-            const composer = await page.locator(".paperclip-task-chat-composer").boundingBox();
+            const composer = await page.locator(".pilibala-task-chat-composer").boundingBox();
             expect(bounds!.width).toBeCloseTo(composer!.width, 0);
             expect(bounds!.x).toBeCloseTo(composer!.x, 0);
             expect(bounds!.x).toBeGreaterThanOrEqual(0);
@@ -93,12 +93,12 @@ for (const surface of ["composer-new-task", "composer-skills"]) {
           await page.screenshot({ path: testInfo.outputPath(`${surface}-${state}-${theme}-${mobile ? "mobile" : "desktop"}.png`), fullPage: true });
           if (state === "slash-commands") {
             await page.setViewportSize({ width: mobile ? 430 : 1000, height: 844 });
-            await page.locator(".paperclip-task-chat-composer").evaluate((element) => {
+            await page.locator(".pilibala-task-chat-composer").evaluate((element) => {
               (element as HTMLElement).style.width = "85%";
             });
             await expect.poll(() => page.evaluate(() => {
               const menu = document.querySelector('[data-testid="mention-autocomplete-menu"]')!.getBoundingClientRect();
-              const composer = document.querySelector(".paperclip-task-chat-composer")!.getBoundingClientRect();
+              const composer = document.querySelector(".pilibala-task-chat-composer")!.getBoundingClientRect();
               return Math.abs(menu.width - composer.width) + Math.abs(menu.left - composer.left);
             })).toBeLessThan(1);
           }

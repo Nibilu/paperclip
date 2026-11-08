@@ -16,12 +16,12 @@ const fail = code => { throw new Error(`reliability_testops_registration_${code}
 const positive = value => Number.isSafeInteger(value) && value > 0;
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 const sorted = values => [...values].sort((a, b) => a - b);
-export const registrationWorkflowRef = 'paperclipai/paperclip/.github/workflows/runner-e2e-testops-registration.yml@refs/heads/master';
+export const registrationWorkflowRef = 'pilibalaai/pilibala/.github/workflows/runner-e2e-testops-registration.yml@refs/heads/master';
 export const standingPlanId = 2;
 const maximumCatalogPages = 30;
 
 export function admitRegistration(env) {
-  if (env.GITHUB_REPOSITORY !== 'paperclipai/paperclip' || env.GITHUB_REF !== 'refs/heads/master'
+  if (env.GITHUB_REPOSITORY !== 'pilibalaai/pilibala' || env.GITHUB_REF !== 'refs/heads/master'
       || env.GITHUB_EVENT_NAME !== 'workflow_dispatch' || env.GITHUB_WORKFLOW_REF !== registrationWorkflowRef
       || !/^[a-f0-9]{40}$/.test(env.GITHUB_SHA ?? '') || !/^[1-9][0-9]{0,15}$/.test(env.GITHUB_RUN_ID ?? '')
       || env.ALLURE_ENDPOINT !== endpoint || env.ALLURE_PROJECT_ID !== '1' || env.REGISTRATION_PLAN !== 'reliability'
@@ -165,7 +165,7 @@ export function registrationReceipt(operation, state, env) {
     && (state.assignments ?? [{ job: { id: state.jobId } }]).some(row => row?.job?.id === state.jobId);
   const registration = { planId: state.plan?.id ?? null, caseIds };
   return {
-    schema: 'paperclip.reliability-testops-registration/v1', operation,
+    schema: 'pilibala.reliability-testops-registration/v1', operation,
     workflowRunId: env.GITHUB_RUN_ID, workflowSha: env.GITHUB_SHA,
     planName: reliabilityPlanName, planUrl: state.plan ? `${endpoint}/testplan/${state.plan.id}` : null,
     jobId: state.jobId, registration, complete,

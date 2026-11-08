@@ -49,8 +49,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import type { RoutineListItem, RoutineVariable } from "@paperclipai/shared";
-import type { FolderListItem } from "@paperclipai/shared";
+import type { RoutineListItem, RoutineVariable } from "@pilibalaai/shared";
+import type { FolderListItem } from "@pilibalaai/shared";
 import {
   AllUnfiledBanner,
   BulkBar,
@@ -364,8 +364,8 @@ export function Routines() {
     variables: [],
   });
   const routineViewStateKey = selectedCompanyId
-    ? `paperclip:routines-view:${selectedCompanyId}`
-    : "paperclip:routines-view";
+    ? `pilibala:routines-view:${selectedCompanyId}`
+    : "pilibala:routines-view";
   const [routineViewState, setRoutineViewState] = useState<RoutineViewState>(() => getRoutineViewState(routineViewStateKey));
   const folderSelection = normalizeFolderSelection(searchParams.get("folder"));
 
@@ -950,7 +950,7 @@ export function Routines() {
             agents={agents}
             projects={projects}
             liveIssueIds={liveIssueIds}
-            viewStateKey="paperclip:routine-recent-runs-view"
+            viewStateKey="pilibala:routine-recent-runs-view"
             issueLinkState={recentRunsIssueLinkState}
             onUpdateIssue={(id, data) => updateIssue.mutate({ id, data })}
           />
@@ -1209,7 +1209,7 @@ export function Routines() {
 
           <div className="shrink-0 flex flex-col gap-3 border-t border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-muted-foreground">
-              After creation, Paperclip takes you straight to trigger setup. Draft routines stay paused until you add a default agent.
+              After creation, Pilibala takes you straight to trigger setup. Draft routines stay paused until you add a default agent.
             </div>
             <div className="flex flex-col gap-2 sm:items-end">
               <Button
@@ -1274,7 +1274,7 @@ export function Routines() {
           ) : null}
           {routineViewState.groupBy === "folder" && !hasRoutineFolders && !foldersLoading && visibleRoutines.length > 0 ? (
             <AllUnfiledBanner
-              storageKey={`paperclip:routines-folder-nudge:${selectedCompanyId ?? "none"}`}
+              storageKey={`pilibala:routines-folder-nudge:${selectedCompanyId ?? "none"}`}
               itemLabelPlural="routines"
               onCreateFolder={() => openCreateFolder()}
             />

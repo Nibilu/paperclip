@@ -6,7 +6,7 @@ import express from "express";
 import request from "supertest";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { and, eq } from "drizzle-orm";
-import { agents, agentConfigRevisions, activityLog, builtInManagedResources, companies, companyMemberships, connectionGrants, createDb, environments, toolConnections, toolConnectionInstalls } from "@paperclipai/db";
+import { agents, agentConfigRevisions, activityLog, builtInManagedResources, companies, companyMemberships, connectionGrants, createDb, environments, toolConnections, toolConnectionInstalls } from "@pilibalaai/db";
 import { agentRoutes } from "../routes/agents.js";
 import { aiConnectionService } from "../services/ai-connections.js";
 import * as environmentTests from "../services/agent-environment-test.js";
@@ -33,10 +33,10 @@ describePostgres("agent configuration save latency", () => {
   const readAgent = async () => (await db.select().from(agents).where(eq(agents.id, agent.id)))[0];
 
   beforeAll(async () => {
-    home = await realpath(await mkdtemp(path.join(os.tmpdir(), "paperclip-config-save-")));
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    vi.stubEnv("PAPERCLIP_INSTANCE_ID", "configuration-save-fixture");
-    database = await startEmbeddedPostgresTestDatabase("paperclip-config-save-db-");
+    home = await realpath(await mkdtemp(path.join(os.tmpdir(), "pilibala-config-save-")));
+    vi.stubEnv("PILIBALA_HOME", home);
+    vi.stubEnv("PILIBALA_INSTANCE_ID", "configuration-save-fixture");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-config-save-db-");
     db = createDb(database.connectionString);
   }, 90_000);
 
@@ -44,14 +44,14 @@ describePostgres("agent configuration save latency", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Configuration save", issuePrefix: `CS${++fixtureNumber}` });
     await db.insert(companyMemberships).values({ companyId, principalId: userId, principalType: "user", status: "active", membershipRole: "member" });
-    [agent] = await db.insert(agents).values({ companyId, name: "Configuration agent", adapterType: "paperclip_runner",
+    [agent] = await db.insert(agents).values({ companyId, name: "Configuration agent", adapterType: "pilibala_runner",
       adapterConfig: { provider: "codex", model: "gpt-5.6-sol" } }).returning();
     account = await aiConnectionService(db).save(companyId, userId, {
       provider: "openai", method: "api_key", ownership: "personal", name: "Saved account", apiKey: "fixture-save-key", agentIds: [agent.id], allAgents: false,
     }, "fixture-save-key");
     await aiConnectionService(db).setDefault(companyId, userId, account.grantId);
     allocate.mockReset().mockRejectedValue(new Error("A save must not allocate a remote computer"));
-    probe.mockReset().mockResolvedValue({ adapterType: "paperclip_runner", status: "pass", testedAt: new Date().toISOString(),
+    probe.mockReset().mockResolvedValue({ adapterType: "pilibala_runner", status: "pass", testedAt: new Date().toISOString(),
       checks: [{ code: "codex_hello_probe_passed", level: "info", message: "Fixture probe passed" }] });
     release.mockClear();
     vi.spyOn(environmentTests, "agentEnvironmentTestService").mockImplementation((database, manager) => ({
@@ -157,7 +157,7 @@ describePostgres("agent configuration save latency", () => {
     const [connection] = await db.select().from(toolConnections).where(eq(toolConnections.id, account.connectionId));
     await db.update(toolConnections).set({ healthStatus: "unknown", config: { ...connection.config, aiLegacyAdoption: true } }).where(eq(toolConnections.id, account.connectionId));
     allocate.mockResolvedValue({ executionTarget: null, environmentName: "Fixture computer", fallbackChecks: [], release });
-    probe.mockResolvedValueOnce({ adapterType: "paperclip_runner", status: "fail", testedAt: new Date().toISOString(),
+    probe.mockResolvedValueOnce({ adapterType: "pilibala_runner", status: "fail", testedAt: new Date().toISOString(),
       checks: [{ code: "codex_hello_probe_auth_required", level: "error", message: "Fixture login rejected" }] });
     const failed = await request(app).patch(`/api/agents/${agent.id}`).send({ runtimeConfig: { aiConnection: binding } });
     expect(failed.status, JSON.stringify(failed.body)).toBe(422);
@@ -170,7 +170,7 @@ describePostgres("agent configuration save latency", () => {
   });
 
   it("profiles a save with controlled remote allocation latency", async () => {
-    const delayMs = Number(process.env.PAPERCLIP_CONFIG_SAVE_PROFILE_DELAY_MS ?? 50);
+    const delayMs = Number(process.env.PILIBALA_CONFIG_SAVE_PROFILE_DELAY_MS ?? 50);
     allocate.mockImplementation(async () => {
       await new Promise(resolve => setTimeout(resolve, delayMs));
       return { executionTarget: null, environmentName: "Delayed fixture computer", fallbackChecks: [], release };
@@ -178,7 +178,7 @@ describePostgres("agent configuration save latency", () => {
     const startedAt = performance.now();
     const response = await request(app).patch(`/api/agents/${agent.id}`).send({ runtimeConfig: { aiConnection: binding } });
     const elapsedMs = performance.now() - startedAt;
-    if (process.env.PAPERCLIP_CONFIG_SAVE_PROFILE_DELAY_MS) {
+    if (process.env.PILIBALA_CONFIG_SAVE_PROFILE_DELAY_MS) {
       process.stdout.write(`${JSON.stringify({ profile: "agent-configuration-save", remoteAllocationDelayMs: delayMs, elapsedMs,
         allocations: allocate.mock.calls.length, probes: probe.mock.calls.length, status: response.status })}\n`);
     }

@@ -2,7 +2,7 @@
 
 This is slice 56 of the recurring server work stack. Its base is slice 55,
 `13f37eef91edce7ee424ec5424c66fc0e6154f4e`. The parent PR is
-[#17758](https://github.com/paperclipai/paperclip/pull/17758).
+[#17758](https://github.com/pilibalaai/pilibala/pull/17758).
 
 ## Obligation and owner
 

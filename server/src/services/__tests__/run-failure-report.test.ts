@@ -3,7 +3,7 @@ import os from "node:os";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { agents, applyPendingMigrations, authUsers, closeRegisteredClients, companies, companySecrets, createDb, dotAgentBindings,
   dotRunnerAssignments, grokBotDispatches, grokBotRoutines, heartbeatRuns, issues, mcpOauthClients, mcpOauthGrants, nativeRunFinalizations,
-  type Db } from "@paperclipai/db";
+  type Db } from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -33,7 +33,7 @@ import { isNewTerminalRunFailure, reportRunFailure, waitForPendingRunFailureRepo
 import { controllerLeaseLossCancellation } from "../run-cancellation.js";
 import { REDACTED_EVENT_VALUE } from "../../redaction.js";
 
-const testDatabaseUrl = process.env.PAPERCLIP_TEST_DATABASE_URL;
+const testDatabaseUrl = process.env.PILIBALA_TEST_DATABASE_URL;
 const embeddedPostgresSupport = testDatabaseUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 
@@ -49,7 +49,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
       await applyPendingMigrations(testDatabaseUrl);
       db = createDb(testDatabaseUrl);
     } else {
-      tempDb = await startEmbeddedPostgresTestDatabase("paperclip-run-failure-report-");
+      tempDb = await startEmbeddedPostgresTestDatabase("pilibala-run-failure-report-");
       db = createDb(tempDb.connectionString);
     }
   }, 20_000);
@@ -62,7 +62,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
       ["PATH", "HOME", "USER", "USERNAME", "LOGNAME", "USERPROFILE", "TMPDIR", "TEMP", "TMP"]
         .flatMap((key) => inheritedEnv[key] === undefined ? [] : [[key, inheritedEnv[key]]]),
     );
-    process.env.PAPERCLIP_SENTRY_RUN_FAILURES = "unexpected";
+    process.env.PILIBALA_SENTRY_RUN_FAILURES = "unexpected";
   });
 
   afterEach(async () => {
@@ -90,7 +90,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
     agentId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -143,8 +143,8 @@ describeEmbeddedPostgres("reportRunFailure", () => {
   });
 
   it.each([undefined, "", "off", "true", "invalid"])("does no reporting work without an explicit valid mode: %s", async mode => {
-    vi.stubEnv("PAPERCLIP_SENTRY_RUN_FAILURES", mode);
-    if (mode === undefined) delete process.env.PAPERCLIP_SENTRY_RUN_FAILURES;
+    vi.stubEnv("PILIBALA_SENTRY_RUN_FAILURES", mode);
+    if (mode === undefined) delete process.env.PILIBALA_SENTRY_RUN_FAILURES;
     const select = vi.fn();
     await reportRunFailure({ select } as unknown as Db, buildRun());
     expect(select).not.toHaveBeenCalled();
@@ -152,7 +152,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
   });
 
   it.each(["quota", "git", "secret", "selection", "workspace", "hermes"])("reports known %s failures in all mode", async kind => {
-    vi.stubEnv("PAPERCLIP_SENTRY_RUN_FAILURES", "all");
+    vi.stubEnv("PILIBALA_SENTRY_RUN_FAILURES", "all");
     await seedCompanyAndAgent(kind === "hermes" ? { adapterType: "hermes_gateway" } : {});
     const fixtures = {
       quota: providerQuotaRun,
@@ -182,7 +182,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
   });
 
   it.each(["succeeded", "queued", "running", "interrupted", "cancelled"])("all mode excludes %s runs and expected operator stops", async status => {
-    vi.stubEnv("PAPERCLIP_SENTRY_RUN_FAILURES", "all");
+    vi.stubEnv("PILIBALA_SENTRY_RUN_FAILURES", "all");
     const select = vi.fn();
     await reportRunFailure({ select } as unknown as Db, buildRun({ status, startedAt: new Date(), resultJson: {
       cancellation: { source: "operator", expected: true, initiator: { type: "user" }, reason: "Stopped", recordedAt: new Date().toISOString() },
@@ -440,7 +440,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
   it("reports a Codex ACP model capacity failure during setup or in all mode", async () => {
     await seedCompanyAndAgent({ adapterType: "codex_local" });
     await reportRunFailure(db, codexModelCapacityRun(), { phase: "setup" });
-    vi.stubEnv("PAPERCLIP_SENTRY_RUN_FAILURES", "all");
+    vi.stubEnv("PILIBALA_SENTRY_RUN_FAILURES", "all");
     await reportRunFailure(db, codexModelCapacityRun(), { phase: "execute" });
     expect(mockCaptureRunFailure).toHaveBeenCalledTimes(2);
   });
@@ -451,7 +451,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
     resultJson?: Record<string, unknown>;
     retry?: Partial<typeof heartbeatRuns.$inferInsert> | null;
   } = {}) {
-    await seedCompanyAndAgent({ adapterType: "paperclip_runner" });
+    await seedCompanyAndAgent({ adapterType: "pilibala_runner" });
     const run = buildRun({
       error: "Selected model is at capacity. Please try a different model.",
       errorCode: "native_provider_overloaded", runtimeMode: "native", nativePhase: "committed",
@@ -525,7 +525,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
     } finally {
       spy.mockRestore();
     }
-    vi.stubEnv("PAPERCLIP_SENTRY_RUN_FAILURES", "all");
+    vi.stubEnv("PILIBALA_SENTRY_RUN_FAILURES", "all");
     await reportRunFailure(db, run);
     expect(mockCaptureRunFailure).toHaveBeenCalledTimes(3);
   });
@@ -561,7 +561,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
   it("reports a typed ACP provider access failure during setup or in all mode", async () => {
     await seedCompanyAndAgent({ adapterType: "claude_local" });
     await reportRunFailure(db, providerAccessRun(), { phase: "setup" });
-    vi.stubEnv("PAPERCLIP_SENTRY_RUN_FAILURES", "all");
+    vi.stubEnv("PILIBALA_SENTRY_RUN_FAILURES", "all");
     await reportRunFailure(db, providerAccessRun(), { phase: "execute" });
     expect(mockCaptureRunFailure).toHaveBeenCalledTimes(2);
   });
@@ -582,14 +582,14 @@ describeEmbeddedPostgres("reportRunFailure", () => {
   }
 
   it("keeps a retried restart interruption of legacy setup local", async () => {
-    await seedCompanyAndAgent({ adapterType: "paperclip_runner" });
+    await seedCompanyAndAgent({ adapterType: "pilibala_runner" });
     await reportRunFailure(db, restartInterruptedSetupRun());
     expect(mockCaptureRunFailure).not.toHaveBeenCalled();
   });
 
   it("reports a retried restart interruption of legacy setup in all mode", async () => {
-    vi.stubEnv("PAPERCLIP_SENTRY_RUN_FAILURES", "all");
-    await seedCompanyAndAgent({ adapterType: "paperclip_runner" });
+    vi.stubEnv("PILIBALA_SENTRY_RUN_FAILURES", "all");
+    await seedCompanyAndAgent({ adapterType: "pilibala_runner" });
     await reportRunFailure(db, restartInterruptedSetupRun());
     expect(mockCaptureRunFailure).toHaveBeenCalledOnce();
   });
@@ -607,7 +607,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
       processLossDiagnostic: { localCheck: "no_identifiers", retryEligible: true, runPredatesObserver: false },
     } },
   ])("reports process loss without restart-before-dispatch evidence: %j", async (overrides) => {
-    await seedCompanyAndAgent({ adapterType: "paperclip_runner" });
+    await seedCompanyAndAgent({ adapterType: "pilibala_runner" });
     await reportRunFailure(db, restartInterruptedSetupRun(overrides));
     expect(mockCaptureRunFailure).toHaveBeenCalledOnce();
   });
@@ -619,12 +619,12 @@ describeEmbeddedPostgres("reportRunFailure", () => {
     finalization?: boolean;
     offers?: number;
   }) {
-    await seedCompanyAndAgent({ adapterType: "paperclip_runner", adapterConfig: { provider: "grok_bot" } });
+    await seedCompanyAndAgent({ adapterType: "pilibala_runner", adapterConfig: { provider: "grok_bot" } });
     const userId = randomUUID();
     await db.insert(authUsers).values({ id: userId, name: "Operator", email: `${userId}@example.test`, createdAt: new Date(), updatedAt: new Date() });
     await db.insert(mcpOauthClients).values({ id: userId, name: "Grok", redirectUris: ["https://client.example/callback"] });
-    const [grant] = await db.insert(mcpOauthGrants).values({ companyId, userId, clientId: userId, resource: "https://paperclip.example/mcp/runner",
-      purpose: "agent", agentId, scopes: ["paperclip:agent"] }).returning();
+    const [grant] = await db.insert(mcpOauthGrants).values({ companyId, userId, clientId: userId, resource: "https://pilibala.example/mcp/runner",
+      purpose: "agent", agentId, scopes: ["pilibala:agent"] }).returning();
     const [binding] = await db.insert(dotAgentBindings).values({ companyId, agentId, operatorId: userId, grantId: grant!.id,
       providerKind: "grok_bot", status: "ready" }).returning();
     const [secret] = await db.insert(companySecrets).values({ companyId, key: `grok-${binding!.id}`, name: "Grok routine" }).returning();
@@ -658,7 +658,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
   });
 
   it("reports a rejected Grok wake in all mode", async () => {
-    vi.stubEnv("PAPERCLIP_SENTRY_RUN_FAILURES", "all");
+    vi.stubEnv("PILIBALA_SENTRY_RUN_FAILURES", "all");
     const run = await expiredGrokOffer({ wakes: [{ status: "rejected", httpStatus: 400 }] });
     await reportRunFailure(db, run);
     expect(mockCaptureRunFailure).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
@@ -1089,7 +1089,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
     const secret = "opaque-registered-value";
     const run = buildRun({
       error: `connection failed: ${secret}`,
-      contextSnapshot: { paperclipSecretRedactions: [{ fingerprintSha256: "fixture", material: { encrypted: "fixture" } }] },
+      contextSnapshot: { pilibalaSecretRedactions: [{ fingerprintSha256: "fixture", material: { encrypted: "fixture" } }] },
       resultJson: { terminalSessionFailure: { category: "service", details: `upstream rejected ${secret}` } },
     });
     await db.insert(heartbeatRuns).values(run);
@@ -1346,7 +1346,7 @@ describeEmbeddedPostgres("reportRunFailure", () => {
     await seedCompanyAndAgent();
     const run = buildRun({
       status: "failed",
-      error: `connect failed: connectionString: "postgres://appuser:s3cr3t-pass@db.internal:5432/paperclip"`,
+      error: `connect failed: connectionString: "postgres://appuser:s3cr3t-pass@db.internal:5432/pilibala"`,
     });
 
     await reportRunFailure(db, run);
@@ -1386,8 +1386,8 @@ describeEmbeddedPostgres("reportRunFailure", () => {
   });
 
   it("preserves a short error message with known public host settings", async () => {
-    vi.stubEnv("PAPERCLIP_DB_BACKUP_ENABLED", "false");
-    vi.stubEnv("PAPERCLIP_DB_BACKUP_RETENTION_DAYS", "1");
+    vi.stubEnv("PILIBALA_DB_BACKUP_ENABLED", "false");
+    vi.stubEnv("PILIBALA_DB_BACKUP_RETENTION_DAYS", "1");
     vi.stubEnv("GITHUB_RUN_ATTEMPT", "1");
     await seedCompanyAndAgent();
     const shortError = "the provider process exited with code 1";

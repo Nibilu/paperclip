@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { agents, companies, createDb, applyPendingMigrations, closeRegisteredClients, type Db } from "@paperclipai/db";
+import { agents, companies, createDb, applyPendingMigrations, closeRegisteredClients, type Db } from "@pilibalaai/db";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../../__tests__/helpers/embedded-postgres.js";
@@ -12,7 +12,7 @@ import type { LifecycleAgent } from "../application/ports.js";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "../../../services/delivery-work-notifications.js";
 import { resolveExternalTestDatabaseUrl } from "../../../__tests__/helpers/external-test-database.js";
 
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_LIFECYCLE_VERIFICATION_RETRY_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_LIFECYCLE_VERIFICATION_RETRY_TEST_DATABASE_URL");
 const support = external ? { supported: true } : await getEmbeddedPostgresTestSupport();
 (support.supported ? describe : describe.skip)("failed lifecycle verification retries", () => {
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
@@ -21,7 +21,7 @@ const support = external ? { supported: true } : await getEmbeddedPostgresTestSu
   const workers: Array<{ stop(): Promise<void> }> = [];
   beforeAll(async () => {
     if (external) { await applyPendingMigrations(external); db = createDb(external, { maxConnections: 4 }); }
-    else { database = await startEmbeddedPostgresTestDatabase("paperclip-verification-retry-"); db = createDb(database.connectionString, { maxConnections: 4 }); }
+    else { database = await startEmbeddedPostgresTestDatabase("pilibala-verification-retry-"); db = createDb(database.connectionString, { maxConnections: 4 }); }
   }, 90_000);
   afterAll(async () => { if (external) await closeRegisteredClients(external); else await database?.cleanup(); });
   beforeEach(async () => {

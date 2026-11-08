@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { activityLog, agents, companies, completionContracts, createDb, heartbeatRunEvents, heartbeatRuns, issueComments, issues,
-  nativeRunFinalizations, type Db } from "@paperclipai/db";
+  nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { resolveExternalTestDatabaseUrl } from "../../__tests__/helpers/external-test-database.js";
 import { NativeRunCoordinatorStore } from "./native-run-coordinator-store.js";
@@ -15,7 +15,7 @@ import { idleWorkSnapshot } from "../task-admission.js";
 // not be abandoned after one refused or failed publication attempt. Retries
 // are durable and bounded, never double-post, and an exhausted retry leaves a
 // named failure with an owner on the run and the task.
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_NATIVE_RESPONSE_PUBLICATION_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_NATIVE_RESPONSE_PUBLICATION_TEST_DATABASE_URL");
 const support = external ? { supported: true } : await getEmbeddedPostgresTestSupport();
 describe.skipIf(!support.supported)("native final reply publication retry", () => {
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | undefined;
@@ -32,10 +32,10 @@ describe.skipIf(!support.supported)("native final reply publication retry", () =
     const issueId = options.issueId ?? randomUUID(), runId = options.runId ?? randomUUID();
     const sessionId = randomUUID(), runnerId = randomUUID();
     if (!options.companyId) await db.insert(companies).values({ id: companyId, name: "Reply publication fixture", issuePrefix: companyId.slice(0, 8) });
-    if (!options.agentId) await db.insert(agents).values({ id: agentId, companyId, name: "Writer", adapterType: "paperclip_runner" });
+    if (!options.agentId) await db.insert(agents).values({ id: agentId, companyId, name: "Writer", adapterType: "pilibala_runner" });
     if (!options.issueId) await db.insert(issues).values({ id: issueId, companyId, title: "Short changelog blurb", status: "in_progress", assigneeAgentId: agentId });
     const [contract] = options.contract ? [options.contract] : await db.insert(completionContracts).values({ companyId, issueId, revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1", policyVersion: "test", risk: "standard", completionAuthority: "server_arbiter",
+      schemaVersion: "pilibala.completion-contract.v1", policyVersion: "test", risk: "standard", completionAuthority: "server_arbiter",
       incompleteCriteriaPolicy: "preserve_non_terminal", contractJson: { revision: "test", objective: "Write the blurb", criteria: [] },
       canonicalSha256: "fixture-publication-contract", createdByActorType: "system", createdByActorId: "test" }).returning();
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, nativeIssueId: issueId, nativeSessionId: sessionId,
@@ -45,10 +45,10 @@ describe.skipIf(!support.supported)("native final reply publication retry", () =
     const port = new NativeRunCoordinatorStore(db, { companyId, issueId, runId, agentId, normalizedSessionId: sessionId,
       runnerSourceInstanceId: runnerId, completionContractId: contract.id, completionContractSha256: contract.canonicalSha256,
       completionContractRevision: "test", completionContractCriterionIds: [] });
-    await port.completeRun({ result: { schema: "paperclip.run_result.v1", reportedWorkDisposition: "done",
+    await port.completeRun({ result: { schema: "pilibala.run_result.v1", reportedWorkDisposition: "done",
       summary: "Wrote the blurb.", completionClaim: { contractRevision: "test", objectiveSatisfied: true, criteria: [], remainingWork: [] },
       evidence: [], verification: [], attentionRequests: [], artifacts: [] },
-      terminal: { schema: "paperclip.prp.terminal.v1", runTerminalState: "succeeded", turnTerminalState: "completed", reportedWorkDisposition: "done" },
+      terminal: { schema: "pilibala.prp.terminal.v1", runTerminalState: "succeeded", turnTerminalState: "completed", reportedWorkDisposition: "done" },
       turnId: "blurb-turn" });
     await finalizeNativeRun({ db, runId, workspaceFinalizeStatus: "succeeded", projectRunStatus: false });
     expect((await db.select().from(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, runId)))[0].phase).toBe("committed");

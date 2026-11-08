@@ -30,7 +30,7 @@ const migrationFile = "0423_agent_config_read_defaults.sql";
         { name: "Nested review preset", permissions: { authorizationPolicy: { reviewPreset: { id: "low_trust_review" } } } },
         { name: "Boundary", permissions: { authorizationPolicy: { trustBoundary: { mode: "low_trust_review" } } } },
         { name: "Unknown preset", permissions: { trustPreset: "unknown" } },
-        { name: "Built in", metadata: { paperclipBuiltInAgent: { key: "summarizer", featureKeys: [] } } },
+        { name: "Built in", metadata: { pilibalaBuiltInAgent: { key: "summarizer", featureKeys: [] } } },
         { name: "Pending", status: "pending_approval" },
         { name: "Terminated", status: "terminated" },
         { name: "Setup", status: "paused", lifecycleState: "paused", lifecycleHolds: ["setup"], pauseReason: "setup" },

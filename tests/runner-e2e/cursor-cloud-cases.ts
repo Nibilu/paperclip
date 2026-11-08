@@ -23,7 +23,7 @@ export const cursorCloudArtifactTask: RunnerTaskFixture = {
     `Create exactly one file named ${cursorCloudArtifactName(nonce)} in this Cursor Cloud environment's provider-supported artifact output directory containing exactly ${JSON.stringify(`verified-${nonce}\n`)} as UTF-8 bytes. Use the environment's documented output directory; do not assume a legacy absolute path.`,
     "Verify the actual bytes with a read-only command; use one real LF byte at the end.",
     `Call list_cursor_cloud_artifacts to find the exact relative provider path for ${cursorCloudArtifactName(nonce)}. Use register_deliverable to register it under that exact filename title with contentRef cursor-artifact:<exact relative path returned by the helper>, mimeType text/plain, the actual byteSize and SHA-256 digest. Use the returned durable deliverable reference in your completion evidence.`,
-    `Call paperclip_finish with reportedWorkDisposition done, summary CURSOR-CLOUD-DONE-${nonce}, the current completion contract revision, satisfied objective criterion, no remaining work, and actual validation evidence. Wait for acceptance, then emit exactly CURSOR-CLOUD-DONE-${nonce}.`,
+    `Call pilibala_finish with reportedWorkDisposition done, summary CURSOR-CLOUD-DONE-${nonce}, the current completion contract revision, satisfied objective criterion, no remaining work, and actual validation evidence. Wait for acceptance, then emit exactly CURSOR-CLOUD-DONE-${nonce}.`,
     "Do not create PRs, other tasks, agents, or unrelated files.",
   ].join("\n"),
   buildMatchers: (nonce, execution) => [

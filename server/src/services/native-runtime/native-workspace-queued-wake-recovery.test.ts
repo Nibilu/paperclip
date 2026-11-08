@@ -16,7 +16,7 @@ import {
   nativeRunResults,
   projects,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { resolveExternalTestDatabaseUrl } from "../../__tests__/helpers/external-test-database.js";
 import { startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { issueRecoveryActionService } from "../issue-recovery-actions.js";
@@ -38,14 +38,14 @@ describe("native workspace recovery with a queued answer wake", () => {
   const projectId = randomUUID();
 
   beforeAll(async () => {
-    workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-native-queued-wake-recovery-"));
+    workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-native-queued-wake-recovery-"));
     priorLogRoot = process.env.WORKSPACE_OPERATION_LOG_BASE_PATH;
     process.env.WORKSPACE_OPERATION_LOG_BASE_PATH = path.join(workspaceRoot, "operation-logs");
-    const external = resolveExternalTestDatabaseUrl("PAPERCLIP_NATIVE_WORKSPACE_FINALIZER_TEST_DATABASE_URL");
-    if (!external) temporary = await startEmbeddedPostgresTestDatabase("paperclip-native-queued-wake-recovery-");
+    const external = resolveExternalTestDatabaseUrl("PILIBALA_NATIVE_WORKSPACE_FINALIZER_TEST_DATABASE_URL");
+    if (!external) temporary = await startEmbeddedPostgresTestDatabase("pilibala-native-queued-wake-recovery-");
     db = createDb(external ?? temporary!.connectionString, { maxConnections: 6 });
     await db.insert(companies).values({ id: companyId, name: "Queued wake recovery", issuePrefix: "QWR" });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Native workspace agent", adapterType: "paperclip_runner", status: "running" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Native workspace agent", adapterType: "pilibala_runner", status: "running" });
     await db.insert(projects).values({ id: projectId, companyId, name: "Native workspace project", status: "active" });
   }, 30_000);
 
@@ -65,7 +65,7 @@ describe("native workspace recovery with a queued answer wake", () => {
     await db.insert(issues).values({ id: issueId, companyId, title: "Saved copyback with an answer wake",
       status: "in_progress", workMode: "standard", assigneeAgentId: agentId });
     await db.insert(completionContracts).values({ id: contractId, companyId, issueId, revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1", policyVersion: "native-queued-wake-recovery-test-v1",
+      schemaVersion: "pilibala.completion-contract.v1", policyVersion: "native-queued-wake-recovery-test-v1",
       risk: "standard", completionAuthority: "server_arbiter", incompleteCriteriaPolicy: "preserve_non_terminal",
       contractJson: { objective: "Saved copyback" }, canonicalSha256: `contract-${contractId}`,
       createdByActorType: "system", createdByActorId: "test" });
@@ -96,7 +96,7 @@ describe("native workspace recovery with a queued answer wake", () => {
 
   function proveStopped(seed: Awaited<ReturnType<typeof seedAbandonedCopyback>>) {
     return vi.spyOn(platformProof, "requestWorkspaceWorkerStopProof").mockResolvedValue({ status: "verified", proof: {
-      v: 1, iss: "paperclip-cloud", aud: "paperclip-workspace-worker-stop/v1", sub: "stack", runId: seed.runId,
+      v: 1, iss: "pilibala-cloud", aud: "pilibala-workspace-worker-stop/v1", sub: "stack", runId: seed.runId,
       ownerToken: seed.owner.token, worker: seed.owner.worker, stopped: true, iat: 1, exp: 61 } });
   }
 
@@ -130,7 +130,7 @@ describe("native workspace recovery with a queued answer wake", () => {
     if (changed === "requeued started wake") await queueAnswerWake(seed, { startedAt: new Date() });
     if (changed === "recovery action wake") await queueAnswerWake(seed, { contextSnapshot: { issueId: seed.issueId, wakeReason: "source_scoped_recovery_action" } });
     if (changed === "other agent's queued run") {
-      const [other] = await db.insert(agents).values({ companyId, name: "Mentioned agent", adapterType: "paperclip_runner", status: "running" }).returning();
+      const [other] = await db.insert(agents).values({ companyId, name: "Mentioned agent", adapterType: "pilibala_runner", status: "running" }).returning();
       await queueAnswerWake(seed, { agentId: other.id });
     }
     const probe = proveStopped(seed);
@@ -155,12 +155,12 @@ describe("native workspace recovery with a queued answer wake", () => {
     await db.insert(executionWorkspaces).values({ id: workspaceId, companyId, projectId, mode: "local", strategyType: "local_directory", name: "Retained workspace", cwd });
     await db.update(issues).set({ executionWorkspaceId: workspaceId }).where(eq(issues.id, seed.issueId));
     await db.update(nativeRunResults).set({ resultJson: {
-      result: { schema: "paperclip.run_result.v1", reportedWorkDisposition: "yielded", summary: "Wait for the answer.",
+      result: { schema: "pilibala.run_result.v1", reportedWorkDisposition: "yielded", summary: "Wait for the answer.",
         completionClaim: { contractRevision: "test", objectiveSatisfied: false, criteria: [],
           remainingWork: [{ description: "Continue after the answer.", blocksCompletion: true }] },
         continuation: { kind: "response_wake", summary: "Wait for the answer.", idempotencyKey: "saved-wait" },
         evidence: [], verification: [], attentionRequests: [], artifacts: [] },
-      terminal: { schema: "paperclip.prp.terminal.v1", turnTerminalState: "completed",
+      terminal: { schema: "pilibala.prp.terminal.v1", turnTerminalState: "completed",
         runTerminalState: "succeeded", reportedWorkDisposition: "yielded" },
     } }).where(eq(nativeRunResults.runId, seed.runId));
     const wake = await queueAnswerWake(seed);

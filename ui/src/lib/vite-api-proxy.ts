@@ -2,11 +2,11 @@ import type { ProxyOptions } from "vite";
 
 // Shared /api proxy used by both the vite dev server and `vite preview`.
 // The `configure` hook forwards the client's original Host as
-// x-forwarded-host so the paperclip server's board mutation guard treats
+// x-forwarded-host so the pilibala server's board mutation guard treats
 // the browser's Origin as trusted when the SPA is served from a different
 // port than the API (e.g. `pnpm dev:mobile` on :3101 → API on :3100).
 export function createApiProxy(
-  target = process.env.PAPERCLIP_API_PROXY_TARGET ?? "http://localhost:3100",
+  target = process.env.PILIBALA_API_PROXY_TARGET ?? "http://localhost:3100",
 ): Record<string, ProxyOptions> {
   return {
     "/api": {
@@ -31,7 +31,7 @@ export function createApiProxy(
     // /mcp/gateways/:id, /mcp/project-tools, /mcp/runner/*). The SPA has no /mcp
     // routes, so forwarding the whole prefix is safe; without this, a public
     // hostname served by `vite preview` 404s the MCP handshake and agent
-    // sessions see "MCP server `Paperclip_connections` failed to start".
+    // sessions see "MCP server `Pilibala_connections` failed to start".
     "/mcp": {
       target,
       ws: true,

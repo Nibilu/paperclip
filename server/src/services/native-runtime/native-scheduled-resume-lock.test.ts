@@ -7,15 +7,15 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   agents, applyPendingMigrations, companies, createDb, environmentLeases, environments, heartbeatRunEvents,
   heartbeatRuns, issues, nativeRunFinalizations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { resolveExternalTestDatabaseUrl } from "../../__tests__/helpers/external-test-database.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { recoveryService } from "../recovery/service.js";
 import { claimNativeRestartRecoveries } from "./native-restart-recovery.js";
-import { DurablePrpControlPlane } from "../../vendor/paperclip-runner/index.js";
+import { DurablePrpControlPlane } from "../../vendor/pilibala-runner/index.js";
 import { nativeRunnerCheckpointWriter } from "./native-runner-checkpoint.js";
 
-const externalUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_TEST_DATABASE_URL");
+const externalUrl = resolveExternalTestDatabaseUrl("PILIBALA_TEST_DATABASE_URL");
 const support = externalUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 
 // A remote per-turn run fails while restoring its provider session. The
@@ -35,7 +35,7 @@ const support = externalUrl ? { supported: true } : await getEmbeddedPostgresTes
       db = createDb(temporary.connectionString);
     }
     runtimeRoot = await mkdtemp(resolve(tmpdir(), "scheduled-resume-authority-"));
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "83".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "83".repeat(32));
   }, 30_000);
   afterAll(async () => {
     await db?.$client.end(); await temporary?.cleanup();
@@ -48,7 +48,7 @@ const support = externalUrl ? { supported: true } : await getEmbeddedPostgresTes
     const sessionId = randomUUID();
     const failedAt = new Date(Date.now() - 5 * 60_000);
     await db.insert(companies).values({ id: companyId, name: "Scheduled resume", issuePrefix: companyId.slice(0, 8) });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Engineer", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Engineer", adapterType: "pilibala_runner" });
     const lock = options.lockedBy === "none" ? null : runId;
     await db.insert(issues).values({ id: issueId, companyId, title: "Continue after approval", status: "in_progress",
       assigneeAgentId: agentId });
@@ -65,7 +65,7 @@ const support = externalUrl ? { supported: true } : await getEmbeddedPostgresTes
     }).returning();
     await db.update(heartbeatRuns).set({ runnerProfileJson: {
       nativeWorkspaceSync: {
-        schema: "paperclip.native-workspace-sync/v3", state: "prepared", descriptorSha256: "a".repeat(64),
+        schema: "pilibala.native-workspace-sync/v3", state: "prepared", descriptorSha256: "a".repeat(64),
         baselineSha256: "b".repeat(64), finalHostSha256: null, workspaceId: runId,
         leaseId: lease.id, providerLeaseId: lease.providerLeaseId, remoteCwd: "/work", resourceDisposition: "destroy",
       },

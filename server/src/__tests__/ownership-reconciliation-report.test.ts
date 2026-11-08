@@ -16,7 +16,7 @@ import {
   issues,
   nativeRunFinalizations,
   sandboxCreationOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
 import { currentControllerBootId, currentProcessSpaceHash } from "../services/controller-process-identity.js";
@@ -30,7 +30,7 @@ import {
 } from "../services/recovery/ownership-invariant-report.js";
 import { OWNABLE_KINDS } from "../services/recovery/ownership-registry.js";
 
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_HISTORY_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_HISTORY_TEST_DATABASE_URL");
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000);
 const kindReport = (report: OwnershipReport, kind: string) => report.kinds.find(entry => entry.kind === kind)!;
@@ -51,7 +51,7 @@ describe("report-only ownership reconciliation", () => {
     // Spool kinds read the instance root; never let a test read a real instance.
     home = await mkdtemp(join(tmpdir(), "ownership-report-home-"));
     orphanSpool = join(home, "orphan-spool");
-    vi.stubEnv("PAPERCLIP_HOME", home);
+    vi.stubEnv("PILIBALA_HOME", home);
     vi.stubEnv("SANDBOX_ORPHAN_CLEANUP_SPOOL_DIR", orphanSpool);
     if (!external) database = await startEmbeddedPostgresTestDatabase("ownership-reconciliation-");
     db = createDb(external ?? database!.connectionString, { maxConnections: 4, idleTimeoutSeconds: 0, maxLifetimeSeconds: 0 });

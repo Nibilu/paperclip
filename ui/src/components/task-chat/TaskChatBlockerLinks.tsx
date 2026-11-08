@@ -1,10 +1,10 @@
 import type {
   IssueBlockerAttentionIssueSummary,
   IssueRelationIssueSummary,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { ISSUE_SUMMARIES_MAX_IDS } from "@paperclipai/shared";
+import { ISSUE_SUMMARIES_MAX_IDS } from "@pilibalaai/shared";
 import { issuesApi } from "@/api/issues";
 import { useCoordinatorWorkspaceEnabled } from "@/hooks/useCoordinatorWorkspaceEnabled";
 import { createIssueDetailPath } from "@/lib/issueDetailBreadcrumb";

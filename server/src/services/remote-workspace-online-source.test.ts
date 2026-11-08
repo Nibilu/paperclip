@@ -6,10 +6,10 @@ import os from "node:os";
 import path from "node:path";
 import { sql, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { activityLog, agents, companies, completionContracts, createDb, environmentLeases, environments, executionWorkspaceSnapshots, executionWorkspaces, heartbeatRunEvents, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, projects, projectWorkspaces, workspaceOperations, workspaceRuntimeServices, type Db } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority, readRemoteWorkspaceRunReference } from "@paperclipai/shared";
+import { activityLog, agents, companies, completionContracts, createDb, environmentLeases, environments, executionWorkspaceSnapshots, executionWorkspaces, heartbeatRunEvents, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, projects, projectWorkspaces, workspaceOperations, workspaceRuntimeServices, type Db } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority, readRemoteWorkspaceRunReference } from "@pilibalaai/shared";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
-import { resolveManagedProjectWorkspaceDir, resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { resolveManagedProjectWorkspaceDir, resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
 import { createStorageService } from "../storage/service.js";
 import type { StorageService } from "../storage/types.js";
@@ -45,8 +45,8 @@ describe.skipIf(!support.supported)("online ordinary physical source fence", () 
   afterAll(async () => { await db?.$client.end({ timeout: 1 }); await database?.cleanup(); });
   beforeEach(async () => {
     home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "pc-online-source-")));
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "61".repeat(32));
+    vi.stubEnv("PILIBALA_HOME", home);
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "61".repeat(32));
     storage = createStorageService(createLocalDiskStorageProvider(path.join(home, "objects")));
   });
   afterEach(async () => {
@@ -102,7 +102,7 @@ describe.skipIf(!support.supported)("online ordinary physical source fence", () 
     for (const alias of base.aliases) await db.update(executionWorkspaces).set({ repoUrl, branchName: "main" })
       .where(eq(executionWorkspaces.id, alias.workspace.id));
     const [issue] = await db.insert(issues).values({ companyId: base.companyId, projectId: base.projectId, title: "Shared Git child" }).returning();
-    const cwd = path.join(base.cwd, ".paperclip", "worktrees", "child");
+    const cwd = path.join(base.cwd, ".pilibala", "worktrees", "child");
     await git(base.cwd, "worktree", "add", "-qb", "child", cwd);
     const [workspace] = await db.insert(executionWorkspaces).values({ companyId: base.companyId, projectId: base.projectId,
       sourceIssueId: issue.id, name: "Shared Git child", mode: "isolated_workspace", strategyType: "git_worktree",
@@ -133,13 +133,13 @@ describe.skipIf(!support.supported)("online ordinary physical source fence", () 
   it.each([false, true])("does not admit a Git fragment as an ordinary migration source (objects: %s)", async objects => {
     const f = await fixture(), info = path.join(f.cwd, ".git", "info");
     await fs.mkdir(info, { recursive: true });
-    await fs.writeFile(path.join(info, "exclude"), "/.paperclip-repositories/\n");
+    await fs.writeFile(path.join(info, "exclude"), "/.pilibala-repositories/\n");
     if (objects) await fs.mkdir(path.join(f.cwd, ".git", "objects"));
     expect(await inventoryRemoteWorkspaceMigration(db, f)).toMatchObject({ eligible: false,
       reasons: expect.arrayContaining(["online_workspace_source_scope_unproven"]) });
     await expect(migrateRemoteWorkspace({ db, storage, ...f, apply: true })).rejects.toThrow("online_workspace_source_scope_unproven");
     expect(await db.select().from(workspaceOperations)).toEqual([]);
-    expect(await fs.readFile(path.join(info, "exclude"), "utf8")).toBe("/.paperclip-repositories/\n");
+    expect(await fs.readFile(path.join(info, "exclude"), "utf8")).toBe("/.pilibala-repositories/\n");
   });
   it("preserves unmanaged Git import in genuine offline mode while retaining online and drain guards", async () => {
     const f = await fixture(), cwd = path.join(home, "self-hosted-repository"), repoUrl = "https://example.invalid/self-hosted.git";
@@ -154,7 +154,7 @@ describe.skipIf(!support.supported)("online ordinary physical source fence", () 
     expect(await inventoryRemoteWorkspaceMigration(db, f)).toMatchObject({ eligible: false,
       reasons: expect.arrayContaining(["online_workspace_source_scope_unproven"]) });
     await expect(migrateRemoteWorkspace({ db, storage, ...f, apply: true })).rejects.toThrow("online_workspace_source_scope_unproven");
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "true");
+    vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "true");
     const [agent] = await db.insert(agents).values({ companyId: f.companyId, name: "Offline writer guard" }).returning();
     const [run] = await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: agent.id,
       issueId: f.aliases[0].issue.id, status: "running", runtimeMode: "legacy" }).returning();
@@ -250,12 +250,12 @@ describe.skipIf(!support.supported)("online ordinary physical source fence", () 
     const [issue] = await db.insert(issues).values({ companyId, title: "Unrelated object-backed task" }).returning();
     const [environment] = await db.insert(environments).values({ name: runId, driver: "daytona" }).returning();
     const remoteCwd = `/workspaces/${workspaceId}`;
-    const authority = { schema: "paperclip.remote-workspace.v1", epoch: 1, snapshotId: null, source: { kind: "empty" },
+    const authority = { schema: "pilibala.remote-workspace.v1", epoch: 1, snapshotId: null, source: { kind: "empty" },
       location: { environmentId: environment.id, leaseId, providerLeaseId, remoteCwd }, writerRunId: runId, dirty: true };
     const [workspace] = await db.insert(executionWorkspaces).values({ id: workspaceId, companyId, sourceIssueId: issue.id,
       name: "Unrelated remote writer", mode: "isolated_workspace", strategyType: "project_primary", providerType: "cloud_sandbox",
       cwd: remoteCwd, metadata: { remoteWorkspace: authority } }).returning();
-    const reference = { schema: "paperclip.remote-workspace-run.v1", workspaceId, leaseId, providerLeaseId,
+    const reference = { schema: "pilibala.remote-workspace-run.v1", workspaceId, leaseId, providerLeaseId,
       remoteCwd, epoch: 1, state: "prepared", snapshotId: null };
     const [run] = await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, issueId: issue.id,
       nativeIssueId: issue.id, status: "running", runtimeMode: "native", contextSnapshot: { executionWorkspaceId: workspaceId },
@@ -401,7 +401,7 @@ describe.skipIf(!support.supported)("online ordinary physical source fence", () 
   });
   it("fences a configured alias of an existing isolated task directory using its original issue key", async () => {
     const f = await fixture(), sourceIssueId = f.aliases[0].issue.id;
-    const cwd = path.join(resolvePaperclipInstanceRoot(), "isolated-workspaces", f.companyId, sourceIssueId);
+    const cwd = path.join(resolvePilibalaInstanceRoot(), "isolated-workspaces", f.companyId, sourceIssueId);
     await fs.mkdir(cwd, { recursive: true });
     let entered!: () => void, release!: () => void;
     const started = new Promise<void>(resolve => { entered = resolve; });
@@ -503,8 +503,8 @@ describe.skipIf(!support.supported)("online ordinary physical source fence", () 
     const issue = descendant ? (await db.insert(issues).values({ companyId: f.companyId, projectId: f.projectId,
       parentId: f.aliases[0].issue.id, title: "Descendant prepared recovery", executionWorkspaceId: f.workspaceId }).returning())[0]
       : f.aliases[0].issue;
-    const [agent] = await db.insert(agents).values({ companyId: f.companyId, name: "Terminal native worker", adapterType: "paperclip_runner" }).returning();
-    const reference = { schema: "paperclip.native-workspace-sync/v3", state: "prepared", workspaceId: f.workspaceId,
+    const [agent] = await db.insert(agents).values({ companyId: f.companyId, name: "Terminal native worker", adapterType: "pilibala_runner" }).returning();
+    const reference = { schema: "pilibala.native-workspace-sync/v3", state: "prepared", workspaceId: f.workspaceId,
       leaseId: randomUUID(), providerLeaseId: randomUUID(), remoteCwd: "/workspaces/retained",
       descriptorSha256: "12".repeat(32), baselineSha256: "34".repeat(32), resourceDisposition: "destroy" };
     await db.insert(heartbeatRuns).values({ id: runId, companyId: f.companyId, agentId: agent.id,
@@ -529,7 +529,7 @@ describe.skipIf(!support.supported)("online ordinary physical source fence", () 
     const f = await recoveryFixture(descendant), statusVersion = 2;
     const profile = { ...f.run.runnerProfileJson, sessionCheckpoint: cause === "native_session_interrupted"
       ? { backendKind: "runner" } : { backendKind: "runner", providerSessionId: "fixture-established-session" } };
-    const restore = { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [f.lease.id] };
+    const restore = { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [f.lease.id] };
     await db.update(heartbeatRuns).set({ runnerProfileJson: profile, nextEventSeq: cause === "native_session_interrupted" ? 1 : 250,
       resultJson: { ...f.run.resultJson, workspaceRestoreRecovery: restore } }).where(eq(heartbeatRuns.id, f.run.id));
     const events = cause === "native_session_interrupted" ? [] : ["session.started", ...Array.from({ length: 124 }, () => ["tool.execution.started", "tool.execution.completed"]).flat()];
@@ -579,7 +579,7 @@ describe.skipIf(!support.supported)("online ordinary physical source fence", () 
         wakePolicy: null, fingerprint: nativeSha256({ runId: f.run.id, failureCode: cause }), evidence: {
           runId: f.run.id, originalFailureCode: "native_workspace_sync_out_transient", coordinatorAttempt: 3, workspaceFinalizeAttempt: 3,
           systemRecovery: { ...createSystemRecovery(f.run.id), phase: "preserve_files", state: "exhausted", attemptId: randomUUID(), attempts: 4, retriesUsed: 3 },
-          workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId: f.run.id, status: "blocked", stage: "verifying_stop", attempt: 4, requestIds: [], retryable: true },
+          workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId: f.run.id, status: "blocked", stage: "verifying_stop", attempt: 4, requestIds: [], retryable: true },
           previousWorkspaceRecovery: { retained: "original recovery history" },
         } }).where(eq(issueRecoveryActions.id, f.warning.id));
     }
@@ -706,7 +706,7 @@ describe.skipIf(!support.supported)("online ordinary physical source fence", () 
         ...f.warning.evidence, nativeFailureBlock: { runId: f.run.id, statusVersion: String(f.issue.statusVersion) },
       } }).where(eq(issueRecoveryActions.id, f.warning.id));
       if (mode === "missing-allocation") await db.update(heartbeatRuns).set({ resultJson: {
-        ...f.run.resultJson, workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [randomUUID()] },
+        ...f.run.resultJson, workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [randomUUID()] },
       } }).where(eq(heartbeatRuns.id, f.run.id));
       if (mode === "fingerprint") await db.update(issueRecoveryActions).set({ fingerprint: "00".repeat(32) }).where(eq(issueRecoveryActions.id, f.warning.id));
       const control = createAdapterExecutionControl();
@@ -844,14 +844,14 @@ describe.skipIf(!support.supported)("online ordinary physical source fence", () 
   it("takes the original private Git store owner before reserving an import journal", async () => {
     const f = await fixture();
     const [seed] = await db.insert(issues).values({ companyId: f.companyId, title: "Private seed owner" }).returning();
-    const source = path.join(resolvePaperclipInstanceRoot(), "isolated-repository-sources", f.companyId, seed.id, "checkout");
+    const source = path.join(resolvePilibalaInstanceRoot(), "isolated-repository-sources", f.companyId, seed.id, "checkout");
     await fs.mkdir(source, { recursive: true }); await git(source, "init", "-q", "-b", "main");
     await fs.writeFile(path.join(source, "saved.txt"), "private seed work\n");
     await git(source, "add", "."); await git(source, "commit", "-qm", "Private seed");
     const repoUrl = "https://example.invalid/private-seed.git";
     await git(source, "remote", "add", "origin", repoUrl);
     const [issue] = await db.insert(issues).values({ companyId: f.companyId, title: "Linked task" }).returning();
-    const cwd = path.join(f.cwd, ".paperclip", "worktrees", "private-child");
+    const cwd = path.join(f.cwd, ".pilibala", "worktrees", "private-child");
     await git(source, "worktree", "add", "-qb", "private-child", cwd);
     const [workspace] = await db.insert(executionWorkspaces).values({ companyId: f.companyId, projectId: f.projectId,
       sourceIssueId: issue.id, name: "Private linked source", mode: "isolated_workspace", strategyType: "git_worktree",
@@ -896,7 +896,7 @@ describe.skipIf(!support.supported)("online ordinary physical source fence", () 
   });
   it("retains an imported nested child's private cache owner through parent source verification", async () => {
     const f = await gitFixture(), sourceIssueId = randomUUID();
-    const source = path.join(resolvePaperclipInstanceRoot(), "isolated-repository-sources", f.companyId, sourceIssueId, "checkout");
+    const source = path.join(resolvePilibalaInstanceRoot(), "isolated-repository-sources", f.companyId, sourceIssueId, "checkout");
     await git(f.cwd, "worktree", "remove", f.child.cwd!);
     await fs.mkdir(path.dirname(source), { recursive: true });
     await git(home, "clone", "--no-hardlinks", f.cwd, source);

@@ -220,7 +220,7 @@ export async function launchProductJourneys(args: string[], repositoryRoot: stri
   };
   const persist = async () => {
     try {
-      await writeFile(path.join(outputDir, "normalized-results.tmp"), JSON.stringify({ schema: "paperclip.runner-e2e.campaign/v2", campaignId, generatedAt: new Date().toISOString(), expected, source, results }, null, 2), { mode: 0o600 });
+      await writeFile(path.join(outputDir, "normalized-results.tmp"), JSON.stringify({ schema: "pilibala.runner-e2e.campaign/v2", campaignId, generatedAt: new Date().toISOString(), expected, source, results }, null, 2), { mode: 0o600 });
       await rename(path.join(outputDir, "normalized-results.tmp"), path.join(outputDir, "normalized-results.json"));
       reportPersisted = true;
     } catch {
@@ -247,7 +247,7 @@ export async function launchProductJourneys(args: string[], repositoryRoot: stri
   const timer = setTimeout(abort, config.limits.durationMs);
   try {
     try {
-      browser = await chromium.launch({ headless: !config.headed, ...(process.env.PAPERCLIP_RUNNER_E2E_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PAPERCLIP_RUNNER_E2E_CHROMIUM_EXECUTABLE } : {}) });
+      browser = await chromium.launch({ headless: !config.headed, ...(process.env.PILIBALA_RUNNER_E2E_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PILIBALA_RUNNER_E2E_CHROMIUM_EXECUTABLE } : {}) });
       context = await browser.newContext();
       context.setDefaultTimeout(30_000);
       if (controller.signal.aborted) throw new JourneyError("blocked", "campaign_deadline_or_interruption");
@@ -263,7 +263,7 @@ export async function launchProductJourneys(args: string[], repositoryRoot: stri
       const evidence: JourneyEvidence = { targetId: config.id, outcome: "blocked", startingState: ready?.startingState ?? "recipe", phases: [], checks: [], resourceDisposition: "cleanup-failed", privacy: "private", campaignId, attemptId: `${campaignId}:${id}:1` };
       const profile = id === "cloud-onboarding" ? runnerSuites.flatMap(suite => suite.profiles).find(p => p.id === config.modelProfileId) : undefined;
       const result: RunnerE2EResult = {
-        schema: "paperclip.runner-e2e.result/v2", executionId: expected[index]!, suiteId: "product-journeys", suiteDefinitionHash,
+        schema: "pilibala.runner-e2e.result/v2", executionId: expected[index]!, suiteId: "product-journeys", suiteDefinitionHash,
         source, attempt: 1, status: "failed", profileId: isAgentJourney(id) ? "configured-agent" : profile?.id ?? "browser", environmentId: config.executionEnvironment, caseId: id,
         provider: profile?.provider ?? null, model: profile?.model ?? null, runtimeMode: profile?.generation ?? "none", startedAt, finishedAt: startedAt, durationMs: 0, cleanup: "not_started", productJourney: evidence,
       };

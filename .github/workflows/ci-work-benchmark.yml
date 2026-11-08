@@ -151,7 +151,7 @@ jobs:
             pnpm install --frozen-lockfile
           fi
           pnpm run preflight:workspace-links
-          pnpm --filter @paperclipai/plugin-sdk ensure-build-deps
+          pnpm --filter @pilibalaai/plugin-sdk ensure-build-deps
 
       - name: Compare complete commands and executed case inventories
         if: steps.test_scope.outputs.run == 'true'
@@ -163,7 +163,7 @@ jobs:
 
       - name: Exercise restored dependencies for cache-only changes
         if: steps.test_scope.outputs.run != 'true' && steps.qualification.outputs.cacheable == 'true'
-        run: pnpm exec vitest run --project @paperclipai/shared
+        run: pnpm exec vitest run --project @pilibalaai/shared
 
       - name: Retain timings, inventories and failure logs
         if: always()
@@ -190,25 +190,25 @@ jobs:
           package-manager-cache: false
       - name: Select the pinned compiler and workspace path
         id: workspace
-        working-directory: packages/paperclip-runner
+        working-directory: packages/pilibala-runner
         run: |
           toolchain=$(rustup show active-toolchain | awk '{print $1}')
           echo "RUSTUP_TOOLCHAIN=$toolchain" >> "$GITHUB_ENV"
           rustup toolchain list | awk '{print $1}' | grep -vx "$toolchain" | xargs -r -n1 rustup toolchain uninstall || true
-          pinned="$HOME/paperclip-runner-rust"
-          ln -s "$GITHUB_WORKSPACE/packages/paperclip-runner/runner" "$pinned"
+          pinned="$HOME/pilibala-runner-rust"
+          ln -s "$GITHUB_WORKSPACE/packages/pilibala-runner/runner" "$pinned"
           echo "path=$pinned" >> "$GITHUB_OUTPUT"
       - name: Qualify the dependency cache
         id: dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: ${{ steps.workspace.outputs.path }} -> target
-          shared-key: qualification-${{ github.run_id }}-${{ github.run_attempt }}-${{ hashFiles('packages/paperclip-runner/runner/Cargo.toml', '.cargo/config', '.cargo/config.toml', 'packages/.cargo/config', 'packages/.cargo/config.toml', 'packages/paperclip-runner/.cargo/config', 'packages/paperclip-runner/.cargo/config.toml', 'packages/paperclip-runner/runner/.cargo/config', 'packages/paperclip-runner/runner/.cargo/config.toml') }}
+          shared-key: qualification-${{ github.run_id }}-${{ github.run_attempt }}-${{ hashFiles('packages/pilibala-runner/runner/Cargo.toml', '.cargo/config', '.cargo/config.toml', 'packages/.cargo/config', 'packages/.cargo/config.toml', 'packages/pilibala-runner/.cargo/config', 'packages/pilibala-runner/.cargo/config.toml', 'packages/pilibala-runner/runner/.cargo/config', 'packages/pilibala-runner/runner/.cargo/config.toml') }}
           cache-workspace-crates: false
           cache-bin: false
           save-if: 'true'
       - name: Build the exact debug units
-        working-directory: packages/paperclip-runner
+        working-directory: packages/pilibala-runner
         run: cargo build --manifest-path runner/Cargo.toml --locked --workspace --bins
       - name: Compute workspace artifact identity
         id: debug
@@ -235,20 +235,20 @@ jobs:
           package-manager-cache: false
       - name: Select the pinned compiler and workspace path
         id: workspace
-        working-directory: packages/paperclip-runner
+        working-directory: packages/pilibala-runner
         run: |
           toolchain=$(rustup show active-toolchain | awk '{print $1}')
           echo "RUSTUP_TOOLCHAIN=$toolchain" >> "$GITHUB_ENV"
           rustup toolchain list | awk '{print $1}' | grep -vx "$toolchain" | xargs -r -n1 rustup toolchain uninstall || true
-          pinned="$HOME/paperclip-runner-rust"
-          ln -s "$GITHUB_WORKSPACE/packages/paperclip-runner/runner" "$pinned"
+          pinned="$HOME/pilibala-runner-rust"
+          ln -s "$GITHUB_WORKSPACE/packages/pilibala-runner/runner" "$pinned"
           echo "path=$pinned" >> "$GITHUB_OUTPUT"
       - name: Qualify the dependency cache
         id: dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: ${{ steps.workspace.outputs.path }} -> target
-          shared-key: qualification-${{ github.run_id }}-${{ github.run_attempt }}-${{ hashFiles('packages/paperclip-runner/runner/Cargo.toml', '.cargo/config', '.cargo/config.toml', 'packages/.cargo/config', 'packages/.cargo/config.toml', 'packages/paperclip-runner/.cargo/config', 'packages/paperclip-runner/.cargo/config.toml', 'packages/paperclip-runner/runner/.cargo/config', 'packages/paperclip-runner/runner/.cargo/config.toml') }}
+          shared-key: qualification-${{ github.run_id }}-${{ github.run_attempt }}-${{ hashFiles('packages/pilibala-runner/runner/Cargo.toml', '.cargo/config', '.cargo/config.toml', 'packages/.cargo/config', 'packages/.cargo/config.toml', 'packages/pilibala-runner/.cargo/config', 'packages/pilibala-runner/.cargo/config.toml', 'packages/pilibala-runner/runner/.cargo/config', 'packages/pilibala-runner/runner/.cargo/config.toml') }}
           cache-workspace-crates: false
           cache-bin: false
           save-if: 'false'
@@ -269,7 +269,7 @@ jobs:
           test "$DEPENDENCIES_HIT" = true
           test "$ARTIFACTS_HIT" = true
           node scripts/runner-debug-crate-cache.mjs mark-current
-          cd packages/paperclip-runner
+          cd packages/pilibala-runner
           started=$(date +%s)
           cargo build --manifest-path runner/Cargo.toml --locked --workspace --bins --message-format=json > "$RUNNER_TEMP/rust-restored-build.jsonl"
           echo "Restored Rust build: $(($(date +%s) - started)) seconds." >> "$GITHUB_STEP_SUMMARY"

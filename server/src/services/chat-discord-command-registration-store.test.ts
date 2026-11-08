@@ -1,4 +1,4 @@
-import { reconcileDatabaseWork } from "@paperclipai/db";
+import { reconcileDatabaseWork } from "@pilibalaai/db";
 import { idleWorkSnapshot } from "./task-admission.js";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "./delivery-work-notifications.js";
 import { discordCommandSchedule } from "./chat-channels/discord/command-schedule.js";
@@ -27,8 +27,8 @@ import {
   startEmbeddedPostgresTestDatabase,
   toolApplications,
   toolConnections,
-} from "@paperclipai/db";
-import { discordPaperclipCommandDefinition } from "./chat-discord-command-registration.js";
+} from "@pilibalaai/db";
+import { discordPilibalaCommandDefinition } from "./chat-discord-command-registration.js";
 import {
   readDiscordCommandRegistrationDeadline,
   readRegisteredDiscordCommandRegistration,
@@ -36,7 +36,7 @@ import {
   type StoredDiscordCommandRegistrationOptions,
 } from "./chat-discord-command-registration-store.js";
 
-const external = process.env.PAPERCLIP_TEST_DATABASE_URL;
+const external = process.env.PILIBALA_TEST_DATABASE_URL;
 const support = external
   ? { supported: true }
   : await getEmbeddedPostgresTestSupport();
@@ -54,7 +54,7 @@ suite("Discord command ownership store (real PostgreSQL, no network)", () => {
     if (external) db = createDb(external);
     else {
       temporary = await startEmbeddedPostgresTestDatabase(
-        "paperclip-discord-command-store-",
+        "pilibala-discord-command-store-",
       );
       db = createDb(temporary.connectionString);
     }
@@ -280,8 +280,8 @@ suite("Discord command ownership store (real PostgreSQL, no network)", () => {
       ownerId: string;
       receipt: Record<string, unknown>;
     };
-    const prior = discordPaperclipCommandDefinition(registration.ownerId);
-    prior.options[2]!.description = "Close the current Paperclip task";
+    const prior = discordPilibalaCommandDefinition(registration.ownerId);
+    prior.options[2]!.description = "Close the current Pilibala task";
     const remote = f.remote[0]!;
     f.remote[0] = {
       ...prior,
@@ -321,7 +321,7 @@ suite("Discord command ownership store (real PostgreSQL, no network)", () => {
       receipt: { commandId: remote.id },
     });
     expect(f.remote[0]).toMatchObject(
-      discordPaperclipCommandDefinition(registration.ownerId),
+      discordPilibalaCommandDefinition(registration.ownerId),
     );
   });
 
@@ -543,7 +543,7 @@ suite("Discord command ownership store (real PostgreSQL, no network)", () => {
     await f.reconcile();
     f.remote[0] = {
       ...f.remote[0],
-      ...discordPaperclipCommandDefinition("b".repeat(32)),
+      ...discordPilibalaCommandDefinition("b".repeat(32)),
     };
     f.options.force = true;
     expect(await f.reconcile()).toMatchObject({ kind: "conflict" });

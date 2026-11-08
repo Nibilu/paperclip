@@ -10,12 +10,12 @@ describe('external test database guard', () => {
     expect(resolveExternalTestDatabaseUrl('TEST_DB', url)).toBe(url);
   });
   it.each([
-    'postgres://user:synthetic@localhost/paperclip',
+    'postgres://user:synthetic@localhost/pilibala',
     'postgres://user:synthetic@localhost/',
-    'postgres://user:synthetic@localhost/skills_test?database=paperclip',
-    'postgres://user:synthetic@localhost/skills_test?dbname=paperclip',
+    'postgres://user:synthetic@localhost/skills_test?database=pilibala',
+    'postgres://user:synthetic@localhost/skills_test?dbname=pilibala',
     'postgres://user:synthetic@localhost/skills_test?options=-csearch_path=public',
-    'postgres://user:synthetic@localhost/skills_test%2Fpaperclip',
+    'postgres://user:synthetic@localhost/skills_test%2Fpilibala',
     'https://localhost/skills_test',
     'not a URL',
   ])('rejects an unsafe target without exposing its URL', url => {

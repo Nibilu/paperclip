@@ -6,9 +6,9 @@ import { rm } from "node:fs/promises";
 import { createServer, type Server } from "node:http";
 import { resolve } from "node:path";
 import { eq } from "drizzle-orm";
-import { agents, companies, closeRegisteredClients, createDb, heartbeatRuns, issues, nativeRunFinalizations, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@paperclipai/db";
+import { agents, companies, closeRegisteredClients, createDb, heartbeatRuns, issues, nativeRunFinalizations, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@pilibalaai/db";
 import { afterAll, afterEach, beforeAll, it } from "vitest";
-import { defaultCapabilityRunnerdBinary } from "../../vendor/paperclip-runner/index.js";
+import { defaultCapabilityRunnerdBinary } from "../../vendor/pilibala-runner/index.js";
 import { startEmbeddedPostgresTestDatabase } from "./embedded-postgres.js";
 import { registerRunnerPrpAuthority, runnerPrpWebSocketInternals, setupRunnerPrpWebSocketServer } from "../../realtime/runner-prp-ws.js";
 import { readProcessStartedAt } from "../../services/hot-restart.js";
@@ -20,7 +20,7 @@ import { registerLocalRuntimeApiServer } from "../../runtime-api.js";
 
 export const fakeCodexAppServer = resolve(
   import.meta.dirname,
-  "../../../../packages/paperclip-runner/runner/target/debug/fake-codex-app-server",
+  "../../../../packages/pilibala-runner/runner/target/debug/fake-codex-app-server",
 );
 const binariesAvailable =
   existsSync(defaultCapabilityRunnerdBinary()) && existsSync(fakeCodexAppServer);
@@ -78,10 +78,10 @@ export async function stopOwnedProcessGroup(
 export function nativeRestartFixture(options: { dedicatedDatabaseUrl?: string } = {}) {
   let temporary: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let runtimeRoot: string;
-  let paperclipHome: string;
+  let pilibalaHome: string;
   let server: Server | null = null;
   let apiUrl: string;
-  const originalPaperclipHome = process.env.PAPERCLIP_HOME;
+  const originalPilibalaHome = process.env.PILIBALA_HOME;
   let isolatedHome: ReturnType<typeof createIsolatedTestHome>;
 
   const companyId = randomUUID();
@@ -92,8 +92,8 @@ export function nativeRestartFixture(options: { dedicatedDatabaseUrl?: string } 
     temporary = await startRecoveryPostgres("native-runner-restart-recovery-", options);
     runtimeRoot = await createNativeRestartRuntimeRoot();
     isolatedHome = createIsolatedTestHome();
-    paperclipHome = isolatedHome.home;
-    process.env.PAPERCLIP_HOME = paperclipHome;
+    pilibalaHome = isolatedHome.home;
+    process.env.PILIBALA_HOME = pilibalaHome;
     const controllerStartedAt = await readProcessStartedAt(process.pid);
     successor = {
       bootId: randomUUID(),
@@ -119,7 +119,7 @@ export function nativeRestartFixture(options: { dedicatedDatabaseUrl?: string } 
       await db.insert(companies).values({
         id: companyId,
         name: "Native restart recovery",
-        issuePrefix: options.dedicatedDatabaseUrl || process.env.PAPERCLIP_RECOVERY_TEST_DATABASE_URL
+        issuePrefix: options.dedicatedDatabaseUrl || process.env.PILIBALA_RECOVERY_TEST_DATABASE_URL
           ? `NRR${companyId.replaceAll("-", "").slice(0, 12).toUpperCase()}` : "NRR",
         requireBoardApprovalForNewAgents: false,
       });
@@ -129,7 +129,7 @@ export function nativeRestartFixture(options: { dedicatedDatabaseUrl?: string } 
         name: "Native restart runner",
         role: "engineer",
         status: "active",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         adapterConfig: { provider: "codex" },
         runtimeConfig: {},
         permissions: {},
@@ -150,8 +150,8 @@ export function nativeRestartFixture(options: { dedicatedDatabaseUrl?: string } 
     await temporary?.cleanup();
     if (runtimeRoot) await rm(runtimeRoot, { recursive: true, force: true });
     isolatedHome?.cleanup();
-    if (originalPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-    else process.env.PAPERCLIP_HOME = originalPaperclipHome;
+    if (originalPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+    else process.env.PILIBALA_HOME = originalPilibalaHome;
   });
 
   async function seedRun(
@@ -243,11 +243,11 @@ export function nativeRestartFixture(options: { dedicatedDatabaseUrl?: string } 
     };
   }
 
-  return { seedRun, transportOptions, get current() { return { temporary, runtimeRoot, paperclipHome, apiUrl, companyId, agentId, successor, server }; } };
+  return { seedRun, transportOptions, get current() { return { temporary, runtimeRoot, pilibalaHome, apiUrl, companyId, agentId, successor, server }; } };
 }
 
 export function remotePreparedWorkspace() {
-  return { schema: "paperclip.native-workspace-sync/v3", state: "prepared",
+  return { schema: "pilibala.native-workspace-sync/v3", state: "prepared",
     descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
     workspaceId: randomUUID(), leaseId: randomUUID(), providerLeaseId: randomUUID(),
     remoteCwd: "/workspace", resourceDisposition: "destroy" };

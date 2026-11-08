@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { nativeRunMcpRoutes } from "../../server/src/routes/native-run-mcp.js";
 import { createRemoteMcpRelayToken, registerRemoteMcpRelay } from "../../server/src/services/native-runtime/remote-mcp-relay.js";
-import { RUNNER_TOOL_SCOPE_TOKEN_HEADER, startRunnerToolBridge } from "../../packages/paperclip-runner/src/drivers/runner-tool-bridge.js";
+import { RUNNER_TOOL_SCOPE_TOKEN_HEADER, startRunnerToolBridge } from "../../packages/pilibala-runner/src/drivers/runner-tool-bridge.js";
 import { assertCursorCloudCallbackIngress, startCursorCloudCallbackProxy } from "./cursor-cloud-callback-proxy.js";
 
 const require = createRequire(resolve(import.meta.dirname, "../../server/package.json"));
@@ -69,7 +69,7 @@ it("serves the strict MCP SDK through the Cloud callback with isolated sessions 
   };
   const first = await connect().catch(error => { throw new Error("First scoped MCP initialize returned HTTP " + String(requests.at(-1)?.status), { cause: error }); });
   const tools = await first.client.listTools();
-  expect(tools.tools.map((tool: { name: string }) => tool.name)).toEqual(expect.arrayContaining(["get_task_context", "list_cursor_cloud_artifacts", "paperclip_finish", "paperclip_block"]));
+  expect(tools.tools.map((tool: { name: string }) => tool.name)).toEqual(expect.arrayContaining(["get_task_context", "list_cursor_cloud_artifacts", "pilibala_finish", "pilibala_block"]));
   expect(tools.tools.find((tool: { name: string }) => tool.name === "get_task_context").inputSchema).toEqual(schema);
   expect(JSON.parse((await first.client.callTool({ name: "get_task_context", arguments: {} })).content[0].text)).toEqual(task);
   expect(JSON.parse((await first.client.callTool({ name: "list_cursor_cloud_artifacts", arguments: {} })).content[0].text)).toEqual(artifacts);

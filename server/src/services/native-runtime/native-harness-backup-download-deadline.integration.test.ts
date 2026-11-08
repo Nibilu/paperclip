@@ -4,7 +4,7 @@ import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { and, eq } from "drizzle-orm";
-import { heartbeatRuns, nativeHarnessBackups, nativeRunFinalizations } from "@paperclipai/db";
+import { heartbeatRuns, nativeHarnessBackups, nativeRunFinalizations } from "@pilibalaai/db";
 import { afterEach, expect, it, vi } from "vitest";
 import { describeEmbeddedPostgres, nativeRestartFixture } from "../../__tests__/helpers/native-restart.js";
 import { createLocalDiskStorageProvider } from "../../storage/local-disk-provider.js";
@@ -63,7 +63,7 @@ describeEmbeddedPostgres("durable native backup download deadlines", () => {
   });
   /** An OpenCode backup with provider artifacts, so restores make two separate durable reads. */
   async function fixture() {
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "51".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "51".repeat(32));
     const f = await environment.seedRun(randomUUID());
     const { companyId, runtimeRoot, successor, agentId } = environment.current;
     await f.db.update(nativeRunFinalizations).set({ controllerBootId: successor.bootId, controllerGeneration: 1,
@@ -75,7 +75,7 @@ describeEmbeddedPostgres("durable native backup download deadlines", () => {
     const identity = { normalizedSessionId: randomUUID(), providerSessionId: randomUUID(), provider: "opencode" };
     // Enough bytes for many throttled chunks, so a restore outlasts the idle window.
     await writeFile(join(root, "opencode", "sessions", "history.json"), JSON.stringify({ ...identity, turns: "x".repeat(4096) }));
-    const manifest = JSON.stringify({ schema: "paperclip.native-harness-backup.v1", ...identity, directories: ["opencode"] });
+    const manifest = JSON.stringify({ schema: "pilibala.native-harness-backup.v1", ...identity, directories: ["opencode"] });
     await writeFile(join(root, "manifest.json"), manifest, { mode: 0o600 });
     const sourceRoot = join(home, "qualified-provider-pack");
     await mkdir(sourceRoot);
@@ -87,13 +87,13 @@ describeEmbeddedPostgres("durable native backup download deadlines", () => {
     })));
     const payload = { runnerSourceRevision: "a".repeat(40), target: { platform: "linux", architecture: "x64" },
       pins: { opencode: "1.18.34" }, artifacts: { ...artifacts, opencodeCommand: artifacts.opencodeExecutable } };
-    const packManifest = { schema: "paperclip-runner/remote-provider-pack/v1", payload,
+    const packManifest = { schema: "pilibala-runner/remote-provider-pack/v1", payload,
       digest: `sha256:${createHash("sha256").update(canonicalProviderPackJson(payload)).digest("hex")}` };
-    const launchRoot = `/home/daytona/.paperclip-runtime/paperclip-runner/provider-artifacts/${packManifest.digest.slice(7)}`;
+    const launchRoot = `/home/daytona/.pilibala-runtime/pilibala-runner/provider-artifacts/${packManifest.digest.slice(7)}`;
     await f.db.update(heartbeatRuns).set({ nativeSessionId: identity.normalizedSessionId, driverKind: "opencode_server",
       runnerProfileJson: { ...f.preparedProfile, nativeProviderPackAdmissionState: {
-        schema: "paperclip.native-provider-pack-admission-state.v1", state: "verified", admissionEpoch: randomUUID() },
-      nativeProviderPackAdmission: { schema: "paperclip.native-provider-pack-admission.v1", stage: "session_admitted",
+        schema: "pilibala.native-provider-pack-admission-state.v1", state: "verified", admissionEpoch: randomUUID() },
+      nativeProviderPackAdmission: { schema: "pilibala.native-provider-pack-admission.v1", stage: "session_admitted",
         authority: "core_verified_selection", companyId, agentId, runId: f.runId, sessionId: identity.normalizedSessionId,
         runnerInstanceId: "deadline-fixture-runner", runnerEnvironmentLeaseId: "deadline-fixture-lease",
         providerPackDigest: packManifest.digest, opencodeProxySha256: artifacts.opencodeProxy.sha256,

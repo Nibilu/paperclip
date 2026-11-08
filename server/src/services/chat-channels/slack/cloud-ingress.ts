@@ -1,5 +1,5 @@
-import type { Db } from "@paperclipai/db";
-import { chatEndpoints, toolConnections } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { chatEndpoints, toolConnections } from "@pilibalaai/db";
 import { and, eq } from "drizzle-orm";
 import type { chatCredentialMutationLease } from "../../chat-credential-mutation-lease.js";
 import type { createChatCredentials } from "../credentials.js";

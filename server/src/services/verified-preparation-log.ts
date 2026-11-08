@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { isUuidLike } from "@paperclipai/shared";
+import { isUuidLike } from "@pilibalaai/shared";
 import { getRunLogStore } from "./run-log-store.js";
 
 const MAX_BYTES = 2048;
@@ -38,7 +38,7 @@ export async function hasVerifiedPreparationLog(run: PreparationLog): Promise<bo
       || record.ts !== run.lastOutputAt.toISOString() || typeof record.attemptId !== "string" || !isUuidLike(record.attemptId)
       || record.seq !== 1 || record.stream !== "stdout" || typeof record.chunk !== "string"
       || record.chunk !== run.stdoutExcerpt) return false;
-    const prefix = "[paperclip] Enabled run-scoped skills from issue mentions: ";
+    const prefix = "[pilibala] Enabled run-scoped skills from issue mentions: ";
     if (!record.chunk.startsWith(prefix) || !record.chunk.endsWith("\n")) return false;
     const keys = record.chunk.slice(prefix.length, -1).split(", ");
     return keys.length > 0 && new Set(keys).size === keys.length

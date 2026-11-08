@@ -11,9 +11,9 @@ import type { RunnerE2EResult } from "./types.js";
 const temporary: string[] = [];
 afterEach(async () => { await Promise.all(temporary.splice(0).map(root => rm(root, { recursive: true, force: true }))); });
 function fixture() {
-  const result: RunnerE2EResult = { schema: "paperclip.runner-e2e.result/v2", executionId: "app-basics.browser.daytona.create",
+  const result: RunnerE2EResult = { schema: "pilibala.runner-e2e.result/v2", executionId: "app-basics.browser.daytona.create",
     suiteId: "app-basics", suiteDefinitionHash: "recorded-definition", profileId: "browser", environmentId: "daytona", caseId: "create",
-    provider: null, model: null, runtimeMode: "none", targetUrl: "https://qa.test.paperclip.app/", attempt: 1,
+    provider: null, model: null, runtimeMode: "none", targetUrl: "https://qa.test.pilibala.app/", attempt: 1,
     status: "passed", cleanup: "passed", startedAt: "2026-10-27T12:00:00Z", finishedAt: "2026-10-27T12:00:01Z", durationMs: 1000 };
   const campaign = buildRunnerCampaign({ campaignId: "qa-unchanged", generatedAt: result.finishedAt, expected: [result.executionId], results: [result] });
   return { result, campaign, record: campaignHistoryRecord(campaign, "https://reports.example.test/e2e") };
@@ -42,9 +42,9 @@ describe("E2E history organization", () => {
 
   it("records target and agent execution separately without inventing historical targets", () => {
     const { record } = fixture();
-    expect(record.executions[0]).toMatchObject({ targetUrl: "https://qa.test.paperclip.app/", runtimeMode: "none", environmentId: "daytona" });
+    expect(record.executions[0]).toMatchObject({ targetUrl: "https://qa.test.pilibala.app/", runtimeMode: "none", environmentId: "daytona" });
     const row = historyBrowserCampaign(record);
-    expect(row.executions[0]).toMatchObject({ target: "https://qa.test.paperclip.app", environment: "daytona", provider: "__none__", model: "__none__" });
+    expect(row.executions[0]).toMatchObject({ target: "https://qa.test.pilibala.app", environment: "daytona", provider: "__none__", model: "__none__" });
     delete record.executions[0]!.targetUrl;
     delete record.executions[0]!.runtimeMode;
     expect(historyBrowserCampaign(record).executions[0]).toMatchObject({ target: "__unknown__", model: "__unknown__" });
@@ -65,13 +65,13 @@ describe("E2E history organization", () => {
     const { campaign } = fixture(); const measured = JSON.stringify(campaign);
     await writeFile(path.join(root, "history.json"), original); await writeFile(path.join(root, "campaign.json"), measured);
     const output = path.join(root, "output");
-    const history = await refreshHistoryIndex({ history: path.join(root, "history.json"), output, publicCampaign: path.join(root, "campaign.json"), publicUrl: "https://pages.paperclip.ing/evals-qa-basics/", preset: "qa-smoke" });
+    const history = await refreshHistoryIndex({ history: path.join(root, "history.json"), output, publicCampaign: path.join(root, "campaign.json"), publicUrl: "https://pages.pilibala.in/evals-qa-basics/", preset: "qa-smoke" });
     expect(history.campaigns[0]).toMatchObject({ campaignId: campaign.campaignId, generatedAt: campaign.generatedAt, source: campaign.source,
       suites: campaign.suites, selected: campaign.selected, passed: campaign.passed, preset: "qa-smoke" });
     expect(await readFile(path.join(root, "history.json"), "utf8")).toBe(original);
     expect(await readFile(path.join(root, "campaign.json"), "utf8")).toBe(measured);
     expect(await readFile(path.join(output, "index.html"), "utf8")).toContain('data-index-preset-link="qa-smoke"');
-    await expect(refreshHistoryIndex({ history: path.join(output, "history.json"), output, publicCampaign: path.join(root, "campaign.json"), publicUrl: "https://pages.paperclip.ing/evals-qa-basics/" })).rejects.toThrow("already exists");
+    await expect(refreshHistoryIndex({ history: path.join(output, "history.json"), output, publicCampaign: path.join(root, "campaign.json"), publicUrl: "https://pages.pilibala.in/evals-qa-basics/" })).rejects.toThrow("already exists");
   });
 
   it("refuses private Cloud bundles before creating a public history", async () => {
@@ -81,6 +81,6 @@ describe("E2E history organization", () => {
     await writeFile(path.join(root, "history.json"), JSON.stringify(emptyRunnerHistory()));
     await writeFile(path.join(root, "private.json"), JSON.stringify(campaign));
     await expect(refreshHistoryIndex({ history: path.join(root, "history.json"), output: path.join(root, "output"),
-      publicCampaign: path.join(root, "private.json"), publicUrl: "https://pages.paperclip.ing/private/" })).rejects.toThrow("Private Product E2E campaigns");
+      publicCampaign: path.join(root, "private.json"), publicUrl: "https://pages.pilibala.in/private/" })).rejects.toThrow("Private Product E2E campaigns");
   });
 });

@@ -44,7 +44,7 @@ Master: `6cafcaf89b`. Host: macOS, local runner (Daytona image pending a CI buil
 
 0/3 pass. The harness worked: every failure is product-side (RC-02b, RC-05, RC-06). Branch `worktree-agent-a826af5179b88689b` @ `e864139cec`, not yet a PR.
 
-Setup note: fresh worktrees need `pnpm install --frozen-lockfile` and a built `paperclip-runnerd` (`pnpm --filter @paperclipai/paperclip-runner build`) before native cells can run. The chaos harness must check this before starting a wave.
+Setup note: fresh worktrees need `pnpm install --frozen-lockfile` and a built `pilibala-runnerd` (`pnpm --filter @pilibalaai/pilibala-runner build`) before native cells can run. The chaos harness must check this before starting a wave.
 
 Classification of the remaining cells is pending each fixer's diagnosis. A timeout before the restart point counts against setup or the agent, not restart robustness.
 

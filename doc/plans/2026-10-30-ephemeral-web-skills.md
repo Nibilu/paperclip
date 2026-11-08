@@ -2,10 +2,10 @@
 
 ## Qualification status
 
-Implementation is in [PR #18334](https://github.com/paperclipai/paperclip/pull/18334).
+Implementation is in [PR #18334](https://github.com/pilibalaai/pilibala/pull/18334).
 Hosted qualification uses the owned disposable
-[test tenant](https://ephemeral-skills-qa-oct-30.test.paperclip.app), external
-Postgres, S3, and a real remote Paperclip Computer. Cloud policy reserves the
+[test tenant](https://ephemeral-skills-qa-oct-30.test.pilibala.app), external
+Postgres, S3, and a real remote Pilibala Computer. Cloud policy reserves the
 staging domain for master; the rejected staging branch request below made no
 deployment.
 
@@ -64,9 +64,9 @@ handoff, and production volume removal are outside this slice.
 
 ## Canonical work and progress
 
-- Worktree: `/Users/dotta/.codex/worktrees/d084/paperclip`
+- Worktree: `/Users/dotta/.codex/worktrees/d084/pilibala`
 - Branch: `codex/skills-ephemeral-web`
-- Draft PR: https://github.com/paperclipai/paperclip/pull/18334
+- Draft PR: https://github.com/pilibalaai/pilibala/pull/18334
 - Approved plan: this chat, “Skills on ephemeral web servers,” nine sections.
 - Implemented managed create/read/edit/delete-file/fork/rename/restore publication,
   immutable catalog installation/reset, Studio version conflict recovery, durable
@@ -86,14 +86,14 @@ handoff, and production volume removal are outside this slice.
 - One-connection tests now exercise package acquisition before the publication
   transaction. Fork reassignment also uses the transaction's database handle.
 - Host embedded Postgres cannot initialize: exhausted kernel semaphore pool.
-  Owned Docker fixtures are `paperclip-skills-ephemeral-pg` (port 61006) and
-  `paperclip-skills-ephemeral-s3` (port 61007). No unrelated databases changed.
+  Owned Docker fixtures are `pilibala-skills-ephemeral-pg` (port 61006) and
+  `pilibala-skills-ephemeral-s3` (port 61007). No unrelated databases changed.
 - Disposable staging tenant created through normal onboarding:
-  https://ephemeral-skills-qa-oct-30.staging.paperclip.app
+  https://ephemeral-skills-qa-oct-30.staging.pilibala.app
   Agent `dfd238b5-5e5d-43ef-b34a-cb5bff2267f3` (Skills Qualification), paused.
   OpenAI API-key setup uses the explicitly authorized local credential. Candidate
   `6518b323528b2b595c5949c3ed2c57a8d2438cb6` is building under release run
-  https://github.com/paperclipai/paperclip/actions/runs/41085949238.
+  https://github.com/pilibalaai/pilibala/actions/runs/41085949238.
   Single-tenant deploy request: `c65f3677-4b4e-4687-957a-28e2bfb89451`.
   Stack `stack-pool-50f5009d5644` is user-managed during qualification so unrelated
   fleet rollouts cannot replace the test candidate. No live run claimed yet.
@@ -125,7 +125,7 @@ handoff, and production volume removal are outside this slice.
   when the old five-second assertion expired, before the fixture began streaming.
 - The baseline image published successfully, but the deployment check rejected the
   branch with `fleet_campaign_staging_requires_master` (Cloud run `41092962684`).
-  Current Cloud policy uses `test.paperclip.app` for branch experiments. The local
+  Current Cloud policy uses `test.pilibala.app` for branch experiments. The local
   Cloud checkout's older runbook missed this boundary. Qualification is moving to
   an owned disposable test tenant; the rejected request made no tenant deployment.
 - All 53 applicable CI checks passed at `0dc9a42a6f` (two skipped checks).
@@ -143,14 +143,14 @@ handoff, and production volume removal are outside this slice.
   Final project-access/process qualification is running sequentially. Server
   typecheck passed with both final fixes.
 - Correct disposable branch-test tenant:
-  https://ephemeral-skills-qa-oct-30.test.paperclip.app
+  https://ephemeral-skills-qa-oct-30.test.pilibala.app
   Stack `stack-ephemeral-skills-qa-oct-30` is pinned user-managed. Baseline A
   `6518b323528b2b595c5949c3ed2c57a8d2438cb6` is confirmed serving from image
-  `ghcr.io/paperclipai/paperclip:sha-6518b323528b2b595c5949c3ed2c57a8d2438cb6-cloud`.
+  `ghcr.io/pilibalaai/pilibala:sha-6518b323528b2b595c5949c3ed2c57a8d2438cb6-cloud`.
   Deploy request `19c33461-d232-453a-bdd1-ba357459be48`, campaign
   `fleet-campaign-1793366873548`, Cloud run `41094804453`: one target succeeded.
   The user approved saving the same OpenAI key to this test tenant; its remote
-  Codex environment verification succeeded on a Paperclip Computer.
+  Codex environment verification succeeded on a Pilibala Computer.
 - Studio created unassigned managed skill `3ade7878-8aaf-47c7-aebd-7da23a8afb5d`
   (Ephemeral Skills Proof), with instructions, `references/value.txt`, and
   `scripts/prove.sh`. Remote agent `300911d4-590d-4a26-b1c0-c80db14fa072` is
@@ -180,12 +180,12 @@ handoff, and production volume removal are outside this slice.
   and all three file digests matched independently calculated input digests.
   Its saved task document records the execution-local installation path.
 - Imported repository skill `581b718a-3681-48c4-96d5-87d12b694550` from
-  `paperclipai/paperclip` commit `dff63551fe07934a82a0942e502adba3fcbb08ca`.
+  `pilibalaai/pilibala` commit `dff63551fe07934a82a0942e502adba3fcbb08ca`.
   The existing import filter admitted 12 files and excluded the API reference.
   A later explicit source refresh hit the repository size limit and retained
   the installed revision. That refresh is not counted as a successful update.
 - Test-only env campaign `fleet-campaign-1793366873581` succeeded at
-  `2026-10-30T17:38:00.006Z`, changing only `PAPERCLIP_HOME` to
+  `2026-10-30T17:38:00.006Z`, changing only `PILIBALA_HOME` to
   `/tmp/ephemeral-skills-a` on `stack-ephemeral-skills-qa-oct-30`.
   Audit evidence reports one target, one key, zero removed keys, and unchanged
   Computer images. Studio reopened v6 with its supporting files afterward.
@@ -209,7 +209,7 @@ handoff, and production volume removal are outside this slice.
   with zero unresolved review threads. Hosted candidate build is run
   `41101360597`; baseline A remains deployed until it completes.
 - Provider console independently confirmed external Neon Postgres and S3 on A,
-  with `PAPERCLIP_HOME=/tmp/ephemeral-skills-a`, deployment
+  with `PILIBALA_HOME=/tmp/ephemeral-skills-a`, deployment
   `5fc05d1a-2451-465c-8a15-16b18d1e0d3d`, replica
   `f7393d02-49b6-40b9-ae94-db9181300bf4`. A temporary marker was written to
   that home so a later container can prove the predecessor's local state is absent.
@@ -253,7 +253,7 @@ handoff, and production volume removal are outside this slice.
   `d4e172e8-a861-48cc-ae9c-e2f26c8ee636`, Cloud run `41106109829`.
   B is deployment `ed70e789-22c3-4b93-93de-da61d7f30ca4`, replica
   `16fbb2e8-a7b3-4f32-a483-bc2f5c77a8ee`, with
-  `PAPERCLIP_HOME=/tmp/ephemeral-skills-b`. Local health confirmed the code SHA;
+  `PILIBALA_HOME=/tmp/ephemeral-skills-b`. Local health confirmed the code SHA;
   provider console confirmed A's home and marker absent. The unassigned fork
   opened as v2 with zero agents. Studio acknowledged a supporting-file edit to
   the primary managed skill as v7 (`durable-skill-payload-B-20261030`).

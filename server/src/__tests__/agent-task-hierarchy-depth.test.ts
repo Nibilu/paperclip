@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { agents, companies, createDb, heartbeatRuns, issueRelations, issues } from "@paperclipai/db";
+import { agents, companies, createDb, heartbeatRuns, issueRelations, issues } from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -18,7 +18,7 @@ describeEmbeddedPostgres("agent task hierarchy depth", () => {
   let db: ReturnType<typeof createDb>;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-agent-task-depth-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-agent-task-depth-");
     db = createDb(tempDb.connectionString);
   });
 
@@ -30,7 +30,7 @@ describeEmbeddedPostgres("agent task hierarchy depth", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `D${companyId.replace(/-/g, "").slice(0, 5).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

@@ -18,8 +18,8 @@ import express from "express";
 import request from "supertest";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, companies, createDb, applyPendingMigrations, environmentLeases, environments, heartbeatRuns, issueComments, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, agentWakeupRequests, executionWorkspaces } from "@paperclipai/db";
-import type { AdapterSandboxExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
+import { agents, companies, createDb, applyPendingMigrations, environmentLeases, environments, heartbeatRuns, issueComments, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, agentWakeupRequests, executionWorkspaces } from "@pilibalaai/db";
+import type { AdapterSandboxExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
 import { startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { nativeWorkspaceFinalizationLockKey } from "./native-runtime/native-workspace-finalization-ownership.js";
 import { recoverRetainedWorkspace, requestWorkspaceRecovery, reconcileRetainedWorkspaces, retainedWorkspaceCandidates } from "./workspace-recovery.js";
@@ -48,8 +48,8 @@ describe("automatic retained workspace recovery", () => {
     let isolatedDb: typeof db | undefined;
     let isolatedRoot: string | undefined;
     beforeAll(async () => {
-      original = { db, root, connectionString, home: process.env.PAPERCLIP_HOME };
-      const external = resolveExternalTestDatabaseUrl("PAPERCLIP_WORKSPACE_RECOVERY_HANDOFF_TEST_DATABASE_URL");
+      original = { db, root, connectionString, home: process.env.PILIBALA_HOME };
+      const external = resolveExternalTestDatabaseUrl("PILIBALA_WORKSPACE_RECOVERY_HANDOFF_TEST_DATABASE_URL");
       if (external) {
         await applyPendingMigrations(external);
         isolated = { connectionString: external, cleanup: async () => {} };
@@ -58,14 +58,14 @@ describe("automatic retained workspace recovery", () => {
       if (external) await isolatedDb.execute(sql`TRUNCATE TABLE companies CASCADE`);
       isolatedRoot = await mkdtemp(path.join(os.tmpdir(), "workspace-warm-handoff-files-"));
       replaceFixtureState({ db: isolatedDb, root: isolatedRoot, connectionString: isolated.connectionString });
-      process.env.PAPERCLIP_HOME = path.join(root, "home");
+      process.env.PILIBALA_HOME = path.join(root, "home");
     }, 30_000);
     afterAll(async () => {
       await isolatedDb?.$client.end(); await isolated?.cleanup();
       if (isolatedRoot) await rm(isolatedRoot, { recursive: true, force: true });
       if (original) {
         replaceFixtureState({ db: original.db, root: original.root, connectionString: original.connectionString });
-        if (original.home === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = original.home;
+        if (original.home === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = original.home;
       }
     });
   it.each([{ hops: 1, snapshot: false }, { hops: 2, snapshot: false }, { hops: 2, snapshot: true }])(
@@ -166,7 +166,7 @@ describe("automatic retained workspace recovery", () => {
         await db.update(environmentLeases).set({ issueId: other.id }).where(eq(environmentLeases.id, previous.id));
       }
       if (fault === "agent") {
-        const [other] = await db.insert(agents).values({ companyId: f.companyId, name: "Other agent", adapterType: "paperclip_runner" }).returning();
+        const [other] = await db.insert(agents).values({ companyId: f.companyId, name: "Other agent", adapterType: "pilibala_runner" }).returning();
         await db.update(heartbeatRuns).set({ agentId: other.id }).where(eq(heartbeatRuns.id, f.priorRunId));
       }
       if (fault === "unfinalized") {
@@ -194,7 +194,7 @@ describe("automatic retained workspace recovery", () => {
   it("keeps server handoff receipts across metadata updates and same-run reacquisition", async () => {
     const f = await warmHandoffSource(1, async lease => {
       const proof = lease.metadata!.reusableLeasePredecessor;
-      expect(proof).toMatchObject({ schema: "paperclip.reusable-lease-handoff.v1", successorLeaseId: lease.id });
+      expect(proof).toMatchObject({ schema: "pilibala.reusable-lease-handoff.v1", successorLeaseId: lease.id });
       const forged = { schema: "forged-provider-metadata" };
       const updated = await environmentService(db).updateLeaseMetadata(lease.id, { ...lease.metadata,
         reusableLeasePredecessor: forged, reusableLeaseSuccessor: forged, marker: "updated" });
@@ -215,7 +215,7 @@ describe("automatic retained workspace recovery", () => {
 
   it("does not manufacture handoff authority from injected fresh or orphan lease metadata", async () => {
     const f = await warmHandoffSource(), source = await run(f.runId);
-    const forged = { schema: "paperclip.reusable-lease-handoff.v1", successorLeaseId: f.lease.id };
+    const forged = { schema: "pilibala.reusable-lease-handoff.v1", successorLeaseId: f.lease.id };
     const values = { companyId: f.companyId, environmentId: f.lease.environmentId!, issueId: f.issueId,
       heartbeatRunId: source.id, provider: "daytona", providerLeaseId: randomUUID(),
       metadata: { agentId: source.agentId, reusableLeasePredecessor: forged, reusableLeaseSuccessor: forged } };
@@ -363,7 +363,7 @@ describe("automatic retained workspace recovery", () => {
         await db.insert(agentWakeupRequests).values({ companyId: f.companyId, agentId: source.agentId,
           source: wake.source, triggerDetail: wake.triggerDetail, reason: wake.reason,
           requestedByActorType: "user", requestedByActorId: "board", status: "deferred_issue_execution",
-          payload: { ...wake.payload, _paperclipWakeContext: { ...wake.contextSnapshot, wakeReason: wake.reason,
+          payload: { ...wake.payload, _pilibalaWakeContext: { ...wake.contextSnapshot, wakeReason: wake.reason,
             wakeSource: wake.source, wakeTriggerDetail: wake.triggerDetail, wakeCommentIds: [comment.id] } },
         });
         expect(await successors()).toHaveLength(0);

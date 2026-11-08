@@ -592,7 +592,7 @@ export function Layout() {
         ref={mobileViewportRef}
         data-mobile={isMobile ? "true" : undefined}
         className={cn(
-          "paperclip-app-shell bg-background text-foreground pt-(--sz-safe-top)",
+          "pilibala-app-shell bg-background text-foreground pt-(--sz-safe-top)",
           // overflow-x-clip on mobile keeps a stray wide descendant from making the
           // whole viewport scroll horizontally. clip (not hidden) leaves overflow-y
           // computed as visible, so native body scroll + the sticky breadcrumb keep
@@ -645,7 +645,7 @@ export function Layout() {
               collapsed={designSandbox ? false : collapsed}
               peeking={designSandbox ? false : peeking}
               resizable
-              storageKey={designSandbox ? "paperclip.design-proposals.sandbox.sidebar-width" : undefined}
+              storageKey={designSandbox ? "pilibala.design-proposals.sandbox.sidebar-width" : undefined}
               onPanelMouseEnter={handlePanelPointerEnter}
               onPanelMouseLeave={handlePanelPointerLeave}
               onPanelFocusCapture={collapsed ? handlePanelFocus : undefined}

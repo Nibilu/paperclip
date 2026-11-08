@@ -1,6 +1,6 @@
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { requestHumanInputAction } from "../../../packages/paperclip-runner/src/protocol-actions/request-human-input.js";
-import { questionSetToAskUserQuestionsPayload } from "@paperclipai/shared";
+import { requestHumanInputAction } from "../../../packages/pilibala-runner/src/protocol-actions/request-human-input.js";
+import { questionSetToAskUserQuestionsPayload } from "@pilibalaai/shared";
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -22,7 +22,7 @@ import {
   toolProfiles,
   toolProfileBindings,
   toolConnectionInstalls,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type { RuntimeToolsTokenClaims } from "../runtime-tools-token.js";
 import { connectionIntentService } from "../services/connection-intents.js";
 import { instanceSettingsService } from "../services/instance-settings.js";
@@ -42,7 +42,7 @@ const support = await getEmbeddedPostgresTestSupport();
     let runId!: string;
     beforeAll(async () => {
       const tempDb = await startEmbeddedPostgresTestDatabase(
-        "paperclip-connection-intents-",
+        "pilibala-connection-intents-",
       );
       cleanup = tempDb.cleanup;
       connectionString = tempDb.connectionString;
@@ -401,12 +401,12 @@ const support = await getEmbeddedPostgresTestSupport();
       expect(result.providerQuestion).toBeUndefined();
       expect(result.instruction).toContain("connection_request");
     });
-    // BUG-06: on Paperclip Cloud, the native Slack tool path requires a customer-created
+    // BUG-06: on Pilibala Cloud, the native Slack tool path requires a customer-created
     // Slack OAuth app and managed Slack chat setup is behind the Chat connectors opt-in.
     // Agents must offer the one-click aggregator routes instead of that card.
-    describe("Slack on Paperclip Cloud", () => {
+    describe("Slack on Pilibala Cloud", () => {
       const slackQuery = "Slack (team updates / notifications)";
-      beforeAll(() => { vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "cloud-test-token"); });
+      beforeAll(() => { vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "cloud-test-token"); });
       afterAll(() => { vi.unstubAllEnvs(); });
       it("offers aggregator Slack routes while native Slack only supports a customer-created OAuth app", async () => {
         await resetQuestions();
@@ -438,14 +438,14 @@ const support = await getEmbeddedPostgresTestSupport();
       });
       it("keeps Slack's aggregator routes in capability-only discovery", async () => {
         await resetQuestions();
-        const result = await connectionIntentService(db).search(claims, "start and continue Paperclip work");
+        const result = await connectionIntentService(db).search(claims, "start and continue Pilibala work");
         const services = result.results.map((item) => item.service);
         expect(services).toContain("via:composio:slack");
         expect(services).not.toContain("slack");
         // A route needs the provider-choice flow before connection_request.
         expect(result.instruction).toContain("search its aggregator.targetService");
       });
-      it("keeps native connectors that declare a Paperclip Cloud managed method", async () => {
+      it("keeps native connectors that declare a Pilibala Cloud managed method", async () => {
         await resetQuestions();
         const result = await connectionIntentService(db).search(claims, "asana");
         expect(result.results[0]).toMatchObject({ service: "asana" });

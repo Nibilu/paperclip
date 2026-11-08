@@ -17,7 +17,7 @@ export function savedSkillFixture(identity: string, reference: string): SavedSki
   const first = seed[0]! + 1, second = seed[1]! + 1;
   const procedure = `# Saved receipt procedure\n\nThe receipt reference is ${reference}.\n`
     + `Add the two amounts ${first} and ${second}.\n`
-    + `Save exactly one Paperclip task document with key ${key}. Its body must be JSON with exactly `
+    + `Save exactly one Pilibala task document with key ${key}. Its body must be JSON with exactly `
     + `two fields: reference (the receipt reference) and total (the sum of the two amounts).\n`
     + "Check the saved document and finish the task. Do not create other tasks or deliverables.\n";
   return { name: slug, slug, key, procedure,
@@ -179,7 +179,7 @@ function codexAssignedSkillReceipts(bound: Row[], binding: NativePrpRunBinding, 
     const keys = ["schema", "schemaVersion", "phase", "operationId", "callId", "correlation", "idempotencyKey", "content",
       ...(phase === "input" ? ["input"] : ["outcome", "code", "retryable", "authorizationBoundary", "operationReceiptId"])];
     return Boolean(value && event.eventType === `semantic_tool.${phase}` && value.phase === phase
-      && value.schema === "paperclip.prp.semantic_tool.v1" && value.schemaVersion === 1
+      && value.schema === "pilibala.prp.semantic_tool.v1" && value.schemaVersion === 1
       && Object.keys(value).sort().join(",") === keys.sort().join(",")
       && value.operationId === "read_assigned_skill" && typeof value.callId === "string" && value.callId.trim()
       && value.idempotencyKey === null && Number.isSafeInteger(row.seq)
@@ -219,7 +219,7 @@ export function savedSkillReadReceipts(events: Row[], binding: NativePrpRunBindi
   const bound = events.filter(row => isBoundNativePrpEventRow(row, binding));
   const builtin = bound.filter(row => {
     const event = row.payload.prpEvent, payload = event.payload;
-    if (event.eventType !== "tool.execution.completed" || payload?.schema !== "paperclip.tool.execution.v1"
+    if (event.eventType !== "tool.execution.completed" || payload?.schema !== "pilibala.tool.execution.v1"
       || payload.transport !== "builtin" || payload.status !== "completed"
       || typeof event.turnId !== "string" || !event.turnId.trim()
       || typeof payload.executionId !== "string" || !payload.executionId.trim()
@@ -246,7 +246,7 @@ export function savedSkillReadReceipts(events: Row[], binding: NativePrpRunBindi
       && wrappedPath.endsWith(`/.claude/skills/${runtimeName}/SKILL.md`);
     // The ordinary semantic tool is another native read path, not a filesystem wrapper.
     // Its canonical key/version binding does not depend on a provider's directory name.
-    const assignedText = name === "paperclip_read_assigned_skill" && payload.readOnly === true && payload.target === null
+    const assignedText = name === "pilibala_read_assigned_skill" && payload.readOnly === true && payload.target === null
       && (payload.operation === "unknown" || payload.operation === "read")
       && assignment?.key === `company/${binding.companyId}/${fixture.slug}`
       && typeof assignment.versionId === "string" && assignment.versionId.trim()

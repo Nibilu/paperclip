@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { resolvePaperclipInstanceRoot } from "../../server/src/home-paths.js";
+import { resolvePilibalaInstanceRoot } from "../../server/src/home-paths.js";
 import { pollUntil, type RunnerApi } from "./api.js";
 import { sendChatMessage, readChatOutputDocument, collectChatRunEvidence, type ChatFlowInput, type ChatRun } from "./chat-flow.js";
 import { arm as armDocumentGate, clear as clearDocumentGate, release as releaseDocumentGate, waitUntilHeld } from "./context-comment-gate.js";
@@ -94,7 +94,7 @@ export async function observeCompletionUpdate(input: {
       catch (error) { evidenceErrors.push(`${label}: ${error instanceof Error ? error.message : String(error)}`); }
     };
     await preserve("observation", () => input.evidence("completion-update.json", {
-      schema: "paperclip.completion-update-probe.v8", startedAt, finishedAt: new Date().toISOString(),
+      schema: "pilibala.completion-update-probe.v8", startedAt, finishedAt: new Date().toISOString(),
       observation, delivery: observation ? completionDelivery(observation) : null,
       observedFailure: failure instanceof Error ? failure.message : null,
     }));
@@ -138,7 +138,7 @@ export async function runChatCompletionUpdate(context: {
   // isolated task directory. Agent homes and unconfigured project roots are
   // outside the provider sandbox, so each wait resolves from the run's cwd.
   const taskDirectory = (issueId: string) => {
-    const directory = path.join(resolvePaperclipInstanceRoot(), "isolated-workspaces", f.company.id, issueId);
+    const directory = path.join(resolvePilibalaInstanceRoot(), "isolated-workspaces", f.company.id, issueId);
     const relative = path.relative(path.dirname(input.workspacePath), directory);
     if (relative.startsWith("..") || path.isAbsolute(relative)) throw new Error("Completion fixture escaped isolated instance");
     return directory;
@@ -149,7 +149,7 @@ export async function runChatCompletionUpdate(context: {
     await publishChatBrief(brief.at(directory).gate, content);
   };
   const runCwd = (runs: Row[], issueId: string) =>
-    runs.filter(r => r.contextSnapshot?.issueId === issueId).map(r => r.contextSnapshot?.paperclipWorkspace?.cwd ?? null);
+    runs.filter(r => r.contextSnapshot?.issueId === issueId).map(r => r.contextSnapshot?.pilibalaWorkspace?.cwd ?? null);
   const completionWait = restart ? workspaceChatBrief(`${input.nonce}-completion`, 240_000) : null;
   if (completionWait) {
     const instruction = `For automatic delegated-work completion updates, first run this exact command from your current working directory and read the organizer's reference before posting your final reply:\n\n${completionWait.command}\n\nDo not run this command for the initial task handoff or other user messages. Reading this reference does not authorize additional tasks or changes to the completed work.`;
@@ -161,7 +161,7 @@ export async function runChatCompletionUpdate(context: {
   const wait = workspaceChatBrief(input.nonce, 240_000);
   const reference = marker;
   const brief = `The free Friday meetup starts at 10:30 in the community garden. The saved note must include RSVP code ${reference}.`;
-  const instructions = `For the welcome-note assignment, run this exact command from your task's working directory to read the organizer's brief before writing the final note:\n\n${wait.command}\n\nSave a two-sentence welcome note as a Paperclip document on your assigned task using the brief's details and explicitly include its RSVP code in the note. Then complete your task. Do not edit or comment on another task.`;
+  const instructions = `For the welcome-note assignment, run this exact command from your task's working directory to read the organizer's brief before writing the final note:\n\n${wait.command}\n\nSave a two-sentence welcome note as a Pilibala document on your assigned task using the brief's details and explicitly include its RSVP code in the note. Then complete your task. Do not edit or comment on another task.`;
   await api.saveAgentInstructions(worker.id, instructions);
   expect(await api.get(`/api/agents/${worker.id}/instructions-bundle/file?path=AGENTS.md`)).toMatchObject({ content: instructions });
   const prompt = `Create ${multiple ? "two separate tasks titled Welcome note A and Welcome note B" : "one task"} in the Garden welcome project (${project.id}) assigned to Riley Writer to write a two-sentence welcome note for our free Friday garden meetup. Riley has the organizer's brief. Save the finished note on that task and include RSVP code ${marker} in the note so attendees know which code to give the organizer. Please tell me here when the work is finished and give me access to the result. You may start the handoff now; no further approval is needed. Let Riley write the note.`;
@@ -194,7 +194,7 @@ export async function runChatCompletionUpdate(context: {
     if (busy) {
       await clearDocumentGate(context.issue().id);
       await armDocumentGate(context.issue().id);
-      const busyPrompt = `A separate request while Riley works: save a Paperclip document on this conversation with key brief-reference, title Conversation reference, and body REFERENCE${marker}. Once the save succeeds, acknowledge that reference here. Keep this in the current conversation; do not create tasks or projects.`;
+      const busyPrompt = `A separate request while Riley works: save a Pilibala document on this conversation with key brief-reference, title Conversation reference, and body REFERENCE${marker}. Once the save succeeds, acknowledge that reference here. Keep this in the current conversation; do not create tasks or projects.`;
       userMessages.push(busyPrompt);
       await sendChatMessage(page, busyPrompt);
       await waitUntilHeld(context.issue().id, Date.now() + 120_000);

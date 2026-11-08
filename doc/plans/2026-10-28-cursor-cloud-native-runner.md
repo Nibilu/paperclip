@@ -1,4 +1,4 @@
-# Cursor Cloud on native Paperclip Runner — 2026-10-28
+# Cursor Cloud on native Pilibala Runner — 2026-10-28
 
 Owner: the lead integration agent in this task; delegated owners cover the Cloud
 API client and this research/acceptance record. The lead owns integration,
@@ -10,16 +10,16 @@ Target: a reviewable PR with experimental, local-first native Runner support.
 Merge, package publication, production rollout, and automatic conversion of
 existing agents are separate actions, not completed or implied by this record.
 
-Current delivery: [Runner core PR #18068](https://github.com/paperclipai/paperclip/pull/18068)
-and dependent [product PR #18069](https://github.com/paperclipai/paperclip/pull/18069).
+Current delivery: [Runner core PR #18068](https://github.com/pilibalaai/pilibala/pull/18068)
+and dependent [product PR #18069](https://github.com/pilibalaai/pilibala/pull/18069).
 Neither PR is merged. Product PR #18069's Verification section owns the latest
 candidate, check status and final acceptance decision.
 
 ## Hosted placement correction — 2026-10-30
 
 Native Cursor Cloud uses a provider API controller. Cursor hosts the model and
-commands; Paperclip runs only its qualified API client and bounded private artifact
-stager. This placement has no Paperclip Computer, lease, task checkout or host
+commands; Pilibala runs only its qualified API client and bounded private artifact
+stager. This placement has no Pilibala Computer, lease, task checkout or host
 provisioning command. It is derived from the validated native Cursor profile and
 persisted with the admitted run; recovery retains that backend and placement.
 Earlier Cursor profiles retain their admitted workspace binding as identity;
@@ -52,7 +52,7 @@ these results do not establish a pass for subsequent runtime changes.
 
 | Gate | Retained live evidence |
 | --- | --- |
-| C1 Ordinary setup | Fresh Advanced → Paperclip Runner setup, saved reload and real catalog Test on `27172d6ee899`; saved trial retested on `3f4d92f3751e` |
+| C1 Ordinary setup | Fresh Advanced → Pilibala Runner setup, saved reload and real catalog Test on `27172d6ee899`; saved trial retested on `3f4d92f3751e` |
 | C2 Task and C6 artifact | `cursor-cloud-local-20261028-artifact-sonnet-2`, source `b18b743cd45d`, eight strict matchers and exact registered/downloaded bytes; owned remote cleanup confirmed |
 | C3 Continuation and C5 replay | `cursor-cloud-local-20261029-followup-sonnet-11`, source `7591c52a8c32`, two runs on one owned Agent, one answered question, one injected stream cut and matching-cursor reconnect, unique ordered events, settled receipts and owned cleanup |
 | C4 Active Stop | `cursor-cloud-local-20261029-stop-sonnet-3`, source `27172d6ee899`, independently observed foreground command, ordinary UI Stop, terminal cancellation, 15-second quiet window, zero accounting debt and owned cleanup |
@@ -63,7 +63,7 @@ window after a status-read timeout. Stop-3 does not establish Stop-2's cause.
 
 Final review corrections cover semantic planning, bounded status-read recovery,
 atomic artifact staging and checkpoint acquisition. The planning repair retains
-the pinned Paperclip context and tool restrictions while using the Cloud default
+the pinned Pilibala context and tool restrictions while using the Cloud default
 harness. Its two separate rejection gates have RED/GREEN proof; 2,390 affected
 tests and Core typecheck pass, with an additional real-Rust/private-facade Plan
 control. The Cloud driver, checkpoint and artifact suites pass 45, 38 and 15
@@ -139,8 +139,8 @@ continuation/full replay passes. Both PRs stay draft while gates remain open.
 
 An operator selects Cursor Cloud in native Runner, saves an API-key binding and
 explicit model, assigns an ordinary task, sees real provider activity, and gets
-an independently verified result through Paperclip. Cursor executes in its hosted
-environment; the first Paperclip controller/Runner acceptance environment is the
+an independently verified result through Pilibala. Cursor executes in its hosted
+environment; the first Pilibala controller/Runner acceptance environment is the
 local development stack. Local-first does not mean that Cursor's model or tools
 execute on the operator's computer.
 
@@ -159,9 +159,9 @@ This exception does not relax company authorization, semantic-tool policy,
 credential isolation, Stop fencing, result acceptance, or existing budget gates.
 
 Native Cursor permission requests, native questions, native plan decisions, and
-fixed per-run dollar enforcement are unsupported in this release. Paperclip
+fixed per-run dollar enforcement are unsupported in this release. Pilibala
 semantic tools remain a distinct contract. Cursor-native tools are not governed
-by a Paperclip per-command approval callback.
+by a Pilibala per-command approval callback.
 
 Authentication uses an explicitly bound Cursor user/service-account API key.
 Authenticated catalog, repository access and real hosted execution were observed
@@ -199,11 +199,11 @@ available. Diagnose the first divergence before another paid attempt.
 - New provider-neutral shared fields require a concrete consumer and an absent/
   disabled-provider behavior. Keep Cursor payloads and SDK types in provider code.
 - Persist the durable Cloud agent ID separately from each Cloud run ID and the
-  local Paperclip run/session identity. Recovery must observe the existing run
+  local Pilibala run/session identity. Recovery must observe the existing run
   before creating paid work. Refresh scoped MCP credentials on continuation.
 - Stop must cancel the owned Cloud run, verify provider terminal state, close
   local stream/relay resources, and fence later effects. A local socket close or
-  terminal Paperclip row alone does not prove remote work stopped.
+  terminal Pilibala row alone does not prove remote work stopped.
 - Preserve legacy direct invocations, transcripts, cancellation, and finalization.
   A direct run starts no runnerd process or PRP connection. Visiting/saving an
   existing agent does not change its runtime.
@@ -302,8 +302,8 @@ the exact inspected 1.0.28 package.
 | Native permission approval | Cloud v1 | No API callback | Native tools auto-run | No interception | Explicit limitation | Unverified | Unsupported |
 | Native question | Cloud v1 | No response contract found | No API callback | None | No supported claim | Unverified | Unsupported |
 | Native plan decision | Cloud v1 | No response contract found | No API callback | None | No supported claim | Unverified | Unsupported |
-| Semantic tool authorization | Paperclip native | Existing controller contract | Run/session/company/agent/epoch-bound relay | Normal semantic dispatcher | Durable audit/effects | C2 accepted effects; controlled negative/expiry checks | No parallel authorization path |
-| Semantic questions/approval/plans | Paperclip native | Separate existing contracts | Normal semantic relay | Structured question delivered | Real browser answer persisted | Question and answer observed in C3 | Complete continuation still unqualified; no native equivalence or broader decision claim |
+| Semantic tool authorization | Pilibala native | Existing controller contract | Run/session/company/agent/epoch-bound relay | Normal semantic dispatcher | Durable audit/effects | C2 accepted effects; controlled negative/expiry checks | No parallel authorization path |
+| Semantic questions/approval/plans | Pilibala native | Separate existing contracts | Normal semantic relay | Structured question delivered | Real browser answer persisted | Question and answer observed in C3 | Complete continuation still unqualified; no native equivalence or broader decision claim |
 | Todos/plans/revisions | Cloud v1 | Rich events not qualified | Provider translation | No invented capability | Existing generic surface only | Unverified | Outside required cells |
 | Active steering/queue | Cloud v1; SDK absent | Provider API documented | Not exposed by this driver | Descriptor explicitly disables both | No active steering/queue promise | Unsupported in this release | Ordinary follow-up is separate |
 | Ordinary follow-up | Cloud v1 | Documented | Existing Agent/new Run | Stable session identity and refreshed callback | Same task continuation | Controlled same-Agent and governed-yield tests | Required C3 awaits live confirmation of the bounded timing repair |
@@ -321,7 +321,7 @@ the exact inspected 1.0.28 package.
 | Per-run dollar ceiling | Cloud v1 | No enforcement contract | No admitted native cap | Existing budget gates only | Explicit limitation | Unverified | Unsupported |
 | Idle/heartbeat/retry behavior | Cloud v1 | Partial documentation | Stream/recovery policy | Bounded activity | Quiet idle state | Unverified | No idle polling loop claim |
 | Cancel/terminal status | Cloud v1 | Cancellation and terminal API reads observed | Exact Run cancel plus lookup | Unconfirmed termination stays fenced | Durable cancellation | Cleanup observed; native Stop/recovery controls pass | Required active-work C4 unrun |
-| Late callbacks/effects | Paperclip native | Existing authority contract | Expiry/revocation and current actor authority | Fence stopped generation | Stale mutation rejected | Controlled relay/authority checks | C4 still requires bounded live observation |
+| Late callbacks/effects | Pilibala native | Existing authority contract | Expiry/revocation and current actor authority | Fence stopped generation | Stale mutation rejected | Controlled relay/authority checks | C4 still requires bounded live observation |
 | Native process/VM cleanup | Cloud v1 | Hosted lifecycle opaque | Delete plus independent exact Agent/Run 404 | No host-PID proof | Exact API absence recorded | Observed after retained campaigns | No physical remote VM cleanup claim |
 | Local relay/stream cleanup | New integration | Exact owned process exit observed | Socket close/expiry | Bounded shutdown and receipt acknowledgment | No lingering owned local work | Packaged/native controls and live cleanup | Required C4 still unrun |
 | Config/command discovery | Cloud v1 | Limited API inventory | Provider-specific | No arbitrary CLI promise | Normal configuration | Unverified | Outside required cells |
@@ -342,7 +342,7 @@ evidence-impact decision before carrying a prior pass forward.
 | C3 Continuation | Follow-up on existing task/session | Same Cloud agent, distinct Cloud run; current instructions/tool grants; visible reply and durable result without duplicate work | Seven failed live campaigns (1/2/3/4/7/9/10) retain original grades. Attempts 5/6/8 stopped at local infrastructure. Sonnet-10 completed the first turn and accounting settlement but failed local authority rotation before a second native create; the cold-handoff repair passes controlled real-boundary checks. The separate stale-response repair passed 60 Cloud cases, including 14 old-driver red controls | Unqualified | Build and freeze the combined candidate, then one bounded Sonnet-11 attempt; no automatic paid retry |
 | C4 Stop | Stop while provider work is actually pending | Cancel exact run; observe provider terminal state; close local resources; later relay calls/replays cannot mutate task; bounded observation recorded | Supporting controlled cancellation and race checks pass; no live active-command Stop has been attempted | Unqualified; live cell unattempted | After C3/full C5 passes, verify real pending command identity before ordinary UI Stop |
 | C5 Replay | Disconnect/reconnect and retention expiry | Resume cursor; stable order; no duplicate effect/reply; expired stream reconciles through known run without a new paid prompt | Failed campaigns retain exact cuts/cursors and ordered unique events. Sonnet-10 recorded one cut, matching-cursor 200 reconnect and 61 unique ordered canonical events, but failed before second-turn admission | Partial transport proof; unqualified | Requires normal two-turn completion on the new frozen candidate |
-| C6 Artifact | Download provider-produced result | Listed relative artifact; safe retrieval; independently verified bytes; usable Paperclip result access after settlement; cleanup recorded | Same Sonnet-2 result as C2; one registered/downloaded artifact, exact 24-byte fixture and MIME verified; SHA-256 `475af2a29ebe3347d92d24efaa58ee6e50a96c1e25297a4410ea12407aa5c1d9`; exact owned Agent and Run each returned 404 after cleanup | Passed on recorded candidate | Keep the original artifact bytes/receipt and repeat if the output path changes |
+| C6 Artifact | Download provider-produced result | Listed relative artifact; safe retrieval; independently verified bytes; usable Pilibala result access after settlement; cleanup recorded | Same Sonnet-2 result as C2; one registered/downloaded artifact, exact 24-byte fixture and MIME verified; SHA-256 `475af2a29ebe3347d92d24efaa58ee6e50a96c1e25297a4410ea12407aa5c1d9`; exact owned Agent and Run each returned 404 after cleanup | Passed on recorded candidate | Keep the original artifact bytes/receipt and repeat if the output path changes |
 
 Pre-qualification snapshot total: **3 passed on recorded candidates and 3
 unqualified of 6 required**. See Product PR #18069 Verification for the later
@@ -355,7 +355,7 @@ tunnel and access to the new private README-only fixture repository. Both are
 configured, and a fresh authenticated repository preflight confirms access.
 The saved product Test passed after reopening across a controller restart. An
 initial Test failure was traced to test-drive intentionally discarding ambient
-PAPERCLIP_* routing variables; saving auth.publicBaseUrl in its isolated instance
+PILIBALA_* routing variables; saving auth.publicBaseUrl in its isolated instance
 configuration supplied the callback origin. This was setup repair, with no
 production-code change or provider prompt. Task delivery retains its earlier
 pre-prompt and hosted failures alongside the passing Sonnet artifact attempt.
@@ -597,7 +597,7 @@ All three direct controls had one create POST, no cancel or DELETE, no
 mutation retry, no accepted Run identity and no remaining active owned work.
 No Run lookup was fabricated when the provider supplied no Run identity.
 
-These controls show that the failure persists without Paperclip MCP, across
+These controls show that the failure persists without Pilibala MCP, across
 both successful authentication schemes, and across Sonnet and the selected
 Mini model. They do not identify an account, repository, entitlement,
 provisioning or service root cause. Read-only account UI inspection showed a
@@ -764,7 +764,7 @@ restored. C5 again exercised a real cut/reconnect, but no second turn completed.
 
 This is a qualification-policy mismatch, not a reason to change production
 budget enforcement. The bounded fixtures now require explicit
-`PAPERCLIP_CURSOR_CLOUD_ALLOW_UNPRICED_QUALIFICATION=1`, upsert only their owned
+`PILIBALA_CURSOR_CLOUD_ALLOW_UNPRICED_QUALIFICATION=1`, upsert only their owned
 company and agent monthly billed-cent policies, and verify both saved policies
 before dispatch. Each remains active with a 1,000-cent known-cost hard stop;
 unknown pricing is explicitly allowed under the user's test-spending approval.
@@ -782,7 +782,7 @@ unpause the failed measured company or relabel its result.
 
 The first live continuation/replay campaign failed its required question on
 `62fb0252e931`. Cursor queried unrelated inherited account MCP namespaces, both
-requiring authentication, and never selected the injected `paperclip` server.
+requiring authentication, and never selected the injected `pilibala` server.
 It then ended with objective unsatisfied and no structured question. The
 ordinary fixture retained its failed grade and cleanup passed; exact Agent/Run
 reads returned 404. No second run or Stop attempt occurred. One real SSE cut
@@ -828,7 +828,7 @@ The saved local test-drive was restarted on `abb79acfb016` and returned healthy.
 The ordinary UI retained the explicit Sonnet model and organization-secret
 reference, passed the account/catalog Test with its expected experimental
 warning, and completed Finish setup. Independent API state confirms
-`paperclip_runner`, provider `cursor_cloud`, model `claude-sonnet-4-5`,
+`pilibala_runner`, provider `cursor_cloud`, model `claude-sonnet-4-5`,
 `secret_ref`, lifecycle `ready` and idle status. Setup sent no provider prompt.
 The callback-only tunnel again returned 404 for root/API and 401 for an
 unauthenticated native-run request. This validates C1's saved setup on the
@@ -926,7 +926,7 @@ and Run were independently absent after cleanup.
 
 Campaign 6 (`3050fa41a933`, same Mini model) independently downloaded and verified
 the expected native file. Cursor made no semantic task calls and ended with
-Paperclip requiring review. The ordinary 600-second fixture deadline graded
+Pilibala requiring review. The ordinary 600-second fixture deadline graded
 the attempt FAIL; its cleanup matcher passed and exact owned native Agent/Run
 lookups returned 404. File creation/download alone does not pass C2 or C6.
 
@@ -936,7 +936,7 @@ Official MCP SDK discovery observed 56 tools through the exact owned callback,
 including completion, artifact discovery and registration, without invoking a
 task tool. Sonnet called the semantic tools and supplied correct file metadata.
 The downloaded and staged 24 bytes match the fixture, but Core rejected the
-absolute staged reference with `paperclip_runner_file_handoff_path_denied`.
+absolute staged reference with `pilibala_runner_file_handoff_path_denied`.
 The provider stager must return a reference relative to its admitted artifact
 root; Core's existing containment, symlink and hash checks remain authoritative.
 This is an observed integration defect. Preserve the original campaign result
@@ -952,7 +952,7 @@ opened and closed successfully: 175 loaded modules remained inside that
 consumer, no vendor request occurred, exit was zero and the owned socket was
 removed. A sandboxed listener attempt failed with EPERM; the unchanged check
 passed with local-listener permission. This is package-boundary proof, not a
-public Paperclip install or a passing live task. Rebuild identity after the
+public Pilibala install or a passing live task. Rebuild identity after the
 pending stager repair before carrying it forward.
 
 The Core PR uses fixed fetched master `d30c8f42b842` and independent dependencies.
@@ -1114,7 +1114,7 @@ The clean private Runner candidate tarball contained 1,696 entries and no
 framing, exact synthetic tool input/result, controlled HTTP/SSE terminal lookup,
 confirmed shutdown, socket cleanup and exit zero. Both proxy bundles matched
 source and referenced only Node builtins. This proves that candidate's runtime
-closure, not an ordinary public Paperclip installation or live Cursor work.
+closure, not an ordinary public Pilibala installation or live Cursor work.
 
 | Candidate artifact | SHA-256 |
 | --- | --- |

@@ -8,7 +8,7 @@
 
 | 检查项 | 结果 |
 |---|---|
-| recovery-ladder worktree(`/home/amber/paperclip-recovery-ladder`,branch `feature/recovery-ladder`) | HEAD=875f4e488(S1–S5 已提交,最后提交 16:45) |
+| recovery-ladder worktree(`/home/amber/pilibala-recovery-ladder`,branch `feature/recovery-ladder`) | HEAD=875f4e488(S1–S5 已提交,最后提交 16:45) |
 | S7 代码存在性 | **不存在**:全仓 grep `chosenByTimeout / auto_decided / confirmTimeout` 零命中;S6/S7/S8/S9 均未实现 |
 | 实现进度 | 进行中:`server/src/services/reconciliation-analysis.ts` 与 `server/src/__tests__/issue-recovery-actions.test.ts` 有未提交改动(医生候选就绪门 S4 加固),非 S7 内容 |
 | dev 实例(:3104) | 运行 commit **f50845048**(recovery-ladder 基线,**不含任何 recovery 代码**),health: `commit":"f50845048…"` |
@@ -45,7 +45,7 @@ Harness:embedded PG + express + supertest;fake clock:`vi.useFakeTimers({ toFake:
 
 ## 3. Fixture(已对 committed S5 schema 实测通过)
 
-验证方式:tsx 直接加载 `/home/amber/paperclip-recovery-ladder/server/src/services/reconciliation-analysis.ts` 的 `reconciliationAgentDraftSchema`,脚本与输出存于本机 scratch(`amb101-fixture-check.ts`)。2026-10-22 全部通过。
+验证方式:tsx 直接加载 `/home/amber/pilibala-recovery-ladder/server/src/services/reconciliation-analysis.ts` 的 `reconciliationAgentDraftSchema`,脚本与输出存于本机 scratch(`amb101-fixture-check.ts`)。2026-10-22 全部通过。
 
 - **A(可自动采纳)**:单 recommended,`revertible:true` + 非空 `revertSteps`,`executionScope:"server_side"`,`permissionRequirements:["session_rebind","adapter_config_change"]` → schema 解析通过;不变式(recommended 恰 1、revertible、revertSteps 非空、scope≠manual、无 manual_shell)成立。
 - **B1(永不自动采纳)**:recommended `revertible:false`(server_side)→ 作为 draft 解析通过(draft 本身合法;超时门必须拒绝采纳)。
@@ -66,4 +66,4 @@ Schema 锚点(S5 已提交,`reconciliation-analysis.ts:14-70`):`FIX_OPTION_PERMI
 
 - S7 接口(定时扫描入口、超时字段落点、事件名)由实现方决定;§2 矩阵按行为契约编写,落地时仅绑定点位需对齐。
 - dev 实例部署由用户/实现流程控制,本 issue 不自行切换 dev 分支。
-- 与实现 agent 并行约束:不写入 `/home/amber/paperclip-recovery-ladder`(其有未提交改动)。
+- 与实现 agent 并行约束:不写入 `/home/amber/pilibala-recovery-ladder`(其有未提交改动)。

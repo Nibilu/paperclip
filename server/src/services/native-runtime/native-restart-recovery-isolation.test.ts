@@ -7,15 +7,15 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   agents, applyPendingMigrations, companies, createDb, environmentLeases, environments, heartbeatRunEvents,
   heartbeatRuns, issues, nativeRunFinalizations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { resolveExternalTestDatabaseUrl } from "../../__tests__/helpers/external-test-database.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { heartbeatService } from "../heartbeat.js";
 import { claimNativeRestartRecoveries, NATIVE_RESTART_RECOVERY_FAILED } from "./native-restart-recovery.js";
-import { DurablePrpControlPlane } from "../../vendor/paperclip-runner/index.js";
+import { DurablePrpControlPlane } from "../../vendor/pilibala-runner/index.js";
 import { nativeRunnerCheckpointWriter } from "./native-runner-checkpoint.js";
 
-const externalUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_TEST_DATABASE_URL");
+const externalUrl = resolveExternalTestDatabaseUrl("PILIBALA_TEST_DATABASE_URL");
 const support = externalUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 
 // An hourly routine has two open tasks. The older task's remote run failed with
@@ -37,9 +37,9 @@ const support = externalUrl ? { supported: true } : await getEmbeddedPostgresTes
       db = createDb(temporary.connectionString);
     }
     await db.insert(companies).values({ id: companyId, name: "Restart isolation", issuePrefix: companyId.slice(0, 8) });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Engineer", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Engineer", adapterType: "pilibala_runner" });
     runtimeRoot = await mkdtemp(resolve(tmpdir(), "restart-isolation-authority-"));
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "83".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "83".repeat(32));
   }, 30_000);
   afterAll(async () => {
     await db?.$client.end(); await temporary?.cleanup();
@@ -65,7 +65,7 @@ const support = externalUrl ? { supported: true } : await getEmbeddedPostgresTes
     await db.update(heartbeatRuns).set({ runnerProfileJson: {
       nativeExecutionInput: { binding: { companyId, issueId, runId, agentId } },
       nativeWorkspaceSync: {
-        schema: "paperclip.native-workspace-sync/v3", state: "prepared", descriptorSha256: "a".repeat(64),
+        schema: "pilibala.native-workspace-sync/v3", state: "prepared", descriptorSha256: "a".repeat(64),
         baselineSha256: "b".repeat(64), finalHostSha256: null, workspaceId: runId,
         leaseId: lease.id, providerLeaseId: lease.providerLeaseId, remoteCwd: "/work", resourceDisposition: "destroy",
       },

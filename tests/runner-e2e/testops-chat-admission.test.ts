@@ -21,25 +21,25 @@ afterEach(async () => {
 
 const id = "chat-features.runner-opencode-deepseek-1017.local.create-backlog";
 function fixture() {
-  const env: NodeJS.ProcessEnv = { PAPERCLIP_TESTOPS_CHAT_MAIN_ADMISSION: "v1", GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "workflow_dispatch",
-    GITHUB_REPOSITORY: "paperclipai/paperclip", GITHUB_REF: "refs/heads/master", GITHUB_WORKFLOW_REF: "paperclipai/paperclip/.github/workflows/chat-feature-testops.yml@refs/heads/master",
+  const env: NodeJS.ProcessEnv = { PILIBALA_TESTOPS_CHAT_MAIN_ADMISSION: "v1", GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "workflow_dispatch",
+    GITHUB_REPOSITORY: "pilibalaai/pilibala", GITHUB_REF: "refs/heads/master", GITHUB_WORKFLOW_REF: "pilibalaai/pilibala/.github/workflows/chat-feature-testops.yml@refs/heads/master",
     GITHUB_JOB: "chat", GITHUB_SHA: "a".repeat(40), TARGET_SHA: "a".repeat(40), TESTOPS_ADMITTED_SHA: "a".repeat(40), GITHUB_RUN_ID: "12345", GITHUB_RUN_ATTEMPT: "1",
     GITHUB_ACTOR_ID: "123", TESTOPS_TRIGGERING_ACTOR_ID: "123", TESTOPS_ALLOWED_ACTOR_IDS: "[123]", MANUAL_PRIVATE_IDS: JSON.stringify([id]), SELECTED_EXECUTION_ID: id };
-  const event = { ref: "refs/heads/master", sender: { id: 123 }, repository: { full_name: "paperclipai/paperclip", private: false, default_branch: "master" }, inputs: { ALLURE_JOB_RUN_ID: "789", operation: "evaluate" } as Record<string, string> };
+  const event = { ref: "refs/heads/master", sender: { id: 123 }, repository: { full_name: "pilibalaai/pilibala", private: false, default_branch: "master" }, inputs: { ALLURE_JOB_RUN_ID: "789", operation: "evaluate" } as Record<string, string> };
   const selected = runnerMatrix.find(row => row.id === id)!;
   return { env, event, selected };
 }
 it("binds the actual shipped selection to immutable main admission without candidate approval variables", () => {
   const f = fixture(); const result = authorizeShippedChat(f.env, f.event, f.selected, "b".repeat(64));
-  expect(result).toMatchObject({ authority: "paperclip.shipped-chat-testops/v1", private: true, runId: "12345", attempt: "1", workflowSha: f.env.GITHUB_SHA, targetSha: f.env.GITHUB_SHA, executionIds: [id] });
+  expect(result).toMatchObject({ authority: "pilibala.shipped-chat-testops/v1", private: true, runId: "12345", attempt: "1", workflowSha: f.env.GITHUB_SHA, targetSha: f.env.GITHUB_SHA, executionIds: [id] });
   expect(result.authoritySha256).toMatch(/^[a-f0-9]{64}$/);
   expect(authorizeShippedChat({ ...f.env, LATEST_MASTER_SHA: "c".repeat(40), GITHUB_JOB: "report" }, f.event, f.selected, "b".repeat(64)).authoritySha256).toBe(result.authoritySha256);
 });
 it.each([
-  ["unknown mode", { PAPERCLIP_TESTOPS_CHAT_MAIN_ADMISSION: "unknown" }],
+  ["unknown mode", { PILIBALA_TESTOPS_CHAT_MAIN_ADMISSION: "unknown" }],
   ["untrusted repo", { GITHUB_REPOSITORY: "foreign/repo" }],
   ["nondefault ref", { GITHUB_REF: "refs/heads/feature" }],
-  ["wrong workflow caller", { GITHUB_WORKFLOW_REF: "paperclipai/paperclip/.github/workflows/runner-full-stack-e2e.yml@refs/heads/master" }],
+  ["wrong workflow caller", { GITHUB_WORKFLOW_REF: "pilibalaai/pilibala/.github/workflows/runner-full-stack-e2e.yml@refs/heads/master" }],
   ["source substitution", { TARGET_SHA: "c".repeat(40) }],
   ["admitted source mismatch", { TESTOPS_ADMITTED_SHA: "c".repeat(40) }],
   ["replay", { GITHUB_RUN_ATTEMPT: "2" }],
@@ -88,7 +88,7 @@ it("admits the real filesystem wrapper with the actual catalog and canonical lau
   const f = await wrapperFixture();
   const callbacks = [vi.spyOn(f.selected.profile, "buildAgent"), vi.spyOn(f.selected.task, "buildPrompt")];
   const result = shippedChatEvidenceAuthority(f.env);
-  expect(result).toMatchObject({ authority: "paperclip.shipped-chat-testops/v1", workflowSha: f.env.GITHUB_SHA,
+  expect(result).toMatchObject({ authority: "pilibala.shipped-chat-testops/v1", workflowSha: f.env.GITHUB_SHA,
     targetSha: f.env.GITHUB_SHA, runId: f.env.GITHUB_RUN_ID, attempt: "1", executionIds: [id], private: true,
     launchSha256: createHash("sha256").update(f.actual.readFileSync(f.canonicalLaunch)).digest("hex") });
   expect(Object.isFrozen(result)).toBe(true);

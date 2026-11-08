@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { HeartbeatRun } from "@paperclipai/shared";
+import type { HeartbeatRun } from "@pilibalaai/shared";
 import { ApiError } from "../api/client";
 import { waitForStoppedRuns } from "./wait-for-stopped-runs";
 
@@ -10,7 +10,7 @@ function nativeRun(id: string, receipt: Record<string, unknown> = {}): Heartbeat
   return {
     ...run(id, "cancelled"), runtimeMode: "native",
     resultJson: { nativeCancellation: {
-      schema: "paperclip.native-cancellation.v1", runId: id, companyId: "company-1",
+      schema: "pilibala.native-cancellation.v1", runId: id, companyId: "company-1",
       scope: "run", dispatchState: "acknowledged", ...receipt,
     } },
   };

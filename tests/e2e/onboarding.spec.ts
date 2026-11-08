@@ -34,7 +34,7 @@ test.describe("Onboarding wizard", () => {
     // resumable draft here so this ordinary browser condition is covered when
     // the company-list invalidation runs after the create request.
     await page.addInitScript(() => {
-      localStorage.setItem("paperclip-onboarding-state", JSON.stringify({
+      localStorage.setItem("pilibala-onboarding-state", JSON.stringify({
         step: 1,
         companyName: "",
         createdCompanyId: null,
@@ -635,7 +635,7 @@ test.describe("Onboarding wizard", () => {
       createdCompanyPrefix: company.issuePrefix,
       createdAgentId: null,
     };
-    const readDraft = () => page.evaluate(() => JSON.parse(localStorage.getItem("paperclip-onboarding-state") ?? "null"));
+    const readDraft = () => page.evaluate(() => JSON.parse(localStorage.getItem("pilibala-onboarding-state") ?? "null"));
     await expect.poll(readDraft).toMatchObject(savedSelection);
     const { setupAgentId } = await readDraft();
     await expect.poll(async () => (await (await page.request.get(`/api/agents/${setupAgentId}?companyId=${company.id}`)).json()).metadata?.setupAdapterPending).toBe(false);
@@ -644,7 +644,7 @@ test.describe("Onboarding wizard", () => {
     const setup = await setupResponse.json();
     expect(setup).toMatchObject({ id: setupAgentId, name: "Ada", pauseReason: "setup" });
     const resumedSelection = { ...savedSelection, setupAgentId,
-      runner: setup.adapterType === "paperclip_runner" ? "paperclip" : "legacy" };
+      runner: setup.adapterType === "pilibala_runner" ? "pilibala" : "legacy" };
     const assertResumedLogin = async () => {
       await expect(page.getByRole("heading", { name: "Connect a model", exact: true })).toBeVisible({ timeout: 15_000 });
       await expect(page.getByTestId("onboarding-wizard").getByText("Ada", { exact: true })).toBeVisible();
@@ -766,12 +766,12 @@ test.describe("Onboarding wizard", () => {
       const setup = await (await setupResponse).json();
       await page.locator("summary").filter({ hasText: "Advanced" }).click();
       await page.getByRole("button", { name: "Experimental harness", exact: true }).click();
-      await page.getByRole("option", { name: "Grok Build (Paperclip Runner)", exact: true }).click();
+      await page.getByRole("option", { name: "Grok Build (Pilibala Runner)", exact: true }).click();
       await page.getByRole("button", { name: "Configure agent", exact: true }).click();
       await expect(page.getByRole("heading", { name: "Connect a model", exact: true })).toBeVisible();
       expect(new URL(page.url()).searchParams.get("setupAgentId")).toBe(setup.id);
       const saved = await (await page.request.get(`/api/agents/${setup.id}?companyId=${company.id}`)).json();
-      expect(saved).toMatchObject({ id: setup.id, adapterType: "paperclip_runner", pauseReason: "setup",
+      expect(saved).toMatchObject({ id: setup.id, adapterType: "pilibala_runner", pauseReason: "setup",
         adapterConfig: { provider: "acpx", acpxAgent: "grok", model: "grok-4.7" }, metadata: { setupAdapterPending: false } });
     } finally {
       await page.request.patch("/api/instance/settings/experimental", { data: { enableNativeRunner: previous.enableNativeRunner === true } });

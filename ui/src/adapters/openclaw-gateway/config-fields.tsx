@@ -230,7 +230,7 @@ export function OpenClawGatewayConfigFields({
             value={
               isCreate
                 ? values!.sessionKey ?? ""
-                : eff("adapterConfig", "sessionKey", String(config.sessionKey ?? "paperclip"))
+                : eff("adapterConfig", "sessionKey", String(config.sessionKey ?? "pilibala"))
             }
             onCommit={(v) =>
               isCreate
@@ -239,7 +239,7 @@ export function OpenClawGatewayConfigFields({
             }
             immediate
             className={inputClass}
-            placeholder="paperclip"
+            placeholder="pilibala"
           />
         </Field>
       )}
@@ -309,21 +309,21 @@ export function OpenClawGatewayConfigFields({
         mark={mark}
       />
 
-      <Field label="Paperclip API URL override">
+      <Field label="Pilibala API URL override">
         <DraftInput
           value={
             isCreate
-              ? values!.paperclipApiUrl ?? ""
-              : eff("adapterConfig", "paperclipApiUrl", String(config.paperclipApiUrl ?? ""))
+              ? values!.pilibalaApiUrl ?? ""
+              : eff("adapterConfig", "pilibalaApiUrl", String(config.pilibalaApiUrl ?? ""))
           }
           onCommit={(v) =>
             isCreate
-              ? set!({ paperclipApiUrl: v })
-              : mark("adapterConfig", "paperclipApiUrl", v || undefined)
+              ? set!({ pilibalaApiUrl: v })
+              : mark("adapterConfig", "pilibalaApiUrl", v || undefined)
           }
           immediate
           className={inputClass}
-          placeholder="https://paperclip.example"
+          placeholder="https://pilibala.example"
         />
       </Field>
 
@@ -381,7 +381,7 @@ export function OpenClawGatewayConfigFields({
             onCommit={(v) => mark("adapterConfig", "claimedApiKeyPath", v || undefined)}
             immediate
             className={inputClass}
-            placeholder="~/.openclaw/workspace/paperclip-claimed-api-key.json"
+            placeholder="~/.openclaw/workspace/pilibala-claimed-api-key.json"
           />
         </Field>
       )}
@@ -450,7 +450,7 @@ export function OpenClawGatewayConfigFields({
 
       <Field label="Device auth">
         <div className="text-xs text-muted-foreground leading-relaxed">
-          When enabled, Paperclip persists a device key during onboarding so pairing approvals
+          When enabled, Pilibala persists a device key during onboarding so pairing approvals
           remain stable across runs.
         </div>
       </Field>

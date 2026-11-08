@@ -9,13 +9,13 @@ import path from "node:path";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import {
   companies, environmentLeases, executionWorkspaces, executionWorkspaceSnapshots, heartbeatRuns, issues, workspaceOperations, type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   readRemoteWorkspaceAuthority, remoteWorkspaceSourceSchema,
   type RemoteWorkspaceAuthority, type RemoteWorkspaceRunReference, type RemoteWorkspaceSource,
   type EnvironmentLease,
-} from "@paperclipai/shared";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
+} from "@pilibalaai/shared";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
 import { getStorageService, type StorageService } from "../storage/index.js";
 import { loadConfig } from "../config.js";
 import { conflict, forbidden, HttpError, unprocessable } from "../errors.js";
@@ -43,14 +43,14 @@ import { notifyRemoteWorkspaceSnapshots } from "./remote-workspace-snapshot-rete
 import { notifyTerminalWorkspaceWork } from "./terminal-workspace-work.js";
 import { preserveRemoteWorkspacePreparationFailure } from "./native-runtime/native-workspace-finalization-state.js";
 
-export { readRemoteWorkspaceAuthority, type RemoteWorkspaceAuthority, type RemoteWorkspaceSource } from "@paperclipai/shared";
+export { readRemoteWorkspaceAuthority, type RemoteWorkspaceAuthority, type RemoteWorkspaceSource } from "@pilibalaai/shared";
 export { remoteWorkspaceRepositoryPath } from "./remote-workspace-transport.js";
 export { clearRemoteWorkspaceLocationForReleasedLease } from "./remote-workspace-snapshot-retention.js";
 type Workspace = Pick<typeof executionWorkspaces.$inferSelect, "id" | "companyId" | "metadata" | "sourceIssueId" | "projectId" | "projectWorkspaceId">;
 type Transaction = Parameters<Parameters<Db["transaction"]>[0]>[0];
 const object = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
-const SAVE_WORK_SCHEMA = "paperclip.remote-workspace-save-work.v1";
-const SAVE_TIMING_SCHEMA = "paperclip.remote-workspace-save-timing.v1";
+const SAVE_WORK_SCHEMA = "pilibala.remote-workspace-save-work.v1";
+const SAVE_TIMING_SCHEMA = "pilibala.remote-workspace-save-timing.v1";
 
 /** Per-phase durations of the latest settled save invocation, kept in the operation's local metadata. */
 type RemoteWorkspaceSaveTiming = RemoteWorkspaceSavePhaseTiming & {
@@ -60,7 +60,7 @@ type RemoteWorkspaceSaveTiming = RemoteWorkspaceSavePhaseTiming & {
   publishMs?: number;
   reusedUpload?: boolean;
 };
-const RETIRED_SAVE_SCHEMA = "paperclip.remote-workspace-retired-save.v1";
+const RETIRED_SAVE_SCHEMA = "pilibala.remote-workspace-retired-save.v1";
 type SaveWork = { schema: typeof SAVE_WORK_SCHEMA; activeIds: string[]; unknown: boolean; quiescedAt: string | null };
 function readSaveWork(metadata: Record<string, unknown> | null | undefined): SaveWork | null {
   const work = object(metadata?.saveWork);
@@ -79,12 +79,12 @@ export function shouldUseRemoteWorkspaces(input: {
   adapterType: string; environmentDriver: string | null; experimentalEnabled: boolean; existingWorkspace?: { metadata?: Record<string, unknown> | null } | null;
 }) {
   const enrolled = readRemoteWorkspaceAuthority(input.existingWorkspace?.metadata) !== null;
-  if (enrolled && (input.adapterType !== "paperclip_runner" || input.environmentDriver !== "sandbox")) {
+  if (enrolled && (input.adapterType !== "pilibala_runner" || input.environmentDriver !== "sandbox")) {
     throw conflict("This workspace requires its native sandbox execution environment.", { code: "remote_workspace_execution_required" });
   }
   if (enrolled) return true;
   // Existing host authority changes only through the explicit import workflow.
-  if (input.existingWorkspace || !input.experimentalEnabled || input.adapterType !== "paperclip_runner"
+  if (input.existingWorkspace || !input.experimentalEnabled || input.adapterType !== "pilibala_runner"
     || input.environmentDriver !== "sandbox") return false;
   return configuredRemoteWorkspacePersistence() !== null;
 }
@@ -93,18 +93,18 @@ export function assertEphemeralWorkspaceExecution(input: {
   externalConversation: boolean; adapterType: string;
   pluginTaskWorkspace: boolean; remoteAuthority: boolean;
 }) {
-  if (process.env.PAPERCLIP_EPHEMERAL_SERVER !== "true" || input.externalConversation) return;
+  if (process.env.PILIBALA_EPHEMERAL_SERVER !== "true" || input.externalConversation) return;
   // Runtime selection has not promoted a fresh run yet. Validate storage here;
-  if (input.adapterType !== "paperclip_runner"
+  if (input.adapterType !== "pilibala_runner"
     || (!input.pluginTaskWorkspace && !input.remoteAuthority)) {
-    throw unprocessable("Volume-free servers require native Paperclip Runner execution with remote workspace storage.",
+    throw unprocessable("Volume-free servers require native Pilibala Runner execution with remote workspace storage.",
       { code: "ephemeral_execution_configuration_required" });
   }
 }
 
 export function assertEphemeralNativeRuntime(native: boolean) {
-  if (process.env.PAPERCLIP_EPHEMERAL_SERVER === "true" && !native) {
-    throw unprocessable("Volume-free servers require native Paperclip Runner execution with remote workspace storage.",
+  if (process.env.PILIBALA_EPHEMERAL_SERVER === "true" && !native) {
+    throw unprocessable("Volume-free servers require native Pilibala Runner execution with remote workspace storage.",
       { code: "ephemeral_execution_configuration_required" });
   }
 }
@@ -112,7 +112,7 @@ export function assertEphemeralNativeRuntime(native: boolean) {
 function configuredRemoteWorkspacePersistence(storage?: StorageService) {
   const config = loadConfig();
   const databaseUrl = config.databaseUrl?.trim();
-  const keyFilePath = process.env.PAPERCLIP_SECRETS_MASTER_KEY?.trim() ? null : config.secretsMasterKeyFilePath;
+  const keyFilePath = process.env.PILIBALA_SECRETS_MASTER_KEY?.trim() ? null : config.secretsMasterKeyFilePath;
   if ((storage?.provider ?? config.storageProvider) !== "s3" || !databaseUrl || !/^postgres(?:ql)?:\/\//.test(databaseUrl)
     || (keyFilePath !== null && !existsSync(keyFilePath))) {
     return null;
@@ -129,7 +129,7 @@ export function assertRemoteWorkspacePersistence(storage: StorageService = getSt
 
 function reference(workspaceId: string, authority: RemoteWorkspaceAuthority, state: "prepared" | "saved"): RemoteWorkspaceRunReference {
   if (!authority.location) throw new Error("remote_workspace_location_missing");
-  return { schema: "paperclip.remote-workspace-run.v1", workspaceId, epoch: authority.epoch,
+  return { schema: "pilibala.remote-workspace-run.v1", workspaceId, epoch: authority.epoch,
     leaseId: authority.location.leaseId, providerLeaseId: authority.location.providerLeaseId,
     remoteCwd: authority.location.remoteCwd, state, snapshotId: authority.snapshotId };
 }
@@ -200,7 +200,7 @@ export async function reserveRemoteWorkspace(input: {
       const [shared] = await tx.select({ id: executionWorkspaces.id }).from(executionWorkspaces).where(and(
         eq(executionWorkspaces.companyId, input.companyId), eq(executionWorkspaces.projectWorkspaceId, input.projectWorkspaceId),
         eq(executionWorkspaces.mode, "shared_workspace"), eq(executionWorkspaces.status, "active"),
-        sql`${executionWorkspaces.metadata}->'remoteWorkspace'->>'schema' = 'paperclip.remote-workspace.v1'`,
+        sql`${executionWorkspaces.metadata}->'remoteWorkspace'->>'schema' = 'pilibala.remote-workspace.v1'`,
       )).limit(1);
       selected = shared?.id ?? null;
       selectedSharedSource = selected !== null;
@@ -252,7 +252,7 @@ export async function reserveRemoteWorkspace(input: {
       return saved!;
     }
     const id = input.fresh?.attemptId ?? randomUUID();
-    const initial: RemoteWorkspaceAuthority = { schema: "paperclip.remote-workspace.v1", epoch: 1,
+    const initial: RemoteWorkspaceAuthority = { schema: "pilibala.remote-workspace.v1", epoch: 1,
       snapshotId: null, source, location: null, writerRunId: input.runId, dirty: false };
     const [workspace] = await tx.insert(executionWorkspaces).values({ id, companyId: input.companyId, sourceIssueId: input.issueId,
       projectId: input.projectId, projectWorkspaceId: input.projectWorkspaceId, mode: input.mode ?? "isolated_workspace",
@@ -352,7 +352,7 @@ function publishedWorkspaceDirectory(workspace: Workspace & Pick<typeof executio
   if (!publishedRoot) return null;
   const directory = path.posix.basename(publishedRoot);
   const suffix = directory.slice(workspace.id.length);
-  if (!path.posix.isAbsolute(publishedRoot) || path.posix.basename(path.posix.dirname(publishedRoot)) !== ".paperclip-workspaces"
+  if (!path.posix.isAbsolute(publishedRoot) || path.posix.basename(path.posix.dirname(publishedRoot)) !== ".pilibala-workspaces"
     || !directory.startsWith(workspace.id) || (suffix !== "" && !/^-[1-9][0-9]*-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(suffix))) {
     throw new Error("remote_workspace_published_path_invalid");
   }
@@ -415,7 +415,7 @@ export async function prepareRemoteWorkspace(input: {
   const migration = input.workspace.metadata?.nativeWorkspaceMigration
     ? await readNativeWorkspaceMigration(input.db, input.workspace) : null;
   if (migration && migration.remoteCwd !== target.remoteCwd) throw new Error("native_workspace_migration_target_changed");
-  const remoteRoot = sameAllocation ? initial.location!.remoteCwd : migration?.remoteCwd ?? path.posix.join(target.remoteCwd, ".paperclip-workspaces",
+  const remoteRoot = sameAllocation ? initial.location!.remoteCwd : migration?.remoteCwd ?? path.posix.join(target.remoteCwd, ".pilibala-workspaces",
     publishedWorkspaceDirectory(input.workspace, initial) ?? `${input.workspace.id}-${initial.epoch}-${input.lease.id}`);
   const preparationIdentity = createHash("sha256").update(JSON.stringify([input.workspace.companyId, input.workspace.id,
     input.runId, initial.epoch, input.lease.id, input.lease.providerLeaseId, remoteRoot, initial.source])).digest("hex");
@@ -521,7 +521,7 @@ export async function prepareRemoteWorkspace(input: {
           ...await attachPreservedRemoteWorkspaceSnapshots({ ...scope, runId: input.runId, workspaceId: input.workspace.id }),
         ];
         for (const item of recovered) {
-          const relative = `.paperclip-recovered/${item.operationId}`;
+          const relative = `.pilibala-recovered/${item.operationId}`;
           await input.assertOwned?.();
           const provenance = await readFile(path.join(item.path, "provenance.json"), "utf8");
           const exists = await hasRemoteRecoveryAttachment({ target, remoteCwd: remoteRoot, operationId: item.operationId,

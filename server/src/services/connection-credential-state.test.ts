@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { companySecrets, companySecretVersions, type Db } from "@paperclipai/db";
+import { companySecrets, companySecretVersions, type Db } from "@pilibalaai/db";
 import { PgDialect } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
 import { readConnectionGrantCredentialStates, type ConnectionGrantCredentialInput } from "./connection-credentials.js";

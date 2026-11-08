@@ -1,4 +1,4 @@
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { expect, it, vi } from "vitest";
 import { HttpError } from "../../../errors.js";
 import type { EndpointRow } from "../runtime-types.js";

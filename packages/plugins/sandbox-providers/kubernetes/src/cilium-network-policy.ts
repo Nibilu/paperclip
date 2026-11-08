@@ -1,6 +1,6 @@
 export interface BuildCiliumNetworkPolicyInput {
   namespace: string;
-  paperclipServerNamespace: string;
+  pilibalaServerNamespace: string;
   egressAllowFqdns: string[];
   egressAllowCidrs: string[];
   name?: string;
@@ -9,10 +9,10 @@ export interface BuildCiliumNetworkPolicyInput {
   ownerReferences?: Record<string, unknown>[];
 }
 
-// Design note: no ingress rules are defined here. Paperclip-server does NOT
+// Design note: no ingress rules are defined here. Pilibala-server does NOT
 // push to agent pods — agents make outbound (egress) callbacks to
-// paperclip-server on port 3100. If server→agent push is ever needed, add a
-// targeted ingress rule scoped to the paperclip-server endpoint selector.
+// pilibala-server on port 3100. If server→agent push is ever needed, add a
+// targeted ingress rule scoped to the pilibala-server endpoint selector.
 export function buildCiliumNetworkPolicyManifest(input: BuildCiliumNetworkPolicyInput): Record<string, unknown> {
   const egress: Record<string, unknown>[] = [];
 
@@ -42,8 +42,8 @@ export function buildCiliumNetworkPolicyManifest(input: BuildCiliumNetworkPolicy
     toEndpoints: [
       {
         matchLabels: {
-          "k8s:io.kubernetes.pod.namespace": input.paperclipServerNamespace,
-          app: "paperclip-server",
+          "k8s:io.kubernetes.pod.namespace": input.pilibalaServerNamespace,
+          app: "pilibala-server",
         },
       },
     ],
@@ -60,13 +60,13 @@ export function buildCiliumNetworkPolicyManifest(input: BuildCiliumNetworkPolicy
     apiVersion: "cilium.io/v2",
     kind: "CiliumNetworkPolicy",
     metadata: {
-      name: input.name ?? "paperclip-egress-fqdn",
+      name: input.name ?? "pilibala-egress-fqdn",
       namespace: input.namespace,
-      labels: { "paperclip.io/managed-by": "paperclip-k8s-plugin" },
+      labels: { "pilibala.io/managed-by": "pilibala-k8s-plugin" },
       ...(input.ownerReferences ? { ownerReferences: input.ownerReferences } : {}),
     },
     spec: {
-      endpointSelector: { matchLabels: input.endpointSelector ?? { "paperclip.io/role": "agent" } },
+      endpointSelector: { matchLabels: input.endpointSelector ?? { "pilibala.io/role": "agent" } },
       egress,
     },
   };

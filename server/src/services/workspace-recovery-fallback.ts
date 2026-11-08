@@ -7,9 +7,9 @@ import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
 import {
   agentWakeupRequests, assets, environmentLeases, environments, executionWorkspaces, executionWorkspaceSnapshots, heartbeatRuns,
   issueAttachments, issueRecoveryActions, issues, nativeRunFinalizations, statusDecisionEffects, toolInvocations, workspaceOperations, type Db,
-} from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority, remoteWorkspaceRunReferenceSchema, type Environment, type EnvironmentLease, type ExecutionReconciliation } from "@paperclipai/shared";
-import { createTarballFromDirectory } from "@paperclipai/adapter-utils/sandbox-managed-runtime";
+} from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority, remoteWorkspaceRunReferenceSchema, type Environment, type EnvironmentLease, type ExecutionReconciliation } from "@pilibalaai/shared";
+import { createTarballFromDirectory } from "@pilibalaai/adapter-utils/sandbox-managed-runtime";
 import { logger } from "../middleware/logger.js";
 import { assertWorkspaceFilePathAllowed } from "./workspace-file-resources.js";
 import { getSecretProvider } from "../secrets/provider-registry.js";
@@ -40,8 +40,8 @@ import { readWorkspaceRecovery, verifiedWorkspaceRepairReceipt } from "./workspa
  * unverified files are attached to the task when they can still be read.
  */
 export const RETAINED_SOURCE_FALLBACK_OUTCOME = "retained_source_unverifiable_continued_from_last_saved" as const;
-export const RETAINED_SOURCE_FALLBACK_SCHEMA = "paperclip.retained-source-fallback.v1" as const;
-export const SIBLING_WORKSPACE_RECOVERY_SCHEMA = "paperclip.sibling-workspace-recovery.v1" as const;
+export const RETAINED_SOURCE_FALLBACK_SCHEMA = "pilibala.retained-source-fallback.v1" as const;
+export const SIBLING_WORKSPACE_RECOVERY_SCHEMA = "pilibala.sibling-workspace-recovery.v1" as const;
 export const RETAINED_SOURCE_QUARANTINE_PHASE = "workspace_recovery_quarantine";
 
 const exportCauses = ["native_workspace_sync_out_unrecoverable", "native_workspace_sync_out_retry_exhausted"];
@@ -70,7 +70,7 @@ export function retainedSourceFallbackNote(input: { runId: string; snapshotId: s
   const files = input.quarantine.state === "captured"
     ? `They are attached to this task as ${input.quarantine.filename} (attachment ${input.quarantine.attachmentId}), without secrets, repository metadata or dependency directories. Inspect them and re-apply anything still needed deliberately.`
     : "They could not be read, so they are not available.";
-  return `Paperclip could not verify the unsaved file changes of run ${input.runId}, so they were not applied. `
+  return `Pilibala could not verify the unsaved file changes of run ${input.runId}, so they were not applied. `
     + `This task continues from ${from}. ${files} Check which work from that run needs redoing. `
     + "Its completed external actions remain recorded and must not be repeated.";
 }
@@ -206,11 +206,11 @@ async function quarantineRetainedRoot(db: Db, input: Source & { environmentRunti
     return unreadable("sandbox_destroyed");
   const [environment] = await db.select().from(environments).where(eq(environments.id, lease.environmentId));
   if (!environment) return unreadable("environment_missing");
-  const scratch = await mkdtemp(path.join(os.tmpdir(), "paperclip-quarantine-"));
+  const scratch = await mkdtemp(path.join(os.tmpdir(), "pilibala-quarantine-"));
   try {
     const tarball = path.join(scratch, "unverified.tar");
     try {
-      const target = await resolveEnvironmentExecutionTarget({ db, companyId: input.companyId, adapterType: "paperclip_runner",
+      const target = await resolveEnvironmentExecutionTarget({ db, companyId: input.companyId, adapterType: "pilibala_runner",
         environment, leaseId: lease.id, leaseMetadata: lease.metadata, lease: lease as EnvironmentLease, environmentRuntime: input.environmentRuntime });
       if (target?.kind !== "remote" || target.transport !== "sandbox" || !target.runner) return unreadable("target_unavailable");
       await input.ownership.assertHeld();
@@ -338,7 +338,7 @@ export async function continueFromLastSavedWorkspace(input: Source & {
       // The workspace repair that a restore failure requires before continuing:
       // the unverified epoch is abandoned and the next writer restores the last
       // committed save into a new root.
-      workspaceRepairEvidence: `Paperclip abandoned unverified workspace epoch ${reference.epoch} of run ${run.id}; `
+      workspaceRepairEvidence: `Pilibala abandoned unverified workspace epoch ${reference.epoch} of run ${run.id}; `
         + `the continuation restores ${reference.snapshotId ? `committed snapshot ${reference.snapshotId}` : "the workspace source"} into a new root.`,
       retainedSourceFallback: fallback };
     const now = new Date();
@@ -355,8 +355,8 @@ export async function continueFromLastSavedWorkspace(input: Source & {
         && blockedAt >= run.finishedAt!.getTime() - 1_000 && blockedAt <= action.createdAt.getTime() + 60_000);
     const dispatchable = issue.status !== "blocked" || ownsBlock;
     const userText = quarantine.state === "captured"
-      ? "Paperclip could not verify the previous run's unsaved files, so the task continues from the last saved version. Those files are attached to the task, unapplied."
-      : "Paperclip could not verify the previous run's unsaved files, so the task continues from the last saved version. Those files could not be read.";
+      ? "Pilibala could not verify the previous run's unsaved files, so the task continues from the last saved version. Those files are attached to the task, unapplied."
+      : "Pilibala could not verify the previous run's unsaved files, so the task continues from the last saved version. Those files could not be read.";
     const evidence = { ...action.evidence, automaticRecovery: undefined, [RETAINED_SOURCE_FALLBACK_CHECK_KEY]: undefined,
       retainedSourceFallback: { ...fallback, failureCode: current.system.failure?.code ?? null, recordedAt: now.toISOString() },
       workspaceRecovery: { ...(readWorkspaceRecovery(action.evidence) ?? {}), message: userText, retryable: false },
@@ -481,7 +481,7 @@ export async function settleSiblingRecoveredHold(db: Db, input: Source) {
       ownerType: "system", ownerAgentId: null, ownerUserId: null, nextAction: "Saved work recovered.",
       resolutionNote: "workspace_recovered_by_sibling_action", wakePolicy: null, monitorPolicy: null,
       evidence: { ...action.evidence,
-        workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId: run.id, status: "recovered", stage: "saving_receipts",
+        workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId: run.id, status: "recovered", stage: "saving_receipts",
           attempt: prior?.attempt ?? system.attempts, attemptLimit: prior?.attemptLimit ?? 6, requestIds: prior?.requestIds ?? [], retryable: false },
         siblingWorkspaceRecovery: { schema: SIBLING_WORKSPACE_RECOVERY_SCHEMA, receiptId, recoveryActionId: siblingActionId,
           recordedAt: now.toISOString() } },

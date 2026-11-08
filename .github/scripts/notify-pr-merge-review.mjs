@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const repository = "paperclipai/paperclip";
+const repository = "pilibalaai/pilibala";
 const shaPattern = /^[a-f0-9]{40}$/;
 const minimumChecks = ["ci / verify", "ci / e2e"];
 const gh = (args) => JSON.parse(execFileSync("gh", args, {
@@ -13,7 +13,7 @@ const gh = (args) => JSON.parse(execFileSync("gh", args, {
 const api = (endpoint) => gh(["api", endpoint]);
 const pages = (endpoint) => gh(["api", "--paginate", "--slurp", endpoint]).flat();
 const query = `query($number:Int!, $endCursor:String) {
-  repository(owner:"paperclipai", name:"paperclip") {
+  repository(owner:"pilibalaai", name:"pilibala") {
     pullRequest(number:$number) {
       number url state isDraft headRefOid baseRefOid baseRefName changedFiles
       statusCheckRollup { contexts(first:100, after:$endCursor) {
@@ -160,8 +160,8 @@ export async function notify(event, { read = api, list = pages, view = snapshot,
 
 async function main() {
   try {
-    const url = process.env.PAPERCLIP_PR_REVIEW_WEBHOOK_URL;
-    const token = process.env.PAPERCLIP_PR_REVIEW_WEBHOOK_TOKEN;
+    const url = process.env.PILIBALA_PR_REVIEW_WEBHOOK_URL;
+    const token = process.env.PILIBALA_PR_REVIEW_WEBHOOK_TOKEN;
     if (!url || !token) {
       console.log("PR review notification is not configured; skipped.");
       return;

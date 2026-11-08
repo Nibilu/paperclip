@@ -1,9 +1,9 @@
 import { freshWorkspaceSchema } from "./workspace-provider.js";
-import { workspaceProviderBindingSchema } from "@paperclipai/shared";
+import { workspaceProviderBindingSchema } from "@pilibalaai/shared";
 import { pluginWorkspaceParamsSchema, parseWorkspaceProviderResult } from "./workspace-provider.js";
 import { environmentTaskOperationSchema, parseEnvironmentTaskResult, type PluginEnvironmentTaskParams } from "./environment-tasks.js";
-import type { AgentLifecycleRequest, AgentLifecycleResult } from "@paperclipai/shared";
-import type { AiConnectionRouterRequest, AiConnectionRouterResult } from "@paperclipai/shared";
+import type { AgentLifecycleRequest, AgentLifecycleResult } from "@pilibalaai/shared";
+import type { AiConnectionRouterRequest, AiConnectionRouterResult } from "@pilibalaai/shared";
 import { environmentCreationCleanupErrorData } from "./environment-creation-cleanup.js";
 import { environmentSyncErrorData, withEnvironmentSyncErrorCapture } from "./environment-sync-error.js";
 import { environmentRunnerIngressErrorData } from "./environment-runner-ingress-error.js";
@@ -59,13 +59,13 @@ import { fileURLToPath } from "node:url";
 
 import type {
   AskUserQuestionsInteraction,
-  PaperclipPluginManifestV1,
+  PilibalaPluginManifestV1,
   RequestCheckboxConfirmationInteraction,
   RequestConfirmationInteraction,
   SuggestTasksInteraction,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
-import type { PaperclipPlugin } from "./define-plugin.js";
+import type { PilibalaPlugin } from "./define-plugin.js";
 import type {
   PluginApiRequestInput,
   PluginHealthDiagnostics,
@@ -168,7 +168,7 @@ export interface WorkerRpcHostOptions {
    *
    * The worker entrypoint should import its plugin and pass it here.
    */
-  plugin: PaperclipPlugin;
+  plugin: PilibalaPlugin;
 
   /**
    * Input stream to read JSON-RPC messages from.
@@ -297,7 +297,7 @@ export interface RunWorkerOptions {
  * ```
  */
 export function runWorker(
-  plugin: PaperclipPlugin,
+  plugin: PilibalaPlugin,
   moduleUrl: string,
   options?: RunWorkerOptions,
 ): WorkerRpcHost | void {
@@ -327,7 +327,7 @@ export function runWorker(
  * ```ts
  * // worker-bootstrap.ts
  * import plugin from "./worker.js";
- * import { startWorkerRpcHost } from "@paperclipai/plugin-sdk";
+ * import { startWorkerRpcHost } from "@pilibalaai/plugin-sdk";
  *
  * startWorkerRpcHost({ plugin });
  * ```
@@ -352,7 +352,7 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
   let initialized = false;
   const idleDrain = createPluginIdleDrain();
   const unsettledHostCalls = new Map<string | number, () => void>();
-  let manifest: PaperclipPluginManifestV1 | null = null;
+  let manifest: PilibalaPluginManifestV1 | null = null;
   let currentConfig: Record<string, unknown> = {};
   // The company whose config was last applied via configChanged. Used to fail
   // closed when a single-tenant plugin would be collapsed onto a second,
@@ -379,7 +379,7 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
     (params: Record<string, unknown>, context: PluginPerformActionContext) => Promise<unknown>
   >();
   const toolHandlers = new Map<string, {
-    declaration: Pick<import("@paperclipai/shared").PluginToolDeclaration, "displayName" | "description" | "parametersSchema">;
+    declaration: Pick<import("@pilibalaai/shared").PluginToolDeclaration, "displayName" | "description" | "parametersSchema">;
     fn: (params: unknown, runCtx: ToolRunContext) => Promise<ToolResult>;
   }>();
 
@@ -471,7 +471,7 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
         const activeInvocation = invocationContextStorage.getStore();
         const request = {
           ...createRequest(method, params, id),
-          ...(activeInvocation ? { paperclipInvocationId: activeInvocation.id } : {}),
+          ...(activeInvocation ? { pilibalaInvocationId: activeInvocation.id } : {}),
         };
         sendMessage(request);
       } catch (err) {
@@ -490,7 +490,7 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
       const activeInvocation = invocationContextStorage.getStore();
       sendMessage({
         ...createNotification(method, params),
-        ...(activeInvocation ? { paperclipInvocationId: activeInvocation.id } : {}),
+        ...(activeInvocation ? { pilibalaInvocationId: activeInvocation.id } : {}),
       });
     } catch {
       // Swallow — the host may have closed stdin
@@ -1513,7 +1513,7 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
       tools: {
         register(
           name: string,
-          declaration: Pick<import("@paperclipai/shared").PluginToolDeclaration, "displayName" | "description" | "parametersSchema">,
+          declaration: Pick<import("@pilibalaai/shared").PluginToolDeclaration, "displayName" | "description" | "parametersSchema">,
           fn: (params: unknown, runCtx: ToolRunContext) => Promise<ToolResult>,
         ): void {
           toolHandlers.set(name, { declaration, fn });
@@ -1633,8 +1633,8 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
         done = idleDrain.begin();
       }
       const invoke = () => withSpan("plugin.worker", () => dispatchMethod(method, params));
-      const result = request.paperclipInvocation
-        ? await invocationContextStorage.run(request.paperclipInvocation, invoke)
+      const result = request.pilibalaInvocation
+        ? await invocationContextStorage.run(request.pilibalaInvocation, invoke)
         : await invoke();
       sendMessage(createSuccessResponse(id, result ?? null));
     } catch (err) {
@@ -2410,7 +2410,7 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
       const runNotification = async (fn: () => void | Promise<void>) => {
         const done = idleDrain.begin();
         try {
-          await (notif.paperclipInvocation ? invocationContextStorage.run(notif.paperclipInvocation, fn) : fn());
+          await (notif.pilibalaInvocation ? invocationContextStorage.run(notif.pilibalaInvocation, fn) : fn());
         } finally { done(); }
       };
       if (notif.method === "releaseIdleSleep" && notif.params) {

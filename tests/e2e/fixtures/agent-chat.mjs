@@ -1,8 +1,8 @@
 // Deterministic provider: all effects use the real run-authenticated APIs/MCP transport.
-// No DB writes, mocked Paperclip responses, provider calls, or outside workspaces.
-const base = process.env.PAPERCLIP_API_URL;
+// No DB writes, mocked Pilibala responses, provider calls, or outside workspaces.
+const base = process.env.PILIBALA_API_URL;
 const headers = {
-  Authorization: `Bearer ${process.env.PAPERCLIP_API_KEY}`,
+  Authorization: `Bearer ${process.env.PILIBALA_API_KEY}`,
   "Content-Type": "application/json",
 };
 async function api(path, method = "GET", body) {
@@ -18,7 +18,7 @@ async function api(path, method = "GET", body) {
     );
   return data;
 }
-const run = await api(`/heartbeat-runs/${process.env.PAPERCLIP_RUN_ID}`);
+const run = await api(`/heartbeat-runs/${process.env.PILIBALA_RUN_ID}`);
 const ctx = run.contextSnapshot;
 const task = await api(`/issues/${ctx.issueId}`);
 const comment = async (body) =>
@@ -26,7 +26,7 @@ const comment = async (body) =>
 if (!task.conversationAgentId) {
   if (task.description?.includes("proactive-digest-fixture")) {
     await api("/agents/me/chat/messages", "POST", {
-      body: "## Morning PR digest\n\nPlease review [PR 123](https://github.com/paperclipai/paperclip/pull/123), [PR 456](https://github.com/paperclipai/paperclip/pull/456), and [PR 789](https://github.com/paperclipai/paperclip/pull/789).",
+      body: "## Morning PR digest\n\nPlease review [PR 123](https://github.com/pilibalaai/pilibala/pull/123), [PR 456](https://github.com/pilibalaai/pilibala/pull/456), and [PR 789](https://github.com/pilibalaai/pilibala/pull/789).",
       idempotencyKey: "morning-digest",
     });
     await api(`/issues/${task.id}`, "PATCH", { status: "done", comment: "Digest delivered." });

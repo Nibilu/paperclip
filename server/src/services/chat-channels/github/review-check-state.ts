@@ -1,8 +1,8 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { chatActions, chatDeliveries, chatEndpoints, chatEndpointResources,
   chatGitHubConfigurations, chatGitHubReviews, chatMessageLinks, companies,
-  heartbeatRuns, type Db } from "@paperclipai/db";
-import type { GitHubReviewEventContext } from "@paperclipai/shared";
+  heartbeatRuns, type Db } from "@pilibalaai/db";
+import type { GitHubReviewEventContext } from "@pilibalaai/shared";
 
 export async function githubReviewCheckState(db: Db, action: typeof chatActions.$inferSelect) {
   const event = action.payload.event as GitHubReviewEventContext;

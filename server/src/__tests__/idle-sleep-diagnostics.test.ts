@@ -1,7 +1,7 @@
 import { PgDialect } from "drizzle-orm/pg-core";
 import { readFileSync } from "node:fs";
 import type { SQL } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { describe, expect, it, vi } from "vitest";
 import { readIdleSleepSafety, type IdleSleepDrainStatus } from "../services/idle-sleep-safety.js";
 import { beginIdleTrackedWork } from "../services/task-admission.js";

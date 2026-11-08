@@ -1,6 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { heartbeatRuns, issueRecoveryActions, nativeRunFinalizations, type Db } from "@paperclipai/db";
-import { confirmNativeControllerStoppedSchema } from "@paperclipai/shared";
+import { heartbeatRuns, issueRecoveryActions, nativeRunFinalizations, type Db } from "@pilibalaai/db";
+import { confirmNativeControllerStoppedSchema } from "@pilibalaai/shared";
 import { conflict } from "../../errors.js";
 import { persistActivity, publishActivity } from "../activity-log.js";
 import { notifyLiveRunRecovery } from "../live-run-recovery-notifications.js";
@@ -30,7 +30,7 @@ export async function requestNativeControllerStopConfirmation(tx: Db, coordinato
     fingerprint: fingerprint(coordinator.runId), attemptCount: 1,
     evidence: { runId: coordinator.runId, controller: { bootId: coordinator.controllerBootId, pid: coordinator.controllerPid,
       processStartedAt: coordinator.controllerProcessStartedAt?.toISOString() ?? null } },
-    nextAction: "This run's previous server was recorded before Paperclip stored which host it ran on, so Paperclip "
+    nextAction: "This run's previous server was recorded before Pilibala stored which host it ran on, so Pilibala "
       + "cannot verify that it stopped. Confirm that the previous server process has stopped (for example, its "
       + "container was replaced), and the run resumes from its saved state.",
   }).onConflictDoNothing();

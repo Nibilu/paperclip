@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Plus, Search, Users, X } from "lucide-react";
 import { Badge } from "./ui/badge";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import { AgentChatPicker } from "@/components/AgentChatPicker";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { Button } from "@/components/ui/button";

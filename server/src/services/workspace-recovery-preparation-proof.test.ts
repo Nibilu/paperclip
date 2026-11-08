@@ -1,5 +1,5 @@
 import { appendHeartbeatRunEvent } from "./heartbeat-run-events.js";
-import { heartbeatRunEvents, authUsers, companyMemberships, agents, companies, environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, agentWakeupRequests, workspaceOperations, executionWorkspaces } from "@paperclipai/db";
+import { heartbeatRunEvents, authUsers, companyMemberships, agents, companies, environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, agentWakeupRequests, workspaceOperations, executionWorkspaces } from "@pilibalaai/db";
 import { requestedRunCancellation } from "./run-cancellation.js";
 import { readFreshWorkspaceReadiness } from "./fresh-workspace-continuation.js";
 import { materializeIsolatedTaskDirectory } from "./isolated-task-directory.js";
@@ -9,7 +9,7 @@ import path from "node:path";
 import request from "supertest";
 import { and, eq, sql } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
-import type { AdapterSandboxExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
+import type { AdapterSandboxExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
 import { recoverRetainedWorkspace } from "./workspace-recovery.js";
 import { heartbeatService } from "./heartbeat.js";
 import { useWorkspaceRecoveryFixture, boardRecoveryApp, db, failedRemotePreparation, fixtureCompanyIds, receiptOnlyRecoveryApp, run } from "./__tests__/workspace-recovery-fixture.js";
@@ -35,7 +35,7 @@ describe("automatic retained workspace recovery", () => {
       await db.update(heartbeatRuns).set({ sessionIdBefore: randomUUID() }).where(eq(heartbeatRuns.id, f.runId));
       await recoverRetainedWorkspace(f.input);
       const source = await run(f.runId), heartbeat = heartbeatService(db);
-      const stoppedWorkerAudit = { v: 1, iss: "paperclip-cloud", aud: "paperclip-workspace-worker-stop/v1",
+      const stoppedWorkerAudit = { v: 1, iss: "pilibala-cloud", aud: "pilibala-workspace-worker-stop/v1",
         sub: "test-stack", stopped: true, iat: 100, exp: 160, runId: f.runId, ownerToken: randomUUID(),
         worker: { provider: "railway", projectId: randomUUID(), environmentId: randomUUID(), serviceId: randomUUID(), deploymentId: randomUUID() } };
       source.runnerProfileJson = { ...source.runnerProfileJson, nativeWorkspaceOwnerStopProof:
@@ -74,7 +74,7 @@ describe("automatic retained workspace recovery", () => {
       if (gate === "missing_error" || gate === "missing_measurement") await db.delete(heartbeatRunEvents).where(and(
         eq(heartbeatRunEvents.runId, f.runId), eq(heartbeatRunEvents.seq, gate === "missing_error" ? 1 : 2)));
       if (gate === "foreign_error") {
-        const [foreign] = await db.insert(agents).values({ companyId: f.companyId, name: "Other owner", adapterType: "paperclip_runner" }).returning();
+        const [foreign] = await db.insert(agents).values({ companyId: f.companyId, name: "Other owner", adapterType: "pilibala_runner" }).returning();
         await db.update(heartbeatRunEvents).set({ agentId: foreign.id })
           .where(and(eq(heartbeatRunEvents.runId, f.runId), eq(heartbeatRunEvents.seq, 1)));
       }
@@ -157,7 +157,7 @@ describe("automatic retained workspace recovery", () => {
       successorRunId = randomUUID(), requestId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Preparation settlement", issuePrefix: `S${companyId.slice(0, 6)}` });
     fixtureCompanyIds.add(companyId);
-    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "pilibala_runner" });
     await db.insert(issues).values({ id: issueId, companyId, title: "Continue existing directory", status: "blocked", assigneeAgentId: agentId });
     const cwd = await materializeIsolatedTaskDirectory({ companyId, issueId });
     await writeFile(path.join(cwd, "saved.txt"), "existing task work\n");
@@ -167,7 +167,7 @@ describe("automatic retained workspace recovery", () => {
     const error = "The selected existing task directory has no Git checkout.";
     await db.insert(heartbeatRuns).values({ id: sourceRunId, companyId, agentId, issueId, runtimeMode: "legacy",
       status: "failed", finishedAt: new Date(), errorCode: "workspace_validation_failed", error, executionStage: "preparing",
-      contextSnapshot: { issueId }, runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+      contextSnapshot: { issueId }, runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
       usageJson: { ledgerScope: { issueId, projectId: null, billingCode: null } },
       resultJson: { stopReason: "adapter_failed", executionRecovery: { kind: "bootstrap", providerWorkStarted: false },
         workspaceValidation: { reason: "git_worktree_base_not_git_checkout", issueId,
@@ -187,7 +187,7 @@ describe("automatic retained workspace recovery", () => {
       contextSnapshot: { issueId, previousRunId: sourceRunId, taskRetryRequestId: requestId } }).returning();
     await db.insert(agentWakeupRequests).values({ id: requestId, companyId, agentId, source: "on_demand", triggerDetail: "manual", reason: "task_retry",
       status: "coalesced", runId: successor.id, requestedByActorType: "user", requestedByActorId: "local-board",
-      idempotencyKey: `task-retry:${randomUUID()}`, payload: { issueId, taskRetry: { schema: "paperclip.task-retry.v1",
+      idempotencyKey: `task-retry:${randomUUID()}`, payload: { issueId, taskRetry: { schema: "pilibala.task-retry.v1",
         generationId: requestId, sourceRunId, actorId: "local-board", actorSource: "session", strategy: "evaluate" } } });
     const reuse = mode === "plain" || mode === "unsupported_warning";
     expect(await readFreshWorkspaceReadiness(db, successor)).toMatchObject(reuse

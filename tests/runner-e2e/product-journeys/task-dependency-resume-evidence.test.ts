@@ -13,7 +13,7 @@ describe("task dependency resume evidence", () => {
   it.each([
     ["provider", (f: DependencyEvidence) => changeRuns(f, run => { run.runnerProfileJson.nativeExecutionInput.provider.kind = "other"; }), "configured-model-and-environment"],
     ["model", (f: DependencyEvidence) => changeRuns(f, run => { run.runnerProfileJson.nativeExecutionInput.provider.model = "other"; }), "configured-model-and-environment"],
-    ["environment", (f: DependencyEvidence) => changeRuns(f, run => { run.contextSnapshot.paperclipEnvironment.id = "other"; }), "configured-model-and-environment"],
+    ["environment", (f: DependencyEvidence) => changeRuns(f, run => { run.contextSnapshot.pilibalaEnvironment.id = "other"; }), "configured-model-and-environment"],
     ["runtime mode", (f: DependencyEvidence) => changeRuns(f, run => { run.runtimeMode = "legacy"; }), "configured-model-and-environment"],
     ["uncommitted phase", (f: DependencyEvidence) => changeRuns(f, run => { run.nativePhase = "saving"; }), "configured-model-and-environment"],
     ["document author", (f: DependencyEvidence) => { f.finished.document!.createdByUserId = "user"; }, "dependency-output-authored-by-run"],
@@ -56,7 +56,7 @@ describe("task dependency resume evidence", () => {
     ["reopened native work still owns checkout", f => { f.reopened.dependent.executionRunId = "run"; }],
     ["wrong provider", f => { f.finished.dependentRuns[0]!.runnerProfileJson.nativeExecutionInput.provider.kind = "other"; }],
     ["wrong model", f => { f.finished.dependentRuns[0]!.runnerProfileJson.nativeExecutionInput.provider.model = "other"; }],
-    ["wrong environment", f => { f.finished.dependentRuns[0]!.contextSnapshot.paperclipEnvironment.id = "other"; }],
+    ["wrong environment", f => { f.finished.dependentRuns[0]!.contextSnapshot.pilibalaEnvironment.id = "other"; }],
     ["uncommitted native phase", f => { for (const p of [f.finished, f.reopened]) for (const r of [...p.dependentRuns, ...p.agentRuns]) r.nativePhase = "saving"; }],
     ["missing native phase", f => { for (const p of [f.finished, f.reopened]) for (const r of [...p.dependentRuns, ...p.agentRuns]) delete r.nativePhase; }],
     ["incomplete activity coverage", f => { f.reopened.activityCoverage.agent = false; }],

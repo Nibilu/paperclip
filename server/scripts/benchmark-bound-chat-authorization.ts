@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { SQL } from "drizzle-orm";
-import { createDb } from "@paperclipai/db";
+import { createDb } from "@pilibalaai/db";
 import { seedBoundChatAuthorization } from "../src/__tests__/helpers/bound-chat-authorization.js";
 import { startEmbeddedPostgresTestDatabase } from "../src/__tests__/helpers/embedded-postgres.js";
 import { authorizeChatConversationForBoundRun as treatment } from "../src/services/native-runtime/chat-attachment-reuse.js";

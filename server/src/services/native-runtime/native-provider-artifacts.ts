@@ -45,7 +45,7 @@ import {
   nativeProviderArtifacts,
   nativeProviderArtifactReferences,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type { StorageService } from "../../storage/types.js";
 import { createLocalEncryptedCipher } from "../../secrets/local-encrypted-provider.js";
 import {
@@ -118,9 +118,9 @@ async function artifactOwnerFence(
     run.issueId !== owner.issueId ||
     run.driver !== "opencode_server" ||
     !run.sessionId ||
-    state?.schema !== "paperclip.native-provider-pack-admission-state.v1" ||
+    state?.schema !== "pilibala.native-provider-pack-admission-state.v1" ||
     state.state !== "verified" ||
-    receipt?.schema !== "paperclip.native-provider-pack-admission.v1" ||
+    receipt?.schema !== "pilibala.native-provider-pack-admission.v1" ||
     receipt.stage !== "session_admitted" ||
     receipt.authority !== "core_verified_selection" ||
     receipt.companyId !== owner.companyId ||

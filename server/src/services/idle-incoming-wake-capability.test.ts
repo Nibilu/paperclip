@@ -67,8 +67,8 @@ describe("signed idle capabilities", () => {
       alg: "EdDSA",
     };
     const env = {
-      PAPERCLIP_CLOUD_STACK_ID: "stack",
-      PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS: JSON.stringify({ keys: [jwk] }),
+      PILIBALA_CLOUD_STACK_ID: "stack",
+      PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS: JSON.stringify({ keys: [jwk] }),
     };
     const encode = (v: unknown) =>
       Buffer.from(JSON.stringify(v)).toString("base64url");

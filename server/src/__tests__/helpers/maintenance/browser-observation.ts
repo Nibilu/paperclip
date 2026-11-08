@@ -29,7 +29,7 @@ export async function observeMaintenanceBrowser(origin: string, announcementDesc
     await page.reload({ waitUntil: 'networkidle' });
     if (!requests.slice(beforeActive).some(request => request.path.startsWith('/api/'))) throw new Error('Active browser did not make ordinary app requests');
     const visibilityEvents: Array<{ state: string; rendererAt: number }> = [];
-    const prefix = 'paperclip-sleep-visibility:';
+    const prefix = 'pilibala-sleep-visibility:';
     page.on('console', message => { if (message.text().startsWith(prefix)) visibilityEvents.push(JSON.parse(message.text().slice(prefix.length))); });
     // Passive native events only; never replace document visibility properties.
     await page.evaluate(prefix => document.addEventListener('visibilitychange', () => console.log(prefix + JSON.stringify({ state: document.visibilityState, rendererAt: performance.now() }))), prefix);

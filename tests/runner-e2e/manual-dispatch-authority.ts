@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 import { lstatSync, readFileSync } from "node:fs";
 import { canonicalPrivateManualIds, MANUAL_PRIVATE_EXECUTIONS, MANUAL_PRIVATE_PROTOCOL } from "./manual-private-retention.js";
 
-const authority = "paperclip.manual-dispatch-evidence/v1";
-const repository = "paperclipai/paperclip";
+const authority = "pilibala.manual-dispatch-evidence/v1";
+const repository = "pilibalaai/pilibala";
 const workflow = ".github/workflows/runner-full-stack-e2e.yml";
 const numericId = /^[1-9][0-9]{0,19}$/;
 const values = (value: unknown) => String(value ?? "").split(",").map(item => item.trim()).filter(Boolean);
@@ -23,7 +23,7 @@ export function authorizeManualDispatch(env: NodeJS.ProcessEnv, event: unknown) 
   const actor = env.GITHUB_ACTOR_ID;
   let allowed: unknown;
   try { allowed = JSON.parse(env.MANUAL_DISPATCH_ALLOWED_ACTOR_IDS ?? "null"); } catch { allowed = null; }
-  if (env.PAPERCLIP_MANUAL_DISPATCH_AUTHORITY !== "v1" || env.GITHUB_ACTIONS !== "true" || env.GITHUB_EVENT_NAME !== "workflow_dispatch"
+  if (env.PILIBALA_MANUAL_DISPATCH_AUTHORITY !== "v1" || env.GITHUB_ACTIONS !== "true" || env.GITHUB_EVENT_NAME !== "workflow_dispatch"
     || env.GITHUB_REPOSITORY !== repository || payload.repository?.full_name !== repository
     || typeof branch !== "string" || !/^[A-Za-z0-9._/-]+$/.test(branch) || env.GITHUB_REF !== `refs/heads/${branch}` || payload.ref !== env.GITHUB_REF
     || env.GITHUB_WORKFLOW_REF !== `${repository}/${workflow}@refs/heads/${branch}`

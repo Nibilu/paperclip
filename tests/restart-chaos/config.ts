@@ -104,9 +104,9 @@ export function parseCommand(argv: readonly string[], now = Date.now()): ParsedC
   }
   const env = (values.env ?? "local") as EnvironmentKind;
   if (!ENVIRONMENT_KINDS.includes(env)) throw new Error(`Unknown env "${env}"; allowed: ${ENVIRONMENT_KINDS.join(", ")}`);
-  const daytonaImage = values["daytona-image"] ?? (env === "daytona" ? process.env.PAPERCLIP_E2E_DAYTONA_IMAGE : undefined);
+  const daytonaImage = values["daytona-image"] ?? (env === "daytona" ? process.env.PILIBALA_E2E_DAYTONA_IMAGE : undefined);
   if (env === "daytona" && !/^.+@sha256:[0-9a-f]{64}$/.test(daytonaImage ?? "")) {
-    throw new Error("--env daytona needs an immutable runner image: --daytona-image <registry/repository@sha256:…> or PAPERCLIP_E2E_DAYTONA_IMAGE");
+    throw new Error("--env daytona needs an immutable runner image: --daytona-image <registry/repository@sha256:…> or PILIBALA_E2E_DAYTONA_IMAGE");
   }
   if (env !== "daytona" && values["daytona-image"] !== undefined) throw new Error("--daytona-image applies only to --env daytona");
   // B5 grades bench.sh progress read from the live workspace while it runs. A

@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { Db } from "@paperclipai/db";
-import { agents, agentWakeupRequests, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRunEvents, heartbeatRuns, issues, projects, projectWorkspaces } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { agents, agentWakeupRequests, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRunEvents, heartbeatRuns, issues, projects, projectWorkspaces } from "@pilibalaai/db";
 import { and, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { writePaperclipSkillSyncPreference } from "@paperclipai/adapter-utils/server-utils";
+import { writePilibalaSkillSyncPreference } from "@pilibalaai/adapter-utils/server-utils";
 import { HttpError } from "../../errors.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { createRunDispatch, isResolvedInteractionContinuationWakeContext, type PostCommitEffect } from "../../modules/run-dispatch/index.js";
@@ -231,7 +231,7 @@ describe("heartbeat retry module callbacks", () => {
 });
 
 import { resolveExternalTestDatabaseUrl } from "../../__tests__/helpers/external-test-database.js";
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_HEARTBEAT_RETRIES_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_HEARTBEAT_RETRIES_TEST_DATABASE_URL");
 const support = external ? { supported: true, reason: undefined } : await getEmbeddedPostgresTestSupport();
 const describePostgres = support.supported ? describe : describe.skip;
 if (!support.supported) console.warn(`Skipping retry PostgreSQL tests: ${support.reason ?? "unsupported host"}`);
@@ -395,7 +395,7 @@ describePostgres("heartbeat retry module database wiring", () => {
     const {run,agent}=await fixture();
     const snapshot={...run.contextSnapshot,skillVersions:{"company/review":"v1"},skillSelectionSnapshot:true,shadowedSkills:[{key:"old",shadowedBy:"company/review"}]};
     await db.update(heartbeatRuns).set({contextSnapshot:snapshot}).where(eq(heartbeatRuns.id,run.id));
-    await db.update(agents).set({adapterConfig:writePaperclipSkillSyncPreference({},[{key:"company/review",versionId:"v2"}])}).where(eq(agents.id,agent.id));
+    await db.update(agents).set({adapterConfig:writePilibalaSkillSyncPreference({},[{key:"company/review",versionId:"v2"}])}).where(eq(agents.id,agent.id));
     const result=await boundRetries().retries.scheduleBoundedRetryForRun({...run,contextSnapshot:snapshot},agent,{now,random:()=>0});
     expect(result.outcome).toBe("scheduled");
     const [successor]=await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.retryOfRunId,run.id));

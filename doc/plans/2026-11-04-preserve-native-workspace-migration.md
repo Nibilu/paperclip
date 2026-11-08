@@ -2,7 +2,7 @@
 
 A retained native session binds both its Core workspace address and the provider's
 sandbox address. Migrating files to object storage must preserve these addresses;
-a new `.paperclip-workspaces` directory alone is not session continuity.
+a new `.pilibala-workspaces` directory alone is not session continuity.
 
 The offline workspace owner records selected native source bindings in its
 successful migration operation. It checks the source again before publication.

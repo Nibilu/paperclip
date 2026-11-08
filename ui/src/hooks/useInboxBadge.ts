@@ -21,7 +21,7 @@ export function useDismissedInboxAlerts() {
 
   useEffect(() => {
     const handleStorage = (event: StorageEvent) => {
-      if (event.key !== "paperclip:inbox:dismissed") return;
+      if (event.key !== "pilibala:inbox:dismissed") return;
       setDismissed(loadDismissedInboxAlerts());
     };
     window.addEventListener("storage", handleStorage);

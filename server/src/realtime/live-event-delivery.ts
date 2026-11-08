@@ -1,4 +1,4 @@
-import type { LiveEvent } from "@paperclipai/shared";
+import type { LiveEvent } from "@pilibalaai/shared";
 import { beginIdleTrackedWork } from "../services/task-admission.js";
 
 export const LIVE_DELIVERY_MAX_ITEMS = 1_000;

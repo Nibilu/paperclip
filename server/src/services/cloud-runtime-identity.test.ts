@@ -10,8 +10,8 @@ import {
 } from "./cloud-runtime-identity.js";
 
 const STACK_ID = "stack-pool-123";
-const POOL_ORIGIN = "https://pool-123.staging.paperclip.app";
-const CANONICAL_ORIGIN = "https://gonzo.staging.paperclip.app";
+const POOL_ORIGIN = "https://pool-123.staging.pilibala.app";
+const CANONICAL_ORIGIN = "https://gonzo.staging.pilibala.app";
 const NOW = new Date("2099-01-01T00:00:00.000Z");
 const pair = generateKeyPairSync("ed25519");
 const publicJwk = {
@@ -21,8 +21,8 @@ const publicJwk = {
   alg: "EdDSA",
 };
 const env = {
-  PAPERCLIP_CLOUD_STACK_ID: STACK_ID,
-  PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS: JSON.stringify({ keys: [publicJwk] }),
+  PILIBALA_CLOUD_STACK_ID: STACK_ID,
+  PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS: JSON.stringify({ keys: [publicJwk] }),
 } as NodeJS.ProcessEnv;
 
 function encodeJson(value: Record<string, unknown>) {
@@ -74,9 +74,9 @@ function verifyAssertion(compactJws: string, overrides: Partial<NodeJS.ProcessEn
 describe("verifyCloudRuntimeIdentityAssertion", () => {
   it("preserves distinct self-hosted public and authentication origins", () => {
     const selfHostedEnv = {
-      PAPERCLIP_PUBLIC_URL: "https://app.example.test",
-      PAPERCLIP_AUTH_PUBLIC_BASE_URL: "https://auth.example.test",
-      PAPERCLIP_API_URL: "https://api.example.test",
+      PILIBALA_PUBLIC_URL: "https://app.example.test",
+      PILIBALA_AUTH_PUBLIC_BASE_URL: "https://auth.example.test",
+      PILIBALA_API_URL: "https://api.example.test",
     } as NodeJS.ProcessEnv;
 
     expect(runtimePublicOrigin(selfHostedEnv)).toBe("https://app.example.test");
@@ -102,8 +102,8 @@ describe("verifyCloudRuntimeIdentityAssertion", () => {
     ["expired", { exp: Math.floor(NOW.getTime() / 1000) - 1 }],
     ["wrong audience", { aud: "someone-else" }],
     ["cross-stack", { sub: "stack-someone-else" }],
-    ["wrong pool origin", { previousOrigin: "https://someone-else.staging.paperclip.app" }],
-    ["non-HTTPS destination", { canonicalOrigin: "http://gonzo.staging.paperclip.app" }],
+    ["wrong pool origin", { previousOrigin: "https://someone-else.staging.pilibala.app" }],
+    ["non-HTTPS destination", { canonicalOrigin: "http://gonzo.staging.pilibala.app" }],
     ["path-bearing destination", { canonicalOrigin: `${CANONICAL_ORIGIN}/GON` }],
     ["slug mismatch", { stackSlug: "kermit" }],
     ["partial claims", { claimId: undefined }],

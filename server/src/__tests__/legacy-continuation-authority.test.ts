@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { agents, agentWakeupRequests, companies, createDb, environmentLeases, heartbeatRunEvents, heartbeatRuns, issueComments, issueRecoveryActions, issueThreadInteractions, issues } from "@paperclipai/db";
+import { agents, agentWakeupRequests, companies, createDb, environmentLeases, heartbeatRunEvents, heartbeatRuns, issueComments, issueRecoveryActions, issueThreadInteractions, issues } from "@pilibalaai/db";
 import { heartbeatService } from "../services/heartbeat.js";
 import { recoveryService } from "../services/recovery/service.js";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
@@ -71,7 +71,7 @@ describe("legacy continuation persisted authority", () => {
       { sessionIdAfter: "provider-session" }, { controllerBootId: randomUUID() },
       { controllerLeaseExpiresAt: new Date() }, { executionStage: "adapter_running" }, { errorCode: "cancelled" },
       { resultJson: { workspaceRestoreFailure: "restore_unsafe_archive" } },
-      { resultJson: { workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1" } } },
+      { resultJson: { workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1" } } },
       ...["nativeExecutionInput", "nativeWorkspaceSync", "remoteWorkspace", "nativeWorkspaceFinalizationOwner", "sessionCheckpoint"]
         .map(key => ({ runnerProfileJson: { [key]: { retained: true } } }))]) {
       const changed = { ...run, ...patch };
@@ -99,7 +99,7 @@ describe("legacy continuation persisted authority", () => {
     for (const changed of [{ ...evidence, runId: "malformed" }, { ...evidence, runId: randomUUID() },
       { ...evidence, runId: foreign.runId }, { automaticRecovery: evidence.automaticRecovery },
       { ...evidence, workspaceRestoreFailure: "restore_unsafe_archive" },
-      { ...evidence, workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1" } }]) {
+      { ...evidence, workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1" } }]) {
       await db.update(issueRecoveryActions).set({ evidence: changed }).where(eq(issueRecoveryActions.id, hold.id));
       expect(await getExecutionBlocker(db, f.companyId, f.issueId)).not.toBeNull();
     }

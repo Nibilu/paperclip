@@ -80,7 +80,7 @@ export default class RetryReporter {
     const summaryFile = this.env.GITHUB_STEP_SUMMARY;
     if (!summaryFile) return;
     try {
-      appendFileSync(summaryFile, summaryMarkdown(this.records, this.env.PAPERCLIP_CI_PROFILE_JOB || this.env.GITHUB_JOB));
+      appendFileSync(summaryFile, summaryMarkdown(this.records, this.env.PILIBALA_CI_PROFILE_JOB || this.env.GITHUB_JOB));
     } catch (error) {
       // Reporting must not change the test result; the annotations already printed.
       console.error(`retry reporter: unable to write the step summary: ${error.message}`);

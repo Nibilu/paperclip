@@ -3,7 +3,7 @@ import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import { AgentConversationsSidebar } from "./AgentConversationsSidebar";
 import type { AgentConversationSidebarProps } from "./AgentConversationSidebar";
 import { queryKeys } from "@/lib/queryKeys";
@@ -76,7 +76,7 @@ it("opens the existing create-agent dialog and persists a company-scoped chat pi
   await act(async () => [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent === "Create a new agent")!.click());
   expect(state.newAgent).toHaveBeenCalledOnce();
   await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Pin bob"]')!.click());
-  expect(JSON.parse(localStorage.getItem("paperclip.coordinator.pinned-nav.v1:user-a")!)).toEqual(["agent-chat:company-a:bob"]);
+  expect(JSON.parse(localStorage.getItem("pilibala.coordinator.pinned-nav.v1:user-a")!)).toEqual(["agent-chat:company-a:bob"]);
   expect(container.querySelector('[aria-label="Unpin bob"]')?.getAttribute("aria-pressed")).toBe("true");
   expect(state.ensure).not.toHaveBeenCalled();
 });
@@ -133,7 +133,7 @@ it("passes numeric unread counts to contacts and updates them from the account c
 it("reuses chat indexes for 500 agents across unchanged parent renders and refreshes changed counts", async () => {
   const agents = Array.from({ length: 500 }, (_, index) => ({ ...roster[0], id: `agent-${index}`, name: `Agent ${index}`, urlKey: `agent-${index}` }));
   const savedPins = JSON.stringify(agents.map(agent => `agent-chat:company-a:${agent.id}`));
-  localStorage.setItem("paperclip.coordinator.pinned-nav.v1:user-a", savedPins);
+  localStorage.setItem("pilibala.coordinator.pinned-nav.v1:user-a", savedPins);
   const originalParse = JSON.parse;
   let pinParses = 0;
   const parse = vi.spyOn(JSON, "parse").mockImplementation((value, reviver) => {

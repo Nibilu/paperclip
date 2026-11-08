@@ -9,9 +9,9 @@ export function braintrustGatewayRequestParent(projectId: string, requestId: str
   return Buffer.concat([Buffer.from([4, 2, 0]), Buffer.from(JSON.stringify({
     object_id: projectId,
     propagated_event: { metadata: {
-      paperclip_eval_request_id: requestId, paperclip_eval_campaign_id: campaignId,
-      paperclip_eval_execution_id: identity.executionId, paperclip_eval_attempt_id: identity.attemptId,
-      paperclip_eval_phase: identity.phase,
+      pilibala_eval_request_id: requestId, pilibala_eval_campaign_id: campaignId,
+      pilibala_eval_execution_id: identity.executionId, pilibala_eval_attempt_id: identity.attemptId,
+      pilibala_eval_phase: identity.phase,
     } },
   }))]).toString("base64");
 }

@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, gt, inArray, sql } from "drizzle-orm";
-import { heartbeatRuns, nativeRunFinalizations, type Db } from "@paperclipai/db";
-import type { HarnessRuntimeRequestResolution } from "../../vendor/paperclip-runner/index.js";
+import { heartbeatRuns, nativeRunFinalizations, type Db } from "@pilibalaai/db";
+import type { HarnessRuntimeRequestResolution } from "../../vendor/pilibala-runner/index.js";
 import { accessService } from "../access.js";
 import { loadConfig } from "../../config.js";
 import { conflict } from "../../errors.js";

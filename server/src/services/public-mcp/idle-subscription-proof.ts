@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { asc, isNull, sql } from "drizzle-orm";
-import { mcpEventSubscriptions, type Db } from "@paperclipai/db";
-import { ISSUE_STATUSES } from "@paperclipai/shared";
+import { mcpEventSubscriptions, type Db } from "@pilibalaai/db";
+import { ISSUE_STATUSES } from "@pilibalaai/shared";
 import type { DeadlineReconciliationSnapshot } from "../deadline-reconciliation.js";
 import type { IdleMcpInspectionBudget, IdleMcpWakeProof } from "./idle-wake-proof.js";
 
@@ -44,12 +44,12 @@ export async function projectIdleMcpSubscriptionProof(rows: { subscription: Subs
     input.budget?.check();
     const args = row.arguments;
     const task = row.taskId !== null && row.bindingId === null && taskMatches === true
-      && ["paperclip.task.status_changed", "paperclip.task.comment_created", "paperclip.task.document_updated"].includes(row.name);
-    const dot = row.bindingId !== null && row.taskId === null && bindings.has(row.bindingId) && row.name === "paperclip.dot.mailbox_updated";
+      && ["pilibala.task.status_changed", "pilibala.task.comment_created", "pilibala.task.document_updated"].includes(row.name);
+    const dot = row.bindingId !== null && row.taskId === null && bindings.has(row.bindingId) && row.name === "pilibala.dot.mailbox_updated";
     const owner = task ? input.personal : dot ? input.dot : undefined;
     if (!grants.has(row.grantId) || !owner?.reconciled || !owner.revision || !args || typeof args !== "object" || Array.isArray(args)
       || args.companyId !== row.companyId || args[task ? "taskId" : "bindingId"] !== (task ? row.taskId : row.bindingId)
-      || Object.keys(args).some(key => !["companyId", task ? "taskId" : "bindingId", ...(row.name === "paperclip.task.status_changed" ? ["statuses"] : [])].includes(key))
+      || Object.keys(args).some(key => !["companyId", task ? "taskId" : "bindingId", ...(row.name === "pilibala.task.status_changed" ? ["statuses"] : [])].includes(key))
       || (args.statuses !== undefined && (!Array.isArray(args.statuses) || !args.statuses.length || args.statuses.some(status => !ISSUE_STATUSES.includes(status as typeof ISSUE_STATUSES[number]))))
       || !Number.isFinite(row.startsAt.getTime()) || !Number.isFinite(row.expiresAt.getTime()) || row.expiresAt <= row.startsAt
       || !Number.isFinite(row.verifiedAt.getTime()) || row.verifiedAt.getTime() > input.now

@@ -14,12 +14,12 @@ const digest = (value: unknown): value is string => typeof value === "string" &&
 const object = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === "object" && !Array.isArray(value));
 const exact = (value: Record<string, unknown>, keys: string[]) => Object.keys(value).length === keys.length && Object.keys(value).every(key => keys.includes(key));
 const generation = (value: Omit<ApiWakeAdmission, "generation">) => createHash("sha256").update(JSON.stringify([
-  "paperclip-api-wake-receipt-v1", value.version, value.stackId, value.ownerId, value.capabilityGeneration, value.challenge,
+  "pilibala-api-wake-receipt-v1", value.version, value.stackId, value.ownerId, value.capabilityGeneration, value.challenge,
   value.keys.map(key => [key.fingerprint, key.expiresAt]),
 ])).digest("hex");
 export function apiWakeFingerprint(input: { stackId: string; ownerId: string; challenge: string; keyHash: string }): string {
   if (!digest(input.keyHash) || !digest(input.challenge)) throw new Error("Invalid API wake fingerprint input");
-  return createHash("sha256").update(JSON.stringify(["paperclip-api-wake-v1", input.stackId, input.ownerId, input.challenge, input.keyHash])).digest("hex");
+  return createHash("sha256").update(JSON.stringify(["pilibala-api-wake-v1", input.stackId, input.ownerId, input.challenge, input.keyHash])).digest("hex");
 }
 /** Strict bounded canonical wire contract. Parsing never grants tenant permissions. */
 export function parseApiWakeAdmission(value: unknown): ApiWakeAdmission {

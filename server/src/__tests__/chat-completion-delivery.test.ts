@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { agents, agentWakeupRequests, chatCompletionDeliveries as deliveries, chatTaskHandoffs as handoffs,
-  companies, createDb, documents, environmentLeases, executionWorkspaces, heartbeatRuns, issueComments, issueRecoveryActions, issueThreadInteractions, issues, workspaceOperations } from "@paperclipai/db";
+  companies, createDb, documents, environmentLeases, executionWorkspaces, heartbeatRuns, issueComments, issueRecoveryActions, issueThreadInteractions, issues, workspaceOperations } from "@pilibalaai/db";
 import { recoveryPostgresSupport as support, startRecoveryPostgres } from "./helpers/recovery-postgres.js";
 import { settleInterruptedNativeBootstrap, terminalizeLegacyExecution } from "../services/legacy-execution-recovery.js";
 import { getExecutionBlocker } from "../services/execution-blocker.js";
@@ -293,7 +293,7 @@ import { createHeartbeatQueueTestDependencies } from "./helpers/heartbeat-queue.
       // The real controller claim records preparation before terminal status
       // records completion. The delivery fixture otherwise leaves both unset.
       executionStage: "preparing", finishedAt: new Date(),
-      errorCode: "server_shutdown_interrupted", runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+      errorCode: "server_shutdown_interrupted", runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
     } });
     expect(await getExecutionBlocker(db, f.companyId, f.sourceId)).toMatchObject({ runId: run.id });
     return { f, run: interrupted! };

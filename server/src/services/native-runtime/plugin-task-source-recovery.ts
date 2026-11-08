@@ -1,7 +1,7 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { agents, companies, environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
-import { environmentTaskOperationSchema, type PluginEnvironmentTaskOperation } from "@paperclipai/plugin-sdk";
-import { createRunnerProviderLaunch, parseNativeExecutionInput, parseNativeRuntimeContext, QUALIFIED_ACPX_PROFILES, inspectDurablePrpCheckpointHeader, type NativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+import { agents, companies, environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
+import { environmentTaskOperationSchema, type PluginEnvironmentTaskOperation } from "@pilibalaai/plugin-sdk";
+import { createRunnerProviderLaunch, parseNativeExecutionInput, parseNativeRuntimeContext, QUALIFIED_ACPX_PROFILES, inspectDurablePrpCheckpointHeader, type NativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 import { resolvePluginTaskResume } from "../plugin-task-resume.js";
 import { legacyShutdownWorkspaceResourceProtected } from "../legacy-shutdown-workspace-settlement.js";
 import { NativeExecutionContext } from "./native-execution-context.js";
@@ -55,7 +55,7 @@ function matchesLaunchPolicy(requirements: Requirements, execution: NativeExecut
 }
 
 export type PluginTaskSourceRecovery = {
-  schema: "paperclip.runner.source-recovery.v1";
+  schema: "pilibala.runner.source-recovery.v1";
   resumeFrom: string;
   sourceLeaseId: string;
   identity: Identity;
@@ -72,7 +72,7 @@ export type PluginTaskSourceRecovery = {
 function readRecovery(value: unknown): PluginTaskSourceRecovery | null {
   const v = record(value);
   const identity = environmentTaskOperationSchema.safeParse({ kind: "read_state", identity: v.identity });
-  return v.schema === "paperclip.runner.source-recovery.v1" && identity.success &&
+  return v.schema === "pilibala.runner.source-recovery.v1" && identity.success &&
     ["resumeFrom", "sourceLeaseId", "consumerLeaseId", "consumerRunId", "controllerBootId", "contextId", "accountIdentity"].every(key => typeof v[key] === "string" && v[key] !== "") &&
     Number.isSafeInteger(v.controllerGeneration) && Number(v.controllerGeneration) >= 0 &&
     [v.sourceProfileSha256, v.consumerProfileSha256].every(hash => typeof hash === "string" && /^[a-f0-9]{64}$/.test(hash))
@@ -140,7 +140,7 @@ async function inspect(tx: Transaction, input: {
     eq(environmentLeases.providerLeaseId, sourceTask)));
   if (allocations.some(value => value.companyId !== input.companyId ||
       value.id !== sourceLease.id && value.id !== lease.id && ["active", "retained", "pending_cleanup"].includes(value.status))) return deny();
-  const recovery: PluginTaskSourceRecovery = { schema: "paperclip.runner.source-recovery.v1", identity: input.identity,
+  const recovery: PluginTaskSourceRecovery = { schema: "pilibala.runner.source-recovery.v1", identity: input.identity,
     resumeFrom: sourceTask, sourceLeaseId: sourceLease.id, consumerLeaseId: lease.id, consumerRunId: binding.runId,
     controllerBootId: owner.controllerBootId!, controllerGeneration: owner.controllerGeneration, contextId: input.context.id, accountIdentity: input.accountIdentity,
     sourceProfileSha256: fingerprint(source.runnerProfileJson?.nativeExecutionInput), consumerProfileSha256: fingerprint(current.runnerProfileJson?.nativeExecutionInput) };

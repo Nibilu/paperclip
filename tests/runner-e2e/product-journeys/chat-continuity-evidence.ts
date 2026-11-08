@@ -101,7 +101,7 @@ export function gradeChatContinuity(scope: ChatContinuityScope, points: ChatCont
     .filter(run => !chatContinuityResetRun(run)).every(run => {
     const provider = run.runnerProfileJson?.nativeExecutionInput?.provider;
     return run.runtimeMode === "native" && provider?.kind === scope.provider && provider?.model === scope.model
-      && run.contextSnapshot?.paperclipEnvironment?.id === scope.environmentId
+      && run.contextSnapshot?.pilibalaEnvironment?.id === scope.environmentId
       && run.nativePhase === "committed"
       && nonempty(run.nativeSessionId);
   });
@@ -140,8 +140,8 @@ export function gradeChatContinuity(scope: ChatContinuityScope, points: ChatCont
     && resetRun.contextSnapshot?.conversationSessionGeneration === 1
     && Object.hasOwn(last, "sessionIdBefore") && last.sessionIdBefore === null
     && last.nativeSessionId !== first.nativeSessionId && last.nativeSessionId !== second.nativeSessionId
-    && typeof last.contextSnapshot?.paperclipTaskMarkdown === "string"
-    && !last.contextSnapshot.paperclipTaskMarkdown.includes(scenario.remembered)
+    && typeof last.contextSnapshot?.pilibalaTaskMarkdown === "string"
+    && !last.contextSnapshot.pilibalaTaskMarkdown.includes(scenario.remembered)
     && finalComments.every(row => row.createdByRunId !== resetRun.id));
   const freshAnswer = boundary && Boolean(freshReply && freshReply.runId === last?.id
     && freshReply.body.trim() === scenario.marker && !freshReply.body.includes(scenario.remembered));

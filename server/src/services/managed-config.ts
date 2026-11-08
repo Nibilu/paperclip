@@ -1,8 +1,8 @@
 /**
  * Cloud managed-config bootstrap (harness → app contract).
  *
- * Instances managed by the Paperclip Cloud harness receive one environment
- * variable, `PAPERCLIP_MANAGED_CONFIG`, holding a single JSON document:
+ * Instances managed by the Pilibala Cloud harness receive one environment
+ * variable, `PILIBALA_MANAGED_CONFIG`, holding a single JSON document:
  *
  *   {
  *     "v": 1,
@@ -48,11 +48,11 @@ import {
   INSTANCE_FEATURE_CATALOG,
   instanceExperimentalSettingsSchema,
   type ManagedExperimentalFeatureKey,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 export type ManagedConfigEnv = Record<string, string | undefined>;
 
-export const MANAGED_CONFIG_ENV_KEY = "PAPERCLIP_MANAGED_CONFIG";
+export const MANAGED_CONFIG_ENV_KEY = "PILIBALA_MANAGED_CONFIG";
 export const SUPPORTED_MANAGED_CONFIG_VERSION = 1;
 
 export interface ManagedInstanceConfig {
@@ -68,7 +68,7 @@ export interface ManagedInstanceConfig {
   };
   /**
    * The sandbox entry of the `environments` section: zero or one, since it
-   * provisions the single Paperclip-managed sandbox slot (empty when the
+   * provisions the single Pilibala-managed sandbox slot (empty when the
    * section is absent or declares only plugin entries).
    */
   environments: readonly ManagedEnvironmentSpec[];
@@ -167,7 +167,7 @@ const WORKER_ENV_NAME_PATTERN = /^[A-Z][A-Z0-9_]*$/;
 const COMPANY_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const WORKER_ENV_DENIED_NAME_PATTERN =
-  /(^|_)(AWS|CREDENTIAL|CREDENTIALS|DATABASE|DSN|JWT|KEY|KEYS|PASSWORD|POSTGRES|PRIVATE|SECRET|SECRETS|SIGNING|TOKEN)(_|$)|^(DB|DYLD|LD|NODE)_|^(PATH|PAPERCLIP_MANAGED_CONFIG)$/;
+  /(^|_)(AWS|CREDENTIAL|CREDENTIALS|DATABASE|DSN|JWT|KEY|KEYS|PASSWORD|POSTGRES|PRIVATE|SECRET|SECRETS|SIGNING|TOKEN)(_|$)|^(DB|DYLD|LD|NODE)_|^(PATH|PILIBALA_MANAGED_CONFIG)$/;
 
 function findSecretLikeConfigKey(value: Record<string, unknown>, path: string): string | null {
   for (const [key, child] of Object.entries(value)) {
@@ -317,13 +317,13 @@ function parseManagedEnvironmentsSection(
     const description = readOptionalDescription(entry.description, `${at}.description`);
 
     if (driver === "sandbox") {
-      // The DB enforces at most ONE Paperclip-managed sandbox row per instance
+      // The DB enforces at most ONE Pilibala-managed sandbox row per instance
       // (partial unique index `environments_managed_sandbox_idx`); every
       // sandbox entry provisions that row, so a second one can never be
       // satisfied.
       if (sandbox.length > 0) {
         fail(
-          `"environments" supports at most one sandbox entry: each sandbox entry provisions the single Paperclip-managed sandbox environment (DB invariant environments_managed_sandbox_idx)`,
+          `"environments" supports at most one sandbox entry: each sandbox entry provisions the single Pilibala-managed sandbox environment (DB invariant environments_managed_sandbox_idx)`,
         );
       }
       const provider = requireTrimmedString(entry.provider, `${at}.provider`);
@@ -395,7 +395,7 @@ function parseManagedEnvironmentsSection(
 }
 
 /**
- * Parse `PAPERCLIP_MANAGED_CONFIG` from a raw env map. Returns null only when
+ * Parse `PILIBALA_MANAGED_CONFIG` from a raw env map. Returns null only when
  * the variable is absent (self-hosted). Throws with a precise error on a
  * present-but-blank value or any malformed document so a cloud instance fails
  * to start (fail closed).

@@ -1,4 +1,4 @@
-const SCHEMA = "paperclip/environment-runner-ingress-error/v1";
+const SCHEMA = "pilibala/environment-runner-ingress-error/v1";
 const PHASES = ["sandbox_lookup", "sandbox_start", "sandbox_refresh", "private_preview"] as const;
 
 export interface PluginEnvironmentRunnerIngressFailure {

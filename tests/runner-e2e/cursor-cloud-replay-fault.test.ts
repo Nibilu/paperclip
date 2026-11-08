@@ -4,9 +4,9 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CursorCloudClient } from "../../packages/paperclip-runner/src/drivers/cursor-cloud/cloud-client.js";
-import { CursorCloudDriver } from "../../packages/paperclip-runner/src/drivers/cursor-cloud/cursor-cloud-driver.js";
-import type { PrpEvent } from "../../packages/paperclip-runner/src/protocol/replay-contract.js";
+import { CursorCloudClient } from "../../packages/pilibala-runner/src/drivers/cursor-cloud/cloud-client.js";
+import { CursorCloudDriver } from "../../packages/pilibala-runner/src/drivers/cursor-cloud/cursor-cloud-driver.js";
+import type { PrpEvent } from "../../packages/pilibala-runner/src/protocol/replay-contract.js";
 import { createCursorCloudReplayFaultFetch, gradeCursorCloudReplayFault, installCursorCloudReplayFault, readCursorCloudReplayFaultProofs, readCursorCloudReplayFaultReservation, withCursorCloudReplayFault, type CursorCloudReplayFaultProof } from "./cursor-cloud-replay-fault.js";
 
 const agent = "bc-11111111-1111-4111-8111-111111111111", run = "run-22222222-2222-4222-8222-222222222222";
@@ -231,7 +231,7 @@ it("the actual driver reconnects the real client with its saved cursor and dedup
     throw new Error("Unexpected controlled request");
   };
   const client = new CursorCloudClient({ apiKey: "private-auth-canary", fetch: createCursorCloudReplayFaultFetch({ fetch: peer, digest, record: value => proofs.push(value) }) });
-  const driver = new CursorCloudDriver({ model: "explicit-model", config: { schema: "paperclip.cursor-cloud.config.v1", repos: [{ url: "https://github.com/example/disposable", startingRef: "main" }] }, binding: { companyId: "company", agentId: "agent", issueId: "issue", normalizedSessionId: "session" }, runtimeDirectory: directory,
+  const driver = new CursorCloudDriver({ model: "explicit-model", config: { schema: "pilibala.cursor-cloud.config.v1", repos: [{ url: "https://github.com/example/disposable", startingRef: "main" }] }, binding: { companyId: "company", agentId: "agent", issueId: "issue", normalizedSessionId: "session" }, runtimeDirectory: directory,
     relay: { url: "https://relay.example.test/mcp", token: "private-relay-canary", socketPath: join(directory, "mcp.sock"), expiresAt: Date.now() + 60_000 }, instructions: "Exact fixture instructions.", dynamicTools: [], dynamicToolHandler: async () => ({ success: true }), client, reconnectDelayMs: 1 });
   const session = await driver.openSession({ runId: "local-run", normalizedSessionId: "session", workingDirectory: directory });
   const pump = (async () => { for await (const event of session.events()) events.push(event); })();

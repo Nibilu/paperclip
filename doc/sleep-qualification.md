@@ -29,7 +29,7 @@ replacing an installed package. An opt-in CI job must run the same setup command
 setting an OTLP endpoint alone does not qualify an exporter.
 
 The helper records its exact symlink targets in
-`server/node_modules/.paperclip-sleep-otel-links.json`. If an owned temporary prefix
+`server/node_modules/.pilibala-sleep-otel-links.json`. If an owned temporary prefix
 disappears, rerunning repairs only those matching recorded symlinks. Existing
 matching packages are left alone. An unrecorded dangling link or other entry is
 preserved with a recovery error; its pathname is not evidence of ownership.
@@ -38,13 +38,13 @@ owned links. It preserves foreign replacements and keeps temporary install
 prefixes for setup evidence. Remove those owned prefixes separately when their
 receipts are no longer needed.
 
-Set `PAPERCLIP_SLEEP_CONFIGURED_ACCEPTANCE=1`,
-`PAPERCLIP_SLEEP_ACCEPTANCE_TEST_DATABASE_URL` to the owned migrated fixture and
-`PAPERCLIP_SLEEP_CLOUD_SHA` to the exact reviewed Cloud source SHA. Set
-`PAPERCLIP_SLEEP_CLOUD_CHECKOUT` to that built private checkout; the suite verifies
+Set `PILIBALA_SLEEP_CONFIGURED_ACCEPTANCE=1`,
+`PILIBALA_SLEEP_ACCEPTANCE_TEST_DATABASE_URL` to the owned migrated fixture and
+`PILIBALA_SLEEP_CLOUD_SHA` to the exact reviewed Cloud source SHA. Set
+`PILIBALA_SLEEP_CLOUD_CHECKOUT` to that built private checkout; the suite verifies
 its HEAD and imports its production broker adapter without copying private source.
 Retain artifacts
-with `PAPERCLIP_MAINTENANCE_KEEP_ARTIFACTS=1`. Run the two scoped Vitest files with
+with `PILIBALA_MAINTENANCE_KEEP_ARTIFACTS=1`. Run the two scoped Vitest files with
 one worker and no file parallelism:
 
 ```sh
@@ -181,7 +181,7 @@ is insufficient. Missing live access leaves these layers `INCONCLUSIVE`.
 For actual foreground/background browser coverage, first build the shipped UI into
 `server/ui-dist` in the same reviewed checkout. Install the normal Playwright
 Chromium runtime and run on a display-capable worker. Set
-`PAPERCLIP_SLEEP_BROWSER_ACCEPTANCE=1` for the configured suite. The harness loads
+`PILIBALA_SLEEP_BROWSER_ACCEPTANCE=1` for the configured suite. The harness loads
 the actual UI, records an ordinary active reload, opens another real foreground
 tab and requires Chromium to report the app tab hidden. It observes 90 real
 seconds without app API traffic, then closes the browser before the server quiet
@@ -219,9 +219,9 @@ storage provider; actual ephemeral transport origins are recorded separately.
 
 Before another long campaign, run the opt-in `sleep-managed-preflight.test.ts` on
 its own root-leased fresh external database using
-`PAPERCLIP_SLEEP_MANAGED_PREFLIGHT=1` and an explicit dedicated
-`PAPERCLIP_SLEEP_MANAGED_PREFLIGHT_TEST_DATABASE_URL`. Retain artifacts with
-`PAPERCLIP_MAINTENANCE_KEEP_ARTIFACTS=1`. It uses the same profile and negotiated
+`PILIBALA_SLEEP_MANAGED_PREFLIGHT=1` and an explicit dedicated
+`PILIBALA_SLEEP_MANAGED_PREFLIGHT_TEST_DATABASE_URL`. Retain artifacts with
+`PILIBALA_MAINTENANCE_KEEP_ARTIFACTS=1`. It uses the same profile and negotiated
 broker receiver, provisions real authority, admits and completes one process run,
 and proves real key activity through signed diagnostics. It performs no browser,
 ten-minute wait or quiet-window claim. No embedded allocation or automatic drop.

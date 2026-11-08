@@ -35,7 +35,7 @@ import {
   chatConversations,
   issues,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { setCloudRuntimeConfigSnapshot } from "../services/cloud-runtime-config-snapshot.js";
 import { actorMiddleware } from "../middleware/auth.js";
 import {
@@ -72,7 +72,7 @@ import {
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
 const url = resolveExternalTestDatabaseUrl(
-  "PAPERCLIP_INCOMING_WAKE_TEST_DATABASE_URL",
+  "PILIBALA_INCOMING_WAKE_TEST_DATABASE_URL",
 );
 const support = url
   ? { supported: true }
@@ -117,8 +117,8 @@ function verified(incomingWake = capability): VerifiedIdleCapabilities {
     compactJws: token,
     expectedAction: "task-drain:read",
     env: {
-      PAPERCLIP_CLOUD_STACK_ID: "fixture-stack",
-      PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS: JSON.stringify({
+      PILIBALA_CLOUD_STACK_ID: "fixture-stack",
+      PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS: JSON.stringify({
         keys: [
           {
             ...pair.publicKey.export({ format: "jwk" }),
@@ -145,8 +145,8 @@ function verified(incomingWake = capability): VerifiedIdleCapabilities {
         );
       db = createDb(url ?? database!.connectionString, { maxConnections: 4 });
       await db.execute(sql`SELECT 1 FROM agent_api_keys LIMIT 1`); // Coordinator migrates the fresh fixture; no embedded fallback.
-      vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "fixture-only");
-      vi.stubEnv("PAPERCLIP_CLOUD_STACK_ID", "fixture-stack");
+      vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "fixture-only");
+      vi.stubEnv("PILIBALA_CLOUD_STACK_ID", "fixture-stack");
       setCloudRuntimeConfigSnapshot({ version: 1, revision: 0, config: null });
     });
     afterAll(async () => {
@@ -480,11 +480,11 @@ function verified(incomingWake = capability): VerifiedIdleCapabilities {
       const applicationId = randomUUID(),
         connectionId = randomUUID(),
         grantId = randomUUID();
-      vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID", "fixture-instance");
-      vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", "fixture");
-      vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", "fixture");
-      vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_ENVIRONMENT", "test");
-      vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_BASE_URL", "http://127.0.0.1");
+      vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID", "fixture-instance");
+      vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", "fixture");
+      vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", "fixture");
+      vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_ENVIRONMENT", "test");
+      vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_BASE_URL", "http://127.0.0.1");
       const botConnectionId = randomUUID(),
         endpointId = randomUUID(),
         registration = "b".repeat(43);
@@ -632,11 +632,11 @@ function verified(incomingWake = capability): VerifiedIdleCapabilities {
           providerTenant: { github },
           status: "active",
         });
-      vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID", "fixture-instance");
-      vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", "fixture");
-      vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", "fixture");
-      vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_ENVIRONMENT", "test");
-      vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_BASE_URL", "http://127.0.0.1");
+      vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID", "fixture-instance");
+      vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", "fixture");
+      vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", "fixture");
+      vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_ENVIRONMENT", "test");
+      vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_BASE_URL", "http://127.0.0.1");
       const brokerCap: IdleIncomingWakeCapability = {
         ...capability,
         routes: ["github-broker-events-v1", "tenant-api-http-v2"],

@@ -148,7 +148,7 @@ test("persists private state across invocations and refuses corrupt history", as
     assert.deepEqual(afterPartialDelivery.notifications, first.notifications.slice(1));
     assert.deepEqual(await acknowledgeEvalNotifications(file, first.notifications.map(row => row.id)), { acknowledged: 1, pending: 0 });
     assert.deepEqual((await runEvalMonitor(file, fixture({ runs: [] }).get, now)).notifications, []);
-    assert.equal(JSON.parse(await readFile(file, "utf8")).repository, "paperclipai/paperclip");
+    assert.equal(JSON.parse(await readFile(file, "utf8")).repository, "pilibalaai/pilibala");
     await writeFile(file, "bad history");
     await assert.rejects(runEvalMonitor(file, fixture().get, now));
     assert.equal(await readFile(file, "utf8"), "bad history");

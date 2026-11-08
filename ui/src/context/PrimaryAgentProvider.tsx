@@ -2,7 +2,7 @@ import { useRef, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAccountBoundMutation } from "@/hooks/useAccountBoundMutation";
 import { bindAccount } from "@/lib/account-scope";
-import type { PrimaryAgentPreference } from "@paperclipai/shared";
+import type { PrimaryAgentPreference } from "@pilibalaai/shared";
 import { agentsApi } from "@/api/agents";
 import { primaryAgentApi } from "@/api/primaryAgent";
 import { describeError } from "@/api/errors";

@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { heartbeatRunEvents, heartbeatRuns } from "@paperclipai/db";
-import type { IssueContextUsage } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { heartbeatRunEvents, heartbeatRuns } from "@pilibalaai/db";
+import type { IssueContextUsage } from "@pilibalaai/shared";
 
 /**
  * Recent runs of the assignee searched for its newest usage report. The

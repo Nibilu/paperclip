@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
-const repository = "paperclipai/paperclip";
+const repository = "pilibalaai/pilibala";
 type Json = Record<string, any>;
 type ReadGitHub = (endpoint: string) => Promise<Json>;
 const integer = (value: unknown) => Number.isSafeInteger(value) && Number(value) >= 0;

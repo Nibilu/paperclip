@@ -21,18 +21,18 @@ assert.equal(original.split(anchor).length, 2, "Expected one fixture insertion p
 const files = ["query", "work"].map(kind => `server/src/services/native-runtime/native-response-presentation-${kind}.baseline.ts`);
 for (const file of files) assert.equal(existsSync(path.join(root, file)), false, `Refusing to replace ${file}`);
 const env = { ...process.env, PATH: `${path.dirname(process.execPath)}${path.delimiter}${process.env.PATH ?? ""}`,
-  PAPERCLIP_PRESENTATION_BENCHMARK_OUTPUT: output };
+  PILIBALA_PRESENTATION_BENCHMARK_OUTPUT: output };
 assert.equal(execFileSync("pnpm", ["--version"], { cwd: root, env, encoding: "utf8" }).trim(), "9.15.4", "Use pnpm9.15.4");
 writeFileSync(path.join(output, "metadata.json"), JSON.stringify({ baseline, treatment: git("rev-parse", "HEAD").trim(),
   node: process.version, execPath: process.execPath, pairs: 5, runs: 10,
   mode: "real PostgreSQL source service under Vitest; accelerated retry timers; instrumented process CPU" }, null, 2));
 const benchmark = String.raw`  it("measures equivalent completed accepted-response work without artificial sleeps", async () => {
     const { appendFileSync } = await import("node:fs");
-    const output = process.env.PAPERCLIP_PRESENTATION_BENCHMARK_OUTPUT;
+    const output = process.env.PILIBALA_PRESENTATION_BENCHMARK_OUTPUT;
     if (!output) throw new Error("Benchmark output directory is required");
     const { nativeResponsePresentationWork: baselineWork } = await import("../services/native-runtime/native-response-presentation-work.baseline.js");
-    const { createDatabaseResponseCapture, installDatabaseResponseCapture } = await import("@paperclipai/db/response-capture");
-    const schema = await import("@paperclipai/db");
+    const { createDatabaseResponseCapture, installDatabaseResponseCapture } = await import("@pilibalaai/db/response-capture");
+    const schema = await import("@pilibalaai/db");
     appendFileSync(output + "/child-runtime.jsonl",
       JSON.stringify({ version: process.version, execPath: process.execPath }) + "\n");
     expect(process.version).toBe("v24.22.2");
@@ -114,7 +114,7 @@ try {
   writeFileSync(path.join(root, integration), original.replace(anchor, benchmark + anchor));
   const log = openSync(path.join(output, "vitest.log"), "wx");
   try {
-    const result = spawnSync("pnpm", ["exec", "vitest", "run", "--project", "@paperclipai/server", integration,
+    const result = spawnSync("pnpm", ["exec", "vitest", "run", "--project", "@pilibalaai/server", integration,
       "-t", "measures equivalent completed accepted-response work without artificial sleeps"],
       { cwd: root, env, stdio: ["ignore", log, log] });
     if (result.error) throw result.error;

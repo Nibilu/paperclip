@@ -15,7 +15,7 @@ import {
   nativeRunFinalizations,
   nativeRunResults,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { resolveExternalTestDatabaseUrl } from "../../__tests__/helpers/external-test-database.js";
 import { startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { withNativeWorkspaceFinalizationOwnership } from "./native-workspace-finalization-ownership.js";
@@ -33,15 +33,15 @@ describe("superseded native workspace finalization attempts", () => {
   const agentId = randomUUID();
 
   beforeAll(async () => {
-    workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-finalize-supersession-"));
+    workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-finalize-supersession-"));
     priorLogRoot = process.env.WORKSPACE_OPERATION_LOG_BASE_PATH;
     process.env.WORKSPACE_OPERATION_LOG_BASE_PATH = path.join(workspaceRoot, "operation-logs");
-    const external = resolveExternalTestDatabaseUrl("PAPERCLIP_NATIVE_WORKSPACE_FINALIZER_TEST_DATABASE_URL");
-    if (!external) temporary = await startEmbeddedPostgresTestDatabase("paperclip-finalize-supersession-");
+    const external = resolveExternalTestDatabaseUrl("PILIBALA_NATIVE_WORKSPACE_FINALIZER_TEST_DATABASE_URL");
+    if (!external) temporary = await startEmbeddedPostgresTestDatabase("pilibala-finalize-supersession-");
     db = createDb(external ?? temporary!.connectionString, { maxConnections: 6 });
     await db.insert(companies).values({ id: companyId, name: "Finalize supersession", issuePrefix: "FSS" });
     await db.insert(agents).values({ id: agentId, companyId, name: "Finalize agent",
-      adapterType: "paperclip_runner", status: "running" });
+      adapterType: "pilibala_runner", status: "running" });
   }, 30_000);
 
   afterAll(async () => {
@@ -63,7 +63,7 @@ describe("superseded native workspace finalization attempts", () => {
     await db.insert(issues).values({ id: issueId, companyId, title: "Crash-loop finalize", status: "in_progress",
       workMode: "standard", assigneeAgentId: agentId });
     await db.insert(completionContracts).values({ id: contractId, companyId, issueId, revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1", policyVersion: "finalize-supersession-test-v1",
+      schemaVersion: "pilibala.completion-contract.v1", policyVersion: "finalize-supersession-test-v1",
       risk: "standard", completionAuthority: "server_arbiter", incompleteCriteriaPolicy: "preserve_non_terminal",
       contractJson: { objective: "finalize" }, canonicalSha256: `contract-${contractId}`,
       createdByActorType: "system", createdByActorId: "test" });

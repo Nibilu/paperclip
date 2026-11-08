@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { formatDatabaseBackupResult, runDatabaseBackup, type BackupRetentionPolicy } from "@paperclipai/db";
+import { formatDatabaseBackupResult, runDatabaseBackup, type BackupRetentionPolicy } from "@pilibalaai/db";
 import { conflict } from "../errors.js";
 import type { InstanceDatabaseBackupRunResult, InstanceDatabaseBackupTrigger } from "../routes/instance-database-backups.js";
 import { beginIdleTrackedWork } from "./task-admission.js";
@@ -45,7 +45,7 @@ export function createDatabaseBackupOwner(options: {
         connectionString: options.connectionString,
         backupDir: options.backupDir,
         retention,
-        filenamePrefix: "paperclip",
+        filenamePrefix: "pilibala",
         verifyBeforePrune: verifyCheckpoint ? verifyIdleDatabaseBackup : undefined,
       });
       if (verifyCheckpoint) {

@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import { expect, it } from "vitest";
-import { completionContracts, heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults } from "@paperclipai/db";
-import { DurablePrpControlPlane } from "../../vendor/paperclip-runner/index.js";
+import { completionContracts, heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults } from "@pilibalaai/db";
+import { DurablePrpControlPlane } from "../../vendor/pilibala-runner/index.js";
 import { describeEmbeddedPostgres, nativeRestartFixture } from "../../__tests__/helpers/native-restart.js";
 import { registerNativeRunnerCheckpoint } from "./native-runner-checkpoint.js";
 

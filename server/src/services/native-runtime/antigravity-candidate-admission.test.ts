@@ -1,16 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
-import { QUALIFIED_ACPX_PROFILES } from "../../vendor/paperclip-runner/index.js";
+import { QUALIFIED_ACPX_PROFILES } from "../../vendor/pilibala-runner/index.js";
 import { ANTIGRAVITY_CANDIDATE_ADMISSION_ENV, resolveAntigravityCandidateAdmission } from "./acpx-qualification.js";
-import { resolvePaperclipRunnerNativeProviderInput, resolvePaperclipRunnerProviderProfile } from "./provider-profile.js";
+import { resolvePilibalaRunnerNativeProviderInput, resolvePilibalaRunnerProviderProfile } from "./provider-profile.js";
 import { resolveNativeRuntimeMode } from "./runtime-mode.js";
 
 const companyId = "candidate-company";
 const model = "gemini-3.8-flash-low";
 const config = { provider: "acpx", acpxAgent: "antigravity", model };
 const localHost = process.platform === "darwin" && process.arch === "arm64";
-const distributions = JSON.parse(readFileSync(new URL("../../../../packages/paperclip-runner/antigravity-distributions.json", import.meta.url), "utf8"));
-const admission = () => ({ schema: "paperclip.acpx-candidate-admission.v1", companyId,
+const distributions = JSON.parse(readFileSync(new URL("../../../../packages/pilibala-runner/antigravity-distributions.json", import.meta.url), "utf8"));
+const admission = () => ({ schema: "pilibala.acpx-candidate-admission.v1", companyId,
   agent: "antigravity", model, profileDigest: QUALIFIED_ACPX_PROFILES.antigravity.commandDigest,
   nativeClosureDigest: `sha256:${distributions.platforms["darwin-arm64"].closureSha256}`,
   platform: "darwin", architecture: "arm64", expiresAt: Date.now() + 60_000 });
@@ -22,16 +22,16 @@ describe("Antigravity operator candidate admission", () => {
     vi.stubEnv(ANTIGRAVITY_CANDIDATE_ADMISSION_ENV, undefined);
     const injected = { ...config, candidateAdmission: admission(),
       env: { [ANTIGRAVITY_CANDIDATE_ADMISSION_ENV]: JSON.stringify(admission()) } };
-    expect(() => resolvePaperclipRunnerProviderProfile(injected, { companyId }))
-      .toThrow(expect.objectContaining({ code: "paperclip_runner_acpx_agent_unavailable" }));
+    expect(() => resolvePilibalaRunnerProviderProfile(injected, { companyId }))
+      .toThrow(expect.objectContaining({ code: "pilibala_runner_acpx_agent_unavailable" }));
   });
 
   it("requires explicit company authority and never projects it to another company", () => {
     vi.stubEnv(ANTIGRAVITY_CANDIDATE_ADMISSION_ENV, JSON.stringify(admission()));
     expect(resolveAntigravityCandidateAdmission({})).toBeUndefined();
     expect(resolveAntigravityCandidateAdmission({ companyId: "another-company", model })).toBeUndefined();
-    expect(() => resolvePaperclipRunnerProviderProfile(config)).toThrow(/awaiting native Runner acceptance/);
-    expect(() => resolvePaperclipRunnerProviderProfile(config, { companyId: "another-company" }))
+    expect(() => resolvePilibalaRunnerProviderProfile(config)).toThrow(/awaiting native Runner acceptance/);
+    expect(() => resolvePilibalaRunnerProviderProfile(config, { companyId: "another-company" }))
       .toThrow(/awaiting native Runner acceptance/);
   });
 
@@ -43,13 +43,13 @@ describe("Antigravity operator candidate admission", () => {
       return;
     }
     expect(resolveAntigravityCandidateAdmission({ companyId })).toMatchObject({ companyId, model, agent: "antigravity" });
-    expect(resolvePaperclipRunnerProviderProfile(config, { companyId })).toMatchObject(config);
-    expect(resolvePaperclipRunnerNativeProviderInput({ backend: "acpx_runtime", adapterConfig: config, companyId }))
+    expect(resolvePilibalaRunnerProviderProfile(config, { companyId })).toMatchObject(config);
+    expect(resolvePilibalaRunnerNativeProviderInput({ backend: "acpx_runtime", adapterConfig: config, companyId }))
       .toMatchObject({ ...config, acpxPermissionMode: "approve-all" });
-    expect(() => resolvePaperclipRunnerProviderProfile({ ...config, model: "different-model" }, { companyId }))
-      .toThrow(expect.objectContaining({ code: "paperclip_runner_acpx_qualification_invalid" }));
+    expect(() => resolvePilibalaRunnerProviderProfile({ ...config, model: "different-model" }, { companyId }))
+      .toThrow(expect.objectContaining({ code: "pilibala_runner_acpx_qualification_invalid" }));
     expect(resolveNativeRuntimeMode({ enabled: false, runtimeConfig: {}, adapterConfig: config,
-      agent: { id: "candidate-agent", companyId, adapterType: "paperclip_runner", status: "active" },
+      agent: { id: "candidate-agent", companyId, adapterType: "pilibala_runner", status: "active" },
       issue: { id: "candidate-task", workMode: "standard" }, target: { kind: "local" }, workspaceId: null }))
       .toMatchObject({ kind: "native", profile: { backend: "acpx_runtime" } });
   });
@@ -61,7 +61,7 @@ describe("Antigravity operator candidate admission", () => {
   ])("rejects expired, changed or broad operator authorization %j", changes => {
     vi.stubEnv(ANTIGRAVITY_CANDIDATE_ADMISSION_ENV, JSON.stringify({ ...admission(), ...changes }));
     expect(() => resolveAntigravityCandidateAdmission({ companyId, model })).toThrow();
-    expect(() => resolvePaperclipRunnerProviderProfile(config, { companyId }))
-      .toThrow(expect.objectContaining({ code: "paperclip_runner_acpx_qualification_invalid" }));
+    expect(() => resolvePilibalaRunnerProviderProfile(config, { companyId }))
+      .toThrow(expect.objectContaining({ code: "pilibala_runner_acpx_qualification_invalid" }));
   });
 });

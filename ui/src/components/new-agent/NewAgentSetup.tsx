@@ -1,14 +1,14 @@
 import { ACCOUNT_BOUND_MODEL_DISCOVERY_QUERY_OPTIONS } from "@/lib/native-model-catalog";
-import { PAPERCLIP_RUNNER_ACPX_PROFILES } from "@paperclipai/adapter-utils";
+import { PILIBALA_RUNNER_ACPX_PROFILES } from "@pilibalaai/adapter-utils";
 import { ExternalAgentInviteDialog } from "./ExternalAgentInviteDialog";
 import { useConnectionModels } from "../ai-connections/useConnectionModels";
 import { AgentCharacter } from "../AgentCharacter";
 import { useAgentAppearanceDraft } from "../../hooks/useAgentAppearanceDraft";
 import { AiConnectionField, aiProviderForAdapter } from "../ai-connections/AiConnectionField";
-import type { AiConnectionBinding } from "@paperclipai/shared";
-import type { AgentRunner, AgentRunnerChoice } from "@paperclipai/shared";
+import type { AiConnectionBinding } from "@pilibalaai/shared";
+import type { AgentRunner, AgentRunnerChoice } from "@pilibalaai/shared";
 import { SelectPopover } from "../ui/select";
-import { DEFAULT_CODEX_LOCAL_MODEL } from "@paperclipai/adapter-codex-local";
+import { DEFAULT_CODEX_LOCAL_MODEL } from "@pilibalaai/adapter-codex-local";
 import {
   SETUP_CREDENTIAL_KEYS,
   SETUP_LOGIN_HINTS,
@@ -30,8 +30,8 @@ import type {
   AdapterEnvironmentTestResult,
   Agent,
   EnvBinding,
-} from "@paperclipai/shared";
-import { ADAPTER_AUTH_MISSING_CHECK_CODE, isAgentStatusInvokable, paperclipRunnerCreationLifecycle, paperclipRunnerProfileForHarness } from "@paperclipai/shared";
+} from "@pilibalaai/shared";
+import { ADAPTER_AUTH_MISSING_CHECK_CODE, isAgentStatusInvokable, pilibalaRunnerCreationLifecycle, pilibalaRunnerProfileForHarness } from "@pilibalaai/shared";
 import { useNavigate, useSearchParams } from "@/lib/router";
 import { agentsApi } from "@/api/agents";
 import { ApiError } from "@/api/client";
@@ -105,9 +105,9 @@ export function NewAgentSetup() {
       key={`${selectedCompanyId}:${params.get("name")}:${params.get("adapterType")}:${params.get("runnerProvider") ?? "codex"}:${params.get("runner") ?? "auto"}`}
       companyId={selectedCompanyId}
       name={params.get("name") ?? ""}
-      adapterType={params.get("adapterType") === "paperclip_runner" && Object.hasOwn(nativeSetupHarnesses, params.get("runnerProvider") ?? "codex") ? nativeSetupHarnesses[params.get("runnerProvider") ?? "codex"] : params.get("adapterType") ?? ""}
-      initialRunner={params.get("runner") ?? (params.get("adapterType") === "paperclip_runner" && Object.hasOwn(nativeSetupHarnesses, params.get("runnerProvider") ?? "codex") ? "paperclip" : params.has("setupAgentId") && ["codex_local", "claude_local", "opencode_local", "pi_local", "cursor_cloud"].includes(params.get("adapterType") ?? "") ? "legacy" : "auto")}
-      preserveNativeHarness={params.get("adapterType") === "paperclip_runner" && Object.hasOwn(nativeSetupHarnesses, params.get("runnerProvider") ?? "codex")}
+      adapterType={params.get("adapterType") === "pilibala_runner" && Object.hasOwn(nativeSetupHarnesses, params.get("runnerProvider") ?? "codex") ? nativeSetupHarnesses[params.get("runnerProvider") ?? "codex"] : params.get("adapterType") ?? ""}
+      initialRunner={params.get("runner") ?? (params.get("adapterType") === "pilibala_runner" && Object.hasOwn(nativeSetupHarnesses, params.get("runnerProvider") ?? "codex") ? "pilibala" : params.has("setupAgentId") && ["codex_local", "claude_local", "opencode_local", "pi_local", "cursor_cloud"].includes(params.get("adapterType") ?? "") ? "legacy" : "auto")}
+      preserveNativeHarness={params.get("adapterType") === "pilibala_runner" && Object.hasOwn(nativeSetupHarnesses, params.get("runnerProvider") ?? "codex")}
       runnerProvider={params.get("runnerProvider") ?? "codex"}
       createdAgentId={params.get("createdAgentId")}
       setupAgentId={params.get("setupAgentId")}
@@ -138,8 +138,8 @@ function Setup({
   const cache = useQueryClient();
   const { openNewIssue } = useDialogActions();
   const appearanceDraft = useAgentAppearanceDraft(`${companyId}:new-agent`);
-  const [runner, setRunner] = useState<AgentRunnerChoice>(initialRunner === "legacy" || initialRunner === "paperclip" ? initialRunner : "auto");
-  const isRunner = adapterType === "paperclip_runner";
+  const [runner, setRunner] = useState<AgentRunnerChoice>(initialRunner === "legacy" || initialRunner === "pilibala" ? initialRunner : "auto");
+  const isRunner = adapterType === "pilibala_runner";
   const isDot = isRunner && runnerProvider === "openai_dot";
   const isKimi = isRunner && runnerProvider === "kimi";
   const brandType = isDot ? "openai_dot" : isRunner
@@ -160,14 +160,14 @@ function Setup({
       ? brandType
       : null;
   const unreleasedAntigravity = brandType === "antigravity_runtime"
-    && !PAPERCLIP_RUNNER_ACPX_PROFILES.some(profile => profile.value === "antigravity" && profile.qualified);
+    && !PILIBALA_RUNNER_ACPX_PROFILES.some(profile => profile.value === "antigravity" && profile.qualified);
   const multiProvider =
     brandType === "opencode_local" || brandType === "pi_local";
   const providerKeys = setupProviderKeys(brandType);
   const chooseProvider = multiProvider || brandType === "hermes_local";
   const hasCredentialField =
     isKimi || chooseProvider || Boolean(SETUP_CREDENTIAL_KEYS[adapterType]);
-  const nativeCursorCloud = adapterType === "cursor_cloud" && runner === "paperclip";
+  const nativeCursorCloud = adapterType === "cursor_cloud" && runner === "pilibala";
   const showModel = !isDot && adapterType !== "hermes_gateway" && (adapterType !== "cursor_cloud" || nativeCursorCloud);
   const [allowUnmeteredProvider, setAllowUnmeteredProvider] = useState(false);
   const [gatewayUrl, setGatewayUrl] = useState("");
@@ -240,16 +240,16 @@ function Setup({
     && (!created.lifecycleState || created.lifecycleState === "ready"));
   const finishingSetup = !isDot && ["preparing", "verifying", "resuming", "pausing"].includes(created?.lifecycleState ?? "");
   useEffect(() => {
-    if (brandType !== "pi_local" || created?.adapterType !== "paperclip_runner"
+    if (brandType !== "pi_local" || created?.adapterType !== "pilibala_runner"
       || created.runtimeConfig.aiConnection) return;
     const env = (created.adapterConfig.env ?? {}) as Record<string, unknown>;
     if (Object.values(PROVIDER_ENV_KEYS).some(key => env[key] !== undefined)) return;
     setRuntimeAiBinding(current => current ?? { provider: "openrouter", method: "api_key", mode: "responsible_user" });
   }, [brandType, created?.id, created?.adapterType]);
   const savedNativeMultiProvider = multiProvider && (Boolean(setupAgentId) || runner === "legacy")
-    && created?.adapterType === "paperclip_runner";
-  const requestAdapterType = savedNativeMultiProvider || (preserveNativeHarness && runner === "paperclip")
-    ? "paperclip_runner" : adapterType;
+    && created?.adapterType === "pilibala_runner";
+  const requestAdapterType = savedNativeMultiProvider || (preserveNativeHarness && runner === "pilibala")
+    ? "pilibala_runner" : adapterType;
   const [saving, setSaving] = useState(false);
   const [testState, setTestState] = useState<TestState | "warn">("idle");
   const [result, setResult] = useState<AdapterEnvironmentTestResult | null>(
@@ -448,7 +448,7 @@ function Setup({
   const accountModelScope = JSON.stringify([companyId, environmentId, aiBinding]);
   const models = useQuery({
     queryKey: queryKeys.agents.adapterModels(companyId, brandType, environmentId, accountBoundCatalog ? JSON.stringify(aiBinding ?? null) : aiBinding?.provider),
-    queryFn: () => agentsApi.adapterModels(companyId, isKimi || accountBoundCatalog ? "paperclip_runner" : brandType, isKimi
+    queryFn: () => agentsApi.adapterModels(companyId, isKimi || accountBoundCatalog ? "pilibala_runner" : brandType, isKimi
       ? { provider: "acpx", acpxAgent: "kimi", environmentId } : accountBoundCatalog
       ? { provider: "acpx", acpxAgent: runnerProvider, aiConnection: aiBinding, environmentId }
       : { provider: aiBinding?.provider, environmentId }),
@@ -468,12 +468,12 @@ function Setup({
     queryKey: queryKeys.adapters.availability(companyId, environmentId),
     queryFn: () => adaptersApi.list({ companyId, environmentId }),
   });
-  const candidateHarnesses = adapters.data?.find(adapter => adapter.type === "paperclip_runner" && adapter.loaded && !adapter.disabled)?.candidateHarnesses;
+  const candidateHarnesses = adapters.data?.find(adapter => adapter.type === "pilibala_runner" && adapter.loaded && !adapter.disabled)?.candidateHarnesses;
   const antigravityCandidate = brandType === "antigravity_runtime" ? candidateHarnesses?.find(candidate => candidate.agent === "antigravity") : undefined;
   const pendingAntigravity = unreleasedAntigravity && !antigravityCandidate;
   useEffect(() => { if (antigravityCandidate) setModel(current => current || antigravityCandidate.model); }, [antigravityCandidate?.model]);
   const defaultRunner = adapters.data?.find(adapter => adapter.type === adapterType)?.defaultRunner;
-  const efforts = brandType === "pi_local" && (runner === "paperclip" || (runner === "auto" && defaultRunner === "paperclip"))
+  const efforts = brandType === "pi_local" && (runner === "pilibala" || (runner === "auto" && defaultRunner === "pilibala"))
     ? ["off", "low", "high", "max"] : isRunner ? [] : setupEfforts(adapterType, model);
   useEffect(() => {
     const transition = qualificationTransition.current;
@@ -539,9 +539,9 @@ function Setup({
         adapter.loaded &&
         !adapter.disabled &&
         !getAdapterDisplay(adapterType).comingSoon,
-    ) && (requestAdapterType !== "paperclip_runner" || adapterType === "paperclip_runner" || adapterInventory.data?.some(adapter => adapter.type === "paperclip_runner" && adapter.loaded && !adapter.disabled));
+    ) && (requestAdapterType !== "pilibala_runner" || adapterType === "pilibala_runner" || adapterInventory.data?.some(adapter => adapter.type === "pilibala_runner" && adapter.loaded && !adapter.disabled));
   const configurationAvailable = available || (pendingAntigravity && adapterInventory.data?.some(
-    adapter => adapter.type === "paperclip_runner" && adapter.loaded && !adapter.disabled,
+    adapter => adapter.type === "pilibala_runner" && adapter.loaded && !adapter.disabled,
   ));
   const connectionSettingsReady = Boolean(
     configurationAvailable &&
@@ -610,16 +610,16 @@ function Setup({
           }
         : {}),
     };
-    const profile = paperclipRunnerProfileForHarness(brandType);
+    const profile = pilibalaRunnerProfileForHarness(brandType);
     const nativeSchema = profile ? {
       ...profile,
       ...(profile.provider === "acpx" ? { acpxPermissionMode: "approve-all" } : {}),
       ...(brandType === "pi_local" && effort ? { piThinkingLevel: effort } : {}),
     } : {};
-    const config = getUIAdapter(preserveNativeHarness && runner === "paperclip" && brandType !== "pi_local" ? "paperclip_runner" : adapterType).buildAdapterConfig(preserveNativeHarness && runner === "paperclip" ? { ...values, adapterSchemaValues: nativeSchema } : values,
+    const config = getUIAdapter(preserveNativeHarness && runner === "pilibala" && brandType !== "pi_local" ? "pilibala_runner" : adapterType).buildAdapterConfig(preserveNativeHarness && runner === "pilibala" ? { ...values, adapterSchemaValues: nativeSchema } : values,
       antigravityCandidate ? { candidateHarnesses: [antigravityCandidate] } : undefined);
-    if (preserveNativeHarness && runner === "paperclip" && profile) {
-      Object.assign(config, nativeSchema, profile.provider === "opencode" ? { opencodePermissionMode: "allow" } : profile.provider === "codex" ? { codexPermissionMode: "never" } : {}, paperclipRunnerCreationLifecycle(profile));
+    if (preserveNativeHarness && runner === "pilibala" && profile) {
+      Object.assign(config, nativeSchema, profile.provider === "opencode" ? { opencodePermissionMode: "allow" } : profile.provider === "codex" ? { codexPermissionMode: "never" } : {}, pilibalaRunnerCreationLifecycle(profile));
     }
     if (isRunner)
       Object.assign(config, {
@@ -636,7 +636,7 @@ function Setup({
       for (const key of ["dangerouslySkipPermissions", "opencodePermissionMode", "acpxPermissionMode", "acpxSessionMode", "lifecycleMode", "idleTimeoutMs"]) {
         if (saved[key] !== undefined) config[key] = saved[key];
       }
-      if (brandType === "pi_local" && created.adapterType === "paperclip_runner" && runner !== "legacy" && effort) {
+      if (brandType === "pi_local" && created.adapterType === "pilibala_runner" && runner !== "legacy" && effort) {
         config.piThinkingLevel = effort;
         delete config.thinking;
       }
@@ -733,7 +733,7 @@ function Setup({
       setupId: setupId.current, name, appearance: appearanceDraft.appearance,
       role: existing.length ? "general" : "ceo", ...(leader ? { reportsTo: leader.id } : {}),
       adapterType: requestAdapterType, runner,
-      adapterConfig: requestAdapterType === "paperclip_runner" ? {
+      adapterConfig: requestAdapterType === "pilibala_runner" ? {
         provider: ["claude", "grok", "copilot", "pi", "antigravity", "kimi"].includes(runnerProvider) ? "acpx" : runnerProvider,
         ...(["claude", "grok", "copilot", "pi", "antigravity", "kimi"].includes(runnerProvider) ? { acpxAgent: runnerProvider } : {}),
         ...(antigravityCandidate ? { model: antigravityCandidate.model } : {}),
@@ -754,7 +754,7 @@ function Setup({
     const agent = savedAgent.data;
     if (agent.pauseReason !== "setup") { setScreen("saved"); return; }
     const config = agent.adapterConfig;
-    if (multiProvider || adapterType === "cursor_cloud") setRunner(agent.adapterType === "paperclip_runner" ? "paperclip" : "legacy");
+    if (multiProvider || adapterType === "cursor_cloud") setRunner(agent.adapterType === "pilibala_runner" ? "pilibala" : "legacy");
     setModel(typeof config.model === "string" && config.model ? config.model : antigravityCandidate?.model ?? "");
     setEffort(String(config.modelReasoningEffort ?? config.reasoningEffort ?? config.effort ?? config.thinkingEffort ?? config.piThinkingLevel ?? config.thinking ?? ""));
     setEnvironmentOverride(agent.defaultEnvironmentId ?? "");
@@ -1080,7 +1080,7 @@ function Setup({
                   ·{" "}
                   {runnerProvider === "codex"
                     ? "Native app server runner"
-                    : "Paperclip Runner"}
+                    : "Pilibala Runner"}
                 </span>
               )}
             </div>
@@ -1215,7 +1215,7 @@ function Setup({
                       }}
                       testConnection={async next => {
                         if (brandType !== "antigravity_runtime") return (await runTest(next)) !== null;
-                        if (next.aiConnection?.method === "subscription") await agentsApi.adapterModels(companyId, "paperclip_runner", {
+                        if (next.aiConnection?.method === "subscription") await agentsApi.adapterModels(companyId, "pilibala_runner", {
                           provider: "acpx", acpxAgent: "antigravity", aiConnection: next.aiConnection, environmentId,
                           agentId: !created || created.pauseReason === "setup" ? undefined : created.id,
                         });
@@ -1271,7 +1271,7 @@ function Setup({
                         {created.status === "pending_approval"
                           ? "An organization administrator must approve this agent before it can work."
                           : isDot ? "Pair your Dot and test event delivery in configuration before assigning work."
-                            : finishingSetup ? "Paperclip is preparing and verifying your agent. You can assign a task when it is ready."
+                            : finishingSetup ? "Pilibala is preparing and verifying your agent. You can assign a task when it is ready."
                               : runtimeReady ? "Assign a task when you’re ready for this agent to work." : "Review the agent’s status in configuration before assigning work."}
                       </p>
                     </div>
@@ -1311,7 +1311,7 @@ function Setup({
                         {isDot && <>
                           <p className="text-sm text-muted-foreground">Create this agent, then copy its pairing prompt to your Dot.</p>
                           {experimental.data?.enablePublicMcp !== true && <p className="text-sm text-muted-foreground">Enable Assistant connections (MCP) in Experimental settings before pairing.</p>}
-                          <ToggleField label="Allow externally billed provider" hint="Dot does not report token usage or cost. Paperclip cannot enforce a provider spend ceiling; known company and agent budget limits still apply."
+                          <ToggleField label="Allow externally billed provider" hint="Dot does not report token usage or cost. Pilibala cannot enforce a provider spend ceiling; known company and agent budget limits still apply."
                             checked={allowUnmeteredProvider} onChange={value => { setAllowUnmeteredProvider(value); resetTest(); }} />
                         </>}
                         {!connectionAdapter && aiProviderForAdapter(brandType) && (
@@ -1501,7 +1501,7 @@ function Setup({
                                 "checkpoints",
                                 "quiet",
                                 "verbose",
-                                "paperclipApiUrl",
+                                "pilibalaApiUrl",
                                 "promptTemplate",
                                 "timeoutSec",
                                 "graceSec",
@@ -1738,7 +1738,7 @@ function Setup({
                         )}
                         {adapterType === "cursor_cloud" && (
                           <>
-                          {nativeCursorCloud && <p className="text-sm text-muted-foreground">Experimental. Cursor hosts this agent’s execution environment. A Paperclip computer is not required. Cursor manages cloud command permissions; the effective model is not acknowledged.</p>}
+                          {nativeCursorCloud && <p className="text-sm text-muted-foreground">Experimental. Cursor hosts this agent’s execution environment. A Pilibala computer is not required. Cursor manages cloud command permissions; the effective model is not acknowledged.</p>}
                           <div className="grid gap-5 sm:grid-cols-2">
                             <Field label="GitHub repository">
                               <Input

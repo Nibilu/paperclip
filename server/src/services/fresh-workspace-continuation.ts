@@ -1,7 +1,7 @@
 import { lstat, realpath } from "node:fs/promises";
 import path from "node:path";
 import { and, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
-import { agentWakeupRequests, environmentLeases, executionWorkspaces, heartbeatRunEvents, heartbeatRuns, issues, issueRecoveryActions, nativeRunFinalizations, nativeRunResults, workspaceOperations, type Db } from "@paperclipai/db";
+import { agentWakeupRequests, environmentLeases, executionWorkspaces, heartbeatRunEvents, heartbeatRuns, issues, issueRecoveryActions, nativeRunFinalizations, nativeRunResults, workspaceOperations, type Db } from "@pilibalaai/db";
 import { verifiedWorkspaceRepairReceipt } from "./workspace-recovery-receipt.js";
 import { persistActivity } from "./activity-log.js";
 import { logger } from "../middleware/logger.js";
@@ -14,10 +14,10 @@ import { toExecutionWorkspace } from "./execution-workspaces.js";
 import { workspaceGitOperationScheduler } from "./workspace-git-operation-scheduler.js";
 import { hasRequiredWorkspaceRecovery } from "./workspace-restore-recovery-state.js";
 import { isBoundIsolatedTaskDirectory } from "./isolated-task-directory.js";
-import { readRemoteWorkspaceAuthority, remoteWorkspaceRunReferenceSchema } from "@paperclipai/shared";
+import { readRemoteWorkspaceAuthority, remoteWorkspaceRunReferenceSchema } from "@pilibalaai/shared";
 import { readFailedPreparationSettlement } from "./failed-preparation-settlement.js";
 import { taskRetryRunAncestry } from "./recovery-run-ancestry.js";
-import { parseNativeExecutionInput } from "../vendor/paperclip-runner/index.js";
+import { parseNativeExecutionInput } from "../vendor/pilibala-runner/index.js";
 import { nativeExecutionUsesTaskWorkspace } from "./heartbeat/external-provider.js";
 
 export type ContinuationReadiness =
@@ -265,7 +265,7 @@ async function stoppedNativeContinuationWorkspace(db: Db, source: typeof heartbe
     sql`${heartbeatRunEvents.payload}->>'taskRetryRequestId' = ${input.retryIntentId}`,
   )).limit(1);
   if (!proof) return null;
-  const parsed = z.object({ schema: z.literal("paperclip.stopped_native_conversation.v1"),
+  const parsed = z.object({ schema: z.literal("pilibala.stopped_native_conversation.v1"),
     runId: z.literal(source.id), nativeSessionId: z.literal(source.nativeSessionId), runnerInstanceId: z.literal(source.runnerInstanceId),
     executionWorkspaceId: z.string().uuid(), workspaceCwd: z.string().min(1),
   }).safeParse(proof.payload);

@@ -78,7 +78,7 @@ it("defaults Tasks to All tasks and remembers a deliberate personal view", async
   } finally { first.cleanup(); }
   const selected = render("/ORG/issues?view=mine");
   try {
-    await vi.waitFor(() => expect(localStorage.getItem(JSON.stringify(["paperclip:coordinator-task-view:v2", "company", "viewer"]))).toBe("mine"));
+    await vi.waitFor(() => expect(localStorage.getItem(JSON.stringify(["pilibala:coordinator-task-view:v2", "company", "viewer"]))).toBe("mine"));
   } finally { selected.cleanup(); }
   const returned = render("/ORG/issues");
   try {

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { AttentionItem } from "@paperclipai/shared";
+import type { AttentionItem } from "@pilibalaai/shared";
 import { ArrowUpRight } from "lucide-react";
 import { api, detachInflightGet } from "@/api/client";
 import { Link } from "@/lib/router";

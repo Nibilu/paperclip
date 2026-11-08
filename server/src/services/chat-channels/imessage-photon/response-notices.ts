@@ -1,4 +1,4 @@
-import { chatActions, chatPublications, type Db } from "@paperclipai/db";
+import { chatActions, chatPublications, type Db } from "@pilibalaai/db";
 import { notifyChatPublicationWork } from "../../chat-work-notifications.js";
 import { projectSafeChatPublicationText } from "../../chat-publication-projection.js";
 

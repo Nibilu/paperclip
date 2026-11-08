@@ -3,20 +3,20 @@ import { fileURLToPath } from "node:url";
 import type {
   AdapterSkillContext,
   AdapterSkillSnapshot,
-} from "@paperclipai/adapter-utils";
+} from "@pilibalaai/adapter-utils";
 import {
   buildRuntimeMountedSkillSnapshot,
-  readPaperclipRuntimeSkillEntries,
-  resolveLegacyPaperclipDesiredSkillNames,
-} from "@paperclipai/adapter-utils/server-utils";
+  readPilibalaRuntimeSkillEntries,
+  resolveLegacyPilibalaDesiredSkillNames,
+} from "@pilibalaai/adapter-utils/server-utils";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
 async function buildGrokSkillSnapshot(
   config: Record<string, unknown>,
 ): Promise<AdapterSkillSnapshot> {
-  const availableEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
-  const desiredSkills = resolveLegacyPaperclipDesiredSkillNames(config, availableEntries);
+  const availableEntries = await readPilibalaRuntimeSkillEntries(config, __moduleDir);
+  const desiredSkills = resolveLegacyPilibalaDesiredSkillNames(config, availableEntries);
   return buildRuntimeMountedSkillSnapshot({
     adapterType: "grok_local",
     availableEntries,

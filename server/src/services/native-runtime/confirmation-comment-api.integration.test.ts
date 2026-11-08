@@ -1,18 +1,18 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { heartbeatRuns, issueComments, issues, issueThreadInteractions, nativeRunFinalizations } from "@paperclipai/db";
+import { heartbeatRuns, issueComments, issues, issueThreadInteractions, nativeRunFinalizations } from "@pilibalaai/db";
 import { createLocalAgentJwt } from "../../agent-auth-jwt.js";
 import { startRunnerApiTestServer } from "../../__tests__/helpers/runner-api-server.js";
 import { initializeRunIdentity } from "../run-identity.js";
 import { issueThreadInteractionService } from "../issue-thread-interactions.js";
-import { PaperclipRunnerToolAuthority } from "./paperclip-runner-tool-authority.js";
+import { PilibalaRunnerToolAuthority } from "./pilibala-runner-tool-authority.js";
 
 describe("confirmation reply through the native API tool", () => {
   let server: Awaited<ReturnType<typeof startRunnerApiTestServer>>;
-  const oldSecret = process.env.PAPERCLIP_AGENT_JWT_SECRET;
-  beforeAll(async () => { process.env.PAPERCLIP_AGENT_JWT_SECRET = randomUUID(); server = await startRunnerApiTestServer(); }, 60_000);
-  afterAll(async () => { await server?.close(); if (oldSecret === undefined) delete process.env.PAPERCLIP_AGENT_JWT_SECRET; else process.env.PAPERCLIP_AGENT_JWT_SECRET = oldSecret; });
+  const oldSecret = process.env.PILIBALA_AGENT_JWT_SECRET;
+  beforeAll(async () => { process.env.PILIBALA_AGENT_JWT_SECRET = randomUUID(); server = await startRunnerApiTestServer(); }, 60_000);
+  afterAll(async () => { await server?.close(); if (oldSecret === undefined) delete process.env.PILIBALA_AGENT_JWT_SECRET; else process.env.PILIBALA_AGENT_JWT_SECRET = oldSecret; });
   async function proposal(
     f: Awaited<ReturnType<typeof server.fixture>>,
     idempotencyKey: string,
@@ -113,7 +113,7 @@ describe("confirmation reply through the native API tool", () => {
     await server.db.insert(nativeRunFinalizations).values(lease);
     await server.db.update(issues).set({ status: "in_review", executionRunId: runId, checkoutRunId: runId,
       executionLockedAt: lockedAt, executionAgentNameKey: "api-eval-agent" }).where(eq(issues.id, f.issueId));
-    const current = new PaperclipRunnerToolAuthority(server.db, { ...f.authority.binding, runId });
+    const current = new PilibalaRunnerToolAuthority(server.db, { ...f.authority.binding, runId });
     await expect(current.execute({ tool: "get_task_context", callId: randomUUID(), arguments: {} })).resolves.toBeDefined();
     const rejected = await current.execute({ tool: "call_api", callId: randomUUID(), arguments: {
       operationId: "POST /api/issues/{id}/interactions/{interactionId}/resolve-from-comment",
@@ -144,7 +144,7 @@ describe("confirmation reply through the native API tool", () => {
     const { f, card, call } = await seed();
     await server.db.update(issues).set({ status: "in_review", checkoutRunId: f.runId,
       executionLockedAt: new Date() }).where(eq(issues.id, f.issueId));
-    const token = createLocalAgentJwt(f.agentId, f.companyId, "paperclip_runner", f.runId, f.userId);
+    const token = createLocalAgentJwt(f.agentId, f.companyId, "pilibala_runner", f.runId, f.userId);
     const response = await fetch(`${server.apiUrl}/api/issues/${f.issueId}/interactions/${card.id}/resolve-from-comment`, {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ ...call.arguments.body, decision: "reject", reason: "Revise this proposal." }),
@@ -195,7 +195,7 @@ describe("confirmation reply through the native API tool", () => {
     const { f, card, call, comment } = await seed();
     const url = `${server.apiUrl}/api/issues/${f.issueId}/interactions/${card.id}/resolve-from-comment`;
     expect((await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(call.arguments.body) })).status).toBe(404);
-    const token = createLocalAgentJwt(f.agentId, f.companyId, "paperclip_runner", f.runId, f.userId);
+    const token = createLocalAgentJwt(f.agentId, f.companyId, "pilibala_runner", f.runId, f.userId);
     expect((await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...call.arguments.body, actorUserId: f.userId }) })).status).toBe(400);
   });
   it("preserves formal approval authority in the HTTP route", async () => {

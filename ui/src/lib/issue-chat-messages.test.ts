@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import {
   buildAssistantPartsFromTranscript,
   buildIssueChatMessages,
@@ -222,7 +222,7 @@ describe("buildAssistantPartsFromTranscript", () => {
     expect(result.parts).toHaveLength(1);
     expect(result.parts[0]).toMatchObject({
       type: "tool-call",
-      toolName: "paperclip_provider_activity",
+      toolName: "pilibala_provider_activity",
       args: {
         family: "plan",
         eventType: "plan.updated",
@@ -369,7 +369,7 @@ describe("buildAssistantPartsFromTranscript", () => {
         ts: "2026-04-06T12:00:01.000Z",
         name: "search",
         toolUseId: "tool-1",
-        input: { query: "paperclip" },
+        input: { query: "pilibala" },
       },
       {
         kind: "tool_result",
@@ -1413,11 +1413,11 @@ describe("buildIssueChatMessages", () => {
 
   it.each([
     { adapterType: "codex_local", status: "cancelled" },
-    { adapterType: "paperclip_runner", status: "cancelled" },
+    { adapterType: "pilibala_runner", status: "cancelled" },
     { adapterType: "codex_local", status: "failed" },
-    { adapterType: "paperclip_runner", status: "failed" },
+    { adapterType: "pilibala_runner", status: "failed" },
     { adapterType: "codex_local", status: "succeeded" },
-    { adapterType: "paperclip_runner", status: "succeeded" },
+    { adapterType: "pilibala_runner", status: "succeeded" },
   ])("settles a $status $adapterType run once while its live cache is stale", ({ adapterType, status }) => {
     const startedAt = "2026-11-03T14:22:22.000Z";
     const live: LiveRunForIssue = {
@@ -1451,8 +1451,8 @@ describe("buildIssueChatMessages", () => {
     const createdAt = "2026-11-03T14:22:22.000Z";
     const messages = buildIssueChatMessages({
       comments: [], timelineEvents: [], issueStatus: "in_progress",
-      linkedRuns: [{ runId: "run-active", status: "queued", agentId: "agent-1", adapterType: "paperclip_runner", createdAt, startedAt: null }],
-      liveRuns: [{ id: "run-active", status: "running", agentId: "agent-1", agentName: "Agent", adapterType: "paperclip_runner",
+      linkedRuns: [{ runId: "run-active", status: "queued", agentId: "agent-1", adapterType: "pilibala_runner", createdAt, startedAt: null }],
+      liveRuns: [{ id: "run-active", status: "running", agentId: "agent-1", agentName: "Agent", adapterType: "pilibala_runner",
         invocationSource: "manual", triggerDetail: null, createdAt, startedAt: createdAt, finishedAt: null }],
     });
 
@@ -1465,7 +1465,7 @@ describe("buildIssueChatMessages", () => {
 
   it("keeps distinct runs when one stopped run hands off from live history", () => {
     const createdAt = "2026-11-03T14:22:22.000Z";
-    const live = { status: "running" as const, agentId: "agent-1", agentName: "Agent", adapterType: "paperclip_runner",
+    const live = { status: "running" as const, agentId: "agent-1", agentName: "Agent", adapterType: "pilibala_runner",
       invocationSource: "manual" as const, triggerDetail: null, createdAt, startedAt: createdAt, finishedAt: null };
     const messages = buildIssueChatMessages({
       comments: [], timelineEvents: [], issueStatus: "in_progress",

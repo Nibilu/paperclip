@@ -101,7 +101,7 @@ test("clicking away and reopening cached questions keeps the latest reply in vie
   const question = {
     ...coordinatorTaskQuestion,
     payload: { ...coordinatorTaskQuestion.payload, questionSet: {
-      schema: "paperclip.question_set.v1", questions: [
+      schema: "pilibala.question_set.v1", questions: [
         { id: "reply", prompt: "Give a reply", answerMode: "text", required: true },
       ],
     } },
@@ -225,7 +225,7 @@ test("live updates keep an unpinned reader and draft, and the saved message appe
   expect(sourceRunId).toBeTruthy();
   const body = `Live saved message ${randomUUID()}`;
   const response = await request.post(`/api/issues/${fixture.issue.id}/comments`, {
-    headers: { authorization: `Bearer ${key.token}`, "x-paperclip-run-id": sourceRunId! }, data: { body },
+    headers: { authorization: `Bearer ${key.token}`, "x-pilibala-run-id": sourceRunId! }, data: { body },
   });
   await request.delete(`/api/agents/${fixture.agent.id}/keys/${key.id}`);
   expect(response.ok(), await response.text()).toBeTruthy();

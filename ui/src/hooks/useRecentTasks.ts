@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ISSUE_SUMMARIES_MAX_IDS, type Issue, type IssueSummary } from "@paperclipai/shared";
+import { ISSUE_SUMMARIES_MAX_IDS, type Issue, type IssueSummary } from "@pilibalaai/shared";
 import { issuesApi } from "@/api/issues";
 import { queryKeys } from "@/lib/queryKeys";
 import {

@@ -3,7 +3,7 @@ import express from "express";
 import request from "supertest";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { activityLog, agents, companies, createDb, heartbeatRuns, issues } from "@paperclipai/db";
+import { activityLog, agents, companies, createDb, heartbeatRuns, issues } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { issueRoutes } from "../routes/issues.js";
 import { errorHandler } from "../middleware/index.js";
@@ -24,10 +24,10 @@ describePostgres("agent task hierarchy depth through the issue routes", () => {
   const legacyConversationChildId = randomUUID();
 
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-agent-task-depth-routes-");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-agent-task-depth-routes-");
     db = createDb(database.connectionString);
     await db.insert(companies).values({
-      id: companyId, name: "Paperclip", issuePrefix: "DEP", defaultResponsibleUserId: "board-user",
+      id: companyId, name: "Pilibala", issuePrefix: "DEP", defaultResponsibleUserId: "board-user",
       requireBoardApprovalForNewAgents: false,
     });
     await db.insert(agents).values({ id: agentId, companyId, name: "Coder", role: "engineer", adapterType: "codex_local", status: "active" });

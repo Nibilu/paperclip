@@ -29,7 +29,7 @@ describe("announcement placement gates", () => {
   let health: HealthStatus;
   let client: QueryClient;
   const render = async () => { await act(async () => root.render(<QueryClientProvider client={client}><AnnouncementWell health={health} /></QueryClientProvider>)); };
-  const visible = () => Boolean(container.querySelector('[aria-label="Paperclip announcements"]'));
+  const visible = () => Boolean(container.querySelector('[aria-label="Pilibala announcements"]'));
   beforeEach(() => {
     Object.assign(state, { userId: "alice", settled: true, companyId: "company", loading: false, onboardingOpen: false, toasts: [] });
     vi.clearAllMocks();
@@ -51,11 +51,11 @@ describe("announcement placement gates", () => {
   });
   it("docks in normal flow for the sidebar and floats only when asked", async () => {
     await act(async () => root.render(<QueryClientProvider client={client}><AnnouncementWell health={health} placement="sidebar" /></QueryClientProvider>));
-    const docked = container.querySelector('[aria-label="Paperclip announcements"]')!;
+    const docked = container.querySelector('[aria-label="Pilibala announcements"]')!;
     expect(docked.getAttribute("data-placement")).toBe("sidebar");
     expect(docked.className).not.toMatch(/\bfixed\b/);
     await render();
-    const floating = container.querySelector('[aria-label="Paperclip announcements"]')!;
+    const floating = container.querySelector('[aria-label="Pilibala announcements"]')!;
     expect(floating.getAttribute("data-placement")).toBe("floating");
     expect(floating.className).toMatch(/\bfixed\b/);
   });

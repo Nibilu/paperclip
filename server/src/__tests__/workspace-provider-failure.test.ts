@@ -13,7 +13,7 @@ import {
   startWorkerRpcHost,
   WORKSPACE_OPERATION_FAILURE_REASONS,
   type JsonRpcResponse,
-} from "@paperclipai/plugin-sdk";
+} from "@pilibalaai/plugin-sdk";
 import { HttpError } from "../errors.js";
 import { findPluginWorkerUnavailableError, PluginWorkerUnavailableError } from "../services/plugin-worker-unavailable-error.js";
 import { findWorkspaceProviderFailure, workspaceProviderCallFailure } from "../services/workspace-provider-failure.js";
@@ -88,7 +88,7 @@ describe("workspace provider call failures", () => {
     const transient = new Set(["storage_pending", "runtime_unavailable", "remote_incomplete", "context_changed", "deadline_exceeded"]);
     for (const reason of WORKSPACE_OPERATION_FAILURE_REASONS) {
       const failure = workspaceProviderCallFailure(new JsonRpcCallError({ code: PLUGIN_RPC_ERROR_CODES.WORKER_ERROR, message: "private provider text",
-        data: { schema: "paperclip/workspace-operation-error/v1", reason } }));
+        data: { schema: "pilibala/workspace-operation-error/v1", reason } }));
       expect(failure.summary()).toEqual({ kind: "provider", reason, retryable: transient.has(reason) });
       expect(failure.message).not.toContain("private");
       expect(failure.message.includes("retry the same workspace")).toBe(transient.has(reason));

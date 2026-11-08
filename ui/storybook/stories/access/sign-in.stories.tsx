@@ -3,7 +3,7 @@ import { Routes, Route } from "@/lib/router";
 import { AuthPage } from "@/pages/Auth";
 import { Companies } from "@/pages/Companies";
 import { expect, userEvent, within, waitFor } from "storybook/test";
-import { storybookAuthSession } from "../../fixtures/paperclipData";
+import { storybookAuthSession } from "../../fixtures/pilibalaData";
 import {
   prepareFixtureApi,
   type FixtureState,
@@ -24,7 +24,7 @@ const meta = {
   parameters: {
     layout: "fullscreen",
     initialEntries: ["/auth?next=/companies"],
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "access/login"
       ],

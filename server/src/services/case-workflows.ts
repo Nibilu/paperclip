@@ -1,5 +1,5 @@
-import type { Db } from "@paperclipai/db";
-import type { CaseWorkflowTransition } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import type { CaseWorkflowTransition } from "@pilibalaai/shared";
 import { documentService } from "./documents.js";
 import { getWorkflow, getWorkflowMetadata } from "./workflows.js";
 import { persistActivity, type ActivityPublication } from "./activity-log.js";

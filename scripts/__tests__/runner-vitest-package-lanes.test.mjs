@@ -11,7 +11,7 @@ import test from "node:test";
 import { defaultSuiteWeight, loadShardDurations } from "../general-server-shard.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const runnerRoot = path.join(repoRoot, "packages/paperclip-runner");
+const runnerRoot = path.join(repoRoot, "packages/pilibala-runner");
 const laneWrapper = path.join(runnerRoot, "scripts/run-pr-vitest-lane.mjs");
 const prepCommands = [
   { command: "pnpm", args: ["run", "ensure:eval-build-deps"], cwd: runnerRoot },
@@ -32,7 +32,7 @@ function wrapperPlan(args, envOverrides = {}) {
 // inventory and the lanes' substring filters follow vitest.config.ts exactly.
 function vitestListFiles(filters = []) {
   const listed = spawnSync(process.execPath, [path.join(runnerRoot, "node_modules/vitest/vitest.mjs"), "list", "--filesOnly", ...filters], {
-    cwd: runnerRoot, encoding: "utf8", env: { ...process.env, PAPERCLIP_CI_PROFILE: "" }, maxBuffer: 16 * 1024 * 1024,
+    cwd: runnerRoot, encoding: "utf8", env: { ...process.env, PILIBALA_CI_PROFILE: "" }, maxBuffer: 16 * 1024 * 1024,
   });
   assert.equal(listed.status, 0, listed.stderr);
   return listed.stdout.split("\n").map((line) => line.trim().replaceAll("\\", "/"))
@@ -44,7 +44,7 @@ test("package lanes form a complete, non-overlapping, balanced cover of the Vite
   assert.ok(inventory.length > 100, `expected the full Runner package inventory, got ${inventory.length}`);
 
   const durations = loadShardDurations(path.join(runnerRoot, "scripts/vitest-lane-durations.json"));
-  const weight = (file) => durations[`packages/paperclip-runner/${file}`] ?? defaultSuiteWeight(durations);
+  const weight = (file) => durations[`packages/pilibala-runner/${file}`] ?? defaultSuiteWeight(durations);
   const laneCount = 3;
   const lanes = Array.from({ length: laneCount }, (_, index) => {
     const plan = wrapperPlan([`--package-lane=${index + 1}/${laneCount}`], { GITHUB_WORKFLOW: "PR" });

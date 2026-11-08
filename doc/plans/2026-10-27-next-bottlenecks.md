@@ -141,7 +141,7 @@ shared-block reads or temporary blocks in this window. The deployed and current
 upstream query paths are identical.
 
 Direct overlap is confirmed in
-[#17647](https://github.com/paperclipai/paperclip/pull/17647), draft head
+[#17647](https://github.com/pilibalaai/pilibala/pull/17647), draft head
 `ca8f2d17c64fc7cecff4526817d1ac6e1d479ff4`. It changes this exact selector and
 removes its normal publication-maintenance call. Its coordinator reconstructs
 durable scopes at startup, retains cursors, and consumes committed-change
@@ -196,13 +196,13 @@ inventory cannot be reused for another principal's visibility.
 
 ## Existing work and deferred candidates
 
-- [#17606](https://github.com/paperclipai/paperclip/pull/17606) owns the exact chat
+- [#17606](https://github.com/pilibalaai/pilibala/pull/17606) owns the exact chat
   lifecycle milestone path. Its draft branch moves lifecycle work to committed
   changes and reconstructs pending work. Audit its producer/recovery proof and
   drive its checks before starting a competing polling rewrite. Its draft
   status and source design are not proof that it is safe or merge-ready.
-- [#17664](https://github.com/paperclipai/paperclip/pull/17664) and
-  [#17661](https://github.com/paperclipai/paperclip/pull/17661) overlap the two
+- [#17664](https://github.com/pilibalaai/pilibala/pull/17664) and
+  [#17661](https://github.com/pilibalaai/pilibala/pull/17661) overlap the two
   measured GitHub maintenance duties. The source-run fallback is a distinct
   delivery/link/run lookup in `chat-github-checks.ts:181–202`, used when the
   review lacks a resolvable run. It still merits a local plan/equality experiment,
@@ -212,19 +212,19 @@ inventory cannot be reused for another principal's visibility.
   `server/src/services/execution-workspaces.ts:3576` through the shared terminal
   workspace worker, already migrated by #16282. Its query is at
   `server/src/services/git-workspace-expiration.ts:153–160`.
-  [#17505](https://github.com/paperclipai/paperclip/pull/17505) adjusts cursor and
+  [#17505](https://github.com/pilibalaai/pilibala/pull/17505) adjusts cursor and
   retry deadlines but leaves this query/call intact. A second pass could batch
   repeated activity reads; fresh destructive eligibility, live leases and
   concurrent reopen checks must remain authoritative. No qualified open fix
   reducing these activity reads was found in the scoped check.
-- [#17896](https://github.com/paperclipai/paperclip/pull/17896),
-  [#17894](https://github.com/paperclipai/paperclip/pull/17894), and
-  [#17893](https://github.com/paperclipai/paperclip/pull/17893) are already merged
+- [#17896](https://github.com/pilibalaai/pilibala/pull/17896),
+  [#17894](https://github.com/pilibalaai/pilibala/pull/17894), and
+  [#17893](https://github.com/pilibalaai/pilibala/pull/17893) are already merged
   after the measured deployment. They narrow explicit-continuation run reads,
   avoid duplicate GitHub webhook body transfer and narrow review-wait JSON.
   The final 18:49:08 serving source contains all three. Evaluate their impact in
   a new post-rollout window before duplicating those changes.
-- [#17907](https://github.com/paperclipai/paperclip/pull/17907) keeps the skill
+- [#17907](https://github.com/pilibalaai/pilibala/pull/17907) keeps the skill
   cache lock alive during slow preparation. Its documented scope does not
   explain why preparation is slow or remove the skills-list work above.
 

@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { and, eq, sql } from "drizzle-orm";
 import { expect, it } from "vitest";
 import { agents, completionContracts, heartbeatRunEvents, heartbeatRuns, issues, nativeRunFinalizations,
-  nativeRunnerCheckpoints, nativeRunResults } from "@paperclipai/db";
-import { DurablePrpControlPlane, parseNativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+  nativeRunnerCheckpoints, nativeRunResults } from "@pilibalaai/db";
+import { DurablePrpControlPlane, parseNativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 import { describeEmbeddedPostgres, nativeRestartFixture } from "../../__tests__/helpers/native-restart.js";
 import { admitUnclaimedNativeBootstrapRetry } from "./native-bootstrap-retry.js";
 import { buildNativeCompletionContract } from "./completion-contracts.js";
@@ -25,7 +25,7 @@ describeEmbeddedPostgres("unclaimed native bootstrap retry admission", () => {
     const [issue] = await db.select().from(issues).where(eq(issues.id, issueId));
     const [contract] = await db.select().from(completionContracts).where(eq(completionContracts.issueId, issueId));
     const execution = parseNativeExecutionInput({
-      schema: "paperclip.native-execution-input.v5", executionMode: "default", planningContext: null,
+      schema: "pilibala.native-execution-input.v5", executionMode: "default", planningContext: null,
       runtimeContext: nativeRuntimeContextFixture(),
       binding: { companyId, agentId, issueId, runId, executionWorkspaceId: runId },
       provider: { kind: "codex", model: "fixture-model", approvalPolicy: "never" },
@@ -33,7 +33,7 @@ describeEmbeddedPostgres("unclaimed native bootstrap retry admission", () => {
       workspace: { cwd: runtimeRoot, repoUrl: null, repoRef: null, branchName: null },
       session: { normalizedSessionId: native.normalizedSessionId, driverKind: "codex_app_server", protocolVersion: 1,
         lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null } },
-      completionContract: { id: contract!.id, sha256: contract!.canonicalSha256, schemaVersion: "paperclip.completion-contract.v1",
+      completionContract: { id: contract!.id, sha256: contract!.canonicalSha256, schemaVersion: "pilibala.completion-contract.v1",
         contract: buildNativeCompletionContract(issue!, { revision: contract!.revision }) }, interactionResponses: [], credentialBindings: [],
     });
     await db.update(heartbeatRuns).set({ runnerProfileJson: sql`coalesce(${heartbeatRuns.runnerProfileJson}, '{}'::jsonb)
@@ -54,7 +54,7 @@ describeEmbeddedPostgres("unclaimed native bootstrap retry admission", () => {
       if (scenario === "issued and pruned credential") { core.issueBootstrapTicket(); core.store.state.tickets = {}; }
       if (scenario === "adopted authority") core.store.state.bootstrapHistory!.adopted = true;
       if (scenario === "legacy state") {
-        core.store.state.schema = "paperclip.runner.durable.control-plane-state.v1";
+        core.store.state.schema = "pilibala.runner.durable.control-plane-state.v1";
         delete core.store.state.bootstrapHistory;
       }
       if (scenario === "hidden delivery") core.store.state.commandDeliveryCounts = { removedCommand: 1 };
@@ -73,7 +73,7 @@ describeEmbeddedPostgres("unclaimed native bootstrap retry admission", () => {
         expect(await admitUnclaimedNativeBootstrapRetry({ db, execution, leaseOwner, localStateContents })).toBe(true);
         if (scenario === "local missing event policy") delete original.checkpointEventPolicy;
         else {
-          const event = { schema: "paperclip.prp.event.v1", schemaVersion: 1, sourceKind: "runner",
+          const event = { schema: "pilibala.prp.event.v1", schemaVersion: 1, sourceKind: "runner",
             sourceInstanceId: identity.runnerInstanceId, sourceEventId: "fixture-local-progress", sourceSeq: 1, runId,
             normalizedSessionId: identity.normalizedSessionId, turnId: identity.turnId, itemId: identity.itemId,
             eventType: "item.delta", priority: 2, emittedAt: "2026-01-01T00:00:00.000Z", payload: { delta: "Prior local progress" } };
@@ -95,7 +95,7 @@ describeEmbeddedPostgres("unclaimed native bootstrap retry admission", () => {
       if (scenario === "expired claim") await db.update(nativeRunFinalizations).set({ leaseExpiresAt: new Date(0) })
         .where(eq(nativeRunFinalizations.runId, runId));
       if (scenario === "Stop") await db.update(heartbeatRuns).set({ resultJson: {
-        nativeCancellation: { schema: "paperclip.native-cancellation.v1", companyId, issueId, runId,
+        nativeCancellation: { schema: "pilibala.native-cancellation.v1", companyId, issueId, runId,
           scope: "run", dispatchState: "pending", intentAuditId: randomUUID() },
       } }).where(eq(heartbeatRuns.id, runId));
       if (scenario === "paused agent") await db.update(agents).set({ status: "paused" }).where(eq(agents.id, agentId));

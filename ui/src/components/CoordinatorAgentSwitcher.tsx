@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import { AgentChatPicker } from "./AgentChatPicker";
 import { AgentAvatar } from "./AgentAvatar";
 import { Button } from "./ui/button";

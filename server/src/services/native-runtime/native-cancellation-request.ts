@@ -1,6 +1,6 @@
 import { notifyScheduledRetryCancellation } from "../scheduled-retry-cancellation-notifications.js";
 import { and, eq, sql } from "drizzle-orm";
-import { activityLog, budgetReservations, heartbeatRuns, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { activityLog, budgetReservations, heartbeatRuns, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { badRequest, conflict } from "../../errors.js";
 import { nativeManualAdmissionHoldMatches } from "./native-runner-ownership.js";
 
@@ -20,7 +20,7 @@ type StopRecoveryOwner = Pick<typeof nativeRunFinalizations.$inferSelect,
 export function hasPendingNativeRunStop(run: StopRun): boolean {
   const intent = record(record(run.resultJson).nativeCancellation);
   return run.runtimeMode === "native" && !!run.nativeIssueId
-    && intent.schema === "paperclip.native-cancellation.v1" && intent.scope === "run" && intent.reasonCode === "cancellation_run_only"
+    && intent.schema === "pilibala.native-cancellation.v1" && intent.scope === "run" && intent.reasonCode === "cancellation_run_only"
     && intent.runId === run.id && intent.companyId === run.companyId && intent.issueId === run.nativeIssueId
     && typeof intent.intentId === "string" && intent.intentId.startsWith("native-cancellation:")
     && UUID.test(intent.intentId.slice("native-cancellation:".length))
@@ -87,7 +87,7 @@ export function nativeRetryCancellationEligible(input: {
   const result = record(input.resultJson), native = record(result.nativeCancellation);
   return (!input.requestId || (record(result.startupCancellation).cancellationRequestId === input.requestId
       && native.intentId === cancellationIntentId(input.requestId)))
-    && native.schema === "paperclip.native-cancellation.v1" && typeof native.intentId === "string" && !!native.intentId
+    && native.schema === "pilibala.native-cancellation.v1" && typeof native.intentId === "string" && !!native.intentId
     && native.runId === input.runId && native.companyId === input.companyId && native.issueId === input.issueId
     && native.scope === (input.scope ?? "run") && ["pending", "acknowledged"].includes(String(native.dispatchState))
     && typeof native.dispatched === "boolean" && typeof native.intentAuditId === "string" && !!native.intentAuditId
@@ -99,7 +99,7 @@ export function pendingFailedNativeRetryCancellationCondition() {
   const native = sql`${heartbeatRuns.resultJson}->'nativeCancellation'`;
   const continuingStop = sql`${nativeRunFinalizations.phase} = 'terminal_failure'
     and ${nativeRunFinalizations.failureCode} = 'native_retry_cancelled'
-    and ${native}->>'schema' = 'paperclip.native-cancellation.v1'
+    and ${native}->>'schema' = 'pilibala.native-cancellation.v1'
     and jsonb_typeof(${native}->'intentId') = 'string' and length(${native}->>'intentId') > 0
     and ${native}->>'runId' = ${heartbeatRuns.id}::text
     and ${native}->>'companyId' = ${heartbeatRuns.companyId}::text
@@ -182,7 +182,7 @@ export async function claimCancellationRequest(db: Db, runId: string, companyId:
       if (actor.type !== "board" || actor.userId !== userId) throw conflict("Cancellation request belongs to another actor");
       if (!pendingRetry && !["queued", "running", "scheduled_retry"].includes(run.status)) {
         const native = record(result.nativeCancellation);
-        if (run.status !== "cancelled" || native.schema !== "paperclip.native-cancellation.v1"
+        if (run.status !== "cancelled" || native.schema !== "pilibala.native-cancellation.v1"
           || native.intentId !== cancellationIntentId(requestId) || native.runId !== runId || native.companyId !== companyId
           || native.scope !== "run" || native.dispatchState !== "acknowledged" || typeof native.dispatched !== "boolean"
           || typeof native.intentAuditId !== "string" || !native.intentAuditId
@@ -210,6 +210,6 @@ export function startupCancellationFence(requestedAt: string) {
       'beforeNativeSelection', ${heartbeatRuns.runtimeMode} = 'legacy'
         and ${heartbeatRuns.runtimeModeResolvedAt} is null
         and ${heartbeatRuns.executionStage} = 'preparing'
-        and coalesce(${heartbeatRuns.runnerProfileJson}->'adapterDispatch'->>'adapterType' = 'paperclip_runner', false))
+        and coalesce(${heartbeatRuns.runnerProfileJson}->'adapterDispatch'->>'adapterType' = 'pilibala_runner', false))
     END`;
 }

@@ -149,6 +149,6 @@ the wiring is covered by tests.
 Artifacts V1 now renders for every instance and the Experimental toggle is gone. `enableArtifactsV1`
 stays in the schema and catalog with a default of on. `resolveArtifactsV1Enabled` ignores a stored
 false, because every experimental write persists the whole normalized object, so a stored false only
-means an instance saved some other experiment. A value from `PAPERCLIP_MANAGED_CONFIG` is still
+means an instance saved some other experiment. A value from `PILIBALA_MANAGED_CONFIG` is still
 honoured, which leaves operators an off switch outside Cloud staging. The previous cards remain in
 the code until that switch is retired.

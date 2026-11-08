@@ -6,7 +6,7 @@ import type {
   ProjectWorkspace,
   WorkspaceOperation,
   WorkspaceRuntimeControlTarget,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { api } from "./client";
 import { sanitizeWorkspaceRuntimeControlTarget } from "./workspace-runtime-control";
 

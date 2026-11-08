@@ -1,7 +1,7 @@
 import express from "express";
 import request from "supertest";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { activityLog, applyPendingMigrations, companies, createDb, instanceSettings, type Db } from "@paperclipai/db";
+import { activityLog, applyPendingMigrations, companies, createDb, instanceSettings, type Db } from "@pilibalaai/db";
 import { eq, sql } from "drizzle-orm";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -16,7 +16,7 @@ vi.mock("./adapter-plugin-store.js", () => ({
   getAdapterPluginByType: () => undefined,
 }));
 vi.mock("../adapters/registry.js", () => ({
-  listServerAdapters: () => [{ type: "codex_local" }, { type: "claude_local" }, { type: "paperclip_runner" }, ...legacy.extraTypes.map(type => ({ type }))],
+  listServerAdapters: () => [{ type: "codex_local" }, { type: "claude_local" }, { type: "pilibala_runner" }, ...legacy.extraTypes.map(type => ({ type }))],
   findServerAdapter: (type: string) => ({ type }),
   findActiveServerAdapter: (type: string) => ({ type }),
   isOverridePaused: () => false,
@@ -30,14 +30,14 @@ import { errorHandler } from "../middleware/error-handler.js";
 import { resolveNewAgentRunnerForCompany } from "./agent-runner-selection.js";
 import * as activities from "./activity-log.js";
 
-const externalDatabaseUrl = process.env.PAPERCLIP_ADAPTER_SETTINGS_TEST_DATABASE_URL;
+const externalDatabaseUrl = process.env.PILIBALA_ADAPTER_SETTINGS_TEST_DATABASE_URL;
 const support = externalDatabaseUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 (support.supported ? describe : describe.skip)("durable managed adapter settings", () => {
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: Db;
   let peer: Db;
   let directory: string;
-  const managed = { runtimeEnv: { PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN: "synthetic-test-token" } };
+  const managed = { runtimeEnv: { PILIBALA_CLOUD_TENANT_SERVER_TOKEN: "synthetic-test-token" } };
   const service = () => adapterSettingsService(db, managed);
 
   beforeAll(async () => {
@@ -59,7 +59,7 @@ const support = externalDatabaseUrl ? { supported: true } : await getEmbeddedPos
     legacy.extraTypes = [];
     legacy.get.mockClear();
     legacy.set.mockClear();
-    vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "synthetic-test-token");
+    vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "synthetic-test-token");
   });
   afterEach(async () => {
     vi.restoreAllMocks();
@@ -121,7 +121,7 @@ const support = externalDatabaseUrl ? { supported: true } : await getEmbeddedPos
   });
 
   it("imports legacy choices once before admission and ignores stale files after the DB record exists", async () => {
-    const runtimeEnv = { ...managed.runtimeEnv, PAPERCLIP_HOME: directory };
+    const runtimeEnv = { ...managed.runtimeEnv, PILIBALA_HOME: directory };
     const file = path.join(directory, "adapter-settings.json");
     await fs.writeFile(file, JSON.stringify({ disabledTypes: ["codex_local", "future_adapter"] }));
     const results = await Promise.all([
@@ -137,7 +137,7 @@ const support = externalDatabaseUrl ? { supported: true } : await getEmbeddedPos
   });
 
   it("uses defaults only for an absent legacy file and rejects malformed or oversized input", async () => {
-    const runtimeEnv = { ...managed.runtimeEnv, PAPERCLIP_HOME: directory };
+    const runtimeEnv = { ...managed.runtimeEnv, PILIBALA_HOME: directory };
     const file = path.join(directory, "adapter-settings.json");
     await fs.writeFile(file, JSON.stringify({ disabledTypes: [42] }));
     await expect(initializeAdapterSettings(db, { runtimeEnv })).rejects.toThrow("Persisted adapter settings are invalid");
@@ -169,13 +169,13 @@ const support = externalDatabaseUrl ? { supported: true } : await getEmbeddedPos
 
   it("applies operator restrictions without rewriting saved choices", async () => {
     await service().setDisabled("codex_local", true);
-    const env = { ...managed.runtimeEnv, PAPERCLIP_ADAPTERS: JSON.stringify([{ adapterType: "codex_local", enabled: true }]) };
+    const env = { ...managed.runtimeEnv, PILIBALA_ADAPTERS: JSON.stringify([{ adapterType: "codex_local", enabled: true }]) };
     const overlay = adapterSettingsService(peer, { runtimeEnv: env });
-    expect(await overlay.getDisabledTypes()).toEqual(["claude_local", "paperclip_runner"]);
+    expect(await overlay.getDisabledTypes()).toEqual(["claude_local", "pilibala_runner"]);
     expect(await overlay.inspectStored()).toEqual(await service().inspectStored());
     await expect(overlay.setDisabled("claude_local", false)).rejects.toThrow("hosting operator");
     await expect(overlay.setDisabled("codex_local", true)).rejects.toThrow("hosting operator");
-    expect(await overlay.getDisabledTypes()).toEqual(["claude_local", "paperclip_runner"]);
+    expect(await overlay.getDisabledTypes()).toEqual(["claude_local", "pilibala_runner"]);
     expect(await service().getDisabledTypes()).toEqual(["codex_local"]);
   });
 
@@ -197,17 +197,17 @@ const support = externalDatabaseUrl ? { supported: true } : await getEmbeddedPos
       .onConflictDoUpdate({ target: instanceSettings.singletonKey, set: { general: {},
         experimental: { enableManagedSandboxOnly: true, enableNativeRunner: true } } });
     const draft = { adapterType: "cursor_cloud", runner: "auto" as const, setupOnly: true, adapterConfig: {}, disabledTypes: [] };
-    const saved = { adapterType: "paperclip_runner", adapterConfig: { provider: "cursor_cloud", model: "caller-model", repoUrl: "https://github.com/acme/repo", lifecycleMode: "per_turn" } };
+    const saved = { adapterType: "pilibala_runner", adapterConfig: { provider: "cursor_cloud", model: "caller-model", repoUrl: "https://github.com/acme/repo", lifecycleMode: "per_turn" } };
     const admitted = async (input = draft as typeof draft | typeof saved) => {
       expect(await resolveNewAgentRunnerForCompany(db, "company", input))
-        .toMatchObject({ adapterType: "paperclip_runner", defaultEnvironmentId: null, adapterConfig: { provider: "cursor_cloud" } });
+        .toMatchObject({ adapterType: "pilibala_runner", defaultEnvironmentId: null, adapterConfig: { provider: "cursor_cloud" } });
     };
     const denied = async (input = draft as typeof draft | typeof saved) => {
       await expect(resolveNewAgentRunnerForCompany(db, "company", input))
         .rejects.toMatchObject({ status: 422, details: { code: "agent_runner_unavailable" } });
     };
     await admitted(); // The default managed tenant has no Computer or CLI probe.
-    for (const type of ["cursor_cloud", "paperclip_runner"]) {
+    for (const type of ["cursor_cloud", "pilibala_runner"]) {
       await adapterSettingsService(peer, managed).setDisabled(type, true);
       await denied();
       await denied(saved);
@@ -216,25 +216,25 @@ const support = externalDatabaseUrl ? { supported: true } : await getEmbeddedPos
     }
     await adapterSettingsService(peer, managed).setDisabled("cursor_cloud", true);
     const stored = await service().inspectStored();
-    vi.stubEnv("PAPERCLIP_ADAPTERS", JSON.stringify([
-      { adapterType: "cursor_cloud", enabled: true }, { adapterType: "paperclip_runner", enabled: true },
+    vi.stubEnv("PILIBALA_ADAPTERS", JSON.stringify([
+      { adapterType: "cursor_cloud", enabled: true }, { adapterType: "pilibala_runner", enabled: true },
     ]));
     await admitted(); // Operator allowlist supersedes, rather than unions, saved disables.
     await admitted(saved);
     expect(await service().inspectStored()).toEqual(stored);
     for (const declaration of [
       [{ adapterType: "cursor_cloud", enabled: true }],
-      [{ adapterType: "paperclip_runner", enabled: true }],
-      [{ adapterType: "cursor_cloud", enabled: false }, { adapterType: "paperclip_runner", enabled: true }],
-      [{ adapterType: "cursor_cloud", enabled: true }, { adapterType: "paperclip_runner", enabled: false }],
+      [{ adapterType: "pilibala_runner", enabled: true }],
+      [{ adapterType: "cursor_cloud", enabled: false }, { adapterType: "pilibala_runner", enabled: true }],
+      [{ adapterType: "cursor_cloud", enabled: true }, { adapterType: "pilibala_runner", enabled: false }],
     ]) {
-      vi.stubEnv("PAPERCLIP_ADAPTERS", JSON.stringify(declaration));
+      vi.stubEnv("PILIBALA_ADAPTERS", JSON.stringify(declaration));
       await denied();
       await denied(saved);
     }
-    vi.stubEnv("PAPERCLIP_ADAPTERS", "invalid operator declaration");
+    vi.stubEnv("PILIBALA_ADAPTERS", "invalid operator declaration");
     await expect(resolveNewAgentRunnerForCompany(db, "company", draft)).rejects.toThrow();
-    vi.stubEnv("PAPERCLIP_ADAPTERS", undefined);
+    vi.stubEnv("PILIBALA_ADAPTERS", undefined);
     await denied(); // Removing the overlay restores the saved choice.
     expect(await service().inspectStored()).toEqual(stored);
     expect(legacy.get).not.toHaveBeenCalled();

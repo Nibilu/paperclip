@@ -1,4 +1,4 @@
-import { WORKSPACE_RESTORE_FAILURE_CODES } from "@paperclipai/shared";
+import { WORKSPACE_RESTORE_FAILURE_CODES } from "@pilibalaai/shared";
 import { createHeartbeatRunState } from "./heartbeat/run-state.js";
 import { activityService } from "./activity.js";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -7,7 +7,7 @@ import express from "express";
 import request from "supertest";
 import { eq, sql } from "drizzle-orm";
 import { activityLog, agents, agentWakeupRequests, applyPendingMigrations, companies, createDb, environmentLeases, environments,
-  heartbeatRuns, issueRecoveryActions, issues, workspaceOperations, completionContracts, nativeRunResults, nativeRunFinalizations } from "@paperclipai/db";
+  heartbeatRuns, issueRecoveryActions, issues, workspaceOperations, completionContracts, nativeRunResults, nativeRunFinalizations } from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { lockWorkspaceRecoveryTestDatabase, WORKSPACE_RECOVERY_EXTERNAL_SETUP_TIMEOUT_MS } from "./__tests__/workspace-recovery-database-lock.js";
 import { resolveExternalTestDatabaseUrl } from "../__tests__/helpers/external-test-database.js";
@@ -21,7 +21,7 @@ describe("workspace source verification diagnostics", () => {
   let db: ReturnType<typeof createDb>;
   let temporary: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let externalLock: ReturnType<typeof createDb> | undefined;
-  const external = resolveExternalTestDatabaseUrl("PAPERCLIP_WORKSPACE_RECOVERY_TEST_DATABASE_URL");
+  const external = resolveExternalTestDatabaseUrl("PILIBALA_WORKSPACE_RECOVERY_TEST_DATABASE_URL");
   beforeAll(async () => {
     if (external) {
       externalLock = await lockWorkspaceRecoveryTestDatabase(external);
@@ -36,7 +36,7 @@ describe("workspace source verification diagnostics", () => {
   async function seed() {
     const companyId = randomUUID(), issueId = randomUUID(), runId = randomUUID(), actionId = randomUUID(), agentId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Source verification", issuePrefix: `S${companyId.slice(0, 6)}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "pilibala_runner" });
     await db.insert(issues).values({ id: issueId, companyId, title: "Preserve the source", status: "blocked", assigneeAgentId: agentId });
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, issueId, nativeIssueId: issueId,
       runtimeMode: "native", status: "failed", finishedAt: new Date() });
@@ -44,7 +44,7 @@ describe("workspace source verification diagnostics", () => {
     const [lease] = await db.insert(environmentLeases).values({ companyId, issueId, heartbeatRunId: runId,
       environmentId: environment.id, provider: "daytona", providerLeaseId: randomUUID(), leasePolicy: "retain_on_failure",
       status: "released", cleanupStatus: "success", metadata: { remoteCwd: "/workspace", token: "secret-must-not-appear" } }).returning();
-    const reference = { schema: "paperclip.native-workspace-sync/v3", state: "prepared", leaseId: lease.id,
+    const reference = { schema: "pilibala.native-workspace-sync/v3", state: "prepared", leaseId: lease.id,
       providerLeaseId: lease.providerLeaseId, workspaceId: issueId, remoteCwd: "/workspace", resourceDisposition: "keep_running",
       descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null };
     await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeWorkspaceSync: reference } }).where(eq(heartbeatRuns.id, runId));
@@ -53,7 +53,7 @@ describe("workspace source verification diagnostics", () => {
     await db.insert(issueRecoveryActions).values({ id: actionId, companyId, sourceIssueId: issueId,
       kind: "active_run_watchdog", ownerType: "board", cause: "native_workspace_sync_out_retry_exhausted", fingerprint: runId,
       nextAction: "Inspect the retained source", evidence: { runId, systemRecovery,
-        workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId, status: "blocked",
+        workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId, status: "blocked",
           stage: "verifying_stop", attempt: 1, attemptLimit: 6, requestIds: [] } } });
     return { db, companyId, issueId, runId, actionId, agentId, environment, lease, reference };
   }
@@ -85,7 +85,7 @@ describe("workspace source verification diagnostics", () => {
   it.each(WORKSPACE_RESTORE_FAILURE_CODES)("preserves %s through both run API projections", async code => {
     const f = await seed();
     await db.update(heartbeatRuns).set({ resultJson: { workspaceRestoreFailure: code, opaque: randomBytes(100_000).toString("hex"),
-      workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [f.lease.id] } } })
+      workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [f.lease.id] } } })
       .where(eq(heartbeatRuns.id, f.runId));
     const [runs, activity] = await Promise.all([
       createHeartbeatRunState(db).getRun(f.runId),
@@ -104,7 +104,7 @@ describe("workspace source verification diagnostics", () => {
       from pg_index where indexrelid = 'heartbeat_runs_cancelled_workspace_preservation_idx'::regclass`);
     await db.update(heartbeatRuns).set({ status: "cancelled", resultJson: {
       nativeCancellation: { dispatchState: "acknowledged" }, workspaceRestoreFailure: "restore_invalid_metadata",
-      workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [f.lease.id] },
+      workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [f.lease.id] },
     } }).where(eq(heartbeatRuns.id, f.runId));
     const candidates = () => db.execute(sql`select id from heartbeat_runs where id = ${f.runId}
       and ${sql.raw(String(index.predicate))}`);
@@ -133,7 +133,7 @@ describe("workspace source verification diagnostics", () => {
     const f = await seed();
     const contractId = randomUUID(), resultId = randomUUID();
     await db.insert(completionContracts).values({ id: contractId, companyId: f.companyId, issueId: f.issueId,
-      revision: 1, schemaVersion: "paperclip.completion-contract.v1", policyVersion: "test", risk: "standard",
+      revision: 1, schemaVersion: "pilibala.completion-contract.v1", policyVersion: "test", risk: "standard",
       completionAuthority: "server_arbiter", incompleteCriteriaPolicy: "preserve_non_terminal",
       contractJson: {}, canonicalSha256: "contract", createdByActorType: "system", createdByActorId: "test" });
     await db.update(heartbeatRuns).set({ completionContractId: contractId }).where(eq(heartbeatRuns.id, f.runId));
@@ -184,7 +184,7 @@ describe("workspace source verification diagnostics", () => {
     const f = await seed();
     const before = await snapshot(f);
     const response = await request(app()).get(path(f)).expect(200);
-    expect(response.body.sourceInspection).toEqual({ schema: "paperclip.workspace-source-inspection.v1",
+    expect(response.body.sourceInspection).toEqual({ schema: "pilibala.workspace-source-inspection.v1",
       actionId: f.actionId, runId: f.runId, scope: "recorded_source_identity", status: "verified",
       observedAt: expect.any(String) });
     expect(await snapshot(f)).toEqual(before);
@@ -236,7 +236,7 @@ describe("workspace source verification diagnostics", () => {
       leaseIds.push(lease.id);
     }
     await db.update(heartbeatRuns).set({ resultJson: { workspaceRestoreRecovery: {
-      schema: "paperclip.workspace-restore-recovery.v1", leaseIds } } }).where(eq(heartbeatRuns.id, f.runId));
+      schema: "pilibala.workspace-restore-recovery.v1", leaseIds } } }).where(eq(heartbeatRuns.id, f.runId));
     const before = await snapshot(f);
     const select = vi.spyOn(db, "select");
     try {

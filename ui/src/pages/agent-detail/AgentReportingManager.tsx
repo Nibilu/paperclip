@@ -1,6 +1,6 @@
 import { Pencil, UserRound } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import { agentsApi } from "@/api/agents";
 import { QueryErrorState, useQueryView } from "@/components/QueryView";
 import { ReportsToPicker } from "@/components/ReportsToPicker";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Environment, PluginSandboxEnvironmentConfig } from "@paperclipai/shared";
+import type { Environment, PluginSandboxEnvironmentConfig } from "@pilibalaai/shared";
 import { fingerprintEnvironmentSandboxProviderConfig as fingerprint, SANDBOX_PLATFORM_PROBE_METADATA_KEY } from "../services/environment-custom-image-runtime.js";
 import { hasSandboxSnapshotQualification, qualifiedSandboxSnapshotId, type SandboxTemplateIdentity } from "../services/sandbox-snapshot-qualification.js";
 

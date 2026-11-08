@@ -1,6 +1,6 @@
 import { groupImageResources } from "./image-resources";
 import { useRef, type ReactNode } from "react";
-import type { ExecutionProjection } from "@paperclipai/shared";
+import type { ExecutionProjection } from "@pilibalaai/shared";
 import { useSecondTick } from "@/hooks/useSecondTick";
 import { cn } from "@/lib/utils";
 import type {
@@ -23,8 +23,8 @@ import {
   buildTurnTimelineRows,
   isTerminalRunStatus,
   omitProgressRepeatedByResponse,
-  paperclipRunnerFinalResponse,
-  paperclipRunnerTimelineItems,
+  pilibalaRunnerFinalResponse,
+  pilibalaRunnerTimelineItems,
 } from "./transcript-adapter";
 
 function currentActivityStatusItems(
@@ -206,7 +206,7 @@ export function TaskChatRunnerTurn({
       item.surface === "run_result" &&
       item.disposition === "yielded",
   );
-  const observedFinal = paperclipRunnerFinalResponse(turnItems, awaitingContinuation
+  const observedFinal = pilibalaRunnerFinalResponse(turnItems, awaitingContinuation
     ? { allowFallback: false, yielded: true, waitSummary }
     : { allowFallback: terminal && allowSummaryFallback });
   const observedProviderText = Boolean(
@@ -243,7 +243,7 @@ export function TaskChatRunnerTurn({
     finalRef.current.providerText = observedProviderText;
   }
   const final = finalRef.current.item;
-  const timelineItems = paperclipRunnerTimelineItems(turnItems);
+  const timelineItems = pilibalaRunnerTimelineItems(turnItems);
   const currentActivityItems = currentActivityStatusItems(timelineItems);
   const timelineRows = groupImageResources(buildTurnTimelineRows(
     omitProgressRepeatedByResponse(timelineItems, final?.text),

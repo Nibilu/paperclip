@@ -16,7 +16,7 @@ describe("runner ingress failure contract", () => {
   });
   it.each([{}, null, { ...failure, phase: "unknown" }, { ...failure, httpStatus: "502" },
     { ...failure, httpStatus: 200 }, { ...failure, httpStatus: 600 }, { ...failure, httpStatus: 502.5 }])("rejects unsupported evidence %j", value => {
-    expect(readEnvironmentRunnerIngressFailure({ data: { schema: "paperclip/environment-runner-ingress-error/v1", failure: value } })).toBeNull();
+    expect(readEnvironmentRunnerIngressFailure({ data: { schema: "pilibala/environment-runner-ingress-error/v1", failure: value } })).toBeNull();
   });
   it("does not invoke inherited or accessor fields", () => {
     let reads = 0;

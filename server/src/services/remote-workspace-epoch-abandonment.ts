@@ -1,10 +1,10 @@
 import { and, eq } from "drizzle-orm";
-import { executionWorkspaces, type Db } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority, type RemoteWorkspaceAuthority } from "@paperclipai/shared";
+import { executionWorkspaces, type Db } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority, type RemoteWorkspaceAuthority } from "@pilibalaai/shared";
 import { persistActivity } from "./activity-log.js";
 
 type Transaction = Parameters<Parameters<Db["transaction"]>[0]>[0];
-export const REMOTE_WORKSPACE_ABANDONED_EPOCH_SCHEMA = "paperclip.remote-workspace-abandoned-epoch.v1";
+export const REMOTE_WORKSPACE_ABANDONED_EPOCH_SCHEMA = "pilibala.remote-workspace-abandoned-epoch.v1";
 
 /**
  * Ends an epoch whose unsaved files cannot be verified, without applying them.

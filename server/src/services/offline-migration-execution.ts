@@ -1,5 +1,5 @@
 import { and, eq, isNotNull, not, or } from "drizzle-orm";
-import { heartbeatRuns } from "@paperclipai/db";
+import { heartbeatRuns } from "@pilibalaai/db";
 import { noRetainedExecutionPredicate } from "./pre-dispatch-execution-evidence.js";
 
 /** Only for offline maintenance after every application deployment has stopped.

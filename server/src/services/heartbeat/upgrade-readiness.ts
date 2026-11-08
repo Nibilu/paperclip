@@ -1,6 +1,6 @@
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { sql } from "drizzle-orm";
-import { remoteWorkspaceRunReferenceSchema } from "@paperclipai/shared";
+import { remoteWorkspaceRunReferenceSchema } from "@pilibalaai/shared";
 import { inspectNativeRunnerUpgradeHeader, NATIVE_CHECKPOINT_HEADER_INSPECTION_MAX_BYTES,
   NATIVE_CHECKPOINT_INSPECTION_TOTAL_MAX_BYTES } from "../native-runtime/native-runner-checkpoint.js";
 import { readNativeWorkspaceSyncReference } from "../native-runtime/native-workspace-sync.js";
@@ -37,7 +37,7 @@ export async function readUpgradeReadiness(db: Db, input: {
       f.result_id is not null as "hasResult",
       case when pg_column_size(c.material) <= ${NATIVE_CHECKPOINT_HEADER_INSPECTION_MAX_BYTES}
         and sum(pg_column_size(c.material)) over () <= ${NATIVE_CHECKPOINT_INSPECTION_TOTAL_MAX_BYTES} then c.material else null end as material, (
-      r.runtime_mode = 'native' and a.adapter_type = 'paperclip_runner'
+      r.runtime_mode = 'native' and a.adapter_type = 'pilibala_runner'
       and r.runner_instance_id is not null and r.native_session_id is not null
       and r.process_pid is not null and r.process_started_at is not null
       and f.controller_boot_id = ${owner.bootId}

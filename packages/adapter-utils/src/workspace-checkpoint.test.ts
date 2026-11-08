@@ -12,7 +12,7 @@ const execute = promisify(execFile);
 const roots: string[] = [];
 afterEach(async () => { vi.unstubAllEnvs(); await Promise.all(roots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true }))); });
 async function fixture() {
-  const temp = await fs.mkdtemp(path.join(os.tmpdir(), "checkpoint-test-")); roots.push(temp); vi.stubEnv("PAPERCLIP_HOME", path.join(temp, "home"));
+  const temp = await fs.mkdtemp(path.join(os.tmpdir(), "checkpoint-test-")); roots.push(temp); vi.stubEnv("PILIBALA_HOME", path.join(temp, "home"));
   const root = path.join(temp, "root"); await fs.mkdir(root);
   await fs.writeFile(path.join(root, "unchanged"), "retained");
   await fs.writeFile(path.join(root, "deleted"), "delete me");
@@ -455,15 +455,15 @@ it.each(["full_root", "full_special"] as const)("rejects unsafe %s data before h
 }, 30000);
 
 // RC-50b: models the Daytona provider. Every transfer stages its own
-// `.paperclip-upload-*` scratch at the workspace root, and a SIGKILL during a
+// `.pilibala-upload-*` scratch at the workspace root, and a SIGKILL during a
 // transfer leaves it there. An ordinary export drops `._*` and
-// `.paperclip-upload*` names at any depth and extracts under the host umask;
+// `.pilibala-upload*` names at any depth and extracts under the host umask;
 // a preserveSourceEntries export copies the source exactly.
 it("restores a sparse checkpoint after a killed transfer left provider scratch, keeping exact entries", async () => {
   const { prepareSandboxManagedRuntime } = await import("./sandbox-managed-runtime.js");
   const f = await fixture(); await disposeDirectorySnapshot(f.baseline);
   const remote = path.join(f.temp, "remote");
-  const reserved = /^(\._|\.paperclip-upload)/;
+  const reserved = /^(\._|\.pilibala-upload)/;
   const run = async (command: string) => { await execute("sh", ["-c", command]); };
   type Operations = import("./sandbox-managed-runtime.js").SandboxSyncOperation[];
   const stripUmask = async (directory: string): Promise<void> => {
@@ -494,7 +494,7 @@ it("restores a sparse checkpoint after a killed transfer left provider scratch, 
   const prepared = await prepareSandboxManagedRuntime({ spec: { provider: "test", sandboxId: "test", remoteCwd: remote, timeoutMs: 30000, apiKey: null, transport: "sandbox" },
     adapterKey: "test", client, workspaceLocalDir: f.root, workspaceCheckpoint: true });
   // The s14 sandbox kept this exact file; its mtime equals the SIGKILL.
-  await fs.writeFile(path.join(remote, ".paperclip-upload-d99fe36b-5acc-437b-96ad-85d5ff9e79c4.tar"), Buffer.alloc(2048, 1));
+  await fs.writeFile(path.join(remote, ".pilibala-upload-d99fe36b-5acc-437b-96ad-85d5ff9e79c4.tar"), Buffer.alloc(2048, 1));
   await fs.writeFile(path.join(remote, "new"), "agent work");
   await fs.writeFile(path.join(remote, "._summary"), "user summary");
   await fs.writeFile(path.join(remote, "build.sh"), "#!/bin/sh\n"); await fs.chmod(path.join(remote, "build.sh"), 0o775);
@@ -502,5 +502,5 @@ it("restores a sparse checkpoint after a killed transfer left provider scratch, 
   expect(await fs.readFile(path.join(f.root, "new"), "utf8")).toBe("agent work");
   expect(await fs.readFile(path.join(f.root, "._summary"), "utf8")).toBe("user summary");
   expect((await fs.stat(path.join(f.root, "build.sh"))).mode & 0o777).toBe(0o775);
-  expect((await fs.readdir(f.root)).filter(name => name.startsWith(".paperclip-upload"))).toEqual([]);
+  expect((await fs.readdir(f.root)).filter(name => name.startsWith(".pilibala-upload"))).toEqual([]);
 }, 30000);

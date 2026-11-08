@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { buildTrace, traceUrl } from "./trace.mjs";
 import { associatedProfilePr, authorizedActors, trustedOwnerIds } from "./authorize.mjs";
 
-const repository = "paperclipai/paperclip";
+const repository = "pilibalaai/pilibala";
 const repoPath = `/repos/${repository}`;
 const maxBytes = 32 * 1024 * 1024;
 const gh = (args) => execFileSync("gh", ["api", ...args], { maxBuffer: maxBytes, timeout: 60_000 });
@@ -90,7 +90,7 @@ async function main() {
     console.log("This attempt was not selected for profiling; no data exported.");
     return;
   }
-  const directory = mkdtempSync(path.join(tmpdir(), "paperclip-ci-export-"));
+  const directory = mkdtempSync(path.join(tmpdir(), "pilibala-ci-export-"));
   const records = [];
   let bytes = 0;
   try {
@@ -110,8 +110,8 @@ async function main() {
   }
   const trace = buildTrace(run, jobs, records);
   trace.events[0].data["ci.profile_source"] = historical ? "historical" : "label";
-  const dataset = process.env.HONEYCOMB_CI_DATASET || "paperclip-ci";
-  const url = traceUrl(process.env.HONEYCOMB_TEAM || "paperclip", process.env.HONEYCOMB_ENVIRONMENT || "test", dataset, trace);
+  const dataset = process.env.HONEYCOMB_CI_DATASET || "pilibala-ci";
+  const url = traceUrl(process.env.HONEYCOMB_TEAM || "pilibala", process.env.HONEYCOMB_ENVIRONMENT || "test", dataset, trace);
   if (arg("--output")) writeFileSync(arg("--output"), JSON.stringify(trace, null, 2));
   if (!args.includes("--dry-run")) {
     // Publish the completed root only after every child has been accepted.

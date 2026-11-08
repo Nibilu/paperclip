@@ -2,9 +2,9 @@ import { assertEphemeralAgentInstructions } from "./agent-instructions.js";
 import { initializeDurableAgentFiles } from "./agent-file-durability.js";
 import { notifyAttentionRetentionWork } from "./retention-work-notifications.js";
 import { notifySkillVersionRetention, notifySkillVersionPinChange } from "./skill-version-retention-notifications.js";
-import { agentAppearanceSchema, randomAgentAppearance } from "@paperclipai/shared";
-import { normalizePaperclipRunnerAdapterConfig } from "@paperclipai/adapter-utils/server-utils";
-import { agents, toolConnectionInstalls, principalPermissionGrants, type Db } from "@paperclipai/db";
+import { agentAppearanceSchema, randomAgentAppearance } from "@pilibalaai/shared";
+import { normalizePilibalaRunnerAdapterConfig } from "@pilibalaai/adapter-utils/server-utils";
+import { agents, toolConnectionInstalls, principalPermissionGrants, type Db } from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
 import { unprocessable } from "../errors.js";
 import { agentRecordQueries, isPlainRecord, configPatchFromApprovalPayload, normalizeRuntimeConfigForNewAgent,
@@ -50,12 +50,12 @@ export async function prepareAgentHire(db: Db, companyId: string, input: CreateA
   const rawAdapterConfig = isPlainRecord(data.adapterConfig)
     ? await secretService(db).normalizeAdapterConfigForPersistence(companyId, data.adapterConfig, { adapterType })
     : {};
-  const adapterConfig = normalizePaperclipRunnerAdapterConfig(adapterType, rawAdapterConfig);
+  const adapterConfig = normalizePilibalaRunnerAdapterConfig(adapterType, rawAdapterConfig);
   const profile = { adapterType, adapterConfig };
   const providerApiDraft = options?.setupOnly === true && isProviderApiSetupDraft(profile);
   const providerApi = providerApiDraft ? null : resolveProviderApiPlacement({ agent: profile });
   if (providerApi) assertProviderApiPlacementPolicy(await instanceSettingsService(db).getGeneral());
-  if (!providerApiDraft && !providerApi && adapterType === "paperclip_runner" && !["openai_dot", "grok_bot", "muse"].includes(String(adapterConfig.provider)) &&
+  if (!providerApiDraft && !providerApi && adapterType === "pilibala_runner" && !["openai_dot", "grok_bot", "muse"].includes(String(adapterConfig.provider)) &&
       (await resolveAgentRunnerTaskDriverForCompany(db, companyId, data.defaultEnvironmentId))?.warmTaskVersion === 1) {
     adapterConfig.lifecycleMode = "warm";
   }
@@ -116,7 +116,7 @@ export async function prepareAgentHireApproval(txDb: Db, existing: AgentHireReco
     const normalizedAdapterConfig = await secretService(txDb).normalizeAdapterConfigForPersistence(
       existing.companyId, patch.adapterConfig, { adapterType: (patch.adapterType ?? existing.adapterType) as string },
     );
-    patch.adapterConfig = normalizePaperclipRunnerAdapterConfig(
+    patch.adapterConfig = normalizePilibalaRunnerAdapterConfig(
       (patch.adapterType ?? existing.adapterType) as string,
       normalizedAdapterConfig,
     );
@@ -124,7 +124,7 @@ export async function prepareAgentHireApproval(txDb: Db, existing: AgentHireReco
     Object.prototype.hasOwnProperty.call(patch, "adapterType")
     && isPlainRecord(existing.adapterConfig)
   ) {
-    patch.adapterConfig = normalizePaperclipRunnerAdapterConfig(
+    patch.adapterConfig = normalizePilibalaRunnerAdapterConfig(
       patch.adapterType as string,
       existing.adapterConfig,
     );

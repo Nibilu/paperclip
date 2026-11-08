@@ -308,7 +308,7 @@ authority, not permission to detach a volume.
 Run the finite operator entry from a normal released image:
 
 ```sh
-PAPERCLIP_NATIVE_HARNESS_PRESTAGE=true node --max-old-space-size=512 server/dist-runtime/native-harness-prestage.mjs
+PILIBALA_NATIVE_HARNESS_PRESTAGE=true node --max-old-space-size=512 server/dist-runtime/native-harness-prestage.mjs
 ```
 
 The entry loads the stored Cloud configuration and requires shared object storage.
@@ -341,7 +341,7 @@ Run the controller-only phase separately so it does not re-read provider
 archives that were already verified:
 
 ```sh
-PAPERCLIP_NATIVE_HARNESS_PRESTAGE=true node --max-old-space-size=512 server/dist-runtime/native-harness-prestage.mjs --controllers-only
+PILIBALA_NATIVE_HARNESS_PRESTAGE=true node --max-old-space-size=512 server/dist-runtime/native-harness-prestage.mjs --controllers-only
 ```
 
 This finite entry adopts legacy controller checkpoints for successful
@@ -352,7 +352,7 @@ work, checkout, failed sources, recovery state, or any remaining coordinator
 owner (including an expired owner) defers that source. Local controller and warm
 supervisor bytes are rechecked before commit; a changed source rolls back.
 Unrelated runs remain active. Existing controller checkpoint identity, artifact
-provenance, configuration and snapshot checks still apply. The `paperclip.native-controller-prestage.v1` counts describe this phase; neither successful prestaging
+provenance, configuration and snapshot checks still apply. The `pilibala.native-controller-prestage.v1` counts describe this phase; neither successful prestaging
 nor zero deferred controller sources authorizes volume detachment.
 
 The same finite controller-only entry also preserves settled failed sources.

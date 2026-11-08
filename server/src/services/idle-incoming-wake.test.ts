@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   readIdleIncomingWakeProof,
   incomingWakeFingerprint,
@@ -82,11 +82,11 @@ function input(
   capabilities: VerifiedIdleCapabilities,
   now?: () => number,
 ) {
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID", "fixture-instance");
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", "fixture");
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", "fixture");
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_ENVIRONMENT", "test");
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_BASE_URL", "http://127.0.0.1");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID", "fixture-instance");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", "fixture");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", "fixture");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_ENVIRONMENT", "test");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_BASE_URL", "http://127.0.0.1");
   stops.push(registerConnectionEventWake(db, () => {}));
   return { ownerId, receiverOwner: db, capabilities, now };
 }
@@ -161,7 +161,7 @@ describe("bounded API admission projection", () => {
   const api = { incomingWake: { version: 1, ownerId, generation: "a".repeat(64), routes: ["tenant-api-http-v2"],
     apiKeyProof: { version: 1, challenge: "c".repeat(64) } } } as VerifiedIdleCapabilities;
   it.each(["overflow", "duplicate", "malformed"])("refuses complete eligibility for %s key state", async kind => {
-    vi.stubEnv("PAPERCLIP_CLOUD_STACK_ID", "fixture-stack");
+    vi.stubEnv("PILIBALA_CLOUD_STACK_ID", "fixture-stack");
     const row = { keyHash: "a".repeat(64), expiresAt: null };
     const rows = kind === "overflow" ? Array.from({ length: 1001 }, () => row)
       : kind === "duplicate" ? [row, row] : [{ keyHash: "not-a-digest", expiresAt: null }];
@@ -171,7 +171,7 @@ describe("bounded API admission projection", () => {
     expect(execute).toHaveBeenCalledTimes(2);
   });
   it("has an explicit complete empty-key receipt and shares the inspection time budget", async () => {
-    vi.stubEnv("PAPERCLIP_CLOUD_STACK_ID", "fixture-stack");
+    vi.stubEnv("PILIBALA_CLOUD_STACK_ID", "fixture-stack");
     const execute = vi.fn(async () => []);
     const proof = await readIdleIncomingWakeProof({ execute } as unknown as Pick<Db, "select" | "execute">,
       { ownerId, receiverOwner: {}, capabilities: api });

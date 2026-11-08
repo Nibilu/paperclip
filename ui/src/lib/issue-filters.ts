@@ -1,4 +1,4 @@
-import { isAgentCreatedIssue, type ExternalObjectSummary, type Issue } from "@paperclipai/shared";
+import { isAgentCreatedIssue, type ExternalObjectSummary, type Issue } from "@pilibalaai/shared";
 
 export type IssueFilterWorkspaceLookup = {
   mode?: string | null;

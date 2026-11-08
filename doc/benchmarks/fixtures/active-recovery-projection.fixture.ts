@@ -4,7 +4,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createDb, companies, agents, issues, issueRecoveryActions, heartbeatRuns, agentWakeupRequests,
-  approvals, issueApprovals, issueRelations, issueThreadInteractions, activityLog, issueComments, subscribeDatabaseWork, type Db } from "@paperclipai/db";
+  approvals, issueApprovals, issueRelations, issueThreadInteractions, activityLog, issueComments, subscribeDatabaseWork, type Db } from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { recoveryService } from "../services/recovery/service.js";
 import { recoveryService as baselineService } from "../services/recovery/.bench-baseline-service.js";

@@ -27,7 +27,7 @@ export const productRegressionCases = [
 ].map(([id, suite, name, profile = 'runner-codex']) => Object.freeze({
   id, suite, name, profile,
   model: suite === 'task-workspaces' ? 'openrouter/deepseek/deepseek-v4-flash-0731' : 'gpt-6.1-sol',
-  fullName: `paperclip.Product E2E.${suite}.${name}`,
+  fullName: `pilibala.Product E2E.${suite}.${name}`,
   executionId: `${suite}.${profile}.local.${name}`,
   plan: 'product-regression', environment: 'local',
 }));
@@ -60,13 +60,13 @@ export const productReportingMatcherKinds = ['message_exact', 'message_contains'
   'file_contains', 'artifact_exists', 'artifact_exact', 'json_path', 'json_schema'];
 const failureClasses = ['candidate_failure', 'provider_variance', 'transient_infrastructure', 'permanent_infrastructure',
   'secret_leak', 'cleanup_failure', 'setup_blocked'];
-export const endpoint = 'https://paperclip.testops.cloud';
-export const workflowUrl = 'https://github.com/paperclipai/paperclip/actions/workflows/runner-full-stack-e2e.yml';
+export const endpoint = 'https://pilibala.testops.cloud';
+export const workflowUrl = 'https://github.com/pilibalaai/pilibala/actions/workflows/runner-full-stack-e2e.yml';
 // Official GitHub/Allure job metadata uses these exact aliases for workflow
 // 343807492, independently read from GitHub's workflow API before registration.
 export const workflowUrls = new Set([workflowUrl,
-  'https://github.com/paperclipai/paperclip/blob/master/.github/workflows/runner-full-stack-e2e.yml',
-  'https://github.com/paperclipai/paperclip/actions/workflows/343807492',
+  'https://github.com/pilibalaai/pilibala/blob/master/.github/workflows/runner-full-stack-e2e.yml',
+  'https://github.com/pilibalaai/pilibala/actions/workflows/343807492',
 ]);
 
 export function selectProductRegression(plan, manual = 'all', fromTestOps = false, planKey = 'product-regression', plans = testOpsPlans()) {
@@ -95,7 +95,7 @@ export function selectProductRegression(plan, manual = 'all', fromTestOps = fals
 }
 
 export function validateSelection(value, env, plans = testOpsPlans()) {
-  if (value?.schema !== 'paperclip.product-regression-testops-selection/v1'
+  if (value?.schema !== 'pilibala.product-regression-testops-selection/v1'
       || value.runId !== env.GITHUB_RUN_ID || value.attempt !== env.GITHUB_RUN_ATTEMPT
       || value.workflowSha !== env.GITHUB_SHA || !/^[a-f0-9]{40}$/.test(value.workflowSha)
       || value.targetSha !== env.SOURCE_SHA || !/^[a-f0-9]{40}$/.test(value.targetSha)
@@ -111,7 +111,7 @@ export function projectProductResults(campaign, selection, sourceSha) {
   const planKey = selection.cases?.[0]?.plan;
   if (!Object.hasOwn(testOpsPlanDetails, planKey) || selection.cases.some(row => row.plan !== planKey
       || !['local', 'daytona'].includes(row.environment))) fail('selection_binding');
-  if (campaign && (campaign.schema !== 'paperclip.runner-e2e.campaign/v2'
+  if (campaign && (campaign.schema !== 'pilibala.runner-e2e.campaign/v2'
       || campaign.campaignId !== `gha-${selection.runId}-${selection.attempt}` || campaign.source?.sha !== sourceSha
       || !Array.isArray(campaign.results) || !Array.isArray(campaign.expected)
       || JSON.stringify([...campaign.expected].sort()) !== JSON.stringify(selection.cases.map(row => row.executionId).sort()))) fail('report_binding');
@@ -155,7 +155,7 @@ export function projectProductResults(campaign, selection, sourceSha) {
       const infrastructure = !result || ['permanent_infrastructure', 'transient_infrastructure', 'setup_blocked'].includes(result.failureClass);
       const status = passed ? 'passed' : infrastructure ? 'broken' : 'failed';
       const provenance = {
-        schema: 'paperclip.product-regression-testops-result/v1', caseId: selected.id,
+        schema: 'pilibala.product-regression-testops-result/v1', caseId: selected.id,
         executionId: selected.executionId, workflowRunId: selection.runId, workflowAttempt: selection.attempt,
         workflowSha: selection.workflowSha, sourceSha, status, originalStatus: result?.status ?? null,
         attempt: result?.attempt ?? null, cleanup: result?.cleanup ?? 'not_started',
@@ -188,14 +188,14 @@ export function projectProductResults(campaign, selection, sourceSha) {
         historyId: sha(JSON.stringify([selected.fullName, selected.profile, provenance.model, selected.environment])),
         status, stage: 'finished', statusDetails: { message: provenance.note },
         labels: [{ name: 'AS_ID', value: String(selected.id) }, { name: 'parentSuite', value: 'Product E2E' },
-          { name: 'suite', value: selected.suite }, { name: 'framework', value: 'Paperclip Evals' },
+          { name: 'suite', value: selected.suite }, { name: 'framework', value: 'Pilibala Evals' },
           ...(selected.signature ? [{ name: 'tag', value: `soak-${selected.signature}` }] : [])],
         parameters: [{ name: 'profile', value: selected.profile }, { name: 'environment', value: `${selected.environment} / GitHub Actions` },
           { name: 'declaredModel', value: selected.model }, { name: 'configuredModel', value: provenance.model ?? 'Not recorded' },
           { name: 'sourceSha', value: sourceSha }],
         links: [{ name: 'Full-stack execution and retained diagnostics', type: 'custom',
-          url: `https://github.com/paperclipai/paperclip/actions/runs/${selection.runId}` },
-        { name: 'Evaluated source', type: 'custom', url: `https://github.com/paperclipai/paperclip/commit/${sourceSha}` }],
+          url: `https://github.com/pilibalaai/pilibala/actions/runs/${selection.runId}` },
+        { name: 'Evaluated source', type: 'custom', url: `https://github.com/pilibalaai/pilibala/commit/${sourceSha}` }],
         attachments: [{ name: 'Bound execution provenance and assertions', source: attachment, type: 'application/json' }],
         steps: provenance.checks.map(check => ({ name: `${check.ordinal}. ${check.name}`, status: check.passed ? 'passed' : 'failed', stage: 'finished' })),
       };

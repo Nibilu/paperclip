@@ -1,4 +1,4 @@
-// Explicit browser regression; synthetic history only, with no Paperclip/model runs.
+// Explicit browser regression; synthetic history only, with no Pilibala/model runs.
 import { createServer } from 'node:http';
 import { readFile, mkdir } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
@@ -8,14 +8,14 @@ import { renderRunnerHistoryIndex } from './history-index.ts';
 
 const {values} = parseArgs({options:{screenshots:{type:'string'}}});
 const result = (suite,profile,environment,model,targetUrl,status='passed',attempt=1) => ({
- schema:'paperclip.runner-e2e.result/v2',executionId:`${suite}.${profile}.${environment}.create`,suiteId:suite,
+ schema:'pilibala.runner-e2e.result/v2',executionId:`${suite}.${profile}.${environment}.create`,suiteId:suite,
  suiteDefinitionHash:'fixture-definition',profileId:profile,environmentId:environment,caseId:'create',provider:profile,
  model,runtimeMode:'native',targetUrl,attempt,status,cleanup:'passed',durationMs:1000,
  startedAt:'2026-10-27T12:00:00Z',finishedAt:'2026-10-27T12:00:01Z',
 });
 const a=result('fixture-tasks','codex','local','model-a','http://localhost:3100');
-const b=result('fixture-tasks','claude','daytona','model-b','https://qa.test.paperclip.app','failed');
-const other=result('fixture-other','codex','daytona','model-a','https://qa.test.paperclip.app');
+const b=result('fixture-tasks','claude','daytona','model-b','https://qa.test.pilibala.app','failed');
+const other=result('fixture-other','codex','daytona','model-a','https://qa.test.pilibala.app');
 const record=(id,date,results,{full=false,preset}={})=>{
  const campaign=buildRunnerCampaign({campaignId:id,generatedAt:date,expected:results.map(row=>row.executionId),results});
  const record=campaignHistoryRecord(campaign,'https://reports.example.test/e2e');
@@ -27,7 +27,7 @@ const full=record('full-with-failure','2026-10-25T12:00:00Z',[a,b,other],{full:t
 full.source.ref='refs/heads/'+'long-branch'.repeat(20);
 const subset=record('newer-subset','2026-10-26T12:00:00Z',[a]);
 const unfinished=record('latest-unfinished','2026-10-27T12:00:00Z',[{...a,status:'failed',attempt:0},{...b,attempt:0}],{full:true});
-const browserOnly={...result('fixture-app','browser','daytona',null,'https://qa.test.paperclip.app'),provider:null,runtimeMode:'none'};
+const browserOnly={...result('fixture-app','browser','daytona',null,'https://qa.test.pilibala.app'),provider:null,runtimeMode:'none'};
 const smoke=record('qa-smoke','2026-10-28T12:00:00Z',[browserOnly],{preset:'qa-smoke'});
 const history={...emptyRunnerHistory(),updatedAt:'2026-10-28T12:00:00Z',latestCampaignId:'qa-smoke',campaigns:[smoke,unfinished,subset,full]};
 const html=renderRunnerHistoryIndex(history);
@@ -68,7 +68,7 @@ try{
  await page.getByRole('button',{name:'Reset all filters',exact:true}).click();
  await page.getByLabel('Suite',{exact:true}).selectOption('fixture-tasks');
  await page.getByText('More filters',{exact:true}).click();
- await page.getByLabel('Target',{exact:true}).selectOption('https://qa.test.paperclip.app');
+ await page.getByLabel('Target',{exact:true}).selectOption('https://qa.test.pilibala.app');
  await page.getByLabel('Model',{exact:true}).selectOption('model-a');
  await page.getByLabel('Agent execution',{exact:true}).selectOption('daytona');
  await expect(page.locator('[data-index-campaign]:not([hidden])')).toHaveCount(0);
@@ -100,11 +100,11 @@ try{
  await expect(page.getByRole('heading',{name:'E2E tests',exact:true})).toBeVisible();
  await expect(page.getByLabel('Run preset',{exact:true})).toHaveValue('');
  await expect(page.locator('[data-index-overview]')).toBeVisible();
- await page.getByLabel('Target',{exact:true}).selectOption('https://qa.test.paperclip.app');
+ await page.getByLabel('Target',{exact:true}).selectOption('https://qa.test.pilibala.app');
  await expect(page.locator('[data-index-overview]')).not.toBeVisible();
  await page.getByRole('button',{name:'Reset all filters',exact:true}).click();
  const neutralBorder=await page.getByLabel('Suite',{exact:true}).evaluate(control=>getComputedStyle(control).borderColor);
- const allFilters=new URLSearchParams({view:'attention',suite:'fixture-tasks',coverage:'full',target:'https://qa.test.paperclip.app',
+ const allFilters=new URLSearchParams({view:'attention',suite:'fixture-tasks',coverage:'full',target:'https://qa.test.pilibala.app',
   environment:'daytona',provider:'claude',model:'model-b',profile:'claude',runtime:'native',preset:'qa-smoke',
   status:'failed',from:'2026-10-24',through:'2026-10-29',q:'full'});
  await page.goto(base+'?'+allFilters);

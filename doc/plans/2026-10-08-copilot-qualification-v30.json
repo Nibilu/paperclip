@@ -1,5 +1,5 @@
 {
-  "schema": "paperclip.copilot.qualification-summary/v1",
+  "schema": "pilibala.copilot.qualification-summary/v1",
   "recordedAt": "2026-10-08T12:31:43.458335+00:00",
   "sourceRevision": "c4b5d40bcfd51e6cacccc1ea1343305b05735641",
   "profileVersion": 30,
@@ -54,7 +54,7 @@
       "acceptedCompletionEvidence": true
     }
   },
-  "publicImage": "ghcr.io/paperclipai/paperclip-daytona-runner@sha256:2ccfe999e7794ea1577e581840743a466663143c4303a518e06b3f1e0faa58fb",
+  "publicImage": "ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:2ccfe999e7794ea1577e581840743a466663143c4303a518e06b3f1e0faa58fb",
   "billingEntity": "github",
   "nativeUsd": null,
   "retainedFailures": [

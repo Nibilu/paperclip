@@ -1,6 +1,6 @@
 import type { IdleMcpInspectionBudget } from "./idle-wake-proof.js";
 import { asc, eq, isNull, sql } from "drizzle-orm";
-import { mcpEventDeliveries as deliveries, mcpEventSubscriptions as subscriptions, type Db } from "@paperclipai/db";
+import { mcpEventDeliveries as deliveries, mcpEventSubscriptions as subscriptions, type Db } from "@pilibalaai/db";
 import type { DeadlineReconciliationSnapshot } from "../deadline-reconciliation.js";
 import { idleDeadlineRowLimit, isFutureIdleDeadline, type IdleDeadlineSnapshot } from "../idle-deadline-types.js";
 

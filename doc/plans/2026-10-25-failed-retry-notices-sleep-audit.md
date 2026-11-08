@@ -1,12 +1,12 @@
 # Failed-run retry notice migration
 
 Date: 2026-10-25. Branch: `codex/sleep-31-failed-retry-notices`.
-Parent: [#17647](https://github.com/paperclipai/paperclip/pull/17647),
+Parent: [#17647](https://github.com/pilibalaai/pilibala/pull/17647),
 `fee07f3fa8cbc489cb9bbf657a6065c6e00748c3`.
 This is slice 31 of the recurring-server-work stack. The branch now registers
 a scoped worker and removes retry notices from periodic publication maintenance.
 Producer audit and full acceptance remain in progress; this is not merge-ready.
-Draft PR: [#17649](https://github.com/paperclipai/paperclip/pull/17649).
+Draft PR: [#17649](https://github.com/pilibalaai/pilibala/pull/17649).
 
 ## Obligation and boundary
 
@@ -119,7 +119,7 @@ later success.
 The cursor fixture now removes its own original staged action/receipt as well
 as its denied clones in `finally`, including on a failed assertion. The original
 database is retained as evidence. After applying migrations to a fresh isolated
-`paperclip_sleep31_retry_acceptance_20261025_test`, all 181 selected cases pass
+`pilibala_sleep31_retry_acceptance_20261025_test`, all 181 selected cases pass
 in `/tmp/sleep31-retry-acceptance-fresh.log`. No production error handling was
 relaxed to bypass the failure. The local timestamp/fixture evidence is test-only.
 
@@ -198,7 +198,7 @@ Causal evidence retained:
   `/tmp/sleep31-workspace-build.log`: workspace typecheck and build pass.
 
 The full chat/startup suite passes all 1,503 cases on fresh migrated
-`paperclip_sleep31_wired_chat_20261025_test`, with evidence in
+`pilibala_sleep31_wired_chat_20261025_test`, with evidence in
 `/tmp/sleep31-wired-full-chat.log` (456.47 seconds, exit 0). This includes
 the existing provider authorization and publication acceptance suite.
 The stopped-worker case also checks that publication maintenance no longer
@@ -320,7 +320,7 @@ full updated acceptance, latest-head review and CI still need recording.
 
 
 Existing environment-service acceptance passes all 51 cases on fresh migrated
-`paperclip_sleep31_environment_20261025_test` in
+`pilibala_sleep31_environment_20261025_test` in
 `/tmp/sleep31-environment-service.log`. Server typecheck and build pass at this
 lease-repair checkpoint (`/tmp/sleep31-native-final-types.log` and
 `/tmp/sleep31-native-final-build.log`). Updated full chat acceptance and remote

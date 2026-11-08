@@ -6,33 +6,33 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 
 const env = process.env;
-const headers = { Authorization: `Bearer ${env.PAPERCLIP_API_KEY}`, "X-Paperclip-Run-Id": env.PAPERCLIP_RUN_ID, "Content-Type": "application/json" };
+const headers = { Authorization: `Bearer ${env.PILIBALA_API_KEY}`, "X-Pilibala-Run-Id": env.PILIBALA_RUN_ID, "Content-Type": "application/json" };
 const api = async (route, method = "GET", body) => {
-  const response = await fetch(`${env.PAPERCLIP_API_URL}/api${route}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  const response = await fetch(`${env.PILIBALA_API_URL}/api${route}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
   assert(response.ok, `${response.status}: ${await response.clone().text()}`);
   return response.json();
 };
-const run = await api(`/heartbeat-runs/${env.PAPERCLIP_RUN_ID}`);
-assert.equal(run.contextSnapshot.paperclipEnvironment.driver, "local");
-const services = run.contextSnapshot.paperclipRuntimeServices;
+const run = await api(`/heartbeat-runs/${env.PILIBALA_RUN_ID}`);
+assert.equal(run.contextSnapshot.pilibalaEnvironment.driver, "local");
+const services = run.contextSnapshot.pilibalaRuntimeServices;
 assert.equal(services.length, 1);
 assert.equal(services[0].serviceName, "fixture-web");
-assert.equal(run.contextSnapshot.paperclipRuntimePrimaryUrl, services[0].url);
+assert.equal(run.contextSnapshot.pilibalaRuntimePrimaryUrl, services[0].url);
 assert.equal(await fetch(services[0].url).then(response => response.text()), "workspace runtime service ready");
 const issueId = run.contextSnapshot.issueId;
 const issue = await api(`/issues/${issueId}`);
-assert.equal(run.contextSnapshot.paperclipIssue.id, issue.id);
-assert.equal(run.contextSnapshot.paperclipIssue.description, issue.description);
+assert.equal(run.contextSnapshot.pilibalaIssue.id, issue.id);
+assert.equal(run.contextSnapshot.pilibalaIssue.description, issue.description);
 // The fixture's title equals its description; compact prompts keep the title.
 const descriptionSection = `\nIssue description:\n\`\`\`text\n${issue.description}\n\`\`\``;
-assert(run.contextSnapshot.paperclipTaskMarkdown.includes(descriptionSection));
-assert(run.contextSnapshot.paperclipTaskMarkdownAssignment.includes(descriptionSection));
-assert(!run.contextSnapshot.paperclipTaskMarkdownCompact.includes(descriptionSection));
-assert(!run.contextSnapshot.paperclipTaskMarkdownAssignmentCompact.includes(descriptionSection));
-assert.equal(run.contextSnapshot.paperclipTurnContext.assignment.description.revision,
+assert(run.contextSnapshot.pilibalaTaskMarkdown.includes(descriptionSection));
+assert(run.contextSnapshot.pilibalaTaskMarkdownAssignment.includes(descriptionSection));
+assert(!run.contextSnapshot.pilibalaTaskMarkdownCompact.includes(descriptionSection));
+assert(!run.contextSnapshot.pilibalaTaskMarkdownAssignmentCompact.includes(descriptionSection));
+assert.equal(run.contextSnapshot.pilibalaTurnContext.assignment.description.revision,
   createHash("sha256").update(issue.description.trim()).digest("hex"));
-const repositories = await readdir(path.join(process.cwd(), ".paperclip-repositories"));
-const repo = path.join(process.cwd(), ".paperclip-repositories", repositories.find((name) => !name.includes(".clone-")));
+const repositories = await readdir(path.join(process.cwd(), ".pilibala-repositories"));
+const repo = path.join(process.cwd(), ".pilibala-repositories", repositories.find((name) => !name.includes(".clone-")));
 assert.equal(await readFile(path.join(repo, "README.md"), "utf8"), "Existing uncommitted work\n");
 await assert.rejects(access(path.join(repo, "private.secret")));
 await writeFile(path.join(repo, "recovery-proof.txt"), "Workspace recovered; existing work preserved; private files excluded.\n", { flag: "wx" });

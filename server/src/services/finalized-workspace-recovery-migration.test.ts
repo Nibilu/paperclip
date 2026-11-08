@@ -5,8 +5,8 @@ import path from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { agents, closeRegisteredClients, companies, completionContracts, createDb, environmentLeases, environments,
-  executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, workspaceOperations } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
+  executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, workspaceOperations } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority } from "@pilibalaai/shared";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { createStorageService } from "../storage/service.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
@@ -26,7 +26,7 @@ describe.skipIf(!support.supported)("finalized workspace recovery preservation",
   beforeAll(async () => {
     database = await startEmbeddedPostgresTestDatabase("finalized-recovery-migration-"); db = createDb(database.connectionString);
     root = await fs.mkdtemp(path.join(os.tmpdir(), "finalized-recovery-migration-"));
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "63".repeat(32)); vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "true");
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "63".repeat(32)); vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "true");
   }, 90_000);
   afterAll(async () => {
     if (database) await closeRegisteredClients(database.connectionString);
@@ -36,12 +36,12 @@ describe.skipIf(!support.supported)("finalized workspace recovery preservation",
     const companyId = randomUUID(), workspaceId = randomUUID(), runId = randomUUID(), cwd = path.join(root, workspaceId);
     await fs.mkdir(cwd); await fs.writeFile(path.join(cwd, "saved.txt"), "original held files\n");
     await db.insert(companies).values({ id: companyId, name: "Finalized recovery", issuePrefix: `F${companyId.slice(0, 6)}` });
-    const [agent] = await db.insert(agents).values({ companyId, name: "Historical worker", adapterType: "paperclip_runner" }).returning();
+    const [agent] = await db.insert(agents).values({ companyId, name: "Historical worker", adapterType: "pilibala_runner" }).returning();
     const [issue] = await db.insert(issues).values({ companyId, title: "Held task", status: "blocked" }).returning();
     await db.insert(executionWorkspaces).values({ id: workspaceId, companyId, sourceIssueId: issue.id,
       mode: "isolated_workspace", strategyType: "project_primary", providerType: "local_fs", cwd, name: "Held files" });
     await db.update(issues).set({ executionWorkspaceId: workspaceId }).where(eq(issues.id, issue.id));
-    const reference = { schema: "paperclip.native-workspace-sync/v3" as const, state: "finalized" as const, workspaceId,
+    const reference = { schema: "pilibala.native-workspace-sync/v3" as const, state: "finalized" as const, workspaceId,
       leaseId: randomUUID(), providerLeaseId: randomUUID(), remoteCwd: "/workspaces/task", descriptorSha256: "12".repeat(32),
       baselineSha256: "34".repeat(32), finalHostSha256: "56".repeat(32), resourceDisposition: "destroy" as const };
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId: agent.id, nativeIssueId: issue.id,
@@ -57,8 +57,8 @@ describe.skipIf(!support.supported)("finalized workspace recovery preservation",
       kind: "active_run_watchdog", cause: "native_continuation_requires_reconciliation", fingerprint: randomUUID(),
       nextAction: "Preserve task hold", evidence: { runId, nativeFailureBlock: { retained: "hold" }, ...(files ? {
         systemRecovery: { ...createSystemRecovery(runId), state: "exhausted" },
-        workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId, status: "blocked", stage: "verifying_stop", attempt: 4, requestIds: [] },
-        historicalWorkspaceSource: { schema: "paperclip.historical-workspace-source.v1", runId, leaseIds: [reference.leaseId] },
+        workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId, status: "blocked", stage: "verifying_stop", attempt: 4, requestIds: [] },
+        historicalWorkspaceSource: { schema: "pilibala.historical-workspace-source.v1", runId, leaseIds: [reference.leaseId] },
       } : {}) } }).returning();
     const storage = createStorageService(createLocalDiskStorageProvider(path.join(root, `${workspaceId}-objects`)));
     return { companyId, workspaceId, runId, issueId: issue.id, cwd, reference, action, storage };
@@ -78,7 +78,7 @@ describe.skipIf(!support.supported)("finalized workspace recovery preservation",
     expect(after.issue).toEqual(before.issue); expect(after.owner).toEqual(before.owner); expect(after.action).toEqual(before.action);
     if (files) {
       expect(after.run).toEqual({ ...before.run, updatedAt: expect.any(Date), runnerProfileJson: { ...before.run.runnerProfileJson,
-        finalizedWorkspaceRecoveryMigration: { workspaceId: f.workspaceId, operationId: expect.any(String), schema: "paperclip.legacy-workspace-recovery-migration.v1" } } });
+        finalizedWorkspaceRecoveryMigration: { workspaceId: f.workspaceId, operationId: expect.any(String), schema: "pilibala.legacy-workspace-recovery-migration.v1" } } });
       const inspected = await inspectWorkspaceRecoverySource(db, { ...f, actionId: f.action.id });
       expect(inspected.sources).toEqual([expect.objectContaining({ preservationOnly: true, reference: f.reference })]);
       expect(inspected.sources[0].lease.metadata).toEqual({ remoteCwd: f.reference.remoteCwd });
@@ -174,7 +174,7 @@ describe.skipIf(!support.supported)("finalized workspace recovery preservation",
       sha256: "78".repeat(32), byteSize: 1 });
     await db.insert(workspaceOperations).values({ id: operationId, companyId: f.companyId, issueId: f.issueId,
       heartbeatRunId: f.runId, phase: mode === "old-copyback" ? "workspace_recovery" : "workspace_recovery_snapshot", status: "succeeded",
-      metadata: { schema: "paperclip.workspace-recovery-snapshot.v1", recoveryActionId: f.action.id,
+      metadata: { schema: "pilibala.workspace-recovery-snapshot.v1", recoveryActionId: f.action.id,
         leaseId: f.reference.leaseId, providerLeaseId: f.reference.providerLeaseId,
         descriptorSha256: f.reference.descriptorSha256, finalHostSha256: f.reference.finalHostSha256,
         archive: file("tar"), manifest: file("jsonl") } });
@@ -191,7 +191,7 @@ describe.skipIf(!support.supported)("finalized workspace recovery preservation",
     await db.update(issueRecoveryActions).set({ evidence: { ...f.action.evidence,
       systemRecovery: { ...createSystemRecovery(f.runId), state: "complete" },
       workspaceRecovery: { ...(f.action.evidence.workspaceRecovery as object), status: "recovered" },
-      historicalWorkspaceSource: { schema: "paperclip.historical-workspace-source.v1", runId: f.runId,
+      historicalWorkspaceSource: { schema: "pilibala.historical-workspace-source.v1", runId: f.runId,
         leaseIds: [f.reference.leaseId, otherLeaseId] },
     } }).where(eq(issueRecoveryActions.id, f.action.id));
     await db.insert(workspaceOperations).values({ companyId: f.companyId, issueId: f.issueId,
@@ -204,7 +204,7 @@ describe.skipIf(!support.supported)("finalized workspace recovery preservation",
       sha256: "78".repeat(32), byteSize: 1 });
     await db.insert(workspaceOperations).values({ companyId: f.companyId, issueId: f.issueId,
       heartbeatRunId: f.runId, phase: "workspace_recovery_snapshot", status: "succeeded", metadata: {
-        schema: "paperclip.workspace-recovery-snapshot.v1", recoveryActionId: f.action.id,
+        schema: "pilibala.workspace-recovery-snapshot.v1", recoveryActionId: f.action.id,
         leaseId: otherLeaseId, providerLeaseId: otherProviderLeaseId,
         archive: file("tar"), manifest: file("jsonl") } });
     expect(await verifiedWorkspaceRepairReceipt(db, (await preserved(f)).run)).not.toBeNull();
@@ -213,12 +213,12 @@ describe.skipIf(!support.supported)("finalized workspace recovery preservation",
     const f = await fixture(true);
     const { resourceDisposition: _disposition, ...legacy } = f.reference;
     await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeWorkspaceSync: {
-      ...legacy, schema: "paperclip.native-workspace-sync/v1",
+      ...legacy, schema: "pilibala.native-workspace-sync/v1",
     } } }).where(eq(heartbeatRuns.id, f.runId));
     await migrateRemoteWorkspace({ db, ...f, apply: true, writersStopped: true });
     const inspected = await inspectWorkspaceRecoverySource(db, { ...f, actionId: f.action.id });
     expect(inspected.sources).toEqual([expect.objectContaining({ preservationOnly: true,
-      reference: { ...legacy, schema: "paperclip.native-workspace-sync/v1", resourceDisposition: null } })]);
+      reference: { ...legacy, schema: "pilibala.native-workspace-sync/v1", resourceDisposition: null } })]);
   });
   it("requires the exact receipt and leaves ordinary finalized references alone", async () => {
     const f = await fixture(true);

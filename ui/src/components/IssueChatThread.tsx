@@ -56,15 +56,15 @@ import type {
   IssueWorkMode,
   IssueWorkProduct,
   IssueAssigneeAdapterOverrides,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import type { ActiveRunForIssue, LiveRunForIssue } from "../api/heartbeats";
 import { findUIAdapter } from "../adapters/registry";
 import { useLiveRunTranscripts } from "./transcript/useLiveRunTranscripts";
 import { useSecondTick } from "../hooks/useSecondTick";
 import {
-  usePaperclipIssueRuntime,
-  type PaperclipIssueRuntimeReassignment,
-} from "../hooks/usePaperclipIssueRuntime";
+  usePilibalaIssueRuntime,
+  type PilibalaIssueRuntimeReassignment,
+} from "../hooks/usePilibalaIssueRuntime";
 import { useOptionalToastActions } from "../context/ToastContext";
 import { copyTextToClipboard } from "../lib/clipboard";
 import {
@@ -215,7 +215,7 @@ import type {
   IssueCommentMetadata,
   IssueCommentPresentation,
   SourceTrustMetadata,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   describeToolInput,
   displayToolName,
@@ -225,7 +225,7 @@ import {
   summarizeToolInput,
   summarizeToolResult,
 } from "../lib/transcriptPresentation";
-import { buildAgentMentionHref } from "@paperclipai/shared";
+import { buildAgentMentionHref } from "@pilibalaai/shared";
 import { useComposerStop } from "@/hooks/useComposerStop";
 import { useComposerSubmitKey } from "@/hooks/useComposerSubmitKey";
 import { agentUrl, cn, formatDateTime, formatShortDate } from "../lib/utils";
@@ -257,7 +257,7 @@ import {
   Hammer,
   Loader2,
   MoreHorizontal,
-  Paperclip,
+  Paperclip as Pilibala,
   PauseCircle,
   Search,
   Square,
@@ -554,10 +554,10 @@ interface IssueChatComposerProps {
 
 interface IssueChatThreadProps {
   executionBlocked?: boolean;
-  interruption?: import("@paperclipai/shared").TaskInterruptionPresentation | null;
+  interruption?: import("@pilibalaai/shared").TaskInterruptionPresentation | null;
   retryPreparing?: boolean;
   /** Browser sessions are placed chronologically by the default task thread. */
-  browsers?: import("@paperclipai/shared").TaskBrowser[];
+  browsers?: import("@pilibalaai/shared").TaskBrowser[];
   onOpenBrowser?: (browserId: string) => void;
   hasOlderComments?: boolean;
   comments: IssueChatComment[];
@@ -1081,7 +1081,7 @@ function toValidIsoString(
 
 function parseReassignment(
   target: string,
-): PaperclipIssueRuntimeReassignment | null {
+): PilibalaIssueRuntimeReassignment | null {
   if (!target || target === "__none__") {
     return { assigneeAgentId: null, assigneeUserId: null };
   }
@@ -1144,7 +1144,7 @@ const IssueChatTextPart = memo(function IssueChatTextPart({
     <WorkspaceFileMarkdownBody
       className={cn(
         "text-sm leading-6",
-        onAccent && "paperclip-markdown-on-accent",
+        onAccent && "pilibala-markdown-on-accent",
       )}
       style={recessed ? { opacity: 0.55 } : undefined}
       softBreaks
@@ -1643,7 +1643,7 @@ const TOOL_ICON_MAP: Record<
   string,
   React.ComponentType<{ className?: string }>
 > = {
-  paperclip_provider_activity: ClipboardList,
+  pilibala_provider_activity: ClipboardList,
 };
 
 function getToolIcon(
@@ -1666,7 +1666,7 @@ function IssueChatToolPart({
   isError?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  if (toolName === "paperclip_provider_activity") {
+  if (toolName === "pilibala_provider_activity") {
     return (
       <IssueChatProviderActivity
         args={args}
@@ -2969,7 +2969,7 @@ function IssueChatFeedbackButtons({
           <DialogHeader>
             <DialogTitle>Save your feedback sharing preference</DialogTitle>
             <DialogDescription>
-              Choose whether voted AI outputs can be shared with Paperclip Labs.
+              Choose whether voted AI outputs can be shared with Pilibala Labs.
               This answer becomes the default for future thumbs up and thumbs
               down votes.
             </DialogDescription>
@@ -3591,14 +3591,14 @@ function SystemNoticeCommentContent({
       ? (agentMap?.get(runAgentId)?.name ?? null)
       : null;
     if (authorType === "system") {
-      const label = runAgentName ?? "Paperclip";
+      const label = runAgentName ?? "Pilibala";
       if (runAgentId && runId)
         return { label, href: `/agents/${runAgentId}/runs/${runId}` };
       return { label };
     }
     if (runAgentId && runId) {
       return {
-        label: authorName ?? runAgentName ?? "Paperclip",
+        label: authorName ?? runAgentName ?? "Pilibala",
         href: `/agents/${runAgentId}/runs/${runId}`,
       };
     }
@@ -3726,7 +3726,7 @@ function SystemNoticeCommentContent({
               {copiedLink ? (
                 <Check className="h-3.5 w-3.5" />
               ) : (
-                <Paperclip className="h-3.5 w-3.5" />
+                <Pilibala className="h-3.5 w-3.5" />
               )}
             </button>
           ) : null}
@@ -5558,7 +5558,7 @@ const IssueChatComposer = forwardRef<
         >
           <div className="flex max-w-md items-center gap-3 rounded-md bg-background/80 px-3 py-2 text-left shadow-sm ring-1 ring-border/60">
             <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <Paperclip className="h-4 w-4" />
+              <Pilibala className="h-4 w-4" />
             </span>
             <div className="min-w-0">
               <div className="text-sm font-medium text-foreground">
@@ -6256,7 +6256,7 @@ export function IssueChatThread({
     },
     [onAdd, beginSubmission, rejectSubmission],
   );
-  const runtime = usePaperclipIssueRuntime({
+  const runtime = usePilibalaIssueRuntime({
     messages,
     isRunning,
     onSend: ({ body, reopen, reassignment, attachmentIds }) =>

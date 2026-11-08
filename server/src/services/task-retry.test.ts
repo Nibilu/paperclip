@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { agents, agentWakeupRequests, chatConversations, chatEndpoints, companies, budgetPolicies, costEvents, createDb, type Db, environmentLeases, environments, executionWorkspaces, executionWorkspaceSnapshots, workspaceOperations, heartbeatRunEvents, heartbeatRuns, issueComments, issues, approvals, issueApprovals, issueRecoveryActions, nativeRunFinalizations, toolApplications, toolConnections, toolInvocations, applyPendingMigrations } from "@paperclipai/db";
+import { agents, agentWakeupRequests, chatConversations, chatEndpoints, companies, budgetPolicies, costEvents, createDb, type Db, environmentLeases, environments, executionWorkspaces, executionWorkspaceSnapshots, workspaceOperations, heartbeatRunEvents, heartbeatRuns, issueComments, issues, approvals, issueApprovals, issueRecoveryActions, nativeRunFinalizations, toolApplications, toolConnections, toolInvocations, applyPendingMigrations } from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { priorRecoveryApiReceipt, unresolvedRecoveryToolInvocation } from "./recovery-effect-receipts.js";
 import { requestTaskRetry } from "./task-retry.js";
@@ -24,7 +24,7 @@ describe("durable task Retry admission", () => {
   let postgres: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: ReturnType<typeof createDb>;
   beforeAll(async () => {
-    const externalUrl = process.env.PAPERCLIP_TASK_RETRY_TEST_DATABASE_URL;
+    const externalUrl = process.env.PILIBALA_TASK_RETRY_TEST_DATABASE_URL;
     if (externalUrl) {
       await applyPendingMigrations(externalUrl);
       db = createDb(externalUrl);
@@ -37,7 +37,7 @@ describe("durable task Retry admission", () => {
   async function seed() {
     const companyId = randomUUID(), issueId = randomUUID(), agentId = randomUUID(), runId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Retry company", issuePrefix: `T${companyId.slice(0, 6)}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "paperclip_runner", status: "idle" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "pilibala_runner", status: "idle" });
     await db.insert(issues).values({ id: issueId, companyId, title: "Continue saved work", status: "blocked", assigneeAgentId: agentId });
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, issueId, status: "failed",
       contextSnapshot: { issueId }, finishedAt: new Date() });
@@ -48,7 +48,7 @@ describe("durable task Retry admission", () => {
       const input = await seed();
       await db.update(issues).set({ status: "todo" }).where(eq(issues.id, input.issueId));
       const [source] = await db.update(heartbeatRuns).set({ runtimeMode: "legacy", errorCode: "setup_failed",
-        executionStage: "preparing", runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+        executionStage: "preparing", runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
         resultJson: { executionRecovery: { kind: "bootstrap", providerWorkStarted: false } },
       }).where(eq(heartbeatRuns.id, input.observedRunId)).returning();
       const receipt = await requestTaskRetry(input), successorRunId = randomUUID();
@@ -93,7 +93,7 @@ describe("durable task Retry admission", () => {
     const input = await seed();
     await db.update(issues).set({ status: "todo" }).where(eq(issues.id, input.issueId));
     const [source] = await db.update(heartbeatRuns).set({ runtimeMode: "legacy", errorCode: "setup_failed",
-      executionStage: "preparing", runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+      executionStage: "preparing", runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
       resultJson: { executionRecovery: { kind: "bootstrap", providerWorkStarted: false } },
     }).where(eq(heartbeatRuns.id, input.observedRunId)).returning();
     const receipt = await requestTaskRetry(input), parentId = randomUUID();
@@ -114,7 +114,7 @@ describe("durable task Retry admission", () => {
     const now = new Date();
     const [parent] = await db.update(heartbeatRuns).set({ runtimeMode: "legacy", status: "failed", responsibleUserId: input.actorId,
       errorCode: "remote_workspace_restore_failed", executionStage: "preparing", startedAt: now, finishedAt: now,
-      runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+      runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
       resultJson: { executionRecovery: { kind: "bootstrap", providerWorkStarted: false },
         remoteWorkspaceRestore: { step: "snapshot_download", retryable: true } },
       contextSnapshot: { issueId: input.issueId, wakeReason: "task_retry", taskRetryRequestId: receipt.requestId,
@@ -198,7 +198,7 @@ describe("durable task Retry admission", () => {
     const [source] = await db.update(heartbeatRuns).set({
       runtimeMode: "legacy", errorCode: "setup_failed", executionStage: "preparing",
       createdAt: new Date(now - 3000), finishedAt: new Date(now - 2000),
-      runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+      runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
       resultJson: { executionRecovery: { kind: "bootstrap", providerWorkStarted: false } },
     }).where(eq(heartbeatRuns.id, input.observedRunId)).returning();
     const [hold] = await db.insert(issueRecoveryActions).values({ companyId: input.companyId, sourceIssueId: input.issueId,
@@ -265,14 +265,14 @@ describe("durable task Retry admission", () => {
     const workspaceId = randomUUID(), leaseId = randomUUID(), snapshotId = randomUUID();
     const snapshotOperationId = randomUUID(), recoveryOperationId = randomUUID();
     const providerLeaseId = `fixture-sandbox-${randomUUID()}`, sha256 = "a".repeat(64);
-    const restore = { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [leaseId] };
+    const restore = { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [leaseId] };
     await db.insert(executionWorkspaces).values({ id: workspaceId, companyId: input.companyId,
       sourceIssueId: input.issueId, mode: "isolated_workspace", strategyType: "isolated_workspace", name: "Recovered work",
-      metadata: { remoteWorkspace: { schema: "paperclip.remote-workspace.v1", epoch: 1, snapshotId,
+      metadata: { remoteWorkspace: { schema: "pilibala.remote-workspace.v1", epoch: 1, snapshotId,
         source: { kind: "empty" }, location: null, writerRunId: null, dirty: false } } });
     const [recoveredSource] = await db.update(heartbeatRuns).set({ errorCode: "process_lost",
       startedAt: source.createdAt, controllerBootId: randomUUID(), controllerLeaseExpiresAt: source.finishedAt,
-      runnerProfileJson: { ...source.runnerProfileJson, remoteWorkspace: { schema: "paperclip.remote-workspace-run.v1",
+      runnerProfileJson: { ...source.runnerProfileJson, remoteWorkspace: { schema: "pilibala.remote-workspace-run.v1",
         workspaceId, leaseId, providerLeaseId, remoteCwd: "/fixture/saved-work", epoch: 1, state: "saved", snapshotId } },
       resultJson: { stopReason: "process_lost", executionRecovery: { kind: "bootstrap", providerWorkStarted: false },
         workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery: restore },
@@ -280,7 +280,7 @@ describe("durable task Retry admission", () => {
     await db.insert(environmentLeases).values({ id: leaseId, companyId: input.companyId, issueId: input.issueId,
       heartbeatRunId: source.id, executionWorkspaceId: workspaceId, provider: "daytona", providerLeaseId,
       status: "expired", leasePolicy: "ephemeral", releasedAt: new Date(), cleanupStatus: "success",
-      metadata: { remoteExecutionTermination: { schema: "paperclip.remote-termination.v1", companyId: input.companyId,
+      metadata: { remoteExecutionTermination: { schema: "pilibala.remote-termination.v1", companyId: input.companyId,
         runId: source.id, leaseId, provider: "daytona", providerLeaseId, state: "destroyed", confirmedAt: new Date().toISOString() } } });
     await db.insert(executionWorkspaceSnapshots).values({ id: snapshotId, companyId: input.companyId,
       executionWorkspaceId: workspaceId, sourceOperationId: snapshotOperationId, sourceRunId: source.id,
@@ -297,7 +297,7 @@ describe("durable task Retry admission", () => {
       workspaceRestoreRecovery: restore, continuationDelivery: "invalidated",
       systemRecovery: { ...createSystemRecovery(source.id), state: "complete", phase: "reconcile_effects", attempts: 1,
         preservationOperationIds: [recoveryOperationId] },
-      workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId: source.id, status: "recovered",
+      workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId: source.id, status: "recovered",
         stage: "saving_receipts", attempt: 1, attemptLimit: 6, requestIds: [] } } }).where(eq(issueRecoveryActions.id, hold.id));
     let latest = refused;
     if (refusedCount === 2) [latest] = await db.insert(heartbeatRuns).values({ companyId: input.companyId,
@@ -492,18 +492,18 @@ describe("durable task Retry admission", () => {
         provider: lease.provider, providerLeaseId: lease.providerLeaseId, confirmedAt };
       const metadata = { driver: "sandbox", pluginId, sandboxProviderPlugin: true, remoteCwd: "/work",
         ...(state === "missing_stop" ? {} : {
-          remoteExecutionTermination: { ...identity, schema: "paperclip.remote-termination.v1", state: state === "destroyed" ? "destroyed" : "stopped" },
-          sandboxStopAndRetainReceipt: { ...identity, schema: "paperclip.sandbox-stop-and-retain-receipt.v1",
+          remoteExecutionTermination: { ...identity, schema: "pilibala.remote-termination.v1", state: state === "destroyed" ? "destroyed" : "stopped" },
+          sandboxStopAndRetainReceipt: { ...identity, schema: "pilibala.sandbox-stop-and-retain-receipt.v1",
             pluginId, method: "environmentStopLease", requestId: randomUUID() },
         }),
       };
       await db.update(environmentLeases).set({ metadata }).where(eq(environmentLeases.id, lease.id));
-      const reference = { schema: "paperclip.remote-workspace-run.v1", workspaceId, epoch: 3,
+      const reference = { schema: "pilibala.remote-workspace-run.v1", workspaceId, epoch: 3,
         snapshotId: randomUUID(), leaseId: lease.id, providerLeaseId: lease.providerLeaseId, remoteCwd: "/work", state: "prepared" };
       await db.update(heartbeatRuns).set({ runnerProfileJson: { remoteWorkspace: {
         ...reference, ...(state === "changed_source" ? { providerLeaseId: randomUUID() } : {}),
       } } }).where(eq(heartbeatRuns.id, writerId));
-      const authority = { schema: "paperclip.remote-workspace.v1", epoch: state === "changed_workspace" ? 4 : 3,
+      const authority = { schema: "pilibala.remote-workspace.v1", epoch: state === "changed_workspace" ? 4 : 3,
         snapshotId: reference.snapshotId, source: { kind: "empty" }, writerRunId: writerId, dirty: true,
         location: { environmentId: environment.id, leaseId: lease.id, providerLeaseId: lease.providerLeaseId, remoteCwd: "/work" } };
       await db.insert(executionWorkspaces).values({ id: workspaceId, companyId: input.companyId, sourceIssueId,
@@ -554,7 +554,7 @@ describe("durable task Retry admission", () => {
     }).returning();
     await db.update(heartbeatRuns).set({ runtimeMode: "native", nativeIssueId: input.issueId,
       nativePhase: "terminal_failure", errorCode: "execution_finalization_deadline_exceeded", runnerProfileJson: {
-        nativeWorkspaceSync: { schema: "paperclip.native-workspace-sync/v3", state: "prepared",
+        nativeWorkspaceSync: { schema: "pilibala.native-workspace-sync/v3", state: "prepared",
           descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
           workspaceId: input.observedRunId, leaseId: lease.id,
           providerLeaseId: state === "mismatched" ? randomUUID() : lease.providerLeaseId,
@@ -692,7 +692,7 @@ describe("durable task Retry admission", () => {
       ownerType: "board", cause: "native_workspace_sync_out_retry_exhausted", fingerprint: randomUUID(),
       nextAction: "Automatic recovery of saved work stopped after 1 attempts (last failure: allocation_ownership_ambiguous).",
       evidence: { runId: input.observedRunId, systemRecovery: previous,
-        workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId: input.observedRunId, stage: "verifying_stop",
+        workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId: input.observedRunId, stage: "verifying_stop",
           status: "blocked", attempt: 1, attemptLimit: 6, requestIds: [], retryable: true, message: "Retry recovery." },
         coordinatorAttempt: 1, originalFailureCode: "native_workspace_sync_out_failed",
         workspaceFinalizeAttempt: 3, previousWorkspaceRecovery: null },

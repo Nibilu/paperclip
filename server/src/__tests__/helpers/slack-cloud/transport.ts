@@ -3,7 +3,7 @@ import https from "node:https";
 import { expect, vi } from "vitest";
 
 export function guardSlackFixtureNetwork(options: { requirePreload?: boolean } = {}) {
-  const prewire = Reflect.get(process, Symbol.for("paperclip.slack.fixture.prewire")) as {
+  const prewire = Reflect.get(process, Symbol.for("pilibala.slack.fixture.prewire")) as {
     pid: number;
     stats(): { pid: number; peakPgSockets: number; remainingPgSockets: number; unexpectedAttempts: unknown[] };
   } | undefined;

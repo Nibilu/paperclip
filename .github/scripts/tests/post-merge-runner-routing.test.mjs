@@ -3,17 +3,17 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 
-const fleet = "runs-on/fleet=paperclip-post-merge-x64/env=public-ci";
+const fleet = "runs-on/fleet=pilibala-post-merge-x64/env=public-ci";
 const sha = "a".repeat(40);
 const base = {
-  repository: "paperclipai/paperclip", repository_id: "1170821064",
+  repository: "pilibalaai/pilibala", repository_id: "1170821064",
   ref: "refs/heads/master", event_name: "push", sha, run_attempt: 1,
 };
 const expectedJobs = {
   "docker.yml": ["source_verification", "publication_verification"],
   "cloud-readiness.yml": ["admission", "source_verified"],
   "cloud-migrator-artifacts.yml": [],
-  "release-verify.yml": ["typecheck", "general_tests", "serialized_tests", "runner_workflow_evals", "verify_paperclip_runner", "build"],
+  "release-verify.yml": ["typecheck", "general_tests", "serialized_tests", "runner_workflow_evals", "verify_pilibala_runner", "build"],
   "runner-chaos-evals.yml": ["chaos_and_recovery"],
   "release.yml": ["plan_preview", "package_preview"],
 };
@@ -37,7 +37,7 @@ for (const [file, expectedNames] of Object.entries(expectedJobs)) {
       { name: "switch disabled", enabled: "false" },
       { name: "switch absent", enabled: "" },
       { name: "malformed switch", enabled: "yes" },
-      { name: "fork", github: { repository: "someone/paperclip", repository_id: "123" } },
+      { name: "fork", github: { repository: "someone/pilibala", repository_id: "123" } },
       { name: "repository renamed or transferred", github: { repository_id: "123" } },
       { name: "unapproved PR", github: { event_name: "pull_request", ref: "refs/pull/1/merge" } },
       { name: "PR event even with master ref", github: { event_name: "pull_request" } },
@@ -98,9 +98,9 @@ test("Cloud source proof keeps source-only gating on protected verification capa
     const body = workflow.match(new RegExp(`^  ${name}:\\n([\\s\\S]*?)(?=^  [a-z_]+:|(?![\\s\\S]))`, "m"))?.[1];
     assert.ok(body, `missing ${name} job`);
     bodies.set(name, body);
-    assert.match(body, /runs-on:.*paperclip-post-merge-x64/);
+    assert.match(body, /runs-on:.*pilibala-post-merge-x64/);
     assert.doesNotMatch(body, /^ +continue-on-error:|^ +if:.*always\(\)/m);
-    assert.match(body, /^    if: github.repository == 'paperclipai\/paperclip' && github.ref == 'refs\/heads\/master'$/m);
+    assert.match(body, /^    if: github.repository == 'pilibalaai\/pilibala' && github.ref == 'refs\/heads\/master'$/m);
     assert.match(body, /^ +SOURCE_SHA: \$\{\{ github.sha \}\}$/m);
     assert.equal(body.match(/^    needs: (.+)$/m)?.[1] ?? null, needs, `${name} prerequisites`);
   }

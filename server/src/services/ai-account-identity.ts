@@ -1,4 +1,4 @@
-import type { AiConnectionAccountIdentity, AiConnectionMetadata } from "@paperclipai/shared";
+import type { AiConnectionAccountIdentity, AiConnectionMetadata } from "@pilibalaai/shared";
 import { readUsage } from "./ai-connection-usage.js";
 
 type Observation = Omit<AiConnectionAccountIdentity, "connectionId" | "grantId">;

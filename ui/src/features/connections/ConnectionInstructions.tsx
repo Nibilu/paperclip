@@ -9,7 +9,7 @@ import {
   type ConnectionAgentInstructions,
   type ConnectionInstructionTemplate,
   type ToolConnection,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { describeError } from "@/api/errors";
 import { toolsApi } from "@/api/tools";
 import { queryKeys } from "@/lib/queryKeys";

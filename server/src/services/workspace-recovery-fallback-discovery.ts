@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { issueRecoveryActions } from "@paperclipai/db";
+import { issueRecoveryActions } from "@pilibalaai/db";
 
 /** Source refusals that repeat on every retry (see workspace-recovery-fallback). */
 export const UNVERIFIABLE_SOURCE_CODES = ["allocation_ownership_ambiguous", "source_binding_invalid", "source_unavailable", "historical_source_missing"] as const;

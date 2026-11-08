@@ -2,8 +2,8 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Agent } from "@paperclipai/shared";
-import { appearanceForPalette } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
+import { appearanceForPalette } from "@pilibalaai/shared";
 import { AgentChatPicker, type AgentChatPickerProps } from "./AgentChatPicker";
 
 const agents = [

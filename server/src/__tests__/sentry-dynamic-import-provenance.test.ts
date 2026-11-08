@@ -19,7 +19,7 @@ const sentryPackage = (() => {
   }
 })();
 
-if (process.env.PAPERCLIP_REQUIRE_SENTRY_TEST_SDK === "1" && !sentryPackage) {
+if (process.env.PILIBALA_REQUIRE_SENTRY_TEST_SDK === "1" && !sentryPackage) {
   throw new Error("The Sentry SDK contract job requires the audited optional peer");
 }
 

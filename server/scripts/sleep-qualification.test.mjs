@@ -13,7 +13,7 @@ const configDigest = createHash('sha256').update(JSON.stringify({ automaticBacku
 const expected = { appSha: 'a'.repeat(40), cloudSha: 'b'.repeat(40), target: 'owned-fixture', configDigest };
 function fixture() {
   return { version: 1, ...expected, configuration: structuredClone(configuration), collectorOrigins: { telemetry: configuration.telemetryOrigin, otel: configuration.otelOrigin },
-    announcement: { intercepted: true, requests: ['https://pages.paperclip.ing/announcements/v1/current.json'], unmatched: [] },
+    announcement: { intercepted: true, requests: ['https://pages.pilibala.in/announcements/v1/current.json'], unmatched: [] },
     signalObservation: { telemetryRequests: 1, traceRequests: 1, exportedSpans: 1, qualificationSpans: 1, metricRequests: 0, logRequests: 0, malformedTraceRequests: 0, unexpectedRequests: 0 },
     backupCheckpoint: { owner: 'normal-idle-checkpoint', startedAt: '2099-01-01T00:12:31Z', observedAt: '2099-01-01T00:13:00Z', wakeMarkerObserved: true, failureObserved: false, archives: [{ name: 'owned.sql.gz', bytes: 128, sqlBytes: 256, sha256: 'd'.repeat(64), gzipVerified: true, fixtureIdentifierFound: true, createdAt: '2099-01-01T00:12:45Z', createdAtSource: 'birthtime' }] }, startedAt: '2099-01-01T00:00:00Z', finishedAt: '2099-01-01T01:00:00Z',
     features: { telemetry: true, announcements: true, automaticBackups: true, otel: true, exportedSpans: 1 },
@@ -123,7 +123,7 @@ test('useful authorized deadline outcome requires a durable alarm before the exa
   }
 });
 test('writable path alone cannot establish backup persistence across stop and wake', () => {
-  const f = deployed(); f.provider.storage = { identityVerified: true, volumeId: 'volume', beforeVolumeId: 'volume', afterVolumeId: 'volume', mountPath: '/paperclip', backupsEnabledBefore: true, backupsEnabledAfter: true, sentinelBefore: 'd'.repeat(64), sentinelAfter: 'd'.repeat(64), beforeAt: '2099-01-01T00:13:00Z', afterAt: '2099-01-01T00:25:00Z' };
+  const f = deployed(); f.provider.storage = { identityVerified: true, volumeId: 'volume', beforeVolumeId: 'volume', afterVolumeId: 'volume', mountPath: '/pilibala', backupsEnabledBefore: true, backupsEnabledAfter: true, sentinelBefore: 'd'.repeat(64), sentinelAfter: 'd'.repeat(64), beforeAt: '2099-01-01T00:13:00Z', afterAt: '2099-01-01T00:25:00Z' };
   assert.equal(evaluateSleepQualification(f, expected).layers.backupPersistence.verdict, 'VERIFIED');
   for (const change of [x => delete x.provider.storage.volumeId, x => x.provider.storage.afterVolumeId = 'replacement', x => x.provider.storage.backupsEnabledAfter = false, x => x.provider.storage.sentinelAfter = 'e'.repeat(64)]) {
     const x = structuredClone(f); change(x); assert.equal(evaluateSleepQualification(x, expected).layers.backupPersistence.verdict, 'INCONCLUSIVE');

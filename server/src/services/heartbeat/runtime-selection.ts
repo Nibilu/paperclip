@@ -1,4 +1,4 @@
-import { assertPaperclipRunnerBinaryConfiguration } from "../native-runtime/native-codex-runner.js";
+import { assertPilibalaRunnerBinaryConfiguration } from "../native-runtime/native-codex-runner.js";
 import { readNativeWorkspaceMigration, migratedNativeExecutionCwd } from "../native-runtime/native-workspace-migration.js";
 import { resolveProviderApiPlacement } from "../native-runtime/provider-api-placement.js";
 import { readClaimedNativeStopRecovery } from "../native-runtime/native-cancellation-request.js";
@@ -8,7 +8,7 @@ import { measureRunTransaction } from "../execution-transaction-timing.js";
 import { measureRunPhase } from "../execution-preparation-timing.js";
 import {
   ConfigurationIncompleteFailure,
-  type buildPaperclipWakePayload,
+  type buildPilibalaWakePayload,
   type createHeartbeatRunPreparation,
 } from "./run-preparation.js";
 import { dotRunnerBroker } from "../dot-runner-broker.js";
@@ -27,15 +27,15 @@ import type { buildExecutionContinuation } from "../execution-continuation.js";
 import type { agentInstructionWorkingCopyService } from "../agent-instruction-working-copies.js";
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { agentHarnessType, CHAT_PROVIDERS } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { agentHarnessType, CHAT_PROVIDERS } from "@pilibalaai/shared";
 import {
   type agents,
   completionContracts,
   heartbeatRunEvents,
   heartbeatRuns,
   nativeRunFinalizations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { getStartupTracer } from "../../instrumentation.js";
 import { documentService } from "../documents.js";
 import { managedAgentProfileService } from "../managed-agent-profiles.js";
@@ -63,15 +63,15 @@ import {
 import {
   assertAgentCoreProfileRecoveryBinding,
   assertManagedProfileRecoveryBinding,
-  projectPaperclipRunnerTaskConfig,
-  resolvePaperclipRunnerNativeProviderInput,
+  projectPilibalaRunnerTaskConfig,
+  resolvePilibalaRunnerNativeProviderInput,
 } from "../native-runtime/provider-profile.js";
 import { readRemoteCodexModelCliVersion } from "../native-runtime/codex-model-fallback.js";
 import {
   describeRunnerdNativeSessionBackend,
   parseNativeExecutionInput,
   type NativeExecutionInput,
-} from "../../vendor/paperclip-runner/index.js";
+} from "../../vendor/pilibala-runner/index.js";
 import { PROVIDER_TRACE_MAX_BYTES } from "../provider-trace-store.js";
 import type { AdapterRuntimeEvent } from "../../adapters/index.js";
 import { parseObject } from "../../adapters/utils.js";
@@ -83,7 +83,7 @@ import { CHAT_CONTROL_RECOVERY_ADMISSION_KEY } from "../chat-control-recovery-st
 import { NATIVE_PREPARATION_FENCING_VERSION } from "../native-runtime/native-active-runs.js";
 import type { issueService } from "../issues.js";
 import { buildPlanReviewContext } from "../plan-review-context.js";
-import { normalizePaperclipWakePayload, selectPaperclipTaskMarkdown } from "@paperclipai/adapter-utils/server-utils";
+import { normalizePilibalaWakePayload, selectPilibalaTaskMarkdown } from "@pilibalaai/adapter-utils/server-utils";
 import type { ProviderResourceDisposition } from "../environment-runtime.js";
 import { stageNativeRuntimeSkillAssets, bindStagedNativeRuntimeSkillAssets } from "../native-runtime/runtime-skill-preservation.js";
 
@@ -110,7 +110,7 @@ export interface HeartbeatRuntimeSelectionInput {
     executionContinuation: Awaited<ReturnType<typeof buildExecutionContinuation>> | null;
     safeWakeComments: Parameters<typeof nativeCompletionRequestsWithSources>[0];
     safeWakeCommentContext: { id: string; body: string } | null;
-    paperclipWakePayload: Awaited<ReturnType<typeof buildPaperclipWakePayload>>;
+    pilibalaWakePayload: Awaited<ReturnType<typeof buildPilibalaWakePayload>>;
     acceptedPlanContinuationWake: boolean;
   };
   session: {
@@ -215,7 +215,7 @@ export function resolveNativeSandboxLifecycle(input: {
   } | null;
 }): NativeSandboxLifecycle | null {
   if (
-    input.adapterType !== "paperclip_runner" ||
+    input.adapterType !== "pilibala_runner" ||
     input.target?.kind !== "remote" ||
     input.target.transport !== "sandbox"
   )
@@ -294,7 +294,7 @@ export async function selectHeartbeatRuntime(db: Db, input: HeartbeatRuntimeSele
   const { run, agent, nativeRuntimeResolution, issuesSvc, runtimeEnv, beforeNativeRuntimeSelection, onAdapterEvent,
     onNativeLifecycleSelected, onProviderResourceDisposition, onNativeOwnershipHeld, stopControllerLease } = input;
   const { issueRef, issueContext, context, executionContinuation, safeWakeComments, safeWakeCommentContext,
-    paperclipWakePayload, acceptedPlanContinuationWake } = input.task;
+    pilibalaWakePayload, acceptedPlanContinuationWake } = input.task;
   const { persistedNativeExecutionInput, persistedRunnerProfile, taskSessionCredentialCompatible, taskSessionDecodedParams,
     taskSessionForRun, isFailedChatRunRetry, getFreshSessionHandoff } = input.session;
   const { persistedExecutionWorkspace, executionWorkspace, executionTarget, activeEnvironmentLease, isDotRun, projectRepositoryPaths } = input.workspace;
@@ -311,12 +311,12 @@ export async function selectHeartbeatRuntime(db: Db, input: HeartbeatRuntimeSele
     if (!issueRef) {
       throw new Error("native_runtime_ineligible: issue is required");
     }
-    if (run.runtimeMode !== "native" && agent.adapterType === "paperclip_runner"
+    if (run.runtimeMode !== "native" && agent.adapterType === "pilibala_runner"
       && executionTarget?.kind !== "remote"
       && nativeRuntimeResolution.profile.backend !== "cursor_cloud_api"
       && nativeRuntimeResolution.profile.backend !== "claude_managed_agents_api"
       && nativeRuntimeResolution.profile.backend !== "aws_agentcore_harness_api") {
-      assertPaperclipRunnerBinaryConfiguration();
+      assertPilibalaRunnerBinaryConfiguration();
     }
     const nativeExecutionWorkspaceId =
       persistedNativeExecutionInput?.provider.kind === "cursor_cloud"
@@ -368,14 +368,14 @@ export async function selectHeartbeatRuntime(db: Db, input: HeartbeatRuntimeSele
             : [],
         {
           requiredFullWakeCommentCount:
-            paperclipWakePayload?.fallbackFetchNeeded === true &&
+            pilibalaWakePayload?.fallbackFetchNeeded === true &&
             CHAT_PROVIDERS.some(
               (provider) =>
                 provider ===
-                paperclipWakePayload.externalChatProvider,
+                pilibalaWakePayload.externalChatProvider,
             ) &&
-            Array.isArray(paperclipWakePayload.commentIds)
-              ? paperclipWakePayload.commentIds.length
+            Array.isArray(pilibalaWakePayload.commentIds)
+              ? pilibalaWakePayload.commentIds.length
               : undefined,
         },
       );
@@ -748,27 +748,27 @@ export async function selectHeartbeatRuntime(db: Db, input: HeartbeatRuntimeSele
         || nativeRuntimeResolution.profile.backend === "opencode_server"
         || (nativeRuntimeResolution.profile.backend === "acpx_runtime"
           && parseObject(agent.adapterConfig).acpxAgent === "copilot")
-        ? projectPaperclipRunnerTaskConfig(
+        ? projectPilibalaRunnerTaskConfig(
             nativeRuntimeResolution.profile.backend,
             agent.adapterConfig,
             issueAssigneeOverrides?.adapterConfig,
             managedAiRuntime ? readNonEmptyString(resolvedConfig.model) ?? undefined : undefined,
           )
         : agent.adapterConfig;
-      const requestedNativeProvider = resolvePaperclipRunnerNativeProviderInput({
+      const requestedNativeProvider = resolvePilibalaRunnerNativeProviderInput({
         companyId: agent.companyId,
         backend: nativeRuntimeResolution.profile.backend,
         adapterConfig: nativeProviderConfig, managedProfile, agentCoreProfile, dotBinding, museBinding,
       });
-      const codexCliVersion = agent.adapterType === "paperclip_runner" && requestedNativeProvider.provider === "codex"
+      const codexCliVersion = agent.adapterType === "pilibala_runner" && requestedNativeProvider.provider === "codex"
         ? await readRemoteCodexModelCliVersion({
             model: requestedNativeProvider.model,
             target: executionTarget,
-            remoteCodexPath: runtimeEnv.PAPERCLIP_RUNNER_REMOTE_CODEX_PATH,
-            remoteCodexNpmSpec: runtimeEnv.PAPERCLIP_RUNNER_REMOTE_CODEX_NPM_SPEC,
+            remoteCodexPath: runtimeEnv.PILIBALA_RUNNER_REMOTE_CODEX_PATH,
+            remoteCodexNpmSpec: runtimeEnv.PILIBALA_RUNNER_REMOTE_CODEX_NPM_SPEC,
           }) : null;
       const nativeProvider = codexCliVersion
-        ? resolvePaperclipRunnerNativeProviderInput({
+        ? resolvePilibalaRunnerNativeProviderInput({
             companyId: agent.companyId,
             backend: nativeRuntimeResolution.profile.backend,
             adapterConfig: nativeProviderConfig, codexCliVersion, managedProfile, agentCoreProfile, dotBinding, museBinding,
@@ -790,7 +790,7 @@ export async function selectHeartbeatRuntime(db: Db, input: HeartbeatRuntimeSele
               issue: nativeReviewRequest ? { ...issueRef, title: `Review: ${issueRef.title}`, description: nativeReviewRequest } : issueRef,
               taskPrompt: [
                 nativeReviewRequest ?? readNonEmptyString(
-                  selectPaperclipTaskMarkdown(context, {
+                  selectPilibalaTaskMarkdown(context, {
                     resumedSession: false,
                     includeCommunicationGuidance: false,
                   }),
@@ -800,10 +800,10 @@ export async function selectHeartbeatRuntime(db: Db, input: HeartbeatRuntimeSele
                   ? `## Project repositories\nThe task workspace also contains these editable Git repositories:\n${projectRepositoryPaths.map((repo) => `- ${repo}`).join("\n")}`
                   : null,
               ].filter(Boolean).join("\n\n"),
-              initialCommunicationGuidance: nativeReviewRequest ? null : readNonEmptyString(context.paperclipTaskCommunicationGuidance),
-              wakePayload: context.paperclipWake,
-              caseContext: nativeReviewRequest ? null : context.paperclipCase as CaseExecutionContext | undefined,
-              turnContext: context.paperclipTurnContext,
+              initialCommunicationGuidance: nativeReviewRequest ? null : readNonEmptyString(context.pilibalaTaskCommunicationGuidance),
+              wakePayload: context.pilibalaWake,
+              caseContext: nativeReviewRequest ? null : context.pilibalaCase as CaseExecutionContext | undefined,
+              turnContext: context.pilibalaTurnContext,
               githubInstructionSkillKeys: runScopedMentionedSkillKeys,
               resumedSession,
               previousTurn: (() => {
@@ -811,13 +811,13 @@ export async function selectHeartbeatRuntime(db: Db, input: HeartbeatRuntimeSele
                 try {
                   const previousInput = parseNativeExecutionInput(parseObject(previousNativeRun.runnerProfileJson).nativeExecutionInput);
                   const previousTask = previousInput.task;
-                  const previousWake = normalizePaperclipWakePayload(parseObject(previousNativeRun.contextSnapshot).paperclipWake);
+                  const previousWake = normalizePilibalaWakePayload(parseObject(previousNativeRun.contextSnapshot).pilibalaWake);
                   const githubReviewConfigurationKeys = previousWake?.githubReviewConfigurations.map((config) => config.key);
-                  if (paperclipWakePayload?.externalChatProvider || previousWake?.externalChatProvider) {
+                  if (pilibalaWakePayload?.externalChatProvider || previousWake?.externalChatProvider) {
                     // External native inputs use a neutral task title. Compare
                     // the saved canonical brief so old provider text is not
                     // repeated as a change, while genuine edits still arrive.
-                    const savedIssue = parseObject(parseObject(previousNativeRun.contextSnapshot).paperclipIssue);
+                    const savedIssue = parseObject(parseObject(previousNativeRun.contextSnapshot).pilibalaIssue);
                     if (savedIssue.id !== issueRef.id || typeof savedIssue.title !== "string" ||
                       (savedIssue.description !== null && typeof savedIssue.description !== "string")) return null;
                     return { runId: previousNativeRun.id, task: { title: savedIssue.title, description: savedIssue.description },
@@ -833,7 +833,7 @@ export async function selectHeartbeatRuntime(db: Db, input: HeartbeatRuntimeSele
               conversationMode: context.conversationMode === true,
               agentId: agent.id,
               workspace: {
-                // Projectless paperclip_runner tasks still have a resolved local cwd. Bind that
+                // Projectless pilibala_runner tasks still have a resolved local cwd. Bind that
                 // transient workspace to the run id so the native input remains durable and replayable
                 // without fabricating a project-scoped execution_workspaces row.
                 id: nativeExecutionWorkspaceId,
@@ -913,18 +913,18 @@ export async function selectHeartbeatRuntime(db: Db, input: HeartbeatRuntimeSele
         sandboxResource: nativeSandboxLifecycle.sandboxResource,
       });
       const selectedLifecycleSpan = getStartupTracer(
-        "paperclip.environment-lifecycle",
+        "pilibala.environment-lifecycle",
       ).startSpan("sandbox.lifecycle.selected", {
         attributes: {
-          "paperclip.native.span.provider": nativeExecution.provider.kind,
-          "paperclip.native.span.harness":
+          "pilibala.native.span.provider": nativeExecution.provider.kind,
+          "pilibala.native.span.harness":
             nativeExecution.session.driverKind,
-          "paperclip.native.span.lifecycle_mode":
+          "pilibala.native.span.lifecycle_mode":
             nativeExecution.session.lifecyclePolicy.mode,
-          "paperclip.native.span.sandbox_resource":
+          "pilibala.native.span.sandbox_resource":
             nativeSandboxLifecycle.sandboxResource,
-          "paperclip.native.span.outcome": "selected",
-          "paperclip.native.span.bytes_transferred": 0,
+          "pilibala.native.span.outcome": "selected",
+          "pilibala.native.span.bytes_transferred": 0,
         },
       });
       selectedLifecycleSpan.end();

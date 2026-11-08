@@ -1,8 +1,8 @@
 import { oauthConfig } from "./metadata.js";
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { connectionGrants, toolConnections } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { connectionGrants, toolConnections } from "@pilibalaai/db";
 import { conflict, HttpError, unprocessable } from "../../../errors.js";
 import type { OAuthCredentialStore } from "./credential-store.js";
 import { oauthExpiresAtMs, oauthGrantConfig, oauthGrantExpiresAtMs } from "./client-settings.js";

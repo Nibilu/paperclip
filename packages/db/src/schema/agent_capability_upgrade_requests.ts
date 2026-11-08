@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { check, foreignKey, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import type { AgentCapabilityDiffEntry } from "@paperclipai/shared";
+import type { AgentCapabilityDiffEntry } from "@pilibalaai/shared";
 import { companies } from "./companies.js";
 import { agents } from "./agents.js";
 import { issues } from "./issues.js";

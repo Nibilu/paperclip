@@ -3,7 +3,7 @@ import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
-import { agents, agentWakeupRequests, companies, executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations } from "@paperclipai/db";
+import { agents, agentWakeupRequests, companies, executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations } from "@pilibalaai/db";
 import { expect, it } from "vitest";
 import { startRunnerApiTestServer } from "../../__tests__/helpers/runner-api-server.js";
 import { createIsolatedTestHome } from "../../__tests__/helpers/isolated-test-home.js";
@@ -11,9 +11,9 @@ import { heartbeatService } from "../heartbeat.js";
 import { instanceSettingsService } from "../instance-settings.js";
 import { closeIdleWarmNativeSessionsForRestart } from "./native-session-executor.js";
 
-it.skipIf(process.env.PAPERCLIP_LIVE_REFUSED_RETRY !== "true")("completes work through HTTP Retry after a refused automatic attempt", async () => {
+it.skipIf(process.env.PILIBALA_LIVE_REFUSED_RETRY !== "true")("completes work through HTTP Retry after a refused automatic attempt", async () => {
   const home = createIsolatedTestHome();
-  const keys = ["PAPERCLIP_HOME", "CODEX_HOME", "PAPERCLIP_API_URL", "PAPERCLIP_AGENT_JWT_SECRET", "PAPERCLIP_TELEMETRY_DISABLED", "PAPERCLIP_RUNNER_STATE_DIR"];
+  const keys = ["PILIBALA_HOME", "CODEX_HOME", "PILIBALA_API_URL", "PILIBALA_AGENT_JWT_SECRET", "PILIBALA_TELEMETRY_DISABLED", "PILIBALA_RUNNER_STATE_DIR"];
   const saved = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   let server: Awaited<ReturnType<typeof startRunnerApiTestServer>> | undefined;
   let heartbeat: ReturnType<typeof heartbeatService> | undefined;
@@ -21,14 +21,14 @@ it.skipIf(process.env.PAPERCLIP_LIVE_REFUSED_RETRY !== "true")("completes work t
   try {
     const codexHome = join(home.home, "codex");
     await mkdir(codexHome, { mode: 0o700 });
-    await copyFile(join(process.env.PAPERCLIP_LIVE_CODEX_HOME ?? join(homedir(), ".codex"), "auth.json"), join(codexHome, "auth.json"));
+    await copyFile(join(process.env.PILIBALA_LIVE_CODEX_HOME ?? join(homedir(), ".codex"), "auth.json"), join(codexHome, "auth.json"));
     process.env.CODEX_HOME = codexHome;
-    process.env.PAPERCLIP_HOME = join(home.home, "instance");
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = join(home.home, "runner-state");
-    process.env.PAPERCLIP_AGENT_JWT_SECRET = randomUUID();
-    process.env.PAPERCLIP_TELEMETRY_DISABLED = "1";
+    process.env.PILIBALA_HOME = join(home.home, "instance");
+    process.env.PILIBALA_RUNNER_STATE_DIR = join(home.home, "runner-state");
+    process.env.PILIBALA_AGENT_JWT_SECRET = randomUUID();
+    process.env.PILIBALA_TELEMETRY_DISABLED = "1";
     server = await startRunnerApiTestServer({ deploymentMode: "authenticated", humanSessions: true });
-    process.env.PAPERCLIP_API_URL = server.apiUrl;
+    process.env.PILIBALA_API_URL = server.apiUrl;
     const f = await server.fixture({ connectionScenario: "fresh" }), db = server.db;
     companyId = f.companyId;
     heartbeat = heartbeatService(db);
@@ -42,7 +42,7 @@ it.skipIf(process.env.PAPERCLIP_LIVE_REFUSED_RETRY !== "true")("completes work t
     await instanceSettingsService(db).updateExperimental({ enableNativeRunner: true, enableIsolatedWorkspaces: true });
     await db.update(issues).set({ status: "blocked", executionRunId: null, checkoutRunId: null, responsibleUserId: f.userId,
       executionWorkspaceSettings: { mode: "shared_workspace" }, title: "Complete one Retry turn",
-      description: `Write exactly ${appended} and a newline once to retry-result.txt in the current workspace. Read the complete file. This is the only requested work. Finish with paperclip_finish, reportedWorkDisposition done. No external writes are needed.`, 
+      description: `Write exactly ${appended} and a newline once to retry-result.txt in the current workspace. Read the complete file. This is the only requested work. Finish with pilibala_finish, reportedWorkDisposition done. No external writes are needed.`, 
     }).where(eq(issues.id, f.issueId));
     const [workspace] = await db.insert(executionWorkspaces).values({ companyId: f.companyId, projectId: f.projectId,
       projectWorkspaceId: f.projectWorkspaceId, name: "Saved task workspace", mode: "shared_workspace",
@@ -52,7 +52,7 @@ it.skipIf(process.env.PAPERCLIP_LIVE_REFUSED_RETRY !== "true")("completes work t
     const now = Date.now();
     await db.update(heartbeatRuns).set({ status: "failed", runtimeMode: "legacy", nativeIssueId: null,
       issueId: f.issueId, errorCode: "setup_failed", executionStage: "preparing", createdAt: new Date(now - 3000),
-      finishedAt: new Date(now - 2000), runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+      finishedAt: new Date(now - 2000), runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
       resultJson: { executionRecovery: { kind: "bootstrap", providerWorkStarted: false } },
     }).where(eq(heartbeatRuns.id, f.runId));
     const [hold] = await db.insert(issueRecoveryActions).values({ companyId: f.companyId, sourceIssueId: f.issueId,
@@ -96,12 +96,12 @@ it.skipIf(process.env.PAPERCLIP_LIVE_REFUSED_RETRY !== "true")("completes work t
     const evidence = { passed: true, platform: `${process.platform}-${process.arch}`, model: "gpt-6.1-sol", effort: "high",
       sourceRunId: f.runId, refusedRunId: refused.id, successorRunId: successor.id, sourceFilePreserved: true, outputFileLines: 1,
       taskStatus: task.status, locksCleared: true, finalization: coordinator.phase, duplicateClickReused: true };
-    if (process.env.PAPERCLIP_LIVE_EVIDENCE_PATH) await writeFile(process.env.PAPERCLIP_LIVE_EVIDENCE_PATH, JSON.stringify(evidence, null, 2) + "\n");
+    if (process.env.PILIBALA_LIVE_EVIDENCE_PATH) await writeFile(process.env.PILIBALA_LIVE_EVIDENCE_PATH, JSON.stringify(evidence, null, 2) + "\n");
     console.log(JSON.stringify(evidence));
   } catch (error) {
-    if (server && companyId && process.env.PAPERCLIP_LIVE_EVIDENCE_PATH) {
+    if (server && companyId && process.env.PILIBALA_LIVE_EVIDENCE_PATH) {
       const runs = await server.db.select().from(heartbeatRuns).where(eq(heartbeatRuns.companyId, companyId));
-      await writeFile(`${process.env.PAPERCLIP_LIVE_EVIDENCE_PATH}.failure.json`, JSON.stringify({ error: String(error),
+      await writeFile(`${process.env.PILIBALA_LIVE_EVIDENCE_PATH}.failure.json`, JSON.stringify({ error: String(error),
         runs: runs.map(run => ({ id: run.id, status: run.status, error: run.error, result: run.resultJson })),
       }, null, 2));
     }

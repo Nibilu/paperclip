@@ -65,7 +65,7 @@ export async function receiveSlackCloudEvent(event: SlackCloudEvent, current: Cu
     || typeof envelope.event_id !== "string" || !/^[A-Za-z0-9_-]{1,200}$/.test(envelope.event_id) || envelope.event_id !== packet.eventId
     || event.id !== `slack_${current.bindingId.slice("slack-event:".length)}_${createHash("sha256").update(envelope.event_id).digest("hex")}`)
     throw new SlackCloudReceiptError("event_identity_changed", "invalid");
-  const request = new Request("https://paperclip.invalid/slack-cloud-ingress", { method: "POST",
+  const request = new Request("https://pilibala.invalid/slack-cloud-ingress", { method: "POST",
     headers: { "content-type": "application/json", "x-slack-request-timestamp": packet.timestamp,
       "x-slack-signature": packet.signature }, body: new Uint8Array(body) });
   acceptedTimes.set(request, acceptedAt);

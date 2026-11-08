@@ -98,18 +98,18 @@ async function prepareDaytona(plan: WavePlan, timeline: Timeline): Promise<Recor
   ensureDaytonaPlugin(timeline);
   timeline.add("daytona_vcpu_plan", { cpuPerSandbox: plan.options.daytonaCpu, concurrency: plan.options.concurrency,
     taskVcpu: plan.options.concurrency * (plan.options.daytonaCpu ?? 0) });
-  return { PAPERCLIP_RUNNER_REMOTE_BINARY_PATH: artifacts.runnerdPath, PAPERCLIP_RUNNER_REMOTE_PROVIDER_PACK_PATH: artifacts.providerPackPath };
+  return { PILIBALA_RUNNER_REMOTE_BINARY_PATH: artifacts.runnerdPath, PILIBALA_RUNNER_REMOTE_PROVIDER_PACK_PATH: artifacts.providerPackPath };
 }
 
 function preflight(plan: WavePlan) {
   const missing = [...new Set([...plan.tasks.map(task => CREDENTIAL_FOR_ADAPTER[task.adapter]),
     ...(plan.options.env === "daytona" ? ["DAYTONA_API_KEY"] : [])])].filter(key => !process.env[key]);
   if (missing.length) throw new Error(`Missing credentials ${missing.join(", ")}. Run: set -a; source ~/.secrets; set +a`);
-  const runner = process.env.PAPERCLIP_RUNNER_BINARY
-    ?? path.join(repositoryRoot, "packages/paperclip-runner/runner/target/debug/paperclip-runnerd");
-  if (!existsSync(runner)) throw new Error(`Runner binary missing at ${runner}. Run: pnpm --filter @paperclipai/paperclip-runner run build:runner-binaries`);
+  const runner = process.env.PILIBALA_RUNNER_BINARY
+    ?? path.join(repositoryRoot, "packages/pilibala-runner/runner/target/debug/pilibala-runnerd");
+  if (!existsSync(runner)) throw new Error(`Runner binary missing at ${runner}. Run: pnpm --filter @pilibalaai/pilibala-runner run build:runner-binaries`);
   // Same provider bundle preparation as tests/runner-e2e/verified-provider-bundles.setup.mjs.
-  const build = spawnSync(process.execPath, [path.join(repositoryRoot, "packages/paperclip-runner/scripts/build-verified-provider-entrypoints.mjs")],
+  const build = spawnSync(process.execPath, [path.join(repositoryRoot, "packages/pilibala-runner/scripts/build-verified-provider-entrypoints.mjs")],
     { cwd: repositoryRoot, stdio: "inherit" });
   if (build.status !== 0) throw new Error("Verified provider entrypoint build failed");
 }
@@ -359,7 +359,7 @@ async function main(): Promise<number> {
       const owned = sweeper as DaytonaWaveSweeper;
       // An interrupted wave still reports what it leaked before cleanup.
       sandboxSweep ??= await owned.sweep(0);
-      // Cleanup only through Paperclip; the harness never changes a sandbox.
+      // Cleanup only through Pilibala; the harness never changes a sandbox.
       const cleanup = await owned.cleanUp();
       timeline.add("daytona_cleanup", cleanup);
       console.info(`Daytona R6 sweep: ${sandboxSweep.liveSandboxes.length} live, ${sandboxSweep.archivedSandboxes.length} archived after release, `

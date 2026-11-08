@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@pilibalaai/shared";
 import { useTaskRetry } from "./useTaskRetry";
 import { ExecutionBlockerNotice } from "../components/ExecutionBlockerNotice";
 import { ApiError } from "../api/client";

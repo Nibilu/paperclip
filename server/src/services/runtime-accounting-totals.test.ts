@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { accountingRuntimeBaselines, agents, agentRuntimeState, companies, costEvents, createDb, heartbeatRuns, type Db } from "@paperclipai/db";
+import { accountingRuntimeBaselines, agents, agentRuntimeState, companies, costEvents, createDb, heartbeatRuns, type Db } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { ensureRuntimeAccountingBaseline, readRuntimeAccountingTotals } from "./runtime-accounting-totals.js";
 

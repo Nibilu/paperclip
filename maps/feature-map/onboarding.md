@@ -42,9 +42,9 @@ A saved draft for another provider requires a new choice.
 
 ### `cli-setup`
 
-Use `paperclipai onboard --help` or `paperclipai run --help` to select an isolated data directory before setup.
+Use `pilibalaai onboard --help` or `pilibalaai run --help` to select an isolated data directory before setup.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use a new isolated data directory and record deployment mode. A configured adapter may still need account authentication.
 
@@ -53,8 +53,8 @@ Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use 
 Automated: [wizard tests](../../ui/src/components/OnboardingWizard.test.tsx) cover mocked wizard behavior; [onboarding browser suite](../../tests/e2e/onboarding.spec.ts) supplies its own test environment. Live model execution is a separate check.
 
 - **Create company and resume.** Start a fresh empty instance and run doctor using
-  the [verification skill](../../.agents/skills/verify-paperclip/SKILL.md). Run
-  `node .agents/skills/verify-paperclip/scripts/onboarding-smoke.mjs --evidence-dir "$VERIFY_EVIDENCE_DIR"`.
+  the [verification skill](../../.agents/skills/verify-pilibala/SKILL.md). Run
+  `node .agents/skills/verify-pilibala/scripts/onboarding-smoke.mjs --evidence-dir "$VERIFY_EVIDENCE_DIR"`.
   The helper opens `/onboarding` in a fresh self-hosted instance, enters a unique
   name in `e.g. Northwind Labs`, and chooses `Continue`. The agent-name field must
   appear and the saved company must have no invented goal. Reopen the
@@ -68,7 +68,7 @@ created first task, verify the selected agent and company, and inspect its outpu
 or explicit authentication gate. Reload both company and task.
 
 For Codex or Claude, choose the harness to prove automatic first-agent runner
-selection. On a qualified target it saves Paperclip Runner. The wizard has no
+selection. On a qualified target it saves Pilibala Runner. The wizard has no
 runner dropdown or empty Advanced section. Do not switch runners after onboarding when claiming proof
 of that default. Test the selected runtime and account, then complete a bounded
 useful task and follow-up with an independently checked file artifact. Saved

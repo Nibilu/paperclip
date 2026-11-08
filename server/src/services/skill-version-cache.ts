@@ -5,13 +5,13 @@ import { constants, promises as fs } from "node:fs";
 import path from "node:path";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { companySkillVersions, heartbeatRuns,
-  nativeRunFinalizations, environmentLeases, withDedicatedDbConnection, type Db } from "@paperclipai/db";
-import { resolvePaperclipInstanceRoot } from "../home-paths.js";
+  nativeRunFinalizations, environmentLeases, withDedicatedDbConnection, type Db } from "@pilibalaai/db";
+import { resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { assertSkillSnapshotPath } from "./skill-snapshot.js";
 import { repositorySkillFrontmatter } from "./skill-repository-package.js";
-import type { CompanySkillVersionFileInventoryEntry } from "@paperclipai/shared";
+import type { CompanySkillVersionFileInventoryEntry } from "@pilibalaai/shared";
 import { noteSkillVersionCacheChange } from "./skill-version-retention-notifications.js";
-import { parseNativeExecutionInput } from "../vendor/paperclip-runner/index.js";
+import { parseNativeExecutionInput } from "../vendor/pilibala-runner/index.js";
 import { beginRunPhase } from "./execution-preparation-timing.js";
 import { noRetainedExecutionPredicate } from "./pre-dispatch-execution-evidence.js";
 import { withWorkspaceLockKeepalive } from "./native-runtime/native-workspace-lock-keepalive.js";
@@ -49,7 +49,7 @@ export async function withSkillVersionCacheLock<T>(db: Db, companyId: string, ac
 
 export function skillVersionCachePaths(companyId: string, skillId: string, versionId: string) {
   if (![companyId, skillId, versionId].every(value => uuid.test(value))) throw new Error("Invalid skill cache identity");
-  const root = path.join(resolvePaperclipInstanceRoot(), "skills", companyId);
+  const root = path.join(resolvePilibalaInstanceRoot(), "skills", companyId);
   return {
     root,
     directory: path.join(root, "__versions__", skillId, versionId),
@@ -59,7 +59,7 @@ export function skillVersionCachePaths(companyId: string, skillId: string, versi
 
 /** Never traverse a symlink below the configured instance root. */
 export async function ensureSkillCacheDirectory(directory: string, create = false) {
-  const root = path.resolve(resolvePaperclipInstanceRoot());
+  const root = path.resolve(resolvePilibalaInstanceRoot());
   const relative = path.relative(root, directory);
   if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) throw new Error("Skill cache escaped instance root");
   if (create) await fs.mkdir(root, { recursive: true });

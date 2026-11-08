@@ -4,7 +4,7 @@
  * `managed-environments-plugin-entries.test.ts` for plugin entries).
  */
 import { vi } from "vitest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { MANAGED_CONFIG_ENV_KEY, parseManagedConfigEnv } from "./managed-config.js";
 import type { ApplyManagedEnvironmentsOptions } from "./managed-environments.js";
 
@@ -117,7 +117,7 @@ export function pluginEnvironmentRow(overrides: Record<string, unknown> = {}) {
     name: "Remote Host",
     driver: "plugin",
     config: { pluginKey: PLUGIN_KEY, driverKey: "tasks", driverConfig: {} },
-    metadata: { managedByPaperclip: true, managedPluginEnvironment: `${PLUGIN_KEY}:tasks` },
+    metadata: { managedByPilibala: true, managedPluginEnvironment: `${PLUGIN_KEY}:tasks` },
     ...overrides,
   }) as never;
 }

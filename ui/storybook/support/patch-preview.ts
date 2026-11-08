@@ -1,4 +1,4 @@
-import type { WorkspaceFileContent } from "@paperclipai/shared";
+import type { WorkspaceFileContent } from "@pilibalaai/shared";
 
 export const patchText = `diff --git a/ui/src/preview.ts b/ui/src/preview.ts
 index 1a2b3c4..5d6e7f8 100644

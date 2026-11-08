@@ -60,7 +60,7 @@ function goal(id: string, title: string) {
   return { id, title } as never;
 }
 
-const transient = () => new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" });
+const transient = () => new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" });
 
 describe("Goals", () => {
   let root: Root | null = null;

@@ -25,7 +25,7 @@ export interface IdleDeadlineOwnerInspection {
   issueWaits?: readonly IdleIssueWait[];
 }
 export type IdleDeadlineOwnerReader = (
-  tx: Pick<import("@paperclipai/db").Db, "select" | "execute">,
+  tx: Pick<import("@pilibalaai/db").Db, "select" | "execute">,
   now: number,
   checkBudget: () => void,
 ) => Promise<IdleDeadlineOwnerInspection>;

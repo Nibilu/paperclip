@@ -20,7 +20,7 @@ import { cn } from "../../lib/utils";
 import { Button } from "@/components/ui/button";
 import { RunTranscriptView, type TranscriptMode } from "../transcript/RunTranscriptView";
 import { LIVE_TRANSCRIPT_RENDER_LIMIT, MAX_LIVE_EVENTS, MAX_LIVE_LOG_LINES } from "../../lib/live-log-buffer";
-import { type HeartbeatRun, type HeartbeatRunEvent } from "@paperclipai/shared";
+import { type HeartbeatRun, type HeartbeatRunEvent } from "@pilibalaai/shared";
 import {
   type RunLogChunk,
   type ScrollContainer,

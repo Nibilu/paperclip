@@ -75,7 +75,7 @@ describe("saved agent settings independent evidence", () => {
     ["conflicting issue bindings", f => { Object.assign(f.run, { issueId: "foreign" }); }],
     ["wrong provider", f => { f.run.runnerProfileJson.nativeExecutionInput.provider.kind = "other"; }],
     ["wrong model", f => { f.run.runnerProfileJson.nativeExecutionInput.provider.model = "other"; }],
-    ["wrong environment", f => { f.run.contextSnapshot.paperclipEnvironment.id = "other"; }],
+    ["wrong environment", f => { f.run.contextSnapshot.pilibalaEnvironment.id = "other"; }],
     ["wrong nonce", f => { f.evidence.task!.document.body = JSON.stringify({ reference: "wrong", settingsSaved: true }); }],
     ["human-authored output", f => { f.evidence.task!.document.createdByUserId = "user"; }],
     ["foreign revision", f => { f.evidence.task!.revision.createdByRunId = "other"; }],

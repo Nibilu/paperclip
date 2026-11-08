@@ -14,7 +14,7 @@ describe("repository continuation Git evidence", () => {
   let root: string, sourceCommit: string, first: RepositoryBundleEvidence, final: RepositoryBundleEvidence, firstBytes: Buffer;
   const reference = `${"c".repeat(64)}\n`, firstFile = "first.txt", contextFile = "context.txt", finalFile = "followup.txt";
   beforeAll(async () => {
-    root = await mkdtemp(path.join(os.tmpdir(), "paperclip-qa-repo-control-"));
+    root = await mkdtemp(path.join(os.tmpdir(), "pilibala-qa-repo-control-"));
     const git = async (...args: string[]) => (await execFile("git", ["-c", "core.hooksPath=/dev/null", "-C", root, ...args], {
       env: { PATH: process.env.PATH, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null",
         GIT_AUTHOR_NAME: "Fixture", GIT_AUTHOR_EMAIL: "fixture@example.test", GIT_COMMITTER_NAME: "Fixture", GIT_COMMITTER_EMAIL: "fixture@example.test" },

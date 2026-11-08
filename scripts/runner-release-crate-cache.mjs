@@ -2,7 +2,7 @@
 // The Runner's own crate is the one thing the shared Rust dependency cache
 // leaves out: rust-cache drops workspace crates when it saves, and a fresh
 // checkout would invalidate cargo's mtime fingerprints for them anyway. So
-// every CI build compiled `paperclip-runner-core` in release mode from
+// every CI build compiled `pilibala-runner-core` in release mode from
 // scratch (28-49s per run on 2026-10-11) although 221 of the 239 master
 // commits of the preceding week left its inputs untouched.
 //
@@ -29,7 +29,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const RUNNER_PACKAGE = "packages/paperclip-runner";
+export const RUNNER_PACKAGE = "packages/pilibala-runner";
 const RELEASE_DIR = `${RUNNER_PACKAGE}/runner/target/release`;
 
 // Everything cargo writes for the crate's release lib and bin units:
@@ -37,18 +37,18 @@ const RELEASE_DIR = `${RUNNER_PACKAGE}/runner/target/release`;
 // lib's rlib/rmeta and dep-info, the bin and its dep-info under deps, and the
 // uplifted executable the staging step copies into dist/bin.
 export const CACHED_PATHS = [
-  `${RELEASE_DIR}/.fingerprint/paperclip-runner-core-*`,
-  `${RELEASE_DIR}/deps/libpaperclip_runner_core-*`,
-  `${RELEASE_DIR}/deps/paperclip_runner_core-*.d`,
-  `${RELEASE_DIR}/deps/paperclip_runnerd-*`,
-  `${RELEASE_DIR}/paperclip-runnerd`,
-  `${RELEASE_DIR}/paperclip-runnerd.d`,
+  `${RELEASE_DIR}/.fingerprint/pilibala-runner-core-*`,
+  `${RELEASE_DIR}/deps/libpilibala_runner_core-*`,
+  `${RELEASE_DIR}/deps/pilibala_runner_core-*.d`,
+  `${RELEASE_DIR}/deps/pilibala_runnerd-*`,
+  `${RELEASE_DIR}/pilibala-runnerd`,
+  `${RELEASE_DIR}/pilibala-runnerd.d`,
   // The process-table library is the crate's one workspace dependency. Cargo
   // rebuilds a dependent whose workspace dependency is newer than it, so the
   // library's lib unit is cached and marked current with the crate.
-  `${RELEASE_DIR}/.fingerprint/paperclip-process-table-*`,
-  `${RELEASE_DIR}/deps/libpaperclip_process_table-*`,
-  `${RELEASE_DIR}/deps/paperclip_process_table-*.d`,
+  `${RELEASE_DIR}/.fingerprint/pilibala-process-table-*`,
+  `${RELEASE_DIR}/deps/libpilibala_process_table-*`,
+  `${RELEASE_DIR}/deps/pilibala_process_table-*.d`,
 ];
 
 // Every file the release build of the crate reads, as hashFiles() patterns:
@@ -80,28 +80,28 @@ export const HASHED_INPUTS = [
 // Anything less than this set is discarded, with the missing file named in
 // the job log, so cargo sees a plain miss rather than a half-restored crate.
 export const REQUIRED = [
-  { label: "the lib fingerprint hash", glob: `${RELEASE_DIR}/.fingerprint/paperclip-runner-core-*/lib-paperclip_runner_core` },
-  { label: "the lib dep-info", glob: `${RELEASE_DIR}/.fingerprint/paperclip-runner-core-*/dep-lib-paperclip_runner_core` },
-  { label: "the lib rlib", glob: `${RELEASE_DIR}/deps/libpaperclip_runner_core-*.rlib` },
-  { label: "the lib rmeta", glob: `${RELEASE_DIR}/deps/libpaperclip_runner_core-*.rmeta` },
-  { label: "the bin fingerprint hash", glob: `${RELEASE_DIR}/.fingerprint/paperclip-runner-core-*/bin-paperclip-runnerd` },
-  { label: "the bin dep-info", glob: `${RELEASE_DIR}/.fingerprint/paperclip-runner-core-*/dep-bin-paperclip-runnerd` },
-  { label: "the bin under deps", glob: `${RELEASE_DIR}/deps/paperclip_runnerd-*`, exclude: /\.d$/ },
+  { label: "the lib fingerprint hash", glob: `${RELEASE_DIR}/.fingerprint/pilibala-runner-core-*/lib-pilibala_runner_core` },
+  { label: "the lib dep-info", glob: `${RELEASE_DIR}/.fingerprint/pilibala-runner-core-*/dep-lib-pilibala_runner_core` },
+  { label: "the lib rlib", glob: `${RELEASE_DIR}/deps/libpilibala_runner_core-*.rlib` },
+  { label: "the lib rmeta", glob: `${RELEASE_DIR}/deps/libpilibala_runner_core-*.rmeta` },
+  { label: "the bin fingerprint hash", glob: `${RELEASE_DIR}/.fingerprint/pilibala-runner-core-*/bin-pilibala-runnerd` },
+  { label: "the bin dep-info", glob: `${RELEASE_DIR}/.fingerprint/pilibala-runner-core-*/dep-bin-pilibala-runnerd` },
+  { label: "the bin under deps", glob: `${RELEASE_DIR}/deps/pilibala_runnerd-*`, exclude: /\.d$/ },
   ...processTableRequired(RELEASE_DIR),
 ];
 
 /** The lib unit of the process-table workspace dependency, in `directory`. */
 export function processTableRequired(directory) {
-  const fingerprint = `${directory}/.fingerprint/paperclip-process-table-*`;
+  const fingerprint = `${directory}/.fingerprint/pilibala-process-table-*`;
   return [
-    { label: "the process-table lib fingerprint hash", glob: `${fingerprint}/lib-paperclip_process_table` },
-    { label: "the process-table lib dep-info", glob: `${fingerprint}/dep-lib-paperclip_process_table` },
-    { label: "the process-table lib rlib", glob: `${directory}/deps/libpaperclip_process_table-*.rlib` },
-    { label: "the process-table lib rmeta", glob: `${directory}/deps/libpaperclip_process_table-*.rmeta` },
+    { label: "the process-table lib fingerprint hash", glob: `${fingerprint}/lib-pilibala_process_table` },
+    { label: "the process-table lib dep-info", glob: `${fingerprint}/dep-lib-pilibala_process_table` },
+    { label: "the process-table lib rlib", glob: `${directory}/deps/libpilibala_process_table-*.rlib` },
+    { label: "the process-table lib rmeta", glob: `${directory}/deps/libpilibala_process_table-*.rmeta` },
   ];
 }
 
-const SCHEMA = "paperclip.runner-release-crate.v1";
+const SCHEMA = "pilibala.runner-release-crate.v1";
 
 function keySafe(value) {
   return String(value).replace(/[^A-Za-z0-9._-]+/g, "_");

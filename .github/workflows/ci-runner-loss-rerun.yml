@@ -27,7 +27,7 @@ jobs:
   rerun:
     # Attempt 1 only: this allows one automatic re-run and cannot loop.
     if: >-
-      github.repository == 'paperclipai/paperclip' &&
+      github.repository == 'pilibalaai/pilibala' &&
       github.repository_id == '1170821064' &&
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.path == '.github/workflows/pr.yml' &&

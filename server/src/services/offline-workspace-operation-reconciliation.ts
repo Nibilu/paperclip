@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, gt, inArray, isNotNull, sql } from "drizzle-orm";
-import { executionWorkspaces, heartbeatRuns, nativeRunFinalizations, nativeRunResults, workspaceOperations, type Db } from "@paperclipai/db";
+import { executionWorkspaces, heartbeatRuns, nativeRunFinalizations, nativeRunResults, workspaceOperations, type Db } from "@pilibalaai/db";
 import { persistActivity, publishActivity } from "./activity-log.js";
 import { adapterExecutionControls } from "./adapter-execution-control.js";
 import { offlineWorkspaceMigrationBlockers } from "./remote-workspace-migration-tree.js";
@@ -12,7 +12,7 @@ type ReconciliationInput = { mode: "offline" | "online"; writersStopped: boolean
 const unresolved = () => inArray(workspaceOperations.status, ["running", "pending"]);
 const localMigrationSource = () => and(isNotNull(executionWorkspaces.cwd),
   inArray(executionWorkspaces.providerType, ["local_fs", "git_worktree"]),
-  sql`coalesce(${executionWorkspaces.metadata}->'remoteWorkspace'->>'schema', '') <> 'paperclip.remote-workspace.v1'`);
+  sql`coalesce(${executionWorkspaces.metadata}->'remoteWorkspace'->>'schema', '') <> 'pilibala.remote-workspace.v1'`);
 
 async function assertOffline(db: Db, writersStopped: boolean) {
   // Only the Cloud maintenance caller can establish that all old deployments
@@ -93,8 +93,8 @@ async function reconcileAttempt(db: Db, candidate: Candidate, input: Reconciliat
       input.signal.throwIfAborted();
       if (input.mode === "offline") await assertOffline(database, input.writersStopped);
       const now = new Date();
-      const provenance = { schema: input.mode === "offline" ? "paperclip.offline-workspace-operation-reconciliation.v1"
-        : "paperclip.online-workspace-operation-reconciliation.v1",
+      const provenance = { schema: input.mode === "offline" ? "pilibala.offline-workspace-operation-reconciliation.v1"
+        : "pilibala.online-workspace-operation-reconciliation.v1",
         reason: "superseded_workspace_finalization", reconciledAt: now.toISOString(), previousStatus: current.status,
         supersedingOperationId: receipt.id, runId, resultId: result.id,
         descriptorSha256: reference.descriptorSha256, finalHostSha256: reference.finalHostSha256 };

@@ -2,7 +2,7 @@
 
 ## Scope and parent
 
-This change owns only `server/src/__tests__/pipelines-routes.test.ts` and this receipt. Its exact parent is `e09990e009b1042c9fff212e24429a732853c324`, the current head of [PR #16175](https://github.com/paperclipai/paperclip/pull/16175), on `codex/test-audit-r19-adapter-utils-upload-case`. The dedicated branch is `codex/test-audit-pipeline-bulk-fixture`. No production file, lockfile, workflow, or held audit branch is changed. Do not merge this PR.
+This change owns only `server/src/__tests__/pipelines-routes.test.ts` and this receipt. Its exact parent is `e09990e009b1042c9fff212e24429a732853c324`, the current head of [PR #16175](https://github.com/pilibalaai/pilibala/pull/16175), on `codex/test-audit-r19-adapter-utils-upload-case`. The dedicated branch is `codex/test-audit-pipeline-bulk-fixture`. No production file, lockfile, workflow, or held audit branch is changed. Do not merge this PR.
 
 ## Repeated fixture and retained proof
 
@@ -14,7 +14,7 @@ This removes 90 setup HTTP mutations and 45 per-item review service calls. The n
 
 ## Historical intent and limits
 
-Commit `43b005b704f80aea3ce37cab8136920749c73ee6` introduced the same fixture in [PR #7903](https://github.com/paperclipai/paperclip/pull/7903). Its title and assertions describe partial success. The introduction records no stress-test requirement or timing target. Both the original schema and current `server/src/routes/pipelines-schemas.ts:134` limit bulk review to 100 items. The 50-row fixture is not that limit.
+Commit `43b005b704f80aea3ce37cab8136920749c73ee6` introduced the same fixture in [PR #7903](https://github.com/pilibalaai/pilibala/pull/7903). Its title and assertions describe partial success. The introduction records no stress-test requirement or timing target. Both the original schema and current `server/src/routes/pipelines-schemas.ts:134` limit bulk review to 100 items. The 50-row fixture is not that limit.
 
 The current route at `server/src/routes/pipelines.ts:827` processes each item independently and catches each item's error. `reviewCase` receives no batch-size input. Cases in this fixture have no parent, blocker, or linked execution relationships. Rows 5–49 differ only in unique case key/title/id and repeat row 4's approval input state.
 
@@ -24,13 +24,13 @@ A cross-check of all named pipeline tests in server, CLI, UI, shared, DB-schema,
 
 Local database tests and production mutations were deliberately not started. The host still has 31 allocated SysV shared-memory IDs against `kern.sysv.shmmni = 32`. A prior isolated initdb failed with `could not create shared memory segment: No space left on device`. One remaining slot is not clear test headroom. No global IPC resource or other owner's process was changed.
 
-Passed: `pnpm --config.manage-package-manager-versions=false --filter @paperclipai/server typecheck` (exit 0), including required Runner vendor and shared/plugin build dependencies. Passed: TypeScript AST/syntax validation, all 19 cases retained, all other 18 declarations AST-equivalent, and reversal of the two scalar edits plus the two added assertion lines exactly reconstructs the original test bytes. Passed: `git diff --check` and exact two-file scope review. Production source remains unchanged. The server typecheck excludes test files; the AST/syntax check separately covers this test edit.
+Passed: `pnpm --config.manage-package-manager-versions=false --filter @pilibalaai/server typecheck` (exit 0), including required Runner vendor and shared/plugin build dependencies. Passed: TypeScript AST/syntax validation, all 19 cases retained, all other 18 declarations AST-equivalent, and reversal of the two scalar edits plus the two added assertion lines exactly reconstructs the original test bytes. Passed: `git diff --check` and exact two-file scope review. Production source remains unchanged. The server typecheck excludes test files; the AST/syntax check separately covers this test edit.
 
 Local owner, sibling, full tests, mutation proofs, and causal timing remain unverified. The authorized stacked PR delegates owner/sibling runtime validation to hosted CI. Repo-wide local tests and build were not run because the request permits non-DB verification and requires avoiding local database tests.
 
 ## Exact parent CI baseline
 
-[PR CI run 38411804432](https://github.com/paperclipai/paperclip/actions/runs/38411804432) tested the exact parent SHA. Its [serialized shard 4/9](https://github.com/paperclipai/paperclip/actions/runs/38411804432/job/115345896667) passed the owner with 19 tests:
+[PR CI run 38411804432](https://github.com/pilibalaai/pilibala/actions/runs/38411804432) tested the exact parent SHA. Its [serialized shard 4/9](https://github.com/pilibalaai/pilibala/actions/runs/38411804432/job/115345896667) passed the owner with 19 tests:
 
 - Bulk-review case: 1,134 ms.
 - Owner tests and hooks: 4,239 ms.
@@ -39,7 +39,7 @@ Local owner, sibling, full tests, mutation proofs, and causal timing remain unve
 - Shard test window from its start banner to final suite duration line: 309.323 s.
 - Full job interval from GitHub check timestamps: 375 s.
 
-The [general server shard 12/12](https://github.com/paperclipai/paperclip/actions/runs/38411804432/job/115345897543) passed `pipelines-service.test.ts`, 32 tests, 4,272 ms for tests and hooks. Its grouped execution makes an isolated owner-duration comparison unavailable from that completion line alone.
+The [general server shard 12/12](https://github.com/pilibalaai/pilibala/actions/runs/38411804432/job/115345897543) passed `pipelines-service.test.ts`, 32 tests, 4,272 ms for tests and hooks. Its grouped execution makes an isolated owner-duration comparison unavailable from that completion line alone.
 
 The old serialized manifest weight is 20,408 ms, sampled on September 12. The general manifest sibling weight is 13,114 ms, averaged on October 10. These weights are historical balancing inputs, not a local baseline or a causal estimate of this change.
 

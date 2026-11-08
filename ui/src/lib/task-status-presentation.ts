@@ -1,4 +1,4 @@
-import type { IssueBlockerAttention } from "@paperclipai/shared";
+import type { IssueBlockerAttention } from "@pilibalaai/shared";
 
 /**
  * Everything a task status surface needs to pick its glyph and label. Every

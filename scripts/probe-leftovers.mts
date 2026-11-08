@@ -3,7 +3,7 @@ import fs from "node:fs";
 import { buildTranscript } from "../ui/src/adapters/transcript.ts";
 import { parseHermesStdoutLine } from "../packages/adapters/hermes/src/ui/parse-stdout.ts";
 
-const ACPX = "/home/amber/.paperclip/instances/default/data/run-logs/22bb83e2-4344-4a27-9f32-b853ce198a3e/9d1ec7a5-71ed-45e7-ba80-1ad75483a9f4/836ae6e8-704b-4ed4-bdf6-058d8e3c8b7d.ndjson";
+const ACPX = "/home/amber/.pilibala/instances/default/data/run-logs/22bb83e2-4344-4a27-9f32-b853ce198a3e/9d1ec7a5-71ed-45e7-ba80-1ad75483a9f4/836ae6e8-704b-4ed4-bdf6-058d8e3c8b7d.ndjson";
 const chunks = fs
   .readFileSync(ACPX, "utf8")
   .trim()

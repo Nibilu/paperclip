@@ -12,7 +12,7 @@ import {
   measureStartupStep,
   runWithoutActiveStep,
   SANDBOX_STARTUP_SPAN_ATTRS,
-} from "@paperclipai/adapter-utils/acpx-engine/startup-timing";
+} from "@pilibalaai/adapter-utils/acpx-engine/startup-timing";
 import {
   DEFAULT_SANDBOX_REMOTE_CWD,
   resolveEnvironmentExecutionTarget,
@@ -100,13 +100,13 @@ function recordParentContext() {
 describe("resolveEnvironmentExecutionTarget", () => {
   beforeEach(() => {
     mockResolveEnvironmentDriverConfigForRuntime.mockReset();
-    delete process.env.PAPERCLIP_API_URL;
-    delete process.env.PAPERCLIP_RUNTIME_API_URL;
+    delete process.env.PILIBALA_API_URL;
+    delete process.env.PILIBALA_RUNTIME_API_URL;
   });
 
   it("forwards the physical task binding through the plugin task target", async () => {
     const task = vi.fn(async () => ({ kind: "accepted" as const, taskId: "physical-task" }));
-    const target = await resolveEnvironmentExecutionTarget({ db: {} as never, companyId: "company", adapterType: "paperclip_runner",
+    const target = await resolveEnvironmentExecutionTarget({ db: {} as never, companyId: "company", adapterType: "pilibala_runner",
       environment: { id: "environment", driver: "plugin", config: {} }, leaseMetadata: {},
       lease: { id: "lease", companyId: "company", environmentId: "environment", providerLeaseId: "physical-task", metadata: {} } as never,
       environmentRuntime: { supportsTasks: async () => true, task } as never });
@@ -153,7 +153,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
     });
   });
 
-  it("keeps sandbox targets on bridge mode even when lease metadata includes a Paperclip API URL", async () => {
+  it("keeps sandbox targets on bridge mode even when lease metadata includes a Pilibala API URL", async () => {
     mockResolveEnvironmentDriverConfigForRuntime.mockResolvedValue({
       driver: "sandbox",
       config: {
@@ -176,7 +176,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
       },
       leaseId: "lease-1",
       leaseMetadata: {
-        paperclipApiUrl: "https://paperclip.example.test",
+        pilibalaApiUrl: "https://pilibala.example.test",
       },
       lease: null,
       environmentRuntime: null,
@@ -188,8 +188,8 @@ describe("resolveEnvironmentExecutionTarget", () => {
       providerKey: "fake-plugin",
       remoteCwd: DEFAULT_SANDBOX_REMOTE_CWD,
     });
-    expect(target).not.toHaveProperty("paperclipApiUrl");
-    expect(target).not.toHaveProperty("paperclipTransport");
+    expect(target).not.toHaveProperty("pilibalaApiUrl");
+    expect(target).not.toHaveProperty("pilibalaTransport");
   });
 
   it("passes through a provider-declared sandbox shell command from lease metadata", async () => {
@@ -251,12 +251,12 @@ describe("resolveEnvironmentExecutionTarget", () => {
       },
       leaseId: "lease-1",
       leaseMetadata: {
-        remoteCwd: "/home/sandbox/paperclip-workspace",
+        remoteCwd: "/home/sandbox/pilibala-workspace",
         sshAccess: {
           type: "ssh",
           host: "ssh.example.test",
           port: 22,
-          username: "paperclip",
+          username: "pilibala",
         },
       },
       lease: null,
@@ -267,7 +267,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
       kind: "remote",
       transport: "sandbox",
       providerKey: "fake-plugin",
-      remoteCwd: "/home/sandbox/paperclip-workspace",
+      remoteCwd: "/home/sandbox/pilibala-workspace",
     });
   });
 
@@ -342,8 +342,8 @@ describe("resolveEnvironmentExecutionTarget", () => {
       config: {
         host: "ssh.example.test",
         port: 22,
-        username: "paperclip",
-        remoteWorkspacePath: "/srv/paperclip",
+        username: "pilibala",
+        remoteWorkspacePath: "/srv/pilibala",
         privateKey: "PRIVATE KEY",
         knownHosts: "[ssh.example.test]:22 ssh-ed25519 AAAA",
         strictHostKeyChecking: true,
@@ -368,7 +368,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
     expect(target).toMatchObject({
       kind: "remote",
       transport: "ssh",
-      remoteCwd: "/srv/paperclip",
+      remoteCwd: "/srv/pilibala",
     });
   });
 
@@ -378,8 +378,8 @@ describe("resolveEnvironmentExecutionTarget", () => {
       config: {
         host: "ssh.example.test",
         port: 22,
-        username: "paperclip",
-        remoteWorkspacePath: "/srv/paperclip",
+        username: "pilibala",
+        remoteWorkspacePath: "/srv/pilibala",
         privateKey: "PRIVATE KEY",
         knownHosts: "[ssh.example.test]:22 ssh-ed25519 AAAA",
         strictHostKeyChecking: true,
@@ -404,7 +404,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
     expect(target).toMatchObject({
       kind: "remote",
       transport: "ssh",
-      remoteCwd: "/srv/paperclip",
+      remoteCwd: "/srv/pilibala",
     });
   });
 
@@ -414,8 +414,8 @@ describe("resolveEnvironmentExecutionTarget", () => {
       config: {
         host: "ssh.example.test",
         port: 22,
-        username: "paperclip",
-        remoteWorkspacePath: "/srv/paperclip",
+        username: "pilibala",
+        remoteWorkspacePath: "/srv/pilibala",
         privateKey: "PRIVATE KEY",
         knownHosts: "[ssh.example.test]:22 ssh-ed25519 AAAA",
         strictHostKeyChecking: true,
@@ -440,18 +440,18 @@ describe("resolveEnvironmentExecutionTarget", () => {
     expect(target).toMatchObject({
       kind: "remote",
       transport: "ssh",
-      remoteCwd: "/srv/paperclip",
+      remoteCwd: "/srv/pilibala",
       leaseId: "lease-ssh-1",
       environmentId: "env-ssh-1",
       spec: {
         host: "ssh.example.test",
         port: 22,
-        username: "paperclip",
-        remoteWorkspacePath: "/srv/paperclip",
-        remoteCwd: "/srv/paperclip",
+        username: "pilibala",
+        remoteWorkspacePath: "/srv/pilibala",
+        remoteCwd: "/srv/pilibala",
       },
     });
-    expect(target).not.toHaveProperty("paperclipApiUrl");
+    expect(target).not.toHaveProperty("pilibalaApiUrl");
   });
 
   it("exposes a sandbox runner with single-stream stdin upload disabled", async () => {
@@ -1327,7 +1327,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
   });
 
   // Fire one run-time exec from a bridge continuation that runs after the step
-  // span ended. Each bridge step (`bridge.paperclip`, `bridge.process-session`)
+  // span ended. Each bridge step (`bridge.pilibala`, `bridge.process-session`)
   // starts long-lived work with `criticalPath: false`. The bridge boundary wraps
   // that long-lived work in `runWithoutActiveStep`, exactly as modeled here, so
   // the continuation reads an empty active step. Return the recorded exec span.
@@ -1381,8 +1381,8 @@ describe("resolveEnvironmentExecutionTarget", () => {
     expect(execSpan!.parent).toBeNull();
   });
 
-  it("opens an unparented exec span for a paperclip bridge continuation", async () => {
-    const execSpan = await runContinuationExec("bridge.paperclip", { wrap: true });
+  it("opens an unparented exec span for a pilibala bridge continuation", async () => {
+    const execSpan = await runContinuationExec("bridge.pilibala", { wrap: true });
     expect(execSpan).toBeTruthy();
     expect(execSpan!.parent).toBeNull();
   });

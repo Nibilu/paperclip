@@ -34,7 +34,7 @@ const actor = "migration:native-warm-follow-up-default";
         const id = randomUUID();
         ids.set(candidate.name, id);
         await sql`INSERT INTO agents (id, company_id, name, adapter_type, adapter_config)
-          VALUES (${id}, ${company!.id}, ${candidate.name}, ${candidate.adapterType ?? "paperclip_runner"}, ${sql.json(candidate.config)})`;
+          VALUES (${id}, ${company!.id}, ${candidate.name}, ${candidate.adapterType ?? "pilibala_runner"}, ${sql.json(candidate.config)})`;
         if (candidate.explicit) {
           await sql`INSERT INTO agent_config_revisions (company_id, agent_id, changed_keys, before_config, after_config)
             VALUES (${company!.id}, ${id}, ${sql.json(["adapterConfig"])},

@@ -1,12 +1,12 @@
 import { and, eq, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { agentRuntimeState, agents } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { agentRuntimeState, agents } from "@pilibalaai/db";
 import {
   PROVIDER_RATE_LIMITS_STATE_KEY,
   mergeProviderRateLimitSnapshots,
   providerRateLimitSnapshotFromNotice,
   readProviderRateLimits,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { publishLiveEvent } from "./live-events.js";
 
 /**

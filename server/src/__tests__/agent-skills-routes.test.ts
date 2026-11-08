@@ -87,7 +87,7 @@ function expectResponseId(value: unknown): string {
   return String(value);
 }
 
-vi.mock("@paperclipai/shared/telemetry", () => ({
+vi.mock("@pilibalaai/shared/telemetry", () => ({
   trackAgentCreated: mockTrackAgentCreated,
   trackErrorHandlerCrash: vi.fn(),
 }));
@@ -125,7 +125,7 @@ vi.mock("../services/instance-settings.js", async (importOriginal) => ({
 
 vi.mock("../adapters/index.js", () => ({
   findServerAdapter: vi.fn(() => mockAdapter),
-  findActiveServerAdapter: vi.fn((adapterType: string) => adapterType === "paperclip_runner"
+  findActiveServerAdapter: vi.fn((adapterType: string) => adapterType === "pilibala_runner"
     ? { ...mockAdapter, supportsInstructionsBundle: true }
     : mockAdapter),
   listAdapterModels: vi.fn(),
@@ -133,7 +133,7 @@ vi.mock("../adapters/index.js", () => ({
 }));
 
 function registerModuleMocks() {
-  vi.doMock("@paperclipai/shared/telemetry", () => ({
+  vi.doMock("@pilibalaai/shared/telemetry", () => ({
     trackAgentCreated: mockTrackAgentCreated,
     trackErrorHandlerCrash: vi.fn(),
   }));
@@ -170,7 +170,7 @@ function registerModuleMocks() {
 
   vi.doMock("../adapters/index.js", () => ({
     findServerAdapter: vi.fn(() => mockAdapter),
-    findActiveServerAdapter: vi.fn((adapterType: string) => adapterType === "paperclip_runner"
+    findActiveServerAdapter: vi.fn((adapterType: string) => adapterType === "pilibala_runner"
       ? { ...mockAdapter, supportsInstructionsBundle: true }
       : mockAdapter),
     listAdapterModels: vi.fn(),
@@ -265,7 +265,7 @@ function skillSnapshot(adapterType = "claude_local", mode = "ephemeral") {
     adapterType: adapterType,
     supported: true,
     mode: mode,
-    desiredSkills: ["paperclipai/paperclip/paperclip"],
+    desiredSkills: ["pilibalaai/pilibala/pilibala"],
     entries: [],
     warnings: [],
   };
@@ -315,23 +315,23 @@ describe("agent skill routes", () => {
     mockSecretService.syncEnvBindingsForTarget.mockResolvedValue(undefined);
     mockCompanySkillService.listRuntimeSkillEntries.mockResolvedValue([
       {
-        key: "paperclipai/paperclip/paperclip",
-        runtimeName: "paperclip",
-        source: "/tmp/paperclip",
+        key: "pilibalaai/pilibala/pilibala",
+        runtimeName: "pilibala",
+        source: "/tmp/pilibala",
       },
     ]);
     mockCompanySkillService.resolveRequestedSkillKeys.mockImplementation(
       async (_companyId: string, requested: string[]) =>
         requested.map((value) =>
-          value === "paperclip"
-            ? "paperclipai/paperclip/paperclip"
+          value === "pilibala"
+            ? "pilibalaai/pilibala/pilibala"
             : value,
         ),
     );
     mockCompanySkillService.resolveRequestedSkillEntries.mockImplementation(
       async (_companyId: string, requested: Array<{ key: string; versionId?: string | null }>) => ({
         resolved: requested.map((entry) => ({
-          key: entry.key === "paperclip" ? "paperclipai/paperclip/paperclip" : entry.key,
+          key: entry.key === "pilibala" ? "pilibalaai/pilibala/pilibala" : entry.key,
           versionId: entry.versionId ?? null,
         })),
         unresolved: [],
@@ -411,7 +411,7 @@ describe("agent skill routes", () => {
       expect.objectContaining({
         adapterType: "claude_local",
         config: expect.objectContaining({
-          paperclipRuntimeSkills: expect.any(Array),
+          pilibalaRuntimeSkills: expect.any(Array),
         }),
       }),
     );
@@ -423,7 +423,7 @@ describe("agent skill routes", () => {
     const resolvedVersionId = "22222222-2222-4222-8222-222222222222";
     mockAgentService.getById.mockResolvedValue({
       ...makeAgent("claude_local"),
-      adapterConfig: { paperclipSkillSync: { desiredSkills: [existing] } },
+      adapterConfig: { pilibalaSkillSync: { desiredSkills: [existing] } },
     });
     // Adapters describe the resolved runtime version. It is not an assignment pin.
     mockAdapter.listSkills.mockResolvedValue({
@@ -443,7 +443,7 @@ describe("agent skill routes", () => {
       .send({ desiredSkills: [...snapshot.body.desiredSkillEntries, { key: added, versionId: null }], mode: "replace" }));
     expect(saved.status, JSON.stringify(saved.body)).toBe(200);
     expect(saved.body.desiredSkillEntries).toEqual([{ key: existing, versionId: null }, { key: added, versionId: null }]);
-    expect(mockAgentService.update.mock.calls.at(-1)?.[1].adapterConfig.paperclipSkillSync.desiredSkills).toEqual([existing, added]);
+    expect(mockAgentService.update.mock.calls.at(-1)?.[1].adapterConfig.pilibalaSkillSync.desiredSkills).toEqual([existing, added]);
   });
 
   it("keeps explicit historical assignment pins in skill snapshots", async () => {
@@ -451,7 +451,7 @@ describe("agent skill routes", () => {
     const pinnedVersionId = "22222222-2222-4222-8222-222222222222";
     mockInstanceSettingsService.getExperimental.mockResolvedValue({ enableBetaSkills: true });
     mockAgentService.getById.mockResolvedValue({ ...makeAgent("claude_local"),
-      adapterConfig: { paperclipSkillSync: { desiredSkills: [{ key, versionId: pinnedVersionId }] } } });
+      adapterConfig: { pilibalaSkillSync: { desiredSkills: [{ key, versionId: pinnedVersionId }] } } });
     mockAdapter.listSkills.mockResolvedValue({ ...skillSnapshot(), desiredSkills: [key], desiredSkillEntries: [{ key, versionId: null }] });
     const snapshot = await requestApp(await createApp(), baseUrl => request(baseUrl)
       .get("/api/agents/11111111-1111-4111-8111-111111111111/skills?companyId=company-1"));
@@ -510,7 +510,7 @@ describe("agent skill routes", () => {
         adapterType: "claude_local",
         config: expect.objectContaining({
           env: { HOME: "/home/agent" },
-          paperclipRuntimeSkills: expect.any(Array),
+          pilibalaRuntimeSkills: expect.any(Array),
         }),
       }),
     );
@@ -561,7 +561,7 @@ describe("agent skill routes", () => {
         adapterType: "acpx_local",
         config: expect.objectContaining({
           agent: "claude",
-          paperclipRuntimeSkills: expect.any(Array),
+          pilibalaRuntimeSkills: expect.any(Array),
         }),
       }),
     );
@@ -579,8 +579,8 @@ describe("agent skill routes", () => {
     mockSecretService.resolveAdapterConfigForRuntime.mockResolvedValueOnce({
       config: {
         agent: "codex",
-        paperclipSkillSync: {
-          desiredSkills: ["paperclipai/paperclip/paperclip"],
+        pilibalaSkillSync: {
+          desiredSkills: ["pilibalaai/pilibala/pilibala"],
         },
       },
     });
@@ -588,7 +588,7 @@ describe("agent skill routes", () => {
 
     const res = await requestApp(await createApp(), (baseUrl) => request(baseUrl)
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
-      .send({ desiredSkills: ["paperclip"], mode: "replace" }));
+      .send({ desiredSkills: ["pilibala"], mode: "replace" }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(mockAgentService.update).toHaveBeenCalledWith(
@@ -596,8 +596,8 @@ describe("agent skill routes", () => {
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
           agent: "codex",
-          paperclipSkillSync: expect.objectContaining({
-            desiredSkills: ["paperclipai/paperclip/paperclip"],
+          pilibalaSkillSync: expect.objectContaining({
+            desiredSkills: ["pilibalaai/pilibala/pilibala"],
           }),
         }),
       }),
@@ -608,17 +608,17 @@ describe("agent skill routes", () => {
         adapterType: "acpx_local",
         config: expect.objectContaining({
           agent: "codex",
-          paperclipRuntimeSkills: expect.any(Array),
+          pilibalaRuntimeSkills: expect.any(Array),
         }),
       }),
-      ["paperclipai/paperclip/paperclip"],
+      ["pilibalaai/pilibala/pilibala"],
     );
   });
 
   it("requires an explicit actionable merge mode for skill sync", async () => {
     const res = await requestApp(await createApp(), (baseUrl) => request(baseUrl)
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
-      .send({ desiredSkills: ["paperclip"] }));
+      .send({ desiredSkills: ["pilibala"] }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(422);
     expect(res.body.error).toContain('"add", "remove", or "replace"');
@@ -630,21 +630,21 @@ describe("agent skill routes", () => {
     mockAgentService.getById.mockResolvedValue({
       ...makeAgent("claude_local"),
       adapterConfig: {
-        paperclipSkillSync: { desiredSkills: ["company-1/keep"] },
+        pilibalaSkillSync: { desiredSkills: ["company-1/keep"] },
       },
     });
 
     const res = await requestApp(await createApp(), (baseUrl) => request(baseUrl)
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
-      .send({ desiredSkills: ["paperclip"], mode: "add" }));
+      .send({ desiredSkills: ["pilibala"], mode: "add" }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(mockAgentService.update).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: {
-            desiredSkills: ["company-1/keep", "paperclipai/paperclip/paperclip"],
+          pilibalaSkillSync: {
+            desiredSkills: ["company-1/keep", "pilibalaai/pilibala/pilibala"],
           },
         }),
       }),
@@ -656,22 +656,22 @@ describe("agent skill routes", () => {
     mockAgentService.getById.mockResolvedValue({
       ...makeAgent("claude_local"),
       adapterConfig: {
-        paperclipSkillSync: {
-          desiredSkills: ["company-1/keep", "paperclipai/paperclip/paperclip"],
+        pilibalaSkillSync: {
+          desiredSkills: ["company-1/keep", "pilibalaai/pilibala/pilibala"],
         },
       },
     });
 
     const res = await requestApp(await createApp(), (baseUrl) => request(baseUrl)
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
-      .send({ desiredSkills: ["paperclip"], mode: "remove" }));
+      .send({ desiredSkills: ["pilibala"], mode: "remove" }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(mockAgentService.update).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: { desiredSkills: ["company-1/keep"] },
+          pilibalaSkillSync: { desiredSkills: ["company-1/keep"] },
         }),
       }),
       expect.any(Object),
@@ -682,21 +682,21 @@ describe("agent skill routes", () => {
     mockAgentService.getById.mockResolvedValue({
       ...makeAgent("claude_local"),
       adapterConfig: {
-        paperclipSkillSync: { desiredSkills: ["company-1/keep"] },
+        pilibalaSkillSync: { desiredSkills: ["company-1/keep"] },
       },
     });
 
     const res = await requestApp(await createApp(), (baseUrl) => request(baseUrl)
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
-      .send({ desiredSkills: ["paperclip"], mode: "replace" }));
+      .send({ desiredSkills: ["pilibala"], mode: "replace" }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(mockAgentService.update).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: {
-            desiredSkills: ["paperclipai/paperclip/paperclip"],
+          pilibalaSkillSync: {
+            desiredSkills: ["pilibalaai/pilibala/pilibala"],
           },
         }),
       }),
@@ -712,7 +712,7 @@ describe("agent skill routes", () => {
       .send({
         mode: "replace",
         desiredSkills: [{
-          key: "paperclipai/paperclip/paperclip",
+          key: "pilibalaai/pilibala/pilibala",
           versionId: "22222222-2222-4222-8222-222222222222",
         }],
       }));
@@ -731,7 +731,7 @@ describe("agent skill routes", () => {
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
       .send({
         mode: "replace",
-        desiredSkills: [{ key: "paperclipai/paperclip/paperclip", versionId }],
+        desiredSkills: [{ key: "pilibalaai/pilibala/pilibala", versionId }],
       }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
@@ -739,8 +739,8 @@ describe("agent skill routes", () => {
       expect.any(String),
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: expect.objectContaining({
-            desiredSkills: [{ key: "paperclipai/paperclip/paperclip", versionId }],
+          pilibalaSkillSync: expect.objectContaining({
+            desiredSkills: [{ key: "pilibalaai/pilibala/pilibala", versionId }],
           }),
         }),
       }),
@@ -767,7 +767,7 @@ describe("agent skill routes", () => {
             unresolved.push(entry.key);
           } else {
             resolved.push({
-              key: entry.key === "paperclip" ? "paperclipai/paperclip/paperclip" : entry.key,
+              key: entry.key === "pilibala" ? "pilibalaai/pilibala/pilibala" : entry.key,
               versionId: entry.versionId ?? null,
             });
           }
@@ -778,7 +778,7 @@ describe("agent skill routes", () => {
 
     const res = await requestApp(await createApp(), (baseUrl) => request(baseUrl)
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
-      .send({ desiredSkills: ["paperclip", "stale/removed/skill"], mode: "replace" }));
+      .send({ desiredSkills: ["pilibala", "stale/removed/skill"], mode: "replace" }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     // Stale key preserved in the persisted config alongside the resolved skill.
@@ -786,8 +786,8 @@ describe("agent skill routes", () => {
       expect.any(String),
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: expect.objectContaining({
-            desiredSkills: ["paperclipai/paperclip/paperclip", "stale/removed/skill"],
+          pilibalaSkillSync: expect.objectContaining({
+            desiredSkills: ["pilibalaai/pilibala/pilibala", "stale/removed/skill"],
           }),
         }),
       }),
@@ -825,25 +825,25 @@ describe("agent skill routes", () => {
 
     const res = await requestApp(await createApp(), (baseUrl) => request(baseUrl)
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
-      .send({ desiredSkills: ["paperclipai/paperclip/paperclip"], mode: "replace" }));
+      .send({ desiredSkills: ["pilibalaai/pilibala/pilibala"], mode: "replace" }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(mockAdapter.syncSkills).toHaveBeenCalled();
   });
 
-  it("ignores the reserved legacy Paperclip skill for paperclip_runner", async () => {
-    mockAgentService.getById.mockResolvedValue(makeAgent("paperclip_runner"));
+  it("ignores the reserved legacy Pilibala skill for pilibala_runner", async () => {
+    mockAgentService.getById.mockResolvedValue(makeAgent("pilibala_runner"));
 
     const res = await requestApp(await createApp(), (baseUrl) => request(baseUrl)
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
-      .send({ desiredSkills: ["paperclipai/paperclip/paperclip"], mode: "replace" }));
+      .send({ desiredSkills: ["pilibalaai/pilibala/pilibala"], mode: "replace" }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(mockAgentService.update).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: { desiredSkills: [] },
+          pilibalaSkillSync: { desiredSkills: [] },
         }),
       }),
       expect.any(Object),
@@ -854,26 +854,26 @@ describe("agent skill routes", () => {
     );
   });
 
-  it("allows paperclip_runner to remove a pre-existing legacy Paperclip skill", async () => {
+  it("allows pilibala_runner to remove a pre-existing legacy Pilibala skill", async () => {
     mockAgentService.getById.mockResolvedValue({
-      ...makeAgent("paperclip_runner"),
+      ...makeAgent("pilibala_runner"),
       adapterConfig: {
-        paperclipSkillSync: {
-          desiredSkills: ["company-1/keep", "paperclipai/paperclip/paperclip"],
+        pilibalaSkillSync: {
+          desiredSkills: ["company-1/keep", "pilibalaai/pilibala/pilibala"],
         },
       },
     });
 
     const res = await requestApp(await createApp(), (baseUrl) => request(baseUrl)
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
-      .send({ desiredSkills: ["paperclipai/paperclip/paperclip"], mode: "remove" }));
+      .send({ desiredSkills: ["pilibalaai/pilibala/pilibala"], mode: "remove" }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(mockAgentService.update).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: { desiredSkills: ["company-1/keep"] },
+          pilibalaSkillSync: { desiredSkills: ["company-1/keep"] },
         }),
       }),
       expect.any(Object),
@@ -929,7 +929,7 @@ describe("agent skill routes", () => {
 
     const res = await requestApp(await createApp(), (baseUrl) => request(baseUrl)
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
-      .send({ desiredSkills: ["paperclipai/paperclip/paperclip"], mode: "replace" }));
+      .send({ desiredSkills: ["pilibalaai/pilibala/pilibala"], mode: "replace" }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(mockAdapter.syncSkills).toHaveBeenCalledWith(
@@ -937,10 +937,10 @@ describe("agent skill routes", () => {
         adapterType: "claude_local",
         config: expect.objectContaining({
           env: { HOME: "/home/agent" },
-          paperclipRuntimeSkills: expect.any(Array),
+          pilibalaRuntimeSkills: expect.any(Array),
         }),
       }),
-      ["paperclipai/paperclip/paperclip"],
+      ["pilibalaai/pilibala/pilibala"],
     );
   });
 
@@ -952,7 +952,7 @@ describe("agent skill routes", () => {
         role: "engineer",
         adapterType: "claude_local",
         runner: "legacy",
-        desiredSkills: ["paperclip"],
+        desiredSkills: ["pilibala"],
         adapterConfig: {},
       }));
 
@@ -962,8 +962,8 @@ describe("agent skill routes", () => {
       "company-1",
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: expect.objectContaining({
-            desiredSkills: ["paperclipai/paperclip/paperclip"],
+          pilibalaSkillSync: expect.objectContaining({
+            desiredSkills: ["pilibalaai/pilibala/pilibala"],
           }),
         }),
       }),
@@ -987,7 +987,7 @@ describe("agent skill routes", () => {
         adapterType: "claude_local",
         runner: "legacy",
         desiredSkills: [{
-          key: "paperclipai/paperclip/paperclip",
+          key: "pilibalaai/pilibala/pilibala",
           versionId: "22222222-2222-4222-8222-222222222222",
         }],
         adapterConfig: {},
@@ -1088,7 +1088,7 @@ describe("agent skill routes", () => {
     expect(mockAgentInstructionsService.materializeManagedBundle).not.toHaveBeenCalled();
   });
 
-  it.each(["claude_local", "paperclip_runner"].flatMap((adapterType) =>
+  it.each(["claude_local", "pilibala_runner"].flatMap((adapterType) =>
     ["agents", "agent-hires"].map((route) => ({ adapterType, route })),
   ))("materializes only the CEO entry file for $adapterType via $route", async ({ adapterType, route }) => {
     mockInstanceSettingsService.getExperimental.mockResolvedValue({
@@ -1102,7 +1102,7 @@ describe("agent skill routes", () => {
         role: "ceo",
         adapterType,
         ...(adapterType === "claude_local" ? { runner: "legacy" } : {}),
-        adapterConfig: adapterType === "paperclip_runner" ? { provider: "codex" } : {},
+        adapterConfig: adapterType === "pilibala_runner" ? { provider: "codex" } : {},
       }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(201);
@@ -1115,7 +1115,7 @@ describe("agent skill routes", () => {
     );
   });
 
-  it.each(["claude_local", "paperclip_runner"].flatMap((adapterType) =>
+  it.each(["claude_local", "pilibala_runner"].flatMap((adapterType) =>
     ["agents", "agent-hires"].map((route) => ({ adapterType, route })),
   ))("preserves an explicit CEO instruction bundle for $adapterType via $route", async ({ adapterType, route }) => {
     mockInstanceSettingsService.getExperimental.mockResolvedValue({
@@ -1133,7 +1133,7 @@ describe("agent skill routes", () => {
         role: "ceo",
         adapterType,
         ...(adapterType === "claude_local" ? { runner: "legacy" } : {}),
-        adapterConfig: adapterType === "paperclip_runner" ? { provider: "codex" } : {},
+        adapterConfig: adapterType === "pilibala_runner" ? { provider: "codex" } : {},
         instructionsBundle: { entryFile: "AGENTS.md", files: customFiles },
       }));
 
@@ -1173,7 +1173,7 @@ describe("agent skill routes", () => {
           adapterType: "claude_local",
         }),
         expect.objectContaining({
-          "AGENTS.md": "You are an agent in a Paperclip company.\n",
+          "AGENTS.md": "You are an agent in a Pilibala company.\n",
         }),
         { entryFile: "AGENTS.md", replaceExisting: false },
       );
@@ -1208,30 +1208,30 @@ describe("agent skill routes", () => {
     const entrySeed = seededCalls.at(-1)?.[1] as Record<string, string> | undefined;
     expect(entrySeed?.["AGENTS.md"]).toContain("chief of staff");
     // The normal onboarding flow has beta skill version selection disabled.
-    expect(mockAgentService.create.mock.calls[0][1].adapterConfig.paperclipSkillSync.desiredSkills)
-      .toContain("paperclipai/paperclip/first-task");
+    expect(mockAgentService.create.mock.calls[0][1].adapterConfig.pilibalaSkillSync.desiredSkills)
+      .toContain("pilibalaai/pilibala/first-task");
   });
 
   const codexRunnerCases = [
-    { adapterType: "codex_local", runner: "auto", platform: "linux", expectedType: "paperclip_runner" },
+    { adapterType: "codex_local", runner: "auto", platform: "linux", expectedType: "pilibala_runner" },
     { adapterType: "codex_local", runner: "legacy", platform: "linux", expectedType: "codex_local" },
-    { adapterType: "codex_local", runner: "auto", platform: "darwin", expectedType: "paperclip_runner" },
+    { adapterType: "codex_local", runner: "auto", platform: "darwin", expectedType: "pilibala_runner" },
     { adapterType: "codex_local", runner: "legacy", platform: "darwin", expectedType: "codex_local" },
     { adapterType: "codex_local", runner: "auto", platform: "win32", expectedType: "codex_local" },
   ];
   const creationRunnerCases = [...codexRunnerCases,
-    { adapterType: "claude_local", runner: "auto", platform: "linux", expectedType: "paperclip_runner" },
+    { adapterType: "claude_local", runner: "auto", platform: "linux", expectedType: "pilibala_runner" },
     { adapterType: "claude_local", runner: "legacy", platform: "linux", expectedType: "claude_local" },
-    { adapterType: "claude_local", runner: "auto", platform: "darwin", expectedType: "paperclip_runner" },
+    { adapterType: "claude_local", runner: "auto", platform: "darwin", expectedType: "pilibala_runner" },
     { adapterType: "claude_local", runner: "legacy", platform: "darwin", expectedType: "claude_local" },
   ];
   it.each(creationRunnerCases.flatMap((runnerCase) => [
-    ["agents", "paperclipai/paperclip/paperclip-create-agent"],
-    ["agent-hires", "paperclipai/paperclip/paperclip-create-agent"],
-    ["agents", "paperclip"],
-    ["agent-hires", "paperclip"],
-    ["agents", "paperclipai/paperclip/first-task"],
-    ["agent-hires", "paperclipai/paperclip/first-task"],
+    ["agents", "pilibalaai/pilibala/pilibala-create-agent"],
+    ["agent-hires", "pilibalaai/pilibala/pilibala-create-agent"],
+    ["agents", "pilibala"],
+    ["agent-hires", "pilibala"],
+    ["agents", "pilibalaai/pilibala/first-task"],
+    ["agent-hires", "pilibalaai/pilibala/first-task"],
   ].map(([route, skill]) => ({ ...runnerCase, route, skill }))))("assigns onboarding skills via $route for $adapterType/$runner on $platform with $skill pins", async ({ adapterType, runner, platform, expectedType, route, skill }) => {
     runnerTarget.platform = platform;
     runnerTarget.architecture = platform === "darwin" ? "arm64" : "x64";
@@ -1248,13 +1248,13 @@ describe("agent skill routes", () => {
     const input = mockAgentService.create.mock.calls[0][1];
     expect(input.role).toBe("general");
     expect(input.adapterType).toBe(expectedType);
-    const native = expectedType === "paperclip_runner";
+    const native = expectedType === "pilibala_runner";
     if (native) expect(input.adapterConfig).toMatchObject(adapterType === "claude_local" ? { provider: "acpx", acpxAgent: "claude", model: "claude-opus-5-5" } : { provider: "codex" });
-    const canonicalKey = skill === "paperclip" ? "paperclipai/paperclip/paperclip" : skill;
-    const expected = ["paperclip", "paperclip-board", "paperclip-converting-plans-to-tasks", "paperclip-create-agent", "para-memory-files", "first-task"]
-      .filter((name) => !native || name !== "paperclip")
-      .map((name) => ({ key: `paperclipai/paperclip/${name}`, versionId: `paperclipai/paperclip/${name}` === canonicalKey ? versionId : null }));
-    const desiredSkills = input.adapterConfig.paperclipSkillSync.desiredSkills.map((entry: string | { key: string; versionId: string | null }) =>
+    const canonicalKey = skill === "pilibala" ? "pilibalaai/pilibala/pilibala" : skill;
+    const expected = ["pilibala", "pilibala-board", "pilibala-converting-plans-to-tasks", "pilibala-create-agent", "para-memory-files", "first-task"]
+      .filter((name) => !native || name !== "pilibala")
+      .map((name) => ({ key: `pilibalaai/pilibala/${name}`, versionId: `pilibalaai/pilibala/${name}` === canonicalKey ? versionId : null }));
+    const desiredSkills = input.adapterConfig.pilibalaSkillSync.desiredSkills.map((entry: string | { key: string; versionId: string | null }) =>
       typeof entry === "string" ? { key: entry, versionId: null } : entry);
     expect(desiredSkills).toEqual(expect.arrayContaining(expected));
     expect(desiredSkills).toHaveLength(expected.length);
@@ -1265,7 +1265,7 @@ describe("agent skill routes", () => {
       .post(`/api/companies/company-1/${route}`)
       .send({ name: "Biff", role: "general", adapterType: "codex_local" });
     expect(res.status, JSON.stringify(res.body)).toBe(201);
-    expect(mockAgentService.create.mock.calls[0][1].adapterConfig.paperclipSkillSync).toBeUndefined();
+    expect(mockAgentService.create.mock.calls[0][1].adapterConfig.pilibalaSkillSync).toBeUndefined();
   });
 
   it.each(creationRunnerCases.flatMap((runnerCase) => ["agents", "agent-hires"].map((route) => ({ ...runnerCase, route }))))("assigns core skills without first-task to ordinary CEOs via $route using $runner on $platform", async ({ route, runner, platform, expectedType, adapterType }) => {
@@ -1277,15 +1277,15 @@ describe("agent skill routes", () => {
     expect(res.status, JSON.stringify(res.body)).toBe(201);
     const input = mockAgentService.create.mock.calls[0][1];
     expect(input.adapterType).toBe(expectedType);
-    const native = expectedType === "paperclip_runner";
+    const native = expectedType === "pilibala_runner";
     if (native) expect(input.adapterConfig).toMatchObject(adapterType === "claude_local" ? { provider: "acpx", acpxAgent: "claude", model: "claude-opus-5-5" } : { provider: "codex" });
-    const desiredSkills = input.adapterConfig.paperclipSkillSync.desiredSkills;
-    const expected = ["paperclip", "paperclip-board", "paperclip-converting-plans-to-tasks", "paperclip-create-agent", "para-memory-files"]
-      .filter((name) => !native || name !== "paperclip")
-      .map((name) => `paperclipai/paperclip/${name}`);
+    const desiredSkills = input.adapterConfig.pilibalaSkillSync.desiredSkills;
+    const expected = ["pilibala", "pilibala-board", "pilibala-converting-plans-to-tasks", "pilibala-create-agent", "para-memory-files"]
+      .filter((name) => !native || name !== "pilibala")
+      .map((name) => `pilibalaai/pilibala/${name}`);
     expect(desiredSkills).toEqual(expect.arrayContaining(expected));
     expect(desiredSkills).toHaveLength(expected.length);
-    expect(desiredSkills).not.toContain("paperclipai/paperclip/first-task");
+    expect(desiredSkills).not.toContain("pilibalaai/pilibala/first-task");
   });
 
   it("does not trust an agent-supplied onboarding marker to select chief-of-staff defaults", async () => {
@@ -1297,7 +1297,7 @@ describe("agent skill routes", () => {
       .send({ name: "Biff", role: "general", adapterType: "claude_local",
         runner: "legacy", onboardingFirstAgent: true });
     expect(res.status, JSON.stringify(res.body)).toBe(201);
-    expect(mockAgentService.create.mock.calls[0][1].adapterConfig.paperclipSkillSync).toBeUndefined();
+    expect(mockAgentService.create.mock.calls[0][1].adapterConfig.pilibalaSkillSync).toBeUndefined();
     await vi.waitFor(() => expect(mockAgentInstructionsService.materializeManagedBundle).toHaveBeenCalled());
     expect(mockAgentInstructionsService.materializeManagedBundle.mock.calls[0][1]["AGENTS.md"])
       .not.toContain("chief of staff");
@@ -1323,7 +1323,7 @@ describe("agent skill routes", () => {
     expect(mockApprovalService.create).toHaveBeenCalledTimes(1);
   });
 
-  it("gives a CEO hire the core paperclip skills when none are requested", async () => {
+  it("gives a CEO hire the core pilibala skills when none are requested", async () => {
     const res = await request(await createApp(createDb(true)))
       .post("/api/companies/company-1/agent-hires")
       .send({
@@ -1339,13 +1339,13 @@ describe("agent skill routes", () => {
       "company-1",
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: expect.objectContaining({
+          pilibalaSkillSync: expect.objectContaining({
             desiredSkills: expect.arrayContaining([
-              "paperclipai/paperclip/paperclip",
-              "paperclipai/paperclip/paperclip-board",
-              "paperclipai/paperclip/paperclip-converting-plans-to-tasks",
-              "paperclipai/paperclip/paperclip-create-agent",
-              "paperclipai/paperclip/para-memory-files",
+              "pilibalaai/pilibala/pilibala",
+              "pilibalaai/pilibala/pilibala-board",
+              "pilibalaai/pilibala/pilibala-converting-plans-to-tasks",
+              "pilibalaai/pilibala/pilibala-create-agent",
+              "pilibalaai/pilibala/para-memory-files",
             ]),
           }),
         }),
@@ -1354,7 +1354,7 @@ describe("agent skill routes", () => {
     );
   });
 
-  it("omits the legacy operational skill from paperclip_runner CEO defaults", async () => {
+  it("omits the legacy operational skill from pilibala_runner CEO defaults", async () => {
     mockInstanceSettingsService.getExperimental.mockResolvedValue({
       enableBetaSkills: false,
       enableNativeRunner: true,
@@ -1365,19 +1365,19 @@ describe("agent skill routes", () => {
       .send({
         name: "Native Lead",
         role: "ceo",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         adapterConfig: { provider: "codex" },
       });
 
     expect(res.status, JSON.stringify(res.body)).toBe(201);
     const createInput = mockAgentService.create.mock.calls[0]?.[1] as {
-      adapterConfig: { paperclipSkillSync: { desiredSkills: string[] } };
+      adapterConfig: { pilibalaSkillSync: { desiredSkills: string[] } };
     };
-    expect(createInput.adapterConfig.paperclipSkillSync.desiredSkills).not.toContain(
-      "paperclipai/paperclip/paperclip",
+    expect(createInput.adapterConfig.pilibalaSkillSync.desiredSkills).not.toContain(
+      "pilibalaai/pilibala/pilibala",
     );
-    expect(createInput.adapterConfig.paperclipSkillSync.desiredSkills).toContain(
-      "paperclipai/paperclip/paperclip-board",
+    expect(createInput.adapterConfig.pilibalaSkillSync.desiredSkills).toContain(
+      "pilibalaai/pilibala/pilibala-board",
     );
   });
 
@@ -1389,18 +1389,18 @@ describe("agent skill routes", () => {
         role: "ceo",
         adapterType: "claude_local",
         runner: "legacy",
-        desiredSkills: ["paperclip"],
+        desiredSkills: ["pilibala"],
         adapterConfig: {},
       });
 
     expect(res.status, JSON.stringify(res.body)).toBe(201);
     const createInput = mockAgentService.create.mock.calls[0]?.[1] as {
-      adapterConfig: { paperclipSkillSync: { desiredSkills: string[] } };
+      adapterConfig: { pilibalaSkillSync: { desiredSkills: string[] } };
     };
-    const desired = createInput.adapterConfig.paperclipSkillSync.desiredSkills;
-    // "paperclip" resolves to its canonical key and dedupes with the default.
+    const desired = createInput.adapterConfig.pilibalaSkillSync.desiredSkills;
+    // "pilibala" resolves to its canonical key and dedupes with the default.
     expect(desired).toHaveLength(5);
-    expect(desired).toContain("paperclipai/paperclip/paperclip");
+    expect(desired).toContain("pilibalaai/pilibala/pilibala");
   });
 
   it("does not add default skills to non-CEO hires", async () => {
@@ -1418,7 +1418,7 @@ describe("agent skill routes", () => {
     const createInput = mockAgentService.create.mock.calls[0]?.[1] as {
       adapterConfig: Record<string, unknown>;
     };
-    expect(createInput.adapterConfig.paperclipSkillSync).toBeUndefined();
+    expect(createInput.adapterConfig.pilibalaSkillSync).toBeUndefined();
   });
 
   it("rejects version pins in agent hires while beta skills are disabled", async () => {
@@ -1430,7 +1430,7 @@ describe("agent skill routes", () => {
         adapterType: "claude_local",
         runner: "legacy",
         desiredSkills: [{
-          key: "paperclipai/paperclip/paperclip",
+          key: "pilibalaai/pilibala/pilibala",
           versionId: "22222222-2222-4222-8222-222222222222",
         }],
         adapterConfig: {},
@@ -1454,7 +1454,7 @@ describe("agent skill routes", () => {
         icon: "crown",
         adapterType: "claude_local",
         runner: "legacy",
-        desiredSkills: ["paperclip"],
+        desiredSkills: ["pilibala"],
         adapterConfig: {},
         sourceIssueId,
       });
@@ -1465,8 +1465,8 @@ describe("agent skill routes", () => {
       expect.objectContaining({
         icon: "crown",
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: expect.objectContaining({
-            desiredSkills: ["paperclipai/paperclip/paperclip"],
+          pilibalaSkillSync: expect.objectContaining({
+            desiredSkills: ["pilibalaai/pilibala/pilibala"],
           }),
         }),
       }),
@@ -1487,9 +1487,9 @@ describe("agent skill routes", () => {
       expect.objectContaining({
         payload: expect.objectContaining({
           icon: "crown",
-          desiredSkills: ["paperclipai/paperclip/paperclip"],
+          desiredSkills: ["pilibalaai/pilibala/pilibala"],
           requestedConfigurationSnapshot: expect.objectContaining({
-            desiredSkills: ["paperclipai/paperclip/paperclip"],
+            desiredSkills: ["pilibalaai/pilibala/pilibala"],
           }),
         }),
       }),

@@ -7,7 +7,7 @@ vi.mock("./run-log-store.js", () => ({ getRunLogStore: () => ({ read: fixture.re
 
 function source() {
   const companyId = randomUUID(), agentId = randomUUID(), id = randomUUID(), ts = new Date();
-  const chunk = "[paperclip] Enabled run-scoped skills from issue mentions: fixture/status-report\n";
+  const chunk = "[pilibala] Enabled run-scoped skills from issue mentions: fixture/status-report\n";
   const record = { ts: ts.toISOString(), attemptId: randomUUID(), stream: "stdout", chunk, seq: 1 };
   const content = JSON.stringify(record) + "\n";
   const run: Parameters<typeof hasVerifiedPreparationLog>[0] = { companyId, agentId, id,

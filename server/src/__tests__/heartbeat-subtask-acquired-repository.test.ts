@@ -9,7 +9,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 import {
   agents, authUsers, companies, companyMemberships, createDb, executionWorkspaceRepositories, executionWorkspaces,
   heartbeatRuns, issues, projectWorkspaces, projects,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { heartbeatService } from "../services/heartbeat.js";
 import { issueService } from "../services/issues.js";
 import { taskRepositoryRelativePath } from "../services/execution-workspace-repositories.js";
@@ -36,8 +36,8 @@ describe.skipIf(!recoveryPostgresSupport.supported)("subtask in a project that a
 
   beforeAll(async () => {
     root = await realpath(await mkdtemp(path.join(tmpdir(), "subtask-acquired-repository-")));
-    vi.stubEnv("PAPERCLIP_HOME", path.join(root, "home"));
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "01234567890123456789012345678901");
+    vi.stubEnv("PILIBALA_HOME", path.join(root, "home"));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "01234567890123456789012345678901");
     temporary = await startRecoveryPostgres("subtask-acquired-repository-");
     db = createDb(temporary.connectionString);
     await instanceSettingsService(db).updateExperimental({ enableIsolatedWorkspaces: true });
@@ -129,8 +129,8 @@ describe.skipIf(!recoveryPostgresSupport.supported)("subtask in a project that a
     }
 
     let childCwd: string | null = null;
-    execute.mockImplementation(async (input: { context: { paperclipWorkspace?: { cwd?: string } } }) => {
-      childCwd = input.context.paperclipWorkspace?.cwd ?? null;
+    execute.mockImplementation(async (input: { context: { pilibalaWorkspace?: { cwd?: string } } }) => {
+      childCwd = input.context.pilibalaWorkspace?.cwd ?? null;
       return { exitCode: 0, signal: null, timedOut: false };
     });
     const run = await heartbeat.wakeup(agentId, { source: "on_demand", triggerDetail: "manual", contextSnapshot: { issueId: child.id } });

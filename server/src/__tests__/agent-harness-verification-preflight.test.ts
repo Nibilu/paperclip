@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
-import { agents, aiProviderDefaults, companies, companyMemberships, connectionGrants, createDb, environments, plugins } from "@paperclipai/db";
-import type { AdapterEnvironmentTestResult } from "@paperclipai/adapter-utils";
+import { agents, aiProviderDefaults, companies, companyMemberships, connectionGrants, createDb, environments, plugins } from "@pilibalaai/db";
+import type { AdapterEnvironmentTestResult } from "@pilibalaai/adapter-utils";
 import { agentHarnessVerificationService } from "../services/agent-harness-verification.js";
 import * as environmentTests from "../services/agent-environment-test.js";
 import { aiConnectionService } from "../services/ai-connections.js";
@@ -36,10 +36,10 @@ describePostgres("saved harness account preflight", () => {
   const verify = () => agentHarnessVerificationService(db, {} as PluginWorkerManager).verify(agent);
 
   beforeAll(async () => {
-    home = await realpath(await mkdtemp(path.join(os.tmpdir(), "paperclip-harness-preflight-")));
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    vi.stubEnv("PAPERCLIP_INSTANCE_ID", "harness-preflight-fixture");
-    database = await startEmbeddedPostgresTestDatabase("paperclip-harness-preflight-db-");
+    home = await realpath(await mkdtemp(path.join(os.tmpdir(), "pilibala-harness-preflight-")));
+    vi.stubEnv("PILIBALA_HOME", home);
+    vi.stubEnv("PILIBALA_INSTANCE_ID", "harness-preflight-fixture");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-harness-preflight-db-");
     db = createDb(database.connectionString);
   }, 90_000);
 
@@ -130,7 +130,7 @@ describePostgres("saved harness account preflight", () => {
     const pluginId = randomUUID(), pluginKey = `test.runner-tasks.${pluginId}`;
     await db.insert(plugins).values({ id: pluginId, pluginKey, packageName: "@test/runner-tasks", version: "1.0.0", apiVersion: 1,
       categories: ["automation"], status: "ready", manifestJson: { id: pluginKey, apiVersion: 1, version: "1.0.0",
-        displayName: "Runner tasks", description: "Runner task fixture", author: "Paperclip", categories: ["automation"],
+        displayName: "Runner tasks", description: "Runner task fixture", author: "Pilibala", categories: ["automation"],
         capabilities: ["environment.drivers.register"], entrypoints: { worker: "worker.js" },
         environmentDrivers: [{ driverKey: "tasks", displayName: "Tasks", supportsTasks: true, configSchema: { type: "object" } }] } } as any);
     const [environment] = await db.insert(environments).values({ name: `Runner tasks ${pluginId}`, driver: "plugin", status: "active",
@@ -142,7 +142,7 @@ describePostgres("saved harness account preflight", () => {
       resolveAdapterTestExecutionContext: allocate,
       testManagedEnvironment: probe,
     }));
-    [agent] = await db.update(agents).set({ adapterType: "paperclip_runner", runtimeConfig,
+    [agent] = await db.update(agents).set({ adapterType: "pilibala_runner", runtimeConfig,
       adapterConfig: { provider: "opencode", model: "openrouter/anthropic/claude-sonnet-4.5", ...(homeMode ? { homeMode } : {}) } })
       .where(eq(agents.id, agent.id)).returning();
   }

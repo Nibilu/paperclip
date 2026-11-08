@@ -5,14 +5,14 @@ import path from "node:path";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { activityLog, agents, companies, heartbeatRuns, issues, companySkillRepositorySnapshots as snapshots,
-  nativeRunFinalizations, createDb } from "@paperclipai/db";
+  nativeRunFinalizations, createDb } from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import * as storageModule from "../storage/index.js";
 import { createStorageService } from "../storage/service.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
 import { materializeAsset, rehydratePinnedSkillAssets } from "../services/native-runtime/runtime-context.js";
 import { nativeRuntimeContextFixture } from "../services/native-runtime/runtime-context.test-fixture.js";
-import { canonicalNativeRuntimeContextDigest, parseNativeExecutionInput } from "../vendor/paperclip-runner/index.js";
+import { canonicalNativeRuntimeContextDigest, parseNativeExecutionInput } from "../vendor/pilibala-runner/index.js";
 import { preserveRuntimeSkillAssets, hasLocalRuntimeSkillObligations, migrateRuntimeSkillAssets } from "../services/native-runtime/runtime-skill-preservation.js";
 import { readEphemeralServerDataEligibility } from "../services/ephemeral-server-contract.js";
 import { skillPackageMaintenance } from "../services/skill-package-maintenance.js";
@@ -23,19 +23,19 @@ describe("admitted unversioned runtime skill preservation", () => {
   let db: ReturnType<typeof createDb>;
   let home: string;
   let storage: storageModule.StorageService;
-  const previousHome = process.env.PAPERCLIP_HOME;
+  const previousHome = process.env.PILIBALA_HOME;
   beforeAll(async () => {
     database = await startEmbeddedPostgresTestDatabase("runtime-skill-preservation-");
     db = createDb(database.connectionString, { maxConnections: 6 });
     home = await fs.mkdtemp(path.join(os.tmpdir(), "runtime-skill-preservation-"));
-    process.env.PAPERCLIP_HOME = home;
+    process.env.PILIBALA_HOME = home;
     // Real streaming storage/archives on disk with the same durable receipt
     // contract; no external provider credentials or HTTP mocks.
     storage = createStorageService({ ...createLocalDiskStorageProvider(path.join(home, "objects")), id: "s3" });
     vi.spyOn(storageModule, "getStorageService").mockReturnValue(storage);
   }, 90_000);
   afterEach(async () => {
-    process.env.PAPERCLIP_HOME = home;
+    process.env.PILIBALA_HOME = home;
     await db.delete(activityLog);
     await db.delete(nativeRunFinalizations);
     await db.delete(heartbeatRuns);
@@ -46,7 +46,7 @@ describe("admitted unversioned runtime skill preservation", () => {
   });
   afterAll(async () => {
     vi.restoreAllMocks();
-    if (previousHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = previousHome;
+    if (previousHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = previousHome;
     await db?.$client.end({ timeout: 1 });
     await database?.cleanup();
     if (home) await removeRuntimeAssetTree(home);
@@ -64,13 +64,13 @@ describe("admitted unversioned runtime skill preservation", () => {
     const context = nativeRuntimeContextFixture();
     context.skills = [{ key: "legacy", runtimeName: "legacy", versionId: null, bundle }];
     context.aggregateDigest = canonicalNativeRuntimeContextDigest(context);
-    const execution = parseNativeExecutionInput({ schema: "paperclip.native-execution-input.v3",
+    const execution = parseNativeExecutionInput({ schema: "pilibala.native-execution-input.v3",
       binding: { companyId, runId, agentId, issueId, executionWorkspaceId: runId },
       task: { identifier: "PRESERVE-1", title: "Saved selection", description: null, prompt: "Read saved skills", workMode: "standard" },
       workspace: { cwd: "/tmp", repoUrl: null, repoRef: null, branchName: null },
       session: { normalizedSessionId: null, driverKind: "codex_app_server", protocolVersion: 1, lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null } },
       provider: { kind: "codex", model: null },
-      completionContract: { id: "contract", sha256: "saved", schemaVersion: "paperclip.completion-contract.v1",
+      completionContract: { id: "contract", sha256: "saved", schemaVersion: "pilibala.completion-contract.v1",
         contract: { revision: "1", objective: "Read saved skills", criteria: [{ id: "read", requirement: "Read skills" }] } },
       interactionResponses: [], credentialBindings: [], executionMode: "default", planningContext: null, runtimeContext: context });
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, nativeIssueId: issueId,
@@ -100,7 +100,7 @@ describe("admitted unversioned runtime skill preservation", () => {
     expect((await db.select().from(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, f.runId)))[0])
       .toMatchObject({ phase: "terminal_failure", recoveryState: "blocked", leaseOwner: null });
     expect(await hasLocalRuntimeSkillObligations(db)).toBe(false);
-    process.env.PAPERCLIP_HOME = path.join(home, `cold-${randomUUID()}`);
+    process.env.PILIBALA_HOME = path.join(home, `cold-${randomUUID()}`);
     const recovered = await rehydratePinnedSkillAssets(db, f, f.context);
     expect(recovered.aggregateDigest).toBe(f.context.aggregateDigest);
     expect(recovered.skills[0]!.versionId).toBeNull();
@@ -196,7 +196,7 @@ describe("admitted unversioned runtime skill preservation", () => {
       nativeExecutionInput: { ...f.execution, task: { ...f.execution.task, prompt: "Revised task contract" } } } })
       .where(eq(heartbeatRuns.id, f.runId));
     expect(await hasLocalRuntimeSkillObligations(db)).toBe(false);
-    process.env.PAPERCLIP_HOME = path.join(home, `revision-${randomUUID()}`);
+    process.env.PILIBALA_HOME = path.join(home, `revision-${randomUUID()}`);
     expect((await rehydratePinnedSkillAssets(db, f, f.context)).skills[0]!.bundle.digest).toBe(f.bundle.digest);
     const changed = structuredClone(f.context);
     changed.skills[0]!.runtimeName = "different-admitted-selection";

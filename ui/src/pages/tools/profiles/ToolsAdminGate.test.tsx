@@ -99,7 +99,7 @@ describe("ToolsAdminGate", () => {
 
   it("shows a placeholder, not a denial, during an outage before the first load", async () => {
     getBoardAccessMock.mockRejectedValue(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await render({ browserOnline: false });
 
@@ -107,7 +107,7 @@ describe("ToolsAdminGate", () => {
     expect(container.textContent).not.toContain(DENIAL);
     expect(container.textContent).not.toContain("gated content");
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
   });
 
   it("shows readable copy with Retry for a real error, not a denial", async () => {

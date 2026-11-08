@@ -54,24 +54,24 @@ export function isLinkedGitWorktreeCheckout(rootDir: string): boolean {
 }
 
 export function resolveWorktreeEnvFilePath(rootDir: string): string {
-  return path.resolve(rootDir, ".paperclip", ".env");
+  return path.resolve(rootDir, ".pilibala", ".env");
 }
 
 /** An explicitly empty instance owns its saved keys, even in an agent shell. */
 export function applyEmptyWorktreeSigningSecrets(rootDir: string, env: NodeJS.ProcessEnv = process.env): boolean {
-  if (!existsSync(path.resolve(rootDir, ".paperclip", "seed-empty"))) return false;
+  if (!existsSync(path.resolve(rootDir, ".pilibala", "seed-empty"))) return false;
   const entries = parseEnvFile(readFileSync(resolveWorktreeEnvFilePath(rootDir), "utf8"));
-  for (const key of ["PAPERCLIP_AGENT_JWT_SECRET", "PAPERCLIP_TOOL_ACTION_SIGNING_SECRET"] as const) {
+  for (const key of ["PILIBALA_AGENT_JWT_SECRET", "PILIBALA_TOOL_ACTION_SIGNING_SECRET"] as const) {
     if (!entries[key]?.trim()) throw new Error(`Empty worktree is missing its saved ${key}. Reinitialize its configuration before starting.`);
     env[key] = entries[key];
   }
   // Better Auth otherwise prefers an inherited key over this instance's JWT key.
-  env.BETTER_AUTH_SECRET = entries.BETTER_AUTH_SECRET?.trim() || entries.PAPERCLIP_AGENT_JWT_SECRET;
+  env.BETTER_AUTH_SECRET = entries.BETTER_AUTH_SECRET?.trim() || entries.PILIBALA_AGENT_JWT_SECRET;
   return true;
 }
 
 export function isWorktreeSeedPending(rootDir: string): boolean {
-  const markerDir = path.resolve(rootDir, ".paperclip");
+  const markerDir = path.resolve(rootDir, ".pilibala");
   const manifestPath = path.resolve(markerDir, "seed-manifest.json");
   if (existsSync(manifestPath)) {
     return !hasVerifiedWorktreeSeedManifest(manifestPath);
@@ -91,7 +91,7 @@ function resolveHomeAwarePath(value: string): string {
 }
 
 function resolveDefaultWorktreeHome(env: NodeJS.ProcessEnv): string {
-  return path.resolve(expandHomePrefix(env.PAPERCLIP_WORKTREES_DIR?.trim() || "~/.paperclip-worktrees"));
+  return path.resolve(expandHomePrefix(env.PILIBALA_WORKTREES_DIR?.trim() || "~/.pilibala-worktrees"));
 }
 
 function repairStaleMigratedWorktreeEnvEntries(
@@ -99,8 +99,8 @@ function repairStaleMigratedWorktreeEnvEntries(
   entries: Record<string, string>,
   env: NodeJS.ProcessEnv,
 ): Record<string, string> {
-  const localConfigPath = path.resolve(rootDir, ".paperclip", "config.json");
-  const configuredPath = entries.PAPERCLIP_CONFIG?.trim();
+  const localConfigPath = path.resolve(rootDir, ".pilibala", "config.json");
+  const configuredPath = entries.PILIBALA_CONFIG?.trim();
   if (!configuredPath) return entries;
 
   const resolvedConfiguredPath = resolveHomeAwarePath(configuredPath);
@@ -113,9 +113,9 @@ function repairStaleMigratedWorktreeEnvEntries(
   const homeDir = resolveDefaultWorktreeHome(env);
   return {
     ...entries,
-    PAPERCLIP_HOME: homeDir,
-    PAPERCLIP_CONFIG: localConfigPath,
-    PAPERCLIP_CONTEXT: path.resolve(homeDir, "context.json"),
+    PILIBALA_HOME: homeDir,
+    PILIBALA_CONFIG: localConfigPath,
+    PILIBALA_CONTEXT: path.resolve(homeDir, "context.json"),
   };
 }
 

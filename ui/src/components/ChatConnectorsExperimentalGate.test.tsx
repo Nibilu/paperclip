@@ -178,7 +178,7 @@ describe("Chat connectors visibility gate", () => {
     await vi.waitFor(() => expect(container.querySelector("[data-chat-setup]")).not.toBeNull());
 
     api.get.mockRejectedValue(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await client.invalidateQueries({ queryKey: queryKeys.chatEndpoints.detail("endpoint-1") });
     await flushReact();
@@ -186,7 +186,7 @@ describe("Chat connectors visibility gate", () => {
     expect(api.get).toHaveBeenCalledTimes(2);
     expect(container.querySelector("[data-chat-setup]")).not.toBeNull();
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
     expect(container.textContent).not.toContain("tenant_app_unavailable");
   });
   it("shows readable copy with Retry when the endpoint fails to load", async () => {

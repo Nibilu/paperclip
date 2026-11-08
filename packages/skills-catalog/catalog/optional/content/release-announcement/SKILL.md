@@ -1,7 +1,7 @@
 ---
 name: release-announcement
 description: Write a release announcement — changelog, blog post, in-app note, or social post — that leads with user impact, names the audience, and includes upgrade/migration steps without filler.
-key: paperclipai/optional/content/release-announcement
+key: pilibalaai/optional/content/release-announcement
 recommendedForRoles:
   - devrel
   - product
@@ -28,14 +28,14 @@ Write the channel-appropriate announcement for a release without churn. Differen
 - An internal-only change with no user impact. Update internal docs; do not announce.
 - The release is incomplete (still in active development). Wait until it ships, even if marketing wants the post.
 
-## Paperclip Cases output
+## Pilibala Cases output
 
-When this skill runs inside Paperclip and `experimental.enableCases` is enabled,
+When this skill runs inside Pilibala and `experimental.enableCases` is enabled,
 emit durable release-content cases before handing off the copy. Cases preserve
 the inspectable output; the issue coordinates the work.
 
-Use `skills/paperclip/references/cases.md` for the API contract. Include
-`X-Paperclip-Run-Id` on writes when `PAPERCLIP_RUN_ID` is set. If the API returns
+Use `skills/pilibala/references/cases.md` for the API contract. Include
+`X-Pilibala-Run-Id` on writes when `PILIBALA_RUN_ID` is set. If the API returns
 `403 Cases are disabled`, report that limitation and continue with the requested
 copy artifact.
 
@@ -44,8 +44,8 @@ Upsert the parent release case first when it does not already exist:
 ```json
 {
   "caseType": "release",
-  "key": "paperclip-release:vYYYY.MDD.P",
-  "title": "Paperclip vYYYY.MDD.P release",
+  "key": "pilibala-release:vYYYY.MDD.P",
+  "title": "Pilibala vYYYY.MDD.P release",
   "status": "in_progress",
   "fields": {
     "schema_version": 1,
@@ -67,14 +67,14 @@ For a dev blog, upsert a child case with `parentCaseId` set to the release case:
 ```json
 {
   "caseType": "blog_post",
-  "key": "paperclip-release:vYYYY.MDD.P:blog-post",
-  "title": "Paperclip vYYYY.MDD.P launch post",
+  "key": "pilibala-release:vYYYY.MDD.P:blog-post",
+  "title": "Pilibala vYYYY.MDD.P launch post",
   "status": "in_review",
   "parentCaseId": "<release-case-id>",
   "fields": {
     "schema_version": 1,
     "version": "vYYYY.MDD.P",
-    "slug": "paperclip-vYYYY-MDD-P",
+    "slug": "pilibala-vYYYY-MDD-P",
     "word_count_target": 650,
     "target_audience": ["operators", "developers"],
     "requires_screenshot": false,
@@ -92,8 +92,8 @@ For social output, upsert a sibling child case:
 ```json
 {
   "caseType": "tweet_storm",
-  "key": "paperclip-release:vYYYY.MDD.P:tweet-storm",
-  "title": "Paperclip vYYYY.MDD.P tweet storm",
+  "key": "pilibala-release:vYYYY.MDD.P:tweet-storm",
+  "title": "Pilibala vYYYY.MDD.P tweet storm",
   "status": "in_review",
   "parentCaseId": "<release-case-id>",
   "fields": {

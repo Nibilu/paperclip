@@ -7,7 +7,7 @@ describe("unescapeIntrawordUnderscores", () => {
   it("restores underscores the person typed inside words and identifiers", () => {
     expect(unescapeIntrawordUnderscores("Reply with E2E\\_ASK\\_12\\_journey\\_1793913565974\\_507b01b8."))
       .toBe("Reply with E2E_ASK_12_journey_1793913565974_507b01b8.");
-    expect(unescapeIntrawordUnderscores("Set PAPERCLIP\\_TASK\\_ID and snake\\_case")).toBe("Set PAPERCLIP_TASK_ID and snake_case");
+    expect(unescapeIntrawordUnderscores("Set PILIBALA\\_TASK\\_ID and snake\\_case")).toBe("Set PILIBALA_TASK_ID and snake_case");
     expect(unescapeIntrawordUnderscores("ünïcode\\_wörd")).toBe("ünïcode_wörd");
     expect(unescapeIntrawordUnderscores("foo\\_\\_bar and a\\_\\_\\_b")).toBe("foo__bar and a___b");
     expect(unescapeIntrawordUnderscores("> quoted snake\\_case\n\n- listed snake\\_case")).toBe("> quoted snake_case\n\n- listed snake_case");

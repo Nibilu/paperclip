@@ -17,8 +17,8 @@ import { getExecutionBlocker, hasPendingRunCleanup } from "../../../services/exe
 import { nativeManualAdmissionHoldsExecution } from "../../../services/native-runtime/native-runner-ownership.js";
 import { and, asc, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import { readReleaseRun, type ReleaseRun } from "./release-run-read.js";
-import type { Db } from "@paperclipai/db";
-import { extractIssueReferenceIdentifiers, isUuidLike } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { extractIssueReferenceIdentifiers, isUuidLike } from "@pilibalaai/shared";
 import {
   activityLog,
   agentWakeupRequests,
@@ -30,7 +30,7 @@ import {
   issueRelations,
   issues,
   nativeRunFinalizations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { hasConversationContinuationPolicy } from "../../../services/conversation-continuation.js";
 import { legacyExecutionNeedsReconciliationWithEvidence } from "../../../services/legacy-execution-recovery.js";
 import {
@@ -80,7 +80,7 @@ import type {
 import type { RunSummary } from "../application/types.js";
 
 const DEFERRED_WAKE_STATUS = "deferred_issue_execution";
-const DEFERRED_WAKE_CONTEXT_KEY = "_paperclipWakeContext";
+const DEFERRED_WAKE_CONTEXT_KEY = "_pilibalaWakeContext";
 const EXECUTION_PATH_HEARTBEAT_RUN_STATUSES = ["queued", "running", "scheduled_retry"] as const;
 
 type HeartbeatRunRow = typeof heartbeatRuns.$inferSelect;
@@ -340,7 +340,7 @@ function buildTransaction(tx: Db, deps: WakeQueuePostgresAdapterDeps, db: Db, ru
               and (coalesce(delivered_run.context_snapshot->'wakeCommentIds', '[]'::jsonb) ? ${issueComments.id}::text
                 or (delivered_run.retry_of_run_id is not null and jsonb_path_exists(delivered_run.context_snapshot, '$.executionContinuation.messages[*] ? (@.id == $id)',
                   jsonb_build_object('id', ${issueComments.id}::text))
-                or jsonb_path_exists(delivered_run.context_snapshot, '$.paperclipWake.messages[*] ? (@.id == $id)',
+                or jsonb_path_exists(delivered_run.context_snapshot, '$.pilibalaWake.messages[*] ? (@.id == $id)',
                   jsonb_build_object('id', ${issueComments.id}::text)))))`,
         ))).map(row => row.id));
       const liveNonSelfCommentIds = liveAndUnauthored.filter(commentId => !delivered.has(commentId));

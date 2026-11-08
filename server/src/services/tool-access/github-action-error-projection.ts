@@ -1,6 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { toolApplications, toolConnections, type Db } from "@paperclipai/db";
-import type { IssueThreadInteraction, RequestConfirmationInteraction } from "@paperclipai/shared";
+import { toolApplications, toolConnections, type Db } from "@pilibalaai/db";
+import type { IssueThreadInteraction, RequestConfirmationInteraction } from "@pilibalaai/shared";
 import { projectGitHubActionResult } from "./github-access-errors.js";
 import { toolSourceTemplateKeySql } from "./source-template-key.js";
 

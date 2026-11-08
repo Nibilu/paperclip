@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { agents, companies, createDb, environmentLeases, environments, executionWorkspaces, heartbeatRunEvents, heartbeatRuns, issues } from "@paperclipai/db";
+import { agents, companies, createDb, environmentLeases, environments, executionWorkspaces, heartbeatRunEvents, heartbeatRuns, issues } from "@pilibalaai/db";
 import { recoveryPostgresSupport, startRecoveryPostgres } from "../../__tests__/helpers/recovery-postgres.js";
 import { createReusableLeaseHandoff } from "../environment-lease-handoff.js";
 import { retiredSourceAuthorizesNativeBackupRestore } from "./native-retired-backup-source.js";
@@ -25,17 +25,17 @@ describeDb("retired native backup source authority", () => {
     const companyId = randomUUID(), agentId = randomUUID(), sessionId = randomUUID(), runnerInstanceId = randomUUID();
     const sourceRunId = randomUUID(), currentRunId = randomUUID(), leaseId = randomUUID(), providerLeaseId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Retired source", issuePrefix: `R${companyId.slice(0, 5)}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Codie", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Codie", adapterType: "pilibala_runner" });
     for (const id of [sourceRunId, currentRunId]) await db.insert(heartbeatRuns).values({ id, companyId, agentId,
       status: id === sourceRunId ? "succeeded" : "running", runtimeMode: "native", nativeSessionId: sessionId,
       invocationSource: "assignment", triggerDetail: "system" });
     const lease = (id: string) => ({ id, companyId, heartbeatRunId: sourceRunId, provider: "daytona", providerLeaseId,
       status: options.status ?? "expired", cleanupStatus: "success", releasedAt: new Date(),
       metadata: {
-        nativeHarnessBackup: { schema: "paperclip.native-harness-backup-stamp.v2", normalizedSessionId: sessionId, runnerInstanceId,
+        nativeHarnessBackup: { schema: "pilibala.native-harness-backup-stamp.v2", normalizedSessionId: sessionId, runnerInstanceId,
           sessionScopeSha256: "a".repeat(64), sourceProviderLeaseId: providerLeaseId, authorizedProviderLeaseId: providerLeaseId,
           manifestSha256: options.stampSha ?? manifestSha256, completedAt: completedAt.toISOString() },
-        ...(options.termination === null ? {} : { remoteExecutionTermination: { schema: "paperclip.remote-termination.v1", companyId,
+        ...(options.termination === null ? {} : { remoteExecutionTermination: { schema: "pilibala.remote-termination.v1", companyId,
           runId: sourceRunId, leaseId: id, provider: "daytona", providerLeaseId, state: options.termination ?? "destroyed",
           confirmedAt: new Date().toISOString() } }),
       } });

@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
-import { heartbeatRuns, type Db } from "@paperclipai/db";
-import { normalizeCents, usdToCents, type AccountingFinding, type AccountingHealth, type AccountingInspection } from "@paperclipai/shared";
+import { heartbeatRuns, type Db } from "@pilibalaai/db";
+import { normalizeCents, usdToCents, type AccountingFinding, type AccountingHealth, type AccountingInspection } from "@pilibalaai/shared";
 import { conflict, notFound } from "../errors.js";
 import { receiptFingerprint } from "./receipt-fingerprint.js";
 import { withAccountingReadSnapshot, withOperationAccountingTransaction } from "./accounting-transaction.js";

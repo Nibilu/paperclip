@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createDb } from "@paperclipai/db";
+import { createDb } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { SkillCacheBusy, withSkillVersionCacheLock } from "./skill-version-cache.js";
 

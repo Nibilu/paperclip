@@ -1,4 +1,4 @@
-import { JsonRpcCallError, environmentResumeErrorData } from "@paperclipai/plugin-sdk";
+import { JsonRpcCallError, environmentResumeErrorData } from "@pilibalaai/plugin-sdk";
 import { collectRunFailureDiagnostics } from "../services/run-failure-diagnostics.js";
 import { PluginWorkerUnavailableError } from "../services/plugin-worker-unavailable-error.js";
 import { createSandboxOrphanCleanupSpool } from "../services/sandbox-orphan-cleanup-spool.js";
@@ -16,7 +16,7 @@ import {
   getSshEnvLabSupport,
   startSshEnvLabFixture,
   stopSshEnvLabFixture,
-} from "@paperclipai/adapter-utils/ssh";
+} from "@pilibalaai/adapter-utils/ssh";
 import {
   activityLog,
   workspaceOperations,
@@ -35,7 +35,7 @@ import {
   issues,
   plugins,
   projects,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -58,12 +58,12 @@ import { remoteExecutionHasStopped } from "../services/remote-execution-terminat
 import { heartbeatService } from "../services/heartbeat.ts";
 import { secretService } from "../services/secrets.ts";
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.ts";
-import type { Environment, EnvironmentDriver, EnvironmentStatus } from "@paperclipai/shared";
+import type { Environment, EnvironmentDriver, EnvironmentStatus } from "@pilibalaai/shared";
 import {
   getActiveStepContext,
   runWithRuntimeParent,
   type StartupSpanContext,
-} from "@paperclipai/adapter-utils/acpx-engine/startup-timing";
+} from "@pilibalaai/adapter-utils/acpx-engine/startup-timing";
 import { traceparentFromContextToken } from "../instrumentation.ts";
 import { ROOT_CONTEXT, trace } from "@opentelemetry/api";
 import { buildNativeHarnessBackupManifest } from "../services/native-runtime/native-session-executor.ts";
@@ -71,7 +71,7 @@ import { createNativeHarnessBackupStamp } from "../services/native-runtime/nativ
 
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
 
-const externalTestDatabaseUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_ENVIRONMENT_RUNTIME_TEST_DATABASE_URL");
+const externalTestDatabaseUrl = resolveExternalTestDatabaseUrl("PILIBALA_ENVIRONMENT_RUNTIME_TEST_DATABASE_URL");
 const embeddedPostgresSupport = externalTestDatabaseUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 const sshFixtureSupport = await getSshEnvLabSupport();
@@ -272,11 +272,11 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     status?: string;
     installOrder?: number;
   } = {}) {
-    const pluginKey = input.pluginKey ?? "paperclip.fake-plugin-sandbox-provider";
+    const pluginKey = input.pluginKey ?? "pilibala.fake-plugin-sandbox-provider";
     return db.insert(plugins).values({
       id: pluginId,
       pluginKey,
-      packageName: input.packageName ?? "@paperclipai/plugin-fake-sandbox",
+      packageName: input.packageName ?? "@pilibalaai/plugin-fake-sandbox",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],
@@ -286,7 +286,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         version: "1.0.0",
         displayName: input.displayName ?? "Fake Plugin Sandbox Provider",
         description: input.description ?? "Test fake plugin provider",
-        author: input.author ?? "Paperclip",
+        author: input.author ?? "Pilibala",
         categories: ["automation"],
         capabilities: ["environment.drivers.register"],
         entrypoints: { worker: "dist/worker.js" },
@@ -344,8 +344,8 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
   }
 
   it.each(["missing", "stale", "invalidated", "qualified", "provider-failure", "unowned-marker"])("uses the current managed Cloud snapshot with %s qualification", async qualification => {
-    vi.stubEnv("PAPERCLIP_MANAGED_CONFIG", JSON.stringify({ ...managedCloudConfig,
-      environments: qualification === "unowned-marker" ? [] : [{ name: "Paperclip Sandbox", provider: "daytona", config: {} }] }));
+    vi.stubEnv("PILIBALA_MANAGED_CONFIG", JSON.stringify({ ...managedCloudConfig,
+      environments: qualification === "unowned-marker" ? [] : [{ name: "Pilibala Sandbox", provider: "daytona", config: {} }] }));
     const pluginId = randomUUID();
     const { companyId, environment: baseEnvironment, runId } = await seedEnvironment();
     const config = { provider: "daytona", snapshot: "replacement-snapshot", timeoutMs: 1234 };
@@ -354,8 +354,8 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     const parsed = await resolveEnvironmentDriverConfigForRuntime(db, companyId, { ...baseEnvironment, driver: "sandbox", config });
     const runtimeFingerprint = createHash("sha256").update(stableStringify(parsed.config)).digest("hex");
     await db.update(environments).set({ driver: "sandbox", config, metadata: {
-      managedByPaperclip: true,
-      ...(qualification === "missing" ? {} : { paperclipSandboxPlatformProbes: { [companyId]: {
+      managedByPilibala: true,
+      ...(qualification === "missing" ? {} : { pilibalaSandboxPlatformProbes: { [companyId]: {
         v: 2, companyId, snapshot: "previous-snapshot", template: null,
         baseConfigFingerprint: qualification === "qualified" ? fingerprint : "previous-config",
         runtimeConfigFingerprint: qualification === "qualified" ? runtimeFingerprint : "previous-config",
@@ -375,7 +375,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     });
     const acquire = environmentRuntimeService(db, { pluginWorkerManager: worker }).acquireRunLease({
       companyId, environment, issueId: null, heartbeatRunId: runId,
-      persistedExecutionWorkspace: null, adapterType: "paperclip_runner",
+      persistedExecutionWorkspace: null, adapterType: "pilibala_runner",
     });
     if (qualification === "unowned-marker") {
       await expect(acquire).rejects.toThrow("sandbox_snapshot_qualification_required");
@@ -407,9 +407,9 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     });
     const service = environmentRuntimeService(db, { pluginWorkerManager: worker });
     const acquired = await service.acquireRunLease({ companyId,
-      environment: resolveRunnerEnvironmentForRun(environment, "paperclip_runner", { lifecycleMode: "warm", idleTimeoutMs: 900_000 }),
+      environment: resolveRunnerEnvironmentForRun(environment, "pilibala_runner", { lifecycleMode: "warm", idleTimeoutMs: 900_000 }),
       configuredEnvironment: environment, issueId: null, heartbeatRunId: runId, persistedExecutionWorkspace: null,
-      adapterType: "paperclip_runner", warmRunnerIdleTimeoutMs: 900_000 });
+      adapterType: "pilibala_runner", warmRunnerIdleTimeoutMs: 900_000 });
     expect(worker.call).toHaveBeenCalledWith(pluginId, "environmentAcquireLease", expect.objectContaining({
       config: expect.objectContaining({ reuseLease: true, warmRunnerIdleTimeoutMs: 900_000 }),
     }), expect.any(Number));
@@ -431,7 +431,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     const service = environmentRuntimeService(db, { pluginWorkerManager: worker });
     const acquired = await service.acquireRunLease({ companyId, environment, configuredEnvironment: environment,
       issueId: null, heartbeatRunId: runId, persistedExecutionWorkspace: null,
-      adapterType: "paperclip_runner", runnerReconnectGraceMs: 420_000 });
+      adapterType: "pilibala_runner", runnerReconnectGraceMs: 420_000 });
     expect(worker.call).toHaveBeenCalledWith(pluginId, "environmentAcquireLease", expect.objectContaining({
       config: expect.objectContaining({ autoStopInterval: 5, runnerReconnectGraceMs: 420_000 }),
     }), expect.any(Number));
@@ -439,7 +439,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     expect((await environmentService(db).getById(environment.id))?.config).not.toHaveProperty("runnerReconnectGraceMs");
   });
 
-  it.each([["paperclip_runner", false, false], ["paperclip_runner", true, false], ["paperclip_runner", true, undefined], ["claude_local", false, false], [null, false, false]] as const)("pins qualified snapshots only for native execution (%s, warm=%s, savedReuse=%s)", async (adapterType, warm, savedReuse) => {
+  it.each([["pilibala_runner", false, false], ["pilibala_runner", true, false], ["pilibala_runner", true, undefined], ["claude_local", false, false], [null, false, false]] as const)("pins qualified snapshots only for native execution (%s, warm=%s, savedReuse=%s)", async (adapterType, warm, savedReuse) => {
     const pluginId = randomUUID();
     const { companyId, environment: baseEnvironment, runId } = await seedEnvironment();
     const config = { provider: "daytona", snapshot: "managed-snapshot", ...(savedReuse === undefined ? {} : { reuseLease: savedReuse }), timeoutMs: 1234 };
@@ -448,7 +448,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     const environment: Environment = { ...baseEnvironment, driver: "sandbox", config };
     const parsed = await resolveEnvironmentDriverConfigForRuntime(db, companyId, environment);
     const snapshotId = "a6b9e7d0-f886-471a-b461-640dd03e8d0f";
-    environment.metadata = { paperclipSandboxPlatformProbes: { [companyId]: {
+    environment.metadata = { pilibalaSandboxPlatformProbes: { [companyId]: {
       v: 2, companyId, snapshot: config.snapshot, template: null,
       baseConfigFingerprint: createHash("sha256").update(stableStringify(config)).digest("hex"),
       runtimeConfigFingerprint: createHash("sha256").update(stableStringify(parsed.config)).digest("hex"),
@@ -460,10 +460,10 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       return { providerLeaseId: "snapshot-lease", metadata: { provider: "daytona", snapshot: params.config.snapshot, remoteCwd: "/workspace" } };
     });
     const service = environmentRuntimeService(db, { pluginWorkerManager: worker });
-    const runtimeEnvironment = warm ? resolveRunnerEnvironmentForRun(environment, "paperclip_runner", { lifecycleMode: "warm" }) : environment;
+    const runtimeEnvironment = warm ? resolveRunnerEnvironmentForRun(environment, "pilibala_runner", { lifecycleMode: "warm" }) : environment;
     const acquired = await service.acquireRunLease({ companyId, environment: runtimeEnvironment, configuredEnvironment: environment, issueId: null, heartbeatRunId: runId,
       persistedExecutionWorkspace: null, adapterType, ...(adapterType === null ? { resolveSnapshotIdentity: true } : {}) });
-    const expectedSnapshot = adapterType === "paperclip_runner" ? snapshotId : config.snapshot;
+    const expectedSnapshot = adapterType === "pilibala_runner" ? snapshotId : config.snapshot;
     expect(worker.call).toHaveBeenCalledWith(pluginId, "environmentAcquireLease", expect.objectContaining({
       config: expect.objectContaining({ snapshot: expectedSnapshot }),
       ...(adapterType === null ? { resolveSnapshotIdentity: true } : {}),
@@ -486,7 +486,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       runtimeConfigFingerprint: state === "changed-runtime" ? "0".repeat(64) : createHash("sha256").update(stableStringify(parsed.config)).digest("hex"),
       snapshotIdentity: { provider: "daytona", requestedRef: config.snapshot, id: snapshotId, name: config.snapshot, organizationId: "provider-account", createdAt: "2000-01-01T00:00:00.000Z" },
     };
-    await db.update(environments).set({ metadata: { paperclipSandboxPlatformProbes: { [companyId]: proof } },
+    await db.update(environments).set({ metadata: { pilibalaSandboxPlatformProbes: { [companyId]: proof } },
       ...(state === "changed-base" ? { config: { ...config, snapshot: "replacement-snapshot" } } : {}) }).where(eq(environments.id, environment.id));
     const worker = createFreshPluginLeaseWorker(pluginId);
     vi.mocked(worker.call).mockImplementation(async (_id, method, params: any) => {
@@ -495,7 +495,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       if (method === "environmentReleaseLease") return { providerLeaseId: params.providerLeaseId, state: "archived" };
       throw new Error(`Unexpected ${method}`);
     });
-    const result = await agentEnvironmentTestService(db, worker).resolveAdapterTestExecutionContext({ companyId, environmentId: environment.id, adapterType: "paperclip_runner" });
+    const result = await agentEnvironmentTestService(db, worker).resolveAdapterTestExecutionContext({ companyId, environmentId: environment.id, adapterType: "pilibala_runner" });
     if (state !== "qualified") {
       expect(result.executionTarget).toBeNull();
       expect(result.fallbackChecks).toMatchObject([{ code: "environment_lease_acquire_failed", detail: expect.stringContaining("sandbox_snapshot_qualification_required") }]);
@@ -525,7 +525,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     const worker = createFreshPluginLeaseWorker(randomUUID());
     const service = environmentRuntimeService(db, { pluginWorkerManager: worker });
     await expect(service.acquireRunLease({ companyId, environment: { ...environment, config: { ...environment.config, ...override, reuseLease: false, archiveOnRelease: true } },
-      configuredEnvironment: environment, issueId: null, heartbeatRunId: null, persistedExecutionWorkspace: null, adapterType: "paperclip_runner" }))
+      configuredEnvironment: environment, issueId: null, heartbeatRunId: null, persistedExecutionWorkspace: null, adapterType: "pilibala_runner" }))
       .rejects.toThrow("Run environment does not match its saved configuration.");
     expect(worker.call).not.toHaveBeenCalled();
   });
@@ -548,11 +548,11 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         ...(invalidation === "config-and-metadata-change" ? { metadata: { userNote: "retained" } } : {}) });
     }
     const environment = (await svc.getById(baseEnvironment.id))!;
-    expect((environment.metadata?.paperclipSandboxPlatformProbes as Record<string, any>)[companyId]).toMatchObject({ v: 2, invalidated: true });
+    expect((environment.metadata?.pilibalaSandboxPlatformProbes as Record<string, any>)[companyId]).toMatchObject({ v: 2, invalidated: true });
     const acquire = vi.fn();
     const runtime = environmentRuntimeService(db, { pluginWorkerManager: { call: acquire } as never });
     await expect(runtime.acquireRunLease({ companyId, environment, issueId: null, heartbeatRunId: runId,
-      persistedExecutionWorkspace: null, adapterType: "paperclip_runner" })).rejects.toThrow("sandbox_snapshot_qualification_required");
+      persistedExecutionWorkspace: null, adapterType: "pilibala_runner" })).rejects.toThrow("sandbox_snapshot_qualification_required");
     expect(acquire).not.toHaveBeenCalled();
   });
 
@@ -941,14 +941,14 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
   });
 
   it.each(["active", "released"] as const)("does not select an ephemeral allocation for warm reuse (%s)", async status => {
-    const seeded = await seedReusablePluginSandboxLease("paperclip_runner");
+    const seeded = await seedReusablePluginSandboxLease("pilibala_runner");
     await db.update(environmentLeases).set({ leasePolicy: "ephemeral", status,
       releasedAt: status === "released" ? new Date() : null }).where(eq(environmentLeases.id, seeded.reusableLease.id));
     const workerManager = createFreshPluginLeaseWorker(seeded.pluginId);
     const runtimeWithPlugin = environmentRuntimeService(db, { pluginWorkerManager: workerManager });
     const acquired = await runtimeWithPlugin.acquireRunLease({
       companyId: seeded.companyId, environment: seeded.environment, agentId: seeded.agentId,
-      issueId: null, adapterType: "paperclip_runner", heartbeatRunId: seeded.runId,
+      issueId: null, adapterType: "pilibala_runner", heartbeatRunId: seeded.runId,
       persistedExecutionWorkspace: { id: seeded.executionWorkspaceId, mode: "shared_workspace" },
     });
     expect(seeded.environment.config.reuseLease).toBe(true);
@@ -958,7 +958,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
   });
 
   it("gives a bootstrap retry a fresh allocation even when the failed lease was reusable", async () => {
-    const seeded = await seedReusablePluginSandboxLease("paperclip_runner");
+    const seeded = await seedReusablePluginSandboxLease("pilibala_runner");
     await environmentService(db).releaseLease(seeded.reusableLease.id, "expired");
     let acquisitions = 0;
     const workerManager = {
@@ -972,7 +972,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     } as unknown as PluginWorkerManager;
     const runtime = environmentRuntimeService(db, { pluginWorkerManager: workerManager });
     const input = { companyId: seeded.companyId, environment: seeded.environment, issueId: null, agentId: seeded.agentId,
-      adapterType: "paperclip_runner", heartbeatRunId: seeded.runId,
+      adapterType: "pilibala_runner", heartbeatRunId: seeded.runId,
       persistedExecutionWorkspace: { id: seeded.executionWorkspaceId, mode: "shared_workspace" as const } };
     const first = await runtime.acquireRunLease(input);
     await db.update(heartbeatRuns).set({ status: "failed", errorCode: "remote_workspace_prepare_timeout" })
@@ -988,7 +988,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
   });
 
   it("acquires and resumes a reusable lease after a task changes from per-turn to warm", async () => {
-    const seeded = await seedReusablePluginSandboxLease("paperclip_runner");
+    const seeded = await seedReusablePluginSandboxLease("pilibala_runner");
     await environmentService(db).releaseLease(seeded.reusableLease.id, "expired");
     const environment = { ...seeded.environment, config: { ...seeded.environment.config, reuseLease: false } };
     await environmentService(db).update(environment.id, { config: environment.config });
@@ -1014,12 +1014,12 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     } as unknown as PluginWorkerManager });
     const input = {
       companyId: seeded.companyId, agentId: seeded.agentId, issueId,
-      adapterType: "paperclip_runner", persistedExecutionWorkspace: { id: seeded.executionWorkspaceId, mode: "shared_workspace" as const },
+      adapterType: "pilibala_runner", persistedExecutionWorkspace: { id: seeded.executionWorkspaceId, mode: "shared_workspace" as const },
     };
     const cold = await runtime.acquireRunLease({ ...input, environment, heartbeatRunId: seeded.runId });
     expect(cold.lease.leasePolicy).toBe("ephemeral");
     await runtime.releaseRunLeases(seeded.runId, "released");
-    const warmEnvironment = resolveRunnerEnvironmentForRun(environment, "paperclip_runner", { lifecycleMode: "warm" }, undefined, "selected-account:generation");
+    const warmEnvironment = resolveRunnerEnvironmentForRun(environment, "pilibala_runner", { lifecycleMode: "warm" }, undefined, "selected-account:generation");
     const warmRunId = randomUUID();
     await db.insert(heartbeatRuns).values({ id: warmRunId, companyId: seeded.companyId, agentId: seeded.agentId, status: "running" });
     const warm = await runtime.acquireRunLease({ ...input, environment: warmEnvironment, heartbeatRunId: warmRunId });
@@ -1068,7 +1068,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
 
   it.each(["release_only", "stopped", "stop_failed", "unconfirmed", "restart", "competing_owner", "missing_pin", "late_receipt"])(
     "never dispatches destructive release for an untagged stop-and-retain request: %s", async outcome => {
-      const seeded = await seedReusablePluginSandboxLease("paperclip_runner");
+      const seeded = await seedReusablePluginSandboxLease("pilibala_runner");
       const lease = seeded.reusableLease;
       await db.update(environmentLeases).set({ leasePolicy: "ephemeral", metadata: {
         ...lease.metadata, reuseLease: false, ...(outcome === "missing_pin" ? { pluginId: undefined } : {}),
@@ -1237,7 +1237,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     })));
     const nextAgentId = scenario === "different agent" ? randomUUID() : seeded.agentId;
     if (nextAgentId !== seeded.agentId) await db.insert(agents).values({
-      id: nextAgentId, companyId: seeded.companyId, name: "Other agent", adapterType: "paperclip_runner",
+      id: nextAgentId, companyId: seeded.companyId, name: "Other agent", adapterType: "pilibala_runner",
     });
     let acquisitions = 0;
     const call = vi.fn(async (_pluginId: string, method: string) => {
@@ -1291,15 +1291,15 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     const seeded = await seedReusablePluginSandboxLease();
     await environmentService(db).releaseLease(seeded.reusableLease.id, "expired");
     const attemptId = randomUUID();
-    const providerLeaseId = `paperclip-create-${attemptId}`;
+    const providerLeaseId = `pilibala-create-${attemptId}`;
     const cleanup = {
       providerLeaseId, attemptId, companyId: mode === "foreign scope" ? randomUUID() : seeded.companyId,
       environmentId: mode === "foreign environment" ? randomUUID() : seeded.environment.id,
       runId: mode === "foreign run" ? randomUUID() : seeded.runId,
-      accountFingerprint: mode === "malformed" ? "invalid" : "a".repeat(64), labels: { "paperclip-provider": "fake-plugin" },
+      accountFingerprint: mode === "malformed" ? "invalid" : "a".repeat(64), labels: { "pilibala-provider": "fake-plugin" },
     };
     const acquisitionDiagnostic = { phase: "shell", elapsedMs: 300_000, budgetMs: 300_000 };
-    const data = { schema: "paperclip/environment-creation-cleanup/v1", cleanup,
+    const data = { schema: "pilibala/environment-creation-cleanup/v1", cleanup,
       ...(mode === "old worker" ? {} : { acquisitionDiagnostic: mode === "invalid diagnostic"
         ? { ...acquisitionDiagnostic, phase: "private-command" } : acquisitionDiagnostic }),
     };
@@ -1344,13 +1344,13 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       const seeded = await seedReusablePluginSandboxLease();
       await environmentService(db).releaseLease(seeded.reusableLease.id, "expired");
       const cleanup = {
-        providerLeaseId: `paperclip-create-${randomUUID()}`, attemptId: randomUUID(),
+        providerLeaseId: `pilibala-create-${randomUUID()}`, attemptId: randomUUID(),
         companyId: seeded.companyId, environmentId: seeded.environment.id, runId: seeded.runId,
-        accountFingerprint: "a".repeat(64), labels: { "paperclip-provider": "fake-plugin" },
+        accountFingerprint: "a".repeat(64), labels: { "pilibala-provider": "fake-plugin" },
       };
       const observed = { ...cleanup, observedProviderLeaseId: "verified-provider-id" };
       const failure = Object.assign(new Error("Creation uncertain"), {
-        data: { schema: "paperclip/environment-creation-cleanup/v1", cleanup },
+        data: { schema: "pilibala/environment-creation-cleanup/v1", cleanup },
       });
       let injected = false;
       let deleted = false;
@@ -1367,7 +1367,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
           if (!injected && fault === "foreign observation") {
             injected = true;
             throw Object.assign(new Error("Foreign observation"), {
-              data: { schema: "paperclip/environment-creation-cleanup/v1", cleanup: { ...observed, companyId: "another-company" } },
+              data: { schema: "pilibala/environment-creation-cleanup/v1", cleanup: { ...observed, companyId: "another-company" } },
             });
           }
           if (!injected && fault === "journal write failed") {
@@ -1375,7 +1375,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
             vi.spyOn(db, "transaction").mockRejectedValueOnce(new Error("Database unavailable"));
           }
           throw Object.assign(new Error("Persist observed sandbox identity before cleanup"), {
-            data: { schema: "paperclip/environment-creation-cleanup/v1", cleanup: observed },
+            data: { schema: "pilibala/environment-creation-cleanup/v1", cleanup: observed },
           });
         }
         const rows = await db.select().from(environmentLeases).where(eq(environmentLeases.providerLeaseId, cleanup.providerLeaseId));
@@ -1461,7 +1461,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       },
     });
     const workspaceSyncStamp = {
-      schema: "paperclip.native-workspace-stamp/v1",
+      schema: "pilibala.native-workspace-stamp/v1",
       workspaceId: seeded.executionWorkspaceId,
       providerLeaseId: "sandbox-exact-resume",
       remoteCwd: "/workspace",
@@ -1592,7 +1592,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     );
   });
 
-  it("destroys a disposable paperclip_runner sandbox after the turn", async () => {
+  it("destroys a disposable pilibala_runner sandbox after the turn", async () => {
     const { pluginId, runId, reusableLease } = await seedReusablePluginSandboxLease();
     const workerManager = {
       isRunning: vi.fn((id: string) => id === pluginId),
@@ -1638,7 +1638,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
           string,
           unknown
         >) ?? {}),
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
       },
       sandboxLeaseAcquisition: { outcome: "created" },
     });
@@ -1717,7 +1717,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         host: "ssh.example.test",
         port: 22,
         username: "ssh-user",
-        remoteWorkspacePath: "/srv/paperclip/workspace",
+        remoteWorkspacePath: "/srv/pilibala/workspace",
         privateKey: null,
         knownHosts: null,
         strictHostKeyChecking: true,
@@ -1758,7 +1758,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       return;
     }
 
-    const fixtureRoot = await mkdtemp(path.join(os.tmpdir(), "paperclip-environment-runtime-ssh-"));
+    const fixtureRoot = await mkdtemp(path.join(os.tmpdir(), "pilibala-environment-runtime-ssh-"));
     fixtureRoots.push(fixtureRoot);
     const statePath = path.join(fixtureRoot, "state.json");
     const fixture = await startSshEnvLabFixture({ statePath });
@@ -2131,8 +2131,8 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       config: { provider: "fake-plugin-ready", image: "fake:test", reuseLease: false },
     });
     await insertSandboxProviderPlugin(pluginId, {
-      pluginKey: "paperclip.fake-plugin-ready-sandbox-provider",
-      packageName: "@paperclipai/plugin-fake-ready-sandbox",
+      pluginKey: "pilibala.fake-plugin-ready-sandbox-provider",
+      packageName: "@pilibalaai/plugin-fake-ready-sandbox",
       displayName: "Fake Plugin Ready Sandbox Provider",
       description: "Test fake plugin provider readiness",
       environmentDrivers: [
@@ -2214,8 +2214,8 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       config: { provider: "fake-plugin-reload", image: "fake:test", reuseLease: false },
     });
     await insertSandboxProviderPlugin(pluginId, {
-      pluginKey: "paperclip.fake-plugin-reload-sandbox-provider",
-      packageName: "@paperclipai/plugin-fake-reload-sandbox",
+      pluginKey: "pilibala.fake-plugin-reload-sandbox-provider",
+      packageName: "@pilibalaai/plugin-fake-reload-sandbox",
       displayName: "Fake Plugin Reload Sandbox Provider",
       description: "Test fake plugin provider reload readiness",
       environmentDrivers: [
@@ -2316,8 +2316,8 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     // The plugin reinstall completes, so a ready plugin row now resolves the
     // provider and the probe reports ready.
     await insertSandboxProviderPlugin(pluginId, {
-      pluginKey: "paperclip.fake-plugin-missing-sandbox-provider",
-      packageName: "@paperclipai/plugin-fake-missing-sandbox",
+      pluginKey: "pilibala.fake-plugin-missing-sandbox-provider",
+      packageName: "@pilibalaai/plugin-fake-missing-sandbox",
       displayName: "Fake Plugin Missing Sandbox Provider",
       description: "Test fake plugin provider missing readiness",
       environmentDrivers: [
@@ -2427,7 +2427,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
   // orphan teardown must resolve that recorded ref even when the environment
   // binding is gone, so these tests register a provider with a real secret-ref
   // field, unlike the plain `fake-plugin` tests above.
-  const SECRET_REF_PLUGIN_KEY = "paperclip.secret-plugin-sandbox-provider";
+  const SECRET_REF_PLUGIN_KEY = "pilibala.secret-plugin-sandbox-provider";
   const SECRET_REF_PROVIDER = "secret-plugin";
 
   async function registerSecretRefPluginProvider(): Promise<string> {
@@ -2435,7 +2435,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     await db.insert(plugins).values({
       id: pluginId,
       pluginKey: SECRET_REF_PLUGIN_KEY,
-      packageName: "@paperclipai/plugin-secret-sandbox",
+      packageName: "@pilibalaai/plugin-secret-sandbox",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],
@@ -2445,7 +2445,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         version: "1.0.0",
         displayName: "Secret Plugin Sandbox Provider",
         description: "Test plugin provider with a secret-ref config field",
-        author: "Paperclip",
+        author: "Pilibala",
         categories: ["automation"],
         capabilities: ["environment.drivers.register"],
         entrypoints: { worker: "dist/worker.js" },
@@ -3792,7 +3792,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     { label: "declared provider startup budget", timeoutMs: null, defaultAcquireTimeoutMs: 300_000, expectedRpcTimeoutMs: 330_000 },
     { label: "explicit startup budget", timeoutMs: 120_000, defaultAcquireTimeoutMs: 300_000, expectedRpcTimeoutMs: 150_000 },
   ])("resumes the same sandbox after a slow start within its $label", async (options) => {
-    const seeded = await seedReusablePluginSandboxLease("paperclip_runner", options);
+    const seeded = await seedReusablePluginSandboxLease("pilibala_runner", options);
     let signalResumeStarted!: () => void;
     const resumeStarted = new Promise<void>(resolve => { signalResumeStarted = resolve; });
     const call = vi.fn(async (_pluginId: string, method: string, _params: unknown, rpcTimeoutMs: number) => {
@@ -3818,7 +3818,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     const now = vi.spyOn(Date, "now").mockReturnValue(Date.now());
     const acquisition = runtime.acquireRunLease({
       companyId: seeded.companyId, environment: seeded.environment,
-      issueId: null, agentId: seeded.agentId, adapterType: "paperclip_runner", heartbeatRunId: seeded.runId,
+      issueId: null, agentId: seeded.agentId, adapterType: "pilibala_runner", heartbeatRunId: seeded.runId,
       persistedExecutionWorkspace: { id: seeded.executionWorkspaceId, mode: "shared_workspace" },
     }).then(value => ({ value, error: null }), error => ({ value: null, error }));
     try {
@@ -3962,7 +3962,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     [{ providerLeaseId: "another-sandbox", metadata: {} }, "Error"],
     [{ providerLeaseId: null, metadata: {} }, "Error"],
   ] as const)("names only a provider-confirmed missing sandbox as absent on exact resume (%j)", async (reply, name) => {
-    const seeded = await seedReusablePluginSandboxLease("paperclip_runner", { timeoutMs: 1234 });
+    const seeded = await seedReusablePluginSandboxLease("pilibala_runner", { timeoutMs: 1234 });
     const lease = (await environmentService(db).getLeaseById(seeded.reusableLease.id))!;
     const call = vi.fn(async (_id: string, method: string) => {
       if (method !== "environmentResumeLease") throw new Error("Only exact resume is permitted");
@@ -3983,7 +3983,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     { timeoutMs: 1234, rpcTimeoutMs: 31_234 },
     { timeoutMs: null, rpcTimeoutMs: 60_000 },
   ])("resumes only the exact stopped sandbox lifecycle within its recorded budget ($timeoutMs)", async ({ timeoutMs, rpcTimeoutMs }) => {
-    const seeded = await seedReusablePluginSandboxLease("paperclip_runner", { timeoutMs });
+    const seeded = await seedReusablePluginSandboxLease("pilibala_runner", { timeoutMs });
     await environmentService(db).releaseLease(seeded.reusableLease.id, "released", { cleanupStatus: "success" });
     const lease = (await environmentService(db).getLeaseById(seeded.reusableLease.id))!;
     const call = vi.fn(async (_id: string, method: string, _input?: unknown) => {
@@ -4007,7 +4007,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
 
   it("forwards an explicit export directory to the selected generic plugin", async () => {
     const seeded = await seedReusablePluginSandboxLease();
-    const requestedCwd = `/workspace/.paperclip-workspaces/${seeded.executionWorkspaceId}`;
+    const requestedCwd = `/workspace/.pilibala-workspaces/${seeded.executionWorkspaceId}`;
     const metadata = { ...seeded.reusableLease.metadata, remoteCwd: requestedCwd };
     const call = vi.fn(async () => ({ providerLeaseId: seeded.reusableLease.providerLeaseId!, metadata }));
     const workerManager = { isRunning: () => true, call } as unknown as PluginWorkerManager;
@@ -4022,7 +4022,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
   });
 
   it.each(["stopped", "unconfirmed", "foreign_marker", "competing_owner", "retained_owner", "no_stop_capability", "live_request", "late_receipt", "duplicate_key", "owner_stopped", "owner_driver_changed", "owner_missing", "legacy_intent", "foreign_plugin_pin", "v2_missing_pin"])("recovers a pending export resume with stop-only cleanup after restart: %s", async outcome => {
-    const seeded = await seedReusablePluginSandboxLease("paperclip_runner");
+    const seeded = await seedReusablePluginSandboxLease("pilibala_runner");
     const lease = seeded.reusableLease;
     const requestId = randomUUID();
     if (["duplicate_key", "owner_stopped", "owner_driver_changed", "owner_missing", "legacy_intent"].includes(outcome)) {
@@ -4034,7 +4034,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     }
     await db.update(environmentLeases).set({ status: "pending_cleanup", cleanupStatus: "failed", metadata: {
       ...lease.metadata,
-      nativeWorkspaceExportResume: { schema: outcome === "v2_missing_pin" ? "paperclip.workspace-export-resume.v2" : "paperclip.workspace-export-resume.v1", requestId, companyId: seeded.companyId,
+      nativeWorkspaceExportResume: { schema: outcome === "v2_missing_pin" ? "pilibala.workspace-export-resume.v2" : "pilibala.workspace-export-resume.v1", requestId, companyId: seeded.companyId,
         ...(["legacy_intent", "v2_missing_pin"].includes(outcome) ? {} : { pluginId: outcome === "foreign_plugin_pin" ? randomUUID() : seeded.pluginId }),
         runId: outcome === "foreign_marker" ? randomUUID() : lease.heartbeatRunId, leaseId: lease.id,
         provider: lease.provider, providerLeaseId: lease.providerLeaseId, resultId: randomUUID() },
@@ -4073,12 +4073,12 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
   });
 
   it.each(["stopped", "stop_failed", "unconfirmed", "restart", "committed_release", "inflight"])("preserves terminal ephemeral export work through release and restart: %s", async outcome => {
-    const seeded = await seedReusablePluginSandboxLease("paperclip_runner");
+    const seeded = await seedReusablePluginSandboxLease("pilibala_runner");
     const lease = seeded.reusableLease, requestId = randomUUID();
     await db.update(heartbeatRuns).set({ status: outcome === "committed_release" ? "succeeded" : "failed" }).where(eq(heartbeatRuns.id, seeded.runId));
     await db.update(environmentLeases).set({ status: outcome === "committed_release" ? "active" : "pending_cleanup", leasePolicy: "ephemeral", cleanupStatus: "failed", metadata: {
       ...lease.metadata, reuseLease: false,
-      nativeWorkspaceExportResume: { schema: "paperclip.workspace-export-resume.v2", purpose: "terminal_export", requestId,
+      nativeWorkspaceExportResume: { schema: "pilibala.workspace-export-resume.v2", purpose: "terminal_export", requestId,
         companyId: seeded.companyId, pluginId: seeded.pluginId, runId: seeded.runId, resultId: randomUUID(),
         leaseId: lease.id, provider: lease.provider, providerLeaseId: lease.providerLeaseId },
       pendingCleanupAttemptId: requestId, pendingCleanupInFlight: outcome === "inflight",
@@ -4107,7 +4107,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
   });
 
   it("does not allocate a native-runner replacement without a verified backup", async () => {
-    const seeded = await seedReusablePluginSandboxLease("paperclip_runner");
+    const seeded = await seedReusablePluginSandboxLease("pilibala_runner");
     const workerManager = {
       isRunning: vi.fn((id: string) => id === seeded.pluginId),
       call: vi.fn(async (_pluginId: string, method: string) => {
@@ -4135,7 +4135,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       environment: seeded.environment,
       issueId: null,
       agentId: seeded.agentId,
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       heartbeatRunId: seeded.runId,
       persistedExecutionWorkspace: {
         id: seeded.executionWorkspaceId,
@@ -4158,10 +4158,10 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
   });
 
   it("permits native-runner replacement only after verifying the stamped backup", async () => {
-    const seeded = await seedReusablePluginSandboxLease("paperclip_runner");
-    const backupBase = await mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-replacement-"));
-    const previousStateDirectory = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = backupBase;
+    const seeded = await seedReusablePluginSandboxLease("pilibala_runner");
+    const backupBase = await mkdtemp(path.join(os.tmpdir(), "pilibala-runtime-replacement-"));
+    const previousStateDirectory = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = backupBase;
     try {
       const normalizedSessionId = "native-replacement-session";
       const runnerInstanceId = "native-replacement-runner";
@@ -4253,7 +4253,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         environment: seeded.environment,
         issueId: null,
         agentId: seeded.agentId,
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         heartbeatRunId: seeded.runId,
         persistedExecutionWorkspace: {
           id: seeded.executionWorkspaceId,
@@ -4268,9 +4268,9 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       });
     } finally {
       if (previousStateDirectory === undefined) {
-        delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
+        delete process.env.PILIBALA_RUNNER_STATE_DIR;
       } else {
-        process.env.PAPERCLIP_RUNNER_STATE_DIR = previousStateDirectory;
+        process.env.PILIBALA_RUNNER_STATE_DIR = previousStateDirectory;
       }
       await rm(backupBase, { recursive: true, force: true });
     }
@@ -4672,14 +4672,14 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       const operationId = randomUUID();
       await db.insert(workspaceOperations).values({ id: operationId, companyId, executionWorkspaceId,
         phase: "remote_workspace_migration", status: "succeeded", metadata: {
-          schema: "paperclip.remote-workspace-migration.v1", snapshotId: randomUUID(), nativeSessionContinuity: {
-            schema: "paperclip.native-workspace-migration.v1", remoteCwd: "/workspace", sessions: [{
+          schema: "pilibala.remote-workspace-migration.v1", snapshotId: randomUUID(), nativeSessionContinuity: {
+            schema: "pilibala.native-workspace-migration.v1", remoteCwd: "/workspace", sessions: [{
               sourceRunId: runId, agentId, issueId: randomUUID(), sessionId: randomUUID(), logicalCwd: "/old/controller/workspace",
             }],
           },
         } });
       await db.update(executionWorkspaces).set({ metadata: { nativeWorkspaceMigration: {
-        schema: "paperclip.native-workspace-migration.v1", operationId,
+        schema: "pilibala.native-workspace-migration.v1", operationId,
       } } }).where(eq(executionWorkspaces.id, executionWorkspaceId));
     }
     const nextRunId = randomUUID();
@@ -5501,7 +5501,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       status: "expired",
       failureReason: "environment_deleted",
       cleanupStatus: "success",
-      metadata: { remoteExecutionTermination: { schema: "paperclip.remote-termination.v1",
+      metadata: { remoteExecutionTermination: { schema: "pilibala.remote-termination.v1",
         leaseId: reusableLease.id, runId, providerLeaseId: reusableLease.providerLeaseId, state: "destroyed" } },
     });
   });
@@ -5726,7 +5726,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
           version: "1.0.0",
           displayName: "Reusable Sandbox Provider",
           description: "Owner plugin that denies reusable leases",
-          author: "Paperclip",
+          author: "Pilibala",
           categories: ["automation"],
           capabilities: ["environment.drivers.register"],
           entrypoints: { worker: "dist/worker.js" },
@@ -5851,7 +5851,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
           version: "1.0.0",
           displayName: "Reusable Sandbox Provider",
           description: "Owner plugin that no longer declares the provider key",
-          author: "Paperclip",
+          author: "Pilibala",
           categories: ["automation"],
           capabilities: ["environment.drivers.register"],
           entrypoints: { worker: "dist/worker.js" },
@@ -5911,7 +5911,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
           version: "1.0.0",
           displayName: "Reusable Sandbox Provider",
           description: "Owner plugin that omits the capability declaration",
-          author: "Paperclip",
+          author: "Pilibala",
           categories: ["automation"],
           capabilities: ["environment.drivers.register"],
           entrypoints: { worker: "dist/worker.js" },
@@ -6016,7 +6016,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
 
     await insertSandboxProviderPlugin(pluginId, {
       pluginKey: "acme.environments",
-      packageName: "@acme/paperclip-environments",
+      packageName: "@acme/pilibala-environments",
       displayName: "Acme Environments",
       description: "Test plugin environment driver",
       author: "Acme",
@@ -6119,7 +6119,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
 
     await insertSandboxProviderPlugin(pluginId, {
       pluginKey: "acme.environments",
-      packageName: "@acme/paperclip-environments",
+      packageName: "@acme/pilibala-environments",
       displayName: "Acme Environments",
       description: "Test plugin environment driver",
       author: "Acme",
@@ -6213,7 +6213,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     });
     await insertSandboxProviderPlugin(pluginId, {
       pluginKey: "acme.environments",
-      packageName: "@acme/paperclip-environments",
+      packageName: "@acme/pilibala-environments",
       displayName: "Acme Environments",
       description: "Test plugin environment driver",
       author: "Acme",
@@ -6353,7 +6353,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
 
     await insertSandboxProviderPlugin(pluginId, {
       pluginKey: "acme.environments",
-      packageName: "@acme/paperclip-environments",
+      packageName: "@acme/pilibala-environments",
       displayName: "Acme Environments",
       description: "Test plugin environment driver",
       author: "Acme",

@@ -1,7 +1,7 @@
 import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
-import { environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, nativeRunnerCheckpoints, type Db } from "@paperclipai/db";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import { captureLegacyDurablePrpCheckpoint, parseNativeExecutionInput, type DurablePrpCheckpoint, type PersistedNativeSession } from "../../vendor/paperclip-runner/index.js";
+import { environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, nativeRunnerCheckpoints, type Db } from "@pilibalaai/db";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import { captureLegacyDurablePrpCheckpoint, parseNativeExecutionInput, type DurablePrpCheckpoint, type PersistedNativeSession } from "../../vendor/pilibala-runner/index.js";
 import { notifyNativeFinalizationWork } from "../native-finalization-notifications.js";
 import { readRunCancellation } from "../run-cancellation.js";
 import { nativeSha256 } from "./canonical.js";
@@ -14,7 +14,7 @@ export const NATIVE_CONTROLLER_RECOVERY_MAX_BYTES = 4 * 1024;
 
 /** Private run-profile metadata. No credentials or controller-local paths. */
 export interface NativeControllerRecovery {
-  schema: "paperclip.native-controller-recovery.v1";
+  schema: "pilibala.native-controller-recovery.v1";
   snapshotSha256: string;
   configDigest: string;
   processConfigDigest: string | null;
@@ -33,7 +33,7 @@ export function createNativeControllerRecovery(
   checkpoint: NativeControllerRecovery["checkpoint"],
 ): NativeControllerRecovery {
   const value: NativeControllerRecovery = {
-    schema: "paperclip.native-controller-recovery.v1",
+    schema: "pilibala.native-controller-recovery.v1",
     snapshotSha256: nativeSha256(snapshot),
     configDigest: compatibility.configDigest,
     processConfigDigest: compatibility.processConfigDigest,
@@ -52,7 +52,7 @@ function record(value: unknown): Record<string, unknown> {
 export function readNativeControllerRecovery(value: unknown, snapshot: unknown): NativeControllerRecovery | null {
   const envelope = record(value), checkpoint = record(envelope.checkpoint);
   if (Buffer.byteLength(JSON.stringify(value) ?? "null") > NATIVE_CONTROLLER_RECOVERY_MAX_BYTES
-    || envelope.schema !== "paperclip.native-controller-recovery.v1"
+    || envelope.schema !== "pilibala.native-controller-recovery.v1"
     || typeof envelope.snapshotSha256 !== "string" || envelope.snapshotSha256 !== nativeSha256(snapshot)
     || typeof envelope.configDigest !== "string" || !/^sha256:[a-f0-9]{64}$/.test(envelope.configDigest)
     || !(envelope.processConfigDigest === null || (typeof envelope.processConfigDigest === "string" && /^[a-f0-9]{64}$/.test(envelope.processConfigDigest)))
@@ -196,7 +196,7 @@ export async function resolveNativeControllerRecovery(db: Db, input: {
     || identity.issueId !== input.issueId || identity.runId !== source.id || identity.sessionId !== input.normalizedSessionId) {
     return { kind: "missing_evidence", reason: "snapshot_binding" };
   }
-  if (record(profile.nativeControllerRecovery).schema !== "paperclip.native-controller-recovery.v1") {
+  if (record(profile.nativeControllerRecovery).schema !== "pilibala.native-controller-recovery.v1") {
     return { kind: "unsupported", reason: "metadata_format" };
   }
   const metadata = readNativeControllerRecovery(profile.nativeControllerRecovery, snapshot);
@@ -231,7 +231,7 @@ export async function importNativeControllerRecovery(db: Db, input: {
   if (input.offline && input.legacyCheckpoint) throw new Error("Conflicting native controller migration authority");
   const legacy = input.offline ?? input.legacyCheckpoint;
   const supervisor = record(input.supervisor);
-  if (input.supervisor !== undefined && (supervisor.schema !== "paperclip.native-session-supervisor.v1" || supervisor.configDigest !== input.expectedConfigDigest)) {
+  if (input.supervisor !== undefined && (supervisor.schema !== "pilibala.native-session-supervisor.v1" || supervisor.configDigest !== input.expectedConfigDigest)) {
     return { kind: "unsupported", reason: "supervisor_compatibility" };
   }
   return db.transaction(async tx => {

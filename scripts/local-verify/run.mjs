@@ -77,8 +77,8 @@ export async function runPlan(root, env, plan) {
     for (const job of plan.jobs) {
       const code = job.args === null ? await execute("pnpm", ["test:run"], root, env, job.id)
         : await execute(process.execPath, [path.join(root, "scripts/run-vitest-stable.mjs"), ...job.args], root,
-          job.selected ? { ...env, PAPERCLIP_CI_TEST_SELECTION: manifestFile,
-            PAPERCLIP_CI_SELECTION_HASH: selectionHash(plan.manifest) } : env, job.id);
+          job.selected ? { ...env, PILIBALA_CI_TEST_SELECTION: manifestFile,
+            PILIBALA_CI_SELECTION_HASH: selectionHash(plan.manifest) } : env, job.id);
       if (code !== 0) return code;
     }
     return 0;

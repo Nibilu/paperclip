@@ -17,7 +17,7 @@ Deferred: workflow authoring UI, deletion/archive, import/export, role binding,
 graph validation, and Spec Kit integration.
 
 Status: implementation and live acceptance complete. Full-suite verification and
-review are tracked in https://github.com/paperclipai/paperclip/pull/17114.
+review are tracked in https://github.com/pilibalaai/pilibala/pull/17114.
 
 Implementation: schema/migration, definition REST service and optional native
 tools, transactional adoption with private prompt snapshots, bounded reads,

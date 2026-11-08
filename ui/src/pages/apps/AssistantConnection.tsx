@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { assistantClientNames, mcpAuthorizationHandoffInstructions, mcpInvitation, mcpSetupSteps, type AssistantClient, type McpConnection } from "@paperclipai/shared";
+import { assistantClientNames, mcpAuthorizationHandoffInstructions, mcpInvitation, mcpSetupSteps, type AssistantClient, type McpConnection } from "@pilibalaai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, ExternalLink, Globe, Paperclip, Plug, Terminal } from "lucide-react";
+import { Check, Copy, ExternalLink, Globe, Paperclip as Pilibala, Plug, Terminal } from "lucide-react";
 import { publicMcpApi } from "@/api/publicMcp";
 import { QueryErrorState, useQueryView } from "@/components/QueryView";
 import { useCompany } from "@/context/CompanyContext";
@@ -40,7 +40,7 @@ export function useAssistantConnections(poll = false) {
     view,
     /** Loaded rows are shown through a transient refetch failure (`stale`) as well as `ready`. */
     loaded: view.kind === "ready" || view.kind === "stale",
-    rows: (query.data ?? []).filter(row => row.companyId === selectedCompanyId && !row.revokedAt && !row.scopes.includes("paperclip:agent")),
+    rows: (query.data ?? []).filter(row => row.companyId === selectedCompanyId && !row.revokedAt && !row.scopes.includes("pilibala:agent")),
   };
 }
 
@@ -51,10 +51,10 @@ export function AssistantConnectionCard({ onNavigate }: { onNavigate: (href: str
   const action = !connections.loaded ? "Open" : active.length ? "Manage" : "Set up";
   return <div role="listitem" data-app-slug="assistant-connection" data-connected={connections.loaded ? String(active.length > 0) : undefined} className="overflow-hidden rounded-xl border border-border">
     <div className="flex flex-wrap items-center gap-3 px-4 py-4">
-      <Paperclip className="size-9 shrink-0 p-1 text-foreground" aria-hidden="true" />
+      <Pilibala className="size-9 shrink-0 p-1 text-foreground" aria-hidden="true" />
       <div className="min-w-0 flex-1">
         <h2 className="text-sm font-semibold text-foreground">Assistant Connection (MCP)</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">Use your Paperclip organization from Codex, Claude, OpenCode, or another assistant.</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">Use your Pilibala organization from Codex, Claude, OpenCode, or another assistant.</p>
       </div>
       <Button type="button" size="sm" variant="outline" onClick={() => onNavigate(ASSISTANT_CONNECTION_PATH)} aria-label={`${action} Assistant Connection (MCP)`}>{action}</Button>
     </div>
@@ -87,7 +87,7 @@ function CopyValue({ value, label }: { value: string; label: string }) {
 
 /** Setup copy that depends on the instance, not on the request: signed out, or no public URL configured. */
 function setupUnavailableCopy(errorKind: "auth" | "not_found"): string {
-  if (errorKind === "auth") return "Sign in to connect an assistant. This requires a Paperclip instance with authenticated user accounts.";
+  if (errorKind === "auth") return "Sign in to connect an assistant. This requires a Pilibala instance with authenticated user accounts.";
   return "Assistant connections need an authenticated instance with a public HTTPS URL. Ask your instance administrator to configure the public URL, then try again.";
 }
 
@@ -112,10 +112,10 @@ export function AssistantConnection({ initialAssistant = "codex" }: { initialAss
   const invitation = serverUrl ? mcpInvitation(serverUrl, { id: selectedCompanyId, name: selectedCompany.name }) : "";
   return <div className="max-w-3xl space-y-6 pb-8">
     <header className="space-y-4">
-      <div className="flex items-center gap-3"><Paperclip className="size-7 shrink-0" /><h1 className="text-xl font-semibold">Assistant Connection (MCP)</h1></div>
+      <div className="flex items-center gap-3"><Pilibala className="size-7 shrink-0" /><h1 className="text-xl font-semibold">Assistant Connection (MCP)</h1></div>
       <div className="flex items-center gap-3">
         <CompanyPatternIcon companyName={selectedCompany.name} logoUrl={selectedCompany.logoUrl} className="size-12 shrink-0 rounded-lg" />
-        <div className="space-y-1"><p className="font-medium">{selectedCompany.name}</p><p className="text-sm text-muted-foreground">Connect your assistant to Paperclip. Review work, create tasks, and follow up using your account’s access to this organization.</p></div>
+        <div className="space-y-1"><p className="font-medium">{selectedCompany.name}</p><p className="text-sm text-muted-foreground">Connect your assistant to Pilibala. Review work, create tasks, and follow up using your account’s access to this organization.</p></div>
       </div>
     </header>
     {(setup.isPending || setupView.kind === "reconnecting") && <p className="text-sm text-muted-foreground">Loading assistant setup…</p>}
@@ -129,9 +129,9 @@ export function AssistantConnection({ initialAssistant = "codex" }: { initialAss
     </section>}
     {setup.data?.enabled && <>
       <section className="space-y-4" aria-label="Invite your assistant">
-        <p className="text-sm text-muted-foreground">Paste this invitation into your assistant. It will help set up the connection and ask you to approve access in Paperclip.</p>
+        <p className="text-sm text-muted-foreground">Paste this invitation into your assistant. It will help set up the connection and ask you to approve access in Pilibala.</p>
         <div className="flex justify-end">
-          <AgentSetupPrompt prompt={invitation} label="Copy invitation" title="Invite your assistant" description="Paste this invitation into your assistant. It will help set up the connection and ask you to approve access in Paperclip." side="bottom" align="end" />
+          <AgentSetupPrompt prompt={invitation} label="Copy invitation" title="Invite your assistant" description="Paste this invitation into your assistant. It will help set up the connection and ask you to approve access in Pilibala." side="bottom" align="end" />
         </div>
       </section>
       <details className="space-y-4 text-sm">
@@ -153,7 +153,7 @@ export function AssistantConnection({ initialAssistant = "codex" }: { initialAss
       {connections.view.kind === "error" && <QueryErrorState error={connections.error} action="load your connections" onRetry={connections.view.retry} retrying={connections.view.isFetching} />}
       {connections.loaded && connections.rows.length === 0 && <p className="text-sm text-muted-foreground">No assistants connected to {selectedCompany.name} yet.</p>}
       <div className="divide-y divide-border">{connections.rows.map(row => <div key={row.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-        <div className="min-w-0 flex-1 space-y-1"><Identity name={assistantConnectionDisplayName(row)} avatarUrl={row.user?.image} initials={deriveInitials(row.user?.name ?? "You")} className="font-medium" /><p className="text-xs text-muted-foreground">{`Connected as you · ${row.scopes.includes("paperclip:write") ? "Read and write" : "Read only"}${row.scopes.includes("paperclip:configure") ? " · Configure agents, projects and skills" : ""}`}</p></div>
+        <div className="min-w-0 flex-1 space-y-1"><Identity name={assistantConnectionDisplayName(row)} avatarUrl={row.user?.image} initials={deriveInitials(row.user?.name ?? "You")} className="font-medium" /><p className="text-xs text-muted-foreground">{`Connected as you · ${row.scopes.includes("pilibala:write") ? "Read and write" : "Read only"}${row.scopes.includes("pilibala:configure") ? " · Configure agents, projects and skills" : ""}`}</p></div>
         <Button variant="outline" size="sm" disabled={revoke.isPending} onClick={() => revoke.mutate(row.id)} aria-label={`Revoke ${assistantConnectionDisplayName(row)}`}>Revoke</Button>
       </div>)}</div>
     </section>

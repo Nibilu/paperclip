@@ -24,7 +24,7 @@ test('inspect reconciles exact historical case identity and discards integration
 });
 
 test('multiple alias identities, foreign project and incomplete metadata stop before mutation', async () => {
-  const conflicts = await inspectChatMetadata(inspectApi([caseRow, { ...caseRow, id: 92, fullName: 'paperclip.Product E2E.chat-features.tasks.create-backlog' }]));
+  const conflicts = await inspectChatMetadata(inspectApi([caseRow, { ...caseRow, id: 92, fullName: 'pilibala.Product E2E.chat-features.tasks.create-backlog' }]));
   assert.equal(conflicts.caseConflict, true); assert.deepEqual(conflicts.cases.map(row => row.id), [91, 92]);
   await assert.rejects(ensureChatPlan(() => assert.fail('no ambiguous write'), conflicts, () => assert.fail('no ambiguous marker'))); 
   await assert.rejects(inspectChatMetadata(inspectApi([{ ...caseRow, projectId: 2 }])), /identity_invalid/);
@@ -64,15 +64,15 @@ test('unknown exception text is never copied into closed diagnostics', () => {
 
 
 import { validateChatSelection } from './chat-feature-testops-api.mjs';
-const publicEnv = { GITHUB_REPOSITORY: 'paperclipai/paperclip', GITHUB_REF: 'refs/heads/master',
+const publicEnv = { GITHUB_REPOSITORY: 'pilibalaai/pilibala', GITHUB_REF: 'refs/heads/master',
   GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_RUN_ATTEMPT: '1', GITHUB_SHA: 'a'.repeat(40), GITHUB_RUN_ID: '123',
-  GITHUB_WORKFLOW_REF: 'paperclipai/paperclip/.github/workflows/chat-feature-testops.yml@refs/heads/master',
+  GITHUB_WORKFLOW_REF: 'pilibalaai/pilibala/.github/workflows/chat-feature-testops.yml@refs/heads/master',
   ALLURE_JOB_RUN_ID: '9', CHAT_TESTOPS_CASE_ID: '91', CHAT_TESTOPS_PLAN_ID: '8', CHAT_TESTOPS_JOB_ID: '7' };
 const selectedApi = replacements => async route => {
   const values = { '/api/testcase/91': caseRow, '/api/testplan/8': plan,
     '/api/testplan/8/job': [{ job: { id: 7 }, testCasesCount: 1 }],
-    '/api/job/7': { id: 7, type: 'github', url: 'https://github.com/paperclipai/paperclip/actions/workflows/chat-feature-testops.yml' },
-    '/api/jobrun/9': { id: 9, job: { id: 7, type: 'github' }, stage: 'scheduled', launchId: 10, url: 'https://github.com/paperclipai/paperclip/actions/runs/123' },
+    '/api/job/7': { id: 7, type: 'github', url: 'https://github.com/pilibalaai/pilibala/actions/workflows/chat-feature-testops.yml' },
+    '/api/jobrun/9': { id: 9, job: { id: 7, type: 'github' }, stage: 'scheduled', launchId: 10, url: 'https://github.com/pilibalaai/pilibala/actions/runs/123' },
     '/api/launch/10': { id: 10, projectId: 1, closed: false },
     '/api/jobrun/9/plan?expected=true': [{ id: 91, selector: fullName }] };
   assert.ok(Object.hasOwn(values, route));
@@ -92,10 +92,10 @@ test('selection refuses missing correlation, a different case, broad plan, forei
   for (const [route, value] of [
     ['/api/testcase/91', { ...caseRow, projectId: 2 }],
     ['/api/testplan/8', { ...plan, testCasesCount: 2 }],
-    ['/api/job/7', { id: 7, type: 'github', url: 'https://github.com/paperclipai/paperclip-cloud/actions/workflows/qa-staging-smoke.yml' }],
+    ['/api/job/7', { id: 7, type: 'github', url: 'https://github.com/pilibalaai/pilibala-cloud/actions/workflows/qa-staging-smoke.yml' }],
     ['/api/testplan/8/job', [{ job: { id: 70 }, testCasesCount: 1 }]],
     ['/api/jobrun/9', { id: 9, job: { id: 70, type: 'github' }, stage: 'scheduled', launchId: 10 }],
-    ['/api/jobrun/9', { id: 9, job: { id: 7, type: 'github' }, stage: 'scheduled', launchId: 10, url: 'https://github.com/paperclipai/paperclip/actions/runs/456' }],
+    ['/api/jobrun/9', { id: 9, job: { id: 7, type: 'github' }, stage: 'scheduled', launchId: 10, url: 'https://github.com/pilibalaai/pilibala/actions/runs/456' }],
     ['/api/launch/10', { id: 10, projectId: 1, closed: true }],
     ['/api/jobrun/9/plan?expected=true', [{ id: 92, selector: fullName }]],
   ]) await assert.rejects(validateChatSelection(selectedApi({ [route]: value }), publicEnv), /mismatch/);
@@ -112,13 +112,13 @@ import { launchChatPlan, bootstrapJobMetadata, admitLaunchPlan } from './chat-fe
 const launchEnv = { ...publicEnv, ALLURE_JOB_RUN_ID: '', CHAT_TESTOPS_OPERATION_PARAMETER_ID: '17', CHAT_TESTOPS_INTEGRATION_ID: '2', CHAT_TESTOPS_LAUNCH_NONCE: '1'.repeat(32), CHAT_TESTOPS_LAUNCH_RUN_NUMBER: '2', GITHUB_RUN_NUMBER: '2',
   CHAT_TESTOPS_GITHUB_WORKFLOW_ID: '99', GITHUB_ACTOR_ID: '34892728', TESTOPS_TRIGGERING_ACTOR_ID: '34892728', TESTOPS_ALLOWED_ACTOR_IDS: '[34892728]', GH_TOKEN: 'SYNTHETIC_GH_TOKEN' };
 const ownRun = { id: 123, workflow_id: 99, run_attempt: 1, run_number: 2, head_sha: 'a'.repeat(40), head_branch: 'master', event: 'workflow_dispatch',
-  repository: { full_name: 'paperclipai/paperclip', private: false }, actor: { id: 34892728 }, triggering_actor: { id: 34892728 } };
+  repository: { full_name: 'pilibalaai/pilibala', private: false }, actor: { id: 34892728 }, triggering_actor: { id: 34892728 } };
 async function fence(env = launchEnv, changes = {}, workflowChanges = {}, repoChanges = {}) {
-  return admitLaunchPlan(env, async url => ({ ok: true, text: async () => JSON.stringify(url.endsWith('/repos/paperclipai/paperclip') ? { full_name: 'paperclipai/paperclip', private: false, default_branch: 'master', ...repoChanges }
+  return admitLaunchPlan(env, async url => ({ ok: true, text: async () => JSON.stringify(url.endsWith('/repos/pilibalaai/pilibala') ? { full_name: 'pilibalaai/pilibala', private: false, default_branch: 'master', ...repoChanges }
     : url.includes('/actions/runs/') ? { ...ownRun, ...changes }
     : { id: 99, path: '.github/workflows/chat-feature-testops.yml', state: 'active', ...workflowChanges }) }));
 }
-function launchServer({ wrongAssignment = false, uncertainRun = false, integrationChange = {}, initialParameters = [{ id: 17, value: 'bootstrap' }], expectedParameters = [{ id: 17, value: 'evaluate' }], jobUrl = 'https://github.com/paperclipai/paperclip/actions/workflows/chat-feature-testops.yml' } = {}) {
+function launchServer({ wrongAssignment = false, uncertainRun = false, integrationChange = {}, initialParameters = [{ id: 17, value: 'bootstrap' }], expectedParameters = [{ id: 17, value: 'evaluate' }], jobUrl = 'https://github.com/pilibalaai/pilibala/actions/workflows/chat-feature-testops.yml' } = {}) {
   const calls = [], parameters = structuredClone(initialParameters); let assigned = false, launched = false, requests = 0;
   const api = async (route, method, body) => {
     calls.push({ route, method, body });
@@ -150,7 +150,7 @@ test('backlog launch preflight sends the typed UTF-8 name filter required by Tes
   const server = launchServer();
   const api = async (route, ...args) => {
     if (route.startsWith('/api/launch?')) {
-      const wire = new URL(route, 'https://paperclip.testops.cloud').searchParams.get('search');
+      const wire = new URL(route, 'https://pilibala.testops.cloud').searchParams.get('search');
       let filters;
       try { filters = JSON.parse(Buffer.from(wire, 'base64').toString('utf8')); }
       catch { throw new Error('TestOps HTTP 400: typed launch search required'); }
@@ -185,8 +185,8 @@ test('uncertain plan-run transport is sent once and never followed by another mu
 
 test('official bootstrap job metadata leaves opaque parameter labels unresolved and private values unprojected', async () => {
   const job = await bootstrapJobMetadata(async route => {
-    if (route === '/api/jobrun/9') return { id: 9, job: { id: 7 }, launchId: 10, url: 'https://github.com/paperclipai/paperclip/actions/runs/123' };
-    if (route === '/api/job/7') return { id: 7, type: 'github', url: 'https://github.com/paperclipai/paperclip/actions/workflows/chat-feature-testops.yml', parameters: [{ id: 17, value: 'bootstrap' }, { id: 18, value: 'SYNTHETIC_PRIVATE_VALUE' }] };
+    if (route === '/api/jobrun/9') return { id: 9, job: { id: 7 }, launchId: 10, url: 'https://github.com/pilibalaai/pilibala/actions/runs/123' };
+    if (route === '/api/job/7') return { id: 7, type: 'github', url: 'https://github.com/pilibalaai/pilibala/actions/workflows/chat-feature-testops.yml', parameters: [{ id: 17, value: 'bootstrap' }, { id: 18, value: 'SYNTHETIC_PRIVATE_VALUE' }] };
     assert.fail('no namespace lookup or unrelated request');
   }, publicEnv);
   assert.equal(job.publicWorkflowMatches, true); assert.deepEqual(job.parameters[0], { id: 17, kind: 'UNRESOLVED', value: 'NOT_PROJECTED' });
@@ -205,7 +205,7 @@ test('documented stable-ID list pagination is complete before locally matching e
       return { number, totalPages: 2, totalElements: 2, content: [{ id: number ? 92 : 91 }] };
     }
     if (route === '/api/testcase/91') return { ...caseRow, description: 'SYNTHETIC_PRIVATE_DESCRIPTION' };
-    if (route === '/api/testcase/92') return { id: 92, projectId: 1, fullName: 'paperclip.Product E2E.unrelated.case', automated: true, expectedResult: 'DO_NOT_EXPORT' };
+    if (route === '/api/testcase/92') return { id: 92, projectId: 1, fullName: 'pilibala.Product E2E.unrelated.case', automated: true, expectedResult: 'DO_NOT_EXPORT' };
     return inspectApi([], [])(route);
   };
   const result = await inspectChatMetadata(api);
@@ -277,9 +277,9 @@ test('new job receives only the reviewed enabled GitHub integration; disabled/fo
   }
 });
 
-const uploadContext = { GITHUB_REPOSITORY: 'paperclipai/paperclip', GITHUB_REF: 'refs/heads/master', GITHUB_EVENT_NAME: 'workflow_dispatch',
+const uploadContext = { GITHUB_REPOSITORY: 'pilibalaai/pilibala', GITHUB_REF: 'refs/heads/master', GITHUB_EVENT_NAME: 'workflow_dispatch',
   GITHUB_RUN_ATTEMPT: '1', GITHUB_SHA: 'a'.repeat(40), GITHUB_RUN_ID: '123', ALLURE_JOB_RUN_ID: '9',
-  GITHUB_WORKFLOW_REF: 'paperclipai/paperclip/.github/workflows/chat-feature-testops.yml@refs/heads/master' };
+  GITHUB_WORKFLOW_REF: 'pilibalaai/pilibala/.github/workflows/chat-feature-testops.yml@refs/heads/master' };
 const uploadSelection = { runId: '123', attempt: '1', workflowSha: 'a'.repeat(40), targetSha: 'a'.repeat(40), allureJobRunId: '9',
   executionId: 'chat-features.runner-opencode-deepseek-1017.local.create-backlog', canonicalScenario: 'tasks.create-backlog', projectId: 1,
   planId: 8, jobId: 7, caseId: 91, fullName, launchId: 10 };
@@ -287,7 +287,7 @@ const uploadReceipt = { status: 'passed', cleanup: 'passed', caseId: 91, campaig
   attachmentMetadata: [{ name: 'Synthetic task and source conversation', contentType: 'image/png', contentLength: 400 },
     { name: 'Execution provenance and checks', contentType: 'application/json', contentLength: 300 },
     { name: 'Sanitized Product E2E record and accounting', contentType: 'application/json', contentLength: 800 }] };
-const uploadRun = { id: 9, job: { id: 7, type: 'github' }, launchId: 10, url: 'https://github.com/paperclipai/paperclip/actions/runs/123', stage: 'finished' };
+const uploadRun = { id: 9, job: { id: 7, type: 'github' }, launchId: 10, url: 'https://github.com/pilibalaai/pilibala/actions/runs/123', stage: 'finished' };
 function uploadApi(change = {}, absent = 0, runChange = {}) {
   let polls = 0;
   return async (route, method) => {
@@ -296,7 +296,7 @@ function uploadApi(change = {}, absent = 0, runChange = {}) {
     if (route === '/api/launch/10') return { id: 10, projectId: 1 };
     if (route.startsWith('/api/testresult?')) { polls++; return { content: polls <= absent ? [] : [{ id: 45, testCaseId: 91 }], totalElements: polls <= absent ? 0 : 1, totalPages: polls <= absent ? 0 : 1 }; }
     if (route === '/api/testresult/45') return { id: 45, projectId: 1, launchId: 10, testCaseId: 91, fullName, jobRun: uploadRun, status: 'passed',
-      links: [{ url: uploadRun.url }, { url: `https://github.com/paperclipai/paperclip/commit/${'a'.repeat(40)}` }],
+      links: [{ url: uploadRun.url }, { url: `https://github.com/pilibalaai/pilibala/commit/${'a'.repeat(40)}` }],
       get trace() { assert.fail('must not inspect trace'); }, ...change };
     if (route.startsWith('/api/testresult/attachment?')) return { content: uploadReceipt.attachmentMetadata.map((row, i) => ({ ...row, id: i + 1, missed: false, fromTestCase: false })), totalElements: 3, totalPages: 1 };
     assert.fail(route);
@@ -314,7 +314,7 @@ test('readback verifies exact current launch/case/source/status and safe attachm
 
 test('readback rejects wrong launch, case, current jobrun, source and contradictory result status', async () => {
   const { verifyChatUpload } = await import('./chat-feature-testops-api.mjs');
-  for (const change of [{ launchId: 11 }, { testCaseId: 92 }, { jobRun: { ...uploadRun, id: 11 } }, { links: [{ url: 'https://github.com/paperclipai/paperclip/commit/' + 'b'.repeat(40) }] }, { status: 'failed' }]) {
+  for (const change of [{ launchId: 11 }, { testCaseId: 92 }, { jobRun: { ...uploadRun, id: 11 } }, { links: [{ url: 'https://github.com/pilibalaai/pilibala/commit/' + 'b'.repeat(40) }] }, { status: 'failed' }]) {
     await assert.rejects(verifyChatUpload(uploadApi(change), uploadContext, uploadSelection, uploadReceipt), /upload_mismatch/);
   }
 });
@@ -338,14 +338,14 @@ test('readback rejects authoritative or embedded identity contradictions and a f
   const { verifyChatUpload } = await import('./chat-feature-testops-api.mjs');
   const { job, ...embedded } = uploadRun;
   for (const runChange of [{ job: { id: 8, type: 'github' } }, { job: { id: 7, type: 'gitlab' } },
-    { url: 'https://github.com/paperclipai/paperclip/actions/runs/124' }, { launchId: 11 }]) {
+    { url: 'https://github.com/pilibalaai/pilibala/actions/runs/124' }, { launchId: 11 }]) {
     await assert.rejects(verifyChatUpload(uploadApi({ jobRun: embedded, links: [] }, 0, runChange), uploadContext, uploadSelection, uploadReceipt), /jobrun_mismatch/);
   }
   for (const change of [{ jobRun: { ...embedded, id: 11 } }, { jobRun: { ...embedded, job: { id: 8 } } },
     { jobRun: { ...embedded, job: { id: 7, type: 'gitlab' } } }, { jobRun: { ...embedded, job: { id: 7, url: 'https://github.com/other/repo' } } },
-    { jobRun: { ...embedded, launchId: 11 } }, { jobRun: { ...embedded, url: 'https://github.com/paperclipai/paperclip/actions/runs/124' } },
-    { links: [{ url: 'https://github.com/paperclipai/paperclip/actions/runs/124' }] },
-    { links: [{ url: 'https://github.com/paperclipai/paperclip/commit/' + 'b'.repeat(40) }] }]) {
+    { jobRun: { ...embedded, launchId: 11 } }, { jobRun: { ...embedded, url: 'https://github.com/pilibalaai/pilibala/actions/runs/124' } },
+    { links: [{ url: 'https://github.com/pilibalaai/pilibala/actions/runs/124' }] },
+    { links: [{ url: 'https://github.com/pilibalaai/pilibala/commit/' + 'b'.repeat(40) }] }]) {
     await assert.rejects(verifyChatUpload(uploadApi(change), uploadContext, uploadSelection, uploadReceipt), /upload_mismatch/);
   }
   for (const selection of [{ ...uploadSelection, targetSha: 'b'.repeat(40) }, { ...uploadSelection, workflowSha: 'b'.repeat(40) }]) {
@@ -494,9 +494,9 @@ test('readback stops immediately after a late GET and gives each client only the
 });
 
 function strictBootstrapApi(patch = {}) {
-  const run = { id: 9, job: { id: 7, type: 'github' }, launchId: 10, url: 'https://github.com/paperclipai/paperclip/actions/runs/123', ...patch.run };
+  const run = { id: 9, job: { id: 7, type: 'github' }, launchId: 10, url: 'https://github.com/pilibalaai/pilibala/actions/runs/123', ...patch.run };
   const launch = { id: 10, projectId: 1, ...patch.launch };
-  const job = { id: 7, type: 'github', url: 'https://github.com/paperclipai/paperclip/actions/workflows/chat-feature-testops.yml',
+  const job = { id: 7, type: 'github', url: 'https://github.com/pilibalaai/pilibala/actions/workflows/chat-feature-testops.yml',
     parameters: [{ id: 17, value: 'bootstrap' }, { id: 18, get value() { assert.fail('unrelated parameter value must stay unopened'); } }], ...patch.job };
   return async (route, method) => {
     assert.equal(method, undefined);
@@ -517,7 +517,7 @@ test('post-watch reader binds actual current run source project launch and publi
 });
 
 test('post-watch reader rejects stale foreign project launch source and job identity', async () => {
-  for (const patch of [{ run: { id: 99 } }, { run: { url: 'https://github.com/paperclipai/paperclip/actions/runs/999' } },
+  for (const patch of [{ run: { id: 99 } }, { run: { url: 'https://github.com/pilibalaai/pilibala/actions/runs/999' } },
     { run: { launchId: 20 } }, { run: { job: { id: 7, type: 'foreign' } } }, { launch: { projectId: 2 } },
     { launch: { id: 20 } }, { job: { url: 'https://github.com/other/repo/actions/workflows/chat-feature-testops.yml' } },
     { job: { type: 'foreign' } }, { job: { parameters: [{ id: 0 }] } }]) {
@@ -534,11 +534,11 @@ test('post-watch reader caps opaque parameters and refuses duplicate IDs', async
 });
 
 
-const observedLegacyJobUrl = 'https://github.com/paperclipai/paperclip/actions?query=workflow%3A%22Chat+feature+TestOps%22';
+const observedLegacyJobUrl = 'https://github.com/pilibalaai/pilibala/actions?query=workflow%3A%22Chat+feature+TestOps%22';
 
 test('official observed legacy and existing workflow URLs pass all three actual job consumers', async () => {
-  for (const url of [observedLegacyJobUrl, 'https://github.com/paperclipai/paperclip/actions/workflows/chat-feature-testops.yml',
-    'https://github.com/paperclipai/paperclip/actions/workflows/99']) {
+  for (const url of [observedLegacyJobUrl, 'https://github.com/pilibalaai/pilibala/actions/workflows/chat-feature-testops.yml',
+    'https://github.com/pilibalaai/pilibala/actions/workflows/99']) {
     const env = { ...publicEnv, CHAT_TESTOPS_GITHUB_WORKFLOW_ID: '99' };
     const selected = await validateChatSelection(selectedApi({ '/api/job/7': { id: 7, type: 'github', url } }), env);
     assert.equal(selected.caseId, 91);
@@ -552,7 +552,7 @@ test('official observed legacy and existing workflow URLs pass all three actual 
 });
 
 test('official legacy URL admission rejects foreign workflow repo query credentials and fragment in all consumers', async () => {
-  for (const url of [observedLegacyJobUrl.replace('/paperclip/actions', '/paperclip-cloud/actions'),
+  for (const url of [observedLegacyJobUrl.replace('/pilibala/actions', '/pilibala-cloud/actions'),
     observedLegacyJobUrl.replace('Chat+feature+TestOps', 'Other+workflow'), `${observedLegacyJobUrl}&extra=1`,
     observedLegacyJobUrl.replace('https://github.com', 'https://user:password@github.com'), `${observedLegacyJobUrl}#extra`]) {
     await assert.rejects(validateChatSelection(selectedApi({ '/api/job/7': { id: 7, type: 'github', url } }), publicEnv), /chat_testops_job_mismatch/);

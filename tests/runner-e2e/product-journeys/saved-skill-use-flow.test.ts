@@ -3,8 +3,8 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { canonicalProviderEventsFromOpenCodePart } from "../../../packages/paperclip-runner/src/provider-events.js";
-import { createPrpSemanticToolInputEnvelope, createPrpSemanticToolResultEnvelope } from "../../../packages/paperclip-runner/src/protocol/semantic-tool-receipts.js";
+import { canonicalProviderEventsFromOpenCodePart } from "../../../packages/pilibala-runner/src/provider-events.js";
+import { createPrpSemanticToolInputEnvelope, createPrpSemanticToolResultEnvelope } from "../../../packages/pilibala-runner/src/protocol/semantic-tool-receipts.js";
 import { parseFrontmatterMarkdown } from "../../../packages/shared/src/frontmatter.js";
 import { agentSkillSyncSchema } from "../../../packages/shared/src/validators/adapter-skills.js";
 import { createTaskThroughUi } from "../user-actions.js";
@@ -71,7 +71,7 @@ async function setup(change: (kind: string, row: any) => any = (_kind, row) => r
       if (route === "/api/heartbeat-runs/run") return change("run", { id: "run", companyId: "company", agentId: "agent", issueId: "issue",
         status: "succeeded", runtimeMode: "native", nativePhase: "committed", resultJson: null,
         runnerInstanceId: "instance", nativeSessionId: "session",
-        contextSnapshot: { paperclipEnvironment: { id: "environment" }, skillSelectionSnapshot: true, skillVersions: { [skill.key]: "version" } },
+        contextSnapshot: { pilibalaEnvironment: { id: "environment" }, skillSelectionSnapshot: true, skillVersions: { [skill.key]: "version" } },
         runnerProfileJson: { nativeExecutionInput: { provider: { kind: "opencode", model: "model" },
           runtimeContext: { skills: [{ key: skill.key, versionId: "version", runtimeName: `${fixture.slug}--0123456789` }] } } } });
       if (route.startsWith("/api/heartbeat-runs/run/events?")) {
@@ -88,7 +88,7 @@ async function setup(change: (kind: string, row: any) => any = (_kind, row) => r
           return semantic.map((value, i) => change("event", { runId: "run", companyId: "company", agentId: "agent",
             seq: i + 1, sourceSeq: i + 1, sourceEventId: `event-${i}`, sourceInstanceId: "instance", protocolSchemaVersion: 1,
             eventType: `semantic_tool.${value.phase}`, payload: { prpEvent: { ...correlation,
-              schema: "paperclip.prp.event.v1", schemaVersion: 1, sourceKind: "runner", sourceSeq: i + 1,
+              schema: "pilibala.prp.event.v1", schemaVersion: 1, sourceKind: "runner", sourceSeq: i + 1,
               sourceEventId: `event-${i}`, sourceInstanceId: "instance", eventType: `semantic_tool.${value.phase}`,
               payload: { semantic_tool: value } } } }));
         }
@@ -107,12 +107,12 @@ async function setup(change: (kind: string, row: any) => any = (_kind, row) => r
             const result = { skill: skill.key, versionId: skill.currentVersionId, path: "SKILL.md", text: fixture.markdown,
               sha256: createHash("sha256").update(fixture.markdown).digest("hex"), byteSize: Buffer.byteLength(fixture.markdown), nextOffset: null };
             const output = JSON.stringify({ type: "inputText", text: JSON.stringify(change("assigned-read", result)) });
-            Object.assign(p.payload, { name: "paperclip_read_assigned_skill", operation: "unknown", readOnly: true, target: null,
+            Object.assign(p.payload, { name: "pilibala_read_assigned_skill", operation: "unknown", readOnly: true, target: null,
               output: status === "completed" ? output : "", outputBytes: status === "completed" ? Buffer.byteLength(output) : 0 });
           }
           return change("event", { runId: "run", companyId: "company", agentId: "agent", seq: i + 1, eventType: p.eventType,
             sourceEventId: `event-${i}`, sourceInstanceId: "instance", sourceSeq: i + 1, protocolSchemaVersion: 1,
-            payload: { prpEvent: { schema: "paperclip.prp.event.v1", schemaVersion: 1, sourceKind: "runner", runId: "run", turnId: "turn",
+            payload: { prpEvent: { schema: "pilibala.prp.event.v1", schemaVersion: 1, sourceKind: "runner", runId: "run", turnId: "turn",
               eventType: p.eventType, sourceEventId: `event-${i}`, sourceInstanceId: "instance", sourceSeq: i + 1, payload: p.payload } } });
         });
       }

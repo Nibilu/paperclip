@@ -9,9 +9,9 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   agents, closeRegisteredClients, companies, createDb, environmentLeases, environments,
   executionWorkspaces, executionWorkspaceSnapshots, heartbeatRuns, issues, workspaceOperations,
-} from "@paperclipai/db";
-import type { AdapterSandboxExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import type { EnvironmentLease } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import type { AdapterSandboxExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import type { EnvironmentLease } from "@pilibalaai/shared";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { createStorageService } from "../storage/service.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
@@ -39,7 +39,7 @@ describe.skipIf(!support.supported)("remote workspace save parent lock order", (
     database = await startEmbeddedPostgresTestDatabase("workspace-save-order-");
     db = createDb(database.connectionString);
     root = await realpath(await mkdtemp(path.join(os.tmpdir(), "workspace-save-order-")));
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "62".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "62".repeat(32));
     vi.stubEnv("DATABASE_URL", database.connectionString);
   }, 60_000);
   afterAll(async () => {
@@ -52,7 +52,7 @@ describe.skipIf(!support.supported)("remote workspace save parent lock order", (
   async function preparedFailure() {
     const companyId = randomUUID(), agentId = randomUUID(), issueId = randomUUID(), runId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Save lock order", issuePrefix: `S${companyId.slice(0, 6)}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "pilibala_runner" });
     await db.insert(issues).values({ id: issueId, companyId, title: "Preserve saved work", status: "blocked", assigneeAgentId: agentId });
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, issueId, runtimeMode: "legacy",
       status: "running", executionStage: "preparing", contextSnapshot: { issueId } });
@@ -86,7 +86,7 @@ describe.skipIf(!support.supported)("remote workspace save parent lock order", (
     await writeFile(path.join(prepared.remoteRoot, "saved.txt"), "one preserved result\n");
     await db.update(heartbeatRuns).set({ status: "failed", finishedAt: new Date(), errorCode: "setup_failed",
       resultJson: { workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery: {
-        schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [lease.id],
+        schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [lease.id],
       } } }).where(eq(heartbeatRuns.id, runId));
     const [stoppedLease] = await db.update(environmentLeases).set({ status: "released", releasedAt: new Date(), cleanupStatus: "success",
       metadata: { ...prepared.lease.metadata, remoteExecutionTermination: remoteTerminationReceipt(lease,

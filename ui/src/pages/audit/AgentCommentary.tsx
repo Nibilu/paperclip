@@ -1,7 +1,7 @@
 import { describeError } from "@/api/errors";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { AgentCommentaryEntry, AgentCommentaryKind } from "@paperclipai/shared";
+import type { AgentCommentaryEntry, AgentCommentaryKind } from "@pilibalaai/shared";
 import { ArrowUpRight, ChevronLeft, ChevronRight, Lightbulb, MessageSquareWarning, Search } from "lucide-react";
 import { agentCommentaryApi } from "@/api/agentCommentary";
 import { agentsApi } from "@/api/agents";

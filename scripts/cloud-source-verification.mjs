@@ -3,7 +3,7 @@ import { pathToFileURL } from "node:url";
 import { createActionsReader } from "./github-actions-reader.mjs";
 import { deferredProducer, requestDeferredProducer, sourceAdmissionJob, createReleaseRerunner } from "./cloud-release-admission.mjs";
 
-const repository = "paperclipai/paperclip";
+const repository = "pilibalaai/pilibala";
 const workflowPath = ".github/workflows/cloud-readiness.yml";
 export const sourceVerificationJob = "Cloud source verified v1";
 export class SourceVerificationFailed extends Error {

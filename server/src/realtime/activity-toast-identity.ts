@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { agents, authUsers, companyMemberships, issues, type Db } from "@paperclipai/db";
+import { agents, authUsers, companyMemberships, issues, type Db } from "@pilibalaai/db";
 import { logger } from "../middleware/logger.js";
 
 const TOAST_ACTIONS = new Set(["issue.created", "issue.updated", "issue.comment_added"]);

@@ -10,7 +10,7 @@ import { hashFetchKey, useResilientFetch, type ResilientFetchOptions, type Resil
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
-const unavailable = () => new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" });
+const unavailable = () => new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" });
 const forbidden = () => new ApiError("Forbidden", 403, { error: "Forbidden" });
 const notFound = () => new ApiError("Browser not found", 404, { error: "Browser not found" });
 const busy = () => new ApiError("Too many requests", 429, { error: "rate_limited" });

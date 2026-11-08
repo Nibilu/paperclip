@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import type { Db } from '@paperclipai/db';
+import type { Db } from '@pilibalaai/db';
 import { githubIngressFixture } from '../github-webhook-ingress.js';
 import { chatChannelService } from '../../../services/chat-channels.js';
 

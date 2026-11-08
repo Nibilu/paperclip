@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { idleChatHistoryChecks } from "../../services/chat-channels/idle-history-proof.js";
 
 /** Scope the actual shared predicate to a real producer's receipt. Other pending

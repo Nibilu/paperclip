@@ -1,5 +1,5 @@
-import { createDb } from "@paperclipai/db";
-import { closeIdleWarmNativeSessionsForRestart, executePaperclipNativeSession } from "../../services/native-runtime/native-session-executor.js";
+import { createDb } from "@pilibalaai/db";
+import { closeIdleWarmNativeSessionsForRestart, executePilibalaNativeSession } from "../../services/native-runtime/native-session-executor.js";
 import { dockerCommandRunner } from "./docker-command-runner.js";
 import { createServer } from "node:http";
 import { registerLocalRuntimeApiServer } from "../../runtime-api.js";
@@ -13,7 +13,7 @@ process.once("message", async (input: {
   ingressUrl: string;
   suspendAfterTurn?: boolean;
   transientBackpressureInspection?: boolean;
-  options: Parameters<typeof executePaperclipNativeSession>[0];
+  options: Parameters<typeof executePilibalaNativeSession>[0];
 }) => {
   const target = input.options.runnerExecutionTarget;
   if (target?.kind !== "remote" || target.transport !== "sandbox") throw new Error("Expected remote worker target");
@@ -36,7 +36,7 @@ process.once("message", async (input: {
       }
       return result;
     };
-    const result = await executePaperclipNativeSession({
+    const result = await executePilibalaNativeSession({
       ...input.options,
       db: createDb(input.connectionString),
       runnerExecutionTarget: {

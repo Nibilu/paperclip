@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TranscriptEntry } from "@/adapters";
-import type { HeartbeatRunEvent } from "@paperclipai/shared";
+import type { HeartbeatRunEvent } from "@pilibalaai/shared";
 import {
   assembleThreadItems,
   attachSettledTurns,
@@ -15,10 +15,10 @@ import {
   isNestableLiveChild,
   ISSUE_BRIEF_ITEM_ID,
   omitProgressRepeatedByResponseAcrossSegments,
-  paperclipRunnerActivityItems,
-  paperclipRunnerFinalResponse,
-  paperclipRunnerHistoryItems,
-  paperclipRunnerTimelineItems,
+  pilibalaRunnerActivityItems,
+  pilibalaRunnerFinalResponse,
+  pilibalaRunnerHistoryItems,
+  pilibalaRunnerTimelineItems,
   prependIssueBrief,
   settledRunChildren,
   splitTranscriptAtAnchors,
@@ -77,7 +77,7 @@ describe("accepted native response-wake answers", () => {
     "**Before release**\n- Test and rehearse rollback.\n\n**During release**\n- Deploy incrementally and watch errors.\n\n**After release**\n- Verify workflows and record follow-ups.";
   function fixture(mode = "accepted") {
     const result = {
-      schema: "paperclip.run_result.v1",
+      schema: "pilibala.run_result.v1",
       reportedWorkDisposition: "yielded",
       summary,
       completionClaim: { objectiveSatisfied: true, remainingWork: [] },
@@ -110,7 +110,7 @@ describe("accepted native response-wake answers", () => {
         createdAt: new Date(TS),
         payload: {
           prpEvent: {
-            schema: "paperclip.prp.event.v1",
+            schema: "pilibala.prp.event.v1",
             schemaVersion: 1,
             runId,
             eventType,
@@ -151,7 +151,7 @@ describe("accepted native response-wake answers", () => {
         ? []
         : [
             event(4, "run.terminal", {
-              schema: "paperclip.prp.terminal.v1",
+              schema: "pilibala.prp.terminal.v1",
               turnTerminalState: "completed",
               runTerminalState:
                 mode === "failed_terminal" ? "failed" : "succeeded",
@@ -181,7 +181,7 @@ describe("accepted native response-wake answers", () => {
     "renders the exact accepted response-wake summary instead of commentary: %s",
     (mode) => {
       expect(
-        paperclipRunnerFinalResponse(fixture(mode), { runId }),
+        pilibalaRunnerFinalResponse(fixture(mode), { runId }),
       ).toMatchObject({
         text: summary,
         channel: "final",
@@ -201,16 +201,16 @@ describe("accepted native response-wake answers", () => {
     "failed_terminal",
   ])("keeps %s evidence out of the response-wake final exception", (mode) => {
     expect(
-      paperclipRunnerFinalResponse(fixture(mode), { runId }),
+      pilibalaRunnerFinalResponse(fixture(mode), { runId }),
     ).toBeUndefined();
   });
 
   it("does not grant the exception to another run or a live fallback", () => {
     expect(
-      paperclipRunnerFinalResponse(fixture(), { runId: "other-run" }),
+      pilibalaRunnerFinalResponse(fixture(), { runId: "other-run" }),
     ).toBeUndefined();
     expect(
-      paperclipRunnerFinalResponse(fixture(), { runId, allowFallback: false }),
+      pilibalaRunnerFinalResponse(fixture(), { runId, allowFallback: false }),
     ).toBeUndefined();
   });
 });
@@ -230,8 +230,8 @@ describe("completion tool feed visibility", () => {
   it("keeps completion events inspectable but hides both tool representations from live and settled feed activity", () => {
     for (const running of [true, false]) {
       const entries: TranscriptEntry[] = [
-        { kind: "tool_call", ts: TS, toolUseId: "legacy-finish", name: "paperclip_finish", input: {} },
-        ...["paperclip_finish", "search_tasks"].map((name) => ({
+        { kind: "tool_call", ts: TS, toolUseId: "legacy-finish", name: "pilibala_finish", input: {} },
+        ...["pilibala_finish", "search_tasks"].map((name) => ({
           kind: "provider_activity" as const, ts: TS, family: "tool_execution" as const,
           eventType: running ? "tool.execution.started" : "tool.execution.completed",
           status: running ? "running" as const : "completed" as const,
@@ -244,12 +244,12 @@ describe("completion tool feed visibility", () => {
       ];
       const parsed = transcriptToTaskChatItems(entries, { runId: "finish-visibility", running });
       expect(parsed).toHaveLength(4);
-      const activity = paperclipRunnerActivityItems(parsed);
+      const activity = pilibalaRunnerActivityItems(parsed);
       expect(activity).toHaveLength(2);
-      expect(JSON.stringify(activity)).not.toContain("paperclip_finish");
+      expect(JSON.stringify(activity)).not.toContain("pilibala_finish");
       expect(JSON.stringify(activity)).toContain("search_tasks");
       expect(JSON.stringify(activity)).toContain("Repository is not trusted");
-      expect(paperclipRunnerTimelineItems(parsed)).toEqual(activity);
+      expect(pilibalaRunnerTimelineItems(parsed)).toEqual(activity);
     }
   });
 });
@@ -576,7 +576,7 @@ describe("transcriptToTaskChatItems protocol surfaces", () => {
           payload: {
             executionId: "exec-lifecycle",
             transport: "mcp",
-            namespace: "paperclip",
+            namespace: "pilibala",
             name: "search_tasks",
             operation: "search",
             progress: "Searching the task index",
@@ -617,7 +617,7 @@ describe("transcriptToTaskChatItems protocol surfaces", () => {
     expect(item.details).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ label: "Name", value: "search_tasks" }),
-        expect.objectContaining({ label: "Namespace", value: "paperclip" }),
+        expect.objectContaining({ label: "Namespace", value: "pilibala" }),
         expect.objectContaining({ label: "Operation", value: "search" }),
         expect.objectContaining({ label: "Target", value: "doc/plan.md" }),
         expect.objectContaining({
@@ -629,7 +629,7 @@ describe("transcriptToTaskChatItems protocol surfaces", () => {
     expect(providerActivityPresentation(item)).toMatchObject({
       runningLabel: "Searching tasks",
       completedLabel: "Searched tasks",
-      detail: "Searching the task index · Paperclip · search_tasks",
+      detail: "Searching the task index · Pilibala · search_tasks",
     });
   });
 
@@ -926,7 +926,7 @@ describe("buildActivityPhases provider summaries", () => {
         {
           id: "finish",
           kind: "tool",
-          name: "Paperclip_finish",
+          name: "Pilibala_finish",
           status: "completed",
         },
         provider("research-1", "research"),
@@ -1005,15 +1005,15 @@ describe("buildActivityPhases provider summaries", () => {
       ...Array.from({ length: 6 }, (_, index) =>
         providerTool(`search-${index}`, "ToolSearch", "search"),
       ),
-      providerTool("context", "get_task_context", "read", "paperclip"),
-      providerTool("documents", "list_documents", "list", "paperclip"),
-      providerTool("history", "get_task_history", "read", "paperclip"),
-      providerTool("tasks", "search_tasks", "search", "paperclip"),
-      providerTool("progress", "report_progress", "edit", "paperclip"),
-      providerTool("block", "paperclip_block", "edit", "paperclip"),
+      providerTool("context", "get_task_context", "read", "pilibala"),
+      providerTool("documents", "list_documents", "list", "pilibala"),
+      providerTool("history", "get_task_history", "read", "pilibala"),
+      providerTool("tasks", "search_tasks", "search", "pilibala"),
+      providerTool("progress", "report_progress", "edit", "pilibala"),
+      providerTool("block", "pilibala_block", "edit", "pilibala"),
     ];
     expect(buildActivityPhases(items, false)[0]?.summary).toBe(
-      "Searched available tools 6 times, read from Paperclip 3 times, used Paperclip 3 times",
+      "Searched available tools 6 times, read from Pilibala 3 times, used Pilibala 3 times",
     );
   });
 });
@@ -1145,10 +1145,10 @@ describe("buildTurnTimelineRows (DOT-217)", () => {
     ]);
   });
 
-  it("keeps runtime requests in the Paperclip Runner timeline input", () => {
+  it("keeps runtime requests in the Pilibala Runner timeline input", () => {
     const pending = request("pending", "pending");
     expect(
-      paperclipRunnerTimelineItems([
+      pilibalaRunnerTimelineItems([
         commentary("commentary", "Checking."),
         pending,
         { id: "usage", kind: "usage", usage: { used: 1, size: 10 } },
@@ -1158,7 +1158,7 @@ describe("buildTurnTimelineRows (DOT-217)", () => {
 
   it("keeps aggregate workspace changes at the turn boundary outside activity", () => {
     const rows = buildTurnTimelineRows(
-      paperclipRunnerTimelineItems([tool("before"), workspace, tool("after")]),
+      pilibalaRunnerTimelineItems([tool("before"), workspace, tool("after")]),
       false,
     );
     expect(rows.map((row) => row.kind)).toEqual([
@@ -1181,15 +1181,15 @@ describe("buildTurnTimelineRows (DOT-217)", () => {
       status: "completed",
       diff: { path: "src/App.tsx", added: 2, removed: 1 },
     };
-    expect(paperclipRunnerActivityItems([fileChange])).toEqual([fileChange]);
-    expect(paperclipRunnerActivityItems([fileChange, workspace])).toEqual([
+    expect(pilibalaRunnerActivityItems([fileChange])).toEqual([fileChange]);
+    expect(pilibalaRunnerActivityItems([fileChange, workspace])).toEqual([
       workspace,
     ]);
   });
 
   it("keeps a yielded run-result and provider wait prose out of the durable final slot", () => {
     expect(
-      paperclipRunnerFinalResponse([
+      pilibalaRunnerFinalResponse([
         {
           id: "provider-wait",
           kind: "message",
@@ -1235,24 +1235,24 @@ describe("buildTurnTimelineRows (DOT-217)", () => {
       channel: "final",
       streaming: false,
     } satisfies TaskChatItem;
-    expect(paperclipRunnerFinalResponse([reply, result])).toBe(reply);
-    expect(paperclipRunnerFinalResponse([reply], { yielded: true })).toBe(reply);
+    expect(pilibalaRunnerFinalResponse([reply, result])).toBe(reply);
+    expect(pilibalaRunnerFinalResponse([reply], { yielded: true })).toBe(reply);
     // A provider may echo the wait stub after its authored reply.
     expect(
-      paperclipRunnerFinalResponse([
+      pilibalaRunnerFinalResponse([
         reply,
         { ...reply, id: "stub", text: result.summary },
         result,
       ]),
     ).toBe(reply);
     expect(
-      paperclipRunnerFinalResponse(
+      pilibalaRunnerFinalResponse(
         [{ ...reply, text: "Waiting for Which tools should the storefront use?." }],
         { yielded: true },
       ),
     ).toBeUndefined();
     expect(
-      paperclipRunnerFinalResponse([{ ...reply, text: result.summary }], {
+      pilibalaRunnerFinalResponse([{ ...reply, text: result.summary }], {
         yielded: true,
         waitSummary: result.summary,
       }),
@@ -1296,7 +1296,7 @@ describe("buildTurnTimelineRows (DOT-217)", () => {
     );
 
     const rows = buildTurnTimelineRows(
-      paperclipRunnerTimelineItems(embedded),
+      pilibalaRunnerTimelineItems(embedded),
       false,
     );
     expect(
@@ -1323,7 +1323,7 @@ describe("buildTurnTimelineRows (DOT-217)", () => {
       eventType: "item.completed", stream: "system", level: "info", color: null, message: null,
       createdAt: new Date(TS),
       payload: { prpEvent: {
-        schema: "paperclip.prp.event.v1", sourceEventId: "write-boundary", sourceInstanceId: "runner-1",
+        schema: "pilibala.prp.event.v1", sourceEventId: "write-boundary", sourceInstanceId: "runner-1",
         sourceKind: "runner", sourceSeq: 1, runId, normalizedSessionId: "session-1", eventType: "item.completed",
         schemaVersion: 1, priority: 1, emittedAt: TS,
         payload: { kind: "tool_result", item: { id: "write-plan", tool_use_id: "write-plan", type: "tool_result",
@@ -1510,7 +1510,7 @@ describe("transcriptToTaskChatItems native usage", () => {
           outputTokens: 10,
           cachedTokens: 5,
           costUsd: 0.02,
-          subtype: "paperclip_runner_usage",
+          subtype: "pilibala_runner_usage",
           isError: false,
           errors: [],
         },
@@ -1544,7 +1544,7 @@ describe("transcriptToTaskChatItems native usage", () => {
           outputTokens: 20,
           cachedTokens: 0,
           costUsd: 0,
-          subtype: "paperclip_runner_session_usage",
+          subtype: "pilibala_runner_session_usage",
           isError: false,
           errors: [],
         },
@@ -1627,14 +1627,14 @@ describe("buildTurnSummary tool counting", () => {
     const runUsage = {
       kind: "result",
       ts: TS,
-      subtype: "paperclip_runner_usage",
+      subtype: "pilibala_runner_usage",
       inputTokens: 40,
       outputTokens: 10,
     } as TranscriptEntry;
     const sessionUsage = {
       kind: "result",
       ts: TS,
-      subtype: "paperclip_runner_session_usage",
+      subtype: "pilibala_runner_session_usage",
       inputTokens: 800,
       outputTokens: 200,
     } as TranscriptEntry;
@@ -1912,7 +1912,7 @@ describe("settledRunChildren (PAP-361)", () => {
           outputTokens: 10,
           cachedTokens: 0,
           costUsd: 0,
-          subtype: "paperclip_runner_usage",
+          subtype: "pilibala_runner_usage",
           isError: false,
           errors: [],
         } as TranscriptEntry,
@@ -1945,7 +1945,7 @@ describe("settledRunChildren (PAP-361)", () => {
           outputTokens: 10,
           cachedTokens: 0,
           costUsd: 0,
-          subtype: "paperclip_runner_usage",
+          subtype: "pilibala_runner_usage",
           isError: false,
           errors: [],
         } as TranscriptEntry,
@@ -2017,7 +2017,7 @@ describe("settledRunChildren (PAP-361)", () => {
           outputTokens: 10,
           cachedTokens: 0,
           costUsd: 0,
-          subtype: "paperclip_runner_usage",
+          subtype: "pilibala_runner_usage",
           isError: false,
           errors: [],
         } as TranscriptEntry,
@@ -2067,7 +2067,7 @@ describe("settledRunChildren (PAP-361)", () => {
   });
 });
 
-describe("paperclip runner semantic channels", () => {
+describe("pilibala runner semantic channels", () => {
   it("concatenates fragmented reasoning deltas into logical lines", () => {
     const parsed = transcriptToTaskChatItems(
       [
@@ -2274,7 +2274,7 @@ describe("paperclip runner semantic channels", () => {
       {
         id: "tool",
         kind: "tool",
-        name: "Paperclip_finish",
+        name: "Pilibala_finish",
         status: "completed",
         target: "done",
       },
@@ -2298,7 +2298,7 @@ describe("paperclip runner semantic channels", () => {
       },
     ];
 
-    expect(paperclipRunnerHistoryItems(items).map((item) => item.id)).toEqual([
+    expect(pilibalaRunnerHistoryItems(items).map((item) => item.id)).toEqual([
       "tool",
       "interrupt",
       "runner",
@@ -2344,8 +2344,8 @@ describe("paperclip runner semantic channels", () => {
       {
         id: "finish",
         kind: "tool",
-        name: "Paperclip_finish",
-        rawName: "paperclip_finish",
+        name: "Pilibala_finish",
+        rawName: "pilibala_finish",
         status: "completed",
       },
       {
@@ -2396,7 +2396,7 @@ describe("paperclip runner semantic channels", () => {
       },
     ];
 
-    expect(paperclipRunnerActivityItems(items).map((item) => item.id)).toEqual([
+    expect(pilibalaRunnerActivityItems(items).map((item) => item.id)).toEqual([
       "progress",
       "thinking",
       "tool",
@@ -2917,7 +2917,7 @@ describe("harness status notices", () => {
     kind: "provider_activity", ts: TS, family: "provider_notice", eventType: "provider.notice.recorded",
     status: payload.severity === "error" ? "failed" : "informational", title: "Provider notice",
     summary: String(payload.summary ?? ""),
-    payload: { schema: "paperclip.provider.notice.v1", noticeId, scope: "turn", userActionable: false, ...payload },
+    payload: { schema: "pilibala.provider.notice.v1", noticeId, scope: "turn", userActionable: false, ...payload },
   });
   const read: TranscriptEntry = { kind: "tool_call", ts: TS, toolUseId: "read-1", name: "read_file", input: { path: "a.ts" } };
   const retry = notice("error:retry:turn-1", {
@@ -2931,7 +2931,7 @@ describe("harness status notices", () => {
       notice("compaction-1", { severity: "info", category: "context_compaction", recoverable: true, summary: "Compacting context", details: [{ name: "Phase", value: "running" }] }),
       notice("warning-1", { severity: "warning", category: "warning", recoverable: true, summary: "noise" }),
     ], { runId: "status", running: true });
-    const rows = buildTurnTimelineRows(paperclipRunnerTimelineItems(parsed), true);
+    const rows = buildTurnTimelineRows(pilibalaRunnerTimelineItems(parsed), true);
     expect(rows.map((row) => row.kind === "protocol" && row.surface === "provider_activity" ? row.id : row.kind)).toHaveLength(2);
     const chip = rows[1];
     expect(chip.kind === "protocol" && chip.surface === "provider_activity" && chip.details.find((d) => d.label === "Phase")?.value).toBe("running");
@@ -2939,14 +2939,14 @@ describe("harness status notices", () => {
   });
 
   it("marks a retry resolved once real work follows, and drops it behind a fatal error", () => {
-    const live = buildTurnTimelineRows(paperclipRunnerTimelineItems(transcriptToTaskChatItems([read, retry], { runId: "r", running: true })), true);
+    const live = buildTurnTimelineRows(pilibalaRunnerTimelineItems(transcriptToTaskChatItems([read, retry], { runId: "r", running: true })), true);
     expect(live.at(-1)).toMatchObject({ kind: "protocol" });
     expect(live.at(-1)).not.toHaveProperty("resolved");
 
-    const recovered = buildTurnTimelineRows(paperclipRunnerTimelineItems(transcriptToTaskChatItems([read, retry, { ...read, toolUseId: "read-2" }], { runId: "r", running: true })), true);
+    const recovered = buildTurnTimelineRows(pilibalaRunnerTimelineItems(transcriptToTaskChatItems([read, retry, { ...read, toolUseId: "read-2" }], { runId: "r", running: true })), true);
     expect(recovered.find((row) => row.kind === "protocol")).toMatchObject({ resolved: true });
 
-    const failed = buildTurnTimelineRows(paperclipRunnerTimelineItems(transcriptToTaskChatItems([
+    const failed = buildTurnTimelineRows(pilibalaRunnerTimelineItems(transcriptToTaskChatItems([
       read, retry,
       notice("error:final:turn-1", { severity: "error", category: "error", recoverable: false, summary: "You've hit your usage limit." }),
     ], { runId: "r", running: false })), false);
@@ -2960,13 +2960,13 @@ describe("harness status notices", () => {
       severity: "warning", category: "provider_retry", recoverable: true, summary: "Reconnecting... 1/5",
     });
     const work: TranscriptEntry = { ...read, toolUseId: "read-2" };
-    const rows = buildTurnTimelineRows(paperclipRunnerTimelineItems(transcriptToTaskChatItems(
+    const rows = buildTurnTimelineRows(pilibalaRunnerTimelineItems(transcriptToTaskChatItems(
       [read, retry, work, retry2], { runId: "r", running: true })), true)
       .filter((row) => row.kind === "protocol" && row.surface === "provider_activity");
     expect(rows).toHaveLength(2);
     expect(rows[0]).toMatchObject({ resolved: true });
     expect(rows[1]).not.toHaveProperty("resolved");
-    const backToBack = buildTurnTimelineRows(paperclipRunnerTimelineItems(transcriptToTaskChatItems(
+    const backToBack = buildTurnTimelineRows(pilibalaRunnerTimelineItems(transcriptToTaskChatItems(
       [read, retry, retry2], { runId: "r", running: true })), true)
       .filter((row) => row.kind === "protocol" && row.surface === "provider_activity");
     expect(backToBack).toHaveLength(1);
@@ -2975,14 +2975,14 @@ describe("harness status notices", () => {
 
   it("marks a compaction that never completed as interrupted once the turn ends", () => {
     const running = notice("compaction-1", { severity: "info", category: "context_compaction", recoverable: true, summary: "Compacting context", details: [{ name: "Phase", value: "running" }] });
-    const rows = (live: boolean) => buildTurnTimelineRows(paperclipRunnerTimelineItems(transcriptToTaskChatItems([read, running], { runId: "r", running: live })), live)
+    const rows = (live: boolean) => buildTurnTimelineRows(pilibalaRunnerTimelineItems(transcriptToTaskChatItems([read, running], { runId: "r", running: live })), live)
       .filter((row) => row.kind === "protocol" && row.surface === "provider_activity");
     expect(rows(true)[0]).toMatchObject({ status: "informational" });
     expect(rows(false)[0]).toMatchObject({ status: "interrupted" });
   });
 
   it("marks a retry left unresolved by a stopped turn as interrupted", () => {
-    const rows = (live: boolean) => buildTurnTimelineRows(paperclipRunnerTimelineItems(transcriptToTaskChatItems([read, retry], { runId: "r", running: live })), live)
+    const rows = (live: boolean) => buildTurnTimelineRows(pilibalaRunnerTimelineItems(transcriptToTaskChatItems([read, retry], { runId: "r", running: live })), live)
       .filter((row) => row.kind === "protocol" && row.surface === "provider_activity");
     expect(rows(true)[0]).toMatchObject({ status: "informational" });
     expect(rows(false)[0]).toMatchObject({ status: "interrupted" });
@@ -2991,7 +2991,7 @@ describe("harness status notices", () => {
 
   it("treats a retry followed only by the final answer as recovered", () => {
     const answer: TranscriptEntry = { kind: "assistant", ts: TS, text: "Done: 8 lines.", channel: "final" } as TranscriptEntry;
-    const rows = buildTurnTimelineRows(paperclipRunnerTimelineItems(transcriptToTaskChatItems([read, retry, answer], { runId: "r", running: false })), false)
+    const rows = buildTurnTimelineRows(pilibalaRunnerTimelineItems(transcriptToTaskChatItems([read, retry, answer], { runId: "r", running: false })), false)
       .filter((row) => row.kind === "protocol" && row.surface === "provider_activity");
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ resolved: true });
@@ -3004,7 +3004,7 @@ describe("harness status notices", () => {
       { id: "terminal", kind: "protocol", surface: "run_terminal", turnState: "cancelled", runState: "cancelled", disposition: "blocked" } as TaskChatItem,
       { id: "stopped", kind: "marker", variant: "interrupted", label: "Run stopped" } as TaskChatItem,
     ];
-    const rows = buildTurnTimelineRows(paperclipRunnerTimelineItems(parsed), false)
+    const rows = buildTurnTimelineRows(pilibalaRunnerTimelineItems(parsed), false)
       .filter((row) => row.kind === "protocol" && row.surface === "provider_activity");
     expect(rows[0]).toMatchObject({ status: "interrupted" });
     expect(rows[0]).not.toHaveProperty("resolved");
@@ -3016,7 +3016,7 @@ describe("harness status notices", () => {
       { id: "changes", kind: "protocol", surface: "workspace_change", changeSetId: "c", revision: 1, source: "runner_verified",
         complete: true, files: [], totals: { files: 1, additions: 2, deletions: 0 }, patchArtifactRef: null } as TaskChatItem,
     ];
-    const rows = buildTurnTimelineRows(paperclipRunnerTimelineItems(parsed), false)
+    const rows = buildTurnTimelineRows(pilibalaRunnerTimelineItems(parsed), false)
       .filter((row) => row.kind === "protocol" && row.surface === "provider_activity");
     expect(rows[0]).toMatchObject({ status: "interrupted" });
     expect(rows[0]).not.toHaveProperty("resolved");
@@ -3025,12 +3025,12 @@ describe("harness status notices", () => {
   it("lets a context.compacted divider replace the completed compaction chip", () => {
     const compacted = notice("compaction-1", { severity: "info", category: "context_compaction", recoverable: true, summary: "Context compacted", details: [{ name: "Phase", value: "completed" }] });
     const divider: TranscriptEntry = { kind: "provider_activity", ts: TS, family: "context", eventType: "context.compacted", status: "completed", title: "Context", summary: "", payload: { compactionId: "c1", reason: "provider" } };
-    const rows = (entries: TranscriptEntry[]) => buildTurnTimelineRows(paperclipRunnerTimelineItems(transcriptToTaskChatItems(entries, { runId: "r", running: true })), true)
+    const rows = (entries: TranscriptEntry[]) => buildTurnTimelineRows(pilibalaRunnerTimelineItems(transcriptToTaskChatItems(entries, { runId: "r", running: true })), true)
       .filter((row) => row.kind === "protocol" && row.surface === "provider_activity" && row.family === "provider_notice");
     expect(rows([read, compacted])).toHaveLength(1);
     expect(rows([read, compacted, divider])).toHaveLength(0);
     const marker = { id: "m", kind: "marker", variant: "context_compacted", label: "Context compacted" } as unknown as TaskChatItem;
-    const parsed = paperclipRunnerTimelineItems(transcriptToTaskChatItems([read, compacted], { runId: "r", running: true }));
+    const parsed = pilibalaRunnerTimelineItems(transcriptToTaskChatItems([read, compacted], { runId: "r", running: true }));
     const withMarker = buildTurnTimelineRows([...parsed, marker], true)
       .filter((row) => row.kind === "protocol" && row.surface === "provider_activity");
     expect(withMarker).toHaveLength(0);

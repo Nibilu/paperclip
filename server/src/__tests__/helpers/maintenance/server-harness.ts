@@ -1,4 +1,4 @@
-import type { ManagedExperimentalFeatureKey } from "@paperclipai/shared";
+import type { ManagedExperimentalFeatureKey } from "@pilibalaai/shared";
 import type { IdleWorkCaptureSnapshot } from './idle-work-capture.js';
 import type { IncomingHttpSnapshot } from '../../../../../scripts/sleep-qualification/evidence.mjs';
 import { fork } from "node:child_process";
@@ -63,11 +63,11 @@ export interface MaintenanceConfiguration {
   storageProvider?: "local_disk" | "s3";
 }
 export interface MaintenanceRuntimeSecrets {
-  PAPERCLIP_AGENT_JWT_SECRET: string;
-  PAPERCLIP_DECISION_SIGNING_SECRET: string;
-  PAPERCLIP_TOOL_ACTION_SIGNING_SECRET: string;
+  PILIBALA_AGENT_JWT_SECRET: string;
+  PILIBALA_DECISION_SIGNING_SECRET: string;
+  PILIBALA_TOOL_ACTION_SIGNING_SECRET: string;
   BETTER_AUTH_SECRET: string;
-  PAPERCLIP_SECRETS_MASTER_KEY: string;
+  PILIBALA_SECRETS_MASTER_KEY: string;
 }
 export interface MaintenanceServerOptions {
   runtimeSecrets?: Readonly<MaintenanceRuntimeSecrets>;
@@ -86,11 +86,11 @@ export async function startMaintenanceServer(databaseUrl: string, options: Maint
   const configuration = options.configuration;
   const runtimeSecrets = options.runtimeSecrets;
   if (runtimeSecrets !== undefined) {
-    const keys: Array<keyof MaintenanceRuntimeSecrets> = ['PAPERCLIP_AGENT_JWT_SECRET', 'PAPERCLIP_DECISION_SIGNING_SECRET',
-      'PAPERCLIP_TOOL_ACTION_SIGNING_SECRET', 'BETTER_AUTH_SECRET', 'PAPERCLIP_SECRETS_MASTER_KEY'];
+    const keys: Array<keyof MaintenanceRuntimeSecrets> = ['PILIBALA_AGENT_JWT_SECRET', 'PILIBALA_DECISION_SIGNING_SECRET',
+      'PILIBALA_TOOL_ACTION_SIGNING_SECRET', 'BETTER_AUTH_SECRET', 'PILIBALA_SECRETS_MASTER_KEY'];
     if (!runtimeSecrets || Object.keys(runtimeSecrets).length !== keys.length || keys.some(key =>
       typeof runtimeSecrets[key] !== 'string' || runtimeSecrets[key].trim().length < 32)
-      || !/^[a-f0-9]{64}$/.test(runtimeSecrets.PAPERCLIP_SECRETS_MASTER_KEY)) {
+      || !/^[a-f0-9]{64}$/.test(runtimeSecrets.PILIBALA_SECRETS_MASTER_KEY)) {
       throw new Error('Maintenance runtimeSecrets requires exactly five complete generated fixture secrets');
     }
   }
@@ -102,10 +102,10 @@ export async function startMaintenanceServer(databaseUrl: string, options: Maint
     throw new Error('Managed tenant fixture requires the supported authenticated S3 profile');
   }
   const tenantHeaders: Record<string, string> = options.tenantActor ? {
-    'x-paperclip-cloud-tenant-token': 'maintenance-tenant-token', 'x-paperclip-cloud-stack-id': 'maintenance-stack',
-    'x-paperclip-cloud-stack-role': 'owner', 'x-paperclip-cloud-user-id': options.tenantActor.userId,
-    'x-paperclip-cloud-user-email': options.tenantActor.email, 'x-paperclip-cloud-user-name': options.tenantActor.name,
-    'x-paperclip-cloud-paperclip-company-name': 'Configured sleep acceptance',
+    'x-pilibala-cloud-tenant-token': 'maintenance-tenant-token', 'x-pilibala-cloud-stack-id': 'maintenance-stack',
+    'x-pilibala-cloud-stack-role': 'owner', 'x-pilibala-cloud-user-id': options.tenantActor.userId,
+    'x-pilibala-cloud-user-email': options.tenantActor.email, 'x-pilibala-cloud-user-name': options.tenantActor.name,
+    'x-pilibala-cloud-pilibala-company-name': 'Configured sleep acceptance',
   } : {};
   for (const origin of [configuration?.telemetryOrigin, configuration?.otelOrigin]) {
     if (!origin) continue;
@@ -163,46 +163,46 @@ export async function startMaintenanceServer(databaseUrl: string, options: Maint
       execArgv: [...(options.childPreload ? ["--require", fileURLToPath(options.childPreload)] : []), ...((configuration?.announcements || options.captureIdleWork || options.childEntry) ? ['--experimental-test-module-mocks'] : []), "--import", fileURLToPath(new URL("../../../../node_modules/tsx/dist/loader.mjs", import.meta.url))],
       env: {
         ...(captureStartedAt === undefined ? {} : {
-          PAPERCLIP_MAINTENANCE_IDLE_WORK_CAPTURE: '1',
-          PAPERCLIP_DB_RESPONSE_CAPTURE_WINDOW: `${new Date(captureStartedAt).toISOString()}/${new Date(captureStartedAt + 60_000).toISOString()}`,
+          PILIBALA_MAINTENANCE_IDLE_WORK_CAPTURE: '1',
+          PILIBALA_DB_RESPONSE_CAPTURE_WINDOW: `${new Date(captureStartedAt).toISOString()}/${new Date(captureStartedAt + 60_000).toISOString()}`,
         }),
         ...(options.childPreload ? {
-          PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG: process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG,
-          PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_ORIGINS: JSON.stringify([options.githubOrigin, options.cloud?.s3Origin].filter(Boolean)),
+          PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG: process.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG,
+          PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_ORIGINS: JSON.stringify([options.githubOrigin, options.cloud?.s3Origin].filter(Boolean)),
         } : {}),
         PATH: process.env.PATH, TMPDIR: process.env.TMPDIR, NODE_ENV: "production",
-        PAPERCLIP_HOME: directory, PAPERCLIP_CONFIG: configPath, PAPERCLIP_INSTANCE_ID: "maintenance-test",
-        PAPERCLIP_RUNNER_STATE_DIR: path.join(directory, "durable-sessions"),
+        PILIBALA_HOME: directory, PILIBALA_CONFIG: configPath, PILIBALA_INSTANCE_ID: "maintenance-test",
+        PILIBALA_RUNNER_STATE_DIR: path.join(directory, "durable-sessions"),
         DATABASE_URL: proxy.url, DATABASE_POOL_MAX: options.databasePoolMax === undefined ? (configuration ? "4" : "6") : String(options.databasePoolMax), DATABASE_APPLICATION_NAME: "maintenance-integration-test",
-        PAPERCLIP_AGENT_JWT_SECRET: runtimeSecrets?.PAPERCLIP_AGENT_JWT_SECRET ?? randomUUID(), PAPERCLIP_DECISION_SIGNING_SECRET: runtimeSecrets?.PAPERCLIP_DECISION_SIGNING_SECRET ?? randomUUID(),
-        PAPERCLIP_TOOL_ACTION_SIGNING_SECRET: runtimeSecrets?.PAPERCLIP_TOOL_ACTION_SIGNING_SECRET ?? randomUUID(), BETTER_AUTH_SECRET: runtimeSecrets?.BETTER_AUTH_SECRET ?? randomUUID(),
-        CODEX_HOME: path.join(directory, "codex"), PAPERCLIP_ANNOUNCEMENTS_ENABLED: String(configuration?.announcements ?? false),
-        ...(configuration?.announcements ? { PAPERCLIP_MAINTENANCE_ANNOUNCEMENT_FIXTURE: '1' } : {}),
-        PAPERCLIP_DB_BACKUP_ENABLED: String(Boolean(configuration?.automaticBackups)), PAPERCLIP_UI_DEV_MIDDLEWARE: "false",
-        ...(configuration?.automaticBackups ? { PAPERCLIP_DB_BACKUP_IDLE_CHECKPOINT_ENABLED: configuration.automaticBackups.idleCheckpoint ? "1" : "0" } : {}),
-        ...(configuration?.telemetryOrigin ? { PAPERCLIP_TELEMETRY_ENDPOINT: configuration.telemetryOrigin } : {}),
+        PILIBALA_AGENT_JWT_SECRET: runtimeSecrets?.PILIBALA_AGENT_JWT_SECRET ?? randomUUID(), PILIBALA_DECISION_SIGNING_SECRET: runtimeSecrets?.PILIBALA_DECISION_SIGNING_SECRET ?? randomUUID(),
+        PILIBALA_TOOL_ACTION_SIGNING_SECRET: runtimeSecrets?.PILIBALA_TOOL_ACTION_SIGNING_SECRET ?? randomUUID(), BETTER_AUTH_SECRET: runtimeSecrets?.BETTER_AUTH_SECRET ?? randomUUID(),
+        CODEX_HOME: path.join(directory, "codex"), PILIBALA_ANNOUNCEMENTS_ENABLED: String(configuration?.announcements ?? false),
+        ...(configuration?.announcements ? { PILIBALA_MAINTENANCE_ANNOUNCEMENT_FIXTURE: '1' } : {}),
+        PILIBALA_DB_BACKUP_ENABLED: String(Boolean(configuration?.automaticBackups)), PILIBALA_UI_DEV_MIDDLEWARE: "false",
+        ...(configuration?.automaticBackups ? { PILIBALA_DB_BACKUP_IDLE_CHECKPOINT_ENABLED: configuration.automaticBackups.idleCheckpoint ? "1" : "0" } : {}),
+        ...(configuration?.telemetryOrigin ? { PILIBALA_TELEMETRY_ENDPOINT: configuration.telemetryOrigin } : {}),
         ...(configuration?.otelOrigin ? { OTEL_EXPORTER_OTLP_ENDPOINT: configuration.otelOrigin, OTEL_EXPORTER_OTLP_PROTOCOL: "http/json" } : {}),
         HEARTBEAT_SCHEDULER_ENABLED: String(options.enabled ?? true),
-        PAPERCLIP_MAINTENANCE_FAKE_CLOCK: String(options.clock ?? false),
-        ...(options.suppressed ? { PAPERCLIP_IN_WORKTREE: "true" } : {}),
-        ...(options.githubOrigin ? { PAPERCLIP_MAINTENANCE_GITHUB_ORIGIN: options.githubOrigin } : {}),
+        PILIBALA_MAINTENANCE_FAKE_CLOCK: String(options.clock ?? false),
+        ...(options.suppressed ? { PILIBALA_IN_WORKTREE: "true" } : {}),
+        ...(options.githubOrigin ? { PILIBALA_MAINTENANCE_GITHUB_ORIGIN: options.githubOrigin } : {}),
         ...(options.connector ? {
-          PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID: options.connector.instanceId ?? "maintenance-connector", PAPERCLIP_CLOUD_CONNECTOR_ENVIRONMENT: "test",
-          PAPERCLIP_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY: options.connector.signPrivateKey,
-          PAPERCLIP_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY: options.connector.sealPrivateKey,
-          PAPERCLIP_CLOUD_CONNECTOR_BASE_URL: options.connector.origin,
+          PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID: options.connector.instanceId ?? "maintenance-connector", PILIBALA_CLOUD_CONNECTOR_ENVIRONMENT: "test",
+          PILIBALA_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY: options.connector.signPrivateKey,
+          PILIBALA_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY: options.connector.sealPrivateKey,
+          PILIBALA_CLOUD_CONNECTOR_BASE_URL: options.connector.origin,
         } : {}),
-        ...(options.controlJwks ? { PAPERCLIP_CLOUD_STACK_ID: "maintenance-stack", PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS: options.controlJwks } : {}),
+        ...(options.controlJwks ? { PILIBALA_CLOUD_STACK_ID: "maintenance-stack", PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS: options.controlJwks } : {}),
         ...(options.cloud ? {
-          PAPERCLIP_MANAGED_CONFIG: JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "2026.720.0", features: configuration?.managedFeatures ?? {}, plugins: { autoInstall: [] } }),
-          PAPERCLIP_SECRETS_MASTER_KEY: runtimeSecrets?.PAPERCLIP_SECRETS_MASTER_KEY ?? randomBytes(32).toString("hex"),
-          PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN: "maintenance-tenant-token", PAPERCLIP_CLOUD_STACK_ID: "maintenance-stack",
-          PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS: options.cloud.jwks, PAPERCLIP_CLOUD_WARM_STANDBY: options.cloud.standby ? "1" : "0",
-          PAPERCLIP_PUBLIC_URL: options.tenantActor ? `http://127.0.0.1:${address.port}` : "https://pool-maintenance.staging.paperclip.app", PAPERCLIP_PRIMARY_HOST: options.tenantActor ? "127.0.0.1" : "pool-maintenance.staging.paperclip.app",
-          ...(options.tenantActor ? { PAPERCLIP_MAINTENANCE_MANAGED_TENANT: "1" } : {}),
+          PILIBALA_MANAGED_CONFIG: JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "2026.720.0", features: configuration?.managedFeatures ?? {}, plugins: { autoInstall: [] } }),
+          PILIBALA_SECRETS_MASTER_KEY: runtimeSecrets?.PILIBALA_SECRETS_MASTER_KEY ?? randomBytes(32).toString("hex"),
+          PILIBALA_CLOUD_TENANT_SERVER_TOKEN: "maintenance-tenant-token", PILIBALA_CLOUD_STACK_ID: "maintenance-stack",
+          PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS: options.cloud.jwks, PILIBALA_CLOUD_WARM_STANDBY: options.cloud.standby ? "1" : "0",
+          PILIBALA_PUBLIC_URL: options.tenantActor ? `http://127.0.0.1:${address.port}` : "https://pool-maintenance.staging.pilibala.app", PILIBALA_PRIMARY_HOST: options.tenantActor ? "127.0.0.1" : "pool-maintenance.staging.pilibala.app",
+          ...(options.tenantActor ? { PILIBALA_MAINTENANCE_MANAGED_TENANT: "1" } : {}),
           AWS_ACCESS_KEY_ID: "maintenance-fixture", AWS_SECRET_ACCESS_KEY: "maintenance-fixture", AWS_EC2_METADATA_DISABLED: "true",
         } : {}),
-        PAPERCLIP_MIGRATION_PROMPT: "never", PAPERCLIP_MIGRATION_AUTO_APPLY: "true", PAPERCLIP_MANAGED_RUNTIME_HTTPS: "off",
+        PILIBALA_MIGRATION_PROMPT: "never", PILIBALA_MIGRATION_AUTO_APPLY: "true", PILIBALA_MANAGED_RUNTIME_HTTPS: "off",
       },
       stdio: ["ignore", "pipe", "pipe", "ipc"],
     });
@@ -263,7 +263,7 @@ export async function startMaintenanceServer(databaseUrl: string, options: Maint
         if (options.clock) await request("realtime");
         try {
           const response = await fetch(`http://127.0.0.1:${port}/api${route}`, { method, signal: AbortSignal.timeout(30_000),
-            headers: { "Content-Type": "application/json", ...(Object.keys(headers ?? {}).some(key => ["authorization", "x-paperclip-cloud-control"].includes(key.toLowerCase())) ? {} : tenantHeaders), ...headers }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+            headers: { "Content-Type": "application/json", ...(Object.keys(headers ?? {}).some(key => ["authorization", "x-pilibala-cloud-control"].includes(key.toLowerCase())) ? {} : tenantHeaders), ...headers }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
           const value = await response.json();
           if (!response.ok) throw new Error(`Maintenance API ${method} ${route}: ${response.status} ${JSON.stringify(value)}`);
           return value as T;

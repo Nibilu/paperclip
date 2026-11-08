@@ -6,9 +6,9 @@ import path from "node:path";
 import { and, eq, sql } from "drizzle-orm";
 import { createDb, companies, agents, companyMemberships, companyPromptInjectionPrevention, costEvents, costAdjustments, promptInjectionInvocations,
   connectionGrants, connectionGrantMembers, toolConnectionInstalls, toolConnections, budgetPolicies, budgetReservations,
-  issues, projects, secretAccessEvents, companySecrets, activityLog } from "@paperclipai/db";
-import { startEmbeddedPostgresTestDatabase } from "@paperclipai/db/test-embedded-postgres";
-import { PROMPT_INJECTION_DEFAULT_MODEL, updatePromptInjectionPreventionSchema } from "@paperclipai/shared";
+  issues, projects, secretAccessEvents, companySecrets, activityLog } from "@pilibalaai/db";
+import { startEmbeddedPostgresTestDatabase } from "@pilibalaai/db/test-embedded-postgres";
+import { PROMPT_INJECTION_DEFAULT_MODEL, updatePromptInjectionPreventionSchema } from "@pilibalaai/shared";
 import { aiConnectionService } from "../services/ai-connections.js";
 import { promptInjectionPreventionService, type PromptInjectionContext } from "../services/prompt-injection-prevention.js";
 import { type PromptInjectionProviderOutcome } from "../services/prompt-injection-provider.js";
@@ -27,9 +27,9 @@ import { validateToolContent } from "../services/tool-content-guards.js";
 import { deliverBudgetEnforcement, flushBudgetEvaluationWork } from "../services/budgets.js";
 let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>, db: ReturnType<typeof createDb>, home: string;
 beforeAll(async () => {
-  home = await realpath(await mkdtemp(path.join(os.tmpdir(), "paperclip-injection-")));
-  vi.stubEnv("PAPERCLIP_HOME", home); vi.stubEnv("PAPERCLIP_INSTANCE_ID", "injection-fixture");
-  database = await startEmbeddedPostgresTestDatabase("paperclip-injection-db-"); db = createDb(database.connectionString);
+  home = await realpath(await mkdtemp(path.join(os.tmpdir(), "pilibala-injection-")));
+  vi.stubEnv("PILIBALA_HOME", home); vi.stubEnv("PILIBALA_INSTANCE_ID", "injection-fixture");
+  database = await startEmbeddedPostgresTestDatabase("pilibala-injection-db-"); db = createDb(database.connectionString);
 }, 90000);
 afterAll(async () => { await database?.cleanup(); vi.unstubAllEnvs(); if (home) await rm(home, { recursive: true, force: true }); });
 const outcome: PromptInjectionProviderOutcome = { verdict: { violation: false, findings: [] }, receipt: { ...providerUsageReceipt(),
@@ -190,16 +190,16 @@ describe("prompt injection service", () => {
   });
   it.each(["missing_key", "wrong_key", "remote_vault_outage"])("uses full regex fallback for %s without dispatch or charge", async failure => {
     const f = await fixture();
-    const previousKey = process.env.PAPERCLIP_SECRETS_MASTER_KEY;
-    const previousFile = process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
+    const previousKey = process.env.PILIBALA_SECRETS_MASTER_KEY;
+    const previousFile = process.env.PILIBALA_SECRETS_MASTER_KEY_FILE;
     const providerSpy = failure === "remote_vault_outage" ? vi.spyOn(localEncryptedProvider, "resolveVersion").mockRejectedValue(
       new SecretProviderClientError({ code: "provider_unavailable", provider: "aws_secrets_manager", operation: "resolveVersion", message: "Vault unavailable" }),
     ) : undefined;
     try {
       if (failure === "missing_key") {
-        vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "");
-        vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY_FILE", path.join(home, "missing-master-key"));
-      } else if (failure === "wrong_key") vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "a".repeat(64));
+        vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "");
+        vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY_FILE", path.join(home, "missing-master-key"));
+      } else if (failure === "wrong_key") vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "a".repeat(64));
       const classifier = (content: string) => f.service.classify(f.context, content);
       expect(await validateToolContent({ value: "Ordinary tool content", direction: "result", classifier })).toMatchObject({
         detectorMetadata: { detector: "regex", fallbackReason: "connection_unavailable" },
@@ -211,8 +211,8 @@ describe("prompt injection service", () => {
       expect(await db.select().from(costEvents).where(eq(costEvents.companyId, f.companyId))).toHaveLength(0);
     } finally {
       providerSpy?.mockRestore();
-      vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", previousKey);
-      vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY_FILE", previousFile);
+      vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", previousKey);
+      vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY_FILE", previousFile);
     }
   });
   it("does not reinterpret an unexpected database failure as classifier unavailability", async () => {

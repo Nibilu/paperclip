@@ -1,8 +1,8 @@
 import { measureRunPhase } from "./execution-preparation-timing.js";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { Db } from "@paperclipai/db";
-import type { CompanySkillVersionFileInventoryEntry } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import type { CompanySkillVersionFileInventoryEntry } from "@pilibalaai/shared";
 import { skillPackageStore, type StoredSkillVersion } from "./skill-package-store.js";
 import { assertSkillPackageFileSize, packageSha256, verifySkillPackageDirectory, relocateSkillPackageVerification, type SkillPackageFile, type SkillPackageManifest } from "./skill-package-files.js";
 import { REPOSITORY_CONTENT_DIR, repositorySkillProjection } from "./skill-repository-package.js";

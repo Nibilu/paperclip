@@ -2,8 +2,8 @@
  * Extracts the two controller inputs that must match a Daytona runner image
  * exactly, without Docker:
  *
- * - `/usr/local/bin/paperclip-runnerd` → PAPERCLIP_RUNNER_REMOTE_BINARY_PATH
- * - `/opt/paperclip-runner/provider-pack/` → PAPERCLIP_RUNNER_REMOTE_PROVIDER_PACK_PATH
+ * - `/usr/local/bin/pilibala-runnerd` → PILIBALA_RUNNER_REMOTE_BINARY_PATH
+ * - `/opt/pilibala-runner/provider-pack/` → PILIBALA_RUNNER_REMOTE_PROVIDER_PACK_PATH
  *
  * `skopeo copy` writes the linux/amd64 manifest, config and layer blobs to a
  * directory (no daemon). The layers are then walked from top to bottom,
@@ -24,11 +24,11 @@ import type { Readable } from "node:stream";
 
 const execFileAsync = promisify(execFile);
 
-export const RUNNERD_PATH = "usr/local/bin/paperclip-runnerd";
-export const PROVIDER_PACK_PATH = "opt/paperclip-runner/provider-pack";
-export const CONTENT_ID_LABEL = "io.paperclip.runner.content-id";
+export const RUNNERD_PATH = "usr/local/bin/pilibala-runnerd";
+export const PROVIDER_PACK_PATH = "opt/pilibala-runner/provider-pack";
+export const CONTENT_ID_LABEL = "io.pilibala.runner.content-id";
 export const REVISION_LABEL = "org.opencontainers.image.revision";
-const RECEIPT_SCHEMA = "paperclip-restart-chaos/daytona-image-artifacts/v1";
+const RECEIPT_SCHEMA = "pilibala-restart-chaos/daytona-image-artifacts/v1";
 const IMMUTABLE_IMAGE = /^[a-z0-9.-]+(?::[0-9]+)?\/[a-z0-9._/-]+@sha256:([0-9a-f]{64})$/;
 
 // ---------------------------------------------------------------- tar reader
@@ -378,8 +378,8 @@ export async function prepareDaytonaImageArtifacts(input: { image: string; cache
     const packDir = path.join(rootfs, ...PROVIDER_PACK_PATH.split("/"));
     const packBytes = await readFile(path.join(packDir, "provider-pack.json"));
     const pack = JSON.parse(packBytes.toString("utf8")) as { schema?: string; digest?: string; payload?: { runnerSourceRevision?: string } };
-    if (pack.schema !== "paperclip-runner/remote-provider-pack/v1" || !/^sha256:[0-9a-f]{64}$/.test(pack.digest ?? "")) {
-      throw new Error("Image provider-pack.json is not a paperclip-runner/remote-provider-pack/v1 manifest");
+    if (pack.schema !== "pilibala-runner/remote-provider-pack/v1" || !/^sha256:[0-9a-f]{64}$/.test(pack.digest ?? "")) {
+      throw new Error("Image provider-pack.json is not a pilibala-runner/remote-provider-pack/v1 manifest");
     }
     if (pack.payload?.runnerSourceRevision !== sourceRevision) {
       throw new Error(`Provider pack was built from ${pack.payload?.runnerSourceRevision ?? "an unknown revision"}, but the image revision label is ${sourceRevision}`);

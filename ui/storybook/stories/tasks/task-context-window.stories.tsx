@@ -21,7 +21,7 @@ import {
   storybookIssueLabels,
   storybookIssues,
   storybookProjects,
-} from "../../fixtures/paperclipData";
+} from "../../fixtures/pilibalaData";
 
 /** Codex gpt-5 class session: 272k window, auto-compacts around 245k. */
 const CODEX_WINDOW = 272_000;
@@ -353,7 +353,7 @@ const meta = {
           "Context row in the task Properties panel with a hover breakdown and Compact now, plus the transcript divider recorded when the agent's context is compacted.",
       },
     },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "tasks/discussion",
         "runs-adapters/runs"

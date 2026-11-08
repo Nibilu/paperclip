@@ -1,4 +1,4 @@
-import { QUALIFIED_ACPX_PROFILES } from "../../packages/paperclip-runner/src/drivers/acpx/qualified-profiles.js";
+import { QUALIFIED_ACPX_PROFILES } from "../../packages/pilibala-runner/src/drivers/acpx/qualified-profiles.js";
 import { describe, expect, it } from "vitest";
 import { rollController, validControllerRollingDeploymentReceipt } from "./controller-rolling-deployment.js";
 import { validControllerReplacementReceipt } from "./controller-replacement.js";

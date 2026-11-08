@@ -8,7 +8,7 @@ describe("tool app gallery URL matching", () => {
   it("matches pasted links against gallery URL patterns", () => {
     expect(getAppDefinitionForUrl("https://mcp.zapier.com/api/mcp")?.slug).toBe("zapier");
     expect(getAppDefinitionForUrl("https://api.githubcopilot.com/mcp/")?.slug).toBe("github");
-    expect(getAppDefinitionForUrl("https://github.com/paperclipai/paperclip/pull/1")?.slug).toBe("github");
+    expect(getAppDefinitionForUrl("https://github.com/pilibalaai/pilibala/pull/1")?.slug).toBe("github");
     expect(getAppDefinitionForUrl("https://docs.google.com/spreadsheets/d/sheet_123/edit")?.slug).toBe("google-sheets");
     expect(getAppDefinitionForUrl("https://gmailmcp.googleapis.com/mcp/v1")?.slug).toBe("gmail");
     expect(getAppDefinitionForUrl("https://workspace.google.com/")?.slug).toBe("google-workspace");
@@ -55,10 +55,10 @@ describe("tool app gallery URL matching", () => {
   });
 
   it("uses Notebook's canonical endpoint without per-instance configuration", () => {
-    const notebook = CONNECTABLE_APP_DEFINITIONS.find((app) => app.slug === "paperclip-notebook");
+    const notebook = CONNECTABLE_APP_DEFINITIONS.find((app) => app.slug === "pilibala-notebook");
     expect(notebook?.availability?.available).toBe(true);
-    expect(notebook?.methods[0]?.defaults?.serverUrl).toBe("https://notebook.paperclip.app/mcp");
-    expect(getAppDefinitionForUrl("https://notebook.paperclip.app/p/page-id")?.slug).toBe("paperclip-notebook");
+    expect(notebook?.methods[0]?.defaults?.serverUrl).toBe("https://notebook.pilibala.app/mcp");
+    expect(getAppDefinitionForUrl("https://notebook.pilibala.app/p/page-id")?.slug).toBe("pilibala-notebook");
   });
 
   it("offers region and custom model connections without claiming arbitrary URLs", () => {

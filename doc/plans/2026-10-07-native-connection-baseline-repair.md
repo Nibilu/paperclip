@@ -4,7 +4,7 @@ The original baseline remains **0 PASS / 15 FAIL**. It did not exercise the inte
 
 ## Original evidence
 
-- [Campaign 37562577199, attempt 1](https://github.com/paperclipai/paperclip/actions/runs/37562577199).
+- [Campaign 37562577199, attempt 1](https://github.com/pilibalaai/pilibala/actions/runs/37562577199).
 - [Original public report](https://d1p6rlowie26tp.cloudfront.net/runner-e2e/campaigns/gha-37562577199-1/index.html).
 - Source and trusted workflow: `caf120105c487532db769670fcd39249483e1d99`.
 - Suite hash: `d7bd6c177fe97e9cba28497555d475b545824796d33178fd0372ae21dbb06429`.
@@ -16,7 +16,7 @@ The original baseline remains **0 PASS / 15 FAIL**. It did not exercise the inte
 | Cells | Observed failure | Supported diagnosis |
 | --- | --- | --- |
 | 10 | Browser could not find the creation-time title; renamed title and pending interaction were visible | Stale-title harness assertion, before any intended user decision |
-| 2 Codex provider-choice cells | Native `request_human_input` schema denial before Paperclip execution | Rejected input; retained diagnostics omit the invalid field. Four rejections in the positive cell are calls within one run, not four paid harness attempts |
+| 2 Codex provider-choice cells | Native `request_human_input` schema denial before Pilibala execution | Rejected input; retained diagnostics omit the invalid field. Four rejections in the positive cell are calls within one run, not four paid harness attempts |
 | 2 OpenCode provider-choice cells | Used the preinstalled HubSpot tool once without a choice card | Fixture had already granted real tool access. This does not prove a consent violation or disregard of a decline; no decline was sent |
 | 1 Claude provider-decline cell | `native_finalization_missing: session returned no semantic result` | Native session failed before choice; retained evidence does not establish the underlying cause |
 
@@ -40,7 +40,7 @@ The corrected Codex provider-choice canary passed before the other 14 distinct c
 
 ## Initial corrected campaign stopped before provider execution
 
-[Campaign 37574251834](https://github.com/paperclipai/paperclip/actions/runs/37574251834) resolved source `cbf1c4fba8eabbf779435f550c455f6a66c5aae5` on trusted master workflow `99a9de9940bf5974352d9dbfbb2f21e62e89689f`. It was cancelled during the shared build after review identified another browser precondition defect. The matrix job has no steps and no runner execution; no provider cell or behavioral grade occurred. Preserve this cancelled campaign separately.
+[Campaign 37574251834](https://github.com/pilibalaai/pilibala/actions/runs/37574251834) resolved source `cbf1c4fba8eabbf779435f550c455f6a66c5aae5` on trusted master workflow `99a9de9940bf5974352d9dbfbb2f21e62e89689f`. It was cancelled during the shared build after review identified another browser precondition defect. The matrix job has no steps and no runner execution; no provider cell or behavioral grade occurred. Preserve this cancelled campaign separately.
 
 The initial stable-ID check assumed whitespace around the identifier. The real breadcrumb uses adjacent title/identifier spans. A regression reproduces the failure with `Renamed taskRUN-1`; the corrected check targets the visible identifier element under the current breadcrumb and matches its text exactly. All five browser checks now pass, including wrong route, wrong/partial identifier and an identifier present only in the mutable title or elsewhere on the page. Seven focused suite checks and eval typecheck pass. This review correction changes only browser support and this report; production logic is unchanged.
 
@@ -49,8 +49,8 @@ The initial stable-ID check assumed whitespace around the identifier. The real b
 
 Frozen measured source: `162cc90fdabe7f505b88ae095044531b82784c92`; trusted workflow: `99a9de9940bf5974352d9dbfbb2f21e62e89689f`. These results do not retroactively change the original baseline.
 
-- [Codex provider-second canary 37575158761](https://github.com/paperclipai/paperclip/actions/runs/37575158761): PASS, 17/17 checks, three actual succeeded runs. The saved Arcade choice, separate exact HubSpot access approval, one authorized provider call, persisted Ada Fixture response and actual verification marker all pass. No harness retry. Cleanup and both budget readbacks pass.
-- [Remaining 14 distinct cells, campaign 37576261807](https://github.com/paperclipai/paperclip/actions/runs/37576261807): preserve every first-attempt original grade. Claude provider-decline and provider-second fail after the saved choice on `run.attach`: their run-scoped instruction working-copy path changes while runtime content identity is unchanged. This is not evidence for the unrelated old missing-final failure.
+- [Codex provider-second canary 37575158761](https://github.com/pilibalaai/pilibala/actions/runs/37575158761): PASS, 17/17 checks, three actual succeeded runs. The saved Arcade choice, separate exact HubSpot access approval, one authorized provider call, persisted Ada Fixture response and actual verification marker all pass. No harness retry. Cleanup and both budget readbacks pass.
+- [Remaining 14 distinct cells, campaign 37576261807](https://github.com/pilibalaai/pilibala/actions/runs/37576261807): preserve every first-attempt original grade. Claude provider-decline and provider-second fail after the saved choice on `run.attach`: their run-scoped instruction working-copy path changes while runtime content identity is unchanged. This is not evidence for the unrelated old missing-final failure.
 - Claude service-approve executes the approved service call, then the evaluator fails fast in the gap between the first blocked run finalizing and its continuation appearing. The final ledger retains a second run that starts and is cancelled by cleanup. The earlier workflow snapshot misses it; count both records and do not claim the continuation behavior passed.
 - Codex service-approve executes the approved call, but a yielded result requests another human approval for the same referenced card. Finalization materializes a redundant completion-review card. The original FAIL is retained.
 
@@ -81,7 +81,7 @@ New local verification also passes repository typecheck and build, nine continua
 
 ## Bounded continuation canaries and retained-evidence correction
 
-[Campaign 37581023494](https://github.com/paperclipai/paperclip/actions/runs/37581023494), on measured source `a704a0b9128ab54c1707c1a7ce04c6f969d3a8cb` and trusted master workflow `03cf6a6ecb0caf5e6f9c4e6af87dc723e5e3bca2`, completed **2 PASS / 1 FAIL** on the first and only attempts. Its [original public report](https://d1p6rlowie26tp.cloudfront.net/runner-e2e/campaigns/gha-37581023494-1/index.html) is accessible (HTTP 200). Suite hash `246bcce46091a96be43340213467adc4412f1031836191fc224158322ebff576`; definition digest `7f0b96fd202e68170e30acc10221c6fe012413adb33f932f1a845b13b8109e4c`.
+[Campaign 37581023494](https://github.com/pilibalaai/pilibala/actions/runs/37581023494), on measured source `a704a0b9128ab54c1707c1a7ce04c6f969d3a8cb` and trusted master workflow `03cf6a6ecb0caf5e6f9c4e6af87dc723e5e3bca2`, completed **2 PASS / 1 FAIL** on the first and only attempts. Its [original public report](https://d1p6rlowie26tp.cloudfront.net/runner-e2e/campaigns/gha-37581023494-1/index.html) is accessible (HTTP 200). Suite hash `246bcce46091a96be43340213467adc4412f1031836191fc224158322ebff576`; definition digest `7f0b96fd202e68170e30acc10221c6fe012413adb33f932f1a845b13b8109e4c`.
 
 - **Codex service-approve: PASS**, 17/17 checks. Two succeeded runs, exactly one approved service call, a saved briefing with both returned titles and the actual verification code, no extra pending approval.
 - **OpenCode provider-second: PASS**, 17/17 checks. Three succeeded runs, saved Arcade choice, separate accepted access grant, exactly one `Hubspot_ListContacts`, and a run-attributed final reply containing Ada Fixture and the independently observed marker. The repaired evidence carrier does not establish why the earlier source timed out; a single later pass does not prove the old cause fixed.

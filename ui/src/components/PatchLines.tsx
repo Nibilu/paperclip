@@ -10,6 +10,6 @@ export const PatchLines = memo(function PatchLines({ text }: { text: string }) {
     }));
   }, [text]);
   return <>{lines.map((line, index) => (
-    <span key={index} className="paperclip-patch-line" data-patch-line={line.kind}>{line.text}</span>
+    <span key={index} className="pilibala-patch-line" data-patch-line={line.kind}>{line.text}</span>
   ))}</>;
 });

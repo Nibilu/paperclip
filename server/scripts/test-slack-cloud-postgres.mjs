@@ -11,7 +11,7 @@ const normalOwnerOnly = process.argv.includes('--normal-owner-only');
 const server = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(new URL('../package.json', import.meta.url));
 const guard = path.join(server, 'src/__tests__/helpers/slack-cloud/prewire.cjs');
-const names = ['PAPERCLIP_SLACK_TEST_DATABASE_URL', 'SLACK_EVENT_TEST_DATABASE_URL'];
+const names = ['PILIBALA_SLACK_TEST_DATABASE_URL', 'SLACK_EVENT_TEST_DATABASE_URL'];
 const urls = names.map(name => {
   if (!process.env[name]) throw new Error(`Set ${name} to an owned dedicated PostgreSQL test database`);
   let url;
@@ -25,12 +25,12 @@ if (urls[0].pathname === urls[1].pathname) throw new Error('Slack app and Cloud 
 if (!process.env.SLACK_TEST_CLOUD_DIST || !path.isAbsolute(process.env.SLACK_TEST_CLOUD_DIST)
   || !existsSync(path.join(process.env.SLACK_TEST_CLOUD_DIST, 'connections/broker.js'))) throw new Error('SLACK_TEST_CLOUD_DIST must name the compiled companion Cloud dist directory');
 const vitest = path.join(path.dirname(require.resolve('vitest/package.json')), 'vitest.mjs');
-const ownedHome = mkdtempSync(path.join(tmpdir(), 'paperclip-slack-paired-'));
+const ownedHome = mkdtempSync(path.join(tmpdir(), 'pilibala-slack-paired-'));
 const env = {
   PATH: process.env.PATH, HOME: process.env.HOME, CODEX_HOME: process.env.CODEX_HOME,
-  LANG: process.env.LANG, TMPDIR: ownedHome, PAPERCLIP_HOME: ownedHome,
+  LANG: process.env.LANG, TMPDIR: ownedHome, PILIBALA_HOME: ownedHome,
   NODE_ENV: 'test', NODE_OPTIONS: '', SLACK_GATE_EXPECT_PRELOAD: '1',
-  PAPERCLIP_SLACK_TEST_DATABASE_URL: process.env.PAPERCLIP_SLACK_TEST_DATABASE_URL,
+  PILIBALA_SLACK_TEST_DATABASE_URL: process.env.PILIBALA_SLACK_TEST_DATABASE_URL,
   SLACK_EVENT_TEST_DATABASE_URL: process.env.SLACK_EVENT_TEST_DATABASE_URL,
   SLACK_TEST_CLOUD_DIST: process.env.SLACK_TEST_CLOUD_DIST,
   SLACK_GATE_PROCESS_LOG: process.env.SLACK_GATE_PROCESS_LOG,

@@ -9,15 +9,15 @@ if (args.length !== 2 || !/^--owner=(status|object)$/.test(args[0]) || !/^--stag
   throw new Error('Use --owner=status|object --stage=bootstrap|cycle, or --owner=status --stage=identity');
 }
 if (args[1] === '--stage=identity' && args[0] !== '--owner=status') throw new Error('Identity control requires the status owner');
-const diagnostic = process.env.PAPERCLIP_STATUS_OBJECT_SLEEP_DIAGNOSTIC;
+const diagnostic = process.env.PILIBALA_STATUS_OBJECT_SLEEP_DIAGNOSTIC;
 const diagnosticOwner = args[0] === '--owner=object' && args[1] === '--stage=bootstrap'
   || args[0] === '--owner=status' && args[1] === '--stage=identity';
 if (diagnostic !== undefined && (diagnostic !== '1' || !diagnosticOwner)) {
   throw new Error('Diagnostic capture requires object bootstrap or status identity and the explicit value 1');
 }
 if (!process.version.startsWith('v24.')) throw new Error('Use the actual Node24 executable');
-if (process.env.PAPERCLIP_MAINTENANCE_PG0_CONTROLS) throw new Error('PG0 flag is forbidden for signed owner acceptance');
-const names = ['PAPERCLIP_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL', 'PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL'];
+if (process.env.PILIBALA_MAINTENANCE_PG0_CONTROLS) throw new Error('PG0 flag is forbidden for signed owner acceptance');
+const names = ['PILIBALA_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL', 'PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL'];
 const urls = names.map(name => {
   const value = process.env[name];
   if (!value) throw new Error(`${name} requires an explicit dedicated database`);
@@ -29,20 +29,20 @@ const urls = names.map(name => {
   return url;
 });
 if (urls[0].pathname === urls[1].pathname) throw new Error('App and Cloud fixtures must differ');
-if (process.env.PAPERCLIP_TEST_POSTGRES_ADMIN_URL) {
-  const admin = new URL(process.env.PAPERCLIP_TEST_POSTGRES_ADMIN_URL);
+if (process.env.PILIBALA_TEST_POSTGRES_ADMIN_URL) {
+  const admin = new URL(process.env.PILIBALA_TEST_POSTGRES_ADMIN_URL);
   if (!['postgres:', 'postgresql:'].includes(admin.protocol) || admin.hostname !== '127.0.0.1' || admin.port !== '55448'
     || admin.pathname !== '/postgres' || admin.search || admin.hash) throw new Error('Admin URL must be the same loopback55448/postgres cluster');
 }
-const cloud = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT;
+const cloud = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT;
 if (!cloud || !path.isAbsolute(cloud) || !existsSync(path.join(cloud, 'dist/sleep/fixtures/default-cadence-bridge.js'))) throw new Error('Set exact compiled Cloud checkout');
-if (!path.isAbsolute(process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_NODE || '')) throw new Error('Set exact Node22 executable');
-if (!/^[a-f0-9]{40}$/.test(process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_SHA || '')) throw new Error('Set exact Cloud source SHA');
-const evidence = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_EVIDENCE;
+if (!path.isAbsolute(process.env.PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_NODE || '')) throw new Error('Set exact Node22 executable');
+if (!/^[a-f0-9]{40}$/.test(process.env.PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_SHA || '')) throw new Error('Set exact Cloud source SHA');
+const evidence = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_EVIDENCE;
 if (!evidence || !path.isAbsolute(evidence) || !existsSync(evidence) || !lstatSync(evidence).isDirectory()) {
   throw new Error('Set an existing absolute evidence directory without a symlink');
 }
-const log = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG;
+const log = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG;
 const logStat = log && path.isAbsolute(log) ? lstatSync(log, { throwIfNoEntry: false }) : undefined;
 if (!log || !path.isAbsolute(log) || !existsSync(path.dirname(log))
   || logStat && (!logStat.isFile() || logStat.size !== 0)) throw new Error('Set a fresh absolute guard log');
@@ -55,15 +55,15 @@ for (const entry of readdirSync(evidence)) {
 const require = createRequire(new URL('../server/package.json', import.meta.url));
 const guard = path.join(root, 'scripts/fixtures/skill-default-cadence-network-guard.cjs');
 delete process.env.DATABASE_URL;
-delete process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_ORIGINS;
+delete process.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_ORIGINS;
 require(guard);
 const vitest = path.join(path.dirname(require.resolve('vitest/package.json')), 'vitest.mjs');
 const env = { PATH: process.env.PATH, HOME: process.env.HOME, LANG: process.env.LANG, TMPDIR: process.env.TMPDIR,
-  NODE_ENV: 'test', NODE_OPTIONS: `--require=${guard}`, PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG: log,
-  PAPERCLIP_STATUS_OBJECT_SLEEP_ACCEPTANCE: '1', PAPERCLIP_STATUS_OBJECT_SLEEP_OWNER: args[0].slice(8),
-  PAPERCLIP_STATUS_OBJECT_SLEEP_STAGE: args[1].slice(8), PAPERCLIP_MAINTENANCE_KEEP_ARTIFACTS: '1' };
-for (const name of [...names, 'PAPERCLIP_STATUS_OBJECT_SLEEP_DIAGNOSTIC', 'PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT', 'PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_NODE',
-  'PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_SHA', 'PAPERCLIP_SKILL_DEFAULT_CADENCE_EVIDENCE', 'PAPERCLIP_TEST_POSTGRES_ADMIN_URL']) {
+  NODE_ENV: 'test', NODE_OPTIONS: `--require=${guard}`, PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG: log,
+  PILIBALA_STATUS_OBJECT_SLEEP_ACCEPTANCE: '1', PILIBALA_STATUS_OBJECT_SLEEP_OWNER: args[0].slice(8),
+  PILIBALA_STATUS_OBJECT_SLEEP_STAGE: args[1].slice(8), PILIBALA_MAINTENANCE_KEEP_ARTIFACTS: '1' };
+for (const name of [...names, 'PILIBALA_STATUS_OBJECT_SLEEP_DIAGNOSTIC', 'PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT', 'PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_NODE',
+  'PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_SHA', 'PILIBALA_SKILL_DEFAULT_CADENCE_EVIDENCE', 'PILIBALA_TEST_POSTGRES_ADMIN_URL']) {
   if (process.env[name]) env[name] = process.env[name];
 }
 const child = spawn(process.execPath, ['--require', guard, vitest, 'run', 'server/src/__tests__/status-object-signed-sleep-acceptance.test.ts',

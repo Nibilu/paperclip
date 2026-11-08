@@ -7,9 +7,9 @@ const meta = {
   title: "Tasks and conversations/Agent conversations and project handoff/Design explorations/Agent chat sidebar/Pages",
   component: AgentChatPrototype,
   parameters: { layout: "fullscreen", docs: { description: { component:
-    "The production chat sidebar and pages inside the real Paperclip Layout, including the existing transcript, composer, and context panel. Click Chat to see the landing page, search by name or role, or use + to start or reopen an agent conversation. Each agent has one conversation; sends stay in this Storybook's in-memory fixtures."
+    "The production chat sidebar and pages inside the real Pilibala Layout, including the existing transcript, composer, and context panel. Click Chat to see the landing page, search by name or role, or use + to start or reopen an agent conversation. Each agent has one conversation; sends stay in this Storybook's in-memory fixtures."
   } },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "agent-chat/discovery",
         "agent-chat/history"
@@ -44,7 +44,7 @@ export const AddChat: Story = {
 export const UnreadSwitcher: Story = {
   name: "10 · Switch agents · Unread chats",
   args: { coordinator: true, unreadMessageCounts: { "chat-analyst": 3, "chat-writer": 12 } },
-  parameters: { paperclip: { capabilities: ["agent-chat/discovery", "agent-chat/history"], status: "current", implementation: "production", boundary: "fixtures", notes: "Production header switcher and chat page with per-agent numeric unread counts from the shared chat-list fixture. Does not prove backend read-state persistence or live delivery." } },
+  parameters: { pilibala: { capabilities: ["agent-chat/discovery", "agent-chat/history"], status: "current", implementation: "production", boundary: "fixtures", notes: "Production header switcher and chat page with per-agent numeric unread counts from the shared chat-list fixture. Does not prove backend read-state persistence or live delivery." } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const page = within(canvasElement.ownerDocument.body);
@@ -60,7 +60,7 @@ export const UnreadSwitcherMobile: Story = { ...UnreadSwitcher, name: "12 · Swi
 export const UnreadAddChat: Story = {
   name: "13 · Add chat · Unread counts",
   args: { unreadMessageCounts: { "chat-analyst": 3, "chat-writer": 12 } },
-  parameters: { paperclip: { capabilities: ["agent-chat/discovery", "agent-chat/history"], implementation: "production", boundary: "fixtures", notes: "Production secondary sidebar Add chat picker with numeric unread counts. API data is simulated." } },
+  parameters: { pilibala: { capabilities: ["agent-chat/discovery", "agent-chat/history"], implementation: "production", boundary: "fixtures", notes: "Production secondary sidebar Add chat picker with numeric unread counts. API data is simulated." } },
   play: async ({ canvasElement }) => {
     const page = within(canvasElement.ownerDocument.body);
     await userEvent.click(await within(canvasElement).findByRole("button", { name: "Add chat" }));

@@ -1,26 +1,26 @@
-import { resolveGrokDisableWebSearch } from "../../vendor/paperclip-runner/index.js";
-import { agentHarnessType, normalizeClaudeRunnerOptions } from "@paperclipai/shared";
-import { resolveClaudeEffort, resolveGrokEffort, resolveQualifiedAcpxProfile } from "../../vendor/paperclip-runner/index.js";
+import { resolveGrokDisableWebSearch } from "../../vendor/pilibala-runner/index.js";
+import { agentHarnessType, normalizeClaudeRunnerOptions } from "@pilibalaai/shared";
+import { resolveClaudeEffort, resolveGrokEffort, resolveQualifiedAcpxProfile } from "../../vendor/pilibala-runner/index.js";
 import {
-  isPaperclipRunnerProvider,
-  PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES,
-  PAPERCLIP_RUNNER_ACPX_PROFILES,
-  resolvePaperclipRunnerPermissionMode,
-  resolvePaperclipRunnerCursorMode,
-  resolvePaperclipRunnerPiThinkingLevel,
-  type PaperclipRunnerProvider,
-} from "@paperclipai/adapter-utils";
+  isPilibalaRunnerProvider,
+  PILIBALA_RUNNER_PERMISSION_CAPABILITIES,
+  PILIBALA_RUNNER_ACPX_PROFILES,
+  resolvePilibalaRunnerPermissionMode,
+  resolvePilibalaRunnerCursorMode,
+  resolvePilibalaRunnerPiThinkingLevel,
+  type PilibalaRunnerProvider,
+} from "@pilibalaai/adapter-utils";
 import {
   codexLocalReasoningEffortsForModel,
   isCodexLocalKnownModel,
-} from "@paperclipai/adapter-codex-local";
+} from "@pilibalaai/adapter-codex-local";
 import {
   AGENTCORE_QUALIFIED_MODEL,
   CLAUDE_MANAGED_QUALIFIED_MODEL,
 } from "../provider-profile-qualification.js";
 import { resolveAcpxQualification, resolveAntigravityCandidateAdmission, resolveKimiCandidateAdmission, type AcpxQualificationCandidate } from "./acpx-qualification.js";
 import { compatibleCodexModel } from "./codex-model-fallback.js";
-import { parseNativeCursorCloudConfig, type NativeCursorCloudConfig } from "../../vendor/paperclip-runner/index.js";
+import { parseNativeCursorCloudConfig, type NativeCursorCloudConfig } from "../../vendor/pilibala-runner/index.js";
 
 export const QUALIFIED_OPENCODE_RUNNER_VERSION = "1.18.34" as const;
 export const DEFAULT_OPENCODE_RUNNER_MODEL =
@@ -38,11 +38,11 @@ export const DEFAULT_ACPX_RUNNER_MODELS = {
   kimi: null,
 } as const;
 
-export type QualifiedPaperclipRunnerAcpxAgent =
+export type QualifiedPilibalaRunnerAcpxAgent =
   keyof typeof DEFAULT_ACPX_RUNNER_MODELS;
-type AdmittedPaperclipRunnerAcpxAgent = QualifiedPaperclipRunnerAcpxAgent | AcpxQualificationCandidate | "antigravity";
+type AdmittedPilibalaRunnerAcpxAgent = QualifiedPilibalaRunnerAcpxAgent | AcpxQualificationCandidate | "antigravity";
 
-export type PaperclipRunnerProviderProfile =
+export type PilibalaRunnerProviderProfile =
   | { provider: "cursor_cloud"; backend: "cursor_cloud_api"; model: string }
   | { provider: "muse"; backend: "muse_external"; model: null; museBindingId: string }
   | { provider: "grok_bot"; backend: "grok_bot_mcp"; model: null; externalBindingId: string }
@@ -75,14 +75,14 @@ export type PaperclipRunnerProviderProfile =
       provider: "acpx";
       backend: "acpx_runtime";
       model: string;
-      acpxAgent: AdmittedPaperclipRunnerAcpxAgent;
+      acpxAgent: AdmittedPilibalaRunnerAcpxAgent;
     };
 
-export type PaperclipRunnerNativeProviderInput =
+export type PilibalaRunnerNativeProviderInput =
   | { provider: "cursor_cloud"; model: string; cursorCloud: NativeCursorCloudConfig }
-  | { provider: "muse"; model: null; museBinding: import("../../vendor/paperclip-runner/index.js").MuseBindingSnapshot }
-  | { provider: "grok_bot"; model: null; dotBinding: import("../../vendor/paperclip-runner/index.js").DotBindingSnapshot }
-  | { provider: "openai_dot"; model: null; dotBinding: import("../../vendor/paperclip-runner/index.js").DotBindingSnapshot }
+  | { provider: "muse"; model: null; museBinding: import("../../vendor/pilibala-runner/index.js").MuseBindingSnapshot }
+  | { provider: "grok_bot"; model: null; dotBinding: import("../../vendor/pilibala-runner/index.js").DotBindingSnapshot }
+  | { provider: "openai_dot"; model: null; dotBinding: import("../../vendor/pilibala-runner/index.js").DotBindingSnapshot }
   | {
       provider: "codex";
       model: string | null;
@@ -139,9 +139,9 @@ export type PaperclipRunnerNativeProviderInput =
   | {
       provider: "acpx";
       model: string;
-      acpxAgent: AdmittedPaperclipRunnerAcpxAgent;
+      acpxAgent: AdmittedPilibalaRunnerAcpxAgent;
       homeMode?: "isolated" | "preconfigured";
-      acpxPermissionMode: "approve-all" | "approve-paperclip" | "approve-reads" | "deny-all";
+      acpxPermissionMode: "approve-all" | "approve-pilibala" | "approve-reads" | "deny-all";
       acpxSessionMode?: "agent" | "plan" | "ask";
       piThinkingLevel?: "off" | "low" | "high" | "max";
       claudeEffort?: "low" | "medium" | "high" | "xhigh" | "max";
@@ -149,13 +149,13 @@ export type PaperclipRunnerNativeProviderInput =
       grokDisableWebSearch?: boolean;
     };
 
-export class PaperclipRunnerProviderProfileError extends Error {
+export class PilibalaRunnerProviderProfileError extends Error {
   constructor(
     readonly code: string,
     message: string,
   ) {
     super(message);
-    this.name = "PaperclipRunnerProviderProfileError";
+    this.name = "PilibalaRunnerProviderProfileError";
   }
 }
 
@@ -171,74 +171,74 @@ function optionalString(value: unknown): string | null {
     : null;
 }
 
-export function resolvePaperclipRunnerCursorCloudConfig(config: Record<string, unknown>): NativeCursorCloudConfig {
+export function resolvePilibalaRunnerCursorCloudConfig(config: Record<string, unknown>): NativeCursorCloudConfig {
   const unsupportedEnvironment = Object.keys(asRecord(config.env)).filter(key => key !== "CURSOR_API_KEY");
   if (unsupportedEnvironment.length) {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_cursor_cloud_config_invalid",
-      `Cursor Cloud with Paperclip Runner only supports CURSOR_API_KEY in agent environment settings. Configure hosted secrets in your Cursor Cloud environment instead of ${unsupportedEnvironment.join(", ")}.`);
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_cursor_cloud_config_invalid",
+      `Cursor Cloud with Pilibala Runner only supports CURSOR_API_KEY in agent environment settings. Configure hosted secrets in your Cursor Cloud environment instead of ${unsupportedEnvironment.join(", ")}.`);
   }
   for (const [current, legacy] of [["cloudEnvType", "runtimeEnvType"], ["cloudEnvName", "runtimeEnvName"], ["repoRef", "repoStartingRef"], ["prUrl", "repoPullRequestUrl"]]) {
     if (config[current] !== undefined && config[legacy] !== undefined && config[current] !== config[legacy]) {
-      throw new PaperclipRunnerProviderProfileError("paperclip_runner_cursor_cloud_config_invalid", `Choose one matching value for ${current} and ${legacy}.`);
+      throw new PilibalaRunnerProviderProfileError("pilibala_runner_cursor_cloud_config_invalid", `Choose one matching value for ${current} and ${legacy}.`);
     }
   }
   const unsupported = ["codexPermissionMode", "opencodePermissionMode", "acpxPermissionMode", "acpxSessionMode", "command", "extraArgs", "promptTemplate", "bootstrapPromptTemplate", "modelReasoningEffort", "reasoningEffort", "effort", "modelParams", "executionPlacement", "providerApiPlacement", "controllerPlacement", "apiOnly", "cwd", "workspaceRuntime", "workspaceStrategy"]
     .filter(key => config[key] !== undefined && config[key] !== "" && !(Array.isArray(config[key]) && config[key].length === 0));
   if (config.lifecycleMode !== undefined && config.lifecycleMode !== "per_turn") unsupported.push("lifecycleMode");
   if (config.homeMode === "preconfigured") unsupported.push("homeMode");
-  if (unsupported.length) throw new PaperclipRunnerProviderProfileError("paperclip_runner_cursor_cloud_config_invalid", `Cursor Cloud cannot honor these settings: ${unsupported.join(", ")}.`);
+  if (unsupported.length) throw new PilibalaRunnerProviderProfileError("pilibala_runner_cursor_cloud_config_invalid", `Cursor Cloud cannot honor these settings: ${unsupported.join(", ")}.`);
   const repoUrl = optionalString(config.repoUrl);
   const startingRef = optionalString(config.repoRef ?? config.repoStartingRef);
   const prUrl = optionalString(config.prUrl ?? config.repoPullRequestUrl);
   const envName = optionalString(config.cloudEnvName ?? config.runtimeEnvName);
   try {
     return parseNativeCursorCloudConfig({
-      schema: "paperclip.cursor-cloud.config.v1",
+      schema: "pilibala.cursor-cloud.config.v1",
       repos: repoUrl ? [{ url: repoUrl, ...(startingRef ? { startingRef } : {}), ...(prUrl ? { prUrl } : {}) }] : [],
       env: { type: config.cloudEnvType ?? config.runtimeEnvType ?? "cloud", ...(envName ? { name: envName } : {}) },
       ...Object.fromEntries(["workOnCurrentBranch", "autoCreatePR", "skipReviewerRequest"].filter(key => config[key] !== undefined).map(key => [key, config[key]])),
       ...(config.cursorCloudTimeoutMs !== undefined ? { timeoutMs: config.cursorCloudTimeoutMs } : {}),
     });
   } catch {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_cursor_cloud_config_invalid", "Cursor Cloud requires an HTTPS repository or named Cursor cloud environment, cloud-hosted execution, and supported settings. Its timeout must be between 1 second and 1 hour.");
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_cursor_cloud_config_invalid", "Cursor Cloud requires an HTTPS repository or named Cursor cloud environment, cloud-hosted execution, and supported settings. Its timeout must be between 1 second and 1 hour.");
   }
 }
 
 /** Configuration can be saved before pairing; task admission requires a binding. */
-export function validatePaperclipRunnerDotConfig(config: Record<string, unknown>, requireBinding = true): string | null {
+export function validatePilibalaRunnerDotConfig(config: Record<string, unknown>, requireBinding = true): string | null {
   const bindingId = optionalString(config.dotBindingId);
   if ((requireBinding && !bindingId) || (bindingId && !/^[0-9a-f-]{36}$/i.test(bindingId))
       || config.allowUnmeteredProvider !== true || (config.lifecycleMode && config.lifecycleMode !== "per_turn")
       || optionalString(config.model)) {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_dot_config_invalid", "Dot requires per-turn lifecycle and explicit externally billed, unmetered-provider acknowledgement. Pair a binding before assigning work.");
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_dot_config_invalid", "Dot requires per-turn lifecycle and explicit externally billed, unmetered-provider acknowledgement. Pair a binding before assigning work.");
   }
   return bindingId;
 }
 
 /** Closed personal runtime configuration; model and workspace grants are excluded. */
-export function validatePaperclipRunnerMuseConfig(config: Record<string, unknown>, requireBinding = true): string | null {
+export function validatePilibalaRunnerMuseConfig(config: Record<string, unknown>, requireBinding = true): string | null {
   const bindingId = optionalString(config.museBindingId);
   if ((requireBinding && !bindingId) || (bindingId && !/^[0-9a-f-]{36}$/i.test(bindingId))
       || config.allowUnmeteredProvider !== true || (config.lifecycleMode && config.lifecycleMode !== "per_turn")
       || optionalString(config.model) || config.dotWorkspaceAccess === true || config.dotAttachmentAccess === true) {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_muse_config_invalid", "Muse requires a paired personal-agent binding, per-turn lifecycle and unavailable-usage acknowledgement.");
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_muse_config_invalid", "Muse requires a paired personal-agent binding, per-turn lifecycle and unavailable-usage acknowledgement.");
   }
   return bindingId;
 }
 
-export function validatePaperclipRunnerGrokConfig(config: Record<string, unknown>, requireBinding = true): string | null {
+export function validatePilibalaRunnerGrokConfig(config: Record<string, unknown>, requireBinding = true): string | null {
   const bindingId = optionalString(config.externalBindingId);
   if ((requireBinding && !bindingId) || (bindingId && !/^[0-9a-f-]{36}$/i.test(bindingId))
       || config.allowUnmeteredProvider !== true || (config.lifecycleMode && config.lifecycleMode !== "per_turn")
       || optionalString(config.model) || config.dotWorkspaceAccess === true || config.dotAttachmentAccess === true
       || optionalString(config.cwd) || optionalString(config.command)) {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_grok_config_invalid", "Grok Bot requires a bound per-turn work session and an explicit acknowledgement of unreported provider spending. Paperclip workspace, shell and third-party app tools are unavailable.");
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_grok_config_invalid", "Grok Bot requires a bound per-turn work session and an explicit acknowledgement of unreported provider spending. Pilibala workspace, shell and third-party app tools are unavailable.");
   }
   return bindingId;
 }
 
 /** A task may change a Runner model (and supported effort), but not provider identity. */
-export function projectPaperclipRunnerTaskConfig(
+export function projectPilibalaRunnerTaskConfig(
   backend: "codex_app_server" | "opencode_server" | "acpx_runtime" | "cursor_cloud_api",
   agentConfig: unknown,
   taskOverrides: unknown,
@@ -250,8 +250,8 @@ export function projectPaperclipRunnerTaskConfig(
   // The server resolves a connection's model namespace after task overrides.
   // Carry that model into durable input without allowing routing to change the harness.
   const model = optionalString(managedModel) ?? optionalString(task.model);
-  const grok = backend === "acpx_runtime" && agentHarnessType("paperclip_runner", base) === "grok_local";
-  const supportsEffort = backend === "codex_app_server" || grok || (backend === "acpx_runtime" && agentHarnessType("paperclip_runner", base) === "claude_local");
+  const grok = backend === "acpx_runtime" && agentHarnessType("pilibala_runner", base) === "grok_local";
+  const supportsEffort = backend === "codex_app_server" || grok || (backend === "acpx_runtime" && agentHarnessType("pilibala_runner", base) === "claude_local");
   const effortKey = supportsEffort
     ? ["modelReasoningEffort", "reasoningEffort", "effort"].find((key) => key in task)
     : undefined;
@@ -273,7 +273,7 @@ function positiveNumberOrNull(
   if (value === undefined || value === null || value === "") return null;
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new PaperclipRunnerProviderProfileError(code, message);
+    throw new PilibalaRunnerProviderProfileError(code, message);
   }
   return parsed;
 }
@@ -292,7 +292,7 @@ function boundedPositiveInteger(
     || value <= 0
     || value > maximum
   ) {
-    throw new PaperclipRunnerProviderProfileError(
+    throw new PilibalaRunnerProviderProfileError(
       code,
       `${label} must be an integer between 1 and ${maximum}.`,
     );
@@ -301,23 +301,23 @@ function boundedPositiveInteger(
 }
 
 function assertPermissionMode(
-  provider: PaperclipRunnerProvider,
+  provider: PilibalaRunnerProvider,
   config: Record<string, unknown>,
 ): void {
-  const capability = PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES[provider];
+  const capability = PILIBALA_RUNNER_PERMISSION_CAPABILITIES[provider];
   if (!capability.configurable) return;
   const configured = config[capability.configKey];
   if (
     configured !== undefined
-    && resolvePaperclipRunnerPermissionMode(provider, configured) !== configured
+    && resolvePilibalaRunnerPermissionMode(provider, configured) !== configured
   ) {
     if (provider === "codex") {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_codex_permission_mode_unqualified",
-        "Paperclip Runner currently supports Codex only with codexPermissionMode set to never. Update the agent configuration before starting a new native run.",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_codex_permission_mode_unqualified",
+        "Pilibala Runner currently supports Codex only with codexPermissionMode set to never. Update the agent configuration before starting a new native run.",
       );
     }
-    throw new PaperclipRunnerProviderProfileError(
+    throw new PilibalaRunnerProviderProfileError(
       "runner_permission_mode_invalid",
       `${capability.configKey} is not supported by ${provider}.`,
     );
@@ -356,16 +356,16 @@ export function assertManagedProfileRecoveryBinding(input: {
     || snapshot.environmentId !== stored.environmentId
     || snapshot.betaVersion !== stored.betaVersion
   ) {
-    throw new PaperclipRunnerProviderProfileError(
-      "paperclip_runner_claude_managed_recovery_identity_mismatch",
+    throw new PilibalaRunnerProviderProfileError(
+      "pilibala_runner_claude_managed_recovery_identity_mismatch",
       "The persisted Claude Managed identity no longer matches its qualified profile.",
     );
   }
   const rawBinding = asRecord(asRecord(input.adapterConfig).env).ANTHROPIC_API_KEY;
   const boundSecretId = asRecord(rawBinding).secretId;
   if (boundSecretId !== stored.apiKeySecretId) {
-    throw new PaperclipRunnerProviderProfileError(
-      "paperclip_runner_claude_managed_recovery_secret_mismatch",
+    throw new PilibalaRunnerProviderProfileError(
+      "pilibala_runner_claude_managed_recovery_secret_mismatch",
       "The persisted Claude Managed run is not bound to its profile's current API-key secret.",
     );
   }
@@ -419,8 +419,8 @@ export function assertAgentCoreProfileRecoveryBinding(input: {
     snapshot.profileId !== stored.id
     || fields.some((field) => snapshot[field] !== configuration[field])
   ) {
-    throw new PaperclipRunnerProviderProfileError(
-      "paperclip_runner_aws_agentcore_recovery_identity_mismatch",
+    throw new PilibalaRunnerProviderProfileError(
+      "pilibala_runner_aws_agentcore_recovery_identity_mismatch",
       "The persisted AWS AgentCore identity no longer matches its qualified profile.",
     );
   }
@@ -441,67 +441,67 @@ export function claudeRunnerUnsupportedSettings(config: Record<string, unknown>)
 }
 
 /**
- * Resolve the immutable provider identity used for a fresh Paperclip Runner
+ * Resolve the immutable provider identity used for a fresh Pilibala Runner
  * selection. The persisted adapterConfig is the authority; runtimeConfig is
  * deliberately not consulted so model-profile or migration metadata cannot
  * silently switch the harness selected for a run.
  */
-export function resolvePaperclipRunnerProviderProfile(
+export function resolvePilibalaRunnerProviderProfile(
   adapterConfig: unknown,
   context: { companyId?: string } = {},
-): PaperclipRunnerProviderProfile {
+): PilibalaRunnerProviderProfile {
   const config = asRecord(adapterConfig);
   const candidate = config.provider ?? "codex";
-  if (!isPaperclipRunnerProvider(candidate)) {
-    throw new PaperclipRunnerProviderProfileError(
-      "paperclip_runner_provider_unsupported",
-      "Paperclip Runner provider must be Codex, OpenCode, Claude Managed, AWS AgentCore, or ACPX.",
+  if (!isPilibalaRunnerProvider(candidate)) {
+    throw new PilibalaRunnerProviderProfileError(
+      "pilibala_runner_provider_unsupported",
+      "Pilibala Runner provider must be Codex, OpenCode, Claude Managed, AWS AgentCore, or ACPX.",
     );
   }
 
   if (candidate === "cursor_cloud") {
     const model = optionalString(config.model);
-    if (!model) throw new PaperclipRunnerProviderProfileError("paperclip_runner_cursor_cloud_model_required", "Cursor Cloud requires an explicit model. Select a model before testing or assigning work.");
-    resolvePaperclipRunnerCursorCloudConfig(config);
+    if (!model) throw new PilibalaRunnerProviderProfileError("pilibala_runner_cursor_cloud_model_required", "Cursor Cloud requires an explicit model. Select a model before testing or assigning work.");
+    resolvePilibalaRunnerCursorCloudConfig(config);
     return { provider: "cursor_cloud", backend: "cursor_cloud_api", model };
   }
 
   if (candidate === "muse") {
-    const bindingId = validatePaperclipRunnerMuseConfig(config)!;
+    const bindingId = validatePilibalaRunnerMuseConfig(config)!;
     return { provider: "muse", backend: "muse_external", model: null, museBindingId: bindingId };
   }
   if (candidate === "grok_bot") {
-    return { provider: "grok_bot", backend: "grok_bot_mcp", model: null, externalBindingId: validatePaperclipRunnerGrokConfig(config)! };
+    return { provider: "grok_bot", backend: "grok_bot_mcp", model: null, externalBindingId: validatePilibalaRunnerGrokConfig(config)! };
   }
   if (candidate === "openai_dot") {
-    const bindingId = validatePaperclipRunnerDotConfig(config)!;
+    const bindingId = validatePilibalaRunnerDotConfig(config)!;
     return { provider: "openai_dot", backend: "openai_dot_mcp", model: null, dotBindingId: bindingId };
   }
-  if (candidate === "acpx" && agentHarnessType("paperclip_runner", config) === "claude_local") {
+  if (candidate === "acpx" && agentHarnessType("pilibala_runner", config) === "claude_local") {
     const unsupported = claudeRunnerUnsupportedSettings(config);
-    if (unsupported.length) throw new PaperclipRunnerProviderProfileError("agent_runner_config_incompatible",
-      `Paperclip Runner cannot honor these settings: ${unsupported.join(", ")}. Remove them before retrying.`);
+    if (unsupported.length) throw new PilibalaRunnerProviderProfileError("agent_runner_config_incompatible",
+      `Pilibala Runner cannot honor these settings: ${unsupported.join(", ")}. Remove them before retrying.`);
   }
   assertPermissionMode(candidate, config);
   try {
-    resolvePaperclipRunnerCursorMode(candidate, config.acpxAgent, config.acpxSessionMode);
+    resolvePilibalaRunnerCursorMode(candidate, config.acpxAgent, config.acpxSessionMode);
   } catch (error) {
-    throw new PaperclipRunnerProviderProfileError(
-      "paperclip_runner_mode_invalid",
+    throw new PilibalaRunnerProviderProfileError(
+      "pilibala_runner_mode_invalid",
       error instanceof Error ? error.message : "Invalid Cursor session mode",
     );
   }
-  try { if (candidate === "acpx" && agentHarnessType("paperclip_runner", config) === "claude_local") resolveClaudeEffort("claude", config.modelReasoningEffort ?? config.reasoningEffort ?? config.effort); } catch (error) {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_claude_effort_invalid", error instanceof Error ? error.message : "Invalid Claude effort");
+  try { if (candidate === "acpx" && agentHarnessType("pilibala_runner", config) === "claude_local") resolveClaudeEffort("claude", config.modelReasoningEffort ?? config.reasoningEffort ?? config.effort); } catch (error) {
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_claude_effort_invalid", error instanceof Error ? error.message : "Invalid Claude effort");
   }
   try { if (candidate === "acpx" && config.acpxAgent === "grok") resolveGrokEffort("grok", config.modelReasoningEffort ?? config.reasoningEffort ?? config.effort); } catch (error) {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_grok_effort_invalid", error instanceof Error ? error.message : "Invalid Grok effort");
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_grok_effort_invalid", error instanceof Error ? error.message : "Invalid Grok effort");
   }
   try { if (candidate === "acpx" && config.acpxAgent === "grok") resolveGrokDisableWebSearch("grok", config.disableWebSearch); } catch (error) {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_grok_search_invalid", error instanceof Error ? error.message : "Invalid Grok search policy");
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_grok_search_invalid", error instanceof Error ? error.message : "Invalid Grok search policy");
   }
-  try { resolvePaperclipRunnerPiThinkingLevel(candidate, config.acpxAgent, config.piThinkingLevel); } catch (error) {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_pi_thinking_invalid", error instanceof Error ? error.message : "Invalid Pi thinking level");
+  try { resolvePilibalaRunnerPiThinkingLevel(candidate, config.acpxAgent, config.piThinkingLevel); } catch (error) {
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_pi_thinking_invalid", error instanceof Error ? error.message : "Invalid Pi thinking level");
   }
   const model = optionalString(config.model);
   if (candidate === "codex") {
@@ -514,9 +514,9 @@ export function resolvePaperclipRunnerProviderProfile(
 
   if (candidate === "opencode") {
     if (!model || !model.includes("/") || model.endsWith("/")) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_opencode_model_invalid",
-        "Paperclip Runner OpenCode requires model in provider/model form.",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_opencode_model_invalid",
+        "Pilibala Runner OpenCode requires model in provider/model form.",
       );
     }
     return {
@@ -529,20 +529,20 @@ export function resolvePaperclipRunnerProviderProfile(
   if (candidate === "claude_managed") {
     const managedProfileId = optionalString(config.managedProfileId);
     if (!managedProfileId) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_claude_managed_profile_required",
-        "Paperclip Runner Claude Managed requires a company managed-agent profile.",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_claude_managed_profile_required",
+        "Pilibala Runner Claude Managed requires a company managed-agent profile.",
       );
     }
     if (config.managedAgentsRetentionAcknowledged !== true) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_claude_managed_retention_required",
-        "Paperclip Runner Claude Managed requires acknowledgement of stateful beta retention.",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_claude_managed_retention_required",
+        "Pilibala Runner Claude Managed requires acknowledgement of stateful beta retention.",
       );
     }
     if (model !== null && model !== CLAUDE_MANAGED_QUALIFIED_MODEL) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_claude_managed_model_unqualified",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_claude_managed_model_unqualified",
         `The Claude Managed profile requires exact model ${CLAUDE_MANAGED_QUALIFIED_MODEL}.`,
       );
     }
@@ -553,8 +553,8 @@ export function resolvePaperclipRunnerProviderProfile(
       model,
       maxSessionListCostUsd: positiveNumberOrNull(
         config.maxSessionListCostUsd,
-        "paperclip_runner_claude_managed_spend_cap_invalid",
-        "Paperclip Runner Claude Managed requires a positive session spend ceiling when overridden.",
+        "pilibala_runner_claude_managed_spend_cap_invalid",
+        "Pilibala Runner Claude Managed requires a positive session spend ceiling when overridden.",
       ),
     };
   }
@@ -562,20 +562,20 @@ export function resolvePaperclipRunnerProviderProfile(
   if (candidate === "aws_agentcore") {
     const agentCoreProfileId = optionalString(config.agentCoreProfileId);
     if (!agentCoreProfileId) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_aws_agentcore_profile_required",
-        "Paperclip Runner AWS AgentCore requires a company remote-agent profile.",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_aws_agentcore_profile_required",
+        "Pilibala Runner AWS AgentCore requires a company remote-agent profile.",
       );
     }
     if (config.agentCoreRetentionAcknowledged !== true) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_aws_agentcore_retention_required",
-        "Paperclip Runner AWS AgentCore requires acknowledgement of 90-day Memory retention.",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_aws_agentcore_retention_required",
+        "Pilibala Runner AWS AgentCore requires acknowledgement of 90-day Memory retention.",
       );
     }
     if (model !== null && model !== AGENTCORE_QUALIFIED_MODEL) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_aws_agentcore_model_unqualified",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_aws_agentcore_model_unqualified",
         `The AWS AgentCore profile requires exact model ${AGENTCORE_QUALIFIED_MODEL}.`,
       );
     }
@@ -586,26 +586,26 @@ export function resolvePaperclipRunnerProviderProfile(
       model,
       maxEstimatedSessionCostUsd: positiveNumberOrNull(
         config.maxEstimatedSessionCostUsd,
-        "paperclip_runner_aws_agentcore_spend_cap_invalid",
-        "Paperclip Runner AWS AgentCore requires a positive estimated session spend ceiling when overridden.",
+        "pilibala_runner_aws_agentcore_spend_cap_invalid",
+        "Pilibala Runner AWS AgentCore requires a positive estimated session spend ceiling when overridden.",
       ),
     };
   }
 
   const acpxAgent = config.acpxAgent ?? "claude";
   if (acpxAgent === "copilot" && (!model || ["auto", "default"].includes(model.toLowerCase()))) {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_acpx_model_required", "GitHub Copilot requires an explicit model ID; there is no default model.");
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_acpx_model_required", "GitHub Copilot requires an explicit model ID; there is no default model.");
   }
-  const pendingAcpxProfile = PAPERCLIP_RUNNER_ACPX_PROFILES.find(profile => profile.value === acpxAgent && !profile.qualified);
+  const pendingAcpxProfile = PILIBALA_RUNNER_ACPX_PROFILES.find(profile => profile.value === acpxAgent && !profile.qualified);
   if (pendingAcpxProfile) {
-    if (!model) throw new PaperclipRunnerProviderProfileError("paperclip_runner_acpx_model_required", `${pendingAcpxProfile.label} requires an explicit model ID; there is no default model.`);
+    if (!model) throw new PilibalaRunnerProviderProfileError("pilibala_runner_acpx_model_required", `${pendingAcpxProfile.label} requires an explicit model ID; there is no default model.`);
     if (pendingAcpxProfile.value === "antigravity") {
       try {
         if (resolveAntigravityCandidateAdmission({ companyId: context.companyId, model }, process.env)) {
           return { provider: "acpx", backend: "acpx_runtime", model, acpxAgent: "antigravity" };
         }
       } catch {
-        throw new PaperclipRunnerProviderProfileError("paperclip_runner_acpx_qualification_invalid", "Antigravity candidate admission requires the authorized company, exact model and runtime identity.");
+        throw new PilibalaRunnerProviderProfileError("pilibala_runner_acpx_qualification_invalid", "Antigravity candidate admission requires the authorized company, exact model and runtime identity.");
       }
     }
     if (pendingAcpxProfile.value === "kimi") {
@@ -614,7 +614,7 @@ export function resolvePaperclipRunnerProviderProfile(
           return { provider: "acpx", backend: "acpx_runtime", model, acpxAgent: "kimi" };
         }
       } catch {
-        throw new PaperclipRunnerProviderProfileError("paperclip_runner_acpx_qualification_invalid", "Kimi candidate admission requires the authorized company, exact model, target and runtime identity.");
+        throw new PilibalaRunnerProviderProfileError("pilibala_runner_acpx_qualification_invalid", "Kimi candidate admission requires the authorized company, exact model, target and runtime identity.");
       }
     }
     // Qualification authority belongs to the isolated server operator. Never
@@ -623,20 +623,20 @@ export function resolvePaperclipRunnerProviderProfile(
     try {
       qualification = resolveAcpxQualification({ kind: "acpx", agent: pendingAcpxProfile.value, model }, process.env);
     } catch {
-      throw new PaperclipRunnerProviderProfileError("paperclip_runner_acpx_qualification_invalid", "ACPX qualification requires an exact host-authorized candidate and model.");
+      throw new PilibalaRunnerProviderProfileError("pilibala_runner_acpx_qualification_invalid", "ACPX qualification requires an exact host-authorized candidate and model.");
     }
     if (qualification) {
       return { provider: "acpx", backend: "acpx_runtime", model, acpxAgent: qualification };
     }
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_acpx_agent_unavailable", `${pendingAcpxProfile.label} is awaiting native Runner acceptance. Its profile is not enabled for production runs.`);
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_acpx_agent_unavailable", `${pendingAcpxProfile.label} is awaiting native Runner acceptance. Its profile is not enabled for production runs.`);
   }
   if ((acpxAgent === "cursor" || acpxAgent === "pi" || acpxAgent === "kimi") && !model) {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_acpx_model_required", "This ACPX agent requires an explicit model ID; there is no default model.");
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_acpx_model_required", "This ACPX agent requires an explicit model ID; there is no default model.");
   }
   if (acpxAgent !== "claude" && acpxAgent !== "codex" && acpxAgent !== "grok" && acpxAgent !== "cursor" && acpxAgent !== "copilot" && acpxAgent !== "pi" && acpxAgent !== "kimi") {
-    throw new PaperclipRunnerProviderProfileError(
-      "paperclip_runner_acpx_agent_unavailable",
-      "Paperclip Runner ACPX requires a qualified agent profile.",
+    throw new PilibalaRunnerProviderProfileError(
+      "pilibala_runner_acpx_agent_unavailable",
+      "Pilibala Runner ACPX requires a qualified agent profile.",
     );
   }
   const selectedModel = acpxAgent === "grok" && model === "grok-build"
@@ -645,9 +645,9 @@ export function resolvePaperclipRunnerProviderProfile(
   try {
     resolveQualifiedAcpxProfile(acpxAgent, selectedModel);
   } catch (error) {
-    throw new PaperclipRunnerProviderProfileError(
-      "paperclip_runner_acpx_model_unqualified",
-      error instanceof Error ? error.message : "Paperclip Runner ACPX requires an admitted model.",
+    throw new PilibalaRunnerProviderProfileError(
+      "pilibala_runner_acpx_model_unqualified",
+      error instanceof Error ? error.message : "Pilibala Runner ACPX requires an admitted model.",
     );
   }
   return {
@@ -664,14 +664,14 @@ export function resolvePaperclipRunnerProviderProfile(
  * configuration can select a stored profile, but it cannot replace that
  * profile's immutable remote resource identity.
  */
-export function resolvePaperclipRunnerNativeProviderInput(input: {
+export function resolvePilibalaRunnerNativeProviderInput(input: {
   companyId?: string;
-  backend: PaperclipRunnerProviderProfile["backend"];
+  backend: PilibalaRunnerProviderProfile["backend"];
   adapterConfig: unknown;
   /** Verified image CLI version for a fresh remote Codex run only. */
   codexCliVersion?: string | null;
-  museBinding?: import("../../vendor/paperclip-runner/index.js").MuseBindingSnapshot;
-  dotBinding?: import("../../vendor/paperclip-runner/index.js").DotBindingSnapshot;
+  museBinding?: import("../../vendor/pilibala-runner/index.js").MuseBindingSnapshot;
+  dotBinding?: import("../../vendor/pilibala-runner/index.js").DotBindingSnapshot;
   managedProfile?: {
     id: string;
     profileKey: string;
@@ -687,48 +687,48 @@ export function resolvePaperclipRunnerNativeProviderInput(input: {
     profileKey: string;
     configuration: Record<string, unknown>;
   } | null;
-}): PaperclipRunnerNativeProviderInput {
+}): PilibalaRunnerNativeProviderInput {
   const config = asRecord(input.adapterConfig);
-  const profile = resolvePaperclipRunnerProviderProfile(config, { companyId: input.companyId });
+  const profile = resolvePilibalaRunnerProviderProfile(config, { companyId: input.companyId });
   if (config.homeMode !== undefined && config.homeMode !== "isolated" && config.homeMode !== "preconfigured") {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_home_mode_invalid", "homeMode must be isolated or preconfigured");
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_home_mode_invalid", "homeMode must be isolated or preconfigured");
   }
   const preconfigured = config.homeMode === "preconfigured";
   if (preconfigured && profile.provider !== "codex" && !(profile.provider === "acpx" && ["claude", "codex"].includes(profile.acpxAgent))) {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_home_mode_unsupported", "Preconfigured home supports native Codex and ACPX Claude only");
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_home_mode_unsupported", "Preconfigured home supports native Codex and ACPX Claude only");
   }
   if (preconfigured && profile.provider === "acpx" && config.acpxPermissionMode !== undefined && config.acpxPermissionMode !== "approve-all") {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_home_permission_mode_unsupported", "Preconfigured home currently requires ACPX approve-all; local permission rules still apply");
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_home_permission_mode_unsupported", "Preconfigured home currently requires ACPX approve-all; local permission rules still apply");
   }
   if (preconfigured && profile.provider === "acpx" && profile.acpxAgent === "codex") {
-    throw new PaperclipRunnerProviderProfileError("paperclip_runner_home_state_boundary_unsupported", "preconfigured ACPX Codex cannot protect Runner state; use native Codex or isolated mode");
+    throw new PilibalaRunnerProviderProfileError("pilibala_runner_home_state_boundary_unsupported", "preconfigured ACPX Codex cannot protect Runner state; use native Codex or isolated mode");
   }
   if (profile.backend !== input.backend) {
-    throw new PaperclipRunnerProviderProfileError(
-      "paperclip_runner_provider_changed",
-      "Paperclip Runner provider changed after this run selected its native backend.",
+    throw new PilibalaRunnerProviderProfileError(
+      "pilibala_runner_provider_changed",
+      "Pilibala Runner provider changed after this run selected its native backend.",
     );
   }
   if (profile.provider === "cursor_cloud") {
-    return { provider: "cursor_cloud", model: profile.model, cursorCloud: resolvePaperclipRunnerCursorCloudConfig(config) };
+    return { provider: "cursor_cloud", model: profile.model, cursorCloud: resolvePilibalaRunnerCursorCloudConfig(config) };
   }
   if (profile.provider === "muse") {
-    if (!input.museBinding || input.museBinding.bindingId !== profile.museBindingId) throw new PaperclipRunnerProviderProfileError("paperclip_runner_muse_binding_unavailable", "Muse binding must be resolved by the server after normal admission.");
+    if (!input.museBinding || input.museBinding.bindingId !== profile.museBindingId) throw new PilibalaRunnerProviderProfileError("pilibala_runner_muse_binding_unavailable", "Muse binding must be resolved by the server after normal admission.");
     return { provider: "muse", model: null, museBinding: input.museBinding };
   }
   if (profile.provider === "grok_bot") {
-    if (!input.dotBinding || input.dotBinding.bindingId !== profile.externalBindingId) throw new PaperclipRunnerProviderProfileError("paperclip_runner_grok_binding_unavailable", "The Grok binding must be resolved by the server after normal admission.");
+    if (!input.dotBinding || input.dotBinding.bindingId !== profile.externalBindingId) throw new PilibalaRunnerProviderProfileError("pilibala_runner_grok_binding_unavailable", "The Grok binding must be resolved by the server after normal admission.");
     return { provider: "grok_bot", model: null, dotBinding: input.dotBinding };
   }
   if (profile.provider === "openai_dot") {
-    if (!input.dotBinding || input.dotBinding.bindingId !== profile.dotBindingId) throw new PaperclipRunnerProviderProfileError("paperclip_runner_dot_binding_unavailable", "Dot binding must be resolved by the server after normal admission.");
+    if (!input.dotBinding || input.dotBinding.bindingId !== profile.dotBindingId) throw new PilibalaRunnerProviderProfileError("pilibala_runner_dot_binding_unavailable", "Dot binding must be resolved by the server after normal admission.");
     return { provider: "openai_dot", model: null, dotBinding: input.dotBinding };
   }
   if (profile.provider === "opencode") {
     return {
       provider: "opencode",
       model: profile.model,
-      opencodePermissionMode: resolvePaperclipRunnerPermissionMode(
+      opencodePermissionMode: resolvePilibalaRunnerPermissionMode(
         "opencode",
         config.opencodePermissionMode,
       ) as "allow" | "ask" | "deny",
@@ -741,15 +741,15 @@ export function resolvePaperclipRunnerNativeProviderInput(input: {
       acpxAgent: profile.acpxAgent,
       ...(profile.acpxAgent === "claude" ? { claudeEffort: resolveClaudeEffort("claude", config.modelReasoningEffort ?? config.reasoningEffort ?? config.effort) } : {}),
       ...(profile.acpxAgent === "grok" ? { grokEffort: resolveGrokEffort("grok", config.modelReasoningEffort ?? config.reasoningEffort ?? config.effort), grokDisableWebSearch: resolveGrokDisableWebSearch("grok", config.disableWebSearch) } : {}),
-      ...(profile.acpxAgent === "pi" ? { piThinkingLevel: resolvePaperclipRunnerPiThinkingLevel("acpx", "pi", config.piThinkingLevel) } : {}),
+      ...(profile.acpxAgent === "pi" ? { piThinkingLevel: resolvePilibalaRunnerPiThinkingLevel("acpx", "pi", config.piThinkingLevel) } : {}),
       ...(profile.acpxAgent === "cursor" ? {
-        acpxSessionMode: resolvePaperclipRunnerCursorMode("acpx", "cursor", config.acpxSessionMode),
+        acpxSessionMode: resolvePilibalaRunnerCursorMode("acpx", "cursor", config.acpxSessionMode),
       } : {}),
       ...(preconfigured ? { homeMode: "preconfigured" as const } : {}),
-      acpxPermissionMode: resolvePaperclipRunnerPermissionMode(
+      acpxPermissionMode: resolvePilibalaRunnerPermissionMode(
         "acpx",
         config.acpxPermissionMode,
-      ) as "approve-all" | "approve-paperclip" | "approve-reads" | "deny-all",
+      ) as "approve-all" | "approve-pilibala" | "approve-reads" | "deny-all",
     };
   }
   if (profile.provider === "claude_managed") {
@@ -761,14 +761,14 @@ export function resolvePaperclipRunnerNativeProviderInput(input: {
         && profile.managedProfileId !== stored.profileKey
       )
     ) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_claude_managed_profile_mismatch",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_claude_managed_profile_mismatch",
         "The qualified Claude Managed profile does not match the adapter selection.",
       );
     }
     if (stored.betaVersion !== CLAUDE_MANAGED_BETA_VERSION) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_claude_managed_beta_unqualified",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_claude_managed_beta_unqualified",
         "The Claude Managed profile beta version is not qualified.",
       );
     }
@@ -776,20 +776,20 @@ export function resolvePaperclipRunnerNativeProviderInput(input: {
     const maxSessionListCostUsd = profile.maxSessionListCostUsd
       ?? stored.defaultMaxListCostCents / 100;
     if (!model) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_claude_managed_model_invalid",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_claude_managed_model_invalid",
         "The Claude Managed profile requires a model.",
       );
     }
     if (model !== CLAUDE_MANAGED_QUALIFIED_MODEL) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_claude_managed_model_unqualified",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_claude_managed_model_unqualified",
         `The Claude Managed profile requires exact model ${CLAUDE_MANAGED_QUALIFIED_MODEL}.`,
       );
     }
     if (!Number.isFinite(maxSessionListCostUsd) || maxSessionListCostUsd <= 0) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_claude_managed_spend_cap_invalid",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_claude_managed_spend_cap_invalid",
         "The Claude Managed profile requires a positive session spend ceiling.",
       );
     }
@@ -815,8 +815,8 @@ export function resolvePaperclipRunnerNativeProviderInput(input: {
         && profile.agentCoreProfileId !== stored.profileKey
       )
     ) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_aws_agentcore_profile_mismatch",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_aws_agentcore_profile_mismatch",
         "The qualified AWS AgentCore profile does not match the adapter selection.",
       );
     }
@@ -824,35 +824,35 @@ export function resolvePaperclipRunnerNativeProviderInput(input: {
     const required = (key: string): string => {
       const value = optionalString(remote[key]);
       if (!value) {
-        throw new PaperclipRunnerProviderProfileError(
-          "paperclip_runner_aws_agentcore_profile_invalid",
+        throw new PilibalaRunnerProviderProfileError(
+          "pilibala_runner_aws_agentcore_profile_invalid",
           `The qualified AWS AgentCore profile is missing ${key}.`,
         );
       }
       return value;
     };
     if (remote.eventExpiryDays !== 90) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_aws_agentcore_retention_unqualified",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_aws_agentcore_retention_unqualified",
         "The qualified AWS AgentCore profile must retain Memory events for exactly 90 days.",
       );
     }
     const maxEstimatedSessionCostUsd = profile.maxEstimatedSessionCostUsd
       ?? positiveNumberOrNull(
         remote.defaultMaxEstimatedSessionCostUsd,
-        "paperclip_runner_aws_agentcore_spend_cap_invalid",
+        "pilibala_runner_aws_agentcore_spend_cap_invalid",
         "The AWS AgentCore profile requires a positive estimated session spend ceiling.",
       );
     if (maxEstimatedSessionCostUsd === null) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_aws_agentcore_spend_cap_invalid",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_aws_agentcore_spend_cap_invalid",
         "The AWS AgentCore profile requires a positive estimated session spend ceiling.",
       );
     }
     const model = profile.model ?? required("defaultModel");
     if (model !== AGENTCORE_QUALIFIED_MODEL) {
-      throw new PaperclipRunnerProviderProfileError(
-        "paperclip_runner_aws_agentcore_model_unqualified",
+      throw new PilibalaRunnerProviderProfileError(
+        "pilibala_runner_aws_agentcore_model_unqualified",
         `The AWS AgentCore profile requires exact model ${AGENTCORE_QUALIFIED_MODEL}.`,
       );
     }
@@ -883,21 +883,21 @@ export function resolvePaperclipRunnerNativeProviderInput(input: {
           config.maxIterations,
           8,
           8,
-          "paperclip_runner_aws_agentcore_max_iterations_invalid",
+          "pilibala_runner_aws_agentcore_max_iterations_invalid",
           "AWS AgentCore maxIterations",
         ),
         maxOutputTokens: boundedPositiveInteger(
           config.maxOutputTokens,
           4_096,
           4_096,
-          "paperclip_runner_aws_agentcore_max_output_tokens_invalid",
+          "pilibala_runner_aws_agentcore_max_output_tokens_invalid",
           "AWS AgentCore maxOutputTokens",
         ),
         timeoutSeconds: boundedPositiveInteger(
           config.timeoutSeconds,
           300,
           300,
-          "paperclip_runner_aws_agentcore_timeout_invalid",
+          "pilibala_runner_aws_agentcore_timeout_invalid",
           "AWS AgentCore timeoutSeconds",
         ),
       },
@@ -910,16 +910,16 @@ export function resolvePaperclipRunnerNativeProviderInput(input: {
     || (profile.model && isCodexLocalKnownModel(profile.model)
       && !codexLocalReasoningEffortsForModel(profile.model).includes(effort as "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | "ultra"))
   )) {
-    throw new PaperclipRunnerProviderProfileError(
-      "paperclip_runner_codex_effort_invalid",
-      "Paperclip Runner Codex reasoning effort is not supported for this model.",
+    throw new PilibalaRunnerProviderProfileError(
+      "pilibala_runner_codex_effort_invalid",
+      "Pilibala Runner Codex reasoning effort is not supported for this model.",
     );
   }
   return {
     provider: "codex",
     model: compatibleCodexModel(profile.model, input.codexCliVersion ?? null),
     ...(preconfigured ? { homeMode: "preconfigured" as const } : {}),
-    codexApprovalPolicy: resolvePaperclipRunnerPermissionMode(
+    codexApprovalPolicy: resolvePilibalaRunnerPermissionMode(
       "codex",
       config.codexPermissionMode,
     ) as "never" | "on-request" | "untrusted",

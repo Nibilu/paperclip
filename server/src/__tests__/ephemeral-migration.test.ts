@@ -10,9 +10,9 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { S3Client, CreateBucketCommand, DeleteBucketCommand, DeleteObjectsCommand, ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
-import { activityLog, agentWakeupRequests, agents, agentFileRoots, agentInstructionWorkingCopies, companies, executionWorkspaces, executionWorkspaceSnapshots, issues, workspaceOperations, createDb, closeFileStorageDb, heartbeatRuns, providerTraceRecords } from "@paperclipai/db";
+import { activityLog, agentWakeupRequests, agents, agentFileRoots, agentInstructionWorkingCopies, companies, executionWorkspaces, executionWorkspaceSnapshots, issues, workspaceOperations, createDb, closeFileStorageDb, heartbeatRuns, providerTraceRecords } from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
-import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
+import { readRemoteWorkspaceAuthority } from "@pilibalaai/shared";
 import { getWorkspaceSnapshot, loadWorkspaceSnapshotArchive } from "../services/remote-workspace-snapshot-storage.js";
 import { restoreRemoteWorkspaceArchive } from "../services/remote-workspace-snapshot-archive.js";
 import { migrateEphemeralServerData } from "../maintenance/ephemeral-migration-data.js";
@@ -27,28 +27,28 @@ import { companySkillService } from "../services/company-skills.js";
 import { skillPackageStore } from "../services/skill-package-store.js";
 import { skillInstallationMaintenance } from "../services/skill-installation-maintenance.js";
 import { migrateLocalSkillPackageObjects } from "../services/skill-package-storage-migration.js";
-import { companySkills, companySkillRepositorySnapshots } from "@paperclipai/db";
+import { companySkills, companySkillRepositorySnapshots } from "@pilibalaai/db";
 
 // Explicit real-dependency qualification. Never contacts off-host storage in
 // the default test path; use a disposable S3-compatible service and PostgreSQL.
-describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("existing-volume enrollment with PostgreSQL and S3", () => {
+describe.skipIf(!process.env.PILIBALA_TEST_S3_ENDPOINT)("existing-volume enrollment with PostgreSQL and S3", () => {
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: ReturnType<typeof createDb>, s3: S3Client;
   let home: string, companyId: string, bucket: string;
   beforeAll(async () => {
     database = await startEmbeddedPostgresTestDatabase("ephemeral-migration-"); db = createDb(database.connectionString);
-    s3 = new S3Client({ endpoint: process.env.PAPERCLIP_TEST_S3_ENDPOINT, region: "us-east-1", forcePathStyle: true });
+    s3 = new S3Client({ endpoint: process.env.PILIBALA_TEST_S3_ENDPOINT, region: "us-east-1", forcePathStyle: true });
   }, 90_000);
   beforeEach(async () => {
     companyId = randomUUID(); bucket = `enrollment-${randomUUID()}`;
     home = await fs.mkdtemp(path.join(os.tmpdir(), "ephemeral-migration-"));
     await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-    vi.stubEnv("PAPERCLIP_HOME", home); vi.stubEnv("PAPERCLIP_DURABLE_AGENT_FILES", "true");
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "true");
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", "false"); vi.stubEnv("PAPERCLIP_STORAGE_PROVIDER", "s3");
-    vi.stubEnv("PAPERCLIP_STORAGE_S3_BUCKET", bucket); vi.stubEnv("PAPERCLIP_STORAGE_S3_REGION", "us-east-1");
-    vi.stubEnv("PAPERCLIP_STORAGE_S3_ENDPOINT", process.env.PAPERCLIP_TEST_S3_ENDPOINT!);
-    vi.stubEnv("PAPERCLIP_STORAGE_S3_FORCE_PATH_STYLE", "true");
+    vi.stubEnv("PILIBALA_HOME", home); vi.stubEnv("PILIBALA_DURABLE_AGENT_FILES", "true");
+    vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "true");
+    vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", "false"); vi.stubEnv("PILIBALA_STORAGE_PROVIDER", "s3");
+    vi.stubEnv("PILIBALA_STORAGE_S3_BUCKET", bucket); vi.stubEnv("PILIBALA_STORAGE_S3_REGION", "us-east-1");
+    vi.stubEnv("PILIBALA_STORAGE_S3_ENDPOINT", process.env.PILIBALA_TEST_S3_ENDPOINT!);
+    vi.stubEnv("PILIBALA_STORAGE_S3_FORCE_PATH_STYLE", "true");
     await db.insert(companies).values({ id: companyId, name: "Enrollment fixture", issuePrefix: "MIG" });
   });
   afterEach(async () => {
@@ -92,8 +92,8 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("existing-volume enroll
     await materializeInstructionBytes(rows[0]!.root, "empty.txt", Buffer.alloc(0));
     expect(await migrate()).toMatchObject({ eligibility: { eligible: true }, counts: { agentFiles: 26, verifiedAgentObjects: 28 } });
     await fs.rm(home, { recursive: true, force: true });
-    home = await fs.mkdtemp(path.join(os.tmpdir(), "ephemeral-successor-")); vi.stubEnv("PAPERCLIP_HOME", home);
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", "true"); vi.stubEnv("PAPERCLIP_DURABLE_AGENT_FILES", "false");
+    home = await fs.mkdtemp(path.join(os.tmpdir(), "ephemeral-successor-")); vi.stubEnv("PILIBALA_HOME", home);
+    vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", "true"); vi.stubEnv("PILIBALA_DURABLE_AGENT_FILES", "false");
     // The service's normal board actor uses instance-operator authority.
     const actor = { type: "board" as const, source: "local_implicit" as const, userId: "local-board" };
     const store = agentFileStore(db);
@@ -108,7 +108,7 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("existing-volume enroll
     await expect(verifyAgentFileObjects(db, getStorageService(), AbortSignal.timeout(30_000))).rejects.toThrow(/agent_file_object_(size|digest)_mismatch/);
   }, 120_000);
   it("preserves original skill objects and identity when destination readback fails", async () => {
-    vi.stubEnv("PAPERCLIP_STORAGE_PROVIDER", "local_disk");
+    vi.stubEnv("PILIBALA_STORAGE_PROVIDER", "local_disk");
     const skills = await companySkillService(db).list(companyId);
     const local = getStorageService(), store = skillPackageStore(db, local);
     const before = await Promise.all(skills.map(async skill => {
@@ -116,7 +116,7 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("existing-volume enroll
       return { skillId: skill.id, version: version!, files: await store.versionFiles(version!) };
     }));
     expect(before.length).toBeGreaterThan(0);
-    vi.stubEnv("PAPERCLIP_STORAGE_PROVIDER", "s3");
+    vi.stubEnv("PILIBALA_STORAGE_PROVIDER", "s3");
     const remote = getStorageService();
     await expect(migrateLocalSkillPackageObjects(db, { source: local, destination: { ...remote,
       getObject: async () => { throw new Error("Synthetic destination readback failed"); } }, writersStopped: true,
@@ -127,13 +127,13 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("existing-volume enroll
     }
   }, 120_000);
   it("verifies bundled skill migration after removal of the old server home", async () => {
-    vi.stubEnv("PAPERCLIP_STORAGE_PROVIDER", "local_disk");
+    vi.stubEnv("PILIBALA_STORAGE_PROVIDER", "local_disk");
     const skills = await companySkillService(db).list(companyId), local = skillPackageStore(db);
     const before = await Promise.all(skills.map(async skill => {
       const version = await local.version(companyId, skill.id, skill.currentVersionId!);
       return { skillId: skill.id, version: version!, files: await local.versionFiles(version!) };
     }));
-    vi.stubEnv("PAPERCLIP_STORAGE_PROVIDER", "s3");
+    vi.stubEnv("PILIBALA_STORAGE_PROVIDER", "s3");
     const result = await migrate();
     expect(result.eligibility.eligible).toBe(true);
     expect(result.counts.skillObjects).toBe(before.length);
@@ -148,8 +148,8 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("existing-volume enroll
       .every(row => ["remote_storage", "database_release_snapshot"].includes(row.status))).toBe(true);
   }, 120_000);
   it("migrates overlapping task folders through maintenance and restores both from S3 after volume loss", async () => {
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "73".repeat(32));
-    const parent = path.join(home, "project"), child = path.join(parent, ".paperclip/worktrees/task");
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "73".repeat(32));
+    const parent = path.join(home, "project"), child = path.join(parent, ".pilibala/worktrees/task");
     await fs.mkdir(child, { recursive: true });
     const fixtures = [{ cwd: parent, file: "project.txt", bytes: "project work" }, { cwd: child, file: "task.txt", bytes: "nested task work" }];
     const ids: string[] = [], queued = [];
@@ -170,7 +170,7 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("existing-volume enroll
     }
     expect(await migrate()).toMatchObject({ eligibility: { eligible: true }, counts: { workspaces: 2 } });
     await fs.rm(home, { recursive: true }); home = await fs.mkdtemp(path.join(os.tmpdir(), "workspace-successor-"));
-    vi.stubEnv("PAPERCLIP_HOME", home);
+    vi.stubEnv("PILIBALA_HOME", home);
     for (const { run, wake } of queued) {
       expect((await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, run.id)))[0]).toEqual(run);
       expect((await db.select().from(agentWakeupRequests).where(eq(agentWakeupRequests.id, wake.id)))[0]).toEqual(wake);
@@ -195,7 +195,7 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("existing-volume enroll
     await fs.writeFile(path.join(logRoot, logRef), history);
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId: row.id, status: "interrupted",
       runtimeMode: "native", logStore: "local_file", logRef });
-    vi.stubEnv("PAPERCLIP_DECISION_SIGNING_SECRET", "");
+    vi.stubEnv("PILIBALA_DECISION_SIGNING_SECRET", "");
     const [queued] = await db.insert(heartbeatRuns).values({ companyId, agentId: row.id, status: "queued",
       contextSnapshot: { input: "Resume this turn after maintenance" } }).returning();
     const original = resolveDecisionSigningSecret();
@@ -207,9 +207,9 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("existing-volume enroll
     const id = randomUUID(), token = randomBytes(32).toString("base64url");
     const stamp = JSON.parse(await fs.readFile(new URL("../../dist/build-info.json", import.meta.url), "utf8"));
     const child = spawn(process.execPath, [entry], { env: { ...process.env, DATABASE_URL: database.connectionString,
-      PAPERCLIP_DATABASE_LISTEN_URL: database.connectionString, PAPERCLIP_SECRETS_MASTER_KEY: randomBytes(32).toString("hex"),
-      PAPERCLIP_SHARED_UI_ASSETS: "true", PAPERCLIP_EPHEMERAL_MIGRATION: "true", PAPERCLIP_EPHEMERAL_MIGRATION_ID: id,
-      PAPERCLIP_EPHEMERAL_MIGRATION_TOKEN: token, PORT: String(address.port) }, stdio: ["ignore", "pipe", "pipe"] });
+      PILIBALA_DATABASE_LISTEN_URL: database.connectionString, PILIBALA_SECRETS_MASTER_KEY: randomBytes(32).toString("hex"),
+      PILIBALA_SHARED_UI_ASSETS: "true", PILIBALA_EPHEMERAL_MIGRATION: "true", PILIBALA_EPHEMERAL_MIGRATION_ID: id,
+      PILIBALA_EPHEMERAL_MIGRATION_TOKEN: token, PORT: String(address.port) }, stdio: ["ignore", "pipe", "pipe"] });
     let diagnostic = "";
     child.stderr.on("data", chunk => { diagnostic = (diagnostic + String(chunk)).slice(-8_192); });
     child.stdout.resume();
@@ -291,9 +291,9 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("existing-volume enroll
     await db.insert(agentInstructionWorkingCopies).values({ runId: run!.id, companyId, agentId: row.id,
       responsibleUserId: "fixture", entryFile: "AGENTS.md", baseHash: "fixture", localRoot: path.join(home, "rejected-copy"),
       executionRoot: path.join(home, "rejected-copy"), location: "local", state: "unavailable",
-      errorCode: "AGENT_FILES_LIMIT_EXCEEDED", receipt: { schema: "paperclip.agent-files.v1", cleanupPending: true } });
+      errorCode: "AGENT_FILES_LIMIT_EXCEEDED", receipt: { schema: "pilibala.agent-files.v1", cleanupPending: true } });
     await expect(migrate()).rejects.toThrow("local_instruction_copies_require_settlement");
-    await db.update(agentInstructionWorkingCopies).set({ receipt: { schema: "paperclip.agent-files.v1", cleanupPending: false } })
+    await db.update(agentInstructionWorkingCopies).set({ receipt: { schema: "pilibala.agent-files.v1", cleanupPending: false } })
       .where(eq(agentInstructionWorkingCopies.runId, run!.id));
     await expect(migrate()).rejects.toThrow("local_instruction_copies_require_settlement");
     await db.update(agentInstructionWorkingCopies).set({ processStoppedAt: new Date() })

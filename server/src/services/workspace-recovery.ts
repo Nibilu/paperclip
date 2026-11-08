@@ -1,4 +1,4 @@
-import { classifyWorkspaceRestoreFailure } from "@paperclipai/adapter-utils/workspace-restore-merge";
+import { classifyWorkspaceRestoreFailure } from "@pilibalaai/adapter-utils/workspace-restore-merge";
 import { createHash } from "node:crypto";
 import { adapterExecutionControls } from "./adapter-execution-control.js";
 import { isAcknowledgedNativeStop } from "./acknowledged-native-stop.js";
@@ -12,8 +12,8 @@ import { resumePreservedResultFinalization } from "./preserved-result-finalizati
 import { reclaimInactiveNativeProviderCache } from "./native-runtime/retained-provider-cache.js";
 import { REMOTE_WORKSPACE_SANDBOX_DISK_FULL, sandboxProviderFailureLabel } from "./remote-workspace-transport.js";
 import { and, asc, eq, gt, inArray, ne, notInArray, or, sql } from "drizzle-orm";
-import { agentWakeupRequests, environmentLeases, executionWorkspaces, heartbeatRuns, issues, issueRecoveryActions, nativeRunFinalizations, workspaceOperations, type Db } from "@paperclipai/db";
-import { remoteWorkspaceRunReferenceSchema, type Environment, type EnvironmentLease } from "@paperclipai/shared";
+import { agentWakeupRequests, environmentLeases, executionWorkspaces, heartbeatRuns, issues, issueRecoveryActions, nativeRunFinalizations, workspaceOperations, type Db } from "@pilibalaai/db";
+import { remoteWorkspaceRunReferenceSchema, type Environment, type EnvironmentLease } from "@pilibalaai/shared";
 import { conflict } from "../errors.js";
 import { logger } from "../middleware/logger.js";
 import type { EnvironmentRuntimeService } from "./environment-runtime.js";
@@ -87,7 +87,7 @@ async function recheckStoppedWorkspaceRecovery(db: Db, source: StopEvidenceSourc
         ["agent_stop_unconfirmed", "copyback_stop_unconfirmed"].includes(current.failure.code);
       if (current.state !== "running" && current.failure && !stopWait) continue;
       const prior = action.evidence.workspaceStopEvidence as Record<string, unknown> | undefined;
-      const same = prior?.schema === "paperclip.workspace-stop-evidence.v1" && prior.sourceRunId === source.runId &&
+      const same = prior?.schema === "pilibala.workspace-stop-evidence.v1" && prior.sourceRunId === source.runId &&
         prior.generationId === current.generationId && prior.fingerprint === fingerprint;
       if ((same && prior!.consumed === true) || (!observe && (!same || prior!.consumed !== false))) continue;
       const due = Math.max(now, current.providerCooldownAt ?? 0);
@@ -98,7 +98,7 @@ async function recheckStoppedWorkspaceRecovery(db: Db, source: StopEvidenceSourc
       await notifyDeliveryWork(tx, DELIVERY_QUEUES.workspaceRecovery);
       if (advance && !await updateSystemRecovery(tx as unknown as Db, { ...source, actionId: action.id }, current,
         { ...current, revision: current.revision + 1, nextAttemptAt: due })) continue;
-      const marker = { schema: "paperclip.workspace-stop-evidence.v1", sourceRunId: source.runId,
+      const marker = { schema: "pilibala.workspace-stop-evidence.v1", sourceRunId: source.runId,
         generationId: current.generationId, fingerprint, consumed };
       const recorded = await tx.update(issueRecoveryActions).set({ evidence: sql`${issueRecoveryActions.evidence} ||
         ${JSON.stringify({ workspaceStopEvidence: marker })}::jsonb`, updatedAt: new Date() }).where(and(
@@ -133,7 +133,7 @@ export async function requestWorkspaceRecovery(input: Source & { db: Db; idempot
     if (prior?.requestIds.includes(input.idempotencyKey) || prior?.status === "recovered") return { actionId: action.id, status: prior.status };
     const pending = prior && ["queued", "recovering"].includes(prior.status);
     const state: WorkspaceRecovery = pending ? { ...prior!, requestIds: [...prior!.requestIds, input.idempotencyKey] }
-      : { schema: "paperclip.workspace-recovery.v1", runId: run.id, status: "queued", stage: "verifying_stop",
+      : { schema: "pilibala.workspace-recovery.v1", runId: run.id, status: "queued", stage: "verifying_stop",
         attempt: prior?.attempt ?? 0, attemptLimit: (prior?.attempt ?? 0) + 1,
         requestIds: [...(prior?.requestIds ?? []), input.idempotencyKey] };
     const previous = readSystemRecovery(action.evidence);
@@ -274,7 +274,7 @@ export async function recoverRetainedWorkspace(input: Source & { db: Db; environ
             throw new SystemRecoveryFailure("agent_stop_unconfirmed", "recheck_evidence");
           stoppedLease = settled;
         }
-        const target = await resolveEnvironmentExecutionTarget({ db, companyId: input.companyId, adapterType: "paperclip_runner",
+        const target = await resolveEnvironmentExecutionTarget({ db, companyId: input.companyId, adapterType: "pilibala_runner",
           environment, leaseId: lease.id, leaseMetadata: stoppedLease.metadata,
           lease: stoppedLease as EnvironmentLease, environmentRuntime: input.environmentRuntime });
         if (target?.kind !== "remote" || target.transport !== "sandbox" || !target.runner || target.remoteCwd !== remoteCwd)
@@ -534,7 +534,7 @@ export function retainedWorkspaceCandidates(db: Db, cursor?: string, unfinishedO
   const cleanup = sql`(((${heartbeatRuns.runnerProfileJson}#>>'{nativeWorkspaceSync,resourceDisposition}' = 'destroy'
     and ${heartbeatRuns.runnerProfileJson}#>>'{nativeWorkspaceSync,leaseId}' is not null)
     or (${heartbeatRuns.runnerProfileJson}->>'nativeResourceDisposition' = 'destroy'
-      and ${heartbeatRuns.runnerProfileJson}#>>'{remoteWorkspace,schema}' = 'paperclip.remote-workspace-run.v1'
+      and ${heartbeatRuns.runnerProfileJson}#>>'{remoteWorkspace,schema}' = 'pilibala.remote-workspace-run.v1'
       and ${heartbeatRuns.runnerProfileJson}#>>'{remoteWorkspace,state}' = 'saved')) and exists (
     select 1 from ${environmentLeases} where ${environmentLeases.companyId} = ${heartbeatRuns.companyId}
     and ${environmentLeases.heartbeatRunId} = ${heartbeatRuns.id}
@@ -552,7 +552,7 @@ export function retainedWorkspaceCandidates(db: Db, cursor?: string, unfinishedO
       and ${heartbeatRuns.resultJson}#>>'{executionRecovery,kind}' = 'bootstrap'
       and ${heartbeatRuns.resultJson}#>'{executionRecovery,providerWorkStarted}' = 'false'::jsonb))
     and ${heartbeatRuns.runtimeModeResolvedAt} is null and ${heartbeatRuns.executionStage} = 'preparing'
-    and ${heartbeatRuns.runnerProfileJson}#>>'{adapterDispatch,adapterType}' = 'paperclip_runner'
+    and ${heartbeatRuns.runnerProfileJson}#>>'{adapterDispatch,adapterType}' = 'pilibala_runner'
     and (${issueRecoveryActions.evidence}#>>'{automaticRecovery,replay}' = 'blocked'
       or (${issueRecoveryActions.evidence}#>>'{automaticRecovery,replay}' = 'allowed'
         and ${issueRecoveryActions.evidence}->>'bootstrapPreparationSettledAt' is not null

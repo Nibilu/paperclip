@@ -3,7 +3,7 @@ import { useQueryView } from "@/components/QueryView";
 import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { slackRegistrationErrorMessage } from "@paperclipai/shared";
+import { slackRegistrationErrorMessage } from "@pilibalaai/shared";
 import { bindAccount } from "@/lib/account-scope";
 import { chatEndpointsApi } from "@/api/chatEndpoints";
 import { Button } from "@/components/ui/button";

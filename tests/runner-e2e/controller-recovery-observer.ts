@@ -6,7 +6,7 @@ import { createRequire } from "node:module";
 const { sql }: typeof import("../../packages/db/node_modules/drizzle-orm/index.js") =
   createRequire(new URL("../../packages/db/package.json", import.meta.url))("drizzle-orm");
 import { createDb, type Db } from "../../packages/db/src/index.js";
-import { paperclipConfigSchema } from "../../packages/shared/src/config-schema.js";
+import { pilibalaConfigSchema } from "../../packages/shared/src/config-schema.js";
 import { loadNativeRunnerCheckpoint } from "../../server/src/services/native-runtime/native-runner-checkpoint.js";
 import type { ControllerReplacementReceipt } from "./controller-replacement.js";
 
@@ -131,9 +131,9 @@ export async function readControllerRecoverySnapshot(db: Db, binding: RecoveryBi
 }
 
 export async function createControllerRecoveryObserver(configPath: string, binding: RecoveryBinding) {
-  const config = paperclipConfigSchema.parse(JSON.parse(await readFile(configPath, "utf8")));
+  const config = pilibalaConfigSchema.parse(JSON.parse(await readFile(configPath, "utf8")));
   const url = config.database.mode === "postgres" ? config.database.connectionString
-    : `postgres://paperclip:paperclip@127.0.0.1:${config.database.embeddedPostgresPort}/paperclip`;
+    : `postgres://pilibala:pilibala@127.0.0.1:${config.database.embeddedPostgresPort}/pilibala`;
   if (!url) throw new Error("Qualification database is unavailable");
   const db = createDb(url);
   let before: RecoverySnapshot | undefined;

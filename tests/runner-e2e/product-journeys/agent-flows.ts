@@ -76,7 +76,7 @@ export function validateAgentTaskState(context: JourneyContext, issueId: string,
     if (run.companyId !== context.company.id || run.agentId !== agent.id || boundIssueId !== issueId) throw new JourneyError("failed", "agent_run_binding_mismatch");
     // The retired wake stays in the raw record and in the run limit above.
     if (retiredBeforeProviderStart(run)) continue;
-    if (!active(run) && (run.runtimeMode !== "native" || run.contextSnapshot?.paperclipEnvironment?.id !== context.environmentId
+    if (!active(run) && (run.runtimeMode !== "native" || run.contextSnapshot?.pilibalaEnvironment?.id !== context.environmentId
       || provider?.kind !== agent.provider || provider?.model !== agent.model)) throw new JourneyError("failed", "agent_run_binding_mismatch");
     if (!["queued", "running", "succeeded"].includes(run.status) && !(run.status === "cancelled" && allowedCancelled.includes(run.id))) throw new JourneyError("failed", "agent_run_failed");
   }

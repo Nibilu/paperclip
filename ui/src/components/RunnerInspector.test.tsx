@@ -88,7 +88,7 @@ function traceInspection(runId: string, marker: string) {
       createdAt: "2026-08-22T12:00:00.000Z",
       expiresAt: "2026-08-23T12:00:00.000Z",
       deletedAt: null,
-      schema: "paperclip.provider_trace_metadata.v1",
+      schema: "pilibala.provider_trace_metadata.v1",
     },
     entries: [
       {
@@ -187,7 +187,7 @@ describe("RunnerInspector", () => {
         createdAt: "2026-08-22T12:00:00.000Z",
         expiresAt: "2026-08-23T12:00:00.000Z",
         deletedAt: null,
-        schema: "paperclip.provider_trace_metadata.v1",
+        schema: "pilibala.provider_trace_metadata.v1",
       },
       entries: [
         {
@@ -201,7 +201,7 @@ describe("RunnerInspector", () => {
       ],
     });
     revealMock.mockResolvedValue({
-      schema: "paperclip.provider_trace_frame.v1",
+      schema: "pilibala.provider_trace_frame.v1",
       frameId: 1,
       timestamp: "1",
       direction: "provider_to_client",
@@ -244,7 +244,7 @@ describe("RunnerInspector", () => {
       traceInspection(requestedRunId, `${requestedRunId}-redacted`),
     );
     revealMock.mockResolvedValue({
-      schema: "paperclip.provider_trace_frame.v1",
+      schema: "pilibala.provider_trace_frame.v1",
       frameId: 1,
       timestamp: "1",
       direction: "provider_to_client",
@@ -293,7 +293,7 @@ describe("RunnerInspector", () => {
   it("clears exact frames when raw-trace access is revoked while open", async () => {
     traceMock.mockResolvedValue(traceInspection("run-1", "run-1-redacted"));
     revealMock.mockResolvedValue({
-      schema: "paperclip.provider_trace_frame.v1",
+      schema: "pilibala.provider_trace_frame.v1",
       frameId: 1,
       timestamp: "1",
       direction: "provider_to_client",
@@ -437,7 +437,7 @@ describe("RunnerInspector", () => {
     expect(container.textContent).not.toContain("Delete trace");
 
     pendingReveal.resolve({
-      schema: "paperclip.provider_trace_frame.v1",
+      schema: "pilibala.provider_trace_frame.v1",
       frameId: 1,
       timestamp: "1",
       direction: "provider_to_client",
@@ -494,7 +494,7 @@ describe("RunnerInspector", () => {
       entries: [
         { kind: "frame", frameId: 1, timestamp: "1", direction: "client_to_provider", parsed: { id: 1, method: "initialize" } },
         { kind: "frame", frameId: 2, timestamp: "2", direction: "provider_to_client", parsed: { id: 1, result: {} } },
-        { kind: "frame", frameId: 3, timestamp: "3", direction: "provider_to_client", parsed: { id: 1, method: "item/tool/call", params: { callId: "finish-1", tool: "paperclip_finish" } } },
+        { kind: "frame", frameId: 3, timestamp: "3", direction: "provider_to_client", parsed: { id: 1, method: "item/tool/call", params: { callId: "finish-1", tool: "pilibala_finish" } } },
         { kind: "frame", frameId: 4, timestamp: "4", direction: "client_to_provider", parsed: { id: 1, result: { success: true } } },
         { kind: "interpretation", frameId: 3, stage: "typescript_codex_driver_normalization", disposition: "mapped", emittedEventIds: ["runner:run-1:9"], ruleId: "codex_driver.normalize.item/tool/call" },
       ],
@@ -556,7 +556,7 @@ describe("RunnerInspector", () => {
         createdAt: "2026-08-22T12:00:00.000Z",
         expiresAt: "2026-08-23T12:00:00.000Z",
         deletedAt: null,
-        schema: "paperclip.provider_trace_metadata.v1",
+        schema: "pilibala.provider_trace_metadata.v1",
       },
       entries: [
         {
@@ -672,7 +672,7 @@ describe("RunnerInspector disconnect handling", () => {
   let root: Root;
   let store: ConnectivityStore;
   let probe: ReturnType<typeof vi.fn<() => Promise<{ reachable: boolean; retryAfterMs: number | null }>>>;
-  const unavailable = () => new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" });
+  const unavailable = () => new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" });
   const event = (runId: string, seq: number) => ({
     id: seq,
     companyId: "company-1",

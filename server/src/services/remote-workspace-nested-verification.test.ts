@@ -7,8 +7,8 @@ import { createServer, type Server } from "node:http";
 import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { activityLog, companies, createDb, executionWorkspaceSnapshots, executionWorkspaces, issues, projects, workspaceOperations, type Db } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
+import { activityLog, companies, createDb, executionWorkspaceSnapshots, executionWorkspaces, issues, projects, workspaceOperations, type Db } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority } from "@pilibalaai/shared";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { resolveManagedProjectWorkspaceDir } from "../home-paths.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
@@ -37,7 +37,7 @@ describe.skipIf(!support.supported)("bounded nested workspace verification", () 
   afterAll(async () => { await db?.$client.end({ timeout: 1 }); await database?.cleanup(); });
   beforeEach(async () => {
     home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "pc-nested-verification-")));
-    vi.stubEnv("PAPERCLIP_HOME", home); vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "61".repeat(32));
+    vi.stubEnv("PILIBALA_HOME", home); vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "61".repeat(32));
     vi.stubEnv("AWS_ACCESS_KEY_ID", "fixture"); vi.stubEnv("AWS_SECRET_ACCESS_KEY", "fixture");
     vi.stubEnv("AWS_SESSION_TOKEN", "fixture"); vi.stubEnv("AWS_EC2_METADATA_DISABLED", "true");
     storage = createStorageService(createLocalDiskStorageProvider(path.join(home, "objects")));
@@ -77,7 +77,7 @@ describe.skipIf(!support.supported)("bounded nested workspace verification", () 
     const repoUrl = "https://example.invalid/cohort.git"; await git(root, "remote", "add", "origin", repoUrl);
     const members = [];
     for (const name of ["base", "one", "two"]) {
-      const cwd = name === "base" ? root : path.join(root, ".paperclip", "worktrees", name);
+      const cwd = name === "base" ? root : path.join(root, ".pilibala", "worktrees", name);
       if (name !== "base") await git(root, "worktree", "add", "-qb", name, cwd);
       const [issue] = await db.insert(issues).values({ companyId, projectId, title: name }).returning();
       const [workspace] = await db.insert(executionWorkspaces).values({ companyId, projectId, sourceIssueId: issue.id, name,
@@ -93,7 +93,7 @@ describe.skipIf(!support.supported)("bounded nested workspace verification", () 
     const f = await fixture();
     const descendants = [];
     if (grandchildren) for (const child of f.leaves) {
-      const cwd = path.join(child.cwd!, ".paperclip", "worktrees", "nested"), name = `nested-${child.name}`;
+      const cwd = path.join(child.cwd!, ".pilibala", "worktrees", "nested"), name = `nested-${child.name}`;
       await git(f.root, "worktree", "add", "-qb", name, cwd);
       const [issue] = await db.insert(issues).values({ companyId: f.companyId, projectId: f.projectId, title: name }).returning();
       const [workspace] = await db.insert(executionWorkspaces).values({ companyId: f.companyId, projectId: f.projectId,

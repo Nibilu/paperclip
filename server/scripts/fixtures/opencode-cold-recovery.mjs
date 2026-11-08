@@ -70,9 +70,9 @@ const { transport } = createRunnerdCodexTransport({
   environment: {
     PATH: "/usr/local/bin:/usr/bin:/bin",
     HOME: input.home ?? "/root",
-    PAPERCLIP_AI_PROVIDER_URL:
+    PILIBALA_AI_PROVIDER_URL:
       "http://127.0.0.1:" + model.address().port + "/v1",
-    PAPERCLIP_AI_PROVIDER_KEY: "local-fixture-only",
+    PILIBALA_AI_PROVIDER_KEY: "local-fixture-only",
     OPENCODE_DISABLE_MODELS_FETCH: "true",
     OPENCODE_DISABLE_DEFAULT_PLUGINS: "true",
   },
@@ -86,7 +86,7 @@ try {
       ? {}
       : {
           cwd: input.workspace,
-          model: "paperclip/qualification",
+          model: "pilibala/qualification",
           dynamicTools: [],
           completionContract: {
             revision: "cold-closure-v1",

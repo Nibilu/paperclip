@@ -1,5 +1,5 @@
 import { describeError } from "../api/errors";
-import type { TaskInterruptionPresentation } from "@paperclipai/shared";
+import type { TaskInterruptionPresentation } from "@pilibalaai/shared";
 import { AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "../lib/utils";
@@ -41,7 +41,7 @@ export function ExecutionBlockerNotice({ presentation, canRetry, onRetry, optimi
     // generic automatic-retry line while keeping the provider explanation.
     return <ProviderFailureNotice failure={presentation.providerFailure} className={className}
       actions={canRetry && presentation.canRetry ? <Button variant="outline" size="sm" onClick={onRetry}>Retry</Button> : undefined}>
-      {presentation.state === "retry_scheduled" && <p>{step ? `${step}. ${retryIn}` : "Paperclip will retry automatically."}</p>}
+      {presentation.state === "retry_scheduled" && <p>{step ? `${step}. ${retryIn}` : "Pilibala will retry automatically."}</p>}
     </ProviderFailureNotice>;
   }
   if (step && presentation?.state === "working") return <div role="status" aria-label="Task status"

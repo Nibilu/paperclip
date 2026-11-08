@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { canonicalProviderEventsFromOpenCodePart } from "../../../packages/paperclip-runner/src/provider-events.js";
+import { canonicalProviderEventsFromOpenCodePart } from "../../../packages/pilibala-runner/src/provider-events.js";
 import { savedSkillDocumentAttributed, savedSkillFixture, savedSkillReadAssignment, savedSkillReadReceipts, savedSkillReadRuntimeName, savedSkillResultMatches, savedSkillSourceMatches } from "./saved-skill-use-evidence.js";
 
 type Row = Record<string, any>;
@@ -9,11 +9,11 @@ const binding = { companyId: "company", agentId: "agent", issueId: "issue", runI
 const assignment = { key: `company/${binding.companyId}/${fixture.slug}`, versionId: "version" };
 function native(seq: number, eventType: string, payload: Row): Row {
   return { ...binding, seq, eventType, protocolSchemaVersion: 1, sourceSeq: seq, sourceInstanceId: "runner-instance", sourceEventId: `event-${seq}`,
-    payload: { prpEvent: { schema: "paperclip.prp.event.v1", schemaVersion: 1, sourceKind: "runner", runId: binding.runId,
+    payload: { prpEvent: { schema: "pilibala.prp.event.v1", schemaVersion: 1, sourceKind: "runner", runId: binding.runId,
       sourceSeq: seq, sourceInstanceId: "runner-instance", sourceEventId: `event-${seq}`, turnId: "turn", eventType, payload } } };
 }
 function readEvents(): Row[] {
-  const payload = { schema: "paperclip.tool.execution.v1", executionId: "read-skill", name: "read", operation: "read",
+  const payload = { schema: "pilibala.tool.execution.v1", executionId: "read-skill", name: "read", operation: "read",
     transport: "builtin", readOnly: true, target: `/workspace/.agents/skills/${fixture.slug}/SKILL.md` };
   return [native(1, "tool.execution.started", { ...payload, status: "running" }),
     native(2, "tool.execution.completed", { ...payload, status: "completed", output: fixture.markdown, outputBytes: Buffer.byteLength(fixture.markdown), outputTruncated: false })];
@@ -35,7 +35,7 @@ function assignedReadEvents(): Row[] {
   const output = JSON.stringify({ type: "inputText", text: JSON.stringify(result) });
   const events = readEvents();
   for (const row of events) Object.assign(row.payload.prpEvent.payload,
-    { name: "paperclip_read_assigned_skill", operation: "unknown", target: null });
+    { name: "pilibala_read_assigned_skill", operation: "unknown", target: null });
   Object.assign(events[1]!.payload.prpEvent.payload, { output, outputBytes: Buffer.byteLength(output) });
   return events;
 }
@@ -180,7 +180,7 @@ describe("saved skill use evidence", () => {
     ["changed full source", (e: Row[]) => changeAssignedResult(e, r => { r.text += "extra source"; })],
     ["semantic failure with copied source", (e: Row[]) => changeAssignedResult(e, r => { r.outcome = "failed"; r.code = "runner_skill_not_assigned"; })],
     ["shell copied receipt", (e: Row[]) => { for (const row of e) row.payload.prpEvent.payload.name = "bash"; }],
-    ["another first-party tool", (e: Row[]) => { for (const row of e) row.payload.prpEvent.payload.name = "paperclip_read_document"; }],
+    ["another first-party tool", (e: Row[]) => { for (const row of e) row.payload.prpEvent.payload.name = "pilibala_read_document"; }],
     ["non-builtin transport", (e: Row[]) => { for (const row of e) row.payload.prpEvent.payload.transport = "process"; }],
     ["mutating operation", (e: Row[]) => { for (const row of e) row.payload.prpEvent.payload.operation = "edit"; }],
     ["not read only", (e: Row[]) => { e[1]!.payload.prpEvent.payload.readOnly = false; }],

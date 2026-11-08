@@ -14,7 +14,7 @@ const meta = {
   title: "Tasks and conversations/Documents, attachments, and work products/Explorations/Artifact cards/Pull request",
   component: PullRequestCard,
   decorators,
-  parameters: { ...parameters, paperclip: {
+  parameters: { ...parameters, pilibala: {
       "capabilities": [
         "documents-artifacts/work-products"
       ],
@@ -60,7 +60,7 @@ export const PullRequest: Story = {
     author: "Codie",
     updatedAt: "Sep 26, 2026",
     number: 14141,
-    repository: "paperclipai/paperclip",
+    repository: "pilibalaai/pilibala",
     sourceBranch: "fix/personal-keyboard-shortcut-preference",
     targetBranch: "master",
     state: "merged",
@@ -70,6 +70,6 @@ export const PullRequest: Story = {
     additions: 1159,
     deletions: 68,
     filesChanged: 30,
-    url: "https://github.com/paperclipai/paperclip/pull/14141",
+    url: "https://github.com/pilibalaai/pilibala/pull/14141",
   },
 };

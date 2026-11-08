@@ -8,7 +8,7 @@ import {
   caseHandoffs, caseIssueLinks, caseLabels, cases, companies, createDb,
   documentAnnotationAnchorSnapshots, documentAnnotationComments, documentAnnotationThreads,
   documentRevisions, documents, heartbeatRuns, issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { createLocalAgentJwt } from "../agent-auth-jwt.js";
 import { actorMiddleware } from "../middleware/auth.js";
@@ -24,19 +24,19 @@ const describePostgres = support.supported ? describe : describe.skip;
 describePostgres("case REST mutation fencing", () => {
   let temporary: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: ReturnType<typeof createDb>;
-  const oldJwtSecret = process.env.PAPERCLIP_AGENT_JWT_SECRET;
+  const oldJwtSecret = process.env.PILIBALA_AGENT_JWT_SECRET;
   const board = { type: "board" as const, source: "local_implicit" as const };
 
   beforeAll(async () => {
-    process.env.PAPERCLIP_AGENT_JWT_SECRET = "case-mutation-fence-test-secret";
-    temporary = await startEmbeddedPostgresTestDatabase("paperclip-case-mutation-fence-");
+    process.env.PILIBALA_AGENT_JWT_SECRET = "case-mutation-fence-test-secret";
+    temporary = await startEmbeddedPostgresTestDatabase("pilibala-case-mutation-fence-");
     db = createDb(temporary.connectionString);
     await instanceSettingsService(db).updateExperimental({ enableCases: true });
   }, 30_000);
   afterAll(async () => {
     await temporary?.cleanup();
-    if (oldJwtSecret === undefined) delete process.env.PAPERCLIP_AGENT_JWT_SECRET;
-    else process.env.PAPERCLIP_AGENT_JWT_SECRET = oldJwtSecret;
+    if (oldJwtSecret === undefined) delete process.env.PILIBALA_AGENT_JWT_SECRET;
+    else process.env.PILIBALA_AGENT_JWT_SECRET = oldJwtSecret;
   });
 
   async function fixture(runtimeMode: "native" | "legacy") {

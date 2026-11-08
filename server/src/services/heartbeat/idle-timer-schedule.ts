@@ -1,5 +1,5 @@
-import { agents, companies, type Db } from "@paperclipai/db";
-import { AGENT_STATUSES, COMPANY_STATUSES } from "@paperclipai/shared";
+import { agents, companies, type Db } from "@pilibalaai/db";
+import { AGENT_STATUSES, COMPANY_STATUSES } from "@pilibalaai/shared";
 import { eq, getTableColumns } from "drizzle-orm";
 import { evaluateAgentInvokability } from "../agent-invokability.js";
 import { supportsUnscopedTimerHeartbeat } from "../heartbeat-policy.js";
@@ -8,8 +8,8 @@ import { idleDeadlineRowLimit, isFutureIdleDeadline, type IdleDeadlineSnapshot }
 
 export async function readIdleAgentTimerSchedule(tx: Pick<Db, "select">, now: number,
   env: Record<string, string | undefined> = process.env, checkBudget: () => void = () => {}): Promise<IdleDeadlineSnapshot> {
-  const flags = [env.HEARTBEAT_SCHEDULER_ENABLED, env.PAPERCLIP_IN_WORKTREE,
-    env.PAPERCLIP_DATABASE_RESTORE_IN_PROGRESS, env.PAPERCLIP_RESTORE_IN_PROGRESS];
+  const flags = [env.HEARTBEAT_SCHEDULER_ENABLED, env.PILIBALA_IN_WORKTREE,
+    env.PILIBALA_DATABASE_RESTORE_IN_PROGRESS, env.PILIBALA_RESTORE_IN_PROGRESS];
   const state: unknown[] = [flags];
   const blocked = () => ({ blocked: true, state, deadlines: [] });
   if (flags[0] === "false" || flags.slice(1).some(v => ["true", "1", "yes", "on"].includes(v ?? ""))) return blocked();

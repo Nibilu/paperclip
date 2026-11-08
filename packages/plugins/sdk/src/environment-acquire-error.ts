@@ -15,8 +15,8 @@ import {
  */
 export type PluginEnvironmentAcquireErrorDiagnostic = PluginEnvironmentResumeErrorDiagnostic;
 
-const SCHEMA = "paperclip/environment-acquire-error/v1";
-const CLEANUP_SCHEMA = "paperclip/environment-creation-cleanup/v1";
+const SCHEMA = "pilibala/environment-acquire-error/v1";
+const CLEANUP_SCHEMA = "pilibala/environment-creation-cleanup/v1";
 
 function field(value: unknown, key: string): unknown {
   try { return value && typeof value === "object" ? (value as Record<string, unknown>)[key] : undefined; }

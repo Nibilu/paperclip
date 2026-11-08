@@ -2,16 +2,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { AdapterRuntimeMcpServer } from "@paperclipai/adapter-utils";
-import { runChildProcess } from "@paperclipai/adapter-utils/server-utils";
-import { buildPaperclipTaskMarkdown } from "../services/heartbeat.js";
+import type { AdapterRuntimeMcpServer } from "@pilibalaai/adapter-utils";
+import { runChildProcess } from "@pilibalaai/adapter-utils/server-utils";
+import { buildPilibalaTaskMarkdown } from "../services/heartbeat.js";
 import {
   claudeCommandSupportsEffortFlag,
   claudeSessionCwdMatchesExecutionTarget,
   execute,
   resetClaudeCliCapabilitiesCacheForTests,
   sessionCodec,
-} from "@paperclipai/adapter-claude-local/server";
+} from "@pilibalaai/adapter-claude-local/server";
 
 async function writeFailingClaudeCommand(
   commandPath: string,
@@ -60,7 +60,7 @@ const instructionsIndex = argv.indexOf("--append-system-prompt-file");
 const instructionsFilePath = instructionsIndex >= 0 ? argv[instructionsIndex + 1] : null;
 const mcpConfigIndex = argv.indexOf("--mcp-config");
 const mcpConfigPath = mcpConfigIndex >= 0 ? argv[mcpConfigIndex + 1] : null;
-const capturePath = process.env.PAPERCLIP_TEST_CAPTURE_PATH;
+const capturePath = process.env.PILIBALA_TEST_CAPTURE_PATH;
 const payload = {
   argv,
   prompt: fs.readFileSync(0, "utf8"),
@@ -74,9 +74,9 @@ const payload = {
   claudeConfigEntries: process.env.CLAUDE_CONFIG_DIR && fs.existsSync(process.env.CLAUDE_CONFIG_DIR)
     ? fs.readdirSync(process.env.CLAUDE_CONFIG_DIR).sort()
     : [],
-  paperclipApiUrl: process.env.PAPERCLIP_API_URL || null,
-  paperclipApiKey: process.env.PAPERCLIP_API_KEY || null,
-  paperclipApiBridgeMode: process.env.PAPERCLIP_API_BRIDGE_MODE || null,
+  pilibalaApiUrl: process.env.PILIBALA_API_URL || null,
+  pilibalaApiKey: process.env.PILIBALA_API_KEY || null,
+  pilibalaApiBridgeMode: process.env.PILIBALA_API_BRIDGE_MODE || null,
 };
 if (capturePath) {
   fs.writeFileSync(capturePath, JSON.stringify(payload), "utf8");
@@ -108,7 +108,7 @@ const addDirIndex = argv.indexOf("--add-dir");
 const addDir = addDirIndex >= 0 ? argv[addDirIndex + 1] : null;
 const instructionsIndex = argv.indexOf("--append-system-prompt-file");
 const instructionsFilePath = instructionsIndex >= 0 ? argv[instructionsIndex + 1] : null;
-const capturePath = process.env.PAPERCLIP_TEST_CAPTURE_PATH;
+const capturePath = process.env.PILIBALA_TEST_CAPTURE_PATH;
 const payload = {
   argv,
   prompt: fs.readFileSync(0, "utf8"),
@@ -136,7 +136,7 @@ const path = require("node:path");
 
 const argv = process.argv.slice(2);
 if (argv.includes("--help")) {
-  const helpCountPath = process.env.PAPERCLIP_TEST_HELP_COUNT_PATH;
+  const helpCountPath = process.env.PILIBALA_TEST_HELP_COUNT_PATH;
   if (helpCountPath) {
     const current = fs.existsSync(helpCountPath) ? Number(fs.readFileSync(helpCountPath, "utf8")) || 0 : 0;
     fs.writeFileSync(helpCountPath, String(current + 1), "utf8");
@@ -148,7 +148,7 @@ const addDirIndex = argv.indexOf("--add-dir");
 const addDir = addDirIndex >= 0 ? argv[addDirIndex + 1] : null;
 const instructionsIndex = argv.indexOf("--append-system-prompt-file");
 const instructionsFilePath = instructionsIndex >= 0 ? argv[instructionsIndex + 1] : null;
-const capturePath = process.env.PAPERCLIP_TEST_CAPTURE_PATH;
+const capturePath = process.env.PILIBALA_TEST_CAPTURE_PATH;
 const payload = {
   argv,
   prompt: fs.readFileSync(0, "utf8"),
@@ -178,9 +178,9 @@ type CapturePayload = {
   claudeConfigDir: string | null;
   claudeConfigEntries?: string[];
   mcpConfigContents?: string | null;
-  paperclipApiUrl?: string | null;
-  paperclipApiKey?: string | null;
-  paperclipApiBridgeMode?: string | null;
+  pilibalaApiUrl?: string | null;
+  pilibalaApiKey?: string | null;
+  pilibalaApiBridgeMode?: string | null;
   appendedSystemPromptFilePath?: string | null;
   appendedSystemPromptFileContents?: string | null;
 };
@@ -194,8 +194,8 @@ async function writePoisonedMessageIdClaudeCommand(commandPath: string): Promise
 if (process.argv.includes("--version")) { console.log("2.1.286 (Claude Code)"); process.exit(0); }
 const fs = require("node:fs");
 
-const capturePath = process.env.PAPERCLIP_TEST_CAPTURE_PATH;
-const statePath = process.env.PAPERCLIP_TEST_STATE_PATH;
+const capturePath = process.env.PILIBALA_TEST_CAPTURE_PATH;
+const statePath = process.env.PILIBALA_TEST_STATE_PATH;
 const payload = {
   argv: process.argv.slice(2),
   prompt: fs.readFileSync(0, "utf8"),
@@ -231,7 +231,7 @@ async function writeAlwaysPoisonedMessageIdClaudeCommand(commandPath: string): P
 if (process.argv.includes("--version")) { console.log("2.1.286 (Claude Code)"); process.exit(0); }
 const fs = require("node:fs");
 
-const capturePath = process.env.PAPERCLIP_TEST_CAPTURE_PATH;
+const capturePath = process.env.PILIBALA_TEST_CAPTURE_PATH;
 const payload = {
   argv: process.argv.slice(2),
   prompt: fs.readFileSync(0, "utf8"),
@@ -262,8 +262,8 @@ async function writeRetryThenSucceedClaudeCommand(commandPath: string): Promise<
 if (process.argv.includes("--version")) { console.log("2.1.286 (Claude Code)"); process.exit(0); }
 const fs = require("node:fs");
 
-const capturePath = process.env.PAPERCLIP_TEST_CAPTURE_PATH;
-const statePath = process.env.PAPERCLIP_TEST_STATE_PATH;
+const capturePath = process.env.PILIBALA_TEST_CAPTURE_PATH;
+const statePath = process.env.PILIBALA_TEST_STATE_PATH;
 const promptFileFlagIndex = process.argv.indexOf("--append-system-prompt-file");
 const appendedSystemPromptFilePath = promptFileFlagIndex >= 0 ? process.argv[promptFileFlagIndex + 1] : null;
 const payload = {
@@ -362,9 +362,9 @@ function createLocalSandboxRunner() {
 
 describe("claude execute", () => {
   it("passes real assignment markdown and ordered current events once through the CLI", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-context-owner-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-context-owner-"));
     const { workspace, commandPath, capturePath, restore } = await setupExecuteEnv(root);
-    const markdown = buildPaperclipTaskMarkdown({
+    const markdown = buildPilibalaTaskMarkdown({
       issue: { id: "issue-1", identifier: "PAP-901", title: "Repeat phrase Repeat phrase", description: "Repeat phrase Repeat phrase" },
       wakeComments: [
         { id: "comment-a", body: "Same event body." },
@@ -372,7 +372,7 @@ describe("claude execute", () => {
       ],
       includeWakeComments: false,
     });
-    const historicalMarkdown = buildPaperclipTaskMarkdown({
+    const historicalMarkdown = buildPilibalaTaskMarkdown({
       issue: { id: "issue-1", identifier: "PAP-901", title: "Repeat phrase Repeat phrase", description: "Repeat phrase Repeat phrase" },
       wakeComments: [
         { id: "comment-a", body: "Same event body." },
@@ -386,14 +386,14 @@ describe("claude execute", () => {
         runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
         config: {
           engine: "cli", command: commandPath, cwd: workspace,
-          env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath },
-          promptTemplate: "Custom template keeps {{paperclipTaskMarkdown}} and {{paperclipWakePrompt}}.",
+          env: { PILIBALA_TEST_CAPTURE_PATH: capturePath },
+          promptTemplate: "Custom template keeps {{pilibalaTaskMarkdown}} and {{pilibalaWakePrompt}}.",
         },
         context: {
           issueId: "issue-1",
-          paperclipTaskMarkdown: historicalMarkdown,
-          paperclipTaskMarkdownAssignment: markdown,
-          paperclipWake: {
+          pilibalaTaskMarkdown: historicalMarkdown,
+          pilibalaTaskMarkdownAssignment: markdown,
+          pilibalaWake: {
             reason: "issue_commented",
             issue: { id: "issue-1", identifier: "PAP-901", title: "Repeat phrase Repeat phrase", description: "Repeat phrase Repeat phrase", status: "in_progress" },
             comments: [
@@ -403,7 +403,7 @@ describe("claude execute", () => {
             commentWindow: { requestedCount: 2, includedCount: 2, missingCount: 0 },
             fallbackFetchNeeded: false,
           },
-          paperclipTurnContext: { version: 1, assignment: { owner: "task_markdown" }, events: { owner: "wake_prompt", comments: [{ id: "comment-a", revision: "a" }, { id: "comment-b", revision: "b" }] } },
+          pilibalaTurnContext: { version: 1, assignment: { owner: "task_markdown" }, events: { owner: "wake_prompt", comments: [{ id: "comment-a", revision: "a" }, { id: "comment-b", revision: "b" }] } },
         },
         onLog: async () => {},
       });
@@ -424,7 +424,7 @@ describe("claude execute", () => {
     ["  ", "claude-opus-5-5"],
     ["claude-sonnet-4-5", "claude-sonnet-4-5"],
   ])("passes the resolved model to the CLI for %j", async (model, expected) => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-default-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-default-"));
     const { workspace, commandPath, capturePath, restore } = await setupExecuteEnv(root);
     try {
       const result = await execute({
@@ -433,7 +433,7 @@ describe("claude execute", () => {
         runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
         config: {
           engine: "cli", model, command: commandPath, cwd: workspace,
-          env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath },
+          env: { PILIBALA_TEST_CAPTURE_PATH: capturePath },
         },
         context: {}, onLog: async () => {},
       });
@@ -447,7 +447,7 @@ describe("claude execute", () => {
   });
 
   it("uses a strict per-agent MCP config only when managed servers are present", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-mcp-config-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-mcp-config-"));
     const { workspace, commandPath, capturePath, restore } = await setupExecuteEnv(root);
     try {
       const run = async (runId: string, agentId: string, servers: AdapterRuntimeMcpServer[]) => {
@@ -459,7 +459,7 @@ describe("claude execute", () => {
             engine: "cli",
             command: commandPath,
             cwd: workspace,
-            env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath },
+            env: { PILIBALA_TEST_CAPTURE_PATH: capturePath },
             promptTemplate: "Do work.",
           },
           runtimeMcp: { getServers: () => servers },
@@ -472,7 +472,7 @@ describe("claude execute", () => {
 
       const alpha = await run("run-alpha", "agent-alpha", [{
         name: "alpha",
-        url: "https://paperclip.example/api/tool-gateway/gateways/alpha/mcp",
+        url: "https://pilibala.example/api/tool-gateway/gateways/alpha/mcp",
         token: "alpha-token",
         connectionId: "connection-alpha",
       }]);
@@ -483,7 +483,7 @@ describe("claude execute", () => {
         mcpServers: {
           alpha: {
             type: "http",
-            url: "https://paperclip.example/api/tool-gateway/gateways/alpha/mcp",
+            url: "https://pilibala.example/api/tool-gateway/gateways/alpha/mcp",
             headers: { Authorization: "Bearer alpha-token" },
           },
         },
@@ -500,14 +500,14 @@ describe("claude execute", () => {
   });
 
   /**
-   * Regression tests for https://github.com/paperclipai/paperclip/issues/2848
+   * Regression tests for https://github.com/pilibalaai/pilibala/issues/2848
    *
    * --append-system-prompt-file should only be passed on fresh sessions.
    * On resumed sessions the instructions are already in the session cache;
    * re-injecting them wastes tokens and may be rejected by the CLI.
    */
   it("passes --append-system-prompt-file on a fresh session when instructionsFile is set", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-exec-fresh-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-exec-fresh-"));
     const { workspace, commandPath, capturePath, restore } = await setupExecuteEnv(root);
     const instructionsFile = path.join(root, "instructions.md");
     await fs.writeFile(instructionsFile, "# Agent instructions", "utf-8");
@@ -520,7 +520,7 @@ describe("claude execute", () => {
           engine: "cli",
           command: commandPath,
           cwd: workspace,
-          env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath },
+          env: { PILIBALA_TEST_CAPTURE_PATH: capturePath },
           promptTemplate: "Do work.",
           instructionsFilePath: instructionsFile,
         },
@@ -541,7 +541,7 @@ describe("claude execute", () => {
   });
 
   it("omits --append-system-prompt-file on a resumed session even when instructionsFile is set", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-exec-resume-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-exec-resume-"));
     const { workspace, commandPath, capturePath, restore } = await setupExecuteEnv(root);
     const instructionsFile = path.join(root, "instructions.md");
     await fs.writeFile(instructionsFile, "# Agent instructions", "utf-8");
@@ -554,7 +554,7 @@ describe("claude execute", () => {
           engine: "cli",
           command: commandPath,
           cwd: workspace,
-          env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath },
+          env: { PILIBALA_TEST_CAPTURE_PATH: capturePath },
           promptTemplate: "Do work.",
           instructionsFilePath: instructionsFile,
         },
@@ -579,7 +579,7 @@ describe("claude execute", () => {
    * was actually passed — i.e. on fresh sessions, not resumed ones.
    */
   it("commandNotes reports injection on a fresh session with instructionsFile", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-exec-notes-fresh-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-exec-notes-fresh-"));
     const { workspace, commandPath, restore } = await setupExecuteEnv(root);
     const instructionsFile = path.join(root, "instructions.md");
     await fs.writeFile(instructionsFile, "# Agent instructions", "utf-8");
@@ -610,7 +610,7 @@ describe("claude execute", () => {
   });
 
   it("commandNotes is empty on a resumed session even when instructionsFile is set", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-exec-notes-resume-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-exec-notes-resume-"));
     const { workspace, commandPath, restore } = await setupExecuteEnv(root);
     const instructionsFile = path.join(root, "instructions.md");
     await fs.writeFile(instructionsFile, "# Agent instructions", "utf-8");
@@ -641,7 +641,7 @@ describe("claude execute", () => {
   });
 
   it("rebuilds the combined instructions file when an unknown resumed session falls back to fresh", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-exec-resume-fallback-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-exec-resume-fallback-"));
     const { workspace, commandPath, capturePath, statePath, restore } = await setupExecuteEnv(root, {
       commandWriter: writeRetryThenSucceedClaudeCommand,
     });
@@ -661,8 +661,8 @@ describe("claude execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
-            PAPERCLIP_TEST_STATE_PATH: statePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_STATE_PATH: statePath,
           },
           promptTemplate: "Do work.",
           instructionsFilePath: instructionsFile,
@@ -713,7 +713,7 @@ describe("claude execute", () => {
   });
 
   it("normalizes max-turn exhaustion into scheduler stop metadata", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-exec-max-turns-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-exec-max-turns-"));
     const resultEvent = {
       type: "result",
       subtype: "error_max_turns",
@@ -754,7 +754,7 @@ describe("claude execute", () => {
   });
 
   it("does not normalize unstructured max-turn text into scheduler stop metadata", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-exec-max-turn-text-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-exec-max-turn-text-"));
     const resultEvent = {
       type: "result",
       subtype: "error",
@@ -793,7 +793,7 @@ describe("claude execute", () => {
   });
 
   it("does not normalize fallback stdout/stderr max-turn text into scheduler stop metadata", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-exec-max-turn-fallback-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-exec-max-turn-fallback-"));
     const { workspace, commandPath, restore } = await setupExecuteEnv(root, {
       commandWriter: (commandPath) =>
         writeTextFailingClaudeCommand(commandPath, {
@@ -829,7 +829,7 @@ describe("claude execute", () => {
   });
 
   it("logs HOME, CLAUDE_CONFIG_DIR, and the resolved executable path in invocation metadata", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-execute-meta-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-execute-meta-"));
     const workspace = path.join(root, "workspace");
     const binDir = path.join(root, "bin");
     const commandPath = path.join(binDir, "claude");
@@ -870,9 +870,9 @@ describe("claude execute", () => {
           command: "claude",
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -891,7 +891,7 @@ describe("claude execute", () => {
       expect(loggedCommand).toBe(commandPath);
       expect(loggedEnv.HOME).toBe(root);
       expect(loggedEnv.CLAUDE_CONFIG_DIR).toBe(claudeConfigDir);
-      expect(loggedEnv.PAPERCLIP_RESOLVED_COMMAND).toBe(commandPath);
+      expect(loggedEnv.PILIBALA_RESOLVED_COMMAND).toBe(commandPath);
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
@@ -904,7 +904,7 @@ describe("claude execute", () => {
   });
 
   it("injects bridge env into sandbox-managed remote runs", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-execute-sandbox-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-execute-sandbox-"));
     const localWorkspace = path.join(root, "workspace");
     const remoteWorkspace = path.join(root, "sandbox-$HOME");
     const binDir = path.join(root, "bin");
@@ -945,9 +945,9 @@ describe("claude execute", () => {
           command: commandPath,
           cwd: localWorkspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath1,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath1,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         executionTarget: {
@@ -978,11 +978,11 @@ describe("claude execute", () => {
       const capture = JSON.parse(await fs.readFile(capturePath1, "utf8")) as CapturePayload;
       expect(capture.argv).toContain("--dangerously-skip-permissions");
       expect(capture.argv).not.toContain("--allowedTools");
-      expect(capture.claudeConfigDir).toBe(path.join(remoteWorkspace, ".paperclip-runtime", "claude", "config"));
+      expect(capture.claudeConfigDir).toBe(path.join(remoteWorkspace, ".pilibala-runtime", "claude", "config"));
       expect(capture.claudeConfigEntries).toContain("settings.json");
-      expect(capture.paperclipApiUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
-      expect(capture.paperclipApiKey).not.toBe("run-jwt-token");
-      expect(capture.paperclipApiBridgeMode).toBe("queue_v1");
+      expect(capture.pilibalaApiUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+      expect(capture.pilibalaApiKey).not.toBe("run-jwt-token");
+      expect(capture.pilibalaApiBridgeMode).toBe("queue_v1");
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
@@ -993,7 +993,7 @@ describe("claude execute", () => {
   }, 10_000);
 
   it("omits --effort for sandbox-managed runs when the installed Claude CLI does not advertise it", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-execute-sandbox-effort-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-execute-sandbox-effort-"));
     const { workspace, commandPath, capturePath, restore } = await setupExecuteEnv(root, {
       commandWriter: writeHelpWithoutEffortClaudeCommand,
     });
@@ -1022,7 +1022,7 @@ describe("claude execute", () => {
           cwd: workspace,
           effort: "low",
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
           },
           promptTemplate: "Fallback cleanly if the sandbox CLI is old.",
         },
@@ -1051,12 +1051,12 @@ describe("claude execute", () => {
   }, 10_000);
 
   it.each(["compatible", "network-error"])("prepares the selected Claude command before probing effort and logs the %s outcome", async state => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-prepared-effort-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-prepared-effort-"));
     const { workspace, commandPath, capturePath, restore } = await setupExecuteEnv(root, {
       commandWriter: writeHelpWithoutEffortClaudeCommand,
     });
     const remoteWorkspace = path.join(root, "sandbox-workspace");
-    const preparedCommand = path.join(remoteWorkspace, ".paperclip-runtime/claude-cli/2.1.280/bin/claude");
+    const preparedCommand = path.join(remoteWorkspace, ".pilibala-runtime/claude-cli/2.1.280/bin/claude");
     const logs: string[] = [];
     const commands: string[] = [];
     const loggedCommands: Array<string | undefined> = [];
@@ -1073,7 +1073,7 @@ describe("claude execute", () => {
         agent: { id: "agent-1", companyId: "company-1", name: "Claude Coder", adapterType: "claude_local", adapterConfig: { engine: "cli" } },
         runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
         config: { engine: "cli", command: "claude", cwd: workspace, model: "claude-opus-5-5", effort: "high",
-          env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath }, promptTemplate: "Keep the selected reasoning effort." },
+          env: { PILIBALA_TEST_CAPTURE_PATH: capturePath }, promptTemplate: "Keep the selected reasoning effort." },
         context: {},
         executionTarget: { kind: "remote", transport: "sandbox", providerKey: "daytona", environmentId: "env-1", leaseId: "lease-1", remoteCwd: remoteWorkspace,
           runner: { execute: async input => {
@@ -1082,7 +1082,7 @@ describe("claude execute", () => {
             return runner.execute(input);
           } } },
         authToken: "run-jwt-token", onLog: async (_stream, chunk) => { logs.push(chunk); },
-        onMeta: async meta => { commands.push(meta.command); loggedCommands.push(meta.env?.PAPERCLIP_RESOLVED_COMMAND); },
+        onMeta: async meta => { commands.push(meta.command); loggedCommands.push(meta.env?.PILIBALA_RESOLVED_COMMAND); },
       });
       if (state === "compatible") {
         expect(result.exitCode).toBe(0);
@@ -1104,7 +1104,7 @@ describe("claude execute", () => {
   }, 10_000);
 
   it("passes through --effort and reuses the sandbox capability probe across sandbox leases when the installed Claude CLI advertises it", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-execute-sandbox-effort-supported-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-execute-sandbox-effort-supported-"));
     const { workspace, commandPath, capturePath, restore } = await setupExecuteEnv(root, {
       commandWriter: writeHelpWithEffortClaudeCommand,
     });
@@ -1132,8 +1132,8 @@ describe("claude execute", () => {
         cwd: workspace,
         effort: "low",
         env: {
-          PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
-          PAPERCLIP_TEST_HELP_COUNT_PATH: helpCountPath,
+          PILIBALA_TEST_CAPTURE_PATH: capturePath,
+          PILIBALA_TEST_HELP_COUNT_PATH: helpCountPath,
         },
         promptTemplate: "Keep the requested effort when supported.",
       },
@@ -1234,23 +1234,23 @@ describe("claude execute", () => {
   });
 
   it.each(["unchanged", "added", "removed"])("resumes a stable Claude prompt bundle with %s MCP tools", async (change) => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-execute-bundle-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-execute-bundle-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "claude");
     const capturePath1 = path.join(root, "capture-1.json");
     const capturePath2 = path.join(root, "capture-2.json");
     const instructionsPath = path.join(root, "AGENTS.md");
-    const paperclipHome = path.join(root, "paperclip-home");
+    const pilibalaHome = path.join(root, "pilibala-home");
     await fs.mkdir(workspace, { recursive: true });
     await fs.writeFile(instructionsPath, "You are managed instructions.\n", "utf8");
     await writeFakeClaudeCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    const previousPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
+    const previousPilibalaHome = process.env.PILIBALA_HOME;
+    const previousPilibalaInstanceId = process.env.PILIBALA_INSTANCE_ID;
     process.env.HOME = root;
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    delete process.env.PAPERCLIP_INSTANCE_ID;
+    process.env.PILIBALA_HOME = pilibalaHome;
+    delete process.env.PILIBALA_INSTANCE_ID;
 
     try {
       const first = await execute({
@@ -1274,19 +1274,19 @@ describe("claude execute", () => {
           cwd: workspace,
           instructionsFilePath: instructionsPath,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath1,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath1,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
-          paperclipSkillSync: {
-            desiredSkills: ["paperclip"],
+          promptTemplate: "Follow the pilibala heartbeat.",
+          pilibalaSkillSync: {
+            desiredSkills: ["pilibala"],
           },
         },
         context: {},
         runtimeMcp: {
           getServers: () => [{
-            name: "Paperclip projects",
+            name: "Pilibala projects",
             url: "http://localhost:3100/api/mcp/project-tools",
-            connectionId: "paperclip-project-tools",
+            connectionId: "pilibala-project-tools",
             token: "run-jwt-token",
           }],
         },
@@ -1325,11 +1325,11 @@ describe("claude execute", () => {
           cwd: workspace,
           instructionsFilePath: instructionsPath,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath2,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath2,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
-          paperclipSkillSync: {
-            desiredSkills: ["paperclip"],
+          promptTemplate: "Follow the pilibala heartbeat.",
+          pilibalaSkillSync: {
+            desiredSkills: ["pilibala"],
           },
         },
         context: {
@@ -1338,7 +1338,7 @@ describe("claude execute", () => {
           wakeReason: "issue_commented",
           wakeCommentId: "comment-2",
           refreshTools: change !== "unchanged",
-          paperclipWake: {
+          pilibalaWake: {
             reason: "issue_commented",
             issue: {
               id: "issue-1",
@@ -1370,9 +1370,9 @@ describe("claude execute", () => {
         },
         runtimeMcp: {
           getServers: () => change === "removed" ? [] : [{
-            name: "Paperclip projects",
+            name: "Pilibala projects",
             url: "http://localhost:3100/api/mcp/project-tools",
-            connectionId: "paperclip-project-tools",
+            connectionId: "pilibala-project-tools",
             token: "next-run-jwt-token",
           }, ...(change === "added" ? [{ name: "GitHub", url: "https://example.test/github/mcp", connectionId: "github", token: "fresh-github-token" }] : [])],
         },
@@ -1386,7 +1386,7 @@ describe("claude execute", () => {
       const capture1 = JSON.parse(await fs.readFile(capturePath1, "utf8")) as CapturePayload;
       const capture2 = JSON.parse(await fs.readFile(capturePath2, "utf8")) as CapturePayload;
       const expectedRoot = path.join(
-        paperclipHome,
+        pilibalaHome,
         "instances",
         "default",
         "companies",
@@ -1404,7 +1404,7 @@ describe("claude execute", () => {
       expect(capture1.instructionsContents).not.toContain(instructionsPath);
       expect(capture1.prompt).toContain(`Agent instructions for this run were loaded from ${instructionsPath}.`);
       expect(capture2.prompt).toContain(`Agent instructions for this run were loaded from ${instructionsPath}.`);
-      expect(capture1.skillEntries).toContain("paperclip");
+      expect(capture1.skillEntries).toContain("pilibala");
       expect(capture2.argv).toContain("--resume");
       expect(getFreshSessionHandoff).not.toHaveBeenCalled();
       expect(capture2.argv).toContain("11111111-1111-4111-8111-111111111111");
@@ -1414,21 +1414,21 @@ describe("claude execute", () => {
         expect(capture2.mcpConfigContents).not.toContain('"run-jwt-token"');
         if (change === "added") expect(capture2.mcpConfigContents).toContain("fresh-github-token");
       }
-      expect(capture2.prompt).toContain("## Paperclip Resume Delta");
-      expect(capture2.prompt).not.toContain("Follow the paperclip heartbeat.");
+      expect(capture2.prompt).toContain("## Pilibala Resume Delta");
+      expect(capture2.prompt).not.toContain("Follow the pilibala heartbeat.");
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousPaperclipHome;
-      if (previousPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = previousPaperclipInstanceId;
+      if (previousPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = previousPilibalaHome;
+      if (previousPilibalaInstanceId === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+      else process.env.PILIBALA_INSTANCE_ID = previousPilibalaInstanceId;
       await fs.rm(root, { recursive: true, force: true });
     }
   });
 
   it("resumes across per-run instruction copies and refreshes their location", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-working-copy-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-working-copy-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "claude");
     const capturePath = path.join(root, "capture.json");
@@ -1437,8 +1437,8 @@ describe("claude execute", () => {
     await fs.mkdir(skillDir);
     await fs.writeFile(path.join(skillDir, "SKILL.md"), "First skill version.\n");
     await writeFakeClaudeCommand(commandPath);
-    vi.stubEnv("PAPERCLIP_HOME", path.join(root, "paperclip-home"));
-    vi.stubEnv("PAPERCLIP_INSTANCE_ID", "default");
+    vi.stubEnv("PILIBALA_HOME", path.join(root, "pilibala-home"));
+    vi.stubEnv("PILIBALA_INSTANCE_ID", "default");
 
     try {
       let sessionParams: Record<string, unknown> | null = null;
@@ -1463,9 +1463,9 @@ describe("claude execute", () => {
             command: commandPath,
             cwd: workspace,
             instructionsFilePath: instructionsPath,
-            paperclipRuntimeSkills: [{ key: "test-skill", runtimeName: "test-skill", source: skillDir }],
-            paperclipSkillSync: { desiredSkills: ["test-skill"] },
-            env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath, CLAUDE_CONFIG_DIR: path.join(root, "claude-config") },
+            pilibalaRuntimeSkills: [{ key: "test-skill", runtimeName: "test-skill", source: skillDir }],
+            pilibalaSkillSync: { desiredSkills: ["test-skill"] },
+            env: { PILIBALA_TEST_CAPTURE_PATH: capturePath, CLAUDE_CONFIG_DIR: path.join(root, "claude-config") },
           },
           context: { issueId: "issue-1" },
           onLog: async (_stream, chunk) => { logs.push(chunk); },
@@ -1503,24 +1503,24 @@ describe("claude execute", () => {
   });
 
   it("starts a fresh Claude session when the stable prompt bundle changes", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-execute-reset-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-execute-reset-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "claude");
     const capturePath1 = path.join(root, "capture-before.json");
     const capturePath2 = path.join(root, "capture-after.json");
     const instructionsPath = path.join(root, "AGENTS.md");
-    const paperclipHome = path.join(root, "paperclip-home");
+    const pilibalaHome = path.join(root, "pilibala-home");
     const logs: string[] = [];
     await fs.mkdir(workspace, { recursive: true });
     await fs.writeFile(instructionsPath, "Version one instructions.\n", "utf8");
     await writeFakeClaudeCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    const previousPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
+    const previousPilibalaHome = process.env.PILIBALA_HOME;
+    const previousPilibalaInstanceId = process.env.PILIBALA_INSTANCE_ID;
     process.env.HOME = root;
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    delete process.env.PAPERCLIP_INSTANCE_ID;
+    process.env.PILIBALA_HOME = pilibalaHome;
+    delete process.env.PILIBALA_INSTANCE_ID;
 
     try {
       const first = await execute({
@@ -1544,9 +1544,9 @@ describe("claude execute", () => {
           cwd: workspace,
           instructionsFilePath: instructionsPath,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath1,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath1,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -1576,9 +1576,9 @@ describe("claude execute", () => {
           cwd: workspace,
           instructionsFilePath: instructionsPath,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath2,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath2,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -1596,21 +1596,21 @@ describe("claude execute", () => {
 
       expect(before.instructionsFilePath).not.toBe(after.instructionsFilePath);
       expect(after.argv).not.toContain("--resume");
-      expect(after.prompt).toContain("Follow the paperclip heartbeat.");
+      expect(after.prompt).toContain("Follow the pilibala heartbeat.");
       expect(logs.join("")).toContain("will not be resumed with");
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousPaperclipHome;
-      if (previousPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = previousPaperclipInstanceId;
+      if (previousPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = previousPilibalaHome;
+      if (previousPilibalaInstanceId === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+      else process.env.PILIBALA_INSTANCE_ID = previousPilibalaInstanceId;
       await fs.rm(root, { recursive: true, force: true });
     }
   }, 15_000);
 
   it("classifies Claude 'out of extra usage' failures as provider quota errors", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-execute-transient-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-execute-transient-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "claude");
     await fs.mkdir(workspace, { recursive: true });
@@ -1650,7 +1650,7 @@ describe("claude execute", () => {
           engine: "cli",
           command: commandPath,
           cwd: workspace,
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -1677,7 +1677,7 @@ describe("claude execute", () => {
   });
 
   it("treats subtype=success results as successful even when the process exits nonzero", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-execute-success-subtype-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-execute-success-subtype-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "claude");
     await fs.mkdir(workspace, { recursive: true });
@@ -1716,7 +1716,7 @@ describe("claude execute", () => {
           engine: "cli",
           command: commandPath,
           cwd: workspace,
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -1735,7 +1735,7 @@ describe("claude execute", () => {
   });
 
   it("classifies rate-limit / overloaded failures without reset metadata as transient", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-execute-rate-limit-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-execute-rate-limit-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "claude");
     await fs.mkdir(workspace, { recursive: true });
@@ -1773,7 +1773,7 @@ describe("claude execute", () => {
           engine: "cli",
           command: commandPath,
           cwd: workspace,
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -1794,7 +1794,7 @@ describe("claude execute", () => {
   });
 
   it("does not reclassify deterministic Claude failures (auth, max turns) as transient", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-execute-max-turns-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-execute-max-turns-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "claude");
     await fs.mkdir(workspace, { recursive: true });
@@ -1831,7 +1831,7 @@ describe("claude execute", () => {
           engine: "cli",
           command: commandPath,
           cwd: workspace,
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the pilibala heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -1848,7 +1848,7 @@ describe("claude execute", () => {
   });
 
   it("auto-rotates session on previous_message_id 400 (synthetic-msg poisoning) and succeeds on retry", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-exec-poisoned-msgid-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-exec-poisoned-msgid-"));
     const { workspace, commandPath, capturePath, statePath, restore } = await setupExecuteEnv(root, {
       commandWriter: writePoisonedMessageIdClaudeCommand,
     });
@@ -1863,8 +1863,8 @@ describe("claude execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
-            PAPERCLIP_TEST_STATE_PATH: statePath,
+            PILIBALA_TEST_CAPTURE_PATH: capturePath,
+            PILIBALA_TEST_STATE_PATH: statePath,
           },
           promptTemplate: "Do work.",
         },
@@ -1896,7 +1896,7 @@ describe("claude execute", () => {
    * /v1/messages returns 400 again, permanently stranding the issue.
    */
   it("drops sessionId and forces clearSession when a fresh run reports a poisoned previous_message_id", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-exec-poisoned-fresh-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-exec-poisoned-fresh-"));
     const { workspace, commandPath, capturePath, restore } = await setupExecuteEnv(root, {
       commandWriter: writeAlwaysPoisonedMessageIdClaudeCommand,
     });
@@ -1909,7 +1909,7 @@ describe("claude execute", () => {
           engine: "cli",
           command: commandPath,
           cwd: workspace,
-          env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath },
+          env: { PILIBALA_TEST_CAPTURE_PATH: capturePath },
           promptTemplate: "Do work.",
         },
         context: {},
@@ -1940,7 +1940,7 @@ describe("claude execute", () => {
    * was persisted and every subsequent continuation hit the same 400 again.
    */
   it("forces clearSession when the recovery retry also reports a poisoned previous_message_id", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-exec-poisoned-retry-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-exec-poisoned-retry-"));
     const { workspace, commandPath, capturePath, restore } = await setupExecuteEnv(root, {
       commandWriter: writeAlwaysPoisonedMessageIdClaudeCommand,
     });
@@ -1958,7 +1958,7 @@ describe("claude execute", () => {
           engine: "cli",
           command: commandPath,
           cwd: workspace,
-          env: { PAPERCLIP_TEST_CAPTURE_PATH: capturePath },
+          env: { PILIBALA_TEST_CAPTURE_PATH: capturePath },
           promptTemplate: "Do work.",
         },
         context: {},

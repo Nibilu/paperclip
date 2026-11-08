@@ -13,17 +13,17 @@ describe("connector availability", () => {
       expect(isConnectorFeatureEnabled(gated, settings)).toBe(false);
       expect(isConnectorFeatureEnabled(ordinary, settings)).toBe(true);
     }
-    expect(isConnectorFeatureEnabled(gated, { enablePaperclipNotebook: true })).toBe(false);
+    expect(isConnectorFeatureEnabled(gated, { enablePilibalaNotebook: true })).toBe(false);
     expect(isConnectorFeatureEnabled(gated, { enableCases: true })).toBe(true);
   });
 
   it("validates the feature key and declares Notebook's hidden rollout in its manifest", () => {
     expect(appDefinitionSchema.parse(gated).experimentalFeatureKey).toBe("enableCases");
     expect(appDefinitionSchema.safeParse({ ...gated, experimentalFeatureKey: "typoFeature" }).success).toBe(false);
-    const notebook = getConnectableAppDefinition("paperclip-notebook")!;
-    expect(notebook.experimentalFeatureKey).toBe("enablePaperclipNotebook");
+    const notebook = getConnectableAppDefinition("pilibala-notebook")!;
+    expect(notebook.experimentalFeatureKey).toBe("enablePilibalaNotebook");
     expect(isConnectorFeatureEnabled(notebook, {})).toBe(false);
-    expect(isConnectorFeatureEnabled(notebook, { enablePaperclipNotebook: true })).toBe(true);
+    expect(isConnectorFeatureEnabled(notebook, { enablePilibalaNotebook: true })).toBe(true);
   });
 
   it("gates only the built-in Google Workspace connector, default off, while verification is pending", () => {
@@ -56,7 +56,7 @@ describe("native connectors that need a customer-created OAuth app", () => {
   });
 
   it("does not flag connectors with a managed, dynamic-registration, or credential path", () => {
-    // Asana declares a Paperclip Cloud managed method, so it is never flagged,
+    // Asana declares a Pilibala Cloud managed method, so it is never flagged,
     // even while that method's broker profile is unavailable.
     const asana = getConnectableAppDefinition("asana")!;
     expect(nativeConnectorRequiresCustomerOAuthApp(asana, {})).toBe(false);

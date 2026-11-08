@@ -24,9 +24,9 @@ afterEach(async () => {
 
 it.each([undefined, "all"] as const)("keeps nested Git metadata sanitized in cold, cached and recovered seeds (file mode %s)", async (workspaceFileMode) => {
   const temp = await fs.mkdtemp(path.join(os.tmpdir(), "managed-seed-sanitized-")); roots.push(temp);
-  vi.stubEnv("PAPERCLIP_HOME", path.join(temp, "home"));
+  vi.stubEnv("PILIBALA_HOME", path.join(temp, "home"));
   const host = path.join(temp, "host"), remote = path.join(temp, "remote"), cache = path.join(temp, "cache");
-  const relative = ".paperclip-repositories/fixture";
+  const relative = ".pilibala-repositories/fixture";
   const repository = path.join(host, relative); await fs.mkdir(repository, { recursive: true });
   const git = async (root: string, ...args: string[]) => (await execute("git", ["-C", root, ...args])).stdout.trim();
   await git(repository, "init", "-b", "main");
@@ -119,7 +119,7 @@ it.each([undefined, "all"] as const)("keeps nested Git metadata sanitized in col
 
 it.each([false, true])("overlaps seed verification and upload and drains both before %s failure settles", async (failUpload) => {
   const temp = await fs.mkdtemp(path.join(os.tmpdir(), "managed-seed-overlap-")); roots.push(temp);
-  vi.stubEnv("PAPERCLIP_HOME", path.join(temp, "home"));
+  vi.stubEnv("PILIBALA_HOME", path.join(temp, "home"));
   const host = path.join(temp, "host"); await fs.mkdir(host);
   await fs.writeFile(path.join(host, "work.txt"), "original\n");
   const entered = deferred<void>();
@@ -161,9 +161,9 @@ it.each([false, true])("overlaps seed verification and upload and drains both be
 
 it("refuses a durable seed copy that would cross the shared free-space reserve", async () => {
   const temp = await fs.mkdtemp(path.join(os.tmpdir(), "managed-seed-reserve-")); roots.push(temp);
-  vi.stubEnv("PAPERCLIP_HOME", path.join(temp, "home"));
+  vi.stubEnv("PILIBALA_HOME", path.join(temp, "home"));
   const reserve = 64 * 1024 * 1024;
-  vi.stubEnv("PAPERCLIP_WORKSPACE_MANIFEST_MIN_FREE_BYTES", String(reserve));
+  vi.stubEnv("PILIBALA_WORKSPACE_MANIFEST_MIN_FREE_BYTES", String(reserve));
   const host = path.join(temp, "host"), seedDirectory = path.join(temp, "durable");
   await fs.mkdir(host); await fs.mkdir(seedDirectory);
   await fs.writeFile(path.join(host, "work.txt"), "x".repeat(64 * 1024));

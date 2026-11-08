@@ -47,7 +47,7 @@ async function setup(page: Page, request: APIRequestContext, classic: boolean) {
   // Announcements can appear after navigation or reload and cover the classic
   // composer's attachment button. Dismiss through the same UI as a Board user.
   await page.addLocatorHandler(
-    page.getByRole("complementary", { name: "Paperclip announcements", exact: true })
+    page.getByRole("complementary", { name: "Pilibala announcements", exact: true })
       .getByRole("button", { name: "Dismiss announcement", exact: true }),
     async (dismiss) => dismissAnnouncement(page, dismiss),
   );
@@ -82,7 +82,7 @@ async function setup(page: Page, request: APIRequestContext, classic: boolean) {
   ).toBeVisible();
   const composer = classic
     ? page.getByTestId("issue-chat-composer")
-    : page.locator(".paperclip-task-chat-composer");
+    : page.locator(".pilibala-task-chat-composer");
   const editor = composer.getByRole("textbox", {
     name: "editable markdown",
     exact: true,
@@ -148,7 +148,7 @@ test("new-task images survive reload, retain bytes, and clear after creation", a
   await expect(dialog.getByRole("img", { name: "board-fresh.png", exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("paperclip:issue-draft-files", 1);
+      const request = indexedDB.open("pilibala:issue-draft-files", 1);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -162,7 +162,7 @@ test("new-task images survive reload, retain bytes, and clear after creation", a
     } finally { db.close(); }
   })).toBe(1);
   await expect.poll(() => page.evaluate(() => Object.entries(localStorage)
-    .some(([key, value]) => key.startsWith("paperclip:issue-draft:") && value.includes("Keep the caption")))).toBe(true);
+    .some(([key, value]) => key.startsWith("pilibala:issue-draft:") && value.includes("Keep the caption")))).toBe(true);
   await page.reload();
   await page.getByRole("button", { name: /^New [Tt]ask$/, exact: true }).first().click();
   await expect(editor).toContainText("Keep the caption and image after reload.");
@@ -186,7 +186,7 @@ test("an older image draft retains the rich editor", async ({ page, request }) =
     multipart: { file: { name: files[1]!.name, mimeType: files[1]!.mimeType, buffer: files[1]!.buffer } },
   }));
   await page.addInitScript(({ issueId, imagePath }) => {
-    localStorage.setItem(`paperclip:issue-comment-draft:${issueId}`, `Keep this older caption.\n\n![Older image](${imagePath})`);
+    localStorage.setItem(`pilibala:issue-comment-draft:${issueId}`, `Keep this older caption.\n\n![Older image](${imagePath})`);
   }, { issueId: fixture.issue.id, imagePath: attachment.contentPath });
   await page.reload();
   await expect(fixture.editor).toBeVisible();
@@ -207,7 +207,7 @@ test("two open tabs retain their staged images when either tab saves or creates 
   }
   const savedNames = () => page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("paperclip:issue-draft-files", 1);
+      const request = indexedDB.open("pilibala:issue-draft-files", 1);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -273,7 +273,7 @@ for (const classic of [false, true]) {
     );
     const receipts = [];
     for (const file of files) receipts.push(await upload(page, fixture, file));
-    const draftKey = `paperclip:issue-comment-draft:${fixture.issue.id}`;
+    const draftKey = `pilibala:issue-comment-draft:${fixture.issue.id}`;
     await expect
       .poll(() =>
         page.evaluate(
@@ -588,8 +588,8 @@ test("legacy failed upload can be removed before sending the retained text", asy
 });
 
 test("announcement dismissal handler tolerates an already-removed announcement", async ({ page }) => {
-  await page.setContent(`<aside aria-label="Paperclip announcements"><button aria-label="Dismiss announcement">Dismiss</button></aside><button id="continue" onclick="this.dataset.clicked='yes'">Continue</button>`);
-  const dismiss = page.getByRole("complementary", { name: "Paperclip announcements" }).getByRole("button", { name: "Dismiss announcement" });
+  await page.setContent(`<aside aria-label="Pilibala announcements"><button aria-label="Dismiss announcement">Dismiss</button></aside><button id="continue" onclick="this.dataset.clicked='yes'">Continue</button>`);
+  const dismiss = page.getByRole("complementary", { name: "Pilibala announcements" }).getByRole("button", { name: "Dismiss announcement" });
   await page.addLocatorHandler(dismiss, async locator => {
     await page.locator("aside").evaluate(element => element.remove());
     await dismissAnnouncement(page, locator);
@@ -600,8 +600,8 @@ test("announcement dismissal handler tolerates an already-removed announcement",
 });
 
 test("announcement dismissal handler preserves errors while the target remains", async ({ page }) => {
-  await page.setContent('<aside aria-label="Paperclip announcements"><button disabled aria-label="Dismiss announcement">Dismiss</button></aside><button>Continue</button>');
-  const dismiss = page.getByRole("complementary", { name: "Paperclip announcements" }).getByRole("button", { name: "Dismiss announcement" });
+  await page.setContent('<aside aria-label="Pilibala announcements"><button disabled aria-label="Dismiss announcement">Dismiss</button></aside><button>Continue</button>');
+  const dismiss = page.getByRole("complementary", { name: "Pilibala announcements" }).getByRole("button", { name: "Dismiss announcement" });
   page.setDefaultTimeout(1000);
   await expect(dismissAnnouncement(page, dismiss)).rejects.toThrow(/Timeout|timeout/);
   await expect(dismiss).toBeVisible();
@@ -609,8 +609,8 @@ test("announcement dismissal handler preserves errors while the target remains",
 });
 
 test("announcement dismissal handler tolerates detachment after its element snapshot", async ({ page }) => {
-  await page.setContent('<aside aria-label="Paperclip announcements"><button aria-label="Dismiss announcement">Dismiss</button></aside>');
-  const dismiss = page.getByRole("complementary", { name: "Paperclip announcements" }).getByRole("button", { name: "Dismiss announcement" });
+  await page.setContent('<aside aria-label="Pilibala announcements"><button aria-label="Dismiss announcement">Dismiss</button></aside>');
+  const dismiss = page.getByRole("complementary", { name: "Pilibala announcements" }).getByRole("button", { name: "Dismiss announcement" });
   const snapshot = await dismiss.elementHandles();
   expect(snapshot).toHaveLength(1);
   await snapshot[0]!.evaluate(element => (element as ChildNode).remove());

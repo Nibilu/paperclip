@@ -89,7 +89,7 @@ test("shared-file tests map to exactly one shard spec", () => {
 });
 
 const runnerLog = logLines([
-  [0, " RUN  v5.0.0 /home/runner/_work/paperclip/paperclip/packages/paperclip-runner"],
+  [0, " RUN  v5.0.0 /home/runner/_work/pilibala/pilibala/packages/pilibala-runner"],
   [10, ` ${esc}[32m✓${esc}[39m src/live/runnerd-codex-transport.test.ts ${esc}[2m(257 tests)${esc}[22m 126679ms`],
   [11, " ✓ src/control-plane/acpx-controller-recovery.test.ts (11 tests | 1 skipped) 78087ms"],
   [12, " ✓ scripts/vitest-sequencer.test.mjs (3 tests) 12ms"],
@@ -100,13 +100,13 @@ const runnerLog = logLines([
 ]);
 
 test("Runner weights come from Vitest per-file lines and must account for every passed file", () => {
-  const inventory = new Set(["packages/paperclip-runner/src/live/runnerd-codex-transport.test.ts",
-    "packages/paperclip-runner/src/control-plane/acpx-controller-recovery.test.ts",
-    "packages/paperclip-runner/scripts/vitest-sequencer.test.mjs"]);
+  const inventory = new Set(["packages/pilibala-runner/src/live/runnerd-codex-transport.test.ts",
+    "packages/pilibala-runner/src/control-plane/acpx-controller-recovery.test.ts",
+    "packages/pilibala-runner/scripts/vitest-sequencer.test.mjs"]);
   assert.deepEqual(Object.fromEntries(parseRunnerLog(runnerLog, inventory)), {
-    "packages/paperclip-runner/src/live/runnerd-codex-transport.test.ts": { ms: 126_679, complete: false },
-    "packages/paperclip-runner/src/control-plane/acpx-controller-recovery.test.ts": { ms: 78_087, complete: false },
-    "packages/paperclip-runner/scripts/vitest-sequencer.test.mjs": { ms: 12, complete: false },
+    "packages/pilibala-runner/src/live/runnerd-codex-transport.test.ts": { ms: 126_679, complete: false },
+    "packages/pilibala-runner/src/control-plane/acpx-controller-recovery.test.ts": { ms: 78_087, complete: false },
+    "packages/pilibala-runner/scripts/vitest-sequencer.test.mjs": { ms: 12, complete: false },
   });
   assert.throws(() => parseRunnerLog(runnerLog.replace("4 passed", "5 passed"), inventory), /Parsed 4 of 5/);
   assert.throws(() => parseRunnerLog(runnerLog.replace(/ Test Files.*\n/, ""), inventory), /No Vitest summary/);
@@ -116,22 +116,22 @@ test("Runner weights come from Vitest per-file lines and must account for every 
 test("the Runner inventory follows the package's Vitest include list", () => {
   const inventory = runnerInventory();
   assert.ok(inventory.size > 100, `unexpectedly small Runner inventory: ${inventory.size}`);
-  assert.ok(inventory.has("packages/paperclip-runner/src/live/runnerd-codex-transport.test.ts"));
-  assert.ok(inventory.has("packages/paperclip-runner/scripts/vitest-sequencer.test.mjs"));
+  assert.ok(inventory.has("packages/pilibala-runner/src/live/runnerd-codex-transport.test.ts"));
+  assert.ok(inventory.has("packages/pilibala-runner/scripts/vitest-sequencer.test.mjs"));
   // node --test files in the same package are not Vitest weights.
-  assert.ok(!inventory.has("packages/paperclip-runner/scripts/vitest-sequencer.mjs"));
-  assert.ok(![...inventory].some(file => file.startsWith("packages/paperclip-runner/test/")));
+  assert.ok(!inventory.has("packages/pilibala-runner/scripts/vitest-sequencer.mjs"));
+  assert.ok(![...inventory].some(file => file.startsWith("packages/pilibala-runner/test/")));
 });
 
 test("job names select complete, successful shard sets only", () => {
   assert.deepEqual(e2eShardJob("ci / e2e shard (3/8)"), { index: 3, count: 8 });
   assert.equal(e2eShardJob("ci / e2e"), null);
-  assert.deepEqual(runnerPackageJob("ci / Verify Paperclip Runner (vitest package)"), { index: 1, count: 1 });
-  assert.deepEqual(runnerPackageJob("ci / Verify Paperclip Runner (package (2/3))"), { index: 2, count: 3 });
+  assert.deepEqual(runnerPackageJob("ci / Verify Pilibala Runner (vitest package)"), { index: 1, count: 1 });
+  assert.deepEqual(runnerPackageJob("ci / Verify Pilibala Runner (package (2/3))"), { index: 2, count: 3 });
   // The lane labels that #19646 shipped keep the "vitest" prefix.
-  assert.deepEqual(runnerPackageJob("ci / Verify Paperclip Runner (vitest package (3/3))"), { index: 3, count: 3 });
-  assert.equal(runnerPackageJob("ci / Verify Paperclip Runner (vitest native server)"), null);
-  assert.equal(runnerPackageJob("ci / Verify Paperclip Runner (vitest native server)"), null);
+  assert.deepEqual(runnerPackageJob("ci / Verify Pilibala Runner (vitest package (3/3))"), { index: 3, count: 3 });
+  assert.equal(runnerPackageJob("ci / Verify Pilibala Runner (vitest native server)"), null);
+  assert.equal(runnerPackageJob("ci / Verify Pilibala Runner (vitest native server)"), null);
   const job = (name, conclusion = "success") => ({ name, conclusion });
   const shards = [job("ci / e2e shard (1/2)"), job("ci / e2e shard (2/2)"), job("ci / build")];
   assert.equal(completeShardSet(shards, e2eShardJob).length, 2);
@@ -145,7 +145,7 @@ const pull = (number, head, merge, extra = {}) => ({ number, merged_at: `2026-11
   base: { ref: "master", repo: { id: 1170821064 } }, head: { sha: head }, merge_commit_sha: merge, ...extra });
 const prRun = (id, head, extra = {}) => ({ id, run_attempt: 1, head_sha: head, event: "pull_request", path: ".github/workflows/pr.yml",
   status: "completed", conclusion: "success", html_url: `https://example.test/${id}`,
-  repository: { id: 1170821064, full_name: "paperclipai/paperclip" }, ...extra });
+  repository: { id: 1170821064, full_name: "pilibalaai/pilibala" }, ...extra });
 
 test("merged-PR runs must be successful pull_request runs of pr.yml at the PR's final head", () => {
   const merged = pull(1, sha("a"), sha("b"));
@@ -156,16 +156,16 @@ test("merged-PR runs must be successful pull_request runs of pr.yml at the PR's 
     assert.throws(() => validatePull({ ...merged, ...override }));
   }
   for (const override of [{ head_sha: sha("c") }, { event: "push" }, { path: ".github/workflows/pr-trusted.yml" },
-    { conclusion: "failure" }, { status: "in_progress" }, { repository: { id: 7, full_name: "fork/paperclip" } }, { run_attempt: 0 }]) {
+    { conclusion: "failure" }, { status: "in_progress" }, { repository: { id: 7, full_name: "fork/pilibala" } }, { run_attempt: 0 }]) {
     assert.throws(() => validatePrRun(prRun(5, sha("a"), override), merged));
   }
 });
 
 test("collection skips unmerged, absent, stale-head and incomplete runs, and samples each lane per run", async () => {
-  const api = "/repos/paperclipai/paperclip";
+  const api = "/repos/pilibalaai/pilibala";
   const pulls = [pull(1, sha("1"), sha("a")), pull(2, sha("2"), sha("b")), pull(3, sha("3"), sha("c")),
     { ...pull(4, sha("4"), sha("d")), merged_at: null }, pull(5, sha("5"), sha("e"))];
-  const e2eJobs = [{ id: 101, name: "ci / e2e shard (1/1)" }, { id: 102, name: "ci / Verify Paperclip Runner (vitest package)" }];
+  const e2eJobs = [{ id: 101, name: "ci / e2e shard (1/1)" }, { id: 102, name: "ci / Verify Pilibala Runner (vitest package)" }];
   const responses = {
     [`${api}/pulls?state=closed&base=master&sort=updated&direction=desc&per_page=40`]: pulls,
     // PR 1 has only a run of an earlier push; PR 2 is newest-first; PR 5 lacks a Runner job.
@@ -188,7 +188,7 @@ test("collection skips unmerged, absent, stale-head and incomplete runs, and sam
   const lanes = [
     { name: "e2e", classify: e2eShardJob, parse: parseE2eLog, inventory: new Set(["tests/e2e/alpha.spec.ts"]) },
     { name: "runner", classify: runnerPackageJob, parse: parseRunnerLog,
-      inventory: new Set(["packages/paperclip-runner/scripts/vitest-sequencer.test.mjs"]) },
+      inventory: new Set(["packages/pilibala-runner/scripts/vitest-sequencer.test.mjs"]) },
   ];
   const result = await collectMergedPrSamples({ gh, lanes, isMerged: merge => merge !== sha("c"), log: line => warnings.push(line) });
   assert.deepEqual(result.e2e.sources.map(source => source.run), [21]);
@@ -247,7 +247,7 @@ test("refresh arguments keep explicit master run IDs and add dry-run, PR body an
 test("the refresh workflow may only commit the four timing manifests and uses the rendered PR body", () => {
   const workflow = readFileSync(".github/workflows/ci-test-durations.yml", "utf8");
   for (const file of ["scripts/general-server-shard-durations.json", "scripts/serialized-shard-durations.json",
-    "scripts/e2e-shard-durations.json", "packages/paperclip-runner/scripts/vitest-lane-durations.json"]) {
+    "scripts/e2e-shard-durations.json", "packages/pilibala-runner/scripts/vitest-lane-durations.json"]) {
     assert.ok(workflow.split(file).length >= 3, `${file} must be both allowed and staged`);
   }
   assert.match(workflow, /refresh-test-durations\.mjs "--pr-body=\$RUNNER_TEMP\/ci-duration-pr\.md"/);
@@ -256,9 +256,9 @@ test("the refresh workflow may only commit the four timing manifests and uses th
 
 test("oversized-file reporters warn above the configurable budget and never throw", () => {
   assert.equal(oversizedThresholdMs({}), 180_000);
-  assert.equal(oversizedThresholdMs({ PAPERCLIP_CI_OVERSIZED_TEST_FILE_SECONDS: "90" }), 90_000);
+  assert.equal(oversizedThresholdMs({ PILIBALA_CI_OVERSIZED_TEST_FILE_SECONDS: "90" }), 90_000);
   for (const invalid of ["", "0", "-5", "soon"]) {
-    assert.equal(oversizedThresholdMs({ PAPERCLIP_CI_OVERSIZED_TEST_FILE_SECONDS: invalid }), 180_000);
+    assert.equal(oversizedThresholdMs({ PILIBALA_CI_OVERSIZED_TEST_FILE_SECONDS: invalid }), 180_000);
   }
   assert.match(oversizedAnnotation("a,b:c.test.ts", 200_000, 180_000),
     /^::warning file=a%2Cb%3Ac\.test\.ts,title=Oversized test file::a,b:c\.test\.ts took 200s, over the 180s per-file budget/);
@@ -275,7 +275,7 @@ test("oversized-file reporters warn above the configurable budget and never thro
   assert.deepEqual(lines.map(line => /file=([^,]+)/.exec(line)[1]), ["server/src/slow.test.ts", "server/src/failed-slow.test.ts"]);
 
   lines.length = 0;
-  const custom = new OversizedTestFileReporter({ environment: { PAPERCLIP_CI_OVERSIZED_TEST_FILE_SECONDS: "60" },
+  const custom = new OversizedTestFileReporter({ environment: { PILIBALA_CI_OVERSIZED_TEST_FILE_SECONDS: "60" },
     write: line => lines.push(line), root: "/repo" });
   custom.onTestModuleEnd(module("server/src/medium.test.ts", 61_000));
   assert.equal(lines.length, 1);
@@ -313,6 +313,6 @@ test("oversized-file reporters warn above the configurable budget and never thro
 
 test("CI test configs wire the oversized-file reporters for GitHub Actions", () => {
   assert.match(readFileSync("vitest.config.ts", "utf8"), /GITHUB_ACTIONS === "true"[\s\S]{0,120}oversized-test-files\.mjs/);
-  assert.match(readFileSync("packages/paperclip-runner/vitest.config.ts", "utf8"), /GITHUB_ACTIONS === "true"[^\n]*oversized-test-files\.mjs/);
+  assert.match(readFileSync("packages/pilibala-runner/vitest.config.ts", "utf8"), /GITHUB_ACTIONS === "true"[^\n]*oversized-test-files\.mjs/);
   assert.match(readFileSync("tests/e2e/playwright.config.ts", "utf8"), /GITHUB_ACTIONS === "true"[\s\S]{0,120}oversized-test-files-playwright\.mjs/);
 });

@@ -4,10 +4,10 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { eq, sql } from "drizzle-orm";
-import * as databaseModule from "@paperclipai/db";
+import * as databaseModule from "@pilibalaai/db";
 import * as idleWorkModule from "../services/idle-local-work.js";
 import { idleWorkSnapshot, isIdleTaskDrainActive, registerTaskDrainExpiryWork, startTaskDrain, stopTaskDrain } from "../services/task-admission.js";
-import { agents, companies, applyPendingMigrations, createDb, companySecrets, projects, pluginCompanySettings, pluginConfig, plugins, resourceLifecycleEvents, type Db } from "@paperclipai/db";
+import { agents, companies, applyPendingMigrations, createDb, companySecrets, projects, pluginCompanySettings, pluginConfig, plugins, resourceLifecycleEvents, type Db } from "@pilibalaai/db";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { logger } from "../middleware/logger.js";
@@ -20,8 +20,8 @@ import { createDeliveryWorkCoordinator } from "../services/delivery-work-coordin
 import type { PluginLifecycleManager } from "../services/plugin-lifecycle.js";
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
 
-const externalUrl = process.env.PAPERCLIP_PLUGIN_LIFECYCLE_TEST_DATABASE_URL;
-const expectedDatabase = process.env.PAPERCLIP_PLUGIN_LIFECYCLE_EXPECTED_DATABASE;
+const externalUrl = process.env.PILIBALA_PLUGIN_LIFECYCLE_TEST_DATABASE_URL;
+const expectedDatabase = process.env.PILIBALA_PLUGIN_LIFECYCLE_EXPECTED_DATABASE;
 if (externalUrl || expectedDatabase) {
   if (!externalUrl || !expectedDatabase || !/^sleep2_[a-z0-9_]+_test$/.test(expectedDatabase)) throw new Error("Explicit lifecycle test database required");
   const target = new URL(externalUrl);
@@ -40,7 +40,7 @@ describePostgres("durable plugin lifecycle delivery", () => {
   const deliveries = new Set<ReturnType<typeof registerPluginLifecycleDelivery>>();
   beforeAll(async () => {
     if (externalUrl) await applyPendingMigrations(externalUrl);
-    else database = await startEmbeddedPostgresTestDatabase("paperclip-plugin-delivery-");
+    else database = await startEmbeddedPostgresTestDatabase("pilibala-plugin-delivery-");
     db = createDb(externalUrl ?? database.connectionString, { maxConnections: 4 });
   }, 90_000);
   afterAll(async () => { try { await db?.$client.end({ timeout: 1 }); } finally { await database?.cleanup(); } });
@@ -86,8 +86,8 @@ describePostgres("durable plugin lifecycle delivery", () => {
   async function withManagedPlugin(enabledCompanies: string[], run: () => Promise<void>) {
     const root = await mkdtemp(path.join(tmpdir(), "delivery-managed-"));
     await mkdir(path.join(root, "sandbox-providers/daytona"), { recursive: true });
-    vi.stubEnv("PAPERCLIP_BUNDLED_PLUGIN_ROOT", root);
-    vi.stubEnv("PAPERCLIP_MANAGED_CONFIG", JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "1", features: {},
+    vi.stubEnv("PILIBALA_BUNDLED_PLUGIN_ROOT", root);
+    vi.stubEnv("PILIBALA_MANAGED_CONFIG", JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "1", features: {},
       plugins: { autoInstall: ["daytona"], workerEnv: { daytona: ["PROVIDER_ORIGIN"] }, enabledCompanies: { daytona: enabledCompanies } } }));
     try { await run(); }
     finally { vi.unstubAllEnvs(); await rm(root, { recursive: true, force: true }); }
@@ -102,7 +102,7 @@ describePostgres("durable plugin lifecycle delivery", () => {
         { id: disabledCompanyId, name: "Disabled company", issuePrefix: `D${disabledCompanyId.slice(0, 6)}` },
       ]);
       await db.insert(plugins).values([
-        { id: managedId, pluginKey: "paperclip.daytona-sandbox-provider", packageName: "managed", version: "1.0.0", status: "ready", packagePath: "/old/image/plugins/daytona", manifestJson },
+        { id: managedId, pluginKey: "pilibala.daytona-sandbox-provider", packageName: "managed", version: "1.0.0", status: "ready", packagePath: "/old/image/plugins/daytona", manifestJson },
         { id: ungrantedId, pluginKey: ungrantedId, packageName: "ungranted", version: "1.0.0", status: "ready", manifestJson },
       ]);
       await db.insert(pluginCompanySettings).values({ pluginId: managedId, companyId: disabledCompanyId, enabled: false });
@@ -124,13 +124,13 @@ describePostgres("durable plugin lifecycle delivery", () => {
     await withManagedPlugin([companyId], async () => {
       await db.delete(plugins);
       const managedId = randomUUID();
-      await db.insert(plugins).values({ id: managedId, pluginKey: "paperclip.daytona-sandbox-provider", packageName: "managed", version: "1.0.0", status: "ready",
+      await db.insert(plugins).values({ id: managedId, pluginKey: "pilibala.daytona-sandbox-provider", packageName: "managed", version: "1.0.0", status: "ready",
         manifestJson: { resourceLifecycle: ["agent_runtime"], capabilities: ["events.subscribe"] } as never });
       const subscription = { unlisten: vi.fn(), state: {} };
       vi.mocked(db.$client.listen).mockResolvedValueOnce(subscription as never);
       const d = delivery();
       await d.worker.ready;
-      expect(db.$client.listen).toHaveBeenCalledWith("paperclip_plugin_lifecycle", expect.any(Function), expect.any(Function));
+      expect(db.$client.listen).toHaveBeenCalledWith("pilibala_plugin_lifecycle", expect.any(Function), expect.any(Function));
       await db.insert(pluginCompanySettings).values({ pluginId: managedId, companyId, enabled: false });
       d.applied();
       await vi.waitFor(() => expect(listenerOwners[0]!.close).toHaveBeenCalledTimes(1));
@@ -140,12 +140,12 @@ describePostgres("durable plugin lifecycle delivery", () => {
   it("does not listen for a managed plugin that the document enables for no company", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "delivery-managed-"));
     await mkdir(path.join(root, "sandbox-providers/daytona"), { recursive: true });
-    vi.stubEnv("PAPERCLIP_BUNDLED_PLUGIN_ROOT", root);
-    vi.stubEnv("PAPERCLIP_MANAGED_CONFIG", JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "1", features: {},
+    vi.stubEnv("PILIBALA_BUNDLED_PLUGIN_ROOT", root);
+    vi.stubEnv("PILIBALA_MANAGED_CONFIG", JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "1", features: {},
       plugins: { autoInstall: ["daytona"], workerEnv: { daytona: ["PROVIDER_ORIGIN"] } } }));
     try {
       await db.delete(plugins);
-      await db.insert(plugins).values({ id: randomUUID(), pluginKey: "paperclip.daytona-sandbox-provider", packageName: "managed", version: "1.0.0", status: "ready",
+      await db.insert(plugins).values({ id: randomUUID(), pluginKey: "pilibala.daytona-sandbox-provider", packageName: "managed", version: "1.0.0", status: "ready",
         manifestJson: { resourceLifecycle: ["agent_runtime"], capabilities: ["events.subscribe"] } as never });
       const d = delivery();
       await d.worker.ready;
@@ -188,7 +188,7 @@ describePostgres("durable plugin lifecycle delivery", () => {
   });
 
   it("supplies project native credentials only to opted-in callbacks and saves returned patches before acknowledgment", async () => {
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", randomBytes(32).toString("base64"));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", randomBytes(32).toString("base64"));
     await db.update(plugins).set({ manifestJson: { resourceLifecycle: ["project"], capabilities: ["events.subscribe", "projects.instance-secrets"] } as never }).where(eq(plugins.id, pluginId));
     const [project] = await db.insert(projects).values({ companyId, name: "Native credentials owner" }).returning();
     await event(project.id);
@@ -717,7 +717,7 @@ describePostgres("durable plugin lifecycle delivery", () => {
     try {
       await expiry.ready; await worker.ready;
       await vi.waitFor(() => expect(idleWorkSnapshot().active).toBe(0));
-      const identity = () => db.execute(sql`SELECT pid, backend_start::text AS started, client_port FROM pg_stat_activity WHERE datname = current_database() AND query = 'listen "paperclip_plugin_lifecycle"'`);
+      const identity = () => db.execute(sql`SELECT pid, backend_start::text AS started, client_port FROM pg_stat_activity WHERE datname = current_database() AND query = 'listen "pilibala_plugin_lifecycle"'`);
       const [before] = await identity(); expect(before).toBeDefined();
       startTaskDrain({ purpose: "idle", ttlMs: 1_000 });
       await vi.waitFor(() => expect(idleWorkSnapshot().active).toBe(0));
@@ -743,7 +743,7 @@ describePostgres("durable plugin lifecycle delivery", () => {
     try {
       await d.worker.ready; await d.run(); await d.run();
       const identity = async (channel: string) => db.execute(sql`SELECT pid, backend_start::text AS started, client_port FROM pg_stat_activity WHERE datname = current_database() AND query = ${'listen "' + channel + '"'}`);
-      const [owned] = await identity("paperclip_plugin_lifecycle");
+      const [owned] = await identity("pilibala_plugin_lifecycle");
       const [other] = await identity("fixture_other_lifecycle");
       expect(owned).toBeDefined(); expect(other).toBeDefined(); expect(owned!.pid).not.toBe(other!.pid);
       startTaskDrain({ purpose: "idle", ttlMs: 30_000 });
@@ -753,7 +753,7 @@ describePostgres("durable plugin lifecycle delivery", () => {
       expect(await d.worker.prepareForIdleSleep({ canRetire: () => true })).toBe("none");
       stopTaskDrain();
       await d.run(); await d.run();
-      const [resumed] = await identity("paperclip_plugin_lifecycle");
+      const [resumed] = await identity("pilibala_plugin_lifecycle");
       expect(resumed).toBeDefined(); expect(resumed!.pid).not.toBe(owned!.pid);
       const [agent] = await db.insert(agents).values({ companyId, name: "Useful resumed runtime", adapterType: "process" }).returning();
       const foreignCompany = randomUUID();

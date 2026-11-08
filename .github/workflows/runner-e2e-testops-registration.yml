@@ -89,7 +89,7 @@ jobs:
       - name: Inspect or register the plan, its cases and its job assignment
         env:
           ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
-          ALLURE_ENDPOINT: https://paperclip.testops.cloud
+          ALLURE_ENDPOINT: https://pilibala.testops.cloud
           ALLURE_PROJECT_ID: '1'
           REGISTRATION_PLAN: ${{ inputs.plan }}
           REGISTRATION_OPERATION: ${{ inputs.operation }}

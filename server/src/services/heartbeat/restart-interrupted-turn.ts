@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
-import { agentWakeupRequests, heartbeatRunEvents, heartbeatRuns, issueComments, issues, type Db } from "@paperclipai/db";
+import { agentWakeupRequests, heartbeatRunEvents, heartbeatRuns, issueComments, issues, type Db } from "@pilibalaai/db";
 import type { NativeRestartRecoveryClaim } from "../native-runtime/native-restart-recovery.js";
 import { isUserCommentContinuationReason } from "../explicit-native-continuation.js";
 import { requestTaskRetry } from "../task-retry.js";

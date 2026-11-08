@@ -1,5 +1,5 @@
 // The public-install verifier stages three packages that bundle dependencies
-// (`@paperclipai/server`, `@paperclipai/adapter-utils`, `@paperclipai/db`).
+// (`@pilibalaai/server`, `@pilibalaai/adapter-utils`, `@pilibalaai/db`).
 // Each one is a host-side `npm install` of that package's bundled closure into
 // its own pack directory, and none reads what another produces, so they run as
 // concurrent children instead of one after another inside the staging loop.
@@ -11,8 +11,8 @@ import { startPrefetch } from './prefetch-child.mjs';
 
 export const PREPARE_BUNDLED_PACKAGE_SCRIPT = fileURLToPath(new URL('./prepare-bundled-package.mjs', import.meta.url));
 
-// `@paperclipai/adapter-utils` -> `adapter_utils`, for log names and timing keys.
-export const bundledPackageSlug = name => name.replace(/^@paperclipai\//, '').replace(/[^a-z0-9]+/gi, '_');
+// `@pilibalaai/adapter-utils` -> `adapter_utils`, for log names and timing keys.
+export const bundledPackageSlug = name => name.replace(/^@pilibalaai\//, '').replace(/[^a-z0-9]+/gi, '_');
 
 // Starts one child per entry (`{ name, stagedSource, target }`) at once and
 // returns the entries with their `slug` and prefetch `handle`. The caller joins

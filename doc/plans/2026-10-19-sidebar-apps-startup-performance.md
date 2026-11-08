@@ -2,7 +2,7 @@
 
 Outcome: one tested, reviewable PR and an isolated local preview. Preserve
 sidebar accuracy, account isolation, loading layout and recovery. No merge or
-staging deployment. PR: https://github.com/paperclipai/paperclip/pull/16851
+staging deployment. PR: https://github.com/pilibalaai/pilibala/pull/16851
 
 ## Implementation
 
@@ -22,7 +22,7 @@ staging deployment. PR: https://github.com/paperclipai/paperclip/pull/16851
 
 Initial checkout: clean at `0ed760ce9a`. Branch:
 `codex/sidebar-apps-startup-performance`. Route-splitting PR
-[#16849](https://github.com/paperclipai/paperclip/pull/16849) landed during this
+[#16849](https://github.com/pilibalaai/pilibala/pull/16849) landed during this
 work. The branch was rebased onto `9179d8dcc3`; the primary comparison includes
 that same route splitting on both sides. Tested application source:
 `085f7a6f1e2cac82be323ab099820767597936eb`. This includes strict rejection of mixed
@@ -115,7 +115,7 @@ held responses. No agent run was started.
 ## PR check repair
 
 At `453d488398`, every CI lane passed except serialized server shard 7/9.
-The [failed job](https://github.com/paperclipai/paperclip/actions/runs/39285071851/job/118169386829)
+The [failed job](https://github.com/pilibalaai/pilibala/actions/runs/39285071851/job/118169386829)
 reported one failure among 176 tests: the compact issue-list cache capacity test
 expected 256 entries and found 238. Its 261 HTTP requests took 5,631 ms, crossing
 the cache's 5,000 ms expiry. The production cache correctly prunes expired rows.
@@ -139,19 +139,19 @@ Running preview: http://127.0.0.1:3214/APP/apps
 The final production UI and compiled server use the PR head, with the TS loader
 for workspace dependency exports. The performance comparison used `085f7a6f1e`.
 The final preview also includes the strict query guard. Configuration/evidence:
-`/tmp/paperclip-apps-perf-20261019/`; disposable database port 55489. Fixture:
+`/tmp/pilibala-apps-perf-20261019/`; disposable database port 55489. Fixture:
 one synthetic company, five tasks, a disabled draft connector and a paused agent
 with heartbeat disabled. Only this task's own preview/test processes were stopped.
 Native PostgreSQL package symlinks were restored with its install hook.
 
 Archive `ui/` and `announcements/` at the baseline revision, link the same installed
-dependencies, and build from that UI directory with `PAPERCLIP_BUILD_COMMIT` set
+dependencies, and build from that UI directory with `PILIBALA_BUILD_COMMIT` set
 to its full SHA. Save the two production builds in separate directories, then run:
 
 ```sh
-PAPERCLIP_APPS_BENCH_BASELINE_DIST=/path/to/baseline-dist \
-PAPERCLIP_APPS_BENCH_CANDIDATE_DIST=/path/to/candidate-dist \
-PAPERCLIP_APPS_BENCH_SERVER_DIST=/path/to/server-checkout/ui/dist \
+PILIBALA_APPS_BENCH_BASELINE_DIST=/path/to/baseline-dist \
+PILIBALA_APPS_BENCH_CANDIDATE_DIST=/path/to/candidate-dist \
+PILIBALA_APPS_BENCH_SERVER_DIST=/path/to/server-checkout/ui/dist \
 node scripts/benchmark-apps-startup.mjs comparison http://127.0.0.1:3214/ /tmp/apps-comparison
 ```
 

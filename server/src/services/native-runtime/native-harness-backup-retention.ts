@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
-import { environmentLeases, heartbeatRuns, nativeHarnessBackups, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { environmentLeases, heartbeatRuns, nativeHarnessBackups, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 
 type Transaction = Parameters<Parameters<Db["transaction"]>[0]>[0];
 

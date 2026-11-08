@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import * as identity from "./cloud-runtime-identity.js";
 import { createCloudWarmStandby } from "./cloud-warm-standby.js";
 
 const env = {
-  PAPERCLIP_CLOUD_WARM_STANDBY: "1",
-  PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN: "test-token",
-  PAPERCLIP_CLOUD_STACK_ID: "stack-test",
-  PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS: "test-keys",
+  PILIBALA_CLOUD_WARM_STANDBY: "1",
+  PILIBALA_CLOUD_TENANT_SERVER_TOKEN: "test-token",
+  PILIBALA_CLOUD_STACK_ID: "stack-test",
+  PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS: "test-keys",
 };
 function database(rows: unknown[] = []) {
   const limit = vi.fn().mockResolvedValue(rows);
@@ -20,10 +20,10 @@ afterEach(() => vi.restoreAllMocks());
 describe("Cloud warm standby", () => {
   it.each([
     {},
-    { ...env, PAPERCLIP_CLOUD_WARM_STANDBY: "0" },
-    { ...env, PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN: undefined },
-    { ...env, PAPERCLIP_CLOUD_STACK_ID: undefined },
-    { ...env, PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS: undefined },
+    { ...env, PILIBALA_CLOUD_WARM_STANDBY: "0" },
+    { ...env, PILIBALA_CLOUD_TENANT_SERVER_TOKEN: undefined },
+    { ...env, PILIBALA_CLOUD_STACK_ID: undefined },
+    { ...env, PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS: undefined },
   ])("leaves ordinary or incomplete configurations active without querying", async (config) => {
     const { db, select } = database();
     expect((await createCloudWarmStandby(db, config))()).toBe(false);
@@ -50,7 +50,7 @@ describe("Cloud warm standby", () => {
     const claimed = { stackId: "stack-other" } as identity.CloudRuntimeIdentitySnapshot;
     getter.mockReturnValue(claimed);
     expect(isStandby()).toBe(true);
-    getter.mockReturnValue({ ...claimed, stackId: env.PAPERCLIP_CLOUD_STACK_ID });
+    getter.mockReturnValue({ ...claimed, stackId: env.PILIBALA_CLOUD_STACK_ID });
     expect(isStandby()).toBe(false);
     getter.mockReturnValue(null);
     expect(isStandby()).toBe(false);
@@ -58,7 +58,7 @@ describe("Cloud warm standby", () => {
   });
 
   it("starts active after a persisted identity is restored, even with no companies", async () => {
-    vi.spyOn(identity, "getCloudRuntimeIdentity").mockReturnValue({ stackId: env.PAPERCLIP_CLOUD_STACK_ID } as identity.CloudRuntimeIdentitySnapshot);
+    vi.spyOn(identity, "getCloudRuntimeIdentity").mockReturnValue({ stackId: env.PILIBALA_CLOUD_STACK_ID } as identity.CloudRuntimeIdentitySnapshot);
     const { db, select } = database();
     expect((await createCloudWarmStandby(db, env))()).toBe(false);
     expect(select).not.toHaveBeenCalled();

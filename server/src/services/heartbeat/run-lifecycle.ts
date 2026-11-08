@@ -71,13 +71,13 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY,
   type HeartbeatRunStatusPhase,
   type RequestConfirmationResult,
   type RunLivenessState,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   agents,
   agentRuntimeState,
@@ -99,7 +99,7 @@ import {
   issueWorkProducts,
   routines,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { logger } from "../../middleware/logger.js";
 import { publishLiveEvent } from "../live-events.js";
 import {
@@ -184,11 +184,11 @@ import {
 } from "../../redaction.js";
 import {
   type RuntimeStatusUpdate,
-} from "@paperclipai/adapter-utils";
+} from "@pilibalaai/adapter-utils";
 import {
   UNMANAGED_BACKGROUND_TASK_LIVENESS_REASON,
   UNMANAGED_BACKGROUND_TASK_STOP_REASON,
-} from "@paperclipai/adapter-utils/server-utils";
+} from "@pilibalaai/adapter-utils/server-utils";
 import {
   clearHeartbeatRunRuntimeStatus,
   getHeartbeatRunRuntimeStatus,
@@ -665,7 +665,7 @@ function preserveNativeExecutionObligationsSql(incoming: Record<string, unknown>
     and ${projected}->'executionRecovery'->>'providerWorkStarted' = 'false'
     then ${projected} - 'executionRecovery' else ${projected} end` : projected;
   return sql`case when ${heartbeatRuns.runtimeMode} = 'native'
-    and ${heartbeatRuns.resultJson}->'nativeCancellation'->>'schema' = 'paperclip.native-cancellation.v1'
+    and ${heartbeatRuns.resultJson}->'nativeCancellation'->>'schema' = 'pilibala.native-cancellation.v1'
     and ${heartbeatRuns.resultJson}->'nativeCancellation'->>'scope' = 'run'
     and ${heartbeatRuns.resultJson}->'nativeCancellation'->>'reasonCode' = 'cancellation_run_only'
     and ${heartbeatRuns.resultJson}->'nativeCancellation'->>'runId' = ${heartbeatRuns.id}::text
@@ -1841,8 +1841,8 @@ export function createHeartbeatLifecycle(db: Db, dependencies: HeartbeatLifecycl
                 sql`(
                 ${agentWakeupRequests.payload} ->> 'issueId' = ${issue.id}
                 or ${agentWakeupRequests.payload} ->> 'taskId' = ${issue.id}
-                or ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'issueId' = ${issue.id}
-                or ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'taskId' = ${issue.id}
+                or ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'issueId' = ${issue.id}
+                or ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'taskId' = ${issue.id}
               )`,
               ),
             )

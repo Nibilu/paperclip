@@ -1,4 +1,4 @@
-const key = Symbol.for('paperclip.slack.fixture.prewire');
+const key = Symbol.for('pilibala.slack.fixture.prewire');
 if (!process[key]) {
   const net = require('node:net');
   const tls = require('node:tls');
@@ -9,7 +9,7 @@ if (!process[key]) {
   const listeners = new Set();
   const pgTargets = new Set();
   const pgPorts = new Set([5432, 55448]);
-  for (const name of ['PAPERCLIP_SLACK_TEST_DATABASE_URL', 'SLACK_EVENT_TEST_DATABASE_URL']) {
+  for (const name of ['PILIBALA_SLACK_TEST_DATABASE_URL', 'SLACK_EVENT_TEST_DATABASE_URL']) {
     if (!process.env[name]) continue;
     let url;
     try { url = new URL(process.env[name]); } catch { throw new Error('Invalid Slack fixture database target'); }

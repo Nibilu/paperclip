@@ -6,7 +6,7 @@ Branch: `codex/skill-repository-packages`, based on `origin/master` at `7333e4eb
 
 Acceptance: evaluation prose is accepted; dynamic execution checks remain; repository snapshots preserve shared references, binaries, executable files and credits through runtime copying; shared-file updates produce coherent pinned versions; shared-file problems are disclosed without blocking the package; the existing import dialog explains selection, files and requirements and supports inspecting both.
 
-Implementation: one immutable, company-scoped repository snapshot is referenced by each imported skill version. Runtime projections contain a generated discovery entrypoint and the untouched tree under `.paperclip-repository/`, so all existing adapters carry the dependencies without introducing host-only symlinks. Projections may duplicate package files for multiple enabled entrypoints; the database stores each package once. Optional `paperclip.skills.json` declares version 1, public `skills` entrypoint paths and `requirements` text. It never runs installation commands.
+Implementation: one immutable, company-scoped repository snapshot is referenced by each imported skill version. Runtime projections contain a generated discovery entrypoint and the untouched tree under `.pilibala-repository/`, so all existing adapters carry the dependencies without introducing host-only symlinks. Projections may duplicate package files for multiple enabled entrypoints; the database stores each package once. Optional `pilibala.skills.json` declares version 1, public `skills` entrypoint paths and `requirements` text. It never runs installation commands.
 
 Verification: 55 focused scanner, delivery and UI tests pass. The full workspace typecheck, full build, and direct server/UI TypeScript checks pass. Design-token gates pass. Scanning the pinned example distribution accepts all 62 skills without changing their text. A real Codex discovery probe exposes only the selected entrypoint while retaining the complete repository as supporting files.
 
@@ -18,7 +18,7 @@ The location oracle recognizes both provider-home copies and the immutable bundl
 
 The first broad test attempt was stopped when PostgreSQL-dependent suites skipped on the exhausted host. The new full `pnpm test:run` was stopped after seven failures across six test files unchanged by this PR (native session recovery, agent conversations, workspace runtime exposure, workspace dispatch, connection removal, and skill utility locking), plus 21 skipped connection-intent database cases. The recovery assertion reproduces in isolation; the failing test files are unchanged from the starting commit and the recovery fixture omits skill runtime context. The broad suite remains incomplete and is not counted as passed. Live qualification verifies import, delivery and instruction access, not every Poteto workflow or adapter.
 
-Review: [PR #15731](https://github.com/paperclipai/paperclip/pull/15731). The branch is based on master and has no unrelated checkout changes.
+Review: [PR #15731](https://github.com/pilibalaai/pilibala/pull/15731). The branch is based on master and has no unrelated checkout changes.
 
 ## October 12: import warnings
 

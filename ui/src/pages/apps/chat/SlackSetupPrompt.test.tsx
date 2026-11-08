@@ -38,7 +38,7 @@ describe("Slack setup prompt", () => {
     const dialog = await openPrompt();
     expect(copyTextToClipboard).toHaveBeenCalledTimes(1);
     expect(copyTextToClipboard).toHaveBeenCalledWith(buildSlackSetupPrompt(window.location.origin));
-    expect(vi.mocked(copyTextToClipboard).mock.calls[0][0]).toContain(`Paperclip instance URL: ${window.location.origin}`);
+    expect(vi.mocked(copyTextToClipboard).mock.calls[0][0]).toContain(`Pilibala instance URL: ${window.location.origin}`);
     expect(dialog.querySelector(".agent-setup-copy")?.textContent).toBe("Copied to clipboard");
     expect(container.querySelector('[role="status"]')?.textContent).toContain("Ready to paste into your agent.");
     expect(container.querySelector("button")?.dataset.copied).toBe("true");
@@ -69,11 +69,11 @@ describe("Slack setup prompt", () => {
   });
 
   it("uses the preview's configured instance instead of its Storybook host", async () => {
-    await act(async () => root.render(<SlackSetupPrompt instanceUrl="https://my-company.paperclip.app" />));
+    await act(async () => root.render(<SlackSetupPrompt instanceUrl="https://my-company.pilibala.app" />));
     vi.mocked(copyTextToClipboard).mockResolvedValue(undefined);
     const dialog = await openPrompt();
     expect(copyTextToClipboard).toHaveBeenCalledTimes(1);
-    expect(copyTextToClipboard).toHaveBeenCalledWith(buildSlackSetupPrompt("https://my-company.paperclip.app"));
+    expect(copyTextToClipboard).toHaveBeenCalledWith(buildSlackSetupPrompt("https://my-company.pilibala.app"));
   });
 
   it("ignores stale copy results when the prompt changes", async () => {
@@ -84,10 +84,10 @@ describe("Slack setup prompt", () => {
     await copyPrompt(dialog);
     expect(copyTextToClipboard).toHaveBeenCalledTimes(1);
     expect(dialog.querySelector(".agent-setup-copy")?.textContent).toBe("Copying…");
-    await act(async () => root.render(<SlackSetupPrompt instanceUrl="https://another.paperclip.app" />));
+    await act(async () => root.render(<SlackSetupPrompt instanceUrl="https://another.pilibala.app" />));
     await act(async () => finishCopy());
     expect(dialog.querySelector(".agent-setup-copy")?.textContent).toBe("Copy prompt");
-    expect(dialog.querySelector("pre")?.textContent).toContain("https://another.paperclip.app");
+    expect(dialog.querySelector("pre")?.textContent).toContain("https://another.pilibala.app");
   });
 
   it("copies again on every opening", async () => {
@@ -112,13 +112,13 @@ describe("Slack setup prompt", () => {
   });
 
   it("includes only the instance origin, without URL credentials or callback state", () => {
-    const prompt = buildSlackSetupPrompt("https://user:private-password@my-company.paperclip.app/GIT/apps/chat/connect?code=private-code#private-state");
-    expect(prompt).toContain("Paperclip instance URL: https://my-company.paperclip.app\n");
+    const prompt = buildSlackSetupPrompt("https://user:private-password@my-company.pilibala.app/GIT/apps/chat/connect?code=private-code#private-state");
+    expect(prompt).toContain("Pilibala instance URL: https://my-company.pilibala.app\n");
     expect(prompt).not.toMatch(/private-password|private-code|private-state/);
     expect(prompt).toContain(slackSetupPrompt);
   });
 
   it.each(["", "not a URL", "javascript:alert(1)"])("asks for the URL when preview configuration is unavailable: %s", (url) => {
-    expect(buildSlackSetupPrompt(url)).toMatch(/^Paperclip instance URL is unavailable\./);
+    expect(buildSlackSetupPrompt(url)).toMatch(/^Pilibala instance URL is unavailable\./);
   });
 });

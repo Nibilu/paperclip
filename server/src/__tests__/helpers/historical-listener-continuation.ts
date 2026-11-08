@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { eq } from "drizzle-orm";
-import { completionContracts, heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults, type Db } from "@paperclipai/db";
+import { completionContracts, heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults, type Db } from "@pilibalaai/db";
 import { expect } from "vitest";
 import { createRunDispatch } from "../../modules/run-dispatch/index.js";
 import { prepareNativeHeartbeatRun } from "../../services/native-runtime/prepare-native-run.js";
@@ -12,9 +12,9 @@ import { buildNativeExecutionInput } from "../../services/native-runtime/native-
 import { buildNativeCompletionContract } from "../../services/native-runtime/completion-contracts.js";
 import { nativeRuntimeContextFixture } from "../../services/native-runtime/runtime-context.test-fixture.js";
 import { materializeAsset } from "../../services/native-runtime/runtime-context.js";
-import { executePaperclipNativeSession } from "../../services/native-runtime/native-session-executor.js";
+import { executePilibalaNativeSession } from "../../services/native-runtime/native-session-executor.js";
 import { reconcileNativeFinalizations } from "../../services/native-runtime/native-finalization-reconciler.js";
-import { canonicalNativeRuntimeContextDigest, createNativeSessionBackend, createRunnerdCodexTransport, defaultCapabilityRunnerdBinary } from "../../vendor/paperclip-runner/index.js";
+import { canonicalNativeRuntimeContextDigest, createNativeSessionBackend, createRunnerdCodexTransport, defaultCapabilityRunnerdBinary } from "../../vendor/pilibala-runner/index.js";
 import { registerLocalRuntimeApiServer } from "../../runtime-api.js";
 import { registerRunnerPrpAuthority, runnerPrpWebSocketInternals, setupRunnerPrpWebSocketServer } from "../../realtime/runner-prp-ws.js";
 
@@ -32,7 +32,7 @@ async function prepare(db: Db, runId: string, cwd: string, environmentLeaseId: s
     taskPrompt: "Preserve the saved file and complete the task once.", provider: "codex",
     workspace: { id: issue.executionWorkspaceId!, cwd, repoUrl: null, repoRef: null, branchName: null },
     normalizedSessionId: native.normalizedSessionId, runtimeContext,
-    completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "paperclip.completion-contract.v1",
+    completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "pilibala.completion-contract.v1",
       contract: buildNativeCompletionContract(issue, { revision: contract.revision }) },
   });
   const [current] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, runId));
@@ -93,7 +93,7 @@ export async function completeHistoricalListenerSuccessor(input: { db: Db; runId
     issueId: execution.binding.issueId, phase: "observed" });
   const home = join(input.root, "codex-home"), report = join(input.root, "result.json"), calls = join(input.root, "calls.log");
   await mkdir(home, { recursive: true });
-  await writeFile(report, JSON.stringify({ schema: "paperclip.run_result.v1", reportedWorkDisposition: "done",
+  await writeFile(report, JSON.stringify({ schema: "pilibala.run_result.v1", reportedWorkDisposition: "done",
     summary: "Saved task completed after historical controller failure.", completionClaim: {
       contractRevision: execution.completionContract.contract.revision, objectiveSatisfied: true,
       criteria: execution.completionContract.contract.criteria.map(criterion => ({ criterionId: criterion.id, status: "satisfied", evidenceRefs: [] })),
@@ -105,7 +105,7 @@ export async function completeHistoricalListenerSuccessor(input: { db: Db; runId
   if (!address || typeof address === "string") throw new Error("TCP listener required");
   setupRunnerPrpWebSocketServer(server, { apiUrl: `http://127.0.0.1:${address.port}` });
   const bundle = createRunnerdCodexTransport({ runnerBinary: defaultCapabilityRunnerdBinary(),
-    codexCommand: resolve(import.meta.dirname, "../../../../packages/paperclip-runner/runner/target/debug/fake-codex-app-server"),
+    codexCommand: resolve(import.meta.dirname, "../../../../packages/pilibala-runner/runner/target/debug/fake-codex-app-server"),
     codexArgs: ["--state-file", join(input.root, "provider.json"), "--terminal-result-file", report, "--call-log", calls, "--record-process-start"],
     stateDirectory: input.root, lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null },
     runtimeContext: execution.runtimeContext, runnerRuntimeContext: execution.runtimeContext,
@@ -117,7 +117,7 @@ export async function completeHistoricalListenerSuccessor(input: { db: Db; runId
   const backend = createNativeSessionBackend(execution, { runnerInstanceId: native.runnerInstanceId,
     environment: { CODEX_HOME: home, PATH: process.env.PATH }, codexTransportFactory: () => bundle.transport });
   try {
-    expect(await executePaperclipNativeSession({ db: input.db, execution, backend, useRunnerd: true,
+    expect(await executePilibalaNativeSession({ db: input.db, execution, backend, useRunnerd: true,
       runnerInstanceId: native.runnerInstanceId, turnTimeoutMs: 15_000 })).toMatchObject({ exitCode: 0, timedOut: false });
     await workspace.finalize();
     await reconcileNativeFinalizations(input.db, [scheduled.id]);

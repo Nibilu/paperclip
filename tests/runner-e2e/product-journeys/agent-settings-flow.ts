@@ -95,7 +95,7 @@ export async function runAgentSettings(context: JourneyContext, session: TargetS
     observations.original = await snapshot();
     const original = observations.original, entry = original.bundle.entryFile;
     if (original.agent.id !== agent.id || original.agent.companyId !== scope.companyId || original.agent.name !== agent.name
-      || !agent.name.includes(campaignId) || original.agent.adapterType !== "paperclip_runner"
+      || !agent.name.includes(campaignId) || original.agent.adapterType !== "pilibala_runner"
       || original.agent.adapterConfig?.provider !== agent.provider || original.agent.adapterConfig?.model !== agent.model
       || original.bundle.mode !== "managed" || original.bundle.editable !== true || original.file.editable !== true
       || typeof original.file.content !== "string" || original.file.content.includes("\r")

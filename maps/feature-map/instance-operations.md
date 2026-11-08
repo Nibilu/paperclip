@@ -4,7 +4,7 @@ navigation: {"section":"Oversight and operation","sectionOrder":70,"order":40}
 
 # Instance operations
 
-An operator can install and run Paperclip, diagnose the instance, configure supported deployment settings, manage its service, and produce a recoverable database backup.
+An operator can install and run Pilibala, diagnose the instance, configure supported deployment settings, manage its service, and produce a recoverable database backup.
 
 Feature ID: `instance-operations`.
 
@@ -25,17 +25,17 @@ Agent access: [companion](../agent-access-map/instance-operations.md).
 
 ### `operator-cli`
 
-Use `paperclipai install`, `run`, `service`, `doctor`, `configure`, `channels`, or `update --help` for the intended operation.
+Use `pilibalaai install`, `run`, `service`, `doctor`, `configure`, `channels`, or `update --help` for the intended operation.
 
 ### `settings-backup`
 
-Use currently visible instance settings for experiments/access and `paperclipai db:backup --help` for one-off backup. Some legacy general-settings URLs redirect.
+Use currently visible instance settings for experiments/access and `pilibalaai db:backup --help` for one-off backup. Some legacy general-settings URLs redirect.
 
 ### `runtime-provisioning`
 
-On an owned published server installation, use `paperclipai runtime setup pi`, `paperclipai runtime setup cursor`, `paperclipai runtime setup antigravity`, or `paperclipai runtime import-remote <companion-directory> --sha256 <trusted-companion-json-digest>`. Run as the OS user operating that installation; this is separate from source-checkout dependency installation. Antigravity setup stages a pinned patched macOS ARM64 runtime; it remains unavailable for tasks until native acceptance passes.
+On an owned published server installation, use `pilibalaai runtime setup pi`, `pilibalaai runtime setup cursor`, `pilibalaai runtime setup antigravity`, or `pilibalaai runtime import-remote <companion-directory> --sha256 <trusted-companion-json-digest>`. Run as the OS user operating that installation; this is separate from source-checkout dependency installation. Antigravity setup stages a pinned patched macOS ARM64 runtime; it remains unavailable for tasks until native acceptance passes.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use a disposable data directory/service identity. Do not update, restart, or restore over an unrelated live instance as a documentation test.
 
@@ -83,7 +83,7 @@ includes a real fixture worker; it does not establish a hosted replacement.
 
 Manual: Change a harmless experimental setting, reload, and confirm the affected route honors it. Back up a disposable instance, inspect the reported file and metadata, and restore using the documented procedure into a second isolated target. Verify a known record after restoration.
 
-Cloud staging: On a managed `*.staging.paperclip.app` instance, verify experiments
+Cloud staging: On a managed `*.staging.pilibala.app` instance, verify experiments
 are visible, Cloud-enabled controls are locked on, and other experiments are
 editable by a Cloud stack Admin or instance admin with changes surviving reload.
 With an old stored false value and a Cloud true value, verify the effective
@@ -100,15 +100,15 @@ identities and persistence; they do not establish a deployed staging walkthrough
 
 ### `runtime-provisioning`
 
-Automated: [Runtime commands](../../cli/src/__tests__/runtime.test.ts), [setup](../../cli/src/__tests__/runtime-setup.test.ts), [remote Pi companion](../../server/src/__tests__/remote-pi-companion.test.ts), and [Pi package provisioning](../../packages/paperclip-runner/scripts/provision-pi-package.test.mjs) cover parsing, fixtures, package identity, and integrity. They do not qualify every published installation or live provider.
+Automated: [Runtime commands](../../cli/src/__tests__/runtime.test.ts), [setup](../../cli/src/__tests__/runtime-setup.test.ts), [remote Pi companion](../../server/src/__tests__/remote-pi-companion.test.ts), and [Pi package provisioning](../../packages/pilibala-runner/scripts/provision-pi-package.test.mjs) cover parsing, fixtures, package identity, and integrity. They do not qualify every published installation or live provider.
 
 Manual: Use a disposable published installation and its exact runtime release. Run setup for the intended host runtime, inspect verified version/path, and repeat to confirm the existing installation is reused. Test a corrupt, linked, or foreign installation and verify rejection preserves unrelated files. Import a matching Linux x64 Pi companion with an independently trusted manifest digest; repeat for verified_existing, then alter manifest, inventory, source/profile identity, or target files and verify failure without replacing unrelated state. Inspect cleanup/cancellation. Finally use the selected adapter/account to run a bounded task separately: installed bytes do not prove model execution.
 
-Sources: [Runtime CLI](../../cli/src/commands/runtime.ts), [instance-config bypass](../../cli/src/index.ts), [Pi provisioning](../../packages/paperclip-runner/scripts/provision-pi.mjs), [Cursor provisioning](../../packages/paperclip-runner/scripts/provision-cursor.mjs), and [companion importer](../../server/src/services/native-runtime/remote-pi-companion.ts).
+Sources: [Runtime CLI](../../cli/src/commands/runtime.ts), [instance-config bypass](../../cli/src/index.ts), [Pi provisioning](../../packages/pilibala-runner/scripts/provision-pi.mjs), [Cursor provisioning](../../packages/pilibala-runner/scripts/provision-cursor.mjs), and [companion importer](../../server/src/services/native-runtime/remote-pi-companion.ts).
 
-Antigravity: [provisioning](../../packages/paperclip-runner/scripts/provision-antigravity.mjs),
-[closure/integrity regressions](../../packages/paperclip-runner/scripts/materialize-antigravity-distribution.test.mjs),
-and [pending admission tests](../../packages/paperclip-runner/src/drivers/acpx/antigravity-models.test.ts).
+Antigravity: [provisioning](../../packages/pilibala-runner/scripts/provision-antigravity.mjs),
+[closure/integrity regressions](../../packages/pilibala-runner/scripts/materialize-antigravity-distribution.test.mjs),
+and [pending admission tests](../../packages/pilibala-runner/src/drivers/acpx/antigravity-models.test.ts).
 Exercise public-layout setup and verify both native files and cleanup; separately
 verify that configuration/API/driver/sidecar reject the pending provider. These
 checks do not establish authenticated task execution.

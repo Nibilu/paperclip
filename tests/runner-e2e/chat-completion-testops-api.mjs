@@ -47,10 +47,10 @@ export function bindingFromEnv(env, context = {}) {
 }
 export function isWorkflowUrl(url, workflowId, context = {}) {
   const { workflow } = catalogDefinition(context);
-  return url === `https://github.com/paperclipai/paperclip/actions/workflows/${workflow.split('/').at(-1)}`
-    || positive(workflowId) && url === `https://github.com/paperclipai/paperclip/actions/workflows/${workflowId}`
-    || context.catalog === 'full' && url === `https://github.com/paperclipai/paperclip/blob/master/${workflow}`
-    || url === (context.catalog === 'full' ? 'https://github.com/paperclipai/paperclip/actions?query=workflow%3A%22Chat+catalog+TestOps%22' : 'https://github.com/paperclipai/paperclip/actions?query=workflow%3A%22Chat+completion+TestOps%22');
+  return url === `https://github.com/pilibalaai/pilibala/actions/workflows/${workflow.split('/').at(-1)}`
+    || positive(workflowId) && url === `https://github.com/pilibalaai/pilibala/actions/workflows/${workflowId}`
+    || context.catalog === 'full' && url === `https://github.com/pilibalaai/pilibala/blob/master/${workflow}`
+    || url === (context.catalog === 'full' ? 'https://github.com/pilibalaai/pilibala/actions?query=workflow%3A%22Chat+catalog+TestOps%22' : 'https://github.com/pilibalaai/pilibala/actions?query=workflow%3A%22Chat+completion+TestOps%22');
 }
 function validatedResultStatus(result, id, expected, selection, context, runUrl) {
   const { targetSha } = catalogDefinition(context);
@@ -61,8 +61,8 @@ function validatedResultStatus(result, id, expected, selection, context, runUrl)
       || result.jobRun.job.type != null && result.jobRun.job.type !== 'github'
       || result.jobRun.job.url != null && !isWorkflowUrl(result.jobRun.job.url, context.workflowId, context))
     || result.links != null && (!Array.isArray(result.links) || result.links.some(link => !link || typeof link.url === 'string'
-      && (link.url.startsWith('https://github.com/paperclipai/paperclip/actions/runs/') && link.url !== runUrl
-        || link.url.startsWith('https://github.com/paperclipai/paperclip/commit/') && link.url !== `https://github.com/paperclipai/paperclip/commit/${targetSha}`)))) reject('result_mismatch');
+      && (link.url.startsWith('https://github.com/pilibalaai/pilibala/actions/runs/') && link.url !== runUrl
+        || link.url.startsWith('https://github.com/pilibalaai/pilibala/commit/') && link.url !== `https://github.com/pilibalaai/pilibala/commit/${targetSha}`)))) reject('result_mismatch');
   if (!Object.hasOwn(result, 'status')) return undefined;
   if (!['failed', 'broken', 'passed', 'skipped', 'unknown'].includes(result.status)) reject('result_mismatch');
   return result.status;
@@ -105,7 +105,7 @@ export async function validatePilotSelection(api, env, context, workflowId) {
   const run = await api(`/api/jobrun/${env.ALLURE_JOB_RUN_ID}`);
   if (run.id !== Number(env.ALLURE_JOB_RUN_ID) || run.job?.id !== binding.jobId || run.job?.type !== 'github'
     || !['scheduled', 'in_progress'].includes(run.stage) || !positive(run.launchId)
-    || run.url !== `https://github.com/paperclipai/paperclip/actions/runs/${context.runId}`) reject('jobrun_mismatch');
+    || run.url !== `https://github.com/pilibalaai/pilibala/actions/runs/${context.runId}`) reject('jobrun_mismatch');
   const launch = await api(`/api/launch/${run.launchId}`);
   if (launch.id !== run.launchId || launch.projectId !== 1 || launch.closed === true) reject('launch_mismatch');
   const planned = await api(`/api/jobrun/${run.id}/plan?expected=true`);
@@ -115,7 +115,7 @@ export async function validatePilotSelection(api, env, context, workflowId) {
     if (!found) reject('foreign_selection');
     return found;
   });
-  const value = { schema: 'paperclip.chat-completion-testops-selection/v1', ...context,
+  const value = { schema: 'pilibala.chat-completion-testops-selection/v1', ...context,
     targetSha, allureJobRunId: env.ALLURE_JOB_RUN_ID, projectId: 1, planId: binding.planId,
     jobId: binding.jobId, launchId: launch.id, cases: cases.flatMap(row => selected.filter(value => value.key === row.key)) };
   validateSelection(value, context, env.ALLURE_JOB_RUN_ID);
@@ -163,14 +163,14 @@ export async function completePilotRegistration(api, prepared, official, context
   const { cases, targetSha, planName } = catalogDefinition(context);
   const run = await api(`/api/jobrun/${official.jobRunId}`);
   if (run.id !== Number(official.jobRunId) || run.job?.type !== 'github' || !positive(run.job?.id)
-    || run.launchId !== official.launchId || run.url !== `https://github.com/paperclipai/paperclip/actions/runs/${context.runId}`) reject('registration');
+    || run.launchId !== official.launchId || run.url !== `https://github.com/pilibalaai/pilibala/actions/runs/${context.runId}`) reject('registration');
   const launch = await api(`/api/launch/${official.launchId}`);
   if (launch.id !== official.launchId || launch.projectId !== 1) reject('registration');
   const binding = { ...prepared, jobId: run.job.id };
   assertPlan(await api(`/api/testplan/${binding.planId}`), binding, context);
   const job = await api(`/api/job/${binding.jobId}`); assertJob(job, binding, workflowId, context);
   const assignments = await api(`/api/testplan/${binding.planId}/job`);
-  await observe({ schema: 'paperclip.chat-completion-testops-registration-observed/v1', ...context,
+  await observe({ schema: 'pilibala.chat-completion-testops-registration-observed/v1', ...context,
     projectId: 1, jobId: job.id, launchId: official.launchId, allureJobRunId: official.jobRunId,
     parameterCount: Array.isArray(job.parameters) ? job.parameters.length : null,
     parameters: Array.isArray(job.parameters) ? job.parameters.slice(0, 4).map(row => ({
@@ -202,7 +202,7 @@ export async function completePilotRegistration(api, prepared, official, context
   const persistedBinding = context.catalog === 'full' ? { planId: binding.planId, jobId: binding.jobId,
     integrationId: binding.integrationId, cases: binding.cases.map(row => ({ key: row.key, caseId: row.caseId,
       registeredFullName: row.registeredFullName ?? row.fullName })) } : binding;
-  return { schema: 'paperclip.chat-completion-testops-registration/v1', ...context, binding: persistedBinding,
+  return { schema: 'pilibala.chat-completion-testops-registration/v1', ...context, binding: persistedBinding,
     parametersMode: 'job-defaults', branchDefinition: { id: job.parameters[0].id, name: 'Branch', defaultValue: 'refs/heads/master' },
     planUrl: `${endpoint}/testplan/${binding.planId}`, jobUrl: `${endpoint}/project/1/jobs`, qualification: 'registration_only', actualResult: null };
 }
@@ -226,14 +226,14 @@ export async function launchPilotPlan(api, env, context, workflowId, markOnce) {
   await markOnce('launch_plan');
   const launched = await api(`/api/testplan/${binding.planId}/run`, 'POST', { launchName: name });
   if (!positive(launched?.id) || launched.projectId !== 1 || launched.name !== name) reject('launch_mismatch');
-  return { schema: 'paperclip.chat-completion-testops-launch/v1', ...context, launchId: launched.id,
+  return { schema: 'pilibala.chat-completion-testops-launch/v1', ...context, launchId: launched.id,
     planId: binding.planId, jobId: binding.jobId, caseIds: binding.cases.map(row => row.caseId),
     launchUrl: `${endpoint}/launch/${launched.id}`, status: 'REQUESTED', actualResult: null };
 }
 
 async function uploadBinding(get, selection, context) {
   const run = await get(`/api/jobrun/${selection.allureJobRunId}`);
-  const runUrl = `https://github.com/paperclipai/paperclip/actions/runs/${context.runId}`;
+  const runUrl = `https://github.com/pilibalaai/pilibala/actions/runs/${context.runId}`;
   if (run.id !== Number(selection.allureJobRunId) || run.job?.id !== selection.jobId || run.job?.type !== 'github'
     || !['in_progress', 'finished'].includes(run.stage)
     || run.launchId !== selection.launchId || run.url !== runUrl) reject('jobrun_mismatch');
@@ -303,7 +303,7 @@ async function verifyUploadScope(api, selection, context, exported, executionId,
       const batch = await Promise.all(matching.slice(offset, offset + (context.catalog === 'full' ? 4 : 1)).map(verifyResult));
       ready &&= batch.every(row => row.attachmentsVerified); verified.push(...batch);
     }
-    if (ready && now() < deadline) return { schema: 'paperclip.chat-completion-testops-verification/v1', ...context,
+    if (ready && now() < deadline) return { schema: 'pilibala.chat-completion-testops-verification/v1', ...context,
       projectId: 1, planId: selection.planId, jobId: selection.jobId, launchId: selection.launchId,
       allureJobRunId: selection.allureJobRunId, verification: 'VERIFIED', results: verified, launchUrl: `${endpoint}/launch/${selection.launchId}` };
     if (poll < 11 && now() + 5000 < deadline) await wait(5000);

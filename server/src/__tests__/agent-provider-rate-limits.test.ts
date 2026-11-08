@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { agentRuntimeState, agents, companies, createDb } from "@paperclipai/db";
-import { readProviderRateLimits, type ProviderRateLimitSnapshot } from "@paperclipai/shared";
+import { agentRuntimeState, agents, companies, createDb } from "@pilibalaai/db";
+import { readProviderRateLimits, type ProviderRateLimitSnapshot } from "@pilibalaai/shared";
 import { recordAgentProviderRateLimits, preservedAccountRuntimeState } from "../services/agent-provider-rate-limits.js";
 import { heartbeatService } from "../services/heartbeat.js";
 import { recoveryPostgresSupport, startRecoveryPostgres } from "./helpers/recovery-postgres.js";
@@ -12,7 +12,7 @@ if (!recoveryPostgresSupport.supported) console.warn(`Skipping provider rate lim
 
 function snapshot(input: Partial<ProviderRateLimitSnapshot> & { observedAt: string }): ProviderRateLimitSnapshot {
   return {
-    schema: "paperclip.provider.rate_limits.v1",
+    schema: "pilibala.provider.rate_limits.v1",
     provider: "openai",
     windows: [],
     credits: null,
@@ -25,7 +25,7 @@ function notice(value: ProviderRateLimitSnapshot) {
   return {
     eventType: "provider.notice.recorded",
     payload: {
-      schema: "paperclip.provider.notice.v1",
+      schema: "pilibala.provider.notice.v1",
       noticeId: "codex-rate-limits:1",
       severity: "info",
       category: "provider.rate_limits",
@@ -65,7 +65,7 @@ describePostgres("agent provider rate limits", () => {
   async function seed() {
     const companyId = randomUUID(), agentId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Rate limit fixture", issuePrefix: `R${companyId.slice(0, 6)}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Codex planner", adapterType: "paperclip_runner", status: "idle", adapterConfig: {} });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Codex planner", adapterType: "pilibala_runner", status: "idle", adapterConfig: {} });
     return { companyId, agentId };
   }
 
@@ -119,7 +119,7 @@ describePostgres("agent provider rate limits", () => {
     })))).resolves.toBe(false);
     await expect(recordAgentProviderRateLimits(db, binding, {
       eventType: "provider.notice.recorded",
-      payload: { schema: "paperclip.provider.notice.v1", category: "warning", details: [] },
+      payload: { schema: "pilibala.provider.notice.v1", category: "warning", details: [] },
     })).resolves.toBe(false);
     expect(await stored(binding.agentId)).toBeNull();
   });

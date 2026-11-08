@@ -3,7 +3,7 @@
 import { ApiError } from "../api/client";
 import { queryKeys } from "../lib/queryKeys";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { Project } from "@paperclipai/shared";
+import type { Project } from "@pilibalaai/shared";
 import type { ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
@@ -165,7 +165,7 @@ function project(overrides: Partial<Project> = {}): Project {
     managedByPlugin: {
       id: "managed-1",
       pluginId: "plugin-1",
-      pluginKey: "paperclip.missions",
+      pluginKey: "pilibala.missions",
       pluginDisplayName: "Missions",
       resourceKind: "project",
       resourceKey: "operations",
@@ -311,7 +311,7 @@ describe("ProjectDetail", () => {
     expect(container.textContent).toContain("Plugin operations");
     expect(mockIssuesApi.list).toHaveBeenCalledWith("company-1", {
       projectId: "project-1",
-      originKindPrefix: "plugin:paperclip.missions",
+      originKindPrefix: "plugin:pilibala.missions",
     });
   });
 
@@ -338,14 +338,14 @@ describe("ProjectDetail", () => {
   });
 
   describe("plugin detail-tab deep links", () => {
-    const PLUGIN_TAB = "plugin:paperclipai.plugin-llm-wiki:project-knowledge";
+    const PLUGIN_TAB = "plugin:pilibalaai.plugin-llm-wiki:project-knowledge";
     const knowledgeSlot = {
       id: "project-knowledge",
       type: "detailTab",
       displayName: "Knowledge",
       entityTypes: ["project"],
       pluginId: "plugin-llm-wiki",
-      pluginKey: "paperclipai.plugin-llm-wiki",
+      pluginKey: "pilibalaai.plugin-llm-wiki",
       pluginDisplayName: "LLM Wiki",
       pluginVersion: "0.2.0",
     };
@@ -401,7 +401,7 @@ describe("ProjectDetail", () => {
       expect(container.querySelector('[data-testid="navigate"]')).toBeNull();
       expect(container.querySelector('[data-testid="plugin-slot-mount"]')).not.toBeNull();
       expect(mockPluginSlotMount).toHaveBeenCalledWith(expect.objectContaining({
-        slot: expect.objectContaining({ id: "project-knowledge", pluginKey: "paperclipai.plugin-llm-wiki" }),
+        slot: expect.objectContaining({ id: "project-knowledge", pluginKey: "pilibalaai.plugin-llm-wiki" }),
       }));
       expect(container.textContent).toContain("Knowledge");
     });

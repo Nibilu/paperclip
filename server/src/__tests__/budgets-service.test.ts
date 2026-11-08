@@ -15,7 +15,7 @@ import {
   issues,
   nativeRunFinalizations,
   projects,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { budgetService, deliverBudgetEnforcement, hasPendingBudgetEnforcement, flushBudgetEvaluationWork } from "../services/budgets.ts";
 import {
   EMBEDDED_POSTGRES_TEST_TIMEOUT_MS,
@@ -32,7 +32,7 @@ vi.mock("../services/activity-log.js", () => ({
 // Budget behavior is exercised against PostgreSQL below and in
 // cost-accounting-reliability.test.ts, including transaction and retry paths.
 
-const externalUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_BUDGETS_TEST_DATABASE_URL");
+const externalUrl = resolveExternalTestDatabaseUrl("PILIBALA_BUDGETS_TEST_DATABASE_URL");
 const embeddedPostgresSupport = externalUrl ? { supported: true, reason: undefined } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 
@@ -42,7 +42,7 @@ describeEmbeddedPostgres("budgetService release gate enforcement", () => {
 
   beforeAll(async () => {
     await import("../services/agent-lifecycle.js");
-    if (!externalUrl) tempDb = await startEmbeddedPostgresTestDatabase("paperclip-budgets-service-");
+    if (!externalUrl) tempDb = await startEmbeddedPostgresTestDatabase("pilibala-budgets-service-");
     db = createDb(externalUrl ?? tempDb!.connectionString);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
 
@@ -72,7 +72,7 @@ describeEmbeddedPostgres("budgetService release gate enforcement", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `B${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

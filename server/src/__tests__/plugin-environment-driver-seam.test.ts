@@ -12,20 +12,20 @@ import {
 import type { PluginEnvironmentTaskParams } from "../../../packages/plugins/sdk/src/environment-tasks.js";
 import { definePlugin } from "../../../packages/plugins/sdk/src/define-plugin.js";
 import { startWorkerRpcHost } from "../../../packages/plugins/sdk/src/worker-rpc-host.js";
-import { pluginManifestV1Schema, type PaperclipPluginManifestV1 } from "@paperclipai/shared";
+import { pluginManifestV1Schema, type PilibalaPluginManifestV1 } from "@pilibalaai/shared";
 import { pluginCapabilityValidator } from "../services/plugin-capability-validator.js";
 
 // The worker host writes only responses in these tests, and each test reads
 // the result fields of the method it called.
 type WorkerResponse = JsonRpcResponse<{ supportedMethods: string[]; detections: unknown[] }>;
 
-const baseManifest: PaperclipPluginManifestV1 = {
+const baseManifest: PilibalaPluginManifestV1 = {
   id: "test.environment-driver",
   apiVersion: 1,
   version: "1.0.0",
   displayName: "Environment Driver",
   description: "Test environment driver plugin",
-  author: "Paperclip",
+  author: "Pilibala",
   categories: ["automation"],
   capabilities: ["environment.drivers.register"],
   entrypoints: { worker: "dist/worker.js" },
@@ -88,7 +88,7 @@ describe("plugin environment driver seam", () => {
     const withoutCapability = {
       ...baseManifest,
       capabilities: ["http.outbound"],
-    } satisfies PaperclipPluginManifestV1;
+    } satisfies PilibalaPluginManifestV1;
 
     expect(validator.checkOperation(withoutCapability, "environment.execute")).toMatchObject({
       allowed: false,
@@ -258,13 +258,13 @@ describe("plugin environment driver seam", () => {
   });
 });
 
-const objectReferenceManifest: PaperclipPluginManifestV1 = {
+const objectReferenceManifest: PilibalaPluginManifestV1 = {
   id: "test.external-object-provider",
   apiVersion: 1,
   version: "1.0.0",
   displayName: "External Object Provider",
   description: "Test external object provider plugin",
-  author: "Paperclip",
+  author: "Pilibala",
   categories: ["connector"],
   capabilities: ["external.objects.detect", "external.objects.read"],
   entrypoints: { worker: "dist/worker.js" },
@@ -316,7 +316,7 @@ describe("plugin external object provider seam", () => {
     const withoutCapability = {
       ...objectReferenceManifest,
       capabilities: ["external.objects.detect"],
-    } satisfies PaperclipPluginManifestV1;
+    } satisfies PilibalaPluginManifestV1;
 
     expect(validator.checkOperation(withoutCapability, "external.objects.read")).toMatchObject({
       allowed: false,

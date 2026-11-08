@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, budgetEvaluationWork, budgetIncidents, budgetPolicies, companies, createDb } from "@paperclipai/db";
+import { agents, budgetEvaluationWork, budgetIncidents, budgetPolicies, companies, createDb } from "@pilibalaai/db";
 import { budgetService, budgetServiceInTransaction, flushBudgetEvaluationWork } from "../services/budgets.js";
 import { costService } from "../services/costs.js";
 import { EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
@@ -11,7 +11,7 @@ const support = await getEmbeddedPostgresTestSupport();
   let temp: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: ReturnType<typeof createDb>;
   beforeAll(async () => {
-    temp = await startEmbeddedPostgresTestDatabase("paperclip-budget-controls-");
+    temp = await startEmbeddedPostgresTestDatabase("pilibala-budget-controls-");
     db = createDb(temp.connectionString);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
   afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });

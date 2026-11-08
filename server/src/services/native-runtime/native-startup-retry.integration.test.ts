@@ -17,27 +17,27 @@ import {
   issues,
   nativeRunFinalizations,
   nativeRunnerCheckpoints,
-} from "@paperclipai/db";
-import type { NativeExecutionInputV1 } from "@paperclipai/paperclip-runner";
+} from "@pilibalaai/db";
+import type { NativeExecutionInputV1 } from "@pilibalaai/pilibala-runner";
 import { startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 
 const provider = vi.hoisted(() => ({ execute: vi.fn() }));
-vi.mock("../../vendor/paperclip-runner/index.js", async (importOriginal) => ({
+vi.mock("../../vendor/pilibala-runner/index.js", async (importOriginal) => ({
   ...(await importOriginal<
-    typeof import("../../vendor/paperclip-runner/index.js")
+    typeof import("../../vendor/pilibala-runner/index.js")
   >()),
   executeNativeSession: provider.execute,
 }));
 
-import { executePaperclipNativeSession, prepareNativeSessionOpenTimeoutRetry, scopedRunnerdStateRoot } from "./native-session-executor.js";
+import { executePilibalaNativeSession, prepareNativeSessionOpenTimeoutRetry, scopedRunnerdStateRoot } from "./native-session-executor.js";
 import { buildNativeCompletionContract } from "./completion-contracts.js";
 import { prepareNativeHeartbeatRun } from "./prepare-native-run.js";
 import { claimNativeSessionResumptions } from "./native-finalization-reconciler.js";
-import { DurablePrpControlPlane } from "../../vendor/paperclip-runner/index.js";
+import { DurablePrpControlPlane } from "../../vendor/pilibala-runner/index.js";
 import { createNativeRunnerExecutionDriver } from "./native-runner-execution-driver.js";
 import { currentNativeControllerIdentity } from "./native-restart-recovery.js";
 import { loadNativeRunnerCheckpoint } from "./native-runner-checkpoint.js";
-import { environmentRunnerIngressErrorData, JsonRpcCallError, PluginEnvironmentRunnerIngressError } from "@paperclipai/plugin-sdk";
+import { environmentRunnerIngressErrorData, JsonRpcCallError, PluginEnvironmentRunnerIngressError } from "@pilibalaai/plugin-sdk";
 import { accountRunCost } from "../run-cost-accounting.js";
 import { settleUnrecoverableExecutions } from "../execution-recovery-resolution.js";
 import { agentProviderLimitCooldown } from "./native-startup-retry.js";
@@ -75,7 +75,7 @@ function sessionOpenFailure(options: {
 
 function limitFailure(overrides: Record<string, unknown> = {}) {
   return {
-    schema: "paperclip.provider-failure.v1",
+    schema: "pilibala.provider-failure.v1",
     provider: "anthropic",
     phase: "turn",
     category: "rate_limit",
@@ -116,7 +116,7 @@ describe("native provider startup retry", () => {
       companyId,
       name: `Startup agent ${agentId.slice(0, 8)}`,
       status: "active",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       adapterConfig: { provider: "acpx", agent: "claude" },
     });
     return agentId;
@@ -163,7 +163,7 @@ describe("native provider startup retry", () => {
       .from(completionContracts)
       .where(eq(completionContracts.issueId, issueId));
     const execution: NativeExecutionInputV1 = {
-      schema: "paperclip.native-execution-input.v1",
+      schema: "pilibala.native-execution-input.v1",
       binding: { companyId, runId, issueId, agentId, executionWorkspaceId: runId },
       provider: { kind: "codex", model: "gpt-5.6-luna" },
       task: {
@@ -183,7 +183,7 @@ describe("native provider startup retry", () => {
       completionContract: {
         id: contract.id,
         sha256: contract.canonicalSha256,
-        schemaVersion: "paperclip.completion-contract.v1",
+        schemaVersion: "pilibala.completion-contract.v1",
         contract: buildNativeCompletionContract(issue, { revision: contract.revision }),
       },
       interactionResponses: [],
@@ -219,7 +219,7 @@ describe("native provider startup retry", () => {
     });
     const startedAt = new Date();
     await expect(
-      executePaperclipNativeSession({
+      executePilibalaNativeSession({
         db,
         execution: seeded.execution,
         runnerInstanceId: seeded.runnerInstanceId,
@@ -332,7 +332,7 @@ describe("native provider startup retry", () => {
       core.store.state.tickets = {};
     }
     if (options.checkpoint === "legacy") {
-      core.store.state.schema = "paperclip.runner.durable.control-plane-state.v1";
+      core.store.state.schema = "pilibala.runner.durable.control-plane-state.v1";
       delete core.store.state.bootstrapHistory;
     }
     const launch = vi.fn();
@@ -344,7 +344,7 @@ describe("native provider startup retry", () => {
         settlementArmed = false;
         if (options.race === "checkpoint") { core.issueBootstrapTicket(); await core.flushCheckpoint(); }
         if (options.race === "stop") await db.update(heartbeatRuns).set({ resultJson: {
-          nativeCancellation: { schema: "paperclip.native-cancellation.v1", companyId, issueId: seeded.issueId,
+          nativeCancellation: { schema: "pilibala.native-cancellation.v1", companyId, issueId: seeded.issueId,
             runId: seeded.runId, scope: "run", intentAuditId: randomUUID(), dispatchState: "pending" },
         } }).where(eq(heartbeatRuns.id, seeded.runId));
         if (options.race === "claim") await db.update(nativeRunFinalizations).set({
@@ -384,7 +384,7 @@ describe("native provider startup retry", () => {
       throw new Error("ingress failure must precede process launch");
     });
     try {
-      await expect(executePaperclipNativeSession({ db, execution: seeded.execution,
+      await expect(executePilibalaNativeSession({ db, execution: seeded.execution,
         runnerInstanceId: seeded.runnerInstanceId, useRunnerd: true,
         runnerExecutionTarget: { kind: "remote", transport: "sandbox", remoteCwd: "/workspace", runner: {} } as never,
         backend: { descriptor: async () => { throw new Error("unexpected descriptor"); },
@@ -548,7 +548,7 @@ describe("native provider startup retry", () => {
       }
       throw new Error(message);
     });
-    await expect(executePaperclipNativeSession({
+    await expect(executePilibalaNativeSession({
       db,
       execution: seeded.execution,
       runnerInstanceId: seeded.runnerInstanceId,
@@ -578,13 +578,13 @@ describe("native provider startup retry", () => {
     let stateBase: string;
     let previousStateDir: string | undefined;
     beforeAll(() => {
-      previousStateDir = process.env.PAPERCLIP_RUNNER_STATE_DIR;
+      previousStateDir = process.env.PILIBALA_RUNNER_STATE_DIR;
       stateBase = mkdtempSync(join(tmpdir(), "native-startup-retry-state-"));
-      process.env.PAPERCLIP_RUNNER_STATE_DIR = stateBase;
+      process.env.PILIBALA_RUNNER_STATE_DIR = stateBase;
     });
     afterAll(() => {
-      if (previousStateDir === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR;
-      else process.env.PAPERCLIP_RUNNER_STATE_DIR = previousStateDir;
+      if (previousStateDir === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR;
+      else process.env.PILIBALA_RUNNER_STATE_DIR = previousStateDir;
       rmSync(stateBase, { recursive: true, force: true });
     });
 
@@ -603,9 +603,9 @@ describe("native provider startup retry", () => {
       mkdirSync(join(root, "control-plane"), { recursive: true });
       mkdirSync(join(root, "runner"), { recursive: true });
       writeFileSync(join(root, "control-plane", "control-plane-state.json"), JSON.stringify({
-        schema: "paperclip.runner.durable.control-plane-state.v2",
+        schema: "pilibala.runner.durable.control-plane-state.v2",
         identity: { runId: seeded.runId, normalizedSessionId: seeded.execution.binding.runId },
-        bootstrapHistory: { schema: "paperclip.runner.bootstrap-history.v1", credentialsIssued: 1, adopted: false },
+        bootstrapHistory: { schema: "pilibala.runner.bootstrap-history.v1", credentialsIssued: 1, adopted: false },
         commands: [
           { type: "run.prepare", status: "completed", result: { result: { status: "prepared" } } },
           { type: "session.open", status: "completed", result: { commandType: "session.open", status: "completed",
@@ -619,7 +619,7 @@ describe("native provider startup retry", () => {
         connectionCount: 1,
       }));
       writeFileSync(join(root, "runner", "runner-state.json"), JSON.stringify({
-        schema: "paperclip.runner.durable.state.v1", lifecycle: "suspended", nextSourceSeq: 3, ackedSourceSeq: 2, outbox: [],
+        schema: "pilibala.runner.durable.state.v1", lifecycle: "suspended", nextSourceSeq: 3, ackedSourceSeq: 2, outbox: [],
         processedCommands: {
           command_prp_00000001: { commandType: "run.prepare", status: "completed" },
           command_prp_00000002: { commandType: "session.open", status: "completed", result: { processId: pid, status: "started" } },
@@ -672,7 +672,7 @@ describe("native provider startup retry", () => {
       throw new Error("expected the closed listener to stop startup");
     });
     const failedAt = new Date();
-    await expect(executePaperclipNativeSession({
+    await expect(executePilibalaNativeSession({
       db,
       execution: seeded.execution,
       runnerInstanceId: seeded.runnerInstanceId,
@@ -719,7 +719,7 @@ describe("native provider startup retry", () => {
       });
       resolveLocalRuntimeApiUrl();
     });
-    await expect(executePaperclipNativeSession({
+    await expect(executePilibalaNativeSession({
       db,
       execution: seeded.execution,
       runnerInstanceId: seeded.runnerInstanceId,

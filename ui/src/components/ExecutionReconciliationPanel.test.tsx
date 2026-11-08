@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ExecutionReconciliationPanel } from "./ExecutionReconciliationPanel";
 import { issuesApi } from "../api/issues";
-import type { ExecutionBlocker, IssueRecoveryAction } from "@paperclipai/shared";
+import type { ExecutionBlocker, IssueRecoveryAction } from "@pilibalaai/shared";
 
 vi.mock("../api/issues", () => ({ issuesApi: { resolveRecoveryAction: vi.fn() } }));
 vi.mock("../lib/router", () => ({

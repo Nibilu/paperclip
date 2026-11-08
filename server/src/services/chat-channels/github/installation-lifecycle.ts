@@ -15,7 +15,7 @@ import {
   inArray,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatConversations,
@@ -23,12 +23,12 @@ import {
   chatEndpointResources,
   chatEndpoints,
   toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   ChatEndpointSetupState,
   ChatProvider,
   ToolCredentialSecretRef,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import {
   conflict,

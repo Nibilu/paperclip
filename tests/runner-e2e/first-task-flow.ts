@@ -209,7 +209,7 @@ export async function observeManagedFirstTaskSetup(page: Page, api: RunnerApi, f
       if (kind === "discovery") {
         if (Array.isArray(body) && responseAt >= platformEndedAt) {
           const codex = body.find(adapter => adapter.type === "codex_local");
-          qualifiedDefault = codex?.defaultRunner === "paperclip" && codex?.supportedRunners?.includes("paperclip") === true;
+          qualifiedDefault = codex?.defaultRunner === "pilibala" && codex?.supportedRunners?.includes("pilibala") === true;
           if (!qualifiedDefault) rejectFailure(new Error("The selected image is not qualified for native Codex onboarding"));
         }
         return;
@@ -221,11 +221,11 @@ export async function observeManagedFirstTaskSetup(page: Page, api: RunnerApi, f
       }
       else {
         qualification.adapterType = response.ok() && data.status === "pass" ? data.adapterType : null;
-        if (qualification.adapterType !== "paperclip_runner") rejectFailure(new Error("The UI native runtime setup did not pass"));
+        if (qualification.adapterType !== "pilibala_runner") rejectFailure(new Error("The UI native runtime setup did not pass"));
         automaticRequest = request.postDataJSON()?.runner === undefined && (requestStarts.get(request) ?? 0) >= platformEndedAt;
       }
       const leaseId = kind === "platform" ? data.details?.leaseId
-        : /(?:^|;\s*)paperclipLeaseId=([a-zA-Z0-9-]+)(?:;|$)/.exec(String(data.checks?.find((check: Row) => check.code === "sandbox_test_identity")?.detail ?? ""))?.[1];
+        : /(?:^|;\s*)pilibalaLeaseId=([a-zA-Z0-9-]+)(?:;|$)/.exec(String(data.checks?.find((check: Row) => check.code === "sandbox_test_identity")?.detail ?? ""))?.[1];
       if (typeof leaseId !== "string" || !leaseId) {
         fixtures.setupLeaseAccountingIncomplete = true;
         return;
@@ -261,7 +261,7 @@ export async function observeManagedFirstTaskSetup(page: Page, api: RunnerApi, f
     if (failures.length) throw new AggregateError(failures, "Managed onboarding setup evidence could not be verified");
     if (!requireSuccess) return;
     if (!qualification.recorded || qualification.platformResponses !== 1 || qualification.adapterResponses !== 1
-      || qualification.adapterType !== "paperclip_runner" || !automaticRequest || !qualifiedDefault
+      || qualification.adapterType !== "pilibala_runner" || !automaticRequest || !qualifiedDefault
       || fixtures.setupLeaseAccountingIncomplete || fixtures.setupLeases!.length !== 2 || !["platform", "adapter"].every(kind => fixtures.setupLeases!.some(lease => lease.phase === kind))) {
       throw new Error("The UI did not prove one qualified automatic native setup with both owned leases");
     }
@@ -379,8 +379,8 @@ export async function setupFirstTaskFixtures(input: {
   expect(agents).toHaveLength(1);
   const wizardAdapter =
     execution.profile.credential === "OPENAI_API_KEY"
-      ? execution.profile.id === "runner-codex" ? "paperclip_runner" : "codex_local"
-      : execution.profile.id === "runner-acpx-claude" ? "paperclip_runner" : "claude_local";
+      ? execution.profile.id === "runner-codex" ? "pilibala_runner" : "codex_local"
+      : execution.profile.id === "runner-acpx-claude" ? "pilibala_runner" : "claude_local";
   expect(agents[0].adapterType).toBe(wizardAdapter);
   if (execution.profile.id === "runner-codex") {
     expect(agents[0].adapterConfig?.provider).toBe("codex");
@@ -405,7 +405,7 @@ export async function setupFirstTaskFixtures(input: {
   if (managed) {
     await page.reload({ waitUntil: "domcontentloaded" });
     const persisted = await api.get<Row>(`/api/agents/${fixtures.agent.id}`);
-    expect(persisted.adapterType).toBe("paperclip_runner");
+    expect(persisted.adapterType).toBe("pilibala_runner");
     expect(persisted.adapterConfig?.provider).toBe("codex");
   }
   await startFirstTaskWithRuntimeBound({
@@ -623,12 +623,12 @@ export async function runFirstTaskFlow(input: {
       permissions: agent.permissions,
     };
     const desired =
-      agent.adapterConfig?.paperclipSkillSync?.desiredSkills ?? [];
+      agent.adapterConfig?.pilibalaSkillSync?.desiredSkills ?? [];
     expect(
       desired.map((s: string | { key: string }) =>
         typeof s === "string" ? s : s.key,
       ),
-    ).toContain("paperclipai/paperclip/first-task");
+    ).toContain("pilibalaai/pilibala/first-task");
     const bundle = await api.get<{ files: Array<{ path: string }> }>(
       `/api/agents/${fixtures.agent.id}/instructions-bundle`,
     );
@@ -699,7 +699,7 @@ export async function runFirstTaskFlow(input: {
           o.id === (scenario.opening === "interview" ? "interview" : "task"),
       );
       await page
-        // Paperclip includes the option description in the accessible name.
+        // Pilibala includes the option description in the accessible name.
         .getByRole("radio", { name: option.label })
         .last()
         .click();

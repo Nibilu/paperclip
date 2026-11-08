@@ -10,7 +10,7 @@ import { idleWorkSnapshot } from "../services/task-admission.js";
 import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq, sql } from "drizzle-orm";
-import { companies, createDb, sandboxCreationOperations, environmentLeases, environments, type Db } from "@paperclipai/db";
+import { companies, createDb, sandboxCreationOperations, environmentLeases, environments, type Db } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { createDeliveryWorkCoordinator } from "../services/delivery-work-coordinator.js";
 import { DELIVERY_QUEUES } from "../services/delivery-work-notifications.js";
@@ -23,7 +23,7 @@ import { environmentRuntimeService } from "../services/environment-runtime.js";
 
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
 
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_ENVIRONMENT_CLEANUP_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_ENVIRONMENT_CLEANUP_TEST_DATABASE_URL");
 const support = external ? { supported: true } : await getEmbeddedPostgresTestSupport();
 describe.skipIf(!support.supported)("environment cleanup scheduling", () => {
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | undefined, db: ReturnType<typeof createDb>;

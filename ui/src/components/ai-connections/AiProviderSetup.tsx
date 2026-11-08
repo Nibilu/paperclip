@@ -8,7 +8,7 @@ import {
   type AiProviderRouting,
   type AiConnectionBinding,
   type AiManagedConnectionSummary,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { aiConnectionsApi } from "@/api/ai-connections";
 import { agentsApi } from "@/api/agents";
 import { describeError } from "@/api/errors";

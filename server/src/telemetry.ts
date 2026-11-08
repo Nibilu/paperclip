@@ -4,8 +4,8 @@ import {
   resolveTelemetryConfig,
   loadOrCreateState,
   trackServerStarted,
-} from "@paperclipai/shared/telemetry";
-import { resolvePaperclipInstanceRoot } from "./home-paths.js";
+} from "@pilibalaai/shared/telemetry";
+import { resolvePilibalaInstanceRoot } from "./home-paths.js";
 import { serverVersion } from "./version.js";
 
 let client: TelemetryClient | null = null;
@@ -19,7 +19,7 @@ export function initTelemetry(fileConfig?: { enabled?: boolean }): TelemetryClie
 
   let pendingClient: TelemetryClient | null = null;
   try {
-    const stateDir = path.join(resolvePaperclipInstanceRoot(), "telemetry");
+    const stateDir = path.join(resolvePilibalaInstanceRoot(), "telemetry");
     pendingClient = new TelemetryClient(
       config,
       () => loadOrCreateState(stateDir, serverVersion),

@@ -1,5 +1,5 @@
-import { type AgentCommentaryDetail } from "@paperclipai/shared";
-import { storybookAgents } from "../../fixtures/paperclipData";
+import { type AgentCommentaryDetail } from "@pilibalaai/shared";
+import { storybookAgents } from "../../fixtures/pilibalaData";
 import { prepareFixtureApi, type FixtureState } from "../capability-gaps/api";
 
 export const commentaryAgents = ["Amy (Opus)", "Codie", "VoC", "Fry (Codex)"].map((name, index) => ({

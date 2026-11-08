@@ -7,11 +7,11 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { S3Client, CreateBucketCommand, DeleteBucketCommand, DeleteObjectsCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { agents, authUsers, companies, companyMemberships, createDb, closeRegisteredClients, environmentLeases,
-  environments, executionWorkspaces, heartbeatRuns, agentWakeupRequests, issues, issueWorkProducts, nativeRunResults } from "@paperclipai/db";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
-import type { NativeExecutionInput, NativeSession, NativeSessionBackend, PrpEvent } from "@paperclipai/paperclip-runner";
-import type { EnvironmentLease } from "@paperclipai/shared";
+  environments, executionWorkspaces, heartbeatRuns, agentWakeupRequests, issues, issueWorkProducts, nativeRunResults } from "@pilibalaai/db";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
+import type { NativeExecutionInput, NativeSession, NativeSessionBackend, PrpEvent } from "@pilibalaai/pilibala-runner";
+import type { EnvironmentLease } from "@pilibalaai/shared";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { createIsolatedTestHome } from "./helpers/isolated-test-home.js";
 import { heartbeatService, startTaskDrain, stopTaskDrain } from "../services/heartbeat.js";
@@ -22,18 +22,18 @@ import { migrateEphemeralServerData } from "../maintenance/ephemeral-migration-d
 import { resolveManagedInstructionsRoot } from "../services/agent-instructions.js";
 import { materializeInstructionBytes } from "../services/agent-instruction-files.js";
 import { flushInFlightRunLogMirrors } from "../services/run-log-store.js";
-import { CONTROL_PLANE_CONFORMANCE_RESULT, CONTROL_PLANE_CONFORMANCE_TERMINAL } from "../vendor/paperclip-runner/testing.js";
+import { CONTROL_PLANE_CONFORMANCE_RESULT, CONTROL_PLANE_CONFORMANCE_TERMINAL } from "../vendor/pilibala-runner/testing.js";
 
-vi.mock("@paperclipai/adapter-utils/execution-target", async importOriginal => ({
-  ...await importOriginal<typeof import("@paperclipai/adapter-utils/execution-target")>(),
+vi.mock("@pilibalaai/adapter-utils/execution-target", async importOriginal => ({
+  ...await importOriginal<typeof import("@pilibalaai/adapter-utils/execution-target")>(),
   // The scripted session makes no sandbox-to-host API calls.
-  startAdapterExecutionTargetPaperclipBridge: async () => null,
+  startAdapterExecutionTargetPilibalaBridge: async () => null,
 }));
 
 // Real database, migration, object storage, queue claim, workspace restoration,
 // instruction materialization and result settlement. Only the sandbox transport
 // and provider session are scripted; neither can read the deleted predecessor.
-describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("queued turn after preserving offline enrollment", () => {
+describe.skipIf(!process.env.PILIBALA_TEST_S3_ENDPOINT)("queued turn after preserving offline enrollment", () => {
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: ReturnType<typeof createDb>, root: string, bucket: string, s3: S3Client;
   let home: ReturnType<typeof createIsolatedTestHome>;
@@ -43,19 +43,19 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("queued turn after pres
     db = createDb(database.connectionString);
     home = createIsolatedTestHome(); root = await fs.realpath(home.home);
     bucket = `queued-enrollment-${randomUUID()}`;
-    s3 = new S3Client({ endpoint: process.env.PAPERCLIP_TEST_S3_ENDPOINT, region: "us-east-1", forcePathStyle: true });
+    s3 = new S3Client({ endpoint: process.env.PILIBALA_TEST_S3_ENDPOINT, region: "us-east-1", forcePathStyle: true });
     await s3.send(new CreateBucketCommand({ Bucket: bucket }));
     vi.stubEnv("DATABASE_URL", database.connectionString);
-    vi.stubEnv("PAPERCLIP_HOME", path.join(root, "predecessor"));
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "74".repeat(32));
-    vi.stubEnv("PAPERCLIP_DURABLE_AGENT_FILES", "true");
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "true");
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", "false");
-    vi.stubEnv("PAPERCLIP_STORAGE_PROVIDER", "s3");
-    vi.stubEnv("PAPERCLIP_STORAGE_S3_BUCKET", bucket);
-    vi.stubEnv("PAPERCLIP_STORAGE_S3_REGION", "us-east-1");
-    vi.stubEnv("PAPERCLIP_STORAGE_S3_ENDPOINT", process.env.PAPERCLIP_TEST_S3_ENDPOINT!);
-    vi.stubEnv("PAPERCLIP_STORAGE_S3_FORCE_PATH_STYLE", "true");
+    vi.stubEnv("PILIBALA_HOME", path.join(root, "predecessor"));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "74".repeat(32));
+    vi.stubEnv("PILIBALA_DURABLE_AGENT_FILES", "true");
+    vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "true");
+    vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", "false");
+    vi.stubEnv("PILIBALA_STORAGE_PROVIDER", "s3");
+    vi.stubEnv("PILIBALA_STORAGE_S3_BUCKET", bucket);
+    vi.stubEnv("PILIBALA_STORAGE_S3_REGION", "us-east-1");
+    vi.stubEnv("PILIBALA_STORAGE_S3_ENDPOINT", process.env.PILIBALA_TEST_S3_ENDPOINT!);
+    vi.stubEnv("PILIBALA_STORAGE_S3_FORCE_PATH_STYLE", "true");
   }, 90_000);
   afterAll(async () => {
     stopTaskDrain();
@@ -88,18 +88,18 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("queued turn after pres
     const instructions = "Preserved instructions: read saved.txt before completing this turn.";
     const instructionsRoot = resolveManagedInstructionsRoot({ id: agentId, companyId, name: "Queued worker", adapterConfig: {} });
     await materializeInstructionBytes(instructionsRoot, "AGENTS.md", Buffer.from(instructions));
-    await db.insert(agents).values({ id: agentId, companyId, name: "Queued worker", adapterType: "paperclip_runner", status: "idle",
+    await db.insert(agents).values({ id: agentId, companyId, name: "Queued worker", adapterType: "pilibala_runner", status: "idle",
       defaultEnvironmentId: environment.id, adapterConfig: { provider: "codex", instructionsBundleMode: "managed", instructionsRootPath: instructionsRoot },
       runtimeConfig: { heartbeat: { wakeOnDemand: true, maxConcurrentRuns: 1 } } });
     await db.insert(issues).values({ id: issueId, companyId, title: "Continue saved work", issueNumber: 1, identifier: "QEM-1",
       status: "todo", assigneeAgentId: agentId, responsibleUserId: userId, executionWorkspacePreference: "reuse_existing",
       executionWorkspaceSettings: { mode: "isolated_workspace" } });
-    const oldHome = process.env.PAPERCLIP_HOME!, cwd = path.join(oldHome, "task");
+    const oldHome = process.env.PILIBALA_HOME!, cwd = path.join(oldHome, "task");
     await fs.mkdir(cwd, { recursive: true }); await fs.writeFile(path.join(cwd, "saved.txt"), "unfinished work before migration");
     const [workspace] = await db.insert(executionWorkspaces).values({ companyId, sourceIssueId: issueId, name: "Saved task",
       mode: "isolated_workspace", strategyType: "project_primary", providerType: "local_fs", cwd }).returning();
     await db.update(issues).set({ executionWorkspaceId: workspace.id }).where(eq(issues.id, issueId));
-    await db.insert(issueWorkProducts).values({ id: workProductId, companyId, issueId, type: "artifact", provider: "paperclip",
+    await db.insert(issueWorkProducts).values({ id: workProductId, companyId, issueId, type: "artifact", provider: "pilibala",
       title: "Migration fixture evidence", status: "ready_for_review", reviewState: "approved" });
     const predecessor = heartbeatService(db);
     startTaskDrain({});
@@ -116,8 +116,8 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("queued turn after pres
     expect((await db.select().from(agentWakeupRequests).where(eq(agentWakeupRequests.id, wake.id)))[0]).toEqual(wake);
     await fs.rm(oldHome, { recursive: true });
     await expect(fs.stat(oldHome)).rejects.toMatchObject({ code: "ENOENT" });
-    vi.stubEnv("PAPERCLIP_HOME", path.join(root, "replacement"));
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "false");
+    vi.stubEnv("PILIBALA_HOME", path.join(root, "replacement"));
+    vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "false");
 
     const remoteCwd = path.join(root, "independent-sandbox"); await fs.mkdir(remoteCwd);
     const exec = promisify(execFile);
@@ -171,7 +171,7 @@ describe.skipIf(!process.env.PAPERCLIP_TEST_S3_ENDPOINT)("queued turn after pres
         async *events() {
           await turnStarted;
           const [run] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, queued.id));
-          yield { schema: "paperclip.prp.event.v1", sourceEventId: `${queued.id}:terminal`, sourceSeq: 1, sourceInstanceId: run.runnerInstanceId!,
+          yield { schema: "pilibala.prp.event.v1", sourceEventId: `${queued.id}:terminal`, sourceSeq: 1, sourceInstanceId: run.runnerInstanceId!,
             sourceKind: "runner", runId: queued.id, normalizedSessionId: identity.sessionId, turnId, eventType: "turn.completed",
             schemaVersion: 1, priority: 0, emittedAt: new Date().toISOString(), payload: {} } satisfies PrpEvent;
         },

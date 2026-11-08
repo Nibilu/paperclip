@@ -3,7 +3,7 @@ import { managedMcpDeviceScope } from "./device-cutover.js";
 import { pendingLegacyMcpDevicePredicate } from "./idle-device-cutover.js";
 import { pendingMcpCodePredicate, pendingMcpDevicePredicate } from "./idle-authorization-handoffs.js";
 import { asc, gt } from "drizzle-orm";
-import { mcpFileTickets, mcpOauthRequests, mcpOauthDeviceRequests, type Db } from "@paperclipai/db";
+import { mcpFileTickets, mcpOauthRequests, mcpOauthDeviceRequests, type Db } from "@pilibalaai/db";
 import { DELIVERY_QUEUES } from "../delivery-work-notifications.js";
 import type { createDeliveryWorkCoordinator } from "../delivery-work-coordinator.js";
 

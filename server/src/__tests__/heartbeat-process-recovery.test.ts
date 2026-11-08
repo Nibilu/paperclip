@@ -1,7 +1,7 @@
 import { persistHeartbeatRunProcessMetadata } from "../services/heartbeat/run-lifecycle.js";
 import { BOUNDED_TRANSIENT_HEARTBEAT_RETRY_MAX_ATTEMPTS } from "../services/heartbeat/retries.js";
 import { enableRunFailureReporting } from "./helpers/run-failure-reporting.js";
-import { EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@paperclipai/db";
+import { EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@pilibalaai/db";
 import { createSystemRecovery } from "../services/system-recovery-state.js";
 import * as conversationContinuation from "../services/conversation-continuation.js";
 import { classifyEnvironmentCapabilities, environmentRuntimeService } from "../services/environment-runtime.js";
@@ -27,7 +27,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { recordLegacyWorkspaceRestoreFailure, terminalizeLegacyExecution } from "../services/legacy-execution-recovery.js";
 import { issueService } from "../services/issues.js";
 import { getExecutionBlocker } from "../services/execution-blocker.js";
-import { JsonRpcCallError } from "@paperclipai/plugin-sdk";
+import { JsonRpcCallError } from "@pilibalaai/plugin-sdk";
 import { taskInterruptionPresentation } from "../services/task-interruption-presentation.js";
 import { requestTaskRetry } from "../services/task-retry.js";
 import { adapterExecutionControls, createAdapterExecutionControl } from "../services/adapter-execution-control.js";
@@ -106,25 +106,25 @@ import {
   toolConnections,
   workAssessments,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
-import type { EnvironmentLease } from "@paperclipai/shared";
-import type { NativeExecutionInput } from "../vendor/paperclip-runner/index.js";
+import type { EnvironmentLease } from "@pilibalaai/shared";
+import type { NativeExecutionInput } from "../vendor/pilibala-runner/index.js";
 import { runningProcesses, type AdapterExecutionContext, type AdapterExecutionResult } from "../adapters/index.ts";
 import {
   resolveDefaultAgentWorkspaceDir,
-  resolvePaperclipInstanceRoot,
+  resolvePilibalaInstanceRoot,
 } from "../home-paths.js";
 import { buildNativeExecutionInput } from "../services/native-runtime/native-execution-input.js";
 import { nativeRuntimeContextFixture } from "../services/native-runtime/runtime-context.test-fixture.js";
 import { NativeRunnerOwnershipUnverifiedError } from "../services/native-runtime/native-runner-ownership.js";
 import { nativeCompletionSource } from "../services/native-runtime/completion-contracts.js";
 import { nativeCompletionFeedback } from "../services/native-runtime/native-completion-feedback.js";
-import type { PrpStructuredRunResult } from "../vendor/paperclip-runner/index.js";
-import { buildNativeModelEnvelope } from "@paperclipai/paperclip-runner";
+import type { PrpStructuredRunResult } from "../vendor/pilibala-runner/index.js";
+import { buildNativeModelEnvelope } from "@pilibalaai/pilibala-runner";
 import {
   CHAT_CONTROL_RECOVERY_ADMISSION_KEY,
   CHAT_CONTROL_RECOVERY_STOP_CODE,
@@ -156,9 +156,9 @@ const mockRetainedNativeCleanup = vi.hoisted(() =>
     typeof import("../services/native-runtime/native-session-executor.js").reconcileRetainedNativeSessionCleanup
   >(),
 );
-const mockExecutePaperclipNativeSession = vi.hoisted(() =>
+const mockExecutePilibalaNativeSession = vi.hoisted(() =>
   vi.fn<
-    typeof import("../services/native-runtime/native-session-executor.js").executePaperclipNativeSession
+    typeof import("../services/native-runtime/native-session-executor.js").executePilibalaNativeSession
   >(),
 );
 const mockAdapterExecute = vi.hoisted(() =>
@@ -193,15 +193,15 @@ vi.mock("../services/native-runtime/native-session-executor.js", async () => {
   mockRetainedNativeCleanup.mockImplementation(
     actual.reconcileRetainedNativeSessionCleanup,
   );
-  mockExecutePaperclipNativeSession.mockImplementation(
-    actual.executePaperclipNativeSession,
+  mockExecutePilibalaNativeSession.mockImplementation(
+    actual.executePilibalaNativeSession,
   );
   mockDetachNativeSessionsForRestart.mockImplementation(actual.detachNativeSessionsForRestart);
   mockCloseIdleWarmNativeSessionsForRestart.mockImplementation(actual.closeIdleWarmNativeSessionsForRestart);
   return {
     ...actual,
     reconcileRetainedNativeSessionCleanup: mockRetainedNativeCleanup,
-    executePaperclipNativeSession: mockExecutePaperclipNativeSession,
+    executePilibalaNativeSession: mockExecutePilibalaNativeSession,
     detachNativeSessionsForRestart: mockDetachNativeSessionsForRestart,
     closeIdleWarmNativeSessionsForRestart: mockCloseIdleWarmNativeSessionsForRestart,
   };
@@ -218,10 +218,10 @@ vi.mock("../services/local-service-supervisor.js", async () => {
   };
 });
 
-vi.mock("@paperclipai/shared/telemetry", async () => {
+vi.mock("@pilibalaai/shared/telemetry", async () => {
   const actual = await vi.importActual<
-    typeof import("@paperclipai/shared/telemetry")
-  >("@paperclipai/shared/telemetry");
+    typeof import("@pilibalaai/shared/telemetry")
+  >("@pilibalaai/shared/telemetry");
   return {
     ...actual,
     trackAgentFirstHeartbeat: mockTrackAgentFirstHeartbeat,
@@ -255,16 +255,16 @@ import {
   currentNativeControllerIdentity,
 } from "../services/native-runtime/native-restart-recovery.ts";
 import { claimNativeSessionResumptions } from "../services/native-runtime/native-finalization-reconciler.ts";
-import { PaperclipControlPlanePort } from "../services/native-runtime/paperclip-control-plane-port.js";
+import { PilibalaControlPlanePort } from "../services/native-runtime/pilibala-control-plane-port.js";
 import { finalizeNativeRun } from "../services/native-runtime/native-run-finalizer.js";
 import { recordNativeAttentionAssessment } from "../services/native-runtime/work-assessments.js";
 import { routeNativeAttention } from "../services/native-runtime/native-interaction-bridge.js";
-import * as paperclipRunner from "../vendor/paperclip-runner/index.js";
+import * as pilibalaRunner from "../vendor/pilibala-runner/index.js";
 import {
   CONTROL_PLANE_CONFORMANCE_OPEN,
   CONTROL_PLANE_CONFORMANCE_RESULT,
   CONTROL_PLANE_CONFORMANCE_TERMINAL,
-} from "../vendor/paperclip-runner/testing.js";
+} from "../vendor/pilibala-runner/testing.js";
 import { recoveryService } from "../services/recovery/service.ts";
 import {
   readHotRestartIntent,
@@ -284,8 +284,8 @@ import { collectDispositionRepairSourceState } from "../services/recovery/dispos
 import {
   UNMANAGED_BACKGROUND_TASK_LIVENESS_REASON,
   UNMANAGED_BACKGROUND_TASK_STOP_REASON,
-} from "@paperclipai/adapter-utils/server-utils";
-const externalTestDatabaseUrl = process.env.PAPERCLIP_TEST_DATABASE_URL?.trim();
+} from "@pilibalaai/adapter-utils/server-utils";
+const externalTestDatabaseUrl = process.env.PILIBALA_TEST_DATABASE_URL?.trim();
 const embeddedPostgresSupport = externalTestDatabaseUrl
   ? { supported: true }
   : await getEmbeddedPostgresTestSupport();
@@ -522,7 +522,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   ) {
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix,
       defaultResponsibleUserId: "responsible-user",
       requireBoardApprovalForNewAgents: false,
@@ -643,7 +643,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       db = createDb(externalTestDatabaseUrl);
     } else {
       tempDb = await startEmbeddedPostgresTestDatabase(
-        "paperclip-heartbeat-recovery-",
+        "pilibala-heartbeat-recovery-",
       );
       db = createDb(tempDb.connectionString);
     }
@@ -1412,7 +1412,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2410,13 +2410,13 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   });
 
   async function seedPendingNativeFinalization(accept = true) {
-    const fixture = await seedRunFixture({ runtimeMode: "native", adapterType: "paperclip_runner", processPid: 2_000_000_000 });
+    const fixture = await seedRunFixture({ runtimeMode: "native", adapterType: "pilibala_runner", processPid: 2_000_000_000 });
     const { companyId, agentId, issueId, runId } = fixture;
     const contractId = randomUUID(), runnerInstanceId = randomUUID();
     const contractSha = `finalization-contract-${runId}`;
     await db.insert(completionContracts).values({
       id: contractId, companyId, issueId, revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1", policyVersion: "phase6-v1",
+      schemaVersion: "pilibala.completion-contract.v1", policyVersion: "phase6-v1",
       risk: "low", completionAuthority: "agent_claim_policy", incompleteCriteriaPolicy: "preserve_non_terminal",
       contractJson: { revision: CONTROL_PLANE_CONFORMANCE_RESULT.completionClaim.contractRevision,
         objective: "Keep completed work", criteria: [{ id: "objective", requirement: "Keep completed work" }] },
@@ -2425,7 +2425,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     await db.update(heartbeatRuns).set({ nativeIssueId: issueId, nativeSessionId: runId,
       runnerInstanceId, completionContractId: contractId, completionContractSha256: contractSha,
     }).where(eq(heartbeatRuns.id, runId));
-    const makePort = (targetDb = db) => new PaperclipControlPlanePort(targetDb, { companyId, issueId, runId, agentId, sessionId: runId,
+    const makePort = (targetDb = db) => new PilibalaControlPlanePort(targetDb, { companyId, issueId, runId, agentId, sessionId: runId,
       completionContractId: contractId, completionContractSha256: contractSha,
       sourceInstanceId: runnerInstanceId, controlPlaneSourceInstanceId: `finalization-control-${runId}`,
     });
@@ -2488,7 +2488,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       expect(release).not.toHaveBeenCalled();
       expect(destroy).not.toHaveBeenCalled();
       expect(mockAdapterExecute).not.toHaveBeenCalled();
-      expect(mockExecutePaperclipNativeSession).not.toHaveBeenCalled();
+      expect(mockExecutePilibalaNativeSession).not.toHaveBeenCalled();
       await waitForPendingRunFailureReports();
       expect(mockCaptureRunFailure).not.toHaveBeenCalled();
       await heartbeat.drainActiveRunExecutions();
@@ -2558,7 +2558,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       expect((await db.select().from(environmentLeases).where(eq(environmentLeases.id, f.leaseId)))[0].status).toBe("active");
       expect(releaseLease).not.toHaveBeenCalled();
       expect(mockAdapterExecute).not.toHaveBeenCalled();
-      expect(mockExecutePaperclipNativeSession).not.toHaveBeenCalled();
+      expect(mockExecutePilibalaNativeSession).not.toHaveBeenCalled();
       await waitForPendingRunFailureReports();
       expect(mockCaptureRunFailure).not.toHaveBeenCalled();
     } finally {
@@ -2608,7 +2608,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     expect((await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, hold.id)))[0])
       .toMatchObject({ status: "resolved", outcome: "restored" });
     expect(await db.select().from(nativeRunResults).where(eq(nativeRunResults.runId, f.runId))).toEqual(accepted);
-    expect(mockExecutePaperclipNativeSession).not.toHaveBeenCalled();
+    expect(mockExecutePilibalaNativeSession).not.toHaveBeenCalled();
     expect(mockAdapterExecute).not.toHaveBeenCalled();
     await heartbeat.drainActiveRunExecutions();
   });
@@ -2700,7 +2700,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   it.each(["settled", "rejected", "late_callback", "provider_transport_failed"] as const)(
     "joins startup and reap retained cleanup, keeps recovery live, and drains its %s operation",
     async (outcome) => {
-      await withTempPaperclipHome(async () => {
+      await withTempPilibalaHome(async () => {
         const fixture = await seedRunFixture({ runtimeMode: "native" });
         const { companyId, agentId, issueId, runId } = fixture;
         const contractId = randomUUID();
@@ -2711,7 +2711,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
           companyId,
           issueId,
           revision: 1,
-          schemaVersion: "paperclip.completion-contract.v1",
+          schemaVersion: "pilibala.completion-contract.v1",
           policyVersion: "phase6-v1",
           risk: "low",
           completionAuthority: "agent_claim_policy",
@@ -2737,7 +2737,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
           .where(eq(heartbeatRuns.id, runId));
         // Use the real accepted-result/finalization path. Only physical cleanup
         // is held below; startup, candidate discovery, reaping and drain are real.
-        const port = new PaperclipControlPlanePort(db, {
+        const port = new PilibalaControlPlanePort(db, {
           companyId,
           issueId,
           runId,
@@ -2892,7 +2892,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
           });
           expect(heartbeat.getTaskDrainStatus().activeRuns).toBeGreaterThan(0);
           expect(mockAdapterExecute).not.toHaveBeenCalled();
-          expect(mockExecutePaperclipNativeSession).not.toHaveBeenCalled();
+          expect(mockExecutePilibalaNativeSession).not.toHaveBeenCalled();
           release();
           if (outcome === "late_callback") {
             await vi.waitFor(() => expect(physicalCleanupFinished).toBe(true));
@@ -2910,7 +2910,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
           });
           expect(mockRetainedNativeCleanup).toHaveBeenCalledTimes(1);
           expect(mockAdapterExecute).not.toHaveBeenCalled();
-          expect(mockExecutePaperclipNativeSession).not.toHaveBeenCalled();
+          expect(mockExecutePilibalaNativeSession).not.toHaveBeenCalled();
           expect(
             await db
               .select()
@@ -3006,7 +3006,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     expect(child.pid).toBeTypeOf("number");
 
     const { agentId, runId, wakeupRequestId } = await seedRunFixture({
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       runtimeMode: "native",
       processPid: child.pid ?? null,
       includeIssue: false,
@@ -3050,7 +3050,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     async (coordinatorPhase) => {
       const { companyId, agentId, runId, issueId, wakeupRequestId } =
         await seedRunFixture({
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           runtimeMode: "native",
           runErrorCode: "native_execution_ownership_unverified",
         });
@@ -3201,7 +3201,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     expect(child.pid).toBeTypeOf("number");
 
     const { companyId, runId, issueId } = await seedRunFixture({
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       runtimeMode: "native",
       processPid: child.pid ?? null,
     });
@@ -3240,7 +3240,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   it("does not reap a retryable native run while its same-run recovery path owns it", async () => {
     const { companyId, agentId, runId, issueId, wakeupRequestId } =
       await seedRunFixture({
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         runtimeMode: "native",
       });
     const nextAttemptAt = new Date(Date.now() + 60_000);
@@ -3286,7 +3286,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
   it("does not grant a dead native run legacy retry authority after adapter reassignment", async () => {
     const { agentId, runId } = await seedRunFixture({
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       runtimeMode: "native",
       processPid: 999_999_999,
       includeIssue: false,
@@ -3515,7 +3515,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   // the adapter dispatch renewal, leaving an expired lease from another boot.
   async function seedRestartOrphanedLegacySetup(executionStage: "preparing" | "dispatching") {
     const fixture = await seedRunFixture({
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       agentStatus: "idle",
       runtimeMode: "legacy",
     });
@@ -3610,19 +3610,19 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     ]);
   });
 
-  async function withTempPaperclipHome<T>(
+  async function withTempPilibalaHome<T>(
     fn: (home: string) => Promise<T>,
   ): Promise<T> {
     const home = await fs.mkdtemp(
-      path.join(os.tmpdir(), "paperclip-hot-restart-"),
+      path.join(os.tmpdir(), "pilibala-hot-restart-"),
     );
-    const previousHome = process.env.PAPERCLIP_HOME;
-    process.env.PAPERCLIP_HOME = home;
+    const previousHome = process.env.PILIBALA_HOME;
+    process.env.PILIBALA_HOME = home;
     try {
       return await fn(home);
     } finally {
-      if (previousHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousHome;
+      if (previousHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = previousHome;
       // Native dispatch materializes read-only runtime bundles in this owned
       // temporary home. Restore directory permissions solely for test cleanup.
       const makeDirectoriesWritable = async (
@@ -3644,9 +3644,9 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   }
 
   it.each([false, true])("settles a failed saved native descriptor without inventing files when workspace access is disabled: %s", async withoutWorkspace => {
-    await withTempPaperclipHome(async () => {
+    await withTempPilibalaHome(async () => {
       const f = await seedQueuedIssueRunFixture();
-      await db.update(agents).set({ adapterType: "paperclip_runner",
+      await db.update(agents).set({ adapterType: "pilibala_runner",
         adapterConfig: { provider: "codex", model: "gpt-5.6-luna" },
       }).where(eq(agents.id, f.agentId));
       const originalFactory = environmentOrchestrator.environmentRunOrchestrator;
@@ -3665,13 +3665,13 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
               metadata: { driver: "sandbox", pluginId: randomUUID(), sandboxProviderPlugin: true, remoteCwd: "/work" },
             }).returning();
             leaseId = lease!.id;
-            const reference = { schema: "paperclip.native-workspace-sync/v3" as const, state: "prepared" as const,
+            const reference = { schema: "pilibala.native-workspace-sync/v3" as const, state: "prepared" as const,
               descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
               workspaceId: randomUUID(), leaseId: lease!.id, providerLeaseId: lease!.providerLeaseId!, remoteCwd: "/work", resourceDisposition: "destroy" as const };
             await db.update(heartbeatRuns).set({ runtimeMode: "native", nativeIssueId: f.issueId, nativePhase: "observed",
               driverKind: withoutWorkspace ? "grok_bot_mcp" : null,
               runnerProfileJson: { nativeWorkspaceSync: reference, ...(withoutWorkspace ? { nativeExecutionInput: {
-                schema: "paperclip.native-execution-input.v6", provider: { kind: "grok_bot" },
+                schema: "pilibala.native-execution-input.v6", provider: { kind: "grok_bot" },
                 binding: { companyId: f.companyId, agentId: f.agentId, runId, issueId: f.issueId },
                 workspace: { access: "none", cwd: null, repoUrl: null, repoRef: null, branchName: null },
               } } : {}) },
@@ -3705,9 +3705,9 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   });
 
   it("fences native selection when cancellation wins during preparation", async () => {
-    await withTempPaperclipHome(async () => {
+    await withTempPilibalaHome(async () => {
       const { agentId, issueId, runId } = await seedQueuedIssueRunFixture();
-      await db.update(agents).set({ adapterType: "paperclip_runner",
+      await db.update(agents).set({ adapterType: "pilibala_runner",
         adapterConfig: { provider: "codex", model: "gpt-5.6-luna" },
       }).where(eq(agents.id, agentId));
       const factory = vi.fn(() => { throw new Error("provider must not start"); });
@@ -3736,9 +3736,9 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   });
 
   it("does not dispatch when cancellation wins after native selection", async () => {
-    await withTempPaperclipHome(async () => {
+    await withTempPilibalaHome(async () => {
       const { agentId, issueId, runId } = await seedQueuedIssueRunFixture();
-      await db.update(agents).set({ adapterType: "paperclip_runner",
+      await db.update(agents).set({ adapterType: "pilibala_runner",
         adapterConfig: { provider: "codex", model: "gpt-5.6-luna" },
       }).where(eq(agents.id, agentId));
       await db.update(heartbeatRuns).set({ invocationSource: "automation" }).where(eq(heartbeatRuns.id, runId));
@@ -3768,10 +3768,10 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   });
 
   it.each(["projectless", "organization_only", "empty_source"] as const)("dispatches local native external chat inside the server-selected task root: %s", async placement => {
-    await withTempPaperclipHome(async () => {
+    await withTempPilibalaHome(async () => {
       const { companyId, agentId, issueId, runId } =
         await seedQueuedIssueRunFixture();
-      await fs.mkdir(resolvePaperclipInstanceRoot(), { recursive: true });
+      await fs.mkdir(resolvePilibalaInstanceRoot(), { recursive: true });
       const projectId = placement === "projectless" ? null : randomUUID();
       if (projectId) {
         await db.insert(projects).values({ id: projectId, companyId, name: "Chat channel project default" });
@@ -3782,7 +3782,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       await db
         .update(agents)
         .set({
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           adapterConfig: { provider: "codex", model: "gpt-5.6-luna" },
         })
         .where(eq(agents.id, agentId));
@@ -3817,7 +3817,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       const input = nativeSessionBackendFactory.mock.calls[0]![0];
       expect(input.workspace.cwd).toBe(
         path.join(
-          await fs.realpath(resolvePaperclipInstanceRoot()),
+          await fs.realpath(resolvePilibalaInstanceRoot()),
           "isolated-workspaces",
           companyId,
           issueId,
@@ -3835,9 +3835,9 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   });
 
   it.each(["managed_isolated", "shared"] as const)("prepares a fresh native chat configured source safely: %s", async (mode) => {
-    await withTempPaperclipHome(async () => {
+    await withTempPilibalaHome(async () => {
       const { companyId, agentId, issueId, runId } = await seedQueuedIssueRunFixture();
-      const instanceRoot = resolvePaperclipInstanceRoot();
+      const instanceRoot = resolvePilibalaInstanceRoot();
       await fs.mkdir(instanceRoot, { recursive: true });
       const cwd = path.join(instanceRoot, "source-repository");
       await fs.mkdir(cwd, { recursive: true });
@@ -3847,7 +3847,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.test", "commit", "-m", "Source"], { cwd, stdio: "ignore" });
       const [project] = await db.insert(projects).values({ companyId, name: "Chat source" }).returning();
       const [source] = await db.insert(projectWorkspaces).values({ companyId, projectId: project.id, name: "Source", cwd, isPrimary: true }).returning();
-      await db.update(agents).set({ adapterType: "paperclip_runner", adapterConfig: { provider: "codex", model: "gpt-5.6-luna" } }).where(eq(agents.id, agentId));
+      await db.update(agents).set({ adapterType: "pilibala_runner", adapterConfig: { provider: "codex", model: "gpt-5.6-luna" } }).where(eq(agents.id, agentId));
       await db.update(issues).set({ originKind: "chat_channel", projectWorkspaceId: source.id,
         workspaceSelection: { version: 1, source: "channel", selection: { kind: "configured_source", projectWorkspaceId: source.id, mode } },
         executionWorkspaceSettings: { mode: mode === "managed_isolated" ? "isolated_workspace" : "shared_workspace" },
@@ -3876,10 +3876,10 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   });
 
   it("carries the ordinary initial description provenance through native heartbeat assembly", async () => {
-    await withTempPaperclipHome(async () => {
+    await withTempPilibalaHome(async () => {
       const { agentId, issueId, runId } = await seedQueuedIssueRunFixture();
       await db.update(agents).set({
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         adapterConfig: { provider: "codex", model: "gpt-5.6-luna" },
       }).where(eq(agents.id, agentId));
       const nativeSessionBackendFactory = vi.fn(
@@ -3910,7 +3910,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       expect(input.task.prompt).toContain(description);
       expect(input.task.prompt.split(description)).toHaveLength(2);
       const modelEnvelope = buildNativeModelEnvelope(input);
-      expect(modelEnvelope.schema).toBe("paperclip.native-model-envelope.v3");
+      expect(modelEnvelope.schema).toBe("pilibala.native-model-envelope.v3");
       expect(modelEnvelope.task).not.toHaveProperty("description");
       expect(modelEnvelope.task.prompt.split(description)).toHaveLength(2);
       expect(modelEnvelope.completionContract.criteria).toEqual([{
@@ -3921,7 +3921,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   });
 
   it("holds admitted native chat with a legacy shared cwd without replacing input or releasing ownership", async () => {
-    await withTempPaperclipHome(async () => {
+    await withTempPilibalaHome(async () => {
       const { companyId, agentId, issueId, runId } =
         await seedQueuedIssueRunFixture();
       const legacyCwd = resolveDefaultAgentWorkspaceDir(agentId);
@@ -3950,7 +3950,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         completionContract: {
           id: randomUUID(),
           sha256: `sha256:${"a".repeat(64)}`,
-          schemaVersion: "paperclip.run-result.v1",
+          schemaVersion: "pilibala.run-result.v1",
           contract: {
             revision: "1",
             objective: "Retain ownership",
@@ -3967,7 +3967,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       await db
         .update(agents)
         .set({
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           adapterConfig: { provider: "codex", model: "gpt-5.6-luna" },
         })
         .where(eq(agents.id, agentId));
@@ -4030,7 +4030,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       expect(mockAdapterExecute).not.toHaveBeenCalled();
       expect(mockTerminateLocalService).not.toHaveBeenCalled();
       await expect(
-        fs.stat(path.join(resolvePaperclipInstanceRoot(), "chat-workspaces")),
+        fs.stat(path.join(resolvePilibalaInstanceRoot(), "chat-workspaces")),
       ).rejects.toMatchObject({ code: "ENOENT" });
       expect(
         await db
@@ -4042,7 +4042,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   });
 
   it("checkpoints idle warm sessions even when no hot restart was requested", async () => {
-    await withTempPaperclipHome(async () => {
+    await withTempPilibalaHome(async () => {
       mockCloseIdleWarmNativeSessionsForRestart.mockClear();
       const heartbeat = heartbeatService(db);
       await expect(heartbeat.prepareHotRestartShutdown("SIGTERM")).resolves.toMatchObject({ mode: "not_requested" });
@@ -4064,7 +4064,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       },
     });
 
-    await withTempPaperclipHome(async () => {
+    await withTempPilibalaHome(async () => {
       await writeHotRestartIntent({
         previousServerPid: process.pid,
         previousServerVersion: "old-version",
@@ -4130,7 +4130,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       },
     });
 
-    await withTempPaperclipHome(async (home) => {
+    await withTempPilibalaHome(async (home) => {
       await writeHotRestartIntent({
         previousServerPid: process.pid,
         previousServerVersion: "old-acp-version",
@@ -4274,7 +4274,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       },
     });
 
-    await withTempPaperclipHome(async (home) => {
+    await withTempPilibalaHome(async (home) => {
       await writeHotRestartIntent({
         previousServerPid: process.pid,
         previousServerVersion: "old-acp-persistence-failure-version",
@@ -4346,7 +4346,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       },
     });
 
-    await withTempPaperclipHome(async (home) => {
+    await withTempPilibalaHome(async (home) => {
       await writeHotRestartIntent({
         previousServerPid: process.pid,
         previousServerVersion: "old-mixed-version",
@@ -4430,7 +4430,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       processGroupId: null,
     });
 
-    await withTempPaperclipHome(async (home) => {
+    await withTempPilibalaHome(async (home) => {
       await writeHotRestartIntent({
         previousServerPid: process.pid,
         previousServerVersion: "old-home-root-version",
@@ -4498,7 +4498,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       processGroupId: null,
     });
 
-    await withTempPaperclipHome(async (home) => {
+    await withTempPilibalaHome(async (home) => {
       await writeHotRestartIntent({
         previousServerPid: process.pid,
         previousServerVersion: "missing-snapshot-version",
@@ -4535,7 +4535,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       processGroupId: null,
     });
 
-    await withTempPaperclipHome(async (home) => {
+    await withTempPilibalaHome(async (home) => {
       await writeHotRestartIntent({
         previousServerPid: process.pid,
         previousServerVersion: "preflight-race-version",
@@ -4661,7 +4661,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         processStartedAt: new Date(observedProcessStartedAt!),
       });
 
-      await withTempPaperclipHome(async (home) => {
+      await withTempPilibalaHome(async (home) => {
         await writeHotRestartIntent({
           previousServerPid: process.pid,
           previousServerVersion: "old-version",
@@ -4726,7 +4726,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       },
     });
 
-    await withTempPaperclipHome(async (home) => {
+    await withTempPilibalaHome(async (home) => {
       const heartbeat = heartbeatService(db);
       await writeHotRestartIntent({
         previousServerPid: process.pid,
@@ -4800,7 +4800,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         },
       });
 
-      await withTempPaperclipHome(async () => {
+      await withTempPilibalaHome(async () => {
         const heartbeat = heartbeatService(db);
         await writeHotRestartIntent({
           previousServerPid: process.pid,
@@ -4890,9 +4890,9 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     ]);
   });
 
-  it("suspends native Paperclip Runner ownership on graceful restart without cancelling or creating a retry run", async () => {
+  it("suspends native Pilibala Runner ownership on graceful restart without cancelling or creating a retry run", async () => {
     const { agentId, runId, issueId, wakeupRequestId } = await seedRunFixture({
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       agentStatus: "running",
       runtimeMode: "native",
     });
@@ -5526,19 +5526,19 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
     await db.insert(plugins).values({
       id: pluginId,
-      pluginKey: "paperclip.kubernetes-sandbox-provider",
-      packageName: "@paperclipai/kubernetes-sandbox-provider",
+      pluginKey: "pilibala.kubernetes-sandbox-provider",
+      packageName: "@pilibalaai/kubernetes-sandbox-provider",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],
       manifestJson: {
-        id: "paperclip.kubernetes-sandbox-provider",
+        id: "pilibala.kubernetes-sandbox-provider",
         apiVersion: 1,
         version: "1.0.0",
         displayName: "Kubernetes Sandbox Provider",
         description:
           "Test Kubernetes sandbox provider whose worker is mid-restart",
-        author: "Paperclip",
+        author: "Pilibala",
         categories: ["automation"],
         capabilities: ["environment.drivers.register"],
         entrypoints: { worker: "dist/worker.js" },
@@ -5687,8 +5687,8 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     // Daytona answered sandbox create with HTTP 502 and the provisional
     // allocation's cleanup could not be confirmed, exactly as staging recorded.
     const daytonaCreate502 = () => new JsonRpcCallError({ code: -32000,
-      message: "Daytona sandbox creation failed (HTTP 502); cleanup could not be confirmed for paperclip-create-05f81d77",
-      data: { schema: "paperclip/environment-acquire-error/v1", providerDiagnostic: { httpStatus: 502 } } });
+      message: "Daytona sandbox creation failed (HTTP 502); cleanup could not be confirmed for pilibala-create-05f81d77",
+      data: { schema: "pilibala/environment-acquire-error/v1", providerDiagnostic: { httpStatus: 502 } } });
 
     function failLeaseAcquisition(times: number) {
       let remaining = times;
@@ -5820,16 +5820,16 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   it("classifies only the installed-but-not-ready sandbox provider plugin message as a configuration gap", () => {
     expect(
       parseSandboxProviderPluginNotReadyFailureMessage(
-        'Sandbox provider "kubernetes" is installed via plugin "paperclip.kubernetes-sandbox-provider", but that plugin is currently error.',
+        'Sandbox provider "kubernetes" is installed via plugin "pilibala.kubernetes-sandbox-provider", but that plugin is currently error.',
       ),
     ).toEqual({
       provider: "kubernetes",
-      pluginKey: "paperclip.kubernetes-sandbox-provider",
+      pluginKey: "pilibala.kubernetes-sandbox-provider",
       pluginStatus: "error",
     });
     expect(
       parseSandboxProviderPluginNotReadyFailureMessage(
-        'Failed to acquire lease: Sandbox provider "daytona" is installed via plugin "paperclip.daytona-sandbox-provider", but that plugin is currently upgrade_pending.',
+        'Failed to acquire lease: Sandbox provider "daytona" is installed via plugin "pilibala.daytona-sandbox-provider", but that plugin is currently upgrade_pending.',
       ),
     ).toMatchObject({ pluginStatus: "upgrade_pending" });
     expect(
@@ -5840,7 +5840,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     // The transient worker-restart message keeps its retryable classification.
     expect(
       parseSandboxProviderPluginNotReadyFailureMessage(
-        'Sandbox provider "kubernetes" is installed via plugin "paperclip.kubernetes-sandbox-provider", but its worker is not running.',
+        'Sandbox provider "kubernetes" is installed via plugin "pilibala.kubernetes-sandbox-provider", but its worker is not running.',
       ),
     ).toBeNull();
     // The permanent "not installed" message is a different condition.
@@ -5869,18 +5869,18 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
     await db.insert(plugins).values({
       id: pluginId,
-      pluginKey: "paperclip.kubernetes-sandbox-provider",
-      packageName: "@paperclipai/kubernetes-sandbox-provider",
+      pluginKey: "pilibala.kubernetes-sandbox-provider",
+      packageName: "@pilibalaai/kubernetes-sandbox-provider",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],
       manifestJson: {
-        id: "paperclip.kubernetes-sandbox-provider",
+        id: "pilibala.kubernetes-sandbox-provider",
         apiVersion: 1,
         version: "1.0.0",
         displayName: "Kubernetes Sandbox Provider",
         description: "Test Kubernetes sandbox provider stuck in error",
-        author: "Paperclip",
+        author: "Pilibala",
         categories: ["automation"],
         capabilities: ["environment.drivers.register"],
         entrypoints: { worker: "dist/worker.js" },
@@ -5938,10 +5938,10 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       configurationIncomplete: {
         reason: "sandbox_provider_plugin_not_ready",
         sandboxProvider: "kubernetes",
-        pluginKey: "paperclip.kubernetes-sandbox-provider",
+        pluginKey: "pilibala.kubernetes-sandbox-provider",
         pluginStatus: "error",
         fingerprint:
-          "sandbox_provider_plugin:paperclip.kubernetes-sandbox-provider:error",
+          "sandbox_provider_plugin:pilibala.kubernetes-sandbox-provider:error",
       },
     });
 
@@ -5979,7 +5979,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       const rows = await selectRecoveryCommentsForIssue(issueId);
       return (
         rows.find((comment) =>
-          comment.body.includes("paperclip.kubernetes-sandbox-provider"),
+          comment.body.includes("pilibala.kubernetes-sandbox-provider"),
         ) ?? null
       );
     });
@@ -6423,7 +6423,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     mockAdapterExecute.mockClear();
   });
 
-  it.each([true, false])("runs a task from a Paperclip fallback when its configured source directory is unavailable (project linked: %s)", async (projectLinked) => {
+  it.each([true, false])("runs a task from a Pilibala fallback when its configured source directory is unavailable (project linked: %s)", async (projectLinked) => {
     mockAdapterExecute.mockClear();
     const { companyId, agentId, runId, issueId } =
       await seedQueuedIssueRunFixture();
@@ -6434,7 +6434,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     await db.insert(projects).values({
       id: projectId,
       companyId,
-      name: "Paperclip App",
+      name: "Pilibala App",
       status: "in_progress",
     });
     await db.insert(projectWorkspaces).values({
@@ -6443,7 +6443,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       projectId,
       name: "Primary workspace",
       sourceType: "local_path",
-      cwd: path.join(process.cwd(), `paperclip-missing-workspace-${randomUUID()}`),
+      cwd: path.join(process.cwd(), `pilibala-missing-workspace-${randomUUID()}`),
       isPrimary: true,
     });
     await db
@@ -6481,7 +6481,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
   it("keeps an explicit local-path/worktree conflict blocked with a board action and no Sentry event", async () => {
     const { companyId, agentId, runId, issueId } = await seedQueuedIssueRunFixture();
-    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-local-workspace-policy-"));
+    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-local-workspace-policy-"));
     const projectId = randomUUID();
     const workspaceId = randomUUID();
     const heartbeat = heartbeatService(db);
@@ -6537,7 +6537,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     { name: "unknown clone failure", failures: ["unknown"], report: true },
   ])("preserves failed workspace recovery while classifying managed Git connections: $name", async ({ failures, report }) => {
     const { companyId, agentId, runId, issueId } = await seedQueuedIssueRunFixture();
-    const home = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-git-connection-lifecycle-"));
+    const home = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-git-connection-lifecycle-"));
     const bin = path.join(home, "bin");
     const callsPath = path.join(home, "git-calls.jsonl");
     const projectId = randomUUID();
@@ -6565,10 +6565,10 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     const heartbeat = heartbeatService(db);
     const previousSettings = await instanceSettingsService(db).getExperimental();
     const previousPath = process.env.PATH;
-    const previousHome = process.env.PAPERCLIP_HOME;
+    const previousHome = process.env.PILIBALA_HOME;
     try {
       process.env.PATH = `${bin}${path.delimiter}${previousPath ?? ""}`;
-      process.env.PAPERCLIP_HOME = home;
+      process.env.PILIBALA_HOME = home;
       await instanceSettingsService(db).updateExperimental({ enableIsolatedWorkspaces: true });
       await db.insert(projects).values({ id: projectId, companyId, name: "Git connection fixture", status: "in_progress" });
       await db.insert(projectWorkspaces).values(workspaceIds.map((id, index) => ({
@@ -6622,7 +6622,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     } finally {
       await heartbeat.waitForRunExecutionDrain(runId);
       if (previousPath === undefined) delete process.env.PATH; else process.env.PATH = previousPath;
-      if (previousHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = previousHome;
+      if (previousHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = previousHome;
       await instanceSettingsService(db).updateExperimental({ enableIsolatedWorkspaces: previousSettings.enableIsolatedWorkspaces });
       await fs.rm(home, { recursive: true, force: true });
     }
@@ -6630,7 +6630,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
   it("keeps a direct additional-repository connection failure visible without reporting it to Sentry", async () => {
     const { companyId, agentId, runId, issueId } = await seedQueuedIssueRunFixture();
-    const home = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-additional-git-connection-"));
+    const home = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-additional-git-connection-"));
     const cwd = path.join(home, "primary");
     const bin = path.join(home, "bin");
     const cloneCalls = path.join(home, "clone-calls.jsonl");
@@ -6638,7 +6638,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     const workspaceId = randomUUID();
     const repoUrl = "git@clone-alias.example.test:team/additional.git";
     const previousPath = process.env.PATH;
-    const previousHome = process.env.PAPERCLIP_HOME;
+    const previousHome = process.env.PILIBALA_HOME;
     const heartbeat = heartbeatService(db);
     await fs.mkdir(cwd);
     await fs.mkdir(bin);
@@ -6659,7 +6659,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       `process.exit(result.status ?? 2);\n`, { mode: 0o755 });
     try {
       process.env.PATH = `${bin}${path.delimiter}${previousPath ?? ""}`;
-      process.env.PAPERCLIP_HOME = home;
+      process.env.PILIBALA_HOME = home;
       await db.insert(projects).values({ id: projectId, companyId, name: "Additional repository fixture", status: "in_progress" });
       await db.insert(projectWorkspaces).values([
         { id: workspaceId, companyId, projectId, name: "Primary", sourceType: "local_path", cwd, isPrimary: true },
@@ -6699,7 +6699,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     } finally {
       await heartbeat.waitForRunExecutionDrain(runId);
       if (previousPath === undefined) delete process.env.PATH; else process.env.PATH = previousPath;
-      if (previousHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = previousHome;
+      if (previousHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = previousHome;
       await fs.rm(home, { recursive: true, force: true });
     }
   });
@@ -8490,7 +8490,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     await db.insert(budgetPolicies).values({ companyId, scopeType: "company", scopeId: companyId,
       metric: "billed_cents", windowKind: "calendar_month_utc", amount: 100, reservationCents: "10.0000000", isActive: true });
     mockAdapterExecute.mockImplementationOnce(async (raw?: unknown) => {
-      const input = raw as { onUsage: (receipt: import("@paperclipai/adapter-utils").AdapterUsageCheckpoint) => Promise<void> };
+      const input = raw as { onUsage: (receipt: import("@pilibalaai/adapter-utils").AdapterUsageCheckpoint) => Promise<void> };
       await input.onUsage({ costUsd: 0, complete: true });
       const transaction = vi.spyOn(db, "transaction").mockRejectedValueOnce(new Error("Database temporarily unavailable"));
       const rename = vi.spyOn(fs, "rename").mockRejectedValueOnce(new Error("Receipt disk full"));
@@ -8579,7 +8579,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     const [wake] = await db.insert(agentWakeupRequests).values({
       companyId, agentId, source: "automation", reason: "issue_commented", status: "deferred_issue_execution",
       requestedByActorType: "user", requestedByActorId: "responsible-user",
-      payload: { issueId, commentId: comment!.id, _paperclipWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [comment!.id] } },
+      payload: { issueId, commentId: comment!.id, _pilibalaWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [comment!.id] } },
     }).returning();
     await heartbeat.cancelRun(runId, "Interrupt queued input", {
       errorCode: "operator_interrupted", suppressImmediateRecovery: true,
@@ -8604,7 +8604,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     const [wake] = await db.insert(agentWakeupRequests).values({
       companyId, agentId, source: "automation", reason: "issue_commented", status: "deferred_issue_execution",
       requestedByActorType: "user", requestedByActorId: "responsible-user",
-      payload: { issueId, commentId: comment!.id, _paperclipWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [comment!.id] } },
+      payload: { issueId, commentId: comment!.id, _pilibalaWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [comment!.id] } },
     }).returning();
     await db.update(heartbeatRuns).set({ resultJson: {
       queuedCommentInterruptQueueId: wake!.id,
@@ -8650,7 +8650,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         companyId, agentId, source: "automation", reason: "issue_commented",
         status: state === "discarded" ? "cancelled" : "deferred_issue_execution",
         requestedByActorType: "user", requestedByActorId: "responsible-user",
-        payload: { issueId, commentId: commentIds[0], _paperclipWakeContext: {
+        payload: { issueId, commentId: commentIds[0], _pilibalaWakeContext: {
           issueId, wakeReason: "issue_commented", wakeCommentIds: commentIds,
         } },
       }).returning();
@@ -8662,7 +8662,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         companyId, agentId, source: "automation", reason: "issue_commented",
         status: "deferred_issue_execution", requestedAt: new Date(0),
         requestedByActorType: "user", requestedByActorId: "other-user",
-        payload: { issueId, commentId: otherComment!.id, _paperclipWakeContext: {
+        payload: { issueId, commentId: otherComment!.id, _pilibalaWakeContext: {
           issueId, wakeReason: "issue_commented", wakeCommentIds: [otherComment!.id],
         } },
       });
@@ -8695,7 +8695,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     const heartbeat = heartbeatService(db);
     const [pending] = await db.insert(issueComments).values({ companyId, issueId, authorUserId: "responsible-user", body: "List recent Drive files" }).returning();
     const [deferred] = await db.insert(agentWakeupRequests).values({ companyId, agentId, source: "automation", reason: "issue_execution_deferred", status: "deferred_issue_execution",
-      payload: { issueId, commentId: pending!.id, _paperclipWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [pending!.id] } },
+      payload: { issueId, commentId: pending!.id, _pilibalaWakeContext: { issueId, wakeReason: "issue_commented", wakeCommentIds: [pending!.id] } },
     }).returning();
     await heartbeat.cancelRun(runId, "Operator Stop", { resultJson: {
       executionCancellation: { state: "acknowledged" },
@@ -8761,7 +8761,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         issueId,
         commentId: pending!.id,
         ...(dedicatedDonor ? { mutation: "interaction", ...interaction } : {}),
-        _paperclipWakeContext: {
+        _pilibalaWakeContext: {
           issueId,
           wakeReason: "issue_commented",
           wakeCommentIds: [pending!.id],
@@ -8857,7 +8857,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     },
   );
 
-  it.each([{}, { command: "/nonexistent-paperclip-bootstrap-command" }])("releases holds for real process bootstrap failures: %j", async (config) => {
+  it.each([{}, { command: "/nonexistent-pilibala-bootstrap-command" }])("releases holds for real process bootstrap failures: %j", async (config) => {
     const { execute } = await import("../adapters/process/execute.js");
     mockAdapterExecute.mockImplementationOnce(execute);
     const { runId, agentId } = await seedRunFixture({ runtimeMode: "legacy", agentStatus: "idle", runStatus: "queued", includeIssue: false });
@@ -9420,7 +9420,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       const payload = Array.from({ length: 8192 }, () => randomUUID()).join("");
       const [run] = await db.update(heartbeatRuns).set({ resultJson: { payload } }).where(eq(heartbeatRuns.id, runId)).returning();
       await recordLegacyWorkspaceRestoreFailure(db, run, { workspaceRestoreFailure: "restore_failed" });
-      expect((await heartbeat.getRun(runId))?.resultJson?.workspaceRestoreRecovery).toEqual({ schema: "paperclip.workspace-restore-recovery.v1" });
+      expect((await heartbeat.getRun(runId))?.resultJson?.workspaceRestoreRecovery).toEqual({ schema: "pilibala.workspace-restore-recovery.v1" });
       stopping = heartbeat.cancelRun(runId, "Stopped by test operator");
       await expect(stopping).resolves.toMatchObject({ status: "cancelled" });
       await heartbeat.waitForRunExecutionDrain(runId);
@@ -9429,7 +9429,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       expect(finished).toMatchObject({ status: "cancelled", resultJson: {
         lateAdapterReceipt: true,
         workspaceRestoreFailure: "restore_failed",
-        workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [lease.id] },
+        workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [lease.id] },
         cancellation: { expected: true },
       } });
       expect((await db.select().from(environmentLeases).where(eq(environmentLeases.id, lease.id)))[0])
@@ -9935,7 +9935,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       issueId,
       authorAgentId: agentId,
       authorType: "agent",
-      body: "Welcome to Paperclip!",
+      body: "Welcome to Pilibala!",
     });
     const heartbeat = heartbeatService(db);
 
@@ -11908,7 +11908,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     await db.insert(agentTaskSessions).values({
       companyId,
       agentId,
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       taskKey: issueId,
       lastRunId: runId,
       goalJson: {
@@ -12781,7 +12781,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         issueId: source.issueId,
         ...(extra?.comments
           ? {
-              _paperclipWakeContext: {
+              _pilibalaWakeContext: {
                 wakeCommentIds: [source.sourceCommentId],
               },
             }
@@ -13133,7 +13133,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         errorCode: CHAT_CONTROL_RECOVERY_STOP_CODE,
       });
       expect(mockAdapterExecute).not.toHaveBeenCalled();
-      expect(mockExecutePaperclipNativeSession).not.toHaveBeenCalled();
+      expect(mockExecutePilibalaNativeSession).not.toHaveBeenCalled();
       expect(
         (
           await db.select().from(issues).where(eq(issues.id, source.issueId))
@@ -13164,7 +13164,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       }
       if (mode === "native") {
         await db.update(agents).set({
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           adapterConfig: { provider: "codex", model: "gpt-5.6-luna" },
         }).where(eq(agents.id, source.agentId));
       }
@@ -13330,7 +13330,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       errorCode: CHAT_CONTROL_RECOVERY_STOP_CODE,
     });
     expect(mockAdapterExecute).not.toHaveBeenCalled();
-    expect(mockExecutePaperclipNativeSession).not.toHaveBeenCalled();
+    expect(mockExecutePilibalaNativeSession).not.toHaveBeenCalled();
     expect(runningProcesses.size).toBe(0);
   });
 
@@ -13417,7 +13417,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     await db
       .update(agents)
       .set({
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         adapterConfig: { provider: "codex", model: "gpt-5.6-luna" },
       })
       .where(eq(agents.id, source.agentId));
@@ -13468,8 +13468,8 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   it.each(["required", "admitted", "historical"] as const)(
     "rechecks only unadmitted native bootstrap recovery after a committed close: %s",
     async (admission) => {
-      await withTempPaperclipHome(async () => {
-        await fs.mkdir(resolvePaperclipInstanceRoot(), { recursive: true });
+      await withTempPilibalaHome(async () => {
+        await fs.mkdir(resolvePilibalaInstanceRoot(), { recursive: true });
         const { source, child } = await seedPreparedChatRecovery(admission);
         const [prepared] = await db
           .select()
@@ -13510,8 +13510,8 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
   it.each(["admitted", "historical"] as const)(
     "does not acquire a new chat gate lock for protected native recovery: %s",
     async (admission) => {
-      await withTempPaperclipHome(async () => {
-        await fs.mkdir(resolvePaperclipInstanceRoot(), { recursive: true });
+      await withTempPilibalaHome(async () => {
+        await fs.mkdir(resolvePilibalaInstanceRoot(), { recursive: true });
         const { source, child } = await seedPreparedChatRecovery(admission);
         let release!: () => void;
         let locked: Promise<unknown> | undefined;
@@ -13726,7 +13726,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         companyId: source.companyId,
         issueId: source.issueId,
         revision: 1,
-        schemaVersion: "paperclip.completion-contract.v1",
+        schemaVersion: "pilibala.completion-contract.v1",
         policyVersion: "phase6-v3",
         risk: "low",
         completionAuthority: "agent_claim_policy",
@@ -14118,7 +14118,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
   it("lets a child waiting for the shared workspace run before recovering its lead", async () => {
     const { companyId, agentId, issueId, runId } = await seedStrandedIssueFixture({ status: "in_progress", runStatus: "succeeded", livenessState: "advanced" });
-    await db.update(heartbeatRuns).set({ contextSnapshot: { issueId, paperclipWorkspace: { mode: "shared_workspace" } } }).where(eq(heartbeatRuns.id, runId));
+    await db.update(heartbeatRuns).set({ contextSnapshot: { issueId, pilibalaWorkspace: { mode: "shared_workspace" } } }).where(eq(heartbeatRuns.id, runId));
     const projectId = randomUUID(), workspaceId = randomUUID(), childId = randomUUID(), workerId = randomUUID();
     await db.insert(projects).values({ id: projectId, companyId, name: "Shared project" });
     await db.insert(projectWorkspaces).values({ id: workspaceId, companyId, projectId, name: "Primary", sourceType: "local_path", cwd: "/tmp/recovery-shared", isPrimary: true });
@@ -14139,7 +14139,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
   it("resumes a shared-workspace lead when its child needs review", async () => {
     const { companyId, agentId, issueId, runId } = await seedStrandedIssueFixture({ status: "in_progress", runStatus: "succeeded", livenessState: "advanced" });
-    await db.update(heartbeatRuns).set({ contextSnapshot: { issueId, paperclipWorkspace: { mode: "shared_workspace" } } }).where(eq(heartbeatRuns.id, runId));
+    await db.update(heartbeatRuns).set({ contextSnapshot: { issueId, pilibalaWorkspace: { mode: "shared_workspace" } } }).where(eq(heartbeatRuns.id, runId));
     const projectId = randomUUID(), workspaceId = randomUUID(), childId = randomUUID(), workerId = randomUUID();
     await db.insert(projects).values({ id: projectId, companyId, name: "Shared project" });
     await db.insert(projectWorkspaces).values({ id: workspaceId, companyId, projectId, name: "Primary", sourceType: "local_path", cwd: "/tmp/recovery-shared", isPrimary: true });
@@ -14628,7 +14628,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       companyId,
       issueId,
       revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1",
+      schemaVersion: "pilibala.completion-contract.v1",
       policyVersion: "phase6-v4",
       risk: "low",
       completionAuthority: "agent_claim_policy",
@@ -14663,7 +14663,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         },
       })
       .where(eq(heartbeatRuns.id, runId));
-    const port = new PaperclipControlPlanePort(db, {
+    const port = new PilibalaControlPlanePort(db, {
       companyId,
       issueId,
       runId,
@@ -14676,7 +14676,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     });
     await port.completeRun({
       result: {
-        schema: "paperclip.run_result.v1",
+        schema: "pilibala.run_result.v1",
         reportedWorkDisposition: "yielded",
         summary,
         continuation: {
@@ -14699,7 +14699,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         artifacts: [],
       },
       terminal: {
-        schema: "paperclip.prp.terminal.v1",
+        schema: "pilibala.prp.terminal.v1",
         runTerminalState: "succeeded",
         turnTerminalState: "completed",
         reportedWorkDisposition: "yielded",
@@ -14926,10 +14926,10 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
             contextSnapshot: {
               issueId: fixture.issueId,
               source: "chat:slack",
-              paperclipHarnessCheckedOut: true,
+              pilibalaHarnessCheckedOut: true,
               wakeCommentId: fixture.commentId,
               wakeCommentIds: [fixture.commentId],
-              paperclipWake: {
+              pilibalaWake: {
                 externalChatProvider: "slack",
                 checkedOutByHarness: true,
                 issue: { id: fixture.issueId },
@@ -15017,7 +15017,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
             .where(eq(agentWakeupRequests.companyId, f.companyId)),
         ).toEqual([{ id: f.wakeupRequestId }]);
         expect(mockAdapterExecute).not.toHaveBeenCalled();
-        expect(mockExecutePaperclipNativeSession).not.toHaveBeenCalled();
+        expect(mockExecutePilibalaNativeSession).not.toHaveBeenCalled();
       },
     );
 
@@ -15173,7 +15173,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
           ?.status,
       ).toBe("in_progress");
       expect(mockAdapterExecute).not.toHaveBeenCalled();
-      expect(mockExecutePaperclipNativeSession).not.toHaveBeenCalled();
+      expect(mockExecutePilibalaNativeSession).not.toHaveBeenCalled();
     });
 
     it.each(["edited_source", "newer_request"] as const)(
@@ -15204,7 +15204,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
             ?.status,
         ).toBe("blocked");
         expect(mockAdapterExecute).not.toHaveBeenCalled();
-        expect(mockExecutePaperclipNativeSession).not.toHaveBeenCalled();
+        expect(mockExecutePilibalaNativeSession).not.toHaveBeenCalled();
       },
     );
   });
@@ -15788,7 +15788,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       companyId,
       issueId,
       revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1",
+      schemaVersion: "pilibala.completion-contract.v1",
       policyVersion: "phase6-v3",
       risk: "low",
       completionAuthority: "agent_claim_policy",
@@ -15821,7 +15821,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         runnerInstanceId,
       })
       .where(eq(heartbeatRuns.id, runId));
-    const port = new PaperclipControlPlanePort(db, {
+    const port = new PilibalaControlPlanePort(db, {
       companyId,
       issueId,
       runId,
@@ -15834,7 +15834,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     });
     await port.completeRun({
       result: {
-        schema: "paperclip.run_result.v1",
+        schema: "pilibala.run_result.v1",
         reportedWorkDisposition: "blocked",
         summary: "The current Board attachment could not be read.",
         blocker: {
@@ -15861,7 +15861,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
         artifacts: [],
       },
       terminal: {
-        schema: "paperclip.prp.terminal.v1",
+        schema: "pilibala.prp.terminal.v1",
         runTerminalState: "succeeded",
         turnTerminalState: "completed",
         reportedWorkDisposition: "blocked",
@@ -16031,7 +16031,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
           });
         if (change === "run_context")
           await tx.update(heartbeatRuns).set({
-            contextSnapshot: sql`jsonb_set(${heartbeatRuns.contextSnapshot}, '{paperclipTaskMarkdown}', '"Changed execution instructions"'::jsonb)`,
+            contextSnapshot: sql`jsonb_set(${heartbeatRuns.contextSnapshot}, '{pilibalaTaskMarkdown}', '"Changed execution instructions"'::jsonb)`,
           }).where(eq(heartbeatRuns.id, runId));
         if (change === "run_metadata")
           await tx.update(heartbeatRuns).set({ stdoutExcerpt: "Late execution output" }).where(eq(heartbeatRuns.id, runId));
@@ -16162,7 +16162,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       livenessState: "advanced",
       resultJson: {
         nativeResult: {
-          schema: "paperclip.run_result.v1",
+          schema: "pilibala.run_result.v1",
           reportedWorkDisposition: "blocked",
           blocker: {
             scope: "current_track",
@@ -16451,11 +16451,11 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     expect(runs).toHaveLength(1);
   });
   describe("accepted Cursor planning boundaries", () => {
-  const nativeImplementation = mockExecutePaperclipNativeSession.getMockImplementation();
+  const nativeImplementation = mockExecutePilibalaNativeSession.getMockImplementation();
   beforeEach(() => {
-    mockExecutePaperclipNativeSession.mockImplementation(async () => { throw new Error("Accepted-plan tests must never execute a provider"); });
+    mockExecutePilibalaNativeSession.mockImplementation(async () => { throw new Error("Accepted-plan tests must never execute a provider"); });
   });
-  afterEach(() => { mockExecutePaperclipNativeSession.mockImplementation(nativeImplementation!); });
+  afterEach(() => { mockExecutePilibalaNativeSession.mockImplementation(nativeImplementation!); });
 
   async function seedAcceptedCursorPlanWait(semanticFinish = false, sourceSequenceOffset = 0) {
     const f = await seedStrandedIssueFixture({ status: "in_progress", runStatus: "succeeded", livenessState: "advanced" });
@@ -16470,41 +16470,41 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     // Production binds policy/schema as well as the body; a body-only hash is not a valid contract receipt.
     expect(contractSha).not.toBe(nativeSha256(contract));
     const model = "gpt-5.6-luna[context=272k,reasoning=medium,fast=false]";
-    await db.update(agents).set({ adapterType: "paperclip_runner", adapterConfig: { provider: "acpx", acpxAgent: "cursor", model, acpxSessionMode: "plan", acpxPermissionMode: "approve-all" } }).where(eq(agents.id, f.agentId));
+    await db.update(agents).set({ adapterType: "pilibala_runner", adapterConfig: { provider: "acpx", acpxAgent: "cursor", model, acpxSessionMode: "plan", acpxPermissionMode: "approve-all" } }).where(eq(agents.id, f.agentId));
     await db.update(agentWakeupRequests).set({ status: "completed" }).where(eq(agentWakeupRequests.id, f.wakeupRequestId));
     await db.update(heartbeatRuns).set({ runtimeMode: "native", nativeIssueId: f.issueId, nativeSessionId: f.runId,
       completionContractId: contractId, completionContractSha256: contractSha, runnerInstanceId: instance,
       runnerProfileJson: { nativeExecutionInput: { binding: { companyId: f.companyId, issueId: f.issueId, runId: f.runId, agentId: f.agentId }, provider: { kind: "acpx", agent: "cursor", model, mode: "plan", permissionMode: "approve-all",
-        profile: paperclipRunner.resolveQualifiedAcpxProfile("cursor", model) }, session: { normalizedSessionId: f.runId },
+        profile: pilibalaRunner.resolveQualifiedAcpxProfile("cursor", model) }, session: { normalizedSessionId: f.runId },
         completionContract: { id: contractId, sha256: contractSha, contract } } } }).where(eq(heartbeatRuns.id, f.runId));
     const planId = `plan-${"a".repeat(64)}`;
-    const questionSet = { schema: "paperclip.question_set.v1", title: "Native plan", description: "Exact accepted revision", questions: [{ id: planId, prompt: "Proceed?", required: true,
+    const questionSet = { schema: "pilibala.question_set.v1", title: "Native plan", description: "Exact accepted revision", questions: [{ id: planId, prompt: "Proceed?", required: true,
       answerMode: "single_select", options: [{ id: "accept", label: "Accept" }, { id: "reject", label: "Reject" }, { id: "cancel", label: "Cancel" }] }] };
     const [interaction] = await db.insert(issueThreadInteractions).values({ id: interactionId, companyId: f.companyId, issueId: f.issueId, sourceRunId: f.runId,
       createdByAgentId: f.agentId, kind: "ask_user_questions", status: "answered", continuationPolicy: "none",
-      idempotencyKey: `paperclip-runner-question:${f.runId}:request`, resolvedByUserId: "responsible-user", resolvedAt: new Date(Date.now() - 1000),
+      idempotencyKey: `pilibala-runner-question:${f.runId}:request`, resolvedByUserId: "responsible-user", resolvedAt: new Date(Date.now() - 1000),
       payload: { version: 1, questions: [{ id: planId, prompt: "Proceed?", selectionMode: "single", required: true, allowOther: false, options: [{ id: "accept", label: "Accept" }, { id: "reject", label: "Reject" }, { id: "cancel", label: "Cancel" }] }], runtimeRequestId: "request", questionSet: questionSet as never }, result: { version: 1, answers: [{ questionId: planId, optionIds: ["accept"] }] } }).returning();
     const answer = buildQuestionResponseDeliveryEnvelope(interaction as never);
     const [delivery] = await db.insert(issueQuestionResponseDeliveries).values({ companyId: f.companyId, issueId: f.issueId, interactionId,
       sourceRunId: f.runId, targetRunId: f.runId, correlationId: randomUUID(), status: "delivered", deliveryMode: "steered", acknowledgedAt: new Date(), payloadSha256: nativeSha256(answer) }).returning();
-    const port = new PaperclipControlPlanePort(db, { companyId: f.companyId, issueId: f.issueId, runId: f.runId, agentId: f.agentId,
+    const port = new PilibalaControlPlanePort(db, { companyId: f.companyId, issueId: f.issueId, runId: f.runId, agentId: f.agentId,
       sessionId: f.runId, completionContractId: contractId, completionContractSha256: contractSha, sourceInstanceId: instance, controlPlaneSourceInstanceId: `control-${f.runId}` });
     const events = [
-      { eventType: "runtime_request.created", payload: { request: { schema: "paperclip.runtime_request.v2", requestKind: "runtime", requestId: "request", type: "input", status: "pending", turnId: "turn", itemId: "native-plan-tool", prompt: "Review plan",
+      { eventType: "runtime_request.created", payload: { request: { schema: "pilibala.runtime_request.v2", requestKind: "runtime", requestId: "request", type: "input", status: "pending", turnId: "turn", itemId: "native-plan-tool", prompt: "Review plan",
         origin: { adapter: "acpx-runtime-sidecar", provider: "cursor", method: "cursor/create_plan" }, input: questionSet } } },
-      { eventType: "tool.execution.started", payload: { schema: "paperclip.tool.execution.v1", executionId: "native-plan-tool", transport: "builtin", operation: "execute", status: "running", readOnly: false, namespace: null, name: "Create Plan", target: null, inputUpdated: true, output: null, outputBytes: 0, outputTruncated: false, outputDigest: null, progress: null, exitCode: null, durationMs: null } },
+      { eventType: "tool.execution.started", payload: { schema: "pilibala.tool.execution.v1", executionId: "native-plan-tool", transport: "builtin", operation: "execute", status: "running", readOnly: false, namespace: null, name: "Create Plan", target: null, inputUpdated: true, output: null, outputBytes: 0, outputTruncated: false, outputDigest: null, progress: null, exitCode: null, durationMs: null } },
       { eventType: "runtime_request.resolved", payload: { requestId: "request", turnId: "turn", action: "submit", response: answer.response } },
-      { eventType: "tool.execution.completed", payload: { schema: "paperclip.tool.execution.v1", executionId: "native-plan-tool", transport: "builtin", operation: "execute", status: "completed", readOnly: false, namespace: null, name: "Create Plan", target: null, inputUpdated: false, output: null, outputBytes: 0, outputTruncated: false, outputDigest: null, progress: null, exitCode: null, durationMs: null } },
+      { eventType: "tool.execution.completed", payload: { schema: "pilibala.tool.execution.v1", executionId: "native-plan-tool", transport: "builtin", operation: "execute", status: "completed", readOnly: false, namespace: null, name: "Create Plan", target: null, inputUpdated: false, output: null, outputBytes: 0, outputTruncated: false, outputDigest: null, progress: null, exitCode: null, durationMs: null } },
       { eventType: "turn.completed", payload: { status: "completed", error: null } },
     ];
-    for (const [index, event] of events.entries()) await port.appendEvent({ schema: "paperclip.prp.event.v1", sourceEventId: `${instance}:${sourceSequenceOffset + index + 1}`, sourceSeq: sourceSequenceOffset + index + 1,
+    for (const [index, event] of events.entries()) await port.appendEvent({ schema: "pilibala.prp.event.v1", sourceEventId: `${instance}:${sourceSequenceOffset + index + 1}`, sourceSeq: sourceSequenceOffset + index + 1,
       sourceInstanceId: instance, sourceKind: "runner", runId: f.runId, normalizedSessionId: f.runId, turnId: "turn", schemaVersion: 1, priority: 0,
-      emittedAt: new Date().toISOString(), ...event } as paperclipRunner.PrpEvent);
+      emittedAt: new Date().toISOString(), ...event } as pilibalaRunner.PrpEvent);
     const proof = await readNativePlanWait(db, f);
     expect(proof).not.toBeNull();
     const result = semanticFinish ? { ...proof!.result, reportedWorkDisposition: "done" as const, summary: "Explicit semantic finish wins", continuation: undefined,
       completionClaim: { contractRevision: "1", objectiveSatisfied: true, criteria: [{ criterionId: "objective", status: "satisfied" as const, evidenceRefs: [] }], remainingWork: [] } } : proof!.result;
-    await port.completeRun({ result, turnId: "turn", terminal: { schema: "paperclip.prp.terminal.v1", runTerminalState: "succeeded", turnTerminalState: "completed", reportedWorkDisposition: result.reportedWorkDisposition } });
+    await port.completeRun({ result, turnId: "turn", terminal: { schema: "pilibala.prp.terminal.v1", runTerminalState: "succeeded", turnTerminalState: "completed", reportedWorkDisposition: result.reportedWorkDisposition } });
     return { ...f, interactionId, deliveryId: delivery!.id, proof: proof! };
   }
 
@@ -16516,8 +16516,8 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     expect(await db.select().from(statusDecisions).where(eq(statusDecisions.runId, f.runId))).toEqual([expect.objectContaining({ reasonCode: "native_plan_accepted_waiting_for_continuation", toStatus: "in_progress" })]);
     expect(await db.select().from(statusDecisionEffects).where(eq(statusDecisionEffects.issueId, f.issueId))).toEqual([expect.objectContaining({ effectKind: "issue_status_projection", targetType: "issue", deliveryState: "delivered" })]);
     expect(await db.select().from(issueComments).where(eq(issueComments.createdByRunId, f.runId))).toEqual([expect.objectContaining({ body: expect.stringContaining("next message") })]);
-    const current = paperclipRunner.resolveQualifiedAcpxProfile("cursor", "gpt-5.6-luna[context=272k,reasoning=medium,fast=false]");
-    const resolver = vi.spyOn(paperclipRunner, "resolveQualifiedAcpxProfile").mockReturnValue({ ...current,
+    const current = pilibalaRunner.resolveQualifiedAcpxProfile("cursor", "gpt-5.6-luna[context=272k,reasoning=medium,fast=false]");
+    const resolver = vi.spyOn(pilibalaRunner, "resolveQualifiedAcpxProfile").mockReturnValue({ ...current,
       agentProfileVersion: current.agentProfileVersion + 1, commandDigest: `sha256:${"b".repeat(64)}` });
     try {
       expect(await readNativePlanWait(db, f)).toBeNull(); // Old profile cannot create a new wait.
@@ -16544,7 +16544,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       expect(await hasCommittedNativePlanWait(db, f)).toBe(true);
     } finally { resolver.mockRestore(); }
     expect(await db.select().from(agentWakeupRequests).where(eq(agentWakeupRequests.companyId, f.companyId))).toHaveLength(1);
-    expect(mockAdapterExecute).not.toHaveBeenCalled(); expect(mockExecutePaperclipNativeSession).not.toHaveBeenCalled();
+    expect(mockAdapterExecute).not.toHaveBeenCalled(); expect(mockExecutePilibalaNativeSession).not.toHaveBeenCalled();
   });
 
   it("retains an exact historical Cursor6 committed wait across more than 1000 ignored progress rows without allowing new unbound admission", async () => {
@@ -16566,7 +16566,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     profile.nativeExecutionInput.provider.cursorMode = profile.nativeExecutionInput.provider.mode;
     delete profile.nativeExecutionInput.provider.mode;
     await db.update(heartbeatRuns).set({ runnerProfileJson: profile }).where(eq(heartbeatRuns.id, f.runId));
-    const legacy = { ...f.proof.source, schema: "paperclip.native_cursor_plan_wait.v1" }; delete legacy.toolExecutionId; delete legacy.toolLifecycleSha256;
+    const legacy = { ...f.proof.source, schema: "pilibala.native_cursor_plan_wait.v1" }; delete legacy.toolExecutionId; delete legacy.toolLifecycleSha256;
     legacy.authoritySha256 = nativeSha256({ admission: profile.nativeExecutionInput, contract, created: event("runtime_request.created"), resolved: event("runtime_request.resolved"), terminal: event("turn.completed"), interaction, delivery, resolvedAt: interaction!.resolvedAt!.toISOString(), acknowledgedAt: delivery!.acknowledgedAt!.toISOString() });
     const [decision] = await db.select().from(statusDecisions).where(eq(statusDecisions.runId, f.runId));
     const [savedResult] = await db.select().from(nativeRunResults).where(eq(nativeRunResults.runId, f.runId));
@@ -16588,7 +16588,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     const progress = Array.from({ length: progressCount }, (_, index) => {
       const seq = index + 1;
       const prpEvent = { ...event("runtime_request.created"), sourceEventId: `${run!.runnerInstanceId}:${seq}`, sourceSeq: seq, eventType: "tool.execution.progressed",
-        payload: { schema: "paperclip.tool.execution.v1", executionId: "earlier-tool", transport: "builtin", operation: "read", status: "running" } };
+        payload: { schema: "pilibala.tool.execution.v1", executionId: "earlier-tool", transport: "builtin", operation: "read", status: "running" } };
       return { companyId: f.companyId, runId: f.runId, agentId: f.agentId, seq, eventType: prpEvent.eventType, payload: { prpEvent }, sourceInstanceId: run!.runnerInstanceId,
         sourceEventId: prpEvent.sourceEventId, sourceSeq: seq, sourcePayloadSha256: nativeSha256(prpEvent), protocolSchemaVersion: 1 };
     });
@@ -16628,7 +16628,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
       const [agent] = await db.select().from(agents).where(eq(agents.id, f.agentId));
       expect(agent!.adapterConfig.acpxSessionMode).toBe("plan");
       expect(await hasCommittedNativePlanWait(db, f)).toBe(false);
-      expect(mockExecutePaperclipNativeSession).not.toHaveBeenCalled();
+      expect(mockExecutePilibalaNativeSession).not.toHaveBeenCalled();
     } finally {
       await db.update(heartbeatRuns).set({ status: "cancelled", finishedAt: new Date() }).where(and(eq(heartbeatRuns.companyId, f.companyId), inArray(heartbeatRuns.status, ["running", "queued"])));
       await db.update(agentWakeupRequests).set({ status: "cancelled", finishedAt: new Date() }).where(and(eq(agentWakeupRequests.companyId, f.companyId), inArray(agentWakeupRequests.status, ["queued", "claimed"])));

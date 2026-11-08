@@ -1,4 +1,4 @@
-import { agentWakeupRequests, heartbeatRuns, type Db } from "@paperclipai/db";
+import { agentWakeupRequests, heartbeatRuns, type Db } from "@pilibalaai/db";
 import { eq, sql } from "drizzle-orm";
 
 /** A slow database never holds this diagnostic longer than this. */

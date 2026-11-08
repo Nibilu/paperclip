@@ -7,7 +7,7 @@ export function installPluginFixtures(
   let plugin = {
     id: pluginId,
     pluginKey: "storybook.fixture",
-    packageName: "@paperclipai/storybook-fixture",
+    packageName: "@pilibalaai/storybook-fixture",
     version: "1.0.0",
     status: "ready",
     categories: ["automation"],

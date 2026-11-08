@@ -28,7 +28,7 @@ import {
   issueThreadInteractions,
   issueRecoveryActions,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   recoveryPostgresSupport as support,
   startRecoveryPostgres,
@@ -38,7 +38,7 @@ import { documentService } from "../services/documents.js";
 import { getTaskPlanContext } from "../services/task-plan-context.js";
 import { terminalizeLegacyExecution, LEGACY_RECOVERY_CAUSE } from "../services/legacy-execution-recovery.js";
 import { settleUnrecoverableExecutions } from "../services/execution-recovery-resolution.js";
-import { renderPaperclipWakePrompt } from "@paperclipai/adapter-utils/server-utils";
+import { renderPilibalaWakePrompt } from "@pilibalaai/adapter-utils/server-utils";
 import { instanceSettingsService } from "../services/instance-settings.js";
 import {
   AGENT_CHAT_DIRECTIVE,
@@ -55,8 +55,8 @@ import { classifyIssueGraphLiveness } from "../services/recovery/issue-graph-liv
 import { NATIVE_STATUS_ARBITER_POLICY_VERSION } from "../services/native-runtime/status-arbiter.js";
 import { runningProcesses } from "../adapters/index.js";
 import {
-  buildPaperclipTaskMarkdown,
-  buildPaperclipWakePayload,
+  buildPilibalaTaskMarkdown,
+  buildPilibalaWakePayload,
   heartbeatService,
 } from "../services/heartbeat.js";
 
@@ -69,7 +69,7 @@ import {
     let agentId: string;
     beforeAll(async () => {
       database = await startRecoveryPostgres(
-        "paperclip-agent-conversations-",
+        "pilibala-agent-conversations-",
       );
       db = createDb(database.connectionString);
       companyId = randomUUID();
@@ -79,7 +79,7 @@ import {
         .values({
           id: "local-board",
           name: "Local Board",
-          email: "local@paperclip.test",
+          email: "local@pilibala.test",
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -416,7 +416,7 @@ import {
       expect(
         await conversationReplay(db, companyId, issue.id, next.id),
       ).not.toContain("Old session");
-      const payload = await buildPaperclipWakePayload({
+      const payload = await buildPilibalaWakePayload({
         db, companyId,
         contextSnapshot: { issueId: issue.id, conversationMode: true, wakeCommentId: next.id },
         continuationSummary: { key: "summary", title: null, body: "Old session summary", updatedAt: new Date() },
@@ -451,25 +451,25 @@ import {
       const input = { db, companyId, issueSummary: { ...issue, workMode: "planning" },
         contextSnapshot: { issueId: issue.id, conversationMode: true, interactionId: interaction!.id,
           interactionKind: "request_confirmation", interactionStatus: "rejected" } };
-      const payload = await buildPaperclipWakePayload(input);
+      const payload = await buildPilibalaWakePayload(input);
       expect(payload?.planReviewContext?.interaction).toMatchObject({
         status: "rejected", acceptedTargetRevision: null,
         result: { outcome: "rejected", reason: "Include CHAT_REVIEW_MARKER in the revised plan." },
       });
       for (const resumedSession of [false, true]) {
-        const prompt = renderPaperclipWakePrompt(payload, { resumedSession });
+        const prompt = renderPilibalaWakePrompt(payload, { resumedSession });
         expect(prompt).toContain("request_confirmation rejected");
         expect(prompt).toContain("Include CHAT_REVIEW_MARKER in the revised plan.");
         expect(prompt).toContain("not approval to implement or hand off execution tasks");
         expect(prompt).not.toContain("- accepted target:");
       }
-      const later = await buildPaperclipWakePayload({ ...input,
+      const later = await buildPilibalaWakePayload({ ...input,
         contextSnapshot: { issueId: issue.id, conversationMode: true } });
       expect(later?.planReviewContext).toBeNull();
       // An unrelated confirmation must not cause old plan context to be replayed.
       await db.update(issueThreadInteractions).set({ payload: { version: 1, prompt: "Proceed?" } })
         .where(eq(issueThreadInteractions.id, interaction!.id));
-      expect((await buildPaperclipWakePayload(input))?.planReviewContext).toBeNull();
+      expect((await buildPilibalaWakePayload(input))?.planReviewContext).toBeNull();
     });
     it("includes an initial handoff plan in the first execution prompt and pins approved revisions", async () => {
       const task = await issueService(db).create(companyId, {
@@ -482,7 +482,7 @@ import {
       expect(task.description).toBeNull();
       expect(initial?.body).toContain("HANDOFF_ACCEPTANCE_PHRASE");
       for (const includeDescription of [true, false]) {
-        const prompt = buildPaperclipTaskMarkdown({
+        const prompt = buildPilibalaTaskMarkdown({
           issue: task,
           taskPlan: initial,
           includeDescription,
@@ -631,7 +631,7 @@ import {
       await new Promise<void>((resolve) => listener.once("listening", resolve));
       const address = listener.address() as { port: number };
       const cwd = await mkdtemp(join(tmpdir(), "chat-runtime-"));
-      const script = `fetch("http://127.0.0.1:${address.port}/respond", {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({runId:process.env.PAPERCLIP_RUN_ID})}).then(async r=>{if(!r.ok){console.error(r.status,await r.text());process.exitCode=1}})`;
+      const script = `fetch("http://127.0.0.1:${address.port}/respond", {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({runId:process.env.PILIBALA_RUN_ID})}).then(async r=>{if(!r.ok){console.error(r.status,await r.text());process.exitCode=1}})`;
       await db
         .insert(agents)
         .values({
@@ -714,7 +714,7 @@ import {
             source: "on_demand", reason: "issue_execution_deferred", status: "deferred_issue_execution",
             requestedByActorType: "user", requestedByActorId: "local-board",
             payload: { issueId: chat.id, commentId: pending.id,
-              _paperclipWakeContext: { issueId: chat.id, wakeReason: "issue_commented", wakeCommentId: pending.id, wakeCommentIds: [pending.id] } },
+              _pilibalaWakeContext: { issueId: chat.id, wakeReason: "issue_commented", wakeCommentId: pending.id, wakeCommentIds: [pending.id] } },
           }).returning();
           stoppedQueuedWakeId = stoppedQueuedWake.id;
         }
@@ -787,8 +787,8 @@ import {
       const run = await runFor(chat.id, message.id);
       await prepareConversationTurn(db, run);
       await db.update(heartbeatRuns).set({ status: "cancelled" }).where(eq(heartbeatRuns.id, run.id));
-      const previousSecret = process.env.PAPERCLIP_AGENT_JWT_SECRET;
-      process.env.PAPERCLIP_AGENT_JWT_SECRET = "test-conversation-cancellation-secret";
+      const previousSecret = process.env.PILIBALA_AGENT_JWT_SECRET;
+      process.env.PILIBALA_AGENT_JWT_SECRET = "test-conversation-cancellation-secret";
       try {
         const app = express();
         app.use(actorMiddleware(db, { deploymentMode: "local_trusted" }));
@@ -796,8 +796,8 @@ import {
         const token = createLocalAgentJwt(agentId, companyId, "process", run.id)!;
         expect((await request(app).post("/mutate").set("Authorization", `Bearer ${token}`)).status).toBe(403);
       } finally {
-        if (previousSecret === undefined) delete process.env.PAPERCLIP_AGENT_JWT_SECRET;
-        else process.env.PAPERCLIP_AGENT_JWT_SECRET = previousSecret;
+        if (previousSecret === undefined) delete process.env.PILIBALA_AGENT_JWT_SECRET;
+        else process.env.PILIBALA_AGENT_JWT_SECRET = previousSecret;
       }
       await expect(issueService(db).addComment(chat.id, "Late old reply", { agentId, runId: run.id }))
         .rejects.toThrow(/cancelled/);
@@ -990,7 +990,7 @@ describe("chat prompt policy", () => {
   it("tells chat to link the profile of an agent it acted on without turning the link into a wake mention", () => {
     expect(AGENT_CHAT_DIRECTIVE).toContain("link its profile at /<prefix>/agents/<urlKey or id>");
     expect(AGENT_CHAT_DIRECTIVE).toContain("use agent:// only when you intend to notify that agent");
-    const prompt = buildPaperclipTaskMarkdown({ issue: { id: "chat", identifier: null, title: "Chat", workMode: "ask", conversationAgentId: "agent" } });
+    const prompt = buildPilibalaTaskMarkdown({ issue: { id: "chat", identifier: null, title: "Chat", workMode: "ask", conversationAgentId: "agent" } });
     expect(prompt).toContain("/<prefix>/agents/<urlKey or id>");
   });
 
@@ -1016,18 +1016,18 @@ describe("chat prompt policy", () => {
     expect(AGENT_CHAT_DIRECTIVE).toContain("use id only from responses that return the run itself, such as GET /api/heartbeat-runs/{runId}");
     expect(AGENT_CHAT_DIRECTIVE).not.toContain("returned agentId and id");
     expect(AGENT_CHAT_DIRECTIVE).toContain("read the agent and name it rather than showing a raw ID");
-    const prompt = buildPaperclipTaskMarkdown({ issue: { id: "chat", identifier: null, title: "Chat", workMode: "ask", conversationAgentId: "agent" } });
+    const prompt = buildPilibalaTaskMarkdown({ issue: { id: "chat", identifier: null, title: "Chat", workMode: "ask", conversationAgentId: "agent" } });
     expect(prompt).toContain("/<prefix>/agents/<agentId>/runs/<runId>");
   });
 
   it("gives chat replies a usable route for both task and approval sources", () => {
     expect(AGENT_CHAT_DIRECTIVE).toContain("/<prefix>/issues/<identifier>");
     expect(AGENT_CHAT_DIRECTIVE).toContain("For approval links, use /<prefix>/approvals/<approvalId>");
-    expect(AGENT_CHAT_DIRECTIVE).toContain("Never invent a hostname for a Paperclip link.");
+    expect(AGENT_CHAT_DIRECTIVE).toContain("Never invent a hostname for a Pilibala link.");
   });
 
   it.each([true, false])("preserves rejected-plan changes in task markdown (includeDescription=%s)", (includeDescription) => {
-    const prompt = buildPaperclipTaskMarkdown({
+    const prompt = buildPilibalaTaskMarkdown({
       issue: { id: "chat", identifier: null, title: "Chat", workMode: "planning", conversationAgentId: "agent" },
       interaction: { kind: "request_confirmation", status: "rejected" },
       planReview: { status: "rejected", reason: "Add CHAT_REVIEW_MARKER and a validation step." },
@@ -1047,7 +1047,7 @@ describe("chat prompt policy", () => {
   it.each(["standard", "ask", "planning"])(
     "keeps handoff instructions in %s, including accepted plans and resumes",
     (workMode) => {
-      const prompt = buildPaperclipTaskMarkdown({
+      const prompt = buildPilibalaTaskMarkdown({
         issue: {
           id: "chat",
           identifier: null,

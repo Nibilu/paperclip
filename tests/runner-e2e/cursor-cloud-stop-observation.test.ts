@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { afterEach, expect, it, vi } from "vitest";
-import { CursorCloudClient, type CursorCloudSseEvent } from "../../packages/paperclip-runner/src/drivers/cursor-cloud/cloud-client.js";
+import { CursorCloudClient, type CursorCloudSseEvent } from "../../packages/pilibala-runner/src/drivers/cursor-cloud/cloud-client.js";
 import { cursorCloudStopTask } from "./cursor-cloud-cases.js";
 import { CursorCloudStopCommandObserver, CursorCloudStopCommandTracker, readPendingCursorCloudStopExecution } from "./cursor-cloud-stop-observation.js";
 
@@ -10,8 +10,8 @@ const command = "sleep 180 && printf 'MUST_NOT_APPEAR\\n' > '/artifacts/" + file
 const digest = createHash("sha256").update(command).digest("hex");
 const pending = { callId: "delayed-command", toolName: "run_terminal_cmd", commandSha256: digest };
 const event = (type: string, executionId: string, seq: number) => ({ runId: localRunId, seq, protocolSchemaVersion: 1, payload: { prpEvent: {
-  schema: "paperclip.prp.event.v1", schemaVersion: 1, sourceKind: "runner", runId: localRunId, eventType: `tool.execution.${type}`,
-  payload: { schema: "paperclip.tool.execution.v1", executionId, transport: "builtin", name: "run_terminal_cmd", status: type === "completed" ? "succeeded" : "running" },
+  schema: "pilibala.prp.event.v1", schemaVersion: 1, sourceKind: "runner", runId: localRunId, eventType: `tool.execution.${type}`,
+  payload: { schema: "pilibala.tool.execution.v1", executionId, transport: "builtin", name: "run_terminal_cmd", status: type === "completed" ? "succeeded" : "running" },
 } } });
 const native = (status: string, callId = pending.callId, requestedCommand = command): CursorCloudSseEvent => ({ event: "tool_call", data: { callId, name: pending.toolName, status, args: { command: requestedCommand } } });
 const observers: CursorCloudStopCommandObserver[] = [];

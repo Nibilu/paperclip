@@ -32,26 +32,26 @@ import type {
   AdapterEnvironmentTestResult,
   AdapterExecutionContext,
   AdapterExecutionResult,
-} from "@paperclipai/adapter-utils";
+} from "@pilibalaai/adapter-utils";
 
 import {
   ensureAdapterExecutionTargetCommandResolvable,
   readAdapterExecutionTarget,
   resolveAdapterExecutionTargetCwd,
-} from "@paperclipai/adapter-utils/execution-target";
+} from "@pilibalaai/adapter-utils/execution-target";
 import {
   DEFAULT_ACP_ENGINE_MODE,
   DEFAULT_ACP_ENGINE_NON_INTERACTIVE_PERMISSIONS,
   DEFAULT_ACP_ENGINE_PERMISSION_MODE,
   DEFAULT_ACP_ENGINE_WARM_HANDLE_IDLE_MS,
-} from "@paperclipai/adapter-utils/acpx-engine/constants";
+} from "@pilibalaai/adapter-utils/acpx-engine/constants";
 import type {
   AcpxEngineExecutorOptions,
-} from "@paperclipai/adapter-utils/acpx-engine/execute";
+} from "@pilibalaai/adapter-utils/acpx-engine/execute";
 import {
   asString,
   parseObject,
-} from "@paperclipai/adapter-utils/server-utils";
+} from "@pilibalaai/adapter-utils/server-utils";
 
 import { HERMES_ACP_COMMAND } from "../shared/constants.js";
 
@@ -170,7 +170,7 @@ export function buildHermesAcpConfig(config: Record<string, unknown>): Record<st
 
 /**
  * Billing identity for the cost ledger. Hermes resolves providers itself from
- * `$HERMES_HOME`; Paperclip cannot see the effective provider from here, so the
+ * `$HERMES_HOME`; Pilibala cannot see the effective provider from here, so the
  * ACP lane reports an opaque-but-honest "hermes" provider with an unknown
  * billing type rather than guessing openai/anthropic.
  */
@@ -187,7 +187,7 @@ export function createHermesAcpExecutor(options: HermesAcpExecutorOptions = {}):
   return async (ctx) => {
     let currentExecutor = executor;
     if (!currentExecutor) {
-      const { createAcpxEngineExecutor } = await import("@paperclipai/adapter-utils/acpx-engine/execute");
+      const { createAcpxEngineExecutor } = await import("@pilibalaai/adapter-utils/acpx-engine/execute");
       currentExecutor = createAcpxEngineExecutor({
         resolveBillingIdentity: resolveHermesAcpBillingIdentity,
         ...options,

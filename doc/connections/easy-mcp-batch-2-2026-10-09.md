@@ -1,6 +1,6 @@
 # Hosted MCP qualification — 2026-10-09
 
-This batch continues the verified connector work in [PR #15621](https://github.com/paperclipai/paperclip/pull/15621). Provider research was checked against the existing paperclip-content integration research and the canonical [connector playbook](CONNECTOR-PLAYBOOK.md). Luna workers researched and exercised separate providers in an isolated local Paperclip company.
+This batch continues the verified connector work in [PR #15621](https://github.com/pilibalaai/pilibala/pull/15621). Provider research was checked against the existing pilibala-content integration research and the canonical [connector playbook](CONNECTOR-PLAYBOOK.md). Luna workers researched and exercised separate providers in an isolated local Pilibala company.
 
 ## Completed browser journeys
 
@@ -62,6 +62,6 @@ Evidence is recorded as text only. Account-profile and domain results are omitte
 - Full connector service suite: 420 passed, including the four-case JSON-token/access regression and existing managed OAuth lifecycle coverage.
 - Recursive typecheck: passed again after rebasing onto current master.
 - Recursive production build: passed again after rebasing onto current master. UI typecheck, production build, and token gates passed again after the draft-recovery fix.
-- Full local repository Vitest was started before the rebase and cancelled as superseded while still in the general-server phase. It is not counted as a completed pass. Broad current-head verification is tracked in [PR #15686 checks](https://github.com/paperclipai/paperclip/pull/15686/checks); the complete connector service suite passed separately against the final production code.
+- Full local repository Vitest was started before the rebase and cancelled as superseded while still in the general-server phase. It is not counted as a completed pass. Broad current-head verification is tracked in [PR #15686 checks](https://github.com/pilibalaai/pilibala/pull/15686/checks); the complete connector service suite passed separately against the final production code.
 
 The local host reached its macOS System V shared-memory limit during a service restart. Only stale, unattached user-owned segments with dead creator/operator processes were reclaimed; other running apps and their databases were left intact. This host resource failure is separate from provider login/approval gates.

@@ -11,12 +11,12 @@ import path from "node:path";
  * re-checks after each fault.
  */
 export function guardedRunnerOutputs(repositoryRoot: string): string[] {
-  const runner = process.env.PAPERCLIP_RUNNER_BINARY
-    ?? path.join(repositoryRoot, "packages/paperclip-runner/runner/target/debug/paperclip-runnerd");
-  return ["packages/paperclip-runner/dist", path.relative(repositoryRoot, runner)];
+  const runner = process.env.PILIBALA_RUNNER_BINARY
+    ?? path.join(repositoryRoot, "packages/pilibala-runner/runner/target/debug/pilibala-runnerd");
+  return ["packages/pilibala-runner/dist", path.relative(repositoryRoot, runner)];
 }
 
-export function worktreeFingerprint(repositoryRoot: string, outputs: readonly string[] = ["packages/paperclip-runner/dist"]): string {
+export function worktreeFingerprint(repositoryRoot: string, outputs: readonly string[] = ["packages/pilibala-runner/dist"]): string {
   const hash = createHash("sha256");
   const git = (args: string[]) => {
     try { return execFileSync("git", args, { cwd: repositoryRoot, encoding: "buffer", maxBuffer: 256 * 1024 * 1024 }); }

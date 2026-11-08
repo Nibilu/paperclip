@@ -1,13 +1,13 @@
 import { and, asc, gt, isNotNull, isNull, or, sql } from "drizzle-orm";
-import { mcpOauthRequests, mcpOauthDeviceRequests, type Db } from "@paperclipai/db";
+import { mcpOauthRequests, mcpOauthDeviceRequests, type Db } from "@pilibalaai/db";
 import type { IdleDeadlineSnapshot } from "../idle-deadline-types.js";
 import type { IdleMcpInspectionBudget } from "./idle-wake-proof.js";
 
 export function pendingMcpCodePredicate(now: number) {
-  return and(sql`${mcpOauthRequests.resource} ~ '/mcp/(paperclip|runner)$'`,isNotNull(mcpOauthRequests.codeHash),isNull(mcpOauthRequests.consumedAt),gt(mcpOauthRequests.expiresAt,new Date(now)));
+  return and(sql`${mcpOauthRequests.resource} ~ '/mcp/(pilibala|runner)$'`,isNotNull(mcpOauthRequests.codeHash),isNull(mcpOauthRequests.consumedAt),gt(mcpOauthRequests.expiresAt,new Date(now)));
 }
 export function pendingMcpDevicePredicate(now: number) {
-  return and(sql`${mcpOauthDeviceRequests.resource} ~ '/mcp/(paperclip|runner)$'`,gt(mcpOauthDeviceRequests.expiresAt,new Date(now)),
+  return and(sql`${mcpOauthDeviceRequests.resource} ~ '/mcp/(pilibala|runner)$'`,gt(mcpOauthDeviceRequests.expiresAt,new Date(now)),
     or(sql`${mcpOauthDeviceRequests.status} NOT IN ('pending','denied','consumed')`,and(sql`${mcpOauthDeviceRequests.status} = 'pending'`,isNotNull(mcpOauthDeviceRequests.grantId))));
 }
 export async function readIdleMcpAuthorizationHandoffs(tx: Pick<Db,"select">,input: {now:number;budget:IdleMcpInspectionBudget}): Promise<IdleDeadlineSnapshot> {

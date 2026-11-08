@@ -1,5 +1,5 @@
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
-import { subscribeDatabaseWork } from "@paperclipai/db";
+import { subscribeDatabaseWork } from "@pilibalaai/db";
 import { DELIVERY_QUEUES } from "../services/delivery-work-notifications.js";
 import { createHmac, randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
@@ -29,12 +29,12 @@ import {
   routines,
   routineTriggers,
   secretAccessEvents,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
-import { createRoutineSchema, envConfigSchema, type Routine } from "@paperclipai/shared";
+import { createRoutineSchema, envConfigSchema, type Routine } from "@pilibalaai/shared";
 import { issueService } from "../services/issues.ts";
 import { instanceSettingsService } from "../services/instance-settings.ts";
 import * as providerRegistry from "../secrets/provider-registry.ts";
@@ -45,11 +45,11 @@ import { readTaskCreationProvenance } from "../services/task-creation-provenance
 import { createSentryRunLinkResolver } from "../services/sentry-run-links.js";
 import { addSentryRunLinks, setSentryRunLinkResolver } from "../sentry-links.js";
 
-const externalUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_ROUTINES_TEST_DATABASE_URL");
+const externalUrl = resolveExternalTestDatabaseUrl("PILIBALA_ROUTINES_TEST_DATABASE_URL");
 const embeddedPostgresSupport = externalUrl ? { supported: true, reason: undefined } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
-const originalSecretsProviderEnv = process.env.PAPERCLIP_SECRETS_PROVIDER;
-const originalPaperclipApiUrlEnv = process.env.PAPERCLIP_API_URL;
+const originalSecretsProviderEnv = process.env.PILIBALA_SECRETS_PROVIDER;
+const originalPilibalaApiUrlEnv = process.env.PILIBALA_API_URL;
 
 if (!embeddedPostgresSupport.supported) {
   console.warn(
@@ -73,8 +73,8 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    process.env.PAPERCLIP_API_URL = "http://localhost:3100";
-    if (!externalUrl) tempDb = await startEmbeddedPostgresTestDatabase("paperclip-routines-service-");
+    process.env.PILIBALA_API_URL = "http://localhost:3100";
+    if (!externalUrl) tempDb = await startEmbeddedPostgresTestDatabase("pilibala-routines-service-");
     db = createDb(externalUrl ?? tempDb!.connectionString);
   }, 20_000);
 
@@ -82,9 +82,9 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
     vi.unstubAllEnvs();
     setSentryRunLinkResolver(null);
     if (originalSecretsProviderEnv === undefined) {
-      delete process.env.PAPERCLIP_SECRETS_PROVIDER;
+      delete process.env.PILIBALA_SECRETS_PROVIDER;
     } else {
-      process.env.PAPERCLIP_SECRETS_PROVIDER = originalSecretsProviderEnv;
+      process.env.PILIBALA_SECRETS_PROVIDER = originalSecretsProviderEnv;
     }
     await db.delete(activityLog);
     await db.delete(issueInboxArchives);
@@ -112,10 +112,10 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
 
   afterAll(async () => {
     await tempDb?.cleanup();
-    if (originalPaperclipApiUrlEnv === undefined) {
-      delete process.env.PAPERCLIP_API_URL;
+    if (originalPilibalaApiUrlEnv === undefined) {
+      delete process.env.PILIBALA_API_URL;
     } else {
-      process.env.PAPERCLIP_API_URL = originalPaperclipApiUrlEnv;
+      process.env.PILIBALA_API_URL = originalPilibalaApiUrlEnv;
     }
   });
 
@@ -154,7 +154,7 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix,
       defaultResponsibleUserId,
       requireBoardApprovalForNewAgents: false,
@@ -240,7 +240,7 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
   }
 
   it("preserves creation ancestry through regular webhooks, child tasks, and standalone follow-ups", async () => {
-    vi.stubEnv("PAPERCLIP_AGENT_JWT_SECRET", randomUUID().repeat(2));
+    vi.stubEnv("PILIBALA_AGENT_JWT_SECRET", randomUUID().repeat(2));
     const f = await seedFixture();
     const a = await f.svc.createTrigger(f.routine.id, { kind: "webhook", enabled: true, signingMode: "app_webhook", replayWindowSec: 300 }, {});
     const first = await f.svc.firePublicTrigger(a.trigger.publicId!, {
@@ -278,7 +278,7 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
     const event = await addSentryRunLinks({ tags: { event_kind: "run_failure", failure_source: "task_interruption",
       company_id: f.companyId, agent_id: f.agentId, run_id: secondTask!.executionRunId! } });
     expect(event.tags).toMatchObject({ automation_origin_status: "complete", automation_routine_ids: expectedIds.join(","), task_shareable: "true" });
-    expect(event).toHaveProperty("contexts.paperclip_creation.routineIds", expectedIds);
+    expect(event).toHaveProperty("contexts.pilibala_creation.routineIds", expectedIds);
     const manual = await f.svc.runRoutine(secondRoutine.id, { source: "manual", payload: { event: "internal.call" } },
       { agentId: f.agentId, runId: caller!.id });
     expect(await readTaskCreationProvenance(db, f.companyId, manual.linkedIssueId!))
@@ -319,8 +319,8 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
   });
 
   it("rejects forged, foreign, and stopped caller tokens before creating work", async () => {
-    vi.stubEnv("PAPERCLIP_AGENT_JWT_SECRET", randomUUID().repeat(2));
-    vi.stubEnv("PAPERCLIP_AGENT_JWT_TTL_SECONDS", "3600");
+    vi.stubEnv("PILIBALA_AGENT_JWT_SECRET", randomUUID().repeat(2));
+    vi.stubEnv("PILIBALA_AGENT_JWT_TTL_SECONDS", "3600");
     const f = await seedFixture(), other = await seedFixture();
     const configured = await f.svc.createTrigger(f.routine.id, { kind: "webhook", enabled: true, signingMode: "app_webhook", replayWindowSec: 300 }, {});
     const [foreign] = await db.insert(heartbeatRuns).values({ companyId: other.companyId, agentId: other.agentId, status: "running" }).returning();
@@ -394,7 +394,7 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
   });
 
   it("preserves the original database error and permits retry after a provenance lookup outage", async () => {
-    vi.stubEnv("PAPERCLIP_AGENT_JWT_SECRET", randomUUID().repeat(2));
+    vi.stubEnv("PILIBALA_AGENT_JWT_SECRET", randomUUID().repeat(2));
     const f = await seedFixture();
     const configured = await f.svc.createTrigger(f.routine.id, { kind: "webhook", enabled: true, signingMode: "app_webhook", replayWindowSec: 300 }, {});
     const source = await f.issueSvc.create(f.companyId, { title: "Caller source" });
@@ -468,7 +468,7 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
   });
 
   it("shares routine-scoped suppressed receipts across triggers without enqueuing work", async () => {
-    const f = await seedFixture({ runtimeEnv: { PAPERCLIP_IN_WORKTREE: "yes", PAPERCLIP_INSTANCE_ID: "worktree-routines-test" } });
+    const f = await seedFixture({ runtimeEnv: { PILIBALA_IN_WORKTREE: "yes", PILIBALA_INSTANCE_ID: "worktree-routines-test" } });
     const a = await f.svc.createTrigger(f.routine.id, { kind: "webhook", enabled: true, signingMode: "none", replayWindowSec: 300 }, {});
     const b = await f.svc.createTrigger(f.routine.id, { kind: "webhook", enabled: true, signingMode: "none", replayWindowSec: 300 }, {});
     const first = dispatchedRun(await f.svc.firePublicTrigger(a.trigger.publicId!, { idempotencyScope: "routine", idempotencyKey: "occurrence" }));
@@ -2095,7 +2095,7 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
 
     const run = await svc.runRoutine(variableRoutine.id, {
       source: "manual",
-      variables: { repo: "paperclip" },
+      variables: { repo: "pilibala" },
     });
 
     const storedIssue = await db
@@ -2109,11 +2109,11 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
       .where(eq(routineRuns.id, run.id))
       .then((rows) => rows[0] ?? null);
 
-    expect(storedIssue?.title).toBe("repo triage for paperclip");
-    expect(storedIssue?.description).toBe("Review paperclip for high bugs");
+    expect(storedIssue?.title).toBe("repo triage for pilibala");
+    expect(storedIssue?.description).toBe("Review pilibala for high bugs");
     expect(storedRun?.triggerPayload).toEqual({
       variables: {
-        repo: "paperclip",
+        repo: "pilibala",
         priority: "high",
       },
     });
@@ -2692,7 +2692,7 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
   });
 
   it("rejects an HMAC webhook replay when automatic execution is suppressed", async () => {
-    const runtimeEnv = { PAPERCLIP_IN_WORKTREE: "yes", PAPERCLIP_INSTANCE_ID: "worktree-routines-test" };
+    const runtimeEnv = { PILIBALA_IN_WORKTREE: "yes", PILIBALA_INSTANCE_ID: "worktree-routines-test" };
     const { routine, svc } = await seedFixture({ runtimeEnv });
     const { trigger, secretMaterial } = await svc.createTrigger(
       routine.id,
@@ -2730,7 +2730,7 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
   });
 
   it("uses the configured provider for generated webhook trigger secrets", async () => {
-    process.env.PAPERCLIP_SECRETS_PROVIDER = "aws_secrets_manager";
+    process.env.PILIBALA_SECRETS_PROVIDER = "aws_secrets_manager";
     const originalGetSecretProvider = providerRegistry.getSecretProvider;
     const getSecretProviderSpy = vi.spyOn(providerRegistry, "getSecretProvider").mockImplementation((provider) => {
       if (provider !== "aws_secrets_manager") {
@@ -3016,7 +3016,7 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
   });
 
   it("records suppressed automatic runs when worktree execution is disabled while allowing manual runs", async () => {
-    const runtimeEnv = { PAPERCLIP_IN_WORKTREE: "yes", PAPERCLIP_INSTANCE_ID: "worktree-routines-test" };
+    const runtimeEnv = { PILIBALA_IN_WORKTREE: "yes", PILIBALA_INSTANCE_ID: "worktree-routines-test" };
     const { companyId, routine, svc } = await seedFixture({ runtimeEnv });
     const { trigger: scheduleTrigger } = await svc.createTrigger(
       routine.id,
@@ -3047,7 +3047,7 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
   });
 
   it("dispatches only post-cutoff scheduled routines in an armed worktree", async () => {
-    const runtimeEnv = { PAPERCLIP_IN_WORKTREE: "true", PAPERCLIP_INSTANCE_ID: "worktree-routines-test" };
+    const runtimeEnv = { PILIBALA_IN_WORKTREE: "true", PILIBALA_INSTANCE_ID: "worktree-routines-test" };
     const { companyId, agentId, projectId, routine: oldRoutine, svc } = await seedFixture({ runtimeEnv });
     const cutoff = new Date("2025-01-01T00:00:00.000Z");
     await armWorktreeExecution(cutoff);
@@ -3192,7 +3192,7 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
   });
 
   it("applies the armed cutoff to webhook dispatch but not manual API runs", async () => {
-    const runtimeEnv = { PAPERCLIP_IN_WORKTREE: "true", PAPERCLIP_INSTANCE_ID: "worktree-routines-test" };
+    const runtimeEnv = { PILIBALA_IN_WORKTREE: "true", PILIBALA_INSTANCE_ID: "worktree-routines-test" };
     const { routine, svc } = await seedFixture({ runtimeEnv });
     await armWorktreeExecution(new Date("2025-01-01T00:00:00.000Z"));
     await db.update(routines).set({ createdAt: new Date("2024-12-31T23:59:59.000Z") }).where(eq(routines.id, routine.id));

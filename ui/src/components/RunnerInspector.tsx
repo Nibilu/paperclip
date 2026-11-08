@@ -10,7 +10,7 @@ import type {
   HeartbeatRunEvent,
   ProviderTraceFieldMapping,
   ProviderTraceFrame,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   ArrowRight,
   Braces,
@@ -33,7 +33,7 @@ import { heartbeatsApi, type ProviderTraceInspection } from "@/api/heartbeats";
 import { accessApi } from "@/api/access";
 import { QueryErrorState } from "@/components/QueryView";
 import { useResilientFetch } from "@/hooks/useResilientFetch";
-import { parsePaperclipRunnerStdoutLine } from "@/adapters/paperclip-runner";
+import { parsePilibalaRunnerStdoutLine } from "@/adapters/pilibala-runner";
 import { TaskChatProtocolCard } from "@/components/task-chat/TaskChatProtocolCard";
 import type { TaskChatProtocolItem } from "@/components/task-chat/task-chat-model";
 import { transcriptToTaskChatItems } from "@/components/task-chat/transcript-adapter";
@@ -606,8 +606,8 @@ function typedPrpFields(event: HeartbeatRunEvent) {
 function ProductionSurfacePreview({ event, runId }: { event: HeartbeatRunEvent; runId: string }) {
   const prp = eventPrp(event);
   const ts = new Date(event.createdAt).toISOString();
-  const entries = parsePaperclipRunnerStdoutLine(
-    JSON.stringify({ type: "paperclip.prp.event", event: prp }),
+  const entries = parsePilibalaRunnerStdoutLine(
+    JSON.stringify({ type: "pilibala.prp.event", event: prp }),
     ts,
   );
   const item = transcriptToTaskChatItems(entries, {

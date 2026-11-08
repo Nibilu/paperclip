@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { and, desc, eq, gte, isNotNull, ne, or, sql } from "drizzle-orm";
-import { executionWorkspaces, projectWorkspaces, workspaceOperations, type Db } from "@paperclipai/db";
-import { PROJECT_REPOSITORIES_DIR } from "@paperclipai/adapter-utils/git-workspace-sync";
+import { executionWorkspaces, projectWorkspaces, workspaceOperations, type Db } from "@pilibalaai/db";
+import { PROJECT_REPOSITORIES_DIR } from "@pilibalaai/adapter-utils/git-workspace-sync";
 import type { StorageService } from "../storage/types.js";
 import { createIssueGitRemoteAuthProvider } from "./git-credentials.js";
 import { applyGitRestorePointToWorktree, ensureGitRestorePointCommit, loadGitRestorePoint } from "./git-restore-point-storage.js";
@@ -18,7 +18,7 @@ import { materializeManagedProjectWorkspace } from "./managed-repository-checkou
 import { isRuntimeOwnedGitBranch } from "./execution-workspace-branch-ownership.js";
 import { physicalPath } from "./remote-workspace-migration-tree.js";
 import { formatCommandForDisplay } from "./workspace-command-display.js";
-import { resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { recordedIsolatedRemoteSource } from "./isolated-remote-workspace-source.js";
 
 type Workspace = typeof executionWorkspaces.$inferSelect;
@@ -65,7 +65,7 @@ async function verifiedOriginalLocalSource(workspace: Workspace, sourcePath: str
     const present = await fs.lstat(primary).catch((error: NodeJS.ErrnoException) => { if (error.code === "ENOENT") return null; throw error; });
     if (present || await physicalPath(primary) !== primary) throw unavailable();
   }
-  const root = resolvePaperclipInstanceRoot(), relative = path.relative(root, sourcePath), full = originalRecordedCommit(workspace);
+  const root = resolvePilibalaInstanceRoot(), relative = path.relative(root, sourcePath), full = originalRecordedCommit(workspace);
   if (!originalLocalSource(workspace, sourcePath) || !relative || relative === ".." || relative.startsWith(`..${path.sep}`)
     || path.isAbsolute(relative) || path.resolve(sourcePath) !== sourcePath || await fs.realpath(root) !== root
     || typeof full !== "string" || !/^[a-f0-9]{40}$/.test(full)) throw unavailable();
@@ -197,9 +197,9 @@ export async function inspectArchivedGitMigrationSource(db: Pick<Db, "select">, 
     // not certify lost untracked files. Any surviving worktree registration
     // can retain additional index/files authority and must stay blocked.
     if (workspace.mode !== "isolated_workspace" || !workspace.projectId || !managedSourcePaths(workspace).includes(sourcePath)) return null;
-    await assertNoRetainedWorktree(sourcePath, path.join(sourcePath, ".paperclip", "worktrees", workspace.branchName), workspace.branchName);
+    await assertNoRetainedWorktree(sourcePath, path.join(sourcePath, ".pilibala", "worktrees", workspace.branchName), workspace.branchName);
     await git(sourcePath, ["check-ref-format", `refs/heads/${workspace.branchName}`]);
-    const expected = path.join(sourcePath, ".paperclip", "worktrees", workspace.branchName);
+    const expected = path.join(sourcePath, ".pilibala", "worktrees", workspace.branchName);
     if (workspace.cwd !== expected || workspace.providerRef && workspace.providerRef !== expected) return null;
     let removalId: string | null = null;
     if (!isRuntimeOwnedGitBranch(workspace.metadata)) {

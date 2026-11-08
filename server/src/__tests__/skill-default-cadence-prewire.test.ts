@@ -8,16 +8,16 @@ import { expect, it } from 'vitest';
 
 const guard = fileURLToPath(new URL('../../../scripts/fixtures/skill-default-cadence-network-guard.cjs', import.meta.url));
 const launcher = fileURLToPath(new URL('../../../scripts/test-skill-default-cadence.mjs', import.meta.url));
-const prewireRequested = Object.hasOwn(process.env, 'PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG')
-  || process.env.PAPERCLIP_MAINTENANCE_PG0_CONTROLS === '1'
-  || process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_ACCEPTANCE === '1';
+const prewireRequested = Object.hasOwn(process.env, 'PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG')
+  || process.env.PILIBALA_MAINTENANCE_PG0_CONTROLS === '1'
+  || process.env.PILIBALA_SKILL_DEFAULT_CADENCE_ACCEPTANCE === '1';
 it.skipIf(!prewireRequested)('the actual Vitest worker is preloaded with its own PID before fixture execution', () => {
-  const guardState = (globalThis as any)[Symbol.for('paperclip.skill.default-cadence.prewire')];
+  const guardState = (globalThis as any)[Symbol.for('pilibala.skill.default-cadence.prewire')];
   expect(guardState).toBeDefined();
   const observed = guardState.stats();
   expect(observed.pid).toBe(process.pid); expect(observed.preload).toBe(guard);
   expect(observed.threadId).toBe(threadId); expect(observed.isMainThread).toBe(isMainThread);
-  const receipts = readFileSync(process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG!, 'utf8').trim().split('\n').map(line => JSON.parse(line));
+  const receipts = readFileSync(process.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG!, 'utf8').trim().split('\n').map(line => JSON.parse(line));
   expect(receipts).toContainEqual(expect.objectContaining({ event: 'preloaded', pid: process.pid, threadId, isMainThread, sourceHash: observed.sourceHash }));
   expect(observed.unexpectedAttempts).toEqual([]);
   console.info(JSON.stringify({ actualVitestWorkerGuard: observed }));
@@ -27,12 +27,12 @@ function child(code: string, extra: Record<string, string> = {}, nodeArgs: strin
   const log = path.join(root, 'guard.jsonl');
   try {
     const result = spawnSync(process.execPath, ['--require', guard, ...nodeArgs, '-e', code], { timeout: 5_000, encoding: 'utf8',
-      env: { PATH: process.env.PATH, HOME: process.env.HOME, TMPDIR: root, NODE_OPTIONS: '', PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG: log, ...extra } });
+      env: { PATH: process.env.PATH, HOME: process.env.HOME, TMPDIR: root, NODE_OPTIONS: '', PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG: log, ...extra } });
     const events = readFileSync(log, 'utf8').trim().split('\n').map(line => JSON.parse(line));
     return { result, events };
   } finally { rmSync(root, { recursive: true, force: true }); }
 }
-const stats = "globalThis[Symbol.for('paperclip.skill.default-cadence.prewire')].stats()";
+const stats = "globalThis[Symbol.for('pilibala.skill.default-cadence.prewire')].stats()";
 it.each([
   "require('node:http').get('http://example.invalid/')",
   "require('node:https').get('https://example.invalid/')",
@@ -93,9 +93,9 @@ it('permits only an absent current live-parent TSX probe and records the actual 
   expect(events.filter(event => event.event === 'current-parent-pipe-ENOENT')).toHaveLength(1);
 });
 it.each([{},
-  { PAPERCLIP_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL: 'postgres://u@127.0.0.1/live', PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL: 'postgres://u@127.0.0.1/cloud_test' },
-  { PAPERCLIP_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL: 'postgres://u@127.0.0.1/same_test', PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL: 'postgres://u@127.0.0.1/same_test' },
-  { PAPERCLIP_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL: 'postgres://u@example.invalid/app_test', PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL: 'postgres://u@127.0.0.1/cloud_test' },
+  { PILIBALA_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL: 'postgres://u@127.0.0.1/live', PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL: 'postgres://u@127.0.0.1/cloud_test' },
+  { PILIBALA_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL: 'postgres://u@127.0.0.1/same_test', PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL: 'postgres://u@127.0.0.1/same_test' },
+  { PILIBALA_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL: 'postgres://u@example.invalid/app_test', PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL: 'postgres://u@127.0.0.1/cloud_test' },
 ])('launcher refuses absent/unsafe settings before loading Vitest', settings => {
   const result = spawnSync(process.execPath, [launcher], { timeout: 5_000, encoding: 'utf8', env: { PATH: process.env.PATH, NODE_OPTIONS: '', ...settings } });
   expect(result.error).toBeUndefined(); expect(result.status).toBe(1);
@@ -104,7 +104,7 @@ it.each([{},
 
 it('permits approved HTTP options with a request path and default port through an owned agent', () => {
   const { result } = child(`const http=require('node:http'),net=require('node:net');
-    const state=globalThis[Symbol.for('paperclip.skill.default-cadence.prewire')];let agentCalls=0;
+    const state=globalThis[Symbol.for('pilibala.skill.default-cadence.prewire')];let agentCalls=0;
     const server=http.createServer((req,res)=>res.end('approved options response'));
     server.listen(0,'127.0.0.1',()=>{
       state.allowOrigin('http://127.0.0.1');
@@ -127,7 +127,7 @@ it.each([
   expect(JSON.parse(result.stdout.trim())).toMatchObject({ agentCalls: 0, unexpectedAttempts: [reason] });
 });
 it('joins an admitted deferred wake and closes its real child listener before bridge close returns', () => {
-  const bridgeSource = process.env.PAPERCLIP_SKILL_BRIDGE_CONTROL_SOURCE
+  const bridgeSource = process.env.PILIBALA_SKILL_BRIDGE_CONTROL_SOURCE
     ?? fileURLToPath(new URL('./helpers/maintenance/default-cadence-bridge.ts', import.meta.url));
   const networkSource = fileURLToPath(new URL('./helpers/maintenance/default-cadence-network.ts', import.meta.url));
   const loader = fileURLToPath(new URL('../../node_modules/tsx/dist/loader.mjs', import.meta.url));
@@ -145,7 +145,7 @@ it('joins an admitted deferred wake and closes its real child listener before br
     const checkout=path.join(root,'cloud'),entry=path.join(checkout,'dist/sleep/fixtures/default-cadence-bridge.js');fs.mkdirSync(path.dirname(entry),{recursive:true});
     fs.writeFileSync(entry,[
       "process.on('message',message=>{if(message.method==='trigger'){process.send({callbackId:'wake',physical:'wake'},()=>process.exit(0));}else if(message.method==='close'){process.send({id:message.id,result:true});}});",
-      "process.send({ready:true,pid:process.pid,defaultCadenceGuard:globalThis[Symbol.for('paperclip.skill.default-cadence.prewire')].stats()});"
+      "process.send({ready:true,pid:process.pid,defaultCadenceGuard:globalThis[Symbol.for('pilibala.skill.default-cadence.prewire')].stats()});"
     ].join('\n'));
     const physicalFile=path.join(root,'physical-app.cjs');fs.writeFileSync(physicalFile,[
       "const http=require('node:http');const server=http.createServer((req,res)=>res.end('late real child'));",
@@ -154,7 +154,7 @@ it('joins an admitted deferred wake and closes its real child listener before br
     ].join('\n'));
     let release,start,finish,fail,physical,physicalExit,origin,body,physicalOutput='',stops=0;
     const released=new Promise(resolve=>{release=resolve;}),started=new Promise(resolve=>{start=resolve;}),finished=new Promise((resolve,reject)=>{finish=resolve;fail=reject;});
-    const state=globalThis[Symbol.for('paperclip.skill.default-cadence.prewire')];
+    const state=globalThis[Symbol.for('pilibala.skill.default-cadence.prewire')];
     const stop=async()=>{stops++;if(physical&&physical.exitCode===null){
       if(physical.connected)physical.send({stop:true});else physical.kill('SIGTERM');
       await Promise.race([physicalExit,delay(1000).then(async()=>{if(physical.exitCode===null)physical.kill('SIGKILL');await physicalExit;})]);

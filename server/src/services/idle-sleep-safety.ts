@@ -12,7 +12,7 @@ import { readIdleLocalWork, type IdleLocalWork } from "./idle-local-work.js";
 import { readIdleRoutineSchedule, type ScheduledWake } from "./idle-scheduled-work.js";
 import { combineIdleSchedules, readIdleIssueSchedule } from "./idle-issue-schedule.js";
 import { connectionDeliveryWaitingForResponse, finishedIdleRun as finishedRun, finishedIdleWake, finishedFailedIdleLease as finishedFailedLease, passiveBoardRecovery } from "./idle-work-proof.js";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { sql, type SQLWrapper } from "drizzle-orm";
 import { createIdleSleepDiagnostics, type IdleSleepDiagnosticSink, type IdleSleepDiagnostics } from "./idle-sleep-diagnostics.js";
 import { verifiedResourceCleanup } from "./cleanup-verification-proof.js";

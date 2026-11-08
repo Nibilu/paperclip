@@ -1,7 +1,7 @@
 # GitHub review-check scheduling audit
 
 Baseline: `3d7c79c262f92563555b278d101de8240e6f011b`, parent
-[#17661](https://github.com/paperclipai/paperclip/pull/17661).
+[#17661](https://github.com/pilibalaai/pilibala/pull/17661).
 Parent acceptance: 1,571 tests across complete chat, publication, and startup
 suites passed in 517.41 seconds. All 53 remote checks passed on that commit;
 Greptile reviewed the same head at 5/5 with no findings. The parent is unmerged.
@@ -122,7 +122,7 @@ not make the whole stack ready or authorize merging it.
 
 ## Full acceptance and CI repairs
 
-Draft [#17662](https://github.com/paperclipai/paperclip/pull/17662) was published at
+Draft [#17662](https://github.com/pilibalaai/pilibala/pull/17662) was published at
 `c0d91f553994ba898edc2701c6879c10a46b8b50`. Its first full local run completed with
 1,569 passes and 13 failures in 541.25 seconds. The first failure observed a final
 terminal-response state read after the scheduler removed its deadline but before

@@ -93,7 +93,7 @@ import { hasBlockingShortcutDialog, isKeyboardShortcutTextInputTarget } from "..
 import { buildSubIssueDefaultsForViewer } from "../lib/subIssueDefaults";
 import { statusBadge } from "../lib/status-colors";
 import { isSuccessfulRunHandoffRequired } from "../lib/successful-run-handoff";
-import { deriveOriginatingActor, ISSUE_STATUSES, ISSUE_DISPLAY_STATUSES, type Issue, type IssueDisplayStatus, type IssueStatus, type Project } from "@paperclipai/shared";
+import { deriveOriginatingActor, ISSUE_STATUSES, ISSUE_DISPLAY_STATUSES, type Issue, type IssueDisplayStatus, type IssueStatus, type Project } from "@pilibalaai/shared";
 import { Badge } from "@/components/ui/badge";
 import { taskStatusIconProps } from "@/lib/task-status-presentation";
 const ISSUE_SEARCH_DEBOUNCE_MS = 250;

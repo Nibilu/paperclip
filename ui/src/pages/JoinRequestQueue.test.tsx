@@ -24,7 +24,7 @@ vi.mock("@/api/access", () => ({
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip" },
+    selectedCompany: { id: "company-1", name: "Pilibala" },
   }),
 }));
 
@@ -52,8 +52,8 @@ const pendingRequest = {
   requestType: "human",
   createdAt: "2026-04-10T00:00:00.000Z",
   requestIp: "127.0.0.1",
-  requesterUser: { id: "user-2", email: "board@paperclip.local", name: "Board User", image: null },
-  requestEmailSnapshot: "board@paperclip.local",
+  requesterUser: { id: "user-2", email: "board@pilibala.local", name: "Board User", image: null },
+  requestEmailSnapshot: "board@pilibala.local",
   requestingUserId: "user-2",
   invite: { allowedJoinTypes: "human", humanRole: "operator", inviteMessage: null },
 };
@@ -97,7 +97,7 @@ describe("JoinRequestQueue", () => {
     expect(container.textContent).toContain("Board User");
 
     listJoinRequestsMock.mockRejectedValue(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await act(async () => {
       await client.invalidateQueries({ queryKey: pendingQueueKey });
@@ -108,7 +108,7 @@ describe("JoinRequestQueue", () => {
     expect(container.textContent).toContain("Board User");
     expect(container.textContent).toContain("Join Request Queue");
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
     expect(container.textContent).not.toContain("tenant_app_unavailable");
 
     await act(async () => root.unmount());

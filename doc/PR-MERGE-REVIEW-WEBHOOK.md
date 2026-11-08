@@ -11,8 +11,8 @@ deployment branch policy to the `master` branch only, with no tag policy.
 Keep these two values in **environment secrets**, not repository variables,
 repository secrets, committed files, task comments, or workflow outputs:
 
-- `PAPERCLIP_PR_REVIEW_WEBHOOK_URL`: a Paperclip routine webhook URL.
-- `PAPERCLIP_PR_REVIEW_WEBHOOK_TOKEN`: its separate bearer signing secret.
+- `PILIBALA_PR_REVIEW_WEBHOOK_URL`: a Pilibala routine webhook URL.
+- `PILIBALA_PR_REVIEW_WEBHOOK_TOKEN`: its separate bearer signing secret.
 
 Use a webhook trigger with `signingMode: bearer`. The routine should use
 `always_enqueue` concurrency so separate PRs cannot be coalesced into one task.
@@ -21,10 +21,10 @@ The notifier sends only those identifiers. The receiving agent must treat them
 as untrusted data and verify the repository, PR identity, and current revision.
 
 Give the routine instructions to run `pr-merge-review` and publish its MERGE,
-HOLD, or DO NOT MERGE recommendation on the routine execution's Paperclip task.
+HOLD, or DO NOT MERGE recommendation on the routine execution's Pilibala task.
 Require a fresh check of the head, base, reviews, required checks, and task gates.
 Keep GitHub approval, merge, auto-merge, and public-comment actions disabled in
-the instructions for this advisory phase. Configure the routine in Paperclip;
+the instructions for this advisory phase. Configure the routine in Pilibala;
 do not put instance-specific URLs or credentials in this repository.
 
 ## Delivery and verification
@@ -66,7 +66,7 @@ GitHub Actions suite and a successful run of the repository's actual
 PRs that change this caller need a manual advisory review until their caller
 change reaches the trusted branch. Other workflow changes can still be reviewed.
 
-A final refresh rejects head or base changes during evaluation. Paperclip's
+A final refresh rejects head or base changes during evaluation. Pilibala's
 idempotency receipt deduplicates events for the same PR, head, and base. A new
 base can produce a new review. The routine must refresh again before its final
 recommendation. Event delivery and host check visibility can race; notifications
@@ -82,13 +82,13 @@ Run the focused regression checks with:
 node --test .github/scripts/tests/notify-pr-merge-review.test.mjs
 ```
 
-For setup verification, use Paperclip's webhook `setupPending` test mode before
+For setup verification, use Pilibala's webhook `setupPending` test mode before
 activation. This verifies authentication and ingress without starting a review.
 After the workflow is merged to `master`, inspect a real successful workflow
 delivery and its linked routine task to prove end-to-end operation. A saved
 configuration or a setup test alone does not prove that journey.
 
-To pause reviews, pause the routine in Paperclip or disable its trigger. To stop
+To pause reviews, pause the routine in Pilibala or disable its trigger. To stop
 notifications, disable this workflow or remove the two environment secrets.
-Rotate the trigger signing secret in Paperclip and replace the token environment
+Rotate the trigger signing secret in Pilibala and replace the token environment
 secret together. Keep the URL secret even though it has no embedded bearer token.

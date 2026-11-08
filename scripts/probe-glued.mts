@@ -3,7 +3,7 @@ import fs from "node:fs";
 import { buildTranscript } from "../ui/src/adapters/transcript.ts";
 import { parseHermesGatewayStdoutLine } from "../packages/adapters/hermes/src/gateway/ui/parse-stdout.ts";
 
-const GW = "/home/amber/.paperclip/instances/default/data/run-logs/22bb83e2-4344-4a27-9f32-b853ce198a3e/19e9c7ad-963e-4ef1-99e1-8376f69440db/267089d0-a230-478f-93f1-25ed4cf945e4.ndjson";
+const GW = "/home/amber/.pilibala/instances/default/data/run-logs/22bb83e2-4344-4a27-9f32-b853ce198a3e/19e9c7ad-963e-4ef1-99e1-8376f69440db/267089d0-a230-478f-93f1-25ed4cf945e4.ndjson";
 const chunks = fs
   .readFileSync(GW, "utf8")
   .trim()

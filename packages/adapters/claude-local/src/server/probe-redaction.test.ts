@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
 
 // The managed-config step runs inside `prepareSandboxClaudeProbeRuntime`. The
-// step resolves the Paperclip instance root first. This mock makes that resolve
+// step resolves the Pilibala instance root first. This mock makes that resolve
 // throw, so the managed-config materialization fails with a controllable error
 // that carries a secret marker.
 const { resolveInstanceRoot } = vi.hoisted(() => {
@@ -10,9 +10,9 @@ const { resolveInstanceRoot } = vi.hoisted(() => {
   return { resolveInstanceRoot };
 });
 
-vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/execution-target")>(
-    "@paperclipai/adapter-utils/execution-target",
+vi.mock("@pilibalaai/adapter-utils/execution-target", async () => {
+  const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/execution-target")>(
+    "@pilibalaai/adapter-utils/execution-target",
   );
   return {
     ...actual,
@@ -20,16 +20,16 @@ vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
   };
 });
 
-vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/server-utils")>(
-    "@paperclipai/adapter-utils/server-utils",
+vi.mock("@pilibalaai/adapter-utils/server-utils", async () => {
+  const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/server-utils")>(
+    "@pilibalaai/adapter-utils/server-utils",
   );
   return {
     ...actual,
-    resolvePaperclipInstanceRootForAdapter: (...args: unknown[]) => {
+    resolvePilibalaInstanceRootForAdapter: (...args: unknown[]) => {
       if (resolveInstanceRoot.throwError) throw resolveInstanceRoot.throwError;
       return (
-        actual.resolvePaperclipInstanceRootForAdapter as (...a: unknown[]) => string
+        actual.resolvePilibalaInstanceRootForAdapter as (...a: unknown[]) => string
       )(...args);
     },
   };
@@ -41,7 +41,7 @@ const sandboxTarget: AdapterExecutionTarget = {
   kind: "remote",
   transport: "sandbox",
   providerKey: "daytona",
-  remoteCwd: "/home/daytona/paperclip-workspace",
+  remoteCwd: "/home/daytona/pilibala-workspace",
   runner: {
     execute: async () => ({
       exitCode: 0,
@@ -71,7 +71,7 @@ describe("prepareSandboxClaudeProbeRuntime managed-config redaction", () => {
     const checks = await prepareSandboxClaudeProbeRuntime({
       runId: "test-run",
       target: sandboxTarget,
-      cwd: "/home/daytona/paperclip-workspace",
+      cwd: "/home/daytona/pilibala-workspace",
       env: {},
       installCommand: "npm i -g @anthropic-ai/claude-code",
       detectCommand: "claude --version",

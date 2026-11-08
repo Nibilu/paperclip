@@ -20,7 +20,7 @@ import {
   issues,
   projectWorkspaces,
   projects,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { drainHeartbeatRunsToQuiescence } from "./helpers/drain-heartbeat-runs.js";
 import { heartbeatService } from "../services/heartbeat.ts";
@@ -53,7 +53,7 @@ describe.skipIf(!support.supported)("heartbeat resume of an idle-expired workspa
   beforeAll(async () => {
     database = await startEmbeddedPostgresTestDatabase("heartbeat-git-restore-point-resume-");
     db = createDb(database.connectionString);
-    root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-heartbeat-restore-point-")));
+    root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-heartbeat-restore-point-")));
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
   afterEach(async () => {
     await drainHeartbeatRunsToQuiescence(db, heartbeatService(db));
@@ -71,9 +71,9 @@ describe.skipIf(!support.supported)("heartbeat resume of an idle-expired workspa
 
   async function seed(options: { closedParent?: boolean; terminalArchive?: boolean } = {}) {
     const home = path.join(root, randomUUID());
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    vi.stubEnv("PAPERCLIP_INSTANCE_ID", "default");
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "31".repeat(32));
+    vi.stubEnv("PILIBALA_HOME", home);
+    vi.stubEnv("PILIBALA_INSTANCE_ID", "default");
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "31".repeat(32));
     const companyId = randomUUID(), projectId = randomUUID(), agentId = randomUUID(), issueId = randomUUID();
     const workspaceId = randomUUID(), runId = randomUUID(), wakeupId = randomUUID();
     const issuePrefix = `R${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
@@ -106,7 +106,7 @@ describe.skipIf(!support.supported)("heartbeat resume of an idle-expired workspa
       strategyType: "git_worktree", name: "Stalled work", status: "active", providerType: "git_worktree", cwd: realized.cwd, providerRef: realized.cwd,
       repoUrl, baseRef: "origin/main", branchName: realized.branchName,
       metadata: { createdByRuntime: realized.branchCreatedByRuntime, gitBranchOwnershipVersion: 1, baseRefSha: realized.baseRefSha,
-        isolatedRemoteSource: { schema: "paperclip.isolated-remote-source.v1", companyId, issueId, repoUrl } } });
+        isolatedRemoteSource: { schema: "pilibala.isolated-remote-source.v1", companyId, issueId, repoUrl } } });
     await db.update(issues).set({ executionWorkspaceId: workspaceId, executionWorkspacePreference: "reuse_existing", updatedAt: idleSince })
       .where(eq(issues.id, issueId));
     const childId = randomUUID();
@@ -162,7 +162,7 @@ describe.skipIf(!support.supported)("heartbeat resume of an idle-expired workspa
     expect(run).toMatchObject({ status: "succeeded" });
     expect(adapterExecute).toHaveBeenCalledTimes(1);
     expect(adapterExecute.mock.calls[0]?.[0]).toMatchObject({ context: { executionWorkspaceId: seeded.workspaceId,
-      paperclipWorkspace: { cwd: seeded.cwd } } });
+      pilibalaWorkspace: { cwd: seeded.cwd } } });
     expect(git(seeded.cwd, "rev-parse", "HEAD")).toBe(seeded.unpushed);
     expect(await fs.readFile(path.join(seeded.cwd, "notes.md"), "utf8")).toBe("uncommitted notes\n");
     const workspace = await seeded.workspace();
@@ -186,7 +186,7 @@ describe.skipIf(!support.supported)("heartbeat resume of an idle-expired workspa
     expect(run).toMatchObject({ status: "succeeded" });
     expect(adapterExecute).toHaveBeenCalledTimes(1);
     expect(adapterExecute.mock.calls[0]?.[0]).toMatchObject({ context: { executionWorkspaceId: seeded.workspaceId,
-      paperclipWorkspace: { cwd: seeded.cwd } } });
+      pilibalaWorkspace: { cwd: seeded.cwd } } });
     expect(git(seeded.cwd, "rev-parse", "HEAD")).toBe(seeded.unpushed);
     expect(await fs.readFile(path.join(seeded.cwd, "notes.md"), "utf8")).toBe("uncommitted notes\n");
     expect(await seeded.workspace()).toMatchObject({ status: "active", closedAt: null });
@@ -217,7 +217,7 @@ describe.skipIf(!support.supported)("heartbeat resume of an idle-expired workspa
     expect(context?.executionWorkspaceId).not.toBe(seeded.workspaceId);
     // The child starts from the project base, not the parent's unmerged changes,
     // and the parent's saved restore point was left as it was.
-    const childCwd = (context?.paperclipWorkspace as { cwd?: string } | undefined)?.cwd;
+    const childCwd = (context?.pilibalaWorkspace as { cwd?: string } | undefined)?.cwd;
     expect(childCwd).toBeTruthy();
     expect(childCwd).not.toBe(seeded.cwd);
     expect(git(childCwd!, "rev-parse", "HEAD")).not.toBe(seeded.unpushed);

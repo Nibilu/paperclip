@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
-import type { TaskInterruptionPresentation } from "@paperclipai/shared";
+import type { TaskInterruptionPresentation } from "@pilibalaai/shared";
 import type { IssueChatComment } from "../lib/issue-chat-messages";
 import { ExecutionBlockerNotice } from "../components/ExecutionBlockerNotice";
 import { useRunnerSubmission } from "./useRunnerSubmission";

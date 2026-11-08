@@ -9,7 +9,7 @@ import type {
   AdapterEnvironmentTestContext,
   AdapterEnvironmentTestResult,
   AdapterEnvironmentCheck,
-} from "@paperclipai/adapter-utils";
+} from "@pilibalaai/adapter-utils";
 
 import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -18,7 +18,7 @@ import { promisify } from "node:util";
 import { HERMES_CLI, DEFAULT_MODEL, ADAPTER_TYPE, VALID_PROVIDERS } from "../shared/constants.js";
 import { detectModel } from "./detect-model.js";
 import { resolveHermesCommand } from "./execute.js";
-import { parseObject } from "@paperclipai/adapter-utils/server-utils";
+import { parseObject } from "@pilibalaai/adapter-utils/server-utils";
 import {
   resolveHermesExecutionEngineForRun,
   testHermesAcpEnvironment,
@@ -126,7 +126,7 @@ function checkModel(
     return {
       level: "info",
       message: "No model specified — Hermes will use its configured default model",
-      hint: "Set a model explicitly in Paperclip only if you want to override your local Hermes configuration.",
+      hint: "Set a model explicitly in Pilibala only if you want to override your local Hermes configuration.",
       code: "hermes_configured_default_model",
     };
   }
@@ -151,7 +151,7 @@ async function checkApiKeys(
   }
 
   // Also read ~/.hermes/.env — Hermes stores API keys there by default and does
-  // not export them to the parent process, so Paperclip's process.env won't
+  // not export them to the parent process, so Pilibala's process.env won't
   // contain them.  Parsing this file ensures the environment test reports
   // accurate results for keys that Hermes already knows about.
   const hermesEnvKeys: Record<string, string> = {};
@@ -265,7 +265,7 @@ async function checkProviderConsistency(
   const explicitProvider = asString(config.provider);
 
   if (!explicitProvider || explicitProvider === "auto") {
-    // Host-default path: Paperclip does not guess a provider — Hermes resolves
+    // Host-default path: Pilibala does not guess a provider — Hermes resolves
     // its effective state (session DB / auth.json / host config) natively.
     return {
       level: "info",

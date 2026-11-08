@@ -189,7 +189,7 @@ describe("onboarding approval history journey", () => {
 
   it("retains enough public evidence to regrade actual checkbox choices and the later child run", () => {
     const evidence = recording();
-    const result: RunnerE2EResult = { schema: "paperclip.runner-e2e.result/v2", suiteId: APPROVAL_HISTORY_SUITE,
+    const result: RunnerE2EResult = { schema: "pilibala.runner-e2e.result/v2", suiteId: APPROVAL_HISTORY_SUITE,
       executionId: `${APPROVAL_HISTORY_SUITE}.runner-codex.local.${APPROVAL_HISTORY_CASE}`, attempt: 1, status: "passed",
       profileId: "runner-codex", environmentId: "local", caseId: APPROVAL_HISTORY_CASE, provider: "openai", model: "fixture-model",
       runtimeMode: "native", runIds: ["parent-run", "child-run"], startedAt: "2026-11-01T00:00:00Z", finishedAt: "2026-11-01T00:09:00Z",

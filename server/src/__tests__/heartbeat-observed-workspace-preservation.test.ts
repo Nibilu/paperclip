@@ -4,7 +4,7 @@ import { cp, mkdir, readFile, realpath, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { and, eq, sql } from "drizzle-orm";
-import { agents, authUsers, companyMemberships, environmentLeases, environments, executionWorkspaceSnapshots, executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults } from "@paperclipai/db";
+import { agents, authUsers, companyMemberships, environmentLeases, environments, executionWorkspaceSnapshots, executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults } from "@pilibalaai/db";
 import { beforeAll, expect, it, vi } from "vitest";
 import * as storageBackend from "../storage/index.js";
 import { getStorageService } from "../storage/index.js";
@@ -47,11 +47,11 @@ describeEmbeddedPostgres("stopped observed native workspace preservation", () =>
     await db.insert(authUsers).values({ id: userId, name: "Source operator", email: `${userId}@example.invalid`, createdAt: new Date(), updatedAt: new Date() });
     await db.insert(companyMemberships).values({ companyId, principalType: "user", principalId: userId, membershipRole: "owner" });
     await db.update(agents).set({ defaultEnvironmentId: environmentId, adapterConfig: { provider: "codex", model: "gpt-6.1-sol" } }).where(eq(agents.id, agentId));
-    const reference = { schema: "paperclip.remote-workspace-run.v1", workspaceId, leaseId, providerLeaseId,
+    const reference = { schema: "pilibala.remote-workspace-run.v1", workspaceId, leaseId, providerLeaseId,
       remoteCwd, epoch: 1, state: "prepared", snapshotId: null };
     await db.insert(executionWorkspaces).values({ id: workspaceId, companyId, sourceIssueId: f.issueId,
       mode: "isolated_workspace", strategyType: "project_primary", providerType: "cloud_sandbox", name: "Unsaved original files",
-      cwd: `/workspaces/${workspaceId}`, metadata: { remoteWorkspace: { schema: "paperclip.remote-workspace.v1",
+      cwd: `/workspaces/${workspaceId}`, metadata: { remoteWorkspace: { schema: "pilibala.remote-workspace.v1",
         epoch: 1, snapshotId: null, source: { kind: "empty" }, writerRunId: f.runId, dirty: true,
         location: { environmentId, leaseId, providerLeaseId, remoteCwd } } } });
     await db.update(issues).set({ status: "blocked", executionRunId: null, checkoutRunId: null, executionWorkspaceId: workspaceId })
@@ -66,7 +66,7 @@ describeEmbeddedPostgres("stopped observed native workspace preservation", () =>
       taskPrompt: "Continue the original task.", provider: "codex", model: "gpt-6.1-sol",
       workspace: { id: workspaceId, cwd: remoteCwd, repoUrl: null, repoRef: null, branchName: null },
       normalizedSessionId: f.native.normalizedSessionId, runtimeContext: nativeRuntimeContextFixture(),
-      completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "paperclip.run-result.v1",
+      completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "pilibala.run-result.v1",
         contract: { revision: "1", objective: "Preserve original work", criteria: [{ id: "objective", requirement: "Retain files" }] } } });
     const profile = { ...f.preparedProfile, remoteWorkspace: reference, sessionCheckpoint: checkpoint,
       nativeExecutionInput: execution, nativeResourceDisposition: "stop_and_retain" };
@@ -86,7 +86,7 @@ describeEmbeddedPostgres("stopped observed native workspace preservation", () =>
   it("stops the exact stale allocation, preserves a cold-readable archive and never creates another native session", async () => {
     const f = await seedSource("HISTORICAL-OBSERVED"), db = f.db;
     const settings = instanceSettingsService(db), previous = await settings.getExperimental();
-    const priorDatabase = process.env.DATABASE_URL, priorKey = process.env.PAPERCLIP_SECRETS_MASTER_KEY;
+    const priorDatabase = process.env.DATABASE_URL, priorKey = process.env.PILIBALA_SECRETS_MASTER_KEY;
     const localStorage = getStorageService();
     let storage: { mockRestore(): void } | undefined;
     let heartbeat: ReturnType<typeof heartbeatService> | undefined;
@@ -98,7 +98,7 @@ describeEmbeddedPostgres("stopped observed native workspace preservation", () =>
     const stopAllowed = barrier();
     try {
       storage = vi.spyOn(storageBackend, "getStorageService").mockReturnValue({ ...localStorage, provider: "s3" });
-      process.env.DATABASE_URL = fixture.current.temporary.connectionString; process.env.PAPERCLIP_SECRETS_MASTER_KEY = "72".repeat(32);
+      process.env.DATABASE_URL = fixture.current.temporary.connectionString; process.env.PILIBALA_SECRETS_MASTER_KEY = "72".repeat(32);
       await settings.updateExperimental({ enableNativeRunner: true });
       const { workspaceId, environmentId, leaseId, providerLeaseId, remoteCwd, checkpoint, profile } = f;
       const acquire = vi.fn(async () => { throw new Error("A new allocation is forbidden"); });
@@ -201,7 +201,7 @@ describeEmbeddedPostgres("stopped observed native workspace preservation", () =>
         providerStop?.mockRestore(); providerDestroy?.mockRestore();
         storage?.mockRestore();
         if (priorDatabase === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = priorDatabase;
-        if (priorKey === undefined) delete process.env.PAPERCLIP_SECRETS_MASTER_KEY; else process.env.PAPERCLIP_SECRETS_MASTER_KEY = priorKey;
+        if (priorKey === undefined) delete process.env.PILIBALA_SECRETS_MASTER_KEY; else process.env.PILIBALA_SECRETS_MASTER_KEY = priorKey;
         await settings.updateExperimental(previous);
       }
     }
@@ -259,7 +259,7 @@ describeEmbeddedPostgres("stopped observed native workspace preservation", () =>
       if (mode === "other_allocation_owner") await otherAllocationOwner(f);
       if (mode === "wrong_epoch") await f.db.update(executionWorkspaces).set({ metadata: sql`jsonb_set(${executionWorkspaces.metadata}, '{remoteWorkspace,epoch}', '2')` }).where(eq(executionWorkspaces.id, f.workspaceId));
       if (mode === "stopped_mismatch") await changeLease(f, { status: "released", cleanupStatus: "success", releasedAt: new Date() }, {
-        remoteExecutionTermination: { schema: "paperclip.remote-execution-termination.v1", provider: "fake", providerLeaseId: `sandbox://fake/${randomUUID()}`, state: "stopped", confirmedAt: new Date().toISOString() },
+        remoteExecutionTermination: { schema: "pilibala.remote-execution-termination.v1", provider: "fake", providerLeaseId: `sandbox://fake/${randomUUID()}`, state: "stopped", confirmedAt: new Date().toISOString() },
       });
       if (mode === "operator_stop") await f.db.update(issues).set({ status: "cancelled" }).where(eq(issues.id, f.issueId));
       const provider = getSandboxProvider("fake")!, stopped = vi.spyOn(provider, "stopLease"), destroyed = vi.spyOn(provider, "destroyLease");

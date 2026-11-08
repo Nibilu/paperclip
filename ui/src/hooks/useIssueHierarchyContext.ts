@@ -1,7 +1,7 @@
 import { useQueryView } from "../components/QueryView";
 import { loadIssueHierarchyChildren } from "../lib/issue-hierarchy-context";
 import { useQuery } from "@tanstack/react-query";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@pilibalaai/shared";
 import { issuesApi } from "../api/issues";
 import { queryKeys } from "../lib/queryKeys";
 

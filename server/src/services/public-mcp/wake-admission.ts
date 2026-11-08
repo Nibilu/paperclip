@@ -34,9 +34,9 @@ const exact = (v: Record<string, unknown>, keys: string[]) => Object.keys(v).len
 const digest = (value: unknown): value is string => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const laneChallenge = (context: Context, profile: McpWakeProfile, kind: McpWakeTokenKind) =>
-  hash(["paperclip-mcp-oauth-wake-v1", context.stackId, context.ownerId, context.challenge, profile, kind]);
+  hash(["pilibala-mcp-oauth-wake-v1", context.stackId, context.ownerId, context.challenge, profile, kind]);
 const generation = (value: Omit<McpWakeAdmission, "generation">) =>
-  hash(["paperclip-mcp-oauth-wake-receipt-v1", value.version, value.stackId, value.ownerId,
+  hash(["pilibala-mcp-oauth-wake-receipt-v1", value.version, value.stackId, value.ownerId,
     value.capabilityGeneration, value.challenge, value.lanes, value.revocationAuthorities, ...(value.discovery ? [value.discovery] : []), ...(value.clientMirror ? [value.clientMirror] : []), ...(value.absent ? ["absent"] : [])]);
 
 
@@ -62,7 +62,7 @@ export function createMcpWakeAdmission(input: Context & {
     const keys = selected.map(token => {
       if (!digest(token.tokenHash)) throw new Error("Invalid MCP wake credential hash");
       if (tokenKind === "refresh" && (!token.clientId || token.clientId.length > 2048)) throw new Error("MCP refresh client is required");
-      const keyHash = tokenKind === "refresh" ? hash(["paperclip-mcp-refresh-client-v1", token.tokenHash, token.clientId]) : token.tokenHash;
+      const keyHash = tokenKind === "refresh" ? hash(["pilibala-mcp-refresh-client-v1", token.tokenHash, token.clientId]) : token.tokenHash;
       return { fingerprint: apiWakeFingerprint({ ...context, challenge, keyHash }), expiresAt: token.expiresAt };
     });
     lanes.push({ profile, tokenKind, keys: createApiWakeAdmission({ ...context, challenge, keys }).keys });
@@ -116,7 +116,7 @@ export function authorizeMcpWakeAdmission(receipt: McpWakeAdmission, input: {
   if (!lane || !input.token || input.token.length > 8192 || /\s/.test(input.token)) return;
   const tokenHash = createHash("sha256").update(input.token).digest("hex");
   if (input.tokenKind === "refresh" && (!input.clientId || input.clientId.length > 2048)) return;
-  const keyHash = input.tokenKind === "refresh" ? hash(["paperclip-mcp-refresh-client-v1", tokenHash, input.clientId]) : tokenHash;
+  const keyHash = input.tokenKind === "refresh" ? hash(["pilibala-mcp-refresh-client-v1", tokenHash, input.clientId]) : tokenHash;
   const fingerprint = apiWakeFingerprint({ ...receipt, challenge: laneChallenge(receipt, input.profile, input.tokenKind), keyHash });
   return lane.keys.some(key => key.fingerprint === fingerprint && (key.expiresAt === null || Date.parse(key.expiresAt) > input.now))
     ? { generation: receipt.generation, fingerprint, profile: input.profile, tokenKind: input.tokenKind } : undefined;

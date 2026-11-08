@@ -1,5 +1,5 @@
 import { and, eq, or, sql } from "drizzle-orm";
-import { budgetEvaluationWork, type Db } from "@paperclipai/db";
+import { budgetEvaluationWork, type Db } from "@pilibalaai/db";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "./delivery-work-notifications.js";
 
 export type BudgetEvaluationInput = { companyId: string; agentId?: string | null; projectId?: string | null };

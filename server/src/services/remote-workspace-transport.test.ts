@@ -8,7 +8,7 @@ import { promisify } from "node:util";
 import { deflateSync } from "node:zlib";
 import net from "node:net";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
 import {
   captureRemoteWorkspaceArchive,
   cleanupRemoteWorkspaceArchive,
@@ -37,7 +37,7 @@ describe("remote workspace transport safety with real sandbox commands", () => {
 
   it.each(["missing", "present", "foreign", "proof_symlink", "proof_hardlink", "directory_symlink"])(
     "checks existing recovery attachment provenance without changing files: %s", async state => {
-    const operationId = randomUUID(), parent = path.join(workspace, ".paperclip-recovered");
+    const operationId = randomUUID(), parent = path.join(workspace, ".pilibala-recovered");
     const directory = path.join(parent, operationId), provenance = JSON.stringify({ operationId, sourceRunId: randomUUID() });
     if (state !== "missing") {
       await fs.mkdir(directory, { recursive: true });
@@ -197,7 +197,7 @@ describe("remote workspace transport safety with real sandbox commands", () => {
       await cleanupRemoteWorkspaceArchive({ target: remote, remoteCwd: restored.stagingRoot, operationId: restored.operationId });
       expect(await fs.readFile(path.join(root, "saved.txt"), "utf8")).toBe("saved synthetic files\n");
       expect(await fs.readFile(path.join(root, "newer.txt"), "utf8")).toBe("retain later edits\n");
-      expect(await fs.readdir(path.join(scratch, ".paperclip-runtime", "workspace-snapshots"))).toEqual([]);
+      expect(await fs.readdir(path.join(scratch, ".pilibala-runtime", "workspace-snapshots"))).toEqual([]);
       await expect(restoreRemoteWorkspaceDirectory({ ...input, restorationIdentity: "b".repeat(64) })).rejects.toThrow();
       expect(await fs.readFile(path.join(root, "newer.txt"), "utf8")).toBe("retain later edits\n");
     } finally { await captured.cleanup(); }
@@ -208,16 +208,16 @@ describe("remote workspace transport safety with real sandbox commands", () => {
     const { remote, execute } = target();
     const captured = await captureRemoteWorkspaceArchive({ target: remote, remoteCwd: workspace, operationId: randomUUID() });
     try {
-      const root = path.join(scratch, "allocated"), relativePath = ".paperclip-runtime/reusable-sandbox-lease.json";
+      const root = path.join(scratch, "allocated"), relativePath = ".pilibala-runtime/reusable-sandbox-lease.json";
       const bytes = JSON.stringify({ version: 1, token: "exact-allocation-token", provider: "daytona" });
-      await fs.mkdir(path.join(root, ".paperclip-runtime"), { recursive: true });
+      await fs.mkdir(path.join(root, ".pilibala-runtime"), { recursive: true });
       const sentinel = path.join(root, relativePath);
       await fs.writeFile(sentinel, bytes);
       const input = { target: remote, remoteCwd: root, archivePath: captured.archivePath, manifestDigest: captured.manifestDigest,
         restorationIdentity: "d".repeat(64), allowEmptyRoot: true,
         allocationFiles: [{ relativePath, sha256: createHash("sha256").update(bytes).digest("hex") }] };
       if (scenario === "changed") await fs.writeFile(sentinel, "foreign marker");
-      if (scenario === "unrelated") await fs.writeFile(path.join(root, ".paperclip-runtime", "unrelated.txt"), "keep");
+      if (scenario === "unrelated") await fs.writeFile(path.join(root, ".pilibala-runtime", "unrelated.txt"), "keep");
       if (scenario === "symlink") {
         const outside = path.join(scratch, "outside-marker"); await fs.writeFile(outside, bytes);
         await fs.unlink(sentinel); await fs.symlink(outside, sentinel);
@@ -259,13 +259,13 @@ describe("remote workspace transport safety with real sandbox commands", () => {
 const rename=fs.promises.rename;fs.promises.rename=async(from,to)=>{const s=await fs.promises.lstat(from).catch(()=>null);
 if(s?.isDirectory()&&lower.has(String(s.ino)))throw Object.assign(new Error('EXDEV: cross-device link not permitted, rename'),{code:'EXDEV',errno:-18,syscall:'rename'});
 const result=await rename.call(fs.promises,from,to);
-if(String(to)===${JSON.stringify(path.join(scratch, "retired", ".paperclip-runtime", "workspace-restored.json"))}&&fs.existsSync(${JSON.stringify(postPublish)})){
+if(String(to)===${JSON.stringify(path.join(scratch, "retired", ".pilibala-runtime", "workspace-restored.json"))}&&fs.existsSync(${JSON.stringify(postPublish)})){
 fs.unlinkSync(${JSON.stringify(postPublish)});throw Error('published_interrupted');}return result};`);
     const { remote, execute } = target();
     const captured = await captureRemoteWorkspaceArchive({ target: remote, remoteCwd: workspace, operationId: randomUUID() });
     try {
-      const root = path.join(scratch, "retired"), runtime = path.join(root, ".paperclip-runtime");
-      const session = path.join(runtime, "paperclip-runner", "sessions", "parent", "runner");
+      const root = path.join(scratch, "retired"), runtime = path.join(root, ".pilibala-runtime");
+      const session = path.join(runtime, "pilibala-runner", "sessions", "parent", "runner");
       await fs.mkdir(session, { recursive: true });
       await fs.writeFile(path.join(session, "runner-state.json"), "{\"lifecycle\":\"suspended\"}");
       await fs.writeFile(path.join(runtime, "workspace-ready.json"), JSON.stringify({ preparationIdentity: "f".repeat(64) }));
@@ -287,7 +287,7 @@ fs.unlinkSync(${JSON.stringify(postPublish)});throw Error('published_interrupted
       execute.mockImplementation(async command => {
         if (!command.args?.[1]?.includes("remote_workspace_restore_failed")) return run(command);
         const args = interrupt ? command.args.map((arg, index) => index === 1
-          ? arg.replace("await fs.rename(path.join(staged,'.paperclip-runtime','workspace-restored.json')", "throw Error('interrupted');await fs.rename(path.join(staged,'.paperclip-runtime','workspace-restored.json')") : arg) : command.args;
+          ? arg.replace("await fs.rename(path.join(staged,'.pilibala-runtime','workspace-restored.json')", "throw Error('interrupted');await fs.rename(path.join(staged,'.pilibala-runtime','workspace-restored.json')") : arg) : command.args;
         interrupt = false;
         return run({ ...command, args: ["--require", preload, ...args] });
       });
@@ -309,7 +309,7 @@ fs.unlinkSync(${JSON.stringify(postPublish)});throw Error('published_interrupted
       expect(await fs.lstat(path.join(root, "stale.md")).catch(() => null)).toBeNull();
       expect(await fs.lstat(path.join(root, "locked")).catch(() => null)).toBeNull();
       expect(await fs.readFile(path.join(session, "runner-state.json"), "utf8")).toBe("{\"lifecycle\":\"suspended\"}");
-      expect(await fs.readdir(runtime)).toEqual(expect.arrayContaining(["paperclip-runner", "workspace-restored.json"]));
+      expect(await fs.readdir(runtime)).toEqual(expect.arrayContaining(["pilibala-runner", "workspace-restored.json"]));
       expect(await fs.lstat(path.join(runtime, "workspace-ready.json")).catch(() => null)).toBeNull();
       expect(await fs.lstat(path.join(runtime, "workspace-snapshots")).catch(() => null)).toBeNull();
       await fs.chmod(root, 0o750);
@@ -326,7 +326,7 @@ fs.unlinkSync(${JSON.stringify(postPublish)});throw Error('published_interrupted
     await fs.writeFile(path.join(workspace, "saved.txt"), "verified saved work");
     const { remote, execute } = target(), captured = await captureRemoteWorkspaceArchive({ target: remote, remoteCwd: workspace, operationId: randomUUID() });
     try {
-      const root = path.join(scratch, "pending-root"), runtime = path.join(root, ".paperclip-runtime");
+      const root = path.join(scratch, "pending-root"), runtime = path.join(root, ".pilibala-runtime");
       const flag = path.join(scratch, "cleanup-interrupt"), preload = path.join(scratch, "cleanup-interrupt.cjs");
       await fs.mkdir(runtime, { recursive: true });
       await fs.writeFile(path.join(runtime, "workspace-ready.json"), JSON.stringify({ preparationIdentity: "f".repeat(64) }));
@@ -345,7 +345,7 @@ fs.unlinkSync(${JSON.stringify(flag)});throw Error('cleanup_interrupted');}retur
       await expect(fs.access(path.join(runtime, "workspace-ready.json"))).rejects.toMatchObject({ code: "ENOENT" });
       const interrupted = JSON.parse(await fs.readFile(path.join(runtime, "workspace-restored.json"), "utf8"));
       expect(interrupted.identity).toBeUndefined();
-      expect(interrupted).toMatchObject({ schema: "paperclip.workspace-restore-pending.v1", root,
+      expect(interrupted).toMatchObject({ schema: "pilibala.workspace-restore-pending.v1", root,
         pendingIdentity: input.restorationIdentity, manifestDigest: captured.manifestDigest, inPlaceMode: 0o700 });
       if (identityMode === "same") {
         await fs.writeFile(path.join(runtime, "workspace-restored.json"), JSON.stringify({ ...interrupted, root: root + "-foreign" }));
@@ -360,7 +360,7 @@ fs.unlinkSync(${JSON.stringify(flag)});throw Error('cleanup_interrupted');}retur
       }
       await restoreRemoteWorkspaceDirectory(next);
       expect(JSON.parse(await fs.readFile(path.join(runtime, "workspace-restored.json"), "utf8")))
-        .toEqual({ schema: "paperclip.workspace-restored.v1", root, restorationEpoch: next.restorationEpoch, identity: next.restorationIdentity, manifestDigest: captured.manifestDigest });
+        .toEqual({ schema: "pilibala.workspace-restored.v1", root, restorationEpoch: next.restorationEpoch, identity: next.restorationIdentity, manifestDigest: captured.manifestDigest });
       expect((await fs.stat(root)).mode & 0o777).toBe(0o700);
       expect(await fs.readFile(path.join(root, "saved.txt"), "utf8")).toBe("verified saved work");
       await fs.writeFile(path.join(root, "saved.txt"), "new governed work"); await restoreRemoteWorkspaceDirectory(next);
@@ -374,8 +374,8 @@ fs.unlinkSync(${JSON.stringify(flag)});throw Error('cleanup_interrupted');}retur
     const captured = await captureRemoteWorkspaceArchive({ target: remote, remoteCwd: workspace, operationId: randomUUID() });
     const root = path.join(scratch, "overlap"), entered = path.join(scratch, "entered"), released = path.join(scratch, "released");
     const contended = path.join(scratch, "contended"), preload = path.join(scratch, "overlap.cjs");
-    await fs.mkdir(path.join(root, ".paperclip-runtime"), { recursive: true });
-    await fs.writeFile(path.join(root, ".paperclip-runtime", "workspace-ready.json"), JSON.stringify({ preparationIdentity: "f".repeat(64) }));
+    await fs.mkdir(path.join(root, ".pilibala-runtime"), { recursive: true });
+    await fs.writeFile(path.join(root, ".pilibala-runtime", "workspace-ready.json"), JSON.stringify({ preparationIdentity: "f".repeat(64) }));
     await fs.writeFile(path.join(root, "stale.txt"), "retired work");
     await fs.writeFile(preload, `const fs=require('node:fs');
 const rename=fs.promises.rename,rm=fs.promises.rm;
@@ -428,7 +428,7 @@ DatabaseSync.prototype.exec=function(sql){try{return exec.call(this,sql)}catch(e
       await firstResult; await retry;
       expect(await fs.readFile(path.join(root, "saved.txt"), "utf8")).toBe("new provider work after admitted retry");
       expect(publishedWhileActive).toBe(false);
-      const lockPath = path.join(scratch, ".paperclip-runtime", "workspace-restore-locks", createHash("sha256").update(root).digest("hex") + ".sqlite");
+      const lockPath = path.join(scratch, ".pilibala-runtime", "workspace-restore-locks", createHash("sha256").update(root).digest("hex") + ".sqlite");
       const inode = (await fs.stat(lockPath)).ino;
       await restoreRemoteWorkspaceDirectory(retryInput);
       expect((await fs.stat(lockPath)).ino).toBe(inode);
@@ -442,7 +442,7 @@ DatabaseSync.prototype.exec=function(sql){try{return exec.call(this,sql)}catch(e
   it.each(["completed", "killed"] as const)("fences a delayed old command after the newer epoch is %s", async outcome => {
     await fs.writeFile(path.join(workspace, "saved.txt"), "canonical snapshot bytes");
     const { remote, execute } = target(), captured = await captureRemoteWorkspaceArchive({ target: remote, remoteCwd: workspace, operationId: randomUUID() });
-    const root = path.join(scratch, "epoch-root"), runtime = path.join(root, ".paperclip-runtime");
+    const root = path.join(scratch, "epoch-root"), runtime = path.join(root, ".pilibala-runtime");
     const preload = path.join(scratch, "epoch-overlay.cjs"), kill = path.join(scratch, "kill-newer-once");
     await fs.mkdir(runtime, { recursive: true }); await fs.writeFile(path.join(root, "stale.txt"), "retired bytes");
     await fs.writeFile(path.join(runtime, "workspace-ready.json"), JSON.stringify({ preparationIdentity: "f".repeat(64) }));
@@ -471,7 +471,7 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
       else { await restoreRemoteWorkspaceDirectory(current); await fs.writeFile(path.join(root, "saved.txt"), "new provider edits"); }
       release(); const late = await delayed!;
       expect(late.exitCode).not.toBe(0);
-      const fence = path.join(scratch, ".paperclip-runtime", "workspace-restore-locks", createHash("sha256").update(root).digest("hex") + ".fence.json");
+      const fence = path.join(scratch, ".pilibala-runtime", "workspace-restore-locks", createHash("sha256").update(root).digest("hex") + ".fence.json");
       expect(JSON.parse(await fs.readFile(fence, "utf8"))).toMatchObject({ root, epoch: 2, identity: current.restorationIdentity });
       if (outcome === "killed") {
         expect(await fs.readFile(path.join(root, "stale.txt"), "utf8")).toBe("retired bytes");
@@ -501,8 +501,8 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
       const input = { target: remote, remoteCwd: root, archivePath: captured.archivePath, manifestDigest: captured.manifestDigest,
         restorationIdentity: "4".repeat(64), restorationEpoch: 1 };
       await restoreRemoteWorkspaceDirectory(input);
-      const file = record === "receipt" ? path.join(root, ".paperclip-runtime", "workspace-restored.json")
-        : path.join(scratch, ".paperclip-runtime", "workspace-restore-locks", createHash("sha256").update(root).digest("hex") + ".fence.json");
+      const file = record === "receipt" ? path.join(root, ".pilibala-runtime", "workspace-restored.json")
+        : path.join(scratch, ".pilibala-runtime", "workspace-restore-locks", createHash("sha256").update(root).digest("hex") + ".fence.json");
       await fs.writeFile(file, "{");
       await expect(restoreRemoteWorkspaceDirectory(input)).rejects.toThrow(/reason=unsafe_restore_fence$/);
       expect(await fs.readFile(path.join(root, "saved.txt"), "utf8")).toBe("retained saved work");
@@ -514,8 +514,8 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
     await fs.writeFile(path.join(workspace, "saved.txt"), "valid saved work");
     const { remote } = target(), captured = await captureRemoteWorkspaceArchive({ target: remote, remoteCwd: workspace, operationId: randomUUID() });
     try {
-      const root = path.join(scratch, "invalid-input-root"); await fs.mkdir(path.join(root, ".paperclip-runtime"), { recursive: true });
-      await fs.writeFile(path.join(root, ".paperclip-runtime", "workspace-ready.json"), JSON.stringify({ preparationIdentity: "f".repeat(64) }));
+      const root = path.join(scratch, "invalid-input-root"); await fs.mkdir(path.join(root, ".pilibala-runtime"), { recursive: true });
+      await fs.writeFile(path.join(root, ".pilibala-runtime", "workspace-ready.json"), JSON.stringify({ preparationIdentity: "f".repeat(64) }));
       await fs.writeFile(path.join(root, "sentinel.txt"), "untouched before valid restore");
       const input = { target: remote, remoteCwd: root, archivePath: captured.archivePath, manifestDigest: captured.manifestDigest,
         restorationIdentity: "3".repeat(64), restorationEpoch: 1, replaceRetiredRoot: true };
@@ -531,9 +531,9 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
     await fs.writeFile(path.join(workspace, "saved.txt"), "canonical safe work");
     const { remote } = target(), captured = await captureRemoteWorkspaceArchive({ target: remote, remoteCwd: workspace, operationId: randomUUID() });
     try {
-      const root = path.join(scratch, "unsafe-lock"), directory = path.join(scratch, ".paperclip-runtime", "workspace-restore-locks");
-      await fs.mkdir(path.join(root, ".paperclip-runtime"), { recursive: true });
-      await fs.writeFile(path.join(root, ".paperclip-runtime", "workspace-ready.json"), JSON.stringify({ preparationIdentity: "f".repeat(64) }));
+      const root = path.join(scratch, "unsafe-lock"), directory = path.join(scratch, ".pilibala-runtime", "workspace-restore-locks");
+      await fs.mkdir(path.join(root, ".pilibala-runtime"), { recursive: true });
+      await fs.writeFile(path.join(root, ".pilibala-runtime", "workspace-ready.json"), JSON.stringify({ preparationIdentity: "f".repeat(64) }));
       await fs.writeFile(path.join(root, "sentinel.txt"), "must remain");
       const outside = path.join(scratch, "outside-lock");
       await fs.mkdir(path.dirname(directory), { recursive: true, mode: 0o700 });
@@ -684,7 +684,7 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
       expect(completed[0]!.manifestDigest).toBe(completed[1]!.manifestDigest);
       expect(completed[0]!.sha256).toBe(completed[1]!.sha256);
       for (const saved of completed) expect(createHash("sha256").update(await fs.readFile(saved.archivePath)).digest("hex")).toBe(saved.sha256);
-      const directory = path.join(workspace, ".paperclip-runtime", "workspace-snapshots", operationId);
+      const directory = path.join(workspace, ".pilibala-runtime", "workspace-snapshots", operationId);
       expect((await fs.readdir(directory)).filter(name => name.startsWith("capture-"))).toEqual([]);
       await fs.writeFile(path.join(workspace, "saved.txt"), "later work must not replace a completed capture\n");
       const replay = await captureRemoteWorkspaceArchive({ target: remote, remoteCwd: workspace, operationId });
@@ -695,7 +695,7 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
 
   it("recaptures after an abandoned partial attempt without unlinking unknown staging", async () => {
     await fs.writeFile(path.join(workspace, "saved.txt"), "work after interrupted capture\n");
-    const operationId = randomUUID(), directory = path.join(workspace, ".paperclip-runtime", "workspace-snapshots", operationId);
+    const operationId = randomUUID(), directory = path.join(workspace, ".pilibala-runtime", "workspace-snapshots", operationId);
     const abandoned = path.join(directory, "capture-abandoned"); await fs.mkdir(abandoned, { recursive: true });
     const legacy = path.join(directory, "workspace.pcws"), partial = path.join(abandoned, "workspace.pcws");
     await fs.writeFile(legacy, "unknown old in-progress archive\n"); await fs.writeFile(partial, "abandoned partial archive\n");
@@ -714,7 +714,7 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
 
   it("prefers the canonical capture and reads a completed legacy pair without replacing it", async () => {
     await fs.writeFile(path.join(workspace, "saved.txt"), "immutable completed capture\n");
-    const operationId = randomUUID(), directory = path.join(workspace, ".paperclip-runtime", "workspace-snapshots", operationId);
+    const operationId = randomUUID(), directory = path.join(workspace, ".pilibala-runtime", "workspace-snapshots", operationId);
     const { remote } = target();
     const captured = await captureRemoteWorkspaceArchive({ target: remote, remoteCwd: workspace, operationId });
     try {
@@ -745,7 +745,7 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
   });
 
   it("rejects a preexisting canonical capture symlink without touching its target", async () => {
-    const operationId = randomUUID(), directory = path.join(workspace, ".paperclip-runtime", "workspace-snapshots", operationId);
+    const operationId = randomUUID(), directory = path.join(workspace, ".pilibala-runtime", "workspace-snapshots", operationId);
     const outside = path.join(scratch, "outside-capture"); await fs.mkdir(outside); await fs.mkdir(directory, { recursive: true });
     await fs.writeFile(path.join(outside, "workspace.pcws"), "outside archive sentinel\n");
     await fs.symlink(outside, path.join(directory, "captured"));
@@ -768,12 +768,12 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
     expect(await fs.readFile(outside, "utf8")).toBe("outside source bytes\n");
     expect(await fs.readFile(path.join(workspace, "saved.txt"), "utf8")).toBe("retained source bytes\n");
     expect(await fs.readlink(path.join(workspace, "link"))).toBe(`../${privateName}`);
-    const directory = path.join(workspace, ".paperclip-runtime", "workspace-snapshots", operationId);
+    const directory = path.join(workspace, ".pilibala-runtime", "workspace-snapshots", operationId);
     expect(await fs.readdir(directory)).toEqual(["archive.cjs"]);
   });
 
   it.each(["split", "one-shot"] as const)("retains a closed filesystem failure for a missing canonical archive with %s output", async outputMode => {
-    const operationId = randomUUID(), canonical = path.join(workspace, ".paperclip-runtime", "workspace-snapshots", operationId, "captured");
+    const operationId = randomUUID(), canonical = path.join(workspace, ".pilibala-runtime", "workspace-snapshots", operationId, "captured");
     await fs.mkdir(canonical, { recursive: true });
     const receipt = '{"SYNTHETIC_PRIVATE_METADATA":"retained receipt"}';
     await fs.writeFile(path.join(canonical, "receipt.json"), receipt);
@@ -803,7 +803,7 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
     await expect(captureRemoteWorkspaceArchive({ target: remote, remoteCwd: workspace, operationId })).rejects.toThrow(gitOperation);
     expect(await fs.readFile(path.join(workspace, ".git", "MERGE_HEAD"), "utf8")).toBe(mergeHead);
     expect(await fs.readFile(path.join(workspace, "work.txt"), "utf8")).toBe(conflictedWork);
-    const directory = path.join(workspace, ".paperclip-runtime", "workspace-snapshots", operationId);
+    const directory = path.join(workspace, ".pilibala-runtime", "workspace-snapshots", operationId);
     for (const name of ["workspace.pcws", "receipt.json"]) await expect(fs.access(path.join(directory, name))).rejects.toMatchObject({ code: "ENOENT" });
     const failure = { exitCode: 1, stdout: "", stderr: `${gitOperation}\nSYNTHETIC_PRIVATE_PATH_OR_CREDENTIAL`,
       timedOut: false, signal: null, pid: process.pid, startedAt: new Date().toISOString() };
@@ -840,7 +840,7 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
       for (const operation of operations) for (const file of operation.files) {
         if (file.kind === "directory") {
           expect(file.followSymlinks).toBe(false);
-          expect(file.exclude).toContain(".paperclip-runtime");
+          expect(file.exclude).toContain(".pilibala-runtime");
           await fs.cp(file.sourcePath, file.targetPath, { recursive: true, verbatimSymlinks: true,
             filter: source => !file.exclude!.some(excluded => {
               const relative = path.relative(file.sourcePath, source).split(path.sep).join("/");
@@ -892,7 +892,7 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
     const operationId = randomUUID();
     await expect(captureRemoteWorkspaceArchive({ target: remote, remoteCwd: workspace, operationId }))
       .rejects.toThrow(/^remote_workspace_sandbox_disk_full: the sandbox disk is full; free space in the sandbox before saving the workspace$/);
-    const directory = path.join(workspace, ".paperclip-runtime", "workspace-snapshots", operationId);
+    const directory = path.join(workspace, ".pilibala-runtime", "workspace-snapshots", operationId);
     const leftovers = await fs.readdir(directory).catch(() => []);
     expect(leftovers.filter(name => name !== "archive.cjs")).toEqual([]);
     expect(await fs.readFile(path.join(workspace, "result.txt"), "utf8")).toBe("synthetic saved result\n");
@@ -1489,7 +1489,7 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
   it("never follows a preexisting snapshot receipt temporary symlink", async () => {
     await fs.writeFile(path.join(workspace, "result.txt"), "synthetic saved result\n");
     const operationId = randomUUID();
-    const directory = path.join(workspace, ".paperclip-runtime", "workspace-snapshots", operationId);
+    const directory = path.join(workspace, ".pilibala-runtime", "workspace-snapshots", operationId);
     const outside = path.join(scratch, "outside-sentinel");
     await fs.mkdir(directory, { recursive: true });
     await fs.writeFile(outside, "untouched\n");
@@ -1509,11 +1509,11 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
     const globalConfig = path.join(scratch, "synthetic-gitconfig");
     const sentinel = path.join(scratch, "filter-received-credential");
     await git(origin, "config", "--file", globalConfig, "filter.synthetic-probe.smudge",
-      `sh -c 'printf %s "$PAPERCLIP_GIT_TOKEN" > "${sentinel}"; cat'`);
+      `sh -c 'printf %s "$PILIBALA_GIT_TOKEN" > "${sentinel}"; cat'`);
     const calibration = path.join(scratch, "filter-calibration");
     await git(scratch, "clone", "--no-hardlinks", "--", origin, calibration);
     await exec("git", ["-C", calibration, "checkout", "--detach", "HEAD~1"], {
-      env: { PATH: process.env.PATH, GIT_CONFIG_GLOBAL: globalConfig, GIT_CONFIG_NOSYSTEM: "1", PAPERCLIP_GIT_TOKEN: "SYNTHETIC_ONLY" },
+      env: { PATH: process.env.PATH, GIT_CONFIG_GLOBAL: globalConfig, GIT_CONFIG_NOSYSTEM: "1", PILIBALA_GIT_TOKEN: "SYNTHETIC_ONLY" },
     });
     expect(await fs.readFile(sentinel, "utf8")).toBe("SYNTHETIC_ONLY");
     await fs.rm(sentinel);
@@ -1523,7 +1523,7 @@ fs.unlinkSync(${JSON.stringify(kill)});process.kill(process.pid,'SIGKILL');}retu
     await prepareRemoteWorkspaceDirectory({ target: remote, remoteCwd: path.join(workspace, "clone"),
       preparationIdentity: createHash("sha256").update("synthetic-filter-preparation").digest("hex"),
       source: { kind: "git", repoUrl: origin, ref: "HEAD~1" },
-      resolveGitAuth: async () => ({ configArgs: [], env: { PAPERCLIP_GIT_TOKEN: "SYNTHETIC_ONLY" },
+      resolveGitAuth: async () => ({ configArgs: [], env: { PILIBALA_GIT_TOKEN: "SYNTHETIC_ONLY" },
         source: "company_secret", secretName: "SYNTHETIC_FIXTURE" }) });
     expect(await fs.readFile(path.join(workspace, "clone", "source.txt"), "utf8")).toBe("initial synthetic source\n");
     expect(await fs.lstat(sentinel).catch(() => null)).toBeNull();

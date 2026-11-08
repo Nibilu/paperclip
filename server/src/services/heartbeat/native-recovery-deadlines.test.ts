@@ -1,4 +1,4 @@
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { heartbeatService, startTaskDrain, stopTaskDrain } from "../heartbeat.js";
 import type { HeartbeatRecoveryDependencies } from "./recovery.js";

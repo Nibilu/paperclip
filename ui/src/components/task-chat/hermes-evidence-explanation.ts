@@ -1,4 +1,4 @@
-import type { HermesRunEvidence } from "@paperclipai/shared";
+import type { HermesRunEvidence } from "@pilibalaai/shared";
 
 /**
  * Operator-facing projection of Hermes Gateway run evidence (SPEC-implementation

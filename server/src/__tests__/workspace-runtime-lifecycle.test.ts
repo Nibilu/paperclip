@@ -29,11 +29,11 @@ async function expectListenerClosed(port: number) {
 }
 
 it("retires an ephemeral runtime and preserves useful files for the same owner's next use", async () => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-lifecycle-"));
-  const previousHome = process.env.PAPERCLIP_HOME;
-  const previousInstance = process.env.PAPERCLIP_INSTANCE_ID;
-  process.env.PAPERCLIP_HOME = path.join(root, "home");
-  process.env.PAPERCLIP_INSTANCE_ID = randomUUID();
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-runtime-lifecycle-"));
+  const previousHome = process.env.PILIBALA_HOME;
+  const previousInstance = process.env.PILIBALA_INSTANCE_ID;
+  process.env.PILIBALA_HOME = path.join(root, "home");
+  process.env.PILIBALA_INSTANCE_ID = randomUUID();
   const cwd = path.join(root, "workspace");
   await fs.mkdir(cwd);
   await fs.writeFile(path.join(cwd, "retained.txt"), "useful workspace result");
@@ -102,10 +102,10 @@ http.createServer((req, res) => {
         await stopRuntimeServicesForExecutionWorkspace({ executionWorkspaceId: input.executionWorkspaceId, workspaceCwd: cwd });
       }
     } finally {
-      if (previousHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousHome;
-      if (previousInstance === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = previousInstance;
+      if (previousHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = previousHome;
+      if (previousInstance === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+      else process.env.PILIBALA_INSTANCE_ID = previousInstance;
       await fs.rm(root, { recursive: true, force: true });
     }
   }

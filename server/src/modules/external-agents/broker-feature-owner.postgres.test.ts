@@ -5,7 +5,7 @@ import {
   agents, applyPendingMigrations, authUsers, companies, companyMemberships, createDb,
   dotAgentBindings, dotRunnerAssignments, heartbeatRuns, issues, museAgentBindings,
   museRunnerAssignments, type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { resolveExternalTestDatabaseUrl } from "../../lib/dedicated-test-database-url.js";
 import { accessService } from "../../services/access.js";
 import * as settings from "../../services/instance-settings.js";
@@ -13,7 +13,7 @@ import * as admission from "./admission.js";
 import { dotRunnerBroker } from "./dot.js";
 import { museExternalAgents } from "./muse.js";
 
-const url = resolveExternalTestDatabaseUrl("PAPERCLIP_BROKER_FEATURE_OWNER_TEST_DATABASE_URL");
+const url = resolveExternalTestDatabaseUrl("PILIBALA_BROKER_FEATURE_OWNER_TEST_DATABASE_URL");
 const providers = ["openai_dot", "grok_bot", "muse"] as const;
 
 describe.skipIf(!url)("external broker forwards its admission owner to feature policy", () => {
@@ -46,15 +46,15 @@ describe.skipIf(!url)("external broker forwards its admission owner to feature p
     });
     await accessService(db).setPrincipalPermission(company.id, "user", operatorId, "agents:create", true, operatorId);
     const [agent] = await db.insert(agents).values({
-      companyId: company.id, name: provider, adapterType: "paperclip_runner", status: "active",
+      companyId: company.id, name: provider, adapterType: "pilibala_runner", status: "active",
       adapterConfig: { provider, allowUnmeteredProvider: true },
     }).returning();
     const broker = provider === "muse"
-      ? museExternalAgents(db, { publicOrigin: "https://paperclip.example" })
+      ? museExternalAgents(db, { publicOrigin: "https://pilibala.example" })
       : dotRunnerBroker(db);
     const pairingInput = { companyId: company.id, agentId: agent.id, operatorId };
     const pairing = provider === "muse"
-      ? await museExternalAgents(db, { publicOrigin: "https://paperclip.example" }).createPairing(pairingInput)
+      ? await museExternalAgents(db, { publicOrigin: "https://pilibala.example" }).createPairing(pairingInput)
       : await dotRunnerBroker(db).createPairing({ ...pairingInput, provider });
     const [issue] = await db.insert(issues).values({ companyId: company.id, title: "Denied broker dispatch" }).returning();
     const [run] = await db.insert(heartbeatRuns).values({

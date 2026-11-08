@@ -17,8 +17,8 @@ import { mkdtemp, realpath, rm, access, readFile, writeFile, stat } from "node:f
 import os from "node:os";
 import path from "node:path";
 import { and, eq, sql } from "drizzle-orm";
-import { createDb, type Db, companies, agents, agentTaskSessions, heartbeatRuns, companyMemberships, connectionGrants, toolApplications, connectionGrantDelegations, connectionGrantMembers, toolConnections, toolConnectionInstalls, aiConnectionDefaults, aiProviderDefaults, adapterAuthSessions, environments, plugins, issues, issueThreadInteractions, issueRecoveryActions, connectionIntentDeliveries, agentWakeupRequests, companySecrets, companySecretVersions, userSecretDefinitions, principalPermissionGrants } from "@paperclipai/db";
-import { startEmbeddedPostgresTestDatabase } from "@paperclipai/db/test-embedded-postgres";
+import { createDb, type Db, companies, agents, agentTaskSessions, heartbeatRuns, companyMemberships, connectionGrants, toolApplications, connectionGrantDelegations, connectionGrantMembers, toolConnections, toolConnectionInstalls, aiConnectionDefaults, aiProviderDefaults, adapterAuthSessions, environments, plugins, issues, issueThreadInteractions, issueRecoveryActions, connectionIntentDeliveries, agentWakeupRequests, companySecrets, companySecretVersions, userSecretDefinitions, principalPermissionGrants } from "@pilibalaai/db";
+import { startEmbeddedPostgresTestDatabase } from "@pilibalaai/db/test-embedded-postgres";
 import { fetchCompanyQuotaWindows } from "../services/quota-windows.js";
 import { quotaCredentialRecoveryPath, quotaCredentialRecovery, quotaCredentialHash } from "../services/quota-credential-recovery.js";
 import { reconcileRetainedAiCleanup, retainAiCredentialCleanup } from "../services/retained-ai-credential-cleanup.js";
@@ -26,19 +26,19 @@ import { readAiConnectionConfigurationFailure } from "../services/ai-connection-
 import { aiConnectionService } from "../services/ai-connections.js";
 import { DELIVERY_QUEUES, subscribeDeliveryWork } from "../services/delivery-work-notifications.js";
 import { syncConnectionCredentialBindings } from "../services/connection-credential-bindings.js";
-import * as codexAdapter from "@paperclipai/adapter-codex-local/server";
-import { WORKSPACE_RESTORE_LOCK_TIMEOUT_CODE } from "@paperclipai/adapter-utils/workspace-restore-merge";
-import * as executionTarget from "@paperclipai/adapter-utils/execution-target";
-import * as runnerProbe from "../vendor/paperclip-runner/index.js";
+import * as codexAdapter from "@pilibalaai/adapter-codex-local/server";
+import { WORKSPACE_RESTORE_LOCK_TIMEOUT_CODE } from "@pilibalaai/adapter-utils/workspace-restore-merge";
+import * as executionTarget from "@pilibalaai/adapter-utils/execution-target";
+import * as runnerProbe from "../vendor/pilibala-runner/index.js";
 import * as nativeCodexRunner from "../services/native-runtime/native-codex-runner.js";
 import { testNativeRunnerAuthentication } from "../services/native-runtime/setup-readiness.js";
 import { prepareManagedAiRuntime, withManagedAiProbe, assertManagedAiProjectAuth, isAiConnectionBusy, isAiConnectionIncompatible, managedAiSessionFingerprintConfig } from "../services/ai-connection-runtime.js";
-import { execute as executeGemini, testEnvironment as testGeminiEnvironment } from "@paperclipai/adapter-gemini-local/server";
+import { execute as executeGemini, testEnvironment as testGeminiEnvironment } from "@pilibalaai/adapter-gemini-local/server";
 import { toolAccessService } from "../services/tool-access.js";
 import { secretService } from "../services/secrets.js";
 import { resolveExecutionRunAdapterConfig } from "../services/heartbeat.js";
-import { aiConnectionBindingSchema, connectionPurposeTransportSchema, isAiConnectionCompatible } from "@paperclipai/shared";
-import { openRouterClaudeHeaders } from "@paperclipai/shared/openrouter-attribution";
+import { aiConnectionBindingSchema, connectionPurposeTransportSchema, isAiConnectionCompatible } from "@pilibalaai/shared";
+import { openRouterClaudeHeaders } from "@pilibalaai/shared/openrouter-attribution";
 import { createServer } from "node:http";
 import { once } from "node:events";
 import express from "express";
@@ -65,10 +65,10 @@ const input = { companyId, agentId, adapterType: "claude_local", binding };
 const create = (userId: string, name: string, ownership: "personal" | "shared" = "personal") => service.save(companyId, userId, { provider: "anthropic", method: "api_key", ownership, name, apiKey: "fixture", agentIds: [], allAgents: true }, `fixture-${name}`);
 
 beforeAll(async () => {
-  home = await realpath(await mkdtemp(path.join(os.tmpdir(), "paperclip-ai-tests-")));
-  vi.stubEnv("PAPERCLIP_HOME", home);
-  vi.stubEnv("PAPERCLIP_INSTANCE_ID", "ai-connection-fixture");
-  database = await startEmbeddedPostgresTestDatabase("paperclip-ai-db-");
+  home = await realpath(await mkdtemp(path.join(os.tmpdir(), "pilibala-ai-tests-")));
+  vi.stubEnv("PILIBALA_HOME", home);
+  vi.stubEnv("PILIBALA_INSTANCE_ID", "ai-connection-fixture");
+  database = await startEmbeddedPostgresTestDatabase("pilibala-ai-db-");
   db = createDb(database.connectionString);
   service = aiConnectionService(db);
   await db.insert(companies).values([{ id: companyId, name: "AI connection tests", issuePrefix: "AIT" }, { id: otherCompanyId, name: "Other", issuePrefix: "AIO" }]);
@@ -94,15 +94,15 @@ describe("managed AI connections", () => {
     const selected = routed
       ? { provider, method: "api_key" as const, mode: "delegated" as const, ...account }
       : { provider, method: "api_key" as const, mode: "responsible_user" as const };
-    const piInput = { companyId, agentId, responsibleUserId: owner, adapterType: "paperclip_runner", binding: selected,
+    const piInput = { companyId, agentId, responsibleUserId: owner, adapterType: "pilibala_runner", binding: selected,
       config: { provider: "acpx", acpxAgent: "pi", model: `${provider}/provider-model`, piThinkingLevel: "low", env: { OPENAI_API_KEY: "stale-openai", ANTHROPIC_API_KEY: "stale-anthropic" } } };
     const runtime = await prepareManagedAiRuntime(db, piInput);
     try {
-      expect(runtime.config).toMatchObject({ provider: "acpx", acpxAgent: "pi", model: piInput.config.model, env: { OPENCODE_CONFIG_CONTENT: "", PAPERCLIP_PI_PROVIDERS: "" } });
+      expect(runtime.config).toMatchObject({ provider: "acpx", acpxAgent: "pi", model: piInput.config.model, env: { OPENCODE_CONFIG_CONTENT: "", PILIBALA_PI_PROVIDERS: "" } });
       for (const key of ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY", "CODEX_API_KEY"]) expect(runtime.config.env[key]).toBe(key === envKey ? token : "");
       expect(runtime.attribution).toMatchObject({ connectionId: account.connectionId, grantId: account.grantId, provider });
     } finally { await runtime.cleanup(); }
-    await expect(prepareManagedAiRuntime(db, { ...piInput, config: { ...piInput.config, env: { PAPERCLIP_PI_PROVIDERS: "{}" } } })).rejects.toThrow("routing is incompatible");
+    await expect(prepareManagedAiRuntime(db, { ...piInput, config: { ...piInput.config, env: { PILIBALA_PI_PROVIDERS: "{}" } } })).rejects.toThrow("routing is incompatible");
   });
 
   it.each([200, 401])("reverifies native Pi OpenRouter keys without requiring the Legacy Pi CLI (HTTP %s)", async status => {
@@ -111,14 +111,14 @@ describe("managed AI connections", () => {
     const token = `fixture-pi-adoption-${status}`;
     const account = await service.save(companyId, owner, { provider: "openrouter", method: "api_key", ownership: "personal", name: owner, apiKey: token, allAgents: true, agentIds: [], routing: { kind: "openrouter", protocol: "chat", auth: "bearer", models: [] } }, token);
     const selected = { provider: "openrouter", method: "api_key", mode: "delegated", ...account } as const;
-    const runtime = await prepareManagedAiRuntime(db, { companyId, agentId, responsibleUserId: owner, adapterType: "paperclip_runner", binding: selected, config: { provider: "acpx", acpxAgent: "pi", model: "openrouter/anthropic/claude-sonnet-4.5" } });
+    const runtime = await prepareManagedAiRuntime(db, { companyId, agentId, responsibleUserId: owner, adapterType: "pilibala_runner", binding: selected, config: { provider: "acpx", acpxAgent: "pi", model: "openrouter/anthropic/claude-sonnet-4.5" } });
     const { requireServerAdapter } = await import("../adapters/index.js");
     const { agentEnvironmentTestService } = await import("../services/agent-environment-test.js");
-    const native = vi.spyOn(requireServerAdapter("paperclip_runner"), "testEnvironment").mockResolvedValue({ adapterType: "paperclip_runner", status: "pass", testedAt: new Date().toISOString(), checks: [{ code: "acpx_runtime_ready", level: "info", message: "Pinned Pi runtime verified" }] });
+    const native = vi.spyOn(requireServerAdapter("pilibala_runner"), "testEnvironment").mockResolvedValue({ adapterType: "pilibala_runner", status: "pass", testedAt: new Date().toISOString(), checks: [{ code: "acpx_runtime_ready", level: "info", message: "Pinned Pi runtime verified" }] });
     const legacy = vi.spyOn(requireServerAdapter("pi_local"), "testEnvironment").mockRejectedValue(new Error("Legacy Pi CLI must not be required"));
     const request = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ data: {} }), { status }));
     try {
-      const result = await agentEnvironmentTestService(db).testManagedEnvironment("paperclip_runner", { companyId, adapterType: "paperclip_runner", config: runtime.config }, selected, runtime, agentId);
+      const result = await agentEnvironmentTestService(db).testManagedEnvironment("pilibala_runner", { companyId, adapterType: "pilibala_runner", config: runtime.config }, selected, runtime, agentId);
       expect(result.status).toBe(status === 200 ? "pass" : "fail");
       expect(result.checks).toContainEqual(expect.objectContaining({ code: status === 200 ? "ai_connection_api_key_reverified" : "ai_connection_api_key_rejected" }));
       expect(legacy).not.toHaveBeenCalled();
@@ -147,7 +147,7 @@ describe("managed AI connections", () => {
     app.use("/api", agentRoutes(db)); app.use(errorHandler);
     try {
       const response = await request(app).post(`/api/companies/${companyId}/agents`).send({ name: "Plugin bootstrap", role: "general",
-        adapterType: "paperclip_runner", adapterConfig: { provider: "acpx", acpxAgent: "copilot", model: "gpt-5.6-luna" },
+        adapterType: "pilibala_runner", adapterConfig: { provider: "acpx", acpxAgent: "copilot", model: "gpt-5.6-luna" },
         defaultEnvironmentId: environment.id, runtimeConfig: { aiConnection: { provider: "github", method: "api_key", mode: "responsible_user" } } });
       expect(response.status, JSON.stringify(response.body)).toBe(201);
       expect(response.body.defaultEnvironmentId).toBe(environment.id);
@@ -162,7 +162,7 @@ describe("managed AI connections", () => {
     const config = { provider: "acpx", acpxAgent: "copilot", model: "gpt-5.6-luna" };
     const aiConnection = { provider: "github", method: "api_key", mode: "responsible_user" } as const;
     await db.insert(companyMemberships).values({ companyId, principalId: owner, principalType: "user", status: "active", membershipRole: "member" });
-    await db.insert(agents).values({ id, companyId, name: "Kubernetes fixture", adapterType: "paperclip_runner", adapterConfig: config, runtimeConfig: { aiConnection } });
+    await db.insert(agents).values({ id, companyId, name: "Kubernetes fixture", adapterType: "pilibala_runner", adapterConfig: config, runtimeConfig: { aiConnection } });
     const account = await service.save(companyId, owner, { provider: "github", method: "api_key", ownership: "personal", name: "Kubernetes fixture", apiKey: "github_pat_fixture_kubernetes", agentIds: [id], allAgents: false }, "github_pat_fixture_kubernetes");
     await service.setDefault(companyId, owner, account.grantId);
     const [company] = await db.select().from(companies).where(eq(companies.id, companyId));
@@ -181,7 +181,7 @@ describe("managed AI connections", () => {
       const changedConfig = { ...config, model: "prospective-model" };
       const response = action === "edit"
         ? await request(app).patch(`/api/agents/${id}`).send({ adapterConfig: changedConfig })
-        : await request(app).post(`/api/companies/${companyId}/${action === "hire" ? "agent-hires" : "agents"}`).send({ name: "Forced Kubernetes", role: "general", adapterType: "paperclip_runner", adapterConfig: changedConfig, runtimeConfig: { aiConnection } });
+        : await request(app).post(`/api/companies/${companyId}/${action === "hire" ? "agent-hires" : "agents"}`).send({ name: "Forced Kubernetes", role: "general", adapterType: "pilibala_runner", adapterConfig: changedConfig, runtimeConfig: { aiConnection } });
       expect(response.status, JSON.stringify(response.body)).toBe(422);
       expect(response.body.details.code).toBe("copilot_environment_unavailable");
       expect(probe).not.toHaveBeenCalled();
@@ -200,7 +200,7 @@ describe("managed AI connections", () => {
     const savedConfig = { provider: "acpx", acpxAgent: "copilot", model: "gpt-5.6-luna" };
     const aiConnection = { provider: "github", method: "api_key", mode: "responsible_user" } as const;
     await db.insert(companyMemberships).values({ companyId, principalId: owner, principalType: "user", status: "active", membershipRole: "member" });
-    await db.insert(agents).values({ id, companyId, name: `Copilot ${action} fixture`, adapterType: "paperclip_runner", adapterConfig: savedConfig, runtimeConfig: connectionProvided ? { aiConnection } : {} });
+    await db.insert(agents).values({ id, companyId, name: `Copilot ${action} fixture`, adapterType: "pilibala_runner", adapterConfig: savedConfig, runtimeConfig: connectionProvided ? { aiConnection } : {} });
     const token = `github_pat_fixture_model_${action}`;
     const account = await service.save(companyId, owner, { provider: "github", method: "api_key", ownership: "personal", name: `Model ${action}`, apiKey: token, agentIds: [id], allAgents: false }, token);
     await service.setDefault(companyId, owner, account.grantId);
@@ -215,7 +215,7 @@ describe("managed AI connections", () => {
     try {
       const response = action === "edit"
         ? await request(app).patch(`/api/agents/${id}`).send({ adapterConfig: config })
-        : await request(app).post(`/api/companies/${companyId}/${action === "hire" ? "agent-hires" : "agents"}`).send({ name: `Unavailable ${action}`, role: "general", adapterType: "paperclip_runner", adapterConfig: config, ...(connectionProvided ? { runtimeConfig: { aiConnection } } : {}) });
+        : await request(app).post(`/api/companies/${companyId}/${action === "hire" ? "agent-hires" : "agents"}`).send({ name: `Unavailable ${action}`, role: "general", adapterType: "pilibala_runner", adapterConfig: config, ...(connectionProvided ? { runtimeConfig: { aiConnection } } : {}) });
       expect(response.status, JSON.stringify(response.body)).toBe(422);
       expect(response.body).toMatchObject({ error: "The selected Copilot model is unavailable for this account." });
       expect(probe).toHaveBeenCalledExactlyOnceWith(token, null, "unavailable-copilot-model");
@@ -234,7 +234,7 @@ describe("managed AI connections", () => {
     const aiConnection = { provider: "github", method: "api_key", mode: "responsible_user" } as const;
     const config = { provider: "acpx", acpxAgent: "copilot", model: "gpt-5.6-luna" };
     await db.insert(companyMemberships).values({ companyId, principalId: owner, principalType: "user", status: "active", membershipRole: "member" });
-    await db.insert(agents).values({ id, companyId, name: "Copilot available model", adapterType: "paperclip_runner", adapterConfig: { ...config, model: "previous-model" }, runtimeConfig: { aiConnection } });
+    await db.insert(agents).values({ id, companyId, name: "Copilot available model", adapterType: "pilibala_runner", adapterConfig: { ...config, model: "previous-model" }, runtimeConfig: { aiConnection } });
     const token = "github_pat_fixture_model_valid";
     const account = await service.save(companyId, owner, { provider: "github", method: "api_key", ownership: "personal", name: "Valid model", apiKey: token, agentIds: [id], allAgents: false }, token);
     await service.setDefault(companyId, owner, account.grantId);
@@ -284,7 +284,7 @@ describe("managed AI connections", () => {
     app.use((req, _res, next) => { req.actor = { type: "board", source: "local_implicit", userId: "alice", companyIds: [companyId] }; next(); });
     app.use("/api", agentRoutes(db, { pluginWorkerManager }));
     try {
-      const response = await request(app).get(`/api/companies/${companyId}/adapters/paperclip_runner/models`).query({ provider: "acpx", acpxAgent: "copilot", environmentId: environment.id, agentId, aiConnection: JSON.stringify({ provider: "github", method: "api_key", mode: "responsible_user" }) });
+      const response = await request(app).get(`/api/companies/${companyId}/adapters/pilibala_runner/models`).query({ provider: "acpx", acpxAgent: "copilot", environmentId: environment.id, agentId, aiConnection: JSON.stringify({ provider: "github", method: "api_key", mode: "responsible_user" }) });
       expect(response.status).toBe(200);
       expect(response.headers["cache-control"]).toBe("no-store");
       expect(response.body).toEqual([{ id: "gpt-5.6-luna", label: "GPT" }]);
@@ -306,7 +306,7 @@ describe("managed AI connections", () => {
     const app = express(); app.use(express.json());
     app.use((req, _res, next) => { req.actor = { type: "board", source: "session", userId: String(req.headers["x-test-user"] ?? audience), companyIds: [companyId], memberships: [{ companyId, membershipRole: "member", status: "active" }] }; next(); });
     app.use("/api", agentRoutes(db)); app.use(errorHandler);
-    const url = `/api/companies/${companyId}/adapters/paperclip_runner/models`;
+    const url = `/api/companies/${companyId}/adapters/pilibala_runner/models`;
     const query = { provider: "acpx", acpxAgent: "copilot", aiConnection: JSON.stringify(binding) };
     try {
       const denied = await request(app).get(url).query(query);
@@ -347,7 +347,7 @@ describe("managed AI connections", () => {
     const account = await service.save(companyId, owner, { provider: "github", method: "api_key", ownership: "personal", name: "Copilot", apiKey: token, agentIds: [agentId], allAgents: false }, token);
     const selectedBinding = { provider: "github", method: "api_key", mode: "responsible_user" } as const;
     const config = { provider: "acpx", acpxAgent: "copilot", model: "gpt-5.6-luna", env: { COPILOT_GITHUB_TOKEN: "ambient-never-use", GH_TOKEN: "project-never-use" } };
-    const runInput = { companyId, agentId, responsibleUserId: owner, adapterType: "paperclip_runner", binding: selectedBinding, config };
+    const runInput = { companyId, agentId, responsibleUserId: owner, adapterType: "pilibala_runner", binding: selectedBinding, config };
     const selected = await service.select({ ...runInput, userId: owner, runnerProvider: "acpx", acpxAgent: "copilot", model: config.model });
     expect(await service.credential(selected)).toBe(token);
     expect(JSON.stringify(await service.list(companyId, owner))).not.toContain(token);
@@ -596,7 +596,7 @@ describe("managed AI connections", () => {
     const [row] = await service.quotaAccounts(companyId, owner);
     const [before] = await db.select({ adapterType: agents.adapterType, adapterConfig: agents.adapterConfig }).from(agents).where(eq(agents.id, agentId));
     const runnerBinary = path.join(home, "fixture-runnerd");
-    const resolveBinary = vi.spyOn(nativeCodexRunner, "resolvePaperclipRunnerBinary").mockReturnValue(runnerBinary);
+    const resolveBinary = vi.spyOn(nativeCodexRunner, "resolvePilibalaRunnerBinary").mockReturnValue(runnerBinary);
     const probe = vi.spyOn(runnerProbe, "probeNativeRunnerEnvironment").mockImplementation(async input => {
       expect(input.transportOptions?.runnerBinary).toBe(runnerBinary);
       expect(input.transportOptions?.sourceCodexHome).toContain("/provider");
@@ -611,10 +611,10 @@ describe("managed AI connections", () => {
     });
     let managedHome: string | undefined;
     try {
-      const result = await withManagedAiProbe(db, { companyId, agentId, responsibleUserId: owner, adapterType: "paperclip_runner",
+      const result = await withManagedAiProbe(db, { companyId, agentId, responsibleUserId: owner, adapterType: "pilibala_runner",
         binding: { provider: "openai", method: "subscription", mode: "responsible_user" }, config: { provider: "codex" } }, async runtime => {
         managedHome = runtime.home;
-        return testNativeRunnerAuthentication({ companyId, adapterType: "paperclip_runner", config: runtime.config, managedAiCredentialHome: path.join(runtime.home!, "provider") }, "codex", "gpt-5.6-sol");
+        return testNativeRunnerAuthentication({ companyId, adapterType: "pilibala_runner", config: runtime.config, managedAiCredentialHome: path.join(runtime.home!, "provider") }, "codex", "gpt-5.6-sol");
       });
       expect(result.status, JSON.stringify(result)).toBe("pass"); expect(probe).toHaveBeenCalledOnce();
       expect(await service.credential(row)).toBe(auth("11"));
@@ -630,7 +630,7 @@ describe("managed AI connections", () => {
     await db.insert(companyMemberships).values({ companyId, principalId: owner, principalType: "user", status: "active", membershipRole: "member" });
     await service.save(companyId, owner, { provider: "openai", method: "subscription", ownership: "personal", name: owner, loginSessionId: "fixture", agentIds: [], allAgents: true }, auth("10"));
     const [row] = await service.quotaAccounts(companyId, owner);
-    const input = { companyId, agentId, responsibleUserId: owner, adapterType: "paperclip_runner",
+    const input = { companyId, agentId, responsibleUserId: owner, adapterType: "pilibala_runner",
       binding: { provider: "openai", method: "subscription", mode: "responsible_user" } as const, config: { provider: "codex" } };
     let rejectRetirement!: (error: Error) => void, physical = false;
     const retired = new Promise<void>((_resolve, reject) => { rejectRetirement = reject; });
@@ -642,7 +642,7 @@ describe("managed AI connections", () => {
       await original.onCodexCredentialRefresh!(path.join(original.runtimeDirectory, "codex-home", "auth.json"));
       await original.onCleanupConfirmed!();
     });
-    const binary = vi.spyOn(nativeCodexRunner, "resolvePaperclipRunnerBinary").mockReturnValue(path.join(home, "fixture-runnerd"));
+    const binary = vi.spyOn(nativeCodexRunner, "resolvePilibalaRunnerBinary").mockReturnValue(path.join(home, "fixture-runnerd"));
     const probe = vi.spyOn(runnerProbe, "probeNativeRunnerEnvironment").mockImplementationOnce(async options => {
       original = options; directories.push(options.runtimeDirectory);
       await fs.mkdir(path.join(options.runtimeDirectory, "codex-home"), { mode: 0o700 });
@@ -656,7 +656,7 @@ describe("managed AI connections", () => {
     });
     const invoke = () => withManagedAiProbe(db, input, runtime => {
       retainedHome ??= runtime.home;
-      return testNativeRunnerAuthentication({ companyId, adapterType: "paperclip_runner", config: runtime.config,
+      return testNativeRunnerAuthentication({ companyId, adapterType: "pilibala_runner", config: runtime.config,
         managedAiCredentialHome: path.join(runtime.home!, "provider") }, "codex", "gpt-5.6-sol");
     });
     try {
@@ -1369,7 +1369,7 @@ describe("managed AI connections", () => {
       scope, entries: [{ name: "history.json", bytes: Buffer.from("previous-task-private-transcript").toString("base64") }],
     }) });
     await db.insert(agentTaskSessions).values({ companyId, agentId, adapterType: "grok_local", taskKey,
-      sessionParamsJson: { sessionId: "history", paperclipGrokHistory: { scope, material: retained.material } } });
+      sessionParamsJson: { sessionId: "history", pilibalaGrokHistory: { scope, material: retained.material } } });
     const resumed = await prepareManagedAiRuntime(db, runInput);
     const peer = await prepareManagedAiRuntime(db, { ...runInput, agentId: randomUUID() });
     try {
@@ -1395,7 +1395,7 @@ describe("managed AI connections", () => {
     const saved = await service.save(companyId, owner, { provider: "google", method: "api_key", ownership: "personal",
       name: "Antigravity Google AI", apiKey: token, allAgents: true, agentIds: [] }, token);
     await service.setDefault(companyId, owner, saved.grantId);
-    const input = { companyId, agentId, responsibleUserId: owner, adapterType: "paperclip_runner",
+    const input = { companyId, agentId, responsibleUserId: owner, adapterType: "pilibala_runner",
       binding: { provider: "google", method: "api_key", mode: "responsible_user" } as const,
       config: { provider: "acpx", acpxAgent: "antigravity", model: "exact-antigravity-model", env: {
         GEMINI_API_KEY: "ambient-key", GOOGLE_API_KEY: "ambient-other-key", GEMINI_HOME: "/ambient/home",
@@ -1445,7 +1445,7 @@ console.log(JSON.stringify({ type: "result", subtype: "success", result: "hello"
     const runtime = await prepareManagedAiRuntime(db, {
       companyId, agentId, responsibleUserId: "alice", adapterType: "gemini_local",
       binding: { provider: "google", method: "api_key", mode: "responsible_user" },
-      config: { engine: "cli", command, cwd: root, promptTemplate: "Say hello.", paperclipRuntimeSkills: [], env: { GEMINI_API_KEY: "ambient-google-key" } },
+      config: { engine: "cli", command, cwd: root, promptTemplate: "Say hello.", pilibalaRuntimeSkills: [], env: { GEMINI_API_KEY: "ambient-google-key" } },
     });
     try {
       expect(runtime.attribution.grantId).toBe(saved.grantId);
@@ -1496,7 +1496,7 @@ console.log(JSON.stringify({ type: "result", subtype: "success", result: "hello"
     });
     expect(selected.grant.id).toBe(saved.grantId);
     const selectedCopilot = await service.select({
-      companyId, agentId, userId: "migration-copilot", adapterType: "paperclip_runner",
+      companyId, agentId, userId: "migration-copilot", adapterType: "pilibala_runner",
       runnerProvider: "acpx", acpxAgent: "copilot", model: "gpt-5.6-luna",
       binding: { provider: "github", method: "api_key", mode: "responsible_user" },
     });
@@ -1603,7 +1603,7 @@ console.log(JSON.stringify({ type: "result", subtype: "success", result: "hello"
       await expect(service.probeUsage(companyId, "bob", account.connectionId)).rejects.toThrow("not found");
       expect(fetchSpy).not.toHaveBeenCalled();
       await tools.replaceConnectionGrantMembers(account.connectionId, account.grantId, ["bob"], { actorType: "user", actorId: "alice" });
-      for (const config of [{ adapterType: "claude_local" }, { adapterType: "paperclip_runner", runnerProvider: "acpx", acpxAgent: "claude" }]) {
+      for (const config of [{ adapterType: "claude_local" }, { adapterType: "pilibala_runner", runnerProvider: "acpx", acpxAgent: "claude" }]) {
         const row = await service.select({ companyId, userId: "bob", agentId, binding: selected, ...config });
         expect(await service.probeUsage(companyId, "bob", row.connection.id, row.grant.id)).toMatchObject({ status: "ok", overage: { available: false }, limits: [{ limitReached: true }, { allowed: false }] });
       }
@@ -1626,11 +1626,11 @@ console.log(JSON.stringify({ type: "result", subtype: "success", result: "hello"
     await expect(service.setDefault(companyId, "alice", saved.grantId)).rejects.toThrow("explicit connection");
     await expect(service.select({ ...input, binding: selected, userId: "bob", adapterType: "codex_local", model: "openai/gpt-5.4" })).rejects.toThrow("not shared");
     await expect(service.select({ ...input, companyId: otherCompanyId, binding: selected, userId: "alice", adapterType: "codex_local" })).rejects.toThrow();
-    for (const adapterType of ["codex_local", "paperclip_runner"]) {
+    for (const adapterType of ["codex_local", "pilibala_runner"]) {
       const runtime = await prepareManagedAiRuntime(db, { companyId, agentId, responsibleUserId: "alice", binding: selected, adapterType, config: { provider: "codex", model: "openai/gpt-5.4", env: { OPENAI_API_KEY: "ambient" } } });
       try {
         expect(runtime.config.env.OPENAI_API_KEY).toBe("");
-        expect(runtime.config.env.PAPERCLIP_AI_PROVIDER_KEY).toBe("fixture-routed-credential");
+        expect(runtime.config.env.PILIBALA_AI_PROVIDER_KEY).toBe("fixture-routed-credential");
         const toml = await readFile(path.join(String(runtime.config.env.CODEX_HOME), "config.toml"), "utf8");
         expect(toml).toContain('base_url = "https://openrouter.ai/api/v1"');
         expect(toml).toContain('wire_api = "responses"');
@@ -1651,7 +1651,7 @@ console.log(JSON.stringify({ type: "result", subtype: "success", result: "hello"
     const inherited = process.env.ANTHROPIC_CUSTOM_HEADERS;
     process.env.ANTHROPIC_CUSTOM_HEADERS = "X-Gateway-Route: inherited-route";
     try {
-      for (const adapterType of ["claude_local", "paperclip_runner"]) {
+      for (const adapterType of ["claude_local", "pilibala_runner"]) {
         for (const configured of [customHeaders, reference, undefined]) {
           const runtime = await prepareManagedAiRuntime(db, { companyId, agentId, responsibleUserId: "alice", binding: selected, adapterType,
             config: { provider: "acpx", acpxAgent: "claude", env: configured === undefined ? {} : { ANTHROPIC_CUSTOM_HEADERS: configured } } });
@@ -1757,7 +1757,7 @@ console.log(JSON.stringify({ type: "result", subtype: "success", result: "hello"
     const id = randomUUID();
     const issueId = randomUUID();
     const runId = randomUUID();
-    await db.insert(agents).values({ id, companyId, name: "Legacy Codex", adapterType: "paperclip_runner", adapterConfig: { provider: "codex" } });
+    await db.insert(agents).values({ id, companyId, name: "Legacy Codex", adapterType: "pilibala_runner", adapterConfig: { provider: "codex" } });
     await db.insert(issues).values({ id: issueId, companyId, title: "Legacy auth", status: "in_progress", assigneeAgentId: id });
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId: id, nativeIssueId: issueId, status: "failed", errorCode: "acpx_auth_required", responsibleUserId: "alice", contextSnapshot: {} });
     const intents = connectionIntentService(db);
@@ -2424,9 +2424,9 @@ console.log(JSON.stringify({ type: "result", subtype: "success", result: "hello"
     expect(connectionPurposeTransportSchema.safeParse({ connectionPurpose: "tool", transport: "voice", config: { provider: "speko" } }).success).toBe(false);
     expect(aiConnectionBindingSchema.safeParse({ provider: "anthropic", mode: "responsible_user" }).success).toBe(false);
     expect(aiConnectionBindingSchema.safeParse({ provider: "anthropic", mode: "shared", connectionId: randomUUID(), grantId: randomUUID() }).success).toBe(false);
-    expect(isAiConnectionCompatible({ provider: "anthropic", method: "api_key", mode: "responsible_user" }, "paperclip_runner", "same-model", "acpx", "claude")).toBe(true);
-    expect(isAiConnectionCompatible(binding, "paperclip_runner", "same-model", "acpx", "claude")).toBe(true);
-    expect(isAiConnectionCompatible(binding, "paperclip_runner", "same-model", "acpx", "codex")).toBe(false);
+    expect(isAiConnectionCompatible({ provider: "anthropic", method: "api_key", mode: "responsible_user" }, "pilibala_runner", "same-model", "acpx", "claude")).toBe(true);
+    expect(isAiConnectionCompatible(binding, "pilibala_runner", "same-model", "acpx", "claude")).toBe(true);
+    expect(isAiConnectionCompatible(binding, "pilibala_runner", "same-model", "acpx", "codex")).toBe(false);
     expect(isAiConnectionCompatible({ provider: "openrouter", method: "api_key" }, "opencode_local", "anthropic/model")).toBe(false);
   });
   it("does not let a forged delegation bypass human access or accept an expired subscription attempt", async () => {
@@ -2716,7 +2716,7 @@ console.log(JSON.stringify({ type: "result", subtype: "success", result: "hello"
     const [environment] = await db.insert(environments).values({ name: `Adoption sandbox ${inline}`, driver: "sandbox", config: { provider: "daytona" } }).returning();
     await settings.update({ defaultEnvironmentId: environment.id });
     const id = randomUUID();
-    await db.insert(agents).values({ id, companyId, name: "Runner adoption", adapterType: "paperclip_runner", adapterConfig: { provider: "codex", model: "gpt-5.6-sol" } });
+    await db.insert(agents).values({ id, companyId, name: "Runner adoption", adapterType: "pilibala_runner", adapterConfig: { provider: "codex", model: "gpt-5.6-sol" } });
     const account = await service.save(companyId, "alice", { provider: "openai", method: "api_key", ownership: "personal", name: "Runner adoption account", apiKey: "fixture-adoption-key", agentIds: inline ? [] : [id], allAgents: false }, "fixture-adoption-key");
     await service.setDefault(companyId, "alice", account.grantId);
     if (!inline) {
@@ -2744,7 +2744,7 @@ console.log(JSON.stringify({ type: "result", subtype: "success", result: "hello"
     const release = vi.fn(async () => undefined);
     const acquire = vi.fn(async () => ({ lease: { id: randomUUID(), provider: "daytona", providerLeaseId: "test-sandbox", metadata: {} }, leaseContext: {} }));
     const runtime = vi.spyOn(runtimeModule, "environmentRuntimeService").mockReturnValue({ acquireRunLease: acquire, realizeWorkspace: vi.fn(async () => ({ cwd: "/workspace" })), getDriver: () => ({ releaseRunLease: release }) } as any);
-    const probe = vi.spyOn(requireServerAdapter("paperclip_runner"), "testEnvironment").mockImplementation(async context => ({ adapterType: "paperclip_runner", status: context.executionTarget ? "pass" : "fail", testedAt: new Date().toISOString(), checks: [{ code: context.executionTarget ? "codex_hello_probe_passed" : "host_probe_failed", level: context.executionTarget ? "info" : "error", message: "fixture" }] }));
+    const probe = vi.spyOn(requireServerAdapter("pilibala_runner"), "testEnvironment").mockImplementation(async context => ({ adapterType: "pilibala_runner", status: context.executionTarget ? "pass" : "fail", testedAt: new Date().toISOString(), checks: [{ code: context.executionTarget ? "codex_hello_probe_passed" : "host_probe_failed", level: context.executionTarget ? "info" : "error", message: "fixture" }] }));
     const app = express();
     app.use(express.json());
     app.use((req, _res, next) => { req.actor = { type: "board", source: "local_implicit", userId: "alice", companyIds: [companyId] }; next(); });

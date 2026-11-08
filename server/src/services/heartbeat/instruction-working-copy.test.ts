@@ -29,18 +29,18 @@ function fixture(executionTarget: Input["workspace"]["executionTarget"] = null, 
     reportRetirementUnconfirmed: vi.fn().mockResolvedValue(null),
   };
   const appendRunEvent = vi.fn().mockResolvedValue(undefined);
-  const context = { paperclipWorkspace: { agentHome: "/canonical" } } as Record<string, unknown>;
+  const context = { pilibalaWorkspace: { agentHome: "/canonical" } } as Record<string, unknown>;
   const controller = createHeartbeatInstructionWorkingCopy({
     db: {} as Input["db"], instructionCopies: copies as unknown as Input["instructionCopies"],
     readRun: () => run,
-    agent: { id: "agent", companyId: "company", adapterType: acpxAgent ? "paperclip_runner" : "codex_local", adapterConfig: { lifecycleMode: "warm", ...(acpxAgent ? { provider: "acpx", acpxAgent } : {}) }, runtimeConfig: {} } as unknown as Input["agent"],
+    agent: { id: "agent", companyId: "company", adapterType: acpxAgent ? "pilibala_runner" : "codex_local", adapterConfig: { lifecycleMode: "warm", ...(acpxAgent ? { provider: "acpx", acpxAgent } : {}) }, runtimeConfig: {} } as unknown as Input["agent"],
     context,
     session: { taskSession: null, taskSessionForRun: { lastRunId: "previous-run" }, sessionConfigMetadata: {} as Input["session"]["sessionConfigMetadata"] },
     workspace: { executionTarget, executionWorkspace: { cwd: "/workspace" } as Input["workspace"]["executionWorkspace"], persistedExecutionWorkspace: null },
     appendRunEvent,
   });
   const prepare: Prepare = { runtimeConfig: { retained: true }, hasInstructionFilesystem: true,
-    nativeLifecyclePolicy: resolveHeartbeatNativeLifecyclePolicy({ adapterType: acpxAgent ? "paperclip_runner" : "codex_local",
+    nativeLifecyclePolicy: resolveHeartbeatNativeLifecyclePolicy({ adapterType: acpxAgent ? "pilibala_runner" : "codex_local",
       backend: acpxAgent ? "acpx_runtime" : "codex_app_server", acpxAgent, agentMode: "warm", agentIdleTimeoutMs: undefined,
       environmentPolicy: executionTarget?.kind === "remote" && executionTarget.transport === "sandbox" ? executionTarget.runnerLifecyclePolicy : null,
       managedAiSelected: false, taskOwned: Boolean(executionTarget?.kind === "remote" && executionTarget.transport === "sandbox" && executionTarget.runnerTask) }),
@@ -151,6 +151,6 @@ describe("instruction working-copy extraction boundary", () => {
     expect(await f.controller.nativeInstructionWorkingCopy()?.checkpointWarm?.()).toBe(true);
     expect(f.controller.getInstructionSave()).toMatchObject({ state: "unchanged" });
     expect(f.appendRunEvent.mock.calls.at(-1)?.[0]).toBe(running);
-    expect(f.context.paperclipWorkspace).toMatchObject({ agentHome: f.copy.executionRoot, agentHomeForPermissions: "/canonical" });
+    expect(f.context.pilibalaWorkspace).toMatchObject({ agentHome: f.copy.executionRoot, agentHomeForPermissions: "/canonical" });
   });
 });

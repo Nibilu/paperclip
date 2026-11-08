@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { prepareOnlineEphemeralEnrollment } from "./ephemeral-enrollment.js";
 
 const owners = vi.hoisted(() => ({ eligibility: vi.fn(), key: vi.fn(), audit: vi.fn() }));
@@ -17,15 +17,15 @@ const control = { requestId: "fixture-signed-request", exp: 0 };
 beforeEach(() => {
   vi.resetAllMocks();
   control.exp = Math.floor(Date.now() / 1000) + 60;
-  vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "fixture-managed-instance");
-  vi.stubEnv("PAPERCLIP_CLOUD_STACK_ID", "stack-fixture");
-  vi.stubEnv("PAPERCLIP_BUILD_COMMIT", "a".repeat(40));
+  vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "fixture-managed-instance");
+  vi.stubEnv("PILIBALA_CLOUD_STACK_ID", "stack-fixture");
+  vi.stubEnv("PILIBALA_BUILD_COMMIT", "a".repeat(40));
   vi.stubEnv("RAILWAY_DEPLOYMENT_ID", "11111111-1111-4111-8111-111111111111");
-  vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", "false");
-  vi.stubEnv("PAPERCLIP_DURABLE_AGENT_FILES", "true");
-  vi.stubEnv("PAPERCLIP_SHARED_UI_ASSETS", "true");
-  vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "a".repeat(64));
-  vi.stubEnv("PAPERCLIP_DATABASE_LISTEN_URL", "postgres://fixture:fixture@db.test/database");
+  vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", "false");
+  vi.stubEnv("PILIBALA_DURABLE_AGENT_FILES", "true");
+  vi.stubEnv("PILIBALA_SHARED_UI_ASSETS", "true");
+  vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "a".repeat(64));
+  vi.stubEnv("PILIBALA_DATABASE_LISTEN_URL", "postgres://fixture:fixture@db.test/database");
   owners.eligibility.mockResolvedValue({ eligible: true, blockers: [] });
   owners.key.mockReturnValue(key);
   owners.audit.mockResolvedValue({ publication: {} });
@@ -42,7 +42,7 @@ it("exports the original key only after owner eligibility, config validation and
   expect(owners.eligibility).toHaveBeenCalledWith(db, { purpose: "startup" });
   expect(owners.audit).toHaveBeenCalledOnce();
   expect(JSON.stringify(owners.audit.mock.calls)).not.toContain(key);
-  expect(process.env.PAPERCLIP_EPHEMERAL_SERVER).toBe("false");
+  expect(process.env.PILIBALA_EPHEMERAL_SERVER).toBe("false");
 });
 
 it("does not read or export the key while a local obligation remains", async () => {
@@ -53,7 +53,7 @@ it("does not read or export the key while a local obligation remains", async () 
 });
 
 it("refuses an invalid replacement configuration without publishing or auditing a key", async () => {
-  vi.stubEnv("PAPERCLIP_DATABASE_LISTEN_URL", "postgres://fixture:fixture@other.test/database");
+  vi.stubEnv("PILIBALA_DATABASE_LISTEN_URL", "postgres://fixture:fixture@other.test/database");
   await expect(prepareOnlineEphemeralEnrollment(db, attempt, control)).rejects.toThrow("direct connection to the same database");
   expect(owners.audit).not.toHaveBeenCalled();
 });
@@ -64,7 +64,7 @@ it("fails closed if key preservation auditing fails", async () => {
 });
 
 it("identifies the armed deployment without granting detachment authority", async () => {
-  vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", "true");
+  vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", "true");
   expect(await prepareOnlineEphemeralEnrollment(db, attempt, control)).toMatchObject({ ephemeralServer: true, enrollmentReady: false });
 });
 

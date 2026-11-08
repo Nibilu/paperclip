@@ -1,4 +1,4 @@
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { describe, expect, it, vi } from "vitest";
 import { readIdleMcpAuthorizationHandoffs } from "./idle-authorization-handoffs.js";
 function fixture(results:unknown[][]) {

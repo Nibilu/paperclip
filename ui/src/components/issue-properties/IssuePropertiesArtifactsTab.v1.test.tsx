@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Issue, IssueAttachment, IssueDocument, IssueWorkProduct } from "@paperclipai/shared";
+import type { Issue, IssueAttachment, IssueDocument, IssueWorkProduct } from "@pilibalaai/shared";
 import { TextAttachmentContext } from "@/context/TextAttachmentContext";
 import { IssuePropertiesArtifactsTab, TaskGeneralDocuments, type TaskDocumentEditorOptions } from "./IssuePropertiesArtifactsTab";
 
@@ -54,7 +54,7 @@ const pdfWorkProduct = {
   executionWorkspaceId: null,
   runtimeServiceId: null,
   type: "artifact",
-  provider: "paperclip",
+  provider: "pilibala",
   externalId: null,
   title: "Interface Craft revision — PDF",
   url: null,
@@ -84,9 +84,9 @@ const pullRequest = {
   provider: "github",
   externalId: "42",
   title: "Ship rich work-product cards",
-  url: "https://github.com/paperclipai/paperclip/pull/42",
+  url: "https://github.com/pilibalaai/pilibala/pull/42",
   status: "merged",
-  metadata: { repo: "paperclipai/paperclip", number: 42, state: "merged" },
+  metadata: { repo: "pilibalaai/pilibala", number: 42, state: "merged" },
   createdAt: new Date("2026-09-25T10:00:00Z"),
   updatedAt: new Date("2026-09-25T10:00:00Z"),
 } as unknown as IssueWorkProduct;
@@ -95,7 +95,7 @@ const brokenService = {
   ...pdfWorkProduct,
   id: "wp-service",
   type: "runtime_service",
-  provider: "paperclip",
+  provider: "pilibala",
   title: "Preview server",
   url: "https://preview.example.test",
   status: "active",
@@ -295,7 +295,7 @@ describe("IssuePropertiesArtifactsTab with Artifacts V1 on", () => {
       expect(container.querySelectorAll('[data-testid="artifact-v1-row"]')).toHaveLength(5);
     });
     const pr = container.querySelector<HTMLAnchorElement>('a[aria-label="Open Ship rich work-product cards"]');
-    expect(pr?.getAttribute("href")).toBe("https://github.com/paperclipai/paperclip/pull/42");
+    expect(pr?.getAttribute("href")).toBe("https://github.com/pilibalaai/pilibala/pull/42");
     expect(pr?.getAttribute("target")).toBe("_blank");
     const service = container.querySelector('a[aria-label="Open Preview server"]')?.closest('[data-testid="artifact-v1-row"]');
     expect(service?.textContent).toContain("Unhealthy");

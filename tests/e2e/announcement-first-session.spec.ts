@@ -12,7 +12,7 @@ import { test, expect, request as pwRequest, type APIRequestContext, type Page }
  * is publishing; the card mirrors the real 2026-09-14-connectors entry.
  */
 
-const PORT = Number(process.env.PAPERCLIP_E2E_PORT ?? 3199);
+const PORT = Number(process.env.PILIBALA_E2E_PORT ?? 3199);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const ANNOUNCEMENT_ID = "e2e-n13-connectors";
 const SETTLE_WAIT_MS = 4_500; // ANNOUNCEMENT_SETTLE_MS (3 s) plus slack.
@@ -45,7 +45,7 @@ async function mockAnnouncementFeed(page: Page) {
     eyebrow: "Introducing Connectors",
     title: "Give your agents the access they need",
     description: "Connect Gmail, GitHub, Notion, and more. Choose which agents get access, which accounts they use, and which actions they can take.",
-    image: { path: `assets/${"a".repeat(64)}.png`, alt: "Paperclip agents with their own sets of connected apps." },
+    image: { path: `assets/${"a".repeat(64)}.png`, alt: "Pilibala agents with their own sets of connected apps." },
     primaryAction: { kind: "route", label: "Explore connectors", path: "/apps" },
   } }));
   await page.route(`**/api/announcements/${ANNOUNCEMENT_ID}/image`, (route) =>
@@ -91,7 +91,7 @@ test.describe("Announcement well (N-13)", () => {
     await expect(page.getByRole("button", { name: "Open account menu" })).toBeVisible();
     await page.waitForTimeout(SETTLE_WAIT_MS);
     await page.screenshot({ path: test.info().outputPath("onboarding-task.png") });
-    const well = page.getByRole("complementary", { name: "Paperclip announcements" });
+    const well = page.getByRole("complementary", { name: "Pilibala announcements" });
     await expect(well).toHaveCount(0);
 
     // Positive control on the same page: once onboarding finishes, the same

@@ -5,9 +5,9 @@ import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { run } from './chat-feature-testops-cli.mjs';
 import { fullName, planName } from './chat-feature-testops-api.mjs';
-const context = { GITHUB_REPOSITORY: 'paperclipai/paperclip', GITHUB_REF: 'refs/heads/master', GITHUB_EVENT_NAME: 'workflow_dispatch',
+const context = { GITHUB_REPOSITORY: 'pilibalaai/pilibala', GITHUB_REF: 'refs/heads/master', GITHUB_EVENT_NAME: 'workflow_dispatch',
   GITHUB_RUN_ATTEMPT: '1', GITHUB_SHA: 'a'.repeat(40), GITHUB_RUN_ID: '123',
-  GITHUB_WORKFLOW_REF: 'paperclipai/paperclip/.github/workflows/chat-feature-testops.yml@refs/heads/master' };
+  GITHUB_WORKFLOW_REF: 'pilibalaai/pilibala/.github/workflows/chat-feature-testops.yml@refs/heads/master' };
 
 test('actual retired singleton caller refuses plan recreation and creates no result', async t => {
   const temporary = await realpath(await mkdtemp(path.join(tmpdir(), 'testops-bootstrap-')));
@@ -23,8 +23,8 @@ test('actual retired singleton caller refuses plan recreation and creates no res
     if (route === '/api/testcase/91') return response({ id: 91, projectId: 1, fullName, automated: true });
     if (route === '/api/testplan') return response({ totalPages: 1, content: [{ id: 8, projectId: 1, name: planName, testCasesCount: 1 }] });
     if (route === '/api/integration/project/1') return response({ totalPages: 1, content: [] });
-    if (route === '/api/jobrun/9') return response({ id: 9, job: { id: 7 }, launchId: 10, url: 'https://github.com/paperclipai/paperclip/actions/runs/123' });
-    if (route === '/api/job/7') return response({ id: 7, type: 'github', url: 'https://github.com/paperclipai/paperclip/actions/workflows/chat-feature-testops.yml', parameters: [{ id: 17, value: 'bootstrap' }] });
+    if (route === '/api/jobrun/9') return response({ id: 9, job: { id: 7 }, launchId: 10, url: 'https://github.com/pilibalaai/pilibala/actions/runs/123' });
+    if (route === '/api/job/7') return response({ id: 7, type: 'github', url: 'https://github.com/pilibalaai/pilibala/actions/workflows/chat-feature-testops.yml', parameters: [{ id: 17, value: 'bootstrap' }] });
     if (route === '/api/environment/17') return response({ id: 17, name: 'operation' });
     assert.equal(route, '/api/testplan/8');
     return response({ id: 8, projectId: 1, name: planName, testCasesCount: 1, treeSelection: { leafsInclude: [91], inverted: false } });

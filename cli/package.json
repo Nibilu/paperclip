@@ -1,13 +1,13 @@
 {
-  "name": "paperclipai",
+  "name": "pilibalaai",
   "version": "0.3.1",
-  "description": "Paperclip CLI — orchestrate AI agent teams to run a business",
+  "description": "Pilibala CLI — orchestrate AI agent teams to run a business",
   "type": "module",
   "bin": {
-    "paperclipai": "./dist/index.js"
+    "pilibalaai": "./dist/index.js"
   },
   "keywords": [
-    "paperclip",
+    "pilibala",
     "ai",
     "agents",
     "orchestration",
@@ -16,12 +16,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/paperclipai/paperclip",
+    "url": "https://github.com/pilibalaai/pilibala",
     "directory": "cli"
   },
-  "homepage": "https://github.com/paperclipai/paperclip",
+  "homepage": "https://github.com/pilibalaai/pilibala",
   "bugs": {
-    "url": "https://github.com/paperclipai/paperclip/issues"
+    "url": "https://github.com/pilibalaai/pilibala/issues"
   },
   "files": [
     "dist"
@@ -37,21 +37,21 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "@paperclipai/adapter-claude-local": "workspace:*",
-    "@paperclipai/adapter-codex-local": "workspace:*",
-    "@paperclipai/adapter-cursor-cloud": "workspace:*",
-    "@paperclipai/adapter-cursor-local": "workspace:*",
-    "@paperclipai/adapter-gemini-local": "workspace:*",
-    "@paperclipai/adapter-grok-local": "workspace:*",
-    "@paperclipai/adapter-kimi-local": "workspace:*",
-    "@paperclipai/adapter-opencode-local": "workspace:*",
-    "@paperclipai/adapter-pi-local": "workspace:*",
-    "@paperclipai/adapter-openclaw-gateway": "workspace:*",
-    "@paperclipai/adapter-utils": "workspace:*",
-    "@paperclipai/db": "workspace:*",
-    "@paperclipai/server": "workspace:*",
-    "@paperclipai/shared": "workspace:*",
-    "@paperclipai/hermes-paperclip-adapter": "workspace:*",
+    "@pilibalaai/adapter-claude-local": "workspace:*",
+    "@pilibalaai/adapter-codex-local": "workspace:*",
+    "@pilibalaai/adapter-cursor-cloud": "workspace:*",
+    "@pilibalaai/adapter-cursor-local": "workspace:*",
+    "@pilibalaai/adapter-gemini-local": "workspace:*",
+    "@pilibalaai/adapter-grok-local": "workspace:*",
+    "@pilibalaai/adapter-kimi-local": "workspace:*",
+    "@pilibalaai/adapter-opencode-local": "workspace:*",
+    "@pilibalaai/adapter-pi-local": "workspace:*",
+    "@pilibalaai/adapter-openclaw-gateway": "workspace:*",
+    "@pilibalaai/adapter-utils": "workspace:*",
+    "@pilibalaai/db": "workspace:*",
+    "@pilibalaai/server": "workspace:*",
+    "@pilibalaai/shared": "workspace:*",
+    "@pilibalaai/hermes-pilibala-adapter": "workspace:*",
     "drizzle-orm": "0.45.2",
     "dotenv": "^17.4.2",
     "commander": "^15.0.0",

@@ -15,14 +15,14 @@ async function workspaceArchive(input: {
   signal?: AbortSignal;
   maxEntries?: number;
   maxManifestBytes?: number;
-}): Promise<{ schema: "paperclip.remote-workspace-archive.v1"; manifestDigest: string; byteSize: number; sha256: string; entries: number }> {
+}): Promise<{ schema: "pilibala.remote-workspace-archive.v1"; manifestDigest: string; byteSize: number; sha256: string; entries: number }> {
   const fs = await import("node:fs/promises");
   const { createReadStream } = await import("node:fs");
   const path = await import("node:path");
   const os = await import("node:os");
   const crypto = await import("node:crypto");
   const child = await import("node:child_process");
-  const schema = "paperclip.remote-workspace-archive.v1" as const;
+  const schema = "pilibala.remote-workspace-archive.v1" as const;
   const magic = Buffer.from("PCWS1\n");
   type Entry = { path: string; type: "directory" | "file" | "symlink"; mode?: number; size?: number; sha256?: string; target?: string };
   const fail = (reason: string): never => { throw new Error(`remote_workspace_archive_${reason}`); };
@@ -49,7 +49,7 @@ async function workspaceArchive(input: {
       env: { ...process.env, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: os.devNull, GIT_TERMINAL_PROMPT: "0", GIT_OPTIONAL_LOCKS: "0",
         GIT_DIR: undefined, GIT_COMMON_DIR: undefined, GIT_WORK_TREE: undefined, GIT_INDEX_FILE: undefined,
         GIT_OBJECT_DIRECTORY: undefined, GIT_ALTERNATE_OBJECT_DIRECTORIES: undefined, GIT_CONFIG_PARAMETERS: undefined, GIT_CONFIG_COUNT: "0", GIT_TEMPLATE_DIR: undefined,
-        GIT_AUTHOR_NAME: "Paperclip", GIT_COMMITTER_NAME: "Paperclip", GIT_AUTHOR_EMAIL: "workspace@paperclip.invalid", GIT_COMMITTER_EMAIL: "workspace@paperclip.invalid",
+        GIT_AUTHOR_NAME: "Pilibala", GIT_COMMITTER_NAME: "Pilibala", GIT_AUTHOR_EMAIL: "workspace@pilibala.invalid", GIT_COMMITTER_EMAIL: "workspace@pilibala.invalid",
         GIT_AUTHOR_DATE: "@0 +0000", GIT_COMMITTER_DATE: "@0 +0000", GIT_NO_LAZY_FETCH: "1" },
     }, (error, stdout) => error ? reject(error) : resolve(stdout));
     if (stdin !== undefined) command.stdin?.end(stdin);
@@ -353,7 +353,7 @@ async function workspaceArchive(input: {
     excludedPaths.add(relative);
   }
   const excluded = (next: string) => input.exclude?.some(item => next === item || next.startsWith(`${item}/`))
-    || next === ".paperclip-runtime" || next.startsWith(".paperclip-runtime/");
+    || next === ".pilibala-runtime" || next.startsWith(".pilibala-runtime/");
   const walk = async (root: string, skipGit = false) => {
     const entries: Entry[] = [];
     // One bound for the whole walk, including nested directories. Reserve each
@@ -528,7 +528,7 @@ async function workspaceArchive(input: {
       const originals = new Map(before.map(entry => [entry.path, entry]));
       const entries = [...before, ...(await walk(tree)).filter(entry => !originals.has(entry.path))]
         .sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
-      const manifest = { schema, exclusionPolicy: "paperclip.remote-workspace-exclusions.v1", excluded: [...excludedPaths].sort(), entries }, body = Buffer.from(JSON.stringify(manifest));
+      const manifest = { schema, exclusionPolicy: "pilibala.remote-workspace-exclusions.v1", excluded: [...excludedPaths].sort(), entries }, body = Buffer.from(JSON.stringify(manifest));
       if (body.length > 64 * 1024 * 1024) fail("manifest_too_large");
       const digest = manifestHash(manifest), length = Buffer.alloc(4); length.writeUInt32BE(body.length);
       const output = await fs.open(input.archivePath, "wx", 0o600);
@@ -650,7 +650,7 @@ export async function readRemoteWorkspaceArchiveDirectories(archivePath: string,
       throw new Error("remote_workspace_archive_manifest_mismatch");
     }
     const manifest = JSON.parse(bytes.toString()) as { schema: string; entries: Array<{ type: string; path: string }> };
-    if (manifest.schema !== "paperclip.remote-workspace-archive.v1" || !Array.isArray(manifest.entries)) {
+    if (manifest.schema !== "pilibala.remote-workspace-archive.v1" || !Array.isArray(manifest.entries)) {
       throw new Error("remote_workspace_archive_manifest_mismatch");
     }
     return new Set(manifest.entries.filter(entry => entry.type === "directory").map(entry => entry.path));

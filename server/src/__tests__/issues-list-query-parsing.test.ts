@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { expect, it } from "vitest";
-import { issues } from "@paperclipai/db";
+import { issues } from "@pilibalaai/db";
 import { issueRoutes } from "../routes/issues.js";
 import {
   describeEmbeddedPostgres,
@@ -12,13 +12,13 @@ import {
 } from "./helpers/route-test-harness.js";
 
 /**
- * Regression coverage for https://github.com/paperclipai/paperclip/issues/4628.
+ * Regression coverage for https://github.com/pilibalaai/pilibala/issues/4628.
  * Express's `qs` parser hands the list route either a string or an array for
  * `?status=`, and the route normalizes both shapes.
  */
 
 describeEmbeddedPostgres("issue list status query parsing", () => {
-  const ctx = useEmbeddedPostgres("paperclip-issues-list-query-parsing-", {
+  const ctx = useEmbeddedPostgres("pilibala-issues-list-query-parsing-", {
     resetEach: resetCompanyIssueFixtures,
   });
 

@@ -211,7 +211,7 @@ async function cached(cache: string, pointer: string, manifest: ProviderPackIden
     throw error;
   }
   const publication = JSON.parse(bytes.toString()) as Published;
-  if (publication.schema !== "paperclip.retained-provider-pack-source.v1" || publication.verifiedTarPaths !== true || publication.providerPackDigest !== manifest.digest
+  if (publication.schema !== "pilibala.retained-provider-pack-source.v1" || publication.verifiedTarPaths !== true || publication.providerPackDigest !== manifest.digest
     || publication.sourceRevision !== manifest.payload.runnerSourceRevision || !new RegExp(`^${manifest.digest.slice(7)}-[A-Za-z0-9]{6}$`).test(publication.entry)
     || !/^[a-f0-9]{64}$/.test(publication.receiptSha256)
     || [publication.imageIndexDigest, publication.imageManifestDigest, publication.imageConfigDigest, publication.transportLayerDigest].some(value => !/^sha256:[a-f0-9]{64}$/.test(value))) fail();
@@ -270,13 +270,13 @@ export async function resolveProviderPackUploadSource(input: {
   signal?: AbortSignal;
 }): Promise<{ root: string; archiveOnly: boolean }> {
   const manifest = input.manifest;
-  if (manifest?.schema !== "paperclip-runner/remote-provider-pack/v1" || manifest.digest !== `sha256:${digest(canonicalProviderPackJson(manifest.payload))}`) fail();
+  if (manifest?.schema !== "pilibala-runner/remote-provider-pack/v1" || manifest.digest !== `sha256:${digest(canonicalProviderPackJson(manifest.payload))}`) fail();
   input.signal?.throwIfAborted();
   const configured = JSON.parse((await readStable(join(input.root, "provider-pack.json"))).toString()) as ProviderPackIdentity;
   if (configured?.schema !== manifest.schema || configured.digest !== `sha256:${digest(canonicalProviderPackJson(configured.payload))}`
     || input.sourceDigest !== undefined && input.sourceDigest !== configured.digest) fail();
   if (configured.digest === manifest.digest) return { root: input.root, archiveOnly: false };
-  const cache = join(await realpath(tmpdir()), `paperclip-provider-pack-sources-${process.getuid?.()}`);
+  const cache = join(await realpath(tmpdir()), `pilibala-provider-pack-sources-${process.getuid?.()}`);
   await mkdir(cache, { recursive: true, mode: 0o700 });
   await privateDirectory(cache);
   const signal = input.signal ? AbortSignal.any([input.signal, AbortSignal.timeout(180_000)]) : AbortSignal.timeout(180_000);

@@ -6,7 +6,7 @@ import { Readable } from "node:stream";
 import { setTimeout as delay } from "node:timers/promises";
 import { beforeAll, beforeEach, afterEach, afterAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
-import { agents, agentFileRoots, agentInstructionWorkingCopies, authUsers, companies, companyMemberships, principalPermissionGrants, heartbeatRuns, createDb, closeFileStorageDb } from "@paperclipai/db";
+import { agents, agentFileRoots, agentInstructionWorkingCopies, authUsers, companies, companyMemberships, principalPermissionGrants, heartbeatRuns, createDb, closeFileStorageDb } from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { agentFileStore, adoptAgentFiles, fileHash } from "../services/agent-file-store.js";
 import { invalidateAgentFileProjection, persistDurableAgentFiles } from "../services/agent-file-durability.js";
@@ -66,7 +66,7 @@ describe("durable agent file authority", () => {
   });
   beforeEach(async () => {
     home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "durable-agent-files-")));
-    vi.stubEnv("PAPERCLIP_HOME", home); vi.stubEnv("PAPERCLIP_DURABLE_AGENT_FILES", "true");
+    vi.stubEnv("PILIBALA_HOME", home); vi.stubEnv("PILIBALA_DURABLE_AGENT_FILES", "true");
     objects.bytes.clear(); objects.rejectWrites = false; objects.corruptReads = false;
     objects.readDelayMs = 0; objects.activeReads = 0; objects.peakReads = 0;
     companyId = randomUUID(); agentId = randomUUID(); userId = randomUUID();
@@ -85,7 +85,7 @@ describe("durable agent file authority", () => {
   async function replaceFilesystem() {
     await fs.rm(home, { recursive: true, force: true });
     home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "durable-agent-replacement-")));
-    vi.stubEnv("PAPERCLIP_HOME", home);
+    vi.stubEnv("PILIBALA_HOME", home);
     root = resolveManagedInstructionsRoot({ id: agentId, companyId, name: "File owner", adapterConfig: {} });
   }
 
@@ -122,7 +122,7 @@ describe("durable agent file authority", () => {
     const created = await instructions.readFile(agent, "NOTES.md");
     expect(Number.isFinite(Date.parse(created.createdAt!))).toBe(true);
     await replaceFilesystem();
-    vi.stubEnv("PAPERCLIP_DURABLE_AGENT_FILES", "false");
+    vi.stubEnv("PILIBALA_DURABLE_AGENT_FILES", "false");
     const restored = await instructions.readFile(agent, "AGENTS.md");
     expect(restored.content).toBe("Historical instructions");
     expect(restored.createdAt).toBeUndefined();
@@ -147,7 +147,7 @@ describe("durable agent file authority", () => {
     await db.update(agents).set({ adapterConfig: { instructionsBundleMode: "managed", instructionsRootPath: root } }).where(eq(agents.id, agentId));
     expect(await store().read(companyId, agentId, "AGENTS.md", actor())).toEqual(Buffer.from("Original"));
     await replaceFilesystem();
-    vi.stubEnv("PAPERCLIP_DURABLE_AGENT_FILES", "false");
+    vi.stubEnv("PILIBALA_DURABLE_AGENT_FILES", "false");
     expect(await store().read(companyId, agentId, "nested/data.bin", actor())).toEqual(binary);
     expect(await store().read(companyId, agentId, "empty.txt", actor())).toEqual(Buffer.alloc(0));
     expect((await fs.stat(path.join(root, "script.sh"))).mode & 0o777).toBe(0o755);
@@ -221,7 +221,7 @@ describe("durable agent file authority", () => {
     const [copy] = await db.insert(agentInstructionWorkingCopies).values({ companyId, agentId, runId: run!.id,
       responsibleUserId: userId, entryFile: "AGENTS.md", baseHash: "a".repeat(64), localRoot: path.join(home, "retained-copy"),
       executionRoot: "/retained/agent-files", location: "local", state,
-      errorCode: "INSTRUCTION_COLLECTION_UNAVAILABLE", receipt: { schema: "paperclip.agent-files.v1" } }).returning();
+      errorCode: "INSTRUCTION_COLLECTION_UNAVAILABLE", receipt: { schema: "pilibala.agent-files.v1" } }).returning();
     expect(await migrateAgentFiles(db, { companyId, apply: true, writersStopped: false }))
       .toMatchObject({ results: [{ agentId, state: "working_copy_unsettled" }], pageReady: false });
     expect(await db.select().from(agentFileRoots).where(eq(agentFileRoots.agentId, agentId))).toEqual([]);

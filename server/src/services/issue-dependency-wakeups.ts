@@ -1,15 +1,15 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
-import type { Db } from "@paperclipai/db";
-import { agentWakeupRequests } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { agentWakeupRequests } from "@pilibalaai/db";
 
 export const ISSUE_BLOCKERS_RESOLVED_WAKE_REASON = "issue_blockers_resolved";
 
 export const issueBlockersResolvedWakePayloadSql =
-  sql`${agentWakeupRequests.payload}#>>'{_paperclipWakeContext,wakeReason}' = ${ISSUE_BLOCKERS_RESOLVED_WAKE_REASON}`;
+  sql`${agentWakeupRequests.payload}#>>'{_pilibalaWakeContext,wakeReason}' = ${ISSUE_BLOCKERS_RESOLVED_WAKE_REASON}`;
 
 export function isIssueBlockersResolvedWakePayload(payload: Record<string, unknown> | null | undefined): boolean {
-  const context = payload?._paperclipWakeContext;
+  const context = payload?._pilibalaWakeContext;
   return context !== null && typeof context === "object" && !Array.isArray(context)
     && (context as Record<string, unknown>).wakeReason === ISSUE_BLOCKERS_RESOLVED_WAKE_REASON;
 }

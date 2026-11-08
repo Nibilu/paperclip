@@ -1,6 +1,6 @@
 import { and, asc, eq, inArray, isNotNull, isNull, lte, ne, or, sql } from "drizzle-orm";
-import { executionWorkspaceSnapshots, executionWorkspaces, heartbeatRuns, issueRecoveryActions, workspaceOperations, type Db } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority, type EnvironmentLease } from "@paperclipai/shared";
+import { executionWorkspaceSnapshots, executionWorkspaces, heartbeatRuns, issueRecoveryActions, workspaceOperations, type Db } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority, type EnvironmentLease } from "@pilibalaai/shared";
 import { hasRemoteTerminationReceipt } from "./remote-execution-termination.js";
 import type { StorageService } from "../storage/types.js";
 import type { createDeliveryWorkCoordinator } from "./delivery-work-coordinator.js";
@@ -38,7 +38,7 @@ async function pinned(db: ReadDb, row: Snapshot) {
       // until the final save retires it.
       sql`(${workspaceOperations.status} = 'failed' and ${workspaceOperations.metadata} ? 'lastFailure'
         and ${workspaceOperations.metadata}->'retiredSave' is null)`,
-      sql`(${workspaceOperations.metadata}->'saveWork'->>'schema' = 'paperclip.remote-workspace-save-work.v1'
+      sql`(${workspaceOperations.metadata}->'saveWork'->>'schema' = 'pilibala.remote-workspace-save-work.v1'
         and (${workspaceOperations.metadata}#>'{saveWork,unknown}' is distinct from 'false'::jsonb
           or case when jsonb_typeof(${workspaceOperations.metadata}#>'{saveWork,activeIds}') = 'array'
             then jsonb_array_length(${workspaceOperations.metadata}#>'{saveWork,activeIds}') <> 0 else true end))`),

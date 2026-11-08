@@ -6,11 +6,11 @@ existing private S3 bucket behind CloudFront. It does not deploy to GitHub Pages
 ## Current destination
 
 - AWS account: `078455283791`, region `us-east-1`
-- Bucket: `paperclipai-runner-e2e-history-078455283791-us-east-1`
+- Bucket: `pilibalaai-runner-e2e-history-078455283791-us-east-1`
 - Allowed upload prefix: `storybook/branches/`
 - Distribution: `E3GTU28BBO2SFR`
 - Public origin: `https://d1p6rlowie26tp.cloudfront.net`
-- Role: `arn:aws:iam::078455283791:role/paperclip-storybook-github`
+- Role: `arn:aws:iam::078455283791:role/pilibala-storybook-github`
 
 The distribution's default behavior disables edge caching and rewrites directory
 URLs to `index.html`. Stable branch indexes send `no-cache`; unique build objects
@@ -38,9 +38,9 @@ Set repository variables:
 
 | Variable | Value |
 | --- | --- |
-| `STORYBOOK_AWS_ROLE_ARN` | `arn:aws:iam::078455283791:role/paperclip-storybook-github` |
+| `STORYBOOK_AWS_ROLE_ARN` | `arn:aws:iam::078455283791:role/pilibala-storybook-github` |
 | `STORYBOOK_AWS_REGION` | `us-east-1` |
-| `STORYBOOK_S3_BUCKET` | `paperclipai-runner-e2e-history-078455283791-us-east-1` |
+| `STORYBOOK_S3_BUCKET` | `pilibalaai-runner-e2e-history-078455283791-us-east-1` |
 | `STORYBOOK_PUBLIC_BASE_URL` | `https://d1p6rlowie26tp.cloudfront.net` |
 
 No stored AWS access keys are needed. Leave the runner dashboard variables and
@@ -48,17 +48,17 @@ GitHub Pages configuration unchanged.
 
 ## Operator setup
 
-Use the `paperclip-dev` operator AWS profile. Review the checked-in policies in
+Use the `pilibala-dev` operator AWS profile. Review the checked-in policies in
 `.github/storybook-deploy/` before applying them. The existing GitHub OIDC provider
 must be present in this account.
 
 ```sh
-aws sts get-caller-identity --profile paperclip-dev
-aws iam create-role --profile paperclip-dev \
-  --role-name paperclip-storybook-github \
+aws sts get-caller-identity --profile pilibala-dev
+aws iam create-role --profile pilibala-dev \
+  --role-name pilibala-storybook-github \
   --assume-role-policy-document file://.github/storybook-deploy/trust-policy.json
-aws iam put-role-policy --profile paperclip-dev \
-  --role-name paperclip-storybook-github --policy-name StorybookBranchUpload \
+aws iam put-role-policy --profile pilibala-dev \
+  --role-name pilibala-storybook-github --policy-name StorybookBranchUpload \
   --policy-document file://.github/storybook-deploy/upload-policy.json
 ```
 

@@ -6,10 +6,10 @@
 //
 // It replaces this sequence, with the same results:
 //   pnpm install --frozen-lockfile
-//   pnpm --filter @paperclipai/paperclip-runner run ensure:eval-build-deps
-//   pnpm --filter @paperclipai/paperclip-runner run build:rust
-//   pnpm --filter @paperclipai/paperclip-runner build
-//   pnpm --filter @paperclipai/paperclip-runner run build:runner-binaries
+//   pnpm --filter @pilibalaai/pilibala-runner run ensure:eval-build-deps
+//   pnpm --filter @pilibalaai/pilibala-runner run build:rust
+//   pnpm --filter @pilibalaai/pilibala-runner build
+//   pnpm --filter @pilibalaai/pilibala-runner run build:runner-binaries
 //
 // Steps:
 //   install       skipped when the lockfile, manifests, patches and toolchain
@@ -23,7 +23,7 @@
 //
 // A restored Runner build skips the build's lint checks (protocol coverage,
 // traceability and similar). They depend only on the same inputs, and CI runs
-// them; run `pnpm --filter @paperclipai/paperclip-runner build` for them locally.
+// them; run `pnpm --filter @pilibalaai/pilibala-runner build` for them locally.
 //
 // Usage: node scripts/agent-preflight.mjs [--no-cache] [--force-install] [--skip-rust-debug] [--explain]
 
@@ -40,7 +40,7 @@ import { DEBUG_INPUTS, debugContract } from "./runner-debug-crate-cache.mjs";
 import {
   assessRunnerBuild, buildInputsStampPath, collectBuildOutputFiles, computeBuildInputsDigest, expectedBuildOutputs,
   findChangedBuildOutput, writeBuildInputsStamp,
-} from "../packages/paperclip-runner/scripts/build-inputs.mjs";
+} from "../packages/pilibala-runner/scripts/build-inputs.mjs";
 
 const PREFLIGHT_SCRIPTS = ["scripts/agent-preflight.mjs", "scripts/agent-build-cache.mjs"];
 const SEED_INPUTS = [`${RUNNER_PACKAGE}/runner/Cargo.lock`, `${RUNNER_PACKAGE}/runner/Cargo.toml`,
@@ -68,7 +68,7 @@ function writeJson(file, value) {
 }
 
 function stateDirectory(root) {
-  return path.join(root, "node_modules", ".cache", "paperclip-agent-preflight");
+  return path.join(root, "node_modules", ".cache", "pilibala-agent-preflight");
 }
 
 // --- install ---------------------------------------------------------------
@@ -201,7 +201,7 @@ function runnerBuildStep(root, cache, toolchain) {
     for (const tree of DIST_TREES) removeTree(path.join(root, tree));
     log("cached Runner build did not match; building");
   }
-  const seconds = exec("pnpm", ["--filter", "@paperclipai/paperclip-runner", "build"], root);
+  const seconds = exec("pnpm", ["--filter", "@pilibalaai/pilibala-runner", "build"], root);
   const after = assessRunnerBuild({ repoRoot: root, packageRoot });
   if (!after.current || after.stamp.digest !== inputs.digest) return { step: "runner-build", action: "built", seconds };
   writeJson(keyFile, { key, recordedAt: after.stamp.recordedAt });
@@ -227,7 +227,7 @@ function binaryState(file) {
 
 function debugBinsStep(root, cache, toolchain, bins) {
   const debug = path.join(targetDirectory(root), "debug");
-  const stampFile = path.join(debug, ".paperclip-agent-debug-bins.json");
+  const stampFile = path.join(debug, ".pilibala-agent-debug-bins.json");
   const key = debugBinsKey(root, toolchain);
   const stamp = readJson(stampFile);
   const states = () => Object.fromEntries(bins.map(bin => [bin, binaryState(path.join(debug, bin))]));

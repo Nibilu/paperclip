@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

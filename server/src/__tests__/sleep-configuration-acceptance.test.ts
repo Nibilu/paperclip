@@ -6,7 +6,7 @@ import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createDb } from '@paperclipai/db';
+import { createDb } from '@pilibalaai/db';
 import { resolveExternalTestDatabaseUrl } from './helpers/external-test-database.js';
 import { configuredSleepFeatures, finalizeLocalSleepReceipt, observeConfiguredSignals, observeIncomingHttpWindow, observedNoIncomingHttp, sleepConfigurationDigest } from '../../../scripts/sleep-qualification/evidence.mjs';
 import { idleBackupArchiveNames, observeIdleBackupCheckpoint } from './helpers/maintenance/backup-observation.js';
@@ -19,15 +19,15 @@ import { observeMaintenanceBrowser } from './helpers/maintenance/browser-observa
 import { startMaintenanceServer, withMaintenanceProvider } from './helpers/maintenance/server-harness.js';
 import { CLOUD_CONTROL_AUDIENCE, CLOUD_CONTROL_HEADER, CLOUD_CONTROL_JWS_TYPE, CLOUD_RUNTIME_IDENTITY_ISSUER } from '../services/cloud-runtime-identity.js';
 
-const databaseUrl = resolveExternalTestDatabaseUrl('PAPERCLIP_SLEEP_ACCEPTANCE_TEST_DATABASE_URL');
-if (process.env.PAPERCLIP_SLEEP_CONFIGURED_ACCEPTANCE === '1' && !databaseUrl) throw new Error('Configured acceptance requires an explicit dedicated PAPERCLIP_SLEEP_ACCEPTANCE_TEST_DATABASE_URL; embedded allocation is forbidden');
-const cloudSha = process.env.PAPERCLIP_SLEEP_CLOUD_SHA;
-if (process.env.PAPERCLIP_SLEEP_CONFIGURED_ACCEPTANCE === '1' && !/^[a-f0-9]{40}$/.test(cloudSha ?? '')) throw new Error('Configured acceptance requires the exact PAPERCLIP_SLEEP_CLOUD_SHA');
-const cloudCheckout = process.env.PAPERCLIP_SLEEP_CLOUD_CHECKOUT;
-if (process.env.PAPERCLIP_SLEEP_CONFIGURED_ACCEPTANCE === '1' && !cloudCheckout) throw new Error('Configured acceptance requires a reviewed PAPERCLIP_SLEEP_CLOUD_CHECKOUT with its built qualification broker adapter');
-const enabled = process.env.PAPERCLIP_SLEEP_CONFIGURED_ACCEPTANCE === '1' && Boolean(databaseUrl);
+const databaseUrl = resolveExternalTestDatabaseUrl('PILIBALA_SLEEP_ACCEPTANCE_TEST_DATABASE_URL');
+if (process.env.PILIBALA_SLEEP_CONFIGURED_ACCEPTANCE === '1' && !databaseUrl) throw new Error('Configured acceptance requires an explicit dedicated PILIBALA_SLEEP_ACCEPTANCE_TEST_DATABASE_URL; embedded allocation is forbidden');
+const cloudSha = process.env.PILIBALA_SLEEP_CLOUD_SHA;
+if (process.env.PILIBALA_SLEEP_CONFIGURED_ACCEPTANCE === '1' && !/^[a-f0-9]{40}$/.test(cloudSha ?? '')) throw new Error('Configured acceptance requires the exact PILIBALA_SLEEP_CLOUD_SHA');
+const cloudCheckout = process.env.PILIBALA_SLEEP_CLOUD_CHECKOUT;
+if (process.env.PILIBALA_SLEEP_CONFIGURED_ACCEPTANCE === '1' && !cloudCheckout) throw new Error('Configured acceptance requires a reviewed PILIBALA_SLEEP_CLOUD_CHECKOUT with its built qualification broker adapter');
+const enabled = process.env.PILIBALA_SLEEP_CONFIGURED_ACCEPTANCE === '1' && Boolean(databaseUrl);
 const quietMs = 90_000, apiCooldownMs = 600_000;
-if (enabled && process.env.PAPERCLIP_MAINTENANCE_KEEP_ARTIFACTS !== '1') throw new Error('Configured qualification requires retained raw evidence');
+if (enabled && process.env.PILIBALA_MAINTENANCE_KEEP_ARTIFACTS !== '1') throw new Error('Configured qualification requires retained raw evidence');
 
 describe.skipIf(!enabled)('configured assembled sleep qualification (explicit owned external PostgreSQL only)', () => {
   beforeAll(async () => { await prepareMaintenanceRuntime(); }, 210_000);
@@ -49,11 +49,11 @@ describe.skipIf(!enabled)('configured assembled sleep qualification (explicit ow
     await withMaintenanceProvider(collector, async origin => {
       const pair = generateKeyPairSync('ed25519');
       const jwk = { ...pair.publicKey.export({ format: 'jwk' }), kid: 'sleep-qualification', alg: 'EdDSA', use: 'sig' };
-      const configuration = managedSleepConfiguration(origin, process.env.PAPERCLIP_SLEEP_BROWSER_ACCEPTANCE === '1');
+      const configuration = managedSleepConfiguration(origin, process.env.PILIBALA_SLEEP_BROWSER_ACCEPTANCE === '1');
       // Independent intended logical contract; collector ports are observed separately.
       const expected = { target: 'owned-local-assembled', appSha: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), cloudSha: cloudSha!,
         configDigest: createHash('sha256').update(JSON.stringify({ automaticBackups: { intervalMinutes: 60, idleCheckpoint: true }, announcements: true,
-          telemetry: true, otel: { enabled: true, protocol: 'http/json' }, serveUi: process.env.PAPERCLIP_SLEEP_BROWSER_ACCEPTANCE === '1',
+          telemetry: true, otel: { enabled: true, protocol: 'http/json' }, serveUi: process.env.PILIBALA_SLEEP_BROWSER_ACCEPTANCE === '1',
           managedInstance: true, deploymentMode: 'authenticated', storageProvider: 's3' })).digest('hex'),
         collectorOrigins: { telemetry: `${origin}/telemetry`, otel: origin } };
       expect(sleepConfigurationDigest(configuration)).toBe(expected.configDigest);
@@ -75,7 +75,7 @@ describe.skipIf(!enabled)('configured assembled sleep qualification (explicit ow
         expect(await server.api('GET', '/announcements/current')).toMatchObject({ id: 'new-projects' });
         const announcement = (await server.snapshot()).announcement;
         expect(announcement?.intercepted).toBe(true);
-        expect(announcement?.requests).toEqual(['https://pages.paperclip.ing/announcements/v1/current.json']);
+        expect(announcement?.requests).toEqual(['https://pages.pilibala.in/announcements/v1/current.json']);
         expect(announcement?.unmatched).toEqual([]);
         const agent = await server.api<{ id: string }>('POST', `/companies/${company.id}/agents`, { name: 'Owned process worker', role: 'general', adapterType: 'process',
           adapterConfig: { command: process.execPath, args: ['-e', "console.log('sleep-acceptance-useful-work')"], cwd: server.directory }, runtimeConfig: { heartbeat: { enabled: true, intervalSec: 0, wakeOnDemand: true } } });
@@ -113,7 +113,7 @@ describe.skipIf(!enabled)('configured assembled sleep qualification (explicit ow
         expect(s3.snapshot().errors).toEqual([]);
         let browser;
         try {
-          browser = process.env.PAPERCLIP_SLEEP_BROWSER_ACCEPTANCE === '1' ? await observeMaintenanceBrowser(`http://127.0.0.1:${server.port}`, 'Organize your work.', server.tenantHeaders) : undefined;
+          browser = process.env.PILIBALA_SLEEP_BROWSER_ACCEPTANCE === '1' ? await observeMaintenanceBrowser(`http://127.0.0.1:${server.port}`, 'Organize your work.', server.tenantHeaders) : undefined;
           await writeFile(path.join(server.directory, 'sleep-browser-receipt.json'), JSON.stringify({ browser, observedAt: new Date().toISOString() }, null, 2));
         } catch (error) {
           await writeFile(path.join(server.directory, 'sleep-browser-error.json'), JSON.stringify({ observedAt: new Date().toISOString(), error: error instanceof Error ? error.message : String(error) }, null, 2));
@@ -207,7 +207,7 @@ describe.skipIf(!enabled)('configured assembled sleep qualification (explicit ow
           eligibility: { observedAt: new Date().toISOString(), backgroundWork: proof.backgroundWork, ownedHold: final.ownerId === drain.ownerId, apiCooldownElapsedMs: performance.now() - lastApiActivity,
             unchangedGeneration: /^[a-f0-9]{64}$/.test(proof.deadlineProof?.generation ?? '') && initial.idleSleepSafety.deadlineProof?.generation === proof.deadlineProof?.generation }, initial, final,
           live: { databaseSuspension: 'INCONCLUSIVE', hostSuspension: 'INCONCLUSIVE', backupPersistence: 'INCONCLUSIVE', reason: 'Local actual server with simulated Cloud signer; no deployed provider target authorized' },
-          coverage: { announcements: 'Actual route, validated feed/cache and UI with one named injected provider transport fetch; DNS/HTTPS guard covered separately, not exercised here.', browser: browser ? 'Actual Chromium foreground/background measured, then closed before server quiet window' : 'Closed; set PAPERCLIP_SLEEP_BROWSER_ACCEPTANCE=1 with built UI and headed Chromium for background/active evidence', broker: 'Retained enabled connection, actual encrypted OAuth vault, actual continuity/binding owners and signed/sealed production broker delivery; host capability from actual ConnectorStore', history: 'Normal task/credential/routine, actual tool review rejection/outbox retirement, actual signed chat ingress completion and endpoint archival' } };
+          coverage: { announcements: 'Actual route, validated feed/cache and UI with one named injected provider transport fetch; DNS/HTTPS guard covered separately, not exercised here.', browser: browser ? 'Actual Chromium foreground/background measured, then closed before server quiet window' : 'Closed; set PILIBALA_SLEEP_BROWSER_ACCEPTANCE=1 with built UI and headed Chromium for background/active evidence', broker: 'Retained enabled connection, actual encrypted OAuth vault, actual continuity/binding owners and signed/sealed production broker delivery; host capability from actual ConnectorStore', history: 'Normal task/credential/routine, actual tool review rejection/outbox retirement, actual signed chat ingress completion and endpoint archival' } };
         await writeFile(path.join(server.directory, 'sleep-configuration-observations.json'), JSON.stringify(observations, null, 2));
         const { receipt, report } = finalizeLocalSleepReceipt(observations, expected);
         await writeFile(path.join(server.directory, 'sleep-configuration-receipt.json'), JSON.stringify(receipt, null, 2));

@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
 import { captureRemoteWorkspaceArchive, restoreRemoteWorkspaceDirectory, type RemoteWorkspaceTarget } from "./remote-workspace-transport.js";
 
 const roots: string[] = [];

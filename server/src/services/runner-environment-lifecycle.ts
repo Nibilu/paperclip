@@ -1,5 +1,5 @@
-import { resolvePaperclipRunnerIdleTimeoutMs } from "@paperclipai/adapter-utils";
-import type { Environment } from "@paperclipai/shared";
+import { resolvePilibalaRunnerIdleTimeoutMs } from "@pilibalaai/adapter-utils";
+import type { Environment } from "@pilibalaai/shared";
 import { REMOTE_RUNNER_RECONNECT_GRACE_MS } from "./native-runtime/native-runner-recovery-contract.js";
 
 function resolveRunnerLifecycleModeForRun(
@@ -23,13 +23,13 @@ export function resolveRunnerEnvironmentForRun<T extends Pick<Environment, "driv
   admittedLifecycleMode?: "warm" | "per_turn",
   managedAiCredentialIdentity?: string,
 ): T {
-  if (adapterType !== "paperclip_runner" || !["sandbox", "plugin"].includes(environment.driver)) return environment;
+  if (adapterType !== "pilibala_runner" || !["sandbox", "plugin"].includes(environment.driver)) return environment;
   const config = environment.config ?? {};
   const lifecycleMode = resolveRunnerLifecycleModeForRun(config, adapterConfig, admittedLifecycleMode);
   // Warm tasks need a managed credential identity; recovery keeps its admitted policy.
   if (environment.driver === "plugin") return { ...environment, config: { ...config,
     runnerLifecycleMode: admittedLifecycleMode ?? (managedAiCredentialIdentity && lifecycleMode !== "per_turn" ? "warm" : "per_turn"),
-    runnerIdleTimeoutMs: resolvePaperclipRunnerIdleTimeoutMs(config.runnerIdleTimeoutMs ?? adapterConfig.idleTimeoutMs),
+    runnerIdleTimeoutMs: resolvePilibalaRunnerIdleTimeoutMs(config.runnerIdleTimeoutMs ?? adapterConfig.idleTimeoutMs),
   } };
   if (lifecycleMode !== "warm") return environment;
   return {
@@ -54,10 +54,10 @@ export function resolveWarmRunnerIdleTimeoutMsForRun(
   adapterConfig: Record<string, unknown> = {},
   admittedLifecycleMode?: "warm" | "per_turn",
 ): number | undefined {
-  if (adapterType !== "paperclip_runner" || environment.driver !== "sandbox") return undefined;
+  if (adapterType !== "pilibala_runner" || environment.driver !== "sandbox") return undefined;
   const config = environment.config ?? {};
   if (resolveRunnerLifecycleModeForRun(config, adapterConfig, admittedLifecycleMode) !== "warm") return undefined;
-  return resolvePaperclipRunnerIdleTimeoutMs(config.runnerIdleTimeoutMs ?? adapterConfig.idleTimeoutMs);
+  return resolvePilibalaRunnerIdleTimeoutMs(config.runnerIdleTimeoutMs ?? adapterConfig.idleTimeoutMs);
 }
 
 /**
@@ -72,6 +72,6 @@ export function resolveRunnerReconnectGraceMsForRun(
   environment: Pick<Environment, "driver">,
   adapterType: string,
 ): number | undefined {
-  if (adapterType !== "paperclip_runner" || environment.driver !== "sandbox") return undefined;
+  if (adapterType !== "pilibala_runner" || environment.driver !== "sandbox") return undefined;
   return REMOTE_RUNNER_RECONNECT_GRACE_MS;
 }

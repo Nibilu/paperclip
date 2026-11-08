@@ -13,7 +13,7 @@ describe("R6 settle window", () => {
   });
 });
 
-describe("cleanup through Paperclip", () => {
+describe("cleanup through Pilibala", () => {
   const COMPANY = "11111111-1111-4111-8111-111111111111";
   const ENVIRONMENT = "22222222-2222-4222-8222-222222222222";
   const listing = { list: () => (async function* () {})() };
@@ -48,12 +48,12 @@ const labelled = (id: string, labels: Record<string, string> = {}, extra: Partia
 
 describe("wave sandbox selection is read-only and exact", () => {
   const rows = [
-    labelled("mine", { "paperclip-company-id": COMPANY, "paperclip-environment-id": ENVIRONMENT }),
+    labelled("mine", { "pilibala-company-id": COMPANY, "pilibala-environment-id": ENVIRONMENT }),
     labelled("unlabelled"),
-    labelled("other-environment", { "paperclip-company-id": COMPANY, "paperclip-environment-id": OTHER }),
-    labelled("other-company", { "paperclip-company-id": OTHER, "paperclip-environment-id": ENVIRONMENT }),
-    labelled("company-only", { "paperclip-company-id": COMPANY }),
-    labelled("fleet", { "paperclip-company-id": OTHER }, { name: "paperclip-create-abc", snapshot: "fleet-sbx-1" }),
+    labelled("other-environment", { "pilibala-company-id": COMPANY, "pilibala-environment-id": OTHER }),
+    labelled("other-company", { "pilibala-company-id": OTHER, "pilibala-environment-id": ENVIRONMENT }),
+    labelled("company-only", { "pilibala-company-id": COMPANY }),
+    labelled("fleet", { "pilibala-company-id": OTHER }, { name: "pilibala-create-abc", snapshot: "fleet-sbx-1" }),
   ];
 
   it("selects only sandboxes carrying both of the wave's UUID labels", () => {
@@ -69,7 +69,7 @@ describe("wave sandbox selection is read-only and exact", () => {
       return (async function* () { yield* rows; })();
     } });
     expect((await sweeper.listWaveSandboxes()).map(row => row.id)).toEqual(["mine"]);
-    expect(queries).toEqual([{ labels: { "paperclip-company-id": COMPANY, "paperclip-environment-id": ENVIRONMENT } }]);
+    expect(queries).toEqual([{ labels: { "pilibala-company-id": COMPANY, "pilibala-environment-id": ENVIRONMENT } }]);
   });
 
   it("exposes no mutating Daytona operation", () => {
@@ -80,10 +80,10 @@ describe("wave sandbox selection is read-only and exact", () => {
   });
 
   it("hard-refuses fleet sandboxes and anything not labelled for the wave, even with matching labels", () => {
-    const waveLabels = { "paperclip-company-id": COMPANY, "paperclip-environment-id": ENVIRONMENT };
-    expect(isProtectedSandbox({ name: "paperclip-create-1" })).toBe(true);
+    const waveLabels = { "pilibala-company-id": COMPANY, "pilibala-environment-id": ENVIRONMENT };
+    expect(isProtectedSandbox({ name: "pilibala-create-1" })).toBe(true);
     expect(isProtectedSandbox({ name: "x", snapshot: "fleet-sbx-2" })).toBe(true);
-    expect(() => assertHarnessMayMutate(labelled("a", waveLabels, { name: "paperclip-create-1" }), wave)).toThrow(/protected/);
+    expect(() => assertHarnessMayMutate(labelled("a", waveLabels, { name: "pilibala-create-1" }), wave)).toThrow(/protected/);
     expect(() => assertHarnessMayMutate(labelled("b", waveLabels, { name: "probe", snapshot: "fleet-sbx-2" }), wave)).toThrow(/protected/);
     expect(() => assertHarnessMayMutate(labelled("c", {}, { name: "probe" }), wave)).toThrow(/not labelled for this wave/);
     expect(() => assertHarnessMayMutate(labelled("d", waveLabels, { name: "probe" }), wave)).not.toThrow();
@@ -117,7 +117,7 @@ describe("Daytona R6 reconciliation", () => {
 
   it("reports sandboxes with no lease and leases still active at rest", () => {
     const result = reconcileSandboxes(
-      [{ id: "s9", state: "started", labels: { "paperclip-run-id": "r9" } }, { id: "s1", state: "started" }],
+      [{ id: "s9", state: "started", labels: { "pilibala-run-id": "r9" } }, { id: "s1", state: "started" }],
       [{ id: "l1", status: "active", providerLeaseId: "s1", heartbeatRunId: "r1", issueId: "i1" }],
     );
     expect(result.orphanSandboxes).toEqual([expect.objectContaining({ sandboxId: "s9", runId: "r9", reason: "no lease references this sandbox" })]);

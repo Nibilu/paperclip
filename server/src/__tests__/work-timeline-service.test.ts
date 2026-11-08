@@ -20,7 +20,7 @@ import {
   issueApprovals,
   issueComments,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -46,7 +46,7 @@ describeEmbeddedPostgres("work timeline aggregation", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-work-timeline-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-work-timeline-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -330,7 +330,7 @@ describeEmbeddedPostgres("work timeline aggregation", () => {
     await db.insert(activityLog).values({ companyId, actorType: "agent", actorId: agentAId,
       action: "issue.created", entityType: "issue", entityId: childIssueId,
       createdAt: new Date("2026-03-01T11:00:00Z"), details: { parentId: parentIssueId,
-        assigneeAgentId: agentBId, assigneeUserId: null, source: "paperclip_runner_protocol" } });
+        assigneeAgentId: agentBId, assigneeUserId: null, source: "pilibala_runner_protocol" } });
 
     const result = await workTimelineService(db).getTimeline({
       companyId,
@@ -823,7 +823,7 @@ describeEmbeddedPostgres("work timeline aggregation", () => {
     await db.insert(activityLog).values([
       { companyId, actorType: "agent", actorId: agentAId, action: "issue.created", entityType: "issue", entityId: issueId,
         createdAt, details: { identifier: "TL-child", title: "Child", parentId, assigneeAgentId: agentBId,
-          assigneeUserId: null, status: "todo", source: "paperclip_runner_protocol" } },
+          assigneeUserId: null, status: "todo", source: "pilibala_runner_protocol" } },
       { companyId, actorType: "user", actorId: userId, action: "issue.updated", entityType: "issue", entityId: issueId,
         createdAt: new Date("2026-03-03T10:00:00Z"), details: { changes: { assigneeAgentId: { from: agentBId, to: agentAId } } } },
     ]);
@@ -908,7 +908,7 @@ describeEmbeddedPostgres("work timeline aggregation", () => {
     await db.insert(activityLog).values({ companyId, actorType: "agent", actorId: agentAId,
       action: "issue.created", entityType: "issue", entityId: issueId, createdAt,
       details: { ...(kind === "missing-parent" ? {} : { parentId: kind === "malformed-parent" ? 42 : parentId }),
-        assigneeAgentId: agentBId, assigneeUserId: null, source: "paperclip_runner_protocol" } });
+        assigneeAgentId: agentBId, assigneeUserId: null, source: "pilibala_runner_protocol" } });
     const result = await workTimelineService(db).getTimeline({ companyId,
       from: new Date(kind === "outside-window" ? "2026-03-05T00:00:00Z" : "2026-03-01T00:00:00Z"),
       to: new Date(kind === "outside-window" ? "2026-03-06T00:00:00Z" : "2026-03-02T00:00:00Z"),

@@ -1,7 +1,7 @@
 import { hasMigratedLegacyWorkspaceSource } from "./legacy-workspace-recovery-migration.js";
 import { retiredReusableLeasePredecessors } from "./environment-lease-handoff.js";
 import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
-import { environmentLeases, environments, executionWorkspaces, executionWorkspaceSnapshots, heartbeatRuns, issueRecoveryActions, nativeRunFinalizations, nativeRunResults, type Db } from "@paperclipai/db";
+import { environmentLeases, environments, executionWorkspaces, executionWorkspaceSnapshots, heartbeatRuns, issueRecoveryActions, nativeRunFinalizations, nativeRunResults, type Db } from "@pilibalaai/db";
 import { adapterExecutionControls } from "./adapter-execution-control.js";
 import { readNativeWorkspaceSyncReference } from "./native-runtime/native-workspace-sync.js";
 import { SystemRecoveryFailure } from "./system-recovery-state.js";
@@ -9,7 +9,7 @@ import type { NativeWorkspaceFinalizationOwnership } from "./native-runtime/nati
 import { readStopOnlyCleanup } from "./sandbox-stop-and-retain.js";
 import { LEGACY_WORKSPACE_RECOVERY_SCHEMA } from "./workspace-restore-recovery-state.js";
 import { ENVIRONMENT_LEASE_POLICIES, EXECUTION_RECONCILIATION_CAUSES, readRemoteWorkspaceAuthority, remoteWorkspaceRunReferenceSchema, type EnvironmentLeasePolicy,
-  type WorkspaceSourceVerificationFailure } from "@paperclipai/shared";
+  type WorkspaceSourceVerificationFailure } from "@pilibalaai/shared";
 
 export const workspaceExportCauses = ["native_workspace_sync_out_unrecoverable", "native_workspace_sync_out_retry_exhausted"];
 export const terminalWorkspaceRunStates = ["failed", "interrupted", "timed_out", "cancelled", "succeeded"];
@@ -35,7 +35,7 @@ export function workspaceRecoverySourceEligible(includeCompleted = false) {
       (${issueRecoveryActions.evidence}#>>'{automaticRecovery,policy}' = 'preserve_without_replay_v1'
         and ${issueRecoveryActions.evidence}#>>'{automaticRecovery,replay}' = 'blocked'
         and ${issueRecoveryActions.evidence}#>>'{automaticRecovery,runId}' = ${heartbeatRuns.id}::text) or
-      (${issueRecoveryActions.evidence}#>>'{historicalWorkspaceSource,schema}' = 'paperclip.historical-workspace-source.v1'
+      (${issueRecoveryActions.evidence}#>>'{historicalWorkspaceSource,schema}' = 'pilibala.historical-workspace-source.v1'
         and ${issueRecoveryActions.evidence}#>>'{historicalWorkspaceSource,runId}' = ${heartbeatRuns.id}::text))))`;
   return and(
     sql`${issueRecoveryActions.evidence} ? 'systemRecovery'`,
@@ -44,10 +44,10 @@ export function workspaceRecoverySourceEligible(includeCompleted = false) {
     sql`${issueRecoveryActions.evidence}#>>'{systemRecovery,sourceRunId}' = ${heartbeatRuns.id}::text`,
     sql`${issueRecoveryActions.evidence}#>>'{workspaceRecovery,runId}' = ${heartbeatRuns.id}::text`,
     sql`${issueRecoveryActions.evidence}#>>'{systemRecovery,policyVersion}' = '1'`,
-    sql`${issueRecoveryActions.evidence}#>>'{systemRecovery,schema}' = 'paperclip.system-recovery.v1'`,
-    sql`${issueRecoveryActions.evidence}#>>'{workspaceRecovery,schema}' = 'paperclip.workspace-recovery.v1'`,
-    sql`(${issueRecoveryActions.evidence}->'workspaceRestoreRecovery'->>'schema' = 'paperclip.workspace-restore-recovery.v1'
-      or ${issueRecoveryActions.evidence}->'historicalWorkspaceSource'->>'schema' = 'paperclip.historical-workspace-source.v1'
+    sql`${issueRecoveryActions.evidence}#>>'{systemRecovery,schema}' = 'pilibala.system-recovery.v1'`,
+    sql`${issueRecoveryActions.evidence}#>>'{workspaceRecovery,schema}' = 'pilibala.workspace-recovery.v1'`,
+    sql`(${issueRecoveryActions.evidence}->'workspaceRestoreRecovery'->>'schema' = 'pilibala.workspace-restore-recovery.v1'
+      or ${issueRecoveryActions.evidence}->'historicalWorkspaceSource'->>'schema' = 'pilibala.historical-workspace-source.v1'
       or ${issueRecoveryActions.cause} in ('native_workspace_sync_out_unrecoverable', 'native_workspace_sync_out_retry_exhausted'))`,
   );
 }
@@ -119,9 +119,9 @@ export async function inspectWorkspaceRecoverySource(db: Db, input: WorkspaceRec
     if (!snapshot) throw invalid("workspace_reference_mismatch");
   }
   const recorded = run.resultJson?.workspaceRestoreRecovery as { schema?: unknown; leaseIds?: unknown } | undefined;
-  if (recorded != null && recorded.schema !== "paperclip.workspace-restore-recovery.v1") throw invalid("restore_reference_invalid");
+  if (recorded != null && recorded.schema !== "pilibala.workspace-restore-recovery.v1") throw invalid("restore_reference_invalid");
   const historical = action.evidence.historicalWorkspaceSource as { schema?: unknown; runId?: unknown; leaseIds?: unknown } | undefined;
-  if (historical != null && (historical.schema !== "paperclip.historical-workspace-source.v1" || historical.runId !== run.id)) throw invalid("historical_reference_invalid");
+  if (historical != null && (historical.schema !== "pilibala.historical-workspace-source.v1" || historical.runId !== run.id)) throw invalid("historical_reference_invalid");
   const leaseIds = recorded ? recorded.leaseIds
     : recoveryReference && workspaceExportCauses.includes(action.cause) ? [recoveryReference.leaseId]
     : historical?.leaseIds;

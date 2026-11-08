@@ -40,7 +40,7 @@ function fakeGithub(data, {
   const fetcher = async (href, init) => {
     const url = new URL(href);
     calls.push({ method: init.method, path: url.pathname, query: url.search, auth: init.headers.Authorization });
-    const base = `/repos/paperclipai/paperclip`;
+    const base = `/repos/pilibalaai/pilibala`;
     const route = url.pathname.slice(base.length);
     if (init.method === "POST" && route === `/actions/runs/${run.id}/rerun-failed-jobs`) {
       return new Response(null, { status: 201 });
@@ -93,7 +93,7 @@ test("all failed jobs lost their runner: re-runs failed jobs once", async () => 
   assert.equal(decision.rerun, true);
   assert.deepEqual(decision.jobs.map((job) => [job.name, job.lost]), [["ci / General tests (server (3/12))", true]]);
   assert.deepEqual(posted(calls).map((call) => call.path),
-    [`/repos/paperclipai/paperclip/actions/runs/${ALL_LOST}/rerun-failed-jobs`]);
+    [`/repos/pilibalaai/pilibala/actions/runs/${ALL_LOST}/rerun-failed-jobs`]);
   assert.ok(calls.every((call) => call.auth === "Bearer test-token"));
   // `ci / verify` failed too, but only because its dependency failed.
   assert.equal(calls.some((call) => call.path.endsWith("/check-runs/128088995071/annotations")), false);
@@ -116,7 +116,7 @@ test("mixed runner loss and a real test failure: no re-run", async () => {
   assert.equal(decision.rerun, false);
   assert.equal(decision.jobs.length, 8);
   assert.deepEqual(decision.jobs.filter((job) => !job.lost).map((job) => job.name), ["ci / General tests (workspaces-a (1/2))"]);
-  assert.equal(decision.jobs.find((job) => job.name === "ci / Verify Paperclip Runner (vitest package)").lost, true);
+  assert.equal(decision.jobs.find((job) => job.name === "ci / Verify Pilibala Runner (vitest package)").lost, true);
   assert.equal(posted(calls).length, 0);
   assert.match(decision.reason, /1 of 8 failed jobs did not lose their runner/);
   assert.match(summary, /\*\*No automatic re-run\*\*/);
@@ -144,7 +144,7 @@ test("attempt 2 or later is never re-run automatically", async () => {
   const { decision, calls } = await runMain(fixture(ALL_LOST), { mutateRun: (run) => ({ ...run, run_attempt: 2 }) });
   assert.equal(decision.rerun, false);
   assert.match(decision.reason, /attempt 2/);
-  assert.deepEqual(calls.map((call) => call.path), [`/repos/paperclipai/paperclip/actions/runs/${ALL_LOST}`]);
+  assert.deepEqual(calls.map((call) => call.path), [`/repos/pilibalaai/pilibala/actions/runs/${ALL_LOST}`]);
 });
 
 test("a failed routing gate is left for a human re-run", async () => {
@@ -192,7 +192,7 @@ test("ineligible runs are rejected before any job is read", async () => {
     [{ event: "push" }, /event is push/],
     [{ path: ".github/workflows/other.yml" }, /workflow is/],
     [{ conclusion: "success" }, /completed\/success/],
-    [{ repository: { id: 1, full_name: "someone/paperclip" } }, /canonical repository/],
+    [{ repository: { id: 1, full_name: "someone/pilibala" } }, /canonical repository/],
   ]) {
     const github = fakeGithub(data);
     const decision = await decide(github.client, { ...data.run, ...change });
@@ -226,7 +226,7 @@ test("the client refuses to follow pagination to another host", async () => {
     token: "test-token",
     fetcher: async () => json([], { link: '<https://example.com/steal?page=2>; rel="next"' }),
   });
-  await assert.rejects(client.paginate("/repos/paperclipai/paperclip/commits/x/pulls"), /Refusing to call https:\/\/example.com/);
+  await assert.rejects(client.paginate("/repos/pilibalaai/pilibala/commits/x/pulls"), /Refusing to call https:\/\/example.com/);
 });
 
 test("classification is conservative about cancelled jobs", async () => {
@@ -295,7 +295,7 @@ test("summary cells cannot break the table", () => {
 test("workflow acts only on failed first attempts of the canonical PR workflow", () => {
   const condition = workflow.match(/^ {4}if: >-\n((?: {6}.+\n)+)/m)?.[1].replace(/\s+/g, " ").trim();
   assert.equal(condition, [
-    "github.repository == 'paperclipai/paperclip' &&",
+    "github.repository == 'pilibalaai/pilibala' &&",
     "github.repository_id == '1170821064' &&",
     "github.event.workflow_run.event == 'pull_request' &&",
     "github.event.workflow_run.path == '.github/workflows/pr.yml' &&",

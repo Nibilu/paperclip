@@ -3,7 +3,7 @@
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ToolMcpGatewayWithTokens } from "@paperclipai/shared";
+import type { ToolMcpGatewayWithTokens } from "@pilibalaai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/api/client";
 import { GatewaysList } from "./GatewaysList";
@@ -135,7 +135,7 @@ describe("GatewaysList", () => {
     expect(container.textContent).toContain("Dotta's MacBook");
 
     listGatewaysMock.mockRejectedValue(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await act(async () => {
       await client.invalidateQueries();
@@ -144,7 +144,7 @@ describe("GatewaysList", () => {
 
     expect(container.textContent).toContain("Dotta's MacBook");
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
   });
 
   it("shows readable copy and a Retry button for a real error", async () => {

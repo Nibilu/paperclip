@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { createDb, runDatabaseBackup, runDatabaseRestore } from "@paperclipai/db";
+import { createDb, runDatabaseBackup, runDatabaseRestore } from "@pilibalaai/db";
 import { createDatabaseBackupOwner } from "../services/database-backup-owner.js";
 import { idleBackupWakeMarker, verifyIdleDatabaseBackup } from "../services/idle-database-backup.js";
 import { beginIdleTrackedWork, idleWorkSnapshot } from "../services/task-admission.js";
@@ -24,7 +24,7 @@ describe("real automatic backup checkpoint qualification", () => {
   const receipts: unknown[] = [];
   const owner = () => createDatabaseBackupOwner({ connectionString: pair.sourceUrl, backupDir: directory, getRetention: async () => retention, logger });
   beforeAll(async () => {
-    const receiptFile = process.env.PAPERCLIP_BACKUP_QUALIFICATION_RECEIPT;
+    const receiptFile = process.env.PILIBALA_BACKUP_QUALIFICATION_RECEIPT;
     const parent = receiptFile ? path.dirname(receiptFile) : os.tmpdir();
     await mkdir(parent, { recursive: true });
     directory = await mkdtemp(path.join(parent, "backup-checkpoint-qualification-"));
@@ -47,13 +47,13 @@ describe("real automatic backup checkpoint qualification", () => {
   }, 120_000);
   afterAll(async () => {
     try {
-      const receiptFile = process.env.PAPERCLIP_BACKUP_QUALIFICATION_RECEIPT;
+      const receiptFile = process.env.PILIBALA_BACKUP_QUALIFICATION_RECEIPT;
       if (receiptFile) await writeFile(receiptFile, JSON.stringify({ version: 1, cases: receipts, directory,
         sourceDatabase: new URL(pair.sourceUrl).pathname.slice(1), restoreDatabase: new URL(pair.restoreUrl).pathname.slice(1) }, null, 2));
     } finally {
       try { if (ownsRestoreFixture) await emptyRestore(); }
       finally { await source?.$client.end({ timeout: 5 }); }
-      if (directory && !process.env.PAPERCLIP_BACKUP_QUALIFICATION_RECEIPT) await rm(directory, { recursive: true, force: true });
+      if (directory && !process.env.PILIBALA_BACKUP_QUALIFICATION_RECEIPT) await rm(directory, { recursive: true, force: true });
     }
   });
   async function emptyRestore() {
@@ -86,7 +86,7 @@ describe("real automatic backup checkpoint qualification", () => {
 
   it.each(["pg_dump", "javascript"] as const)("restores the real %s archive with relationships, values and sequence progress", async engine => {
     if (engine === "javascript") await emptyRestore();
-    const versions = Object.fromEntries([process.env.PAPERCLIP_PG_DUMP_PATH || "pg_dump", process.env.PAPERCLIP_PSQL_PATH || "psql"]
+    const versions = Object.fromEntries([process.env.PILIBALA_PG_DUMP_PATH || "pg_dump", process.env.PILIBALA_PSQL_PATH || "psql"]
       .map(binary => [binary, execFileSync(binary, ["--version"], { encoding: "utf8" }).trim()]));
     const result = await qualifyBackupRestore(pair, directory, engine);
     expect(result.restored).toEqual({ relational: true, unicode: true, binary: true, emptyBinary: true, nullBinary: true, binaryArrays: true, nestedBinaryArrays: true, binaryArrayBounds: true, nullable: true, nextIdentity: "2", foreignKeyEnforced: true });
@@ -96,14 +96,14 @@ describe("real automatic backup checkpoint qualification", () => {
 
   it("restores the real JavaScript fallback after pg_dump is unavailable", async () => {
     await emptyRestore();
-    const previous = process.env.PAPERCLIP_PG_DUMP_PATH;
-    process.env.PAPERCLIP_PG_DUMP_PATH = path.join(directory, "missing-pg-dump");
+    const previous = process.env.PILIBALA_PG_DUMP_PATH;
+    process.env.PILIBALA_PG_DUMP_PATH = path.join(directory, "missing-pg-dump");
     try {
       const result = await qualifyBackupRestore(pair, directory, "auto");
       expect(result.restored.foreignKeyEnforced).toBe(true);
       receipts.push({ ...result, case: "automatic-javascript-fallback", pgDumpUnavailable: true });
     } finally {
-      if (previous === undefined) delete process.env.PAPERCLIP_PG_DUMP_PATH; else process.env.PAPERCLIP_PG_DUMP_PATH = previous;
+      if (previous === undefined) delete process.env.PILIBALA_PG_DUMP_PATH; else process.env.PILIBALA_PG_DUMP_PATH = previous;
     }
   }, 120_000);
 
@@ -128,9 +128,9 @@ describe("real automatic backup checkpoint qualification", () => {
     let hold: IdleSleepDrainStatus = { ownerId: "slow-owner", draining: true, startedAt: new Date(clock - 1), expiresAt: new Date(clock + 120_000), activeRuns: 0, pendingWakes: 0 };
     const barrier = path.join(directory, `slow-${change}.ready`), release = path.join(directory, `slow-${change}.release`);
     const wrapper = path.join(directory, `slow-${change}.mjs`);
-    const previous = process.env.PAPERCLIP_PG_DUMP_PATH;
+    const previous = process.env.PILIBALA_PG_DUMP_PATH;
     await writeFile(wrapper, `#!${process.execPath}\nimport { spawnSync } from 'node:child_process';\nimport { existsSync, writeFileSync } from 'node:fs';\nconst result = spawnSync(${JSON.stringify(previous || "pg_dump")}, process.argv.slice(2), { stdio: ['ignore', 'inherit', 'inherit'] });\nif (result.status !== 0) process.exit(result.status ?? 1);\nwriteFileSync(${JSON.stringify(barrier)}, 'streamed');\nsetInterval(() => { if (existsSync(${JSON.stringify(release)})) process.exit(0); }, 10);\n`);
-    await chmod(wrapper, 0o700); process.env.PAPERCLIP_PG_DUMP_PATH = wrapper;
+    await chmod(wrapper, 0o700); process.env.PILIBALA_PG_DUMP_PATH = wrapper;
     const run = owner();
     const safety = readIdleSleepSafety(source, () => hold, () => clock, "slow-owner", async () => "none", undefined, async () => Boolean(await run("idle")));
     let result;
@@ -144,7 +144,7 @@ describe("real automatic backup checkpoint qualification", () => {
       expect(idleWorkSnapshot().active).toBe(1);
     } finally {
       await writeFile(release, "release owned dump");
-      if (previous === undefined) delete process.env.PAPERCLIP_PG_DUMP_PATH; else process.env.PAPERCLIP_PG_DUMP_PATH = previous;
+      if (previous === undefined) delete process.env.PILIBALA_PG_DUMP_PATH; else process.env.PILIBALA_PG_DUMP_PATH = previous;
       result = await safety;
     }
     expect(result).toEqual({ version: 1, backgroundWork: "unknown" });
@@ -155,7 +155,7 @@ describe("real automatic backup checkpoint qualification", () => {
 
   it.each(["auto", "javascript"] as const)("preserves prior recovery points after %s verification failure without fallback or pruning", async engine => {
     const first = await owner()("idle"); const firstBytes = await readFile(first!.backupFile);
-    const history = path.join(directory, "paperclip-history.sql.gz"); const historyBytes = gzipSync("SELECT 'history';");
+    const history = path.join(directory, "pilibala-history.sql.gz"); const historyBytes = gzipSync("SELECT 'history';");
     await writeFile(history, historyBytes); await utimes(history, new Date(0), new Date(0));
     const failure = new Error("qualification fsync boundary failed"); let verifications = 0;
     await expect(runDatabaseBackup({ connectionString: pair.sourceUrl, backupDir: directory, retention, backupEngine: engine,
@@ -171,13 +171,13 @@ describe("real automatic backup checkpoint qualification", () => {
     const first = await owner()("idle"); const firstBytes = await readFile(first!.backupFile);
     const barrier = path.join(directory, "dump-streamed");
     const wrapper = path.join(directory, "slow-pg-dump.mjs");
-    const realPgDump = process.env.PAPERCLIP_PG_DUMP_PATH || "pg_dump";
+    const realPgDump = process.env.PILIBALA_PG_DUMP_PATH || "pg_dump";
     await writeFile(wrapper, `#!${process.execPath}\nimport { spawnSync } from 'node:child_process';\nimport { writeFileSync } from 'node:fs';\nconst result = spawnSync(${JSON.stringify(realPgDump)}, process.argv.slice(2), { stdio: ['ignore', 'inherit', 'inherit'] });\nif (result.status !== 0) process.exit(result.status ?? 1);\nwriteFileSync(${JSON.stringify(barrier)}, 'real pg_dump exited; pipeline remains open');\nsetInterval(() => {}, 1000);\n`);
     await chmod(wrapper, 0o700);
     const worker = fileURLToPath(new URL("./fixtures/database-backup-worker.ts", import.meta.url));
     const tsx = fileURLToPath(import.meta.resolve("tsx"));
     const child = spawn(process.execPath, ["--import", tsx, worker], { detached: true, stdio: ["ignore", "ignore", "pipe"],
-      env: { ...process.env, PAPERCLIP_PG_DUMP_PATH: wrapper, PAPERCLIP_BACKUP_WORKER_DATABASE_URL: pair.sourceUrl, PAPERCLIP_BACKUP_WORKER_DIRECTORY: directory } });
+      env: { ...process.env, PILIBALA_PG_DUMP_PATH: wrapper, PILIBALA_BACKUP_WORKER_DATABASE_URL: pair.sourceUrl, PILIBALA_BACKUP_WORKER_DIRECTORY: directory } });
     let stderr = ""; child.stderr!.on("data", chunk => { stderr += String(chunk); });
     const exited = new Promise<void>((resolve, reject) => { child.once("error", reject); child.once("exit", () => resolve()); });
     try {

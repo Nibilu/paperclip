@@ -1,4 +1,4 @@
-import { asString } from "@paperclipai/adapter-utils/server-utils";
+import { asString } from "@pilibalaai/adapter-utils/server-utils";
 import {
   allowsInsecureRemoteHttp,
   isLoopbackHostname,
@@ -15,7 +15,7 @@ import {
 export const HERMES_CAPABILITY_DISCOVERY_TIMEOUT_MS = 5_000;
 export const HERMES_CAPABILITY_REVISION_UNVERSIONED = "unversioned";
 
-/** Paperclip admission operation vocabulary (mirrors @paperclipai/shared). */
+/** Pilibala admission operation vocabulary (mirrors @pilibalaai/shared). */
 export const AGENT_CAPABILITY_OPERATIONS = [
   "create",
   "status",
@@ -65,7 +65,7 @@ export interface HermesCapabilityDiscoveryResult {
   error: AgentCapabilityObservationError | null;
   /** Redacted capability document when the probe succeeded. */
   document: Record<string, unknown> | null;
-  /** Features observed outside Paperclip's operation vocabulary. */
+  /** Features observed outside Pilibala's operation vocabulary. */
   observedExtras: Record<string, unknown> | null;
   checkedAt: string;
 }
@@ -115,7 +115,7 @@ function failure(
 }
 
 /**
- * Map the live Hermes capability document onto Paperclip's operation
+ * Map the live Hermes capability document onto Pilibala's operation
  * vocabulary. Operation availability derives from `features`; endpoint
  * identity derives from the `endpoints` map so a Gateway path change surfaces
  * as a changed capability rather than being silently assumed.
@@ -154,7 +154,7 @@ export function mapCapabilityDocument(doc: Record<string, unknown>): {
     };
   }
 
-  // Everything outside the Paperclip vocabulary is recorded as observed
+  // Everything outside the Pilibala vocabulary is recorded as observed
   // extras, never as admission input (SPEC 11.2 mapping rule).
   const knownFeatureKeys = new Set(Object.values(operationSources).map((s) => s.feature));
   const extras: Record<string, unknown> = {};
@@ -255,7 +255,7 @@ export async function discoverCapabilities(
       timedOut ? "hermes_gateway_capability_timeout" : "hermes_gateway_capability_unreachable",
       "capability_check",
       timedOut ? `Capability check timed out after ${timeoutMs}ms.` : "Capability endpoint could not be reached.",
-      "Check apiBaseUrl and that the Hermes API server is reachable from Paperclip.",
+      "Check apiBaseUrl and that the Hermes API server is reachable from Pilibala.",
     );
   }
 

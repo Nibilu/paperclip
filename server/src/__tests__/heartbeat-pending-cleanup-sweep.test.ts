@@ -12,7 +12,7 @@ import {
   createDb,
   environmentLeases,
   environments,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -59,7 +59,7 @@ import { logger } from "../middleware/logger.ts";
 import { heartbeatService, type HeartbeatEnvironmentRuntime } from "../services/heartbeat.ts";
 import { hasPendingRunCleanup } from "../services/execution-blocker.js";
 import { currentControllerProcess } from "../services/controller-process-identity.js";
-import { environmentStopErrorData, JsonRpcCallError, PLUGIN_RPC_ERROR_CODES, PluginEnvironmentStopError } from "@paperclipai/plugin-sdk";
+import { environmentStopErrorData, JsonRpcCallError, PLUGIN_RPC_ERROR_CODES, PluginEnvironmentStopError } from "@pilibalaai/plugin-sdk";
 
 const embeddedPostgresSupport = await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
@@ -84,7 +84,7 @@ describeEmbeddedPostgres("heartbeat sweepPendingCleanupLeases", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-pending-cleanup-sweep-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-pending-cleanup-sweep-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -113,7 +113,7 @@ describeEmbeddedPostgres("heartbeat sweepPendingCleanupLeases", () => {
     const environmentId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

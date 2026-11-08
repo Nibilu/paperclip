@@ -8,9 +8,9 @@ import {
   nativeRunFinalizations,
   providerTraceRecords,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { offlineMigrationExecutionWhere } from "./offline-migration-execution.js";
-import { resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { createObjectByteJournal } from "./object-byte-journal.js";
 import {
   createProviderTraceObjectStore,
@@ -75,7 +75,7 @@ export async function migrateRunEvidence(
     if (active) throw new Error("active_execution_requires_drain");
   }
   if (preserveHistoricalFiles) {
-    if (process.env.PAPERCLIP_EPHEMERAL_MIGRATION !== "true") {
+    if (process.env.PILIBALA_EPHEMERAL_MIGRATION !== "true") {
       throw new Error("historical_log_archive_requires_offline_migration");
     }
     await assertNoActiveRuns();
@@ -361,7 +361,7 @@ export async function migrateRunEvidence(
       if (!/^[a-f0-9-]+\.ndjson$/.test(filename)) throw new Error("invalid_legacy_trace_ref");
       const file = path.join(
         process.env.PROVIDER_TRACE_BASE_PATH ||
-          path.join(resolvePaperclipInstanceRoot(), "data", "provider-traces"),
+          path.join(resolvePilibalaInstanceRoot(), "data", "provider-traces"),
         filename,
       );
       for (const sidecar of [file, `${file}.rehydration`]) {

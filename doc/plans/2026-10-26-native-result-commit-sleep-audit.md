@@ -1,7 +1,7 @@
 # Accepted native result commits: sleep audit
 
 Date: 2026-10-26. Slice 53 starts at `d5c540b1c0df9aba35262ba121c651806bbca161`,
-parent [#17734](https://github.com/paperclipai/paperclip/pull/17734). The branch is
+parent [#17734](https://github.com/pilibalaai/pilibala/pull/17734). The branch is
 `codex/sleep-53-native-result-commit`. This is one duty from the
 [recurring-server inventory](2026-10-24-recurring-server-sleep-stack.md).
 
@@ -63,7 +63,7 @@ signals rather than worker-local counters or new recovery tables.
 
 | Producer | Boundary and purpose |
 | --- | --- |
-| `PaperclipControlPlanePort.completeRun` | Signal before the first accepted-result insert. Covers result arriving after an existing workspace barrier. |
+| `PilibalaControlPlanePort.completeRun` | Signal before the first accepted-result insert. Covers result arriving after an existing workspace barrier. |
 | `NativeRunCoordinatorStore.completeRun` | Same contract for the PRP coordinator's independent accepted-result writer. Terminal-event reconciliation delegates here. |
 | Workspace operation recorder | Signal before workspace-finalization receipt writes, including the successful barrier arriving after the accepted result. |
 | Direct workspace recovery | Signal the repaired successful receipt in the same transaction. |

@@ -11,7 +11,7 @@ const providerRoot = path.join(repoRoot, "packages/plugins/sandbox-providers/day
 const pluginId = "fixture-daytona-provider";
 
 it.each(["release", "cancel", "stop", "destroy", "resume", "stalled-close"] as const)("preserves worker ownership after %s of a bound duplex channel", async mode => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "paperclip-daytona-worker-close-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "pilibala-daytona-worker-close-"));
   const journal = path.join(root, "provider.jsonl"), savedFile = path.join(root, "saved.txt");
   const workerFile = path.join(root, "worker.mjs");
   const manager = createPluginWorkerManager();
@@ -29,7 +29,7 @@ it.each(["release", "cancel", "stop", "destroy", "resume", "stalled-close"] as c
       nodePaths: [path.join(repoRoot, "server/node_modules")],
       alias: {
         "@daytonaio/sdk": path.join(repoRoot, "server/src/__tests__/fixtures/daytona-worker-lifecycle-sdk.mjs"),
-        "@paperclipai/plugin-sdk": path.join(repoRoot, "packages/plugins/sdk/dist/index.js"),
+        "@pilibalaai/plugin-sdk": path.join(repoRoot, "packages/plugins/sdk/dist/index.js"),
       },
       banner: { js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' },
     });
@@ -41,8 +41,8 @@ it.each(["release", "cancel", "stop", "destroy", "resume", "stalled-close"] as c
       instanceInfo: { instanceId: "fixture-instance", hostVersion: "0.0.0" },
       apiVersion: 1,
       hostHandlers: {},
-      env: { PAPERCLIP_DAYTONA_FIXTURE_JOURNAL: journal, PAPERCLIP_DAYTONA_FIXTURE_SAVED_FILE: savedFile,
-        PAPERCLIP_DAYTONA_FIXTURE_HANG_CLOSE: mode === "stalled-close" ? "1" : "0" },
+      env: { PILIBALA_DAYTONA_FIXTURE_JOURNAL: journal, PILIBALA_DAYTONA_FIXTURE_SAVED_FILE: savedFile,
+        PILIBALA_DAYTONA_FIXTURE_HANG_CLOSE: mode === "stalled-close" ? "1" : "0" },
       duplexChannelLimits: { closeTimeoutMs: 500 },
     });
     const pid = worker.diagnostics().pid;

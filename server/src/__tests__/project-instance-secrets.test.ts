@@ -17,7 +17,7 @@ import {
   projectWorkspaces,
   createDb,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -43,11 +43,11 @@ const support = await getEmbeddedPostgresTestSupport();
     const value = "fixture-private-mount-grant";
     beforeAll(async () => {
       vi.stubEnv(
-        "PAPERCLIP_SECRETS_MASTER_KEY",
+        "PILIBALA_SECRETS_MASTER_KEY",
         randomBytes(32).toString("base64"),
       );
       database = await startEmbeddedPostgresTestDatabase(
-        "paperclip-project-instance-secrets-",
+        "pilibala-project-instance-secrets-",
       );
       db = createDb(database.connectionString);
       await db.insert(companies).values({
@@ -320,12 +320,12 @@ const support = await getEmbeddedPostgresTestSupport();
         .from(companySecrets)
         .where(eq(companySecrets.ownerProjectId, f.project.id));
       expect(row.latestVersion).toBe(2);
-      const key = process.env.PAPERCLIP_SECRETS_MASTER_KEY!;
-      vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "invalid");
+      const key = process.env.PILIBALA_SECRETS_MASTER_KEY!;
+      vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "invalid");
       try {
         await native.projectInstance.set(scope, "mount_grants", null);
       } finally {
-        vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", key);
+        vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", key);
       }
       expect(await native.projectInstance.read(scope)).toEqual({});
       await native.projectInstance.set(scope, "mount_grants", value);
@@ -360,8 +360,8 @@ const support = await getEmbeddedPostgresTestSupport();
         .update(projects)
         .set({ archivedAt: new Date("2020-01-01") })
         .where(eq(projects.id, f.project.id));
-      const key = process.env.PAPERCLIP_SECRETS_MASTER_KEY!;
-      vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "invalid");
+      const key = process.env.PILIBALA_SECRETS_MASTER_KEY!;
+      vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "invalid");
       try {
         const prepared = await f.prepare();
         expect(prepared.instanceSecrets).toEqual({});
@@ -376,7 +376,7 @@ const support = await getEmbeddedPostgresTestSupport();
             .where(eq(companySecrets.ownerProjectId, f.project.id)),
         ).toEqual([]);
       } finally {
-        vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", key);
+        vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", key);
       }
     });
     it("enforces project ownership in the database and rejects archived reads and new credentials", async () => {
@@ -456,22 +456,22 @@ describe("project instance secret patches", () => {
   it.skipIf(!support.supported)("requires a config row unless the managed config enables the plugin for this company", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "instance-secrets-managed-"));
     await mkdir(path.join(root, "sandbox-providers/daytona"), { recursive: true });
-    const database = await startEmbeddedPostgresTestDatabase("paperclip-instance-secrets-managed-");
+    const database = await startEmbeddedPostgresTestDatabase("pilibala-instance-secrets-managed-");
     const db = createDb(database.connectionString);
     try {
       const companyId = randomUUID(), pluginId = randomUUID();
       await db.insert(companies).values({ id: companyId, name: "Managed credentials", issuePrefix: "MCI" });
-      await db.insert(plugins).values({ id: pluginId, pluginKey: "paperclip.daytona-sandbox-provider", packageName: "managed", version: "1.0.0", status: "ready", packagePath: "/old/image/plugins/daytona",
+      await db.insert(plugins).values({ id: pluginId, pluginKey: "pilibala.daytona-sandbox-provider", packageName: "managed", version: "1.0.0", status: "ready", packagePath: "/old/image/plugins/daytona",
         manifestJson: { resourceLifecycle: ["project"], capabilities: ["events.subscribe", "projects.instance-secrets"] } as never });
       const [project] = await db.insert(projects).values({ companyId, name: "Credential owner" }).returning();
       await db.transaction(tx => recordResourceCreationEvent(tx as unknown as Db, companyId, "project", project.id));
       const [event] = await pluginLifecycleInbox(db, pluginId).list(companyId, 100);
       await expect(projectInstanceSecretService(db, pluginId).prepare(event)).rejects.toThrow("require plugin configuration");
-      vi.stubEnv("PAPERCLIP_BUNDLED_PLUGIN_ROOT", root);
-      vi.stubEnv("PAPERCLIP_MANAGED_CONFIG", JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "1", features: {},
+      vi.stubEnv("PILIBALA_BUNDLED_PLUGIN_ROOT", root);
+      vi.stubEnv("PILIBALA_MANAGED_CONFIG", JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "1", features: {},
         plugins: { autoInstall: ["daytona"], workerEnv: { daytona: ["PROVIDER_ORIGIN"] }, enabledCompanies: { daytona: [randomUUID()] } } }));
       await expect(projectInstanceSecretService(db, pluginId).prepare(event)).rejects.toThrow("require plugin configuration");
-      vi.stubEnv("PAPERCLIP_MANAGED_CONFIG", JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "1", features: {},
+      vi.stubEnv("PILIBALA_MANAGED_CONFIG", JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "1", features: {},
         plugins: { autoInstall: ["daytona"], enabledCompanies: { daytona: [companyId] } } }));
       await expect(projectInstanceSecretService(db, pluginId).prepare(event)).resolves.toMatchObject({ instanceSecrets: expect.any(Object) });
     } finally {

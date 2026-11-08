@@ -5,7 +5,7 @@ import { notifyGitHubCredentialChange } from "./github-connection-notifications.
 import { notifyToolConnectionHealth } from "./tool-connection-health-notifications.js";
 import { dispatchGitHubBotCloudEvent } from "./chat-github-cloud-ingress.js";
 import { dispatchSlackCloudEvent } from "./chat-channels/slack/cloud-ingress.js";
-import { chatEndpoints } from "@paperclipai/db";
+import { chatEndpoints } from "@pilibalaai/db";
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import {
@@ -14,7 +14,7 @@ import {
   externalObjects,
   toolConnections,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { and, eq, ne, sql } from "drizzle-orm";
 import {
   logActivity,
@@ -22,11 +22,11 @@ import {
   type ActivityPublication,
 } from "./activity-log.js";
 import {
-  createPaperclipCloudConnector,
-  paperclipCloudConnectorConfigFromEnv,
-  type PaperclipCloudConnector,
+  createPilibalaCloudConnector,
+  pilibalaCloudConnectorConfigFromEnv,
+  type PilibalaCloudConnector,
   type SealedConnectorEvents,
-} from "./paperclip-cloud-connector.js";
+} from "./pilibala-cloud-connector.js";
 import { issueThreadInteractionService } from "./issue-thread-interactions.js";
 import { logger } from "../middleware/logger.js";
 
@@ -219,7 +219,7 @@ function githubSnapshotUpdate(payload: Record<string, unknown>) {
 export function githubConnectionEventService(
   db: Db,
   options: {
-    connector?: PaperclipCloudConnector;
+    connector?: PilibalaCloudConnector;
     env?: NodeJS.ProcessEnv;
     now?: () => Date;
     wakeup?: NonNullable<Parameters<typeof issueThreadInteractionService>[1]>["wakeup"];
@@ -231,21 +231,21 @@ export function githubConnectionEventService(
   let nextEnrollmentDiagnosticAt = 0;
   const slackDiagnostics = new Map<string, number>();
   let configuredConnector: {
-    config: NonNullable<ReturnType<typeof paperclipCloudConnectorConfigFromEnv>>;
-    connector: PaperclipCloudConnector;
+    config: NonNullable<ReturnType<typeof pilibalaCloudConnectorConfigFromEnv>>;
+    connector: PilibalaCloudConnector;
   } | undefined;
   function currentConnector() {
     if (options.connector) return options.connector;
     // Enrollment and identity replacement can happen after this owner starts.
     // Read only on an admitted pass; preserve negotiated delivery while unchanged.
-    const config = paperclipCloudConnectorConfigFromEnv(options.env);
+    const config = pilibalaCloudConnectorConfigFromEnv(options.env);
     if (!config) { configuredConnector = undefined; return null; }
     if (!configuredConnector || !isDeepStrictEqual(configuredConnector.config, config)) {
-      configuredConnector = { config, connector: createPaperclipCloudConnector({ config }) };
+      configuredConnector = { config, connector: createPilibalaCloudConnector({ config }) };
     }
     return configuredConnector.connector;
   }
-  const forcePolling = (options.env ?? process.env).PAPERCLIP_GITHUB_EVENT_POLLING === "1";
+  const forcePolling = (options.env ?? process.env).PILIBALA_GITHUB_EVENT_POLLING === "1";
   let emptyPolls = 0;
   let nextSetupPollAt = 0;
   let inFlight: Promise<GitHubConnectionEventPollResult> | null = null;
@@ -525,7 +525,7 @@ export function githubConnectionEventService(
     }
   }
 
-  async function drainConnectorEvents(connector: PaperclipCloudConnector): Promise<GitHubConnectionEventPollResult> {
+  async function drainConnectorEvents(connector: PilibalaCloudConnector): Promise<GitHubConnectionEventPollResult> {
     const bindings = await activeBindings();
     const githubBots = await db.select().from(chatEndpoints).where(and(eq(chatEndpoints.provider, "github"), sql`${chatEndpoints.setup}->'github'->>'cloudRegistrationId' is not null`, sql`${chatEndpoints.status} not in ('archived', 'disabled')`, sql`exists (select 1 from companies where id = ${chatEndpoints.companyId} and status <> 'archived')`));
     const slackBots = await db.select().from(chatEndpoints).where(and(eq(chatEndpoints.provider, "slack"), sql`${chatEndpoints.setup}->'slackCloudEvents' is not null`, sql`${chatEndpoints.status} in ('active','verifying','attention')`, sql`exists (select 1 from companies where id = ${chatEndpoints.companyId} and status <> 'archived')`));

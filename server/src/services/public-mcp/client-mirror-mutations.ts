@@ -1,5 +1,5 @@
 import { eq, sql } from "drizzle-orm";
-import { mcpOauthClientMirrorState as state, mcpOauthClientChanges as changes, type Db } from "@paperclipai/db";
+import { mcpOauthClientMirrorState as state, mcpOauthClientChanges as changes, type Db } from "@pilibalaai/db";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "../delivery-work-notifications.js";
 
 const revisions = new WeakMap<object, number>();

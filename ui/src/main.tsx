@@ -24,7 +24,7 @@ import { initPluginBridge } from "./plugins/bridge-init";
 import { PluginLauncherProvider } from "./plugins/launchers";
 import { startChunkLoadRecovery } from "./lib/chunk-load-recovery";
 import { startPerfMeasureReaper } from "./lib/perf-measure-reaper";
-import { getOrCreatePaperclipReactRoot } from "./lib/react-root";
+import { getOrCreatePilibalaReactRoot } from "./lib/react-root";
 import { startServiceWorkerUpdates } from "./lib/service-worker-updates";
 import { connectivity } from "./lib/connectivity";
 import { bindConnectivity, createAppQueryClient } from "./lib/query-client";
@@ -83,7 +83,7 @@ const queryClient = createAppQueryClient(
 // live queries refresh once when the server answers again.
 bindConnectivity(queryClient, connectivity);
 startPersistedQueryCache(queryClient, {
-  buildId: typeof __PAPERCLIP_BUILD_COMMIT__ === "string" ? __PAPERCLIP_BUILD_COMMIT__ : null,
+  buildId: typeof __PILIBALA_BUILD_COMMIT__ === "string" ? __PILIBALA_BUILD_COMMIT__ : null,
 });
 window.addEventListener("load", () => {
   startServiceWorkerUpdates({
@@ -108,9 +108,9 @@ function CompanyVoiceCalls({ children }: { children: React.ReactNode }) {
 }
 
 const rootElement = document.getElementById("root");
-if (!rootElement) throw new Error("Paperclip root element is missing");
+if (!rootElement) throw new Error("Pilibala root element is missing");
 
-getOrCreatePaperclipReactRoot(window, rootElement).render(
+getOrCreatePilibalaReactRoot(window, rootElement).render(
   <StrictMode>
     <AppErrorBoundary>
       <QueryClientProvider client={queryClient}>

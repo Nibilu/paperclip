@@ -10,7 +10,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const postinstallHooks = new Map([
   [".", "node scripts/link-plugin-dev-sdk.mjs"],
   ["server", "node scripts/install-copilot-assets.mjs"],
-  ["packages/paperclip-runner", "node scripts/install-copilot-assets.mjs"],
+  ["packages/pilibala-runner", "node scripts/install-copilot-assets.mjs"],
 ]);
 
 export function cachePlan({ files, read, scope, packageDirs }) {
@@ -19,7 +19,7 @@ export function cachePlan({ files, read, scope, packageDirs }) {
     || ["pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc", ".pnpmfile.cjs", "pnpmfile.cjs"].includes(file)
     || file.startsWith("scripts/")
     || file.startsWith("server/scripts/")
-    || file.startsWith("packages/paperclip-runner/scripts/")
+    || file.startsWith("packages/pilibala-runner/scripts/")
     || file.startsWith("patches/"));
   const digest = (inputs, salt) => {
     const hash = createHash("sha256").update(JSON.stringify(salt));
@@ -78,13 +78,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     `cacheable=${plan.cacheable}`,
     `dependency-key=${plan.dependencyKey}`,
     `build-key=${plan.buildKey}`,
-    "dependency-paths<<PAPERCLIP_CACHE_PATHS",
+    "dependency-paths<<PILIBALA_CACHE_PATHS",
     ...plan.dependencyPaths.map((file) => path.join(root, file)),
-    "PAPERCLIP_CACHE_PATHS",
-    "build-paths<<PAPERCLIP_BUILD_PATHS",
+    "PILIBALA_CACHE_PATHS",
+    "build-paths<<PILIBALA_BUILD_PATHS",
     path.join(root, "packages/shared/dist"),
     path.join(root, "packages/plugins/sdk/dist"),
-    "PAPERCLIP_BUILD_PATHS",
+    "PILIBALA_BUILD_PATHS",
   ].join("\n") + "\n";
   if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, output);
   else console.log(JSON.stringify(plan, null, 2));

@@ -7,12 +7,12 @@ const selected = cases.map((row, i) => ({ ...row, caseId: 100 + i }));
 const context = { runId: '123', attempt: '1', workflowSha: 'a'.repeat(40), targetSha, operation: 'evaluate' };
 const binding = { planId: 10, jobId: 11, integrationId: 2, cases: selected };
 const env = { ALLURE_JOB_RUN_ID: '77', CHAT_COMPLETION_TESTOPS_BINDING: JSON.stringify(binding) };
-const selection = { schema: 'paperclip.chat-completion-testops-selection/v1', ...context, projectId: 1,
+const selection = { schema: 'pilibala.chat-completion-testops-selection/v1', ...context, projectId: 1,
   planId: 10, jobId: 11, allureJobRunId: '77', launchId: 12, cases: selected };
-const runUrl = 'https://github.com/paperclipai/paperclip/actions/runs/123';
+const runUrl = 'https://github.com/pilibalaai/pilibala/actions/runs/123';
 const plan = { id: 10, name: 'Chat completion pilot — OpenCode 1017', projectId: 1, testCasesCount: 3,
   treeSelection: { inverted: false, leafsInclude: selected.map(row => row.caseId) } };
-const job = { id: 11, type: 'github', url: 'https://github.com/paperclipai/paperclip/actions/workflows/chat-completion-testops.yml' };
+const job = { id: 11, type: 'github', url: 'https://github.com/pilibalaai/pilibala/actions/workflows/chat-completion-testops.yml' };
 const jobrun = { id: 77, job, launchId: 12, stage: 'in_progress', url: runUrl };
 const attachment = { id: 900, name: 'Execution provenance and checks', contentType: 'application/json', contentLength: 100,
   missed: false, fromTestCase: false };
@@ -132,7 +132,7 @@ test('completion launch preflight sends the typed UTF-8 name filter required by 
   const f = mutationApi({ assignments: [{ job, testCasesCount: 3 }] });
   const api = async (route, ...args) => {
     if (route.startsWith('/api/launch?')) {
-      const wire = new URL(route, 'https://paperclip.testops.cloud').searchParams.get('search');
+      const wire = new URL(route, 'https://pilibala.testops.cloud').searchParams.get('search');
       let filters;
       try { filters = JSON.parse(Buffer.from(wire, 'base64').toString('utf8')); }
       catch { throw new Error('TestOps HTTP 400: typed launch search required'); }
@@ -273,7 +273,7 @@ for (const kind of ['wrong-case', 'wrong-source-run', 'wrong-status', 'foreign-r
       projectId: 1, launchId: 12, status: 'failed', links: [], jobRun: { id: 77, launchId: 12, url: runUrl, job } };
     if (kind === 'foreign-embedded-job' || kind === 'foreign-source-link') replacements['/api/testresult/200'] = {
       id: 200, testCaseId: 100, fullName: selected[0].fullName, projectId: 1, launchId: 12, status: 'passed',
-      links: kind === 'foreign-source-link' ? [{ url: 'https://github.com/paperclipai/paperclip/commit/' + 'b'.repeat(40) }] : [],
+      links: kind === 'foreign-source-link' ? [{ url: 'https://github.com/pilibalaai/pilibala/commit/' + 'b'.repeat(40) }] : [],
       jobRun: { id: 77, launchId: 12, url: runUrl, job: kind === 'foreign-embedded-job' ? { ...job, type: 'foreign' } : job } };
     if (kind === 'foreign-result') replacements['/api/testresult?launchId=12&page=0&size=100'] = { content: [{ id: 999, testCaseId: 999 }], totalElements: 1, totalPages: 1 };
     if (kind === 'duplicate-result') replacements['/api/testresult?launchId=12&page=0&size=100'] = { content: [{ id: 200, testCaseId: 100 }, { id: 200, testCaseId: 100 }], totalElements: 2, totalPages: 1 };

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
-import { environmentLeases, heartbeatRuns, issues, nativeHarnessBackups, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { environmentLeases, heartbeatRuns, issues, nativeHarnessBackups, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import type { StorageService } from "../../storage/types.js";
 import { nativeHarnessStateBase, readNativeHarnessBackupStamp, verifyNativeHarnessBackupStampAsync } from "./native-harness-backup-stamp.js";
 import { nativeHarnessBackupOwner, persistNativeHarnessBackup, verifyDurableNativeHarnessBackup } from "./native-harness-backup-storage.js";
@@ -21,8 +21,8 @@ export async function hasLocalNativeHarnessObligations(db: Db): Promise<boolean>
     join heartbeat_runs r on r.id = s.last_run_id and r.company_id = s.company_id and r.agent_id = s.agent_id
     join environment_leases e on e.company_id = r.company_id and e.issue_id = r.native_issue_id
       and e.metadata->'nativeHarnessBackup'->>'normalizedSessionId' = r.native_session_id::text
-    where s.adapter_type = 'paperclip_runner'
-      and e.metadata->'nativeHarnessBackup'->>'schema' = 'paperclip.native-harness-backup-stamp.v2'
+    where s.adapter_type = 'pilibala_runner'
+      and e.metadata->'nativeHarnessBackup'->>'schema' = 'pilibala.native-harness-backup-stamp.v2'
       and not exists (select 1 from native_harness_backups b where b.company_id = r.company_id
         and b.scope_digest = e.metadata->'nativeHarnessBackup'->>'sessionScopeSha256' and b.status = 'current')
       and (s.id::text, coalesce(e.metadata->'nativeHarnessBackup'->>'sessionScopeSha256', '')) > (${afterSession}, ${afterScope})
@@ -46,7 +46,7 @@ async function prepareSource(base: string, scopeDigest: string) {
   if (!files) return null;
   const { manifestBytes, manifest, state } = files;
   if (state.lifecycle !== "suspended" || typeof state.runId !== "string"
-    || manifest.schema !== "paperclip.native-harness-backup.v1") throw new Error("native_harness_migration_source_unsettled");
+    || manifest.schema !== "pilibala.native-harness-backup.v1") throw new Error("native_harness_migration_source_unsettled");
   const names = new Set<string>();
   let bytes = manifestBytes.length, closed = Array.isArray(manifest.directories) && manifest.directories.length > 0;
   for (const value of Array.isArray(manifest.directories) ? manifest.directories : []) {
@@ -167,7 +167,7 @@ export async function migrateNativeHarnessBackups(db: Db, input: {
 
 export async function prestageNativeHarnessBackups(db: Db, input: { storage: StorageService; signal: AbortSignal }) {
   const deferSource = (scopeDigest: string, reason: string, outcome: string) => {
-    console.warn(JSON.stringify({ schema: "paperclip.native-harness-prestage-source.v1", scopeDigest, reason }));
+    console.warn(JSON.stringify({ schema: "pilibala.native-harness-prestage-source.v1", scopeDigest, reason }));
     return outcome;
   };
   const outcomes = await mapSources({ ...input, concurrency: 1, unavailableSource: (error, scopeDigest) => {

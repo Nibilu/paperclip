@@ -1,11 +1,11 @@
 import path from "node:path";
 import { and, eq, sql } from "drizzle-orm";
-import { executionWorkspaces, heartbeatRuns, workspaceOperations, type Db } from "@paperclipai/db";
-import { parseNativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+import { executionWorkspaces, heartbeatRuns, workspaceOperations, type Db } from "@pilibalaai/db";
+import { parseNativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 import { findNativeSessionResumeRun } from "./native-session-resume.js";
 import { readNativeWorkspaceSyncReference } from "./native-workspace-sync.js";
 
-const SCHEMA = "paperclip.native-workspace-migration.v1";
+const SCHEMA = "pilibala.native-workspace-migration.v1";
 const object = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const absolute = (value: unknown): value is string => typeof value === "string" && value !== "/"
   && !value.includes("\0") && path.posix.isAbsolute(value) && path.posix.normalize(value) === value;
@@ -19,7 +19,7 @@ export async function inspectNativeWorkspaceMigration(db: Db, workspace: Workspa
     select s.agent_id as "agentId", r.native_issue_id as "issueId", r.native_session_id as "sessionId", r.created_at as "createdAt"
     from agent_task_sessions s join heartbeat_runs r on r.id = s.last_run_id
       and r.company_id = s.company_id and r.agent_id = s.agent_id
-    where s.company_id = ${workspace.companyId} and s.adapter_type = 'paperclip_runner'
+    where s.company_id = ${workspace.companyId} and s.adapter_type = 'pilibala_runner'
       and r.native_issue_id is not null and r.native_session_id is not null
       and r.runner_profile_json#>>'{nativeExecutionInput,binding,executionWorkspaceId}' = ${workspace.id}
     order by s.id limit 1001`);
@@ -55,7 +55,7 @@ export async function readNativeWorkspaceMigration(db: Pick<Db, "select">, works
     )).where(and(eq(executionWorkspaces.companyId, workspace.companyId), eq(executionWorkspaces.id, workspace.id)));
   if (!row?.workspaceMetadata?.nativeWorkspaceMigration) return null;
   const migration = object(row.metadata?.nativeSessionContinuity);
-  if (object(row.workspaceMetadata.nativeWorkspaceMigration).schema !== SCHEMA || !row.operationId || row.metadata?.schema !== "paperclip.remote-workspace-migration.v1" || !uuid(row.metadata.snapshotId)
+  if (object(row.workspaceMetadata.nativeWorkspaceMigration).schema !== SCHEMA || !row.operationId || row.metadata?.schema !== "pilibala.remote-workspace-migration.v1" || !uuid(row.metadata.snapshotId)
     || migration.schema !== SCHEMA || !absolute(migration.remoteCwd) || !Array.isArray(migration.sessions)
     || !migration.sessions.length || migration.sessions.length > 1000
     || !migration.sessions.every(value => {

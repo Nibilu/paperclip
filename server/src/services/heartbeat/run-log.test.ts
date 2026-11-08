@@ -143,7 +143,7 @@ describe("heartbeat run-log chunk formatting", () => {
 
   it("keeps the existing head, tail, and omission count for a custom limit", () => {
     expect(compactRunLogChunk(`${"x".repeat(95)}tail!`, 20)).toBe(
-      `${"x".repeat(12)}\n[paperclip truncated run log chunk: omitted 83 chars]\ntail!`,
+      `${"x".repeat(12)}\n[pilibala truncated run log chunk: omitted 83 chars]\ntail!`,
     );
   });
 
@@ -172,15 +172,15 @@ describe("heartbeat run-log chunk formatting", () => {
     expect(compacted).toContain("***REDACTED***");
     expect(compacted).not.toContain("fixture-secret-token");
     expect(compacted).toContain("[omitted base64 image data: 70000 chars]");
-    expect(compacted).not.toContain("[paperclip truncated");
+    expect(compacted).not.toContain("[pilibala truncated");
   });
 });
 
 describe("complete canonical native log privacy", () => {
   it.each([false, true])("keeps structured bytes and applies complete-value secrets, images, and username masking: %s", enabled => {
     const identity = createAgentIdentityRedactor("fixture-configured-private-canary");
-    const envelope = { type: "paperclip.prp.event", event: {
-      schema: "paperclip.prp.event.v1", schemaVersion: 1, eventType: "item.delta",
+    const envelope = { type: "pilibala.prp.event", event: {
+      schema: "pilibala.prp.event.v1", schemaVersion: 1, eventType: "item.delta",
       payload: { header: 'Authorization: Bearer fixture-bearer-canary', api_key: "fixture-api-canary",
         text: 'quoted "fixture-configured-private-canary" by fixture-operator',
         image: { source: { data: "A".repeat(70000), type: "base64" }, type: "image" },
@@ -202,13 +202,13 @@ describe("complete canonical native log privacy", () => {
       expect(chunk).not.toContain(secret);
     expect(chunk).not.toContain("data:image");
     expect(chunk.length).toBeGreaterThan(64 * 1024);
-    expect(chunk).not.toContain("[paperclip truncated");
+    expect(chunk).not.toContain("[pilibala truncated");
   });
 
   it("rejects malformed owned envelopes instead of treating them as coverage-preserving diagnostics", () => {
     const options = { redactIdentity: <T>(value: T) => value, currentUser: { enabled: false } };
-    for (const chunk of ['{"type":"paperclip.prp.event",', '{"type":"diagnostic","event":{}}',
-      '{"type":"paperclip.prp.event","event":[]}'])
+    for (const chunk of ['{"type":"pilibala.prp.event",', '{"type":"diagnostic","event":{}}',
+      '{"type":"pilibala.prp.event","event":[]}'])
       expect(() => redactCanonicalNativeRunLogChunk(chunk, options)).toThrow();
   });
 });

@@ -1,8 +1,8 @@
 import { legacySourceProcessSettled } from "./legacy-process-settlement.js";
 import { parseIssueExecutionState } from "../issue-execution-policy.js";
-import { agents, agentWakeupRequests, companies, heartbeatRuns, issues, type Db } from "@paperclipai/db";
+import { agents, agentWakeupRequests, companies, heartbeatRuns, issues, type Db } from "@pilibalaai/db";
 import { and, eq, sql, type SQLWrapper } from "drizzle-orm";
-import { issueExecutionPolicySchema } from "@paperclipai/shared";
+import { issueExecutionPolicySchema } from "@pilibalaai/shared";
 import { alias } from "drizzle-orm/pg-core";
 import { DEFERRED_WAKE_CONTEXT_KEY } from "./queue.js";
 import { finishedIdleRun } from "../idle-work-proof.js";

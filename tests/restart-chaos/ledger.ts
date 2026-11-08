@@ -4,7 +4,7 @@ import { replayCommand } from "./config.js";
 import type { RuleId, TaskGrade, TaskRecord, WavePlan } from "./types.js";
 
 export interface LedgerLine {
-  schema: "paperclip.restart-chaos.ledger/v1";
+  schema: "pilibala.restart-chaos.ledger/v1";
   waveId: string;
   taskId: string;
   seed: number;
@@ -40,7 +40,7 @@ export function ledgerLine(plan: WavePlan, record: TaskRecord, grade: TaskGrade,
   const rules = Object.fromEntries(Object.entries(grade.rules).map(([id, rule]) => [id, rule.verdict])) as Record<RuleId, string>;
   const ruleDetails = Object.fromEntries(Object.entries(grade.rules).map(([id, rule]) => [id, rule.detail])) as Record<RuleId, string>;
   return {
-    schema: "paperclip.restart-chaos.ledger/v1", waveId: plan.waveId, taskId: record.plan.taskId, seed: plan.seed, gitSha,
+    schema: "pilibala.restart-chaos.ledger/v1", waveId: plan.waveId, taskId: record.plan.taskId, seed: plan.seed, gitSha,
     env: plan.options.env, adapter: record.plan.adapter, workload: record.plan.workload, fault: record.plan.fault,
     ...(record.plan.trigger ? { trigger: record.plan.trigger, triggerMissed: record.triggerMissed ?? [] } : {}),
     holdMs: record.plan.holdMs, fireAfterMs: record.plan.fireAfterMs, issue: record.identifier ?? record.issueId,

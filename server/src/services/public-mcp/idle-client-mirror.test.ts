@@ -1,5 +1,5 @@
 import {describe,it,expect} from "vitest";
-import type {Db} from "@paperclipai/db";
+import type {Db} from "@pilibalaai/db";
 import {readIdleMcpClientMirror} from "./idle-client-mirror.js";
 import {mcpClientMirrorGeneration} from "./client-mirror-contract.js";
 

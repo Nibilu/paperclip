@@ -1,8 +1,8 @@
-import type { SetIssueTitle } from "@paperclipai/shared";
-import { ISSUE_SUMMARIES_MAX_IDS } from "@paperclipai/shared";
-import type { IssueSummary } from "@paperclipai/shared";
-import type { ExecutionReconciliation } from "@paperclipai/shared";
-import type { IssueContextUsage } from "@paperclipai/shared";
+import type { SetIssueTitle } from "@pilibalaai/shared";
+import { ISSUE_SUMMARIES_MAX_IDS } from "@pilibalaai/shared";
+import type { IssueSummary } from "@pilibalaai/shared";
+import type { ExecutionReconciliation } from "@pilibalaai/shared";
+import type { IssueContextUsage } from "@pilibalaai/shared";
 import type {
   AcceptedPlanDecompositionSummary,
   AskUserQuestionsAnswer,
@@ -45,7 +45,7 @@ import type {
   ReleaseIssueTreeHoldResponse,
   UpsertIssueWatchdog,
   UpsertIssueDocument,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { api, ApiError, detachInflightGet, type RequestOptions } from "./client";
 import { CommentSubmissionUnknownError } from "../lib/comment-submit-result";
 import { classifySendFailure } from "../lib/pending-send";
@@ -426,7 +426,7 @@ export const issuesApi = {
   retryWorkspaceExport: (id: string, data: { actionId: string; runId: string; repairNote: string }) =>
     api.post<{ runId: string; resultId: string; leaseId: string; status: "queued" }>(`/issues/${id}/recovery-actions/retry-workspace-export`, data),
   retryTask: (issueId: string, body: { idempotencyKey: string; observedRunId: string | null }) =>
-    api.post<{ requestId: string | null; accepted: boolean; stale: boolean; presentation: import("@paperclipai/shared").TaskInterruptionPresentation | null }>(`/issues/${issueId}/retry`, body),
+    api.post<{ requestId: string | null; accepted: boolean; stale: boolean; presentation: import("@pilibalaai/shared").TaskInterruptionPresentation | null }>(`/issues/${issueId}/retry`, body),
   recoverWorkspace: (id: string, data: { actionId: string; runId: string; idempotencyKey: string }) =>
     api.post<{ actionId: string; status: string }>(`/issues/${id}/recovery-actions/recover-workspace`, data),
   reconstructWorkspace: (id: string, data: { actionId: string; runId: string; expectedStatusVersion: number; attachmentIds: string[];

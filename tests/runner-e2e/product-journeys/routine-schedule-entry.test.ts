@@ -26,7 +26,7 @@ async function fixture(fault: "body" | "document-author" | "revision-run" | "cre
   const task = { id: "task", identifier: "QA-1", companyId: "company", projectId: "project", assigneeAgentId: agent.id,
     status: "done", originKind: "routine_execution", originId: "routine", originRunId: "invocation" };
   const run = { id: "native-run", companyId: "company", issueId: task.id, agentId: agent.id, status: "succeeded", runtimeMode: "native",
-    contextSnapshot: { paperclipEnvironment: { id: "environment" } },
+    contextSnapshot: { pilibalaEnvironment: { id: "environment" } },
     runnerProfileJson: { nativeExecutionInput: { provider: { kind: agent.provider, model: agent.model } } } };
   const body = fault === "body" ? expectedBody.slice(0, -1) : expectedBody;
   const document = { id: "document", companyId: "company", issueId: task.id, latestRevisionId: "revision", body,

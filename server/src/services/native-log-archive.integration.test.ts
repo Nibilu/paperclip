@@ -3,7 +3,7 @@ import { appendFile, link, mkdir, readFile, rm, symlink, writeFile } from "node:
 import { dirname, join } from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { afterEach, expect, it, vi } from "vitest";
-import { environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults, type Db } from "@paperclipai/db";
+import { environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults, type Db } from "@pilibalaai/db";
 import { describeEmbeddedPostgres, nativeRestartFixture } from "../__tests__/helpers/native-restart.js";
 import { createMaintenanceS3Boundary } from "../__tests__/helpers/maintenance/s3-boundary.js";
 import { withMaintenanceProvider } from "../__tests__/helpers/maintenance/server-harness.js";
@@ -24,8 +24,8 @@ describeEmbeddedPostgres("online native historical log preservation", () => {
   afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
   async function fixture() {
     const f = await environment.seedRun(randomUUID());
-    const { companyId, agentId, paperclipHome } = environment.current;
-    const ref = `${companyId}/${agentId}/${f.runId}.ndjson`, base = join(paperclipHome, `archive-test-${f.runId}`);
+    const { companyId, agentId, pilibalaHome } = environment.current;
+    const ref = `${companyId}/${agentId}/${f.runId}.ndjson`, base = join(pilibalaHome, `archive-test-${f.runId}`);
     const file = join(base, ref), bytes = Buffer.from('{"seq":1,"chunk":"surviving 再開 output"}\n{"partial":');
     await mkdir(dirname(file), { recursive: true }); await writeFile(file, bytes);
     await f.db.update(heartbeatRuns).set({ status: "failed", finishedAt: new Date(), logStore: "local_file", logRef: ref,
@@ -43,13 +43,13 @@ describeEmbeddedPostgres("online native historical log preservation", () => {
   async function withSource(action: (f: Awaited<ReturnType<typeof fixture>>) => Promise<void>) {
     const f = await fixture();
     await withMaintenanceProvider(f.s3.server, async endpoint => {
-      for (const [key, value] of Object.entries({ PAPERCLIP_STORAGE_PROVIDER: "s3", PAPERCLIP_STORAGE_S3_ENDPOINT: endpoint,
-        PAPERCLIP_STORAGE_S3_BUCKET: "maintenance-test", PAPERCLIP_STORAGE_S3_REGION: "us-east-1",
-        PAPERCLIP_STORAGE_S3_FORCE_PATH_STYLE: "true", PAPERCLIP_STORAGE_S3_PREFIX: "",
+      for (const [key, value] of Object.entries({ PILIBALA_STORAGE_PROVIDER: "s3", PILIBALA_STORAGE_S3_ENDPOINT: endpoint,
+        PILIBALA_STORAGE_S3_BUCKET: "maintenance-test", PILIBALA_STORAGE_S3_REGION: "us-east-1",
+        PILIBALA_STORAGE_S3_FORCE_PATH_STYLE: "true", PILIBALA_STORAGE_S3_PREFIX: "",
         AWS_ACCESS_KEY_ID: "fixture-only", AWS_SECRET_ACCESS_KEY: "fixture-only",
         RUN_LOG_S3_ENDPOINT: endpoint, RUN_LOG_S3_BUCKET: "maintenance-test", RUN_LOG_S3_REGION: "us-east-1",
         RUN_LOG_S3_FORCE_PATH_STYLE: "true", RUN_LOG_S3_PREFIX: "run-logs", RUN_LOG_BASE_PATH: f.base,
-        PAPERCLIP_EPHEMERAL_MIGRATION: "false" })) vi.stubEnv(key, value);
+        PILIBALA_EPHEMERAL_MIGRATION: "false" })) vi.stubEnv(key, value);
       await action(f);
       expect(f.s3.snapshot().errors).toEqual([]);
     });

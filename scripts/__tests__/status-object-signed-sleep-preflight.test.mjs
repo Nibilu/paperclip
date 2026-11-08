@@ -53,11 +53,11 @@ function fixture(run) {
   const env = {
     PATH: process.env.PATH, HOME: process.env.HOME, TMPDIR: process.env.TMPDIR,
     PREFLIGHT_EXPECTED_ROOT: root, PREFLIGHT_SPAWN_RECEIPT: spawnReceipt, PREFLIGHT_NETWORK_RECEIPT: networkReceipt,
-    PAPERCLIP_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL: 'postgres://paperclip@127.0.0.1:55448/owner_preflight_app_test',
-    PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL: 'postgres://paperclip@127.0.0.1:55448/owner_preflight_cloud_test',
-    PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT: cloud, PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_NODE: process.execPath,
-    PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_SHA: '0'.repeat(40),
-    PAPERCLIP_SKILL_DEFAULT_CADENCE_EVIDENCE: evidence, PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG: log,
+    PILIBALA_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL: 'postgres://pilibala@127.0.0.1:55448/owner_preflight_app_test',
+    PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL: 'postgres://pilibala@127.0.0.1:55448/owner_preflight_cloud_test',
+    PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT: cloud, PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_NODE: process.execPath,
+    PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_SHA: '0'.repeat(40),
+    PILIBALA_SKILL_DEFAULT_CADENCE_EVIDENCE: evidence, PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG: log,
   };
   const execute = () => {
     const result = spawnSync(process.execPath, ['--require', preload, launcher, '--owner=status', '--stage=identity'], {
@@ -65,8 +65,8 @@ function fixture(run) {
     });
     console.log(JSON.stringify({ event: 'launcher-preflight-child', pid: result.pid, status: result.status,
       spawnEntered: existsSync(spawnReceipt), socketAttempted: existsSync(networkReceipt),
-      guardEvents: existsSync(env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG)
-        ? readFileSync(env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG, 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line)) : [] }));
+      guardEvents: existsSync(env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG)
+        ? readFileSync(env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG, 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line)) : [] }));
     assert.equal(result.error, undefined);
     assert(!existsSync(networkReceipt), 'No socket may be entered during preflight controls');
     return result;
@@ -92,7 +92,7 @@ test('fresh evidence reaches the actual launcher Vitest boundary without transpo
 test('fresh evidence may contain only its explicit empty regular guard log', () => fixture(context => {
   const log = path.join(context.evidence, 'guard.jsonl');
   writeFileSync(log, '');
-  context.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG = log;
+  context.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG = log;
   const result = context.execute();
   assert.equal(result.status, 0, result.stderr);
   assert.equal(readFileSync(context.spawnReceipt, 'utf8'), 'vitest-boundary\n');
@@ -111,7 +111,7 @@ for (const name of ['status-provider-state.json', 'status-provider-state.json.ru
 test('rejects a symlink evidence directory before guard or spawn', () => fixture(context => {
   const link = path.join(context.directory, 'evidence-link');
   symlinkSync(context.evidence, link);
-  context.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_EVIDENCE = link;
+  context.env.PILIBALA_SKILL_DEFAULT_CADENCE_EVIDENCE = link;
   refused(context, /evidence directory without a symlink/);
   assert(lstatSync(link).isSymbolicLink());
 }));
@@ -119,7 +119,7 @@ test('rejects a symlink evidence directory before guard or spawn', () => fixture
 test('rejects a symlink guard log without writing its target', () => fixture(context => {
   const link = path.join(context.evidence, 'guard-link.jsonl');
   symlinkSync(context.log, link);
-  context.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG = link;
+  context.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG = link;
   refused(context, /fresh absolute guard log/);
   assert(lstatSync(link).isSymbolicLink());
 }));

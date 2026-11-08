@@ -9,7 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   agentWakeupRequests, agents, applyPendingMigrations, companies, createDb, environmentLeases, executionWorkspaces,
   heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, projects, workspaceOperations, type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { resolveExternalTestDatabaseUrl } from "../__tests__/helpers/external-test-database.js";
 import { admitExplicitNativeContinuation } from "./explicit-native-continuation.js";
@@ -20,7 +20,7 @@ import { createSystemRecovery, failSystemRecovery, readSystemRecovery, SystemRec
 import { requestTaskRetry } from "./task-retry.js";
 
 const execFile = promisify(execFileCallback);
-const externalUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_RETRY_WORKSPACE_TEST_DATABASE_URL");
+const externalUrl = resolveExternalTestDatabaseUrl("PILIBALA_RETRY_WORKSPACE_TEST_DATABASE_URL");
 const support = externalUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 
 /** R2: a Retry after recovery runs out must not drop the agent's work. */
@@ -29,7 +29,7 @@ describe.skipIf(!support.supported)("Retry workspace continuity after exhausted 
   let db: Db;
   let root: string;
   beforeAll(async () => {
-    root = await mkdtemp(join(tmpdir(), "paperclip-retry-workspace-"));
+    root = await mkdtemp(join(tmpdir(), "pilibala-retry-workspace-"));
     if (externalUrl) {
       await applyPendingMigrations(externalUrl);
       database = { connectionString: externalUrl, cleanup: async () => {} } as typeof database;
@@ -52,7 +52,7 @@ describe.skipIf(!support.supported)("Retry workspace continuity after exhausted 
     await db.insert(companies).values({ id: companyId, name: "Retry continuity", defaultResponsibleUserId: "board",
       issuePrefix: `R${companyId.replaceAll("-", "").slice(0, 8)}` });
     await db.insert(agents).values({ id: agentId, companyId, name: "Native", role: "engineer",
-      adapterType: "paperclip_runner", status: "idle", runtimeConfig: { heartbeat: { maxConcurrentRuns: 1 } } });
+      adapterType: "pilibala_runner", status: "idle", runtimeConfig: { heartbeat: { maxConcurrentRuns: 1 } } });
     const [project] = await db.insert(projects).values({ companyId, name: "Repository" }).returning();
     // A real primary checkout and the task's own git worktree with uncommitted edits.
     const primary = join(root, `${issueId}-primary`);
@@ -184,7 +184,7 @@ describe.skipIf(!support.supported)("Retry workspace continuity after exhausted 
       if (unsafe === "corrupt_git") await writeFile(join(f.worktree, ".git"), "gitdir: /nonexistent/worktree\n");
       if (unsafe === "missing_directory") await rm(f.worktree, { recursive: true, force: true });
       if (unsafe === "remote_authority") await db.update(executionWorkspaces).set({ metadata: { remoteWorkspace: {
-        schema: "paperclip.remote-workspace.v1", epoch: 1, snapshotId: randomUUID(), source: { kind: "empty" },
+        schema: "pilibala.remote-workspace.v1", epoch: 1, snapshotId: randomUUID(), source: { kind: "empty" },
         location: null, writerRunId: null, dirty: false } } })
         .where(eq(executionWorkspaces.id, f.workspace.id));
       if (unsafe === "shared_workspace") await db.update(executionWorkspaces).set({ mode: "shared_workspace" })

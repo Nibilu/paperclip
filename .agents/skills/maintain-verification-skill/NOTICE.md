@@ -1,17 +1,17 @@
 # maintain-verification-skill attribution
 
-This skill comes from Paperclip's portable pstack fork in
-`paperclipai/agent-plugins`, commit
+This skill comes from Pilibala's portable pstack fork in
+`pilibalaai/agent-plugins`, commit
 `410257663e0b344df656e604f1601aa1db95f7e4`, under `vendor/pstack/`.
 The fork imported pstack 0.15.15 by Lauren Tan (poteto) from
 [cursor/plugins](https://github.com/cursor/plugins/tree/ccb5507cec1546dc88135c1139c811e6c59115ba/pstack),
 upstream revision `ccb5507cec1546dc88135c1139c811e6c59115ba`.
 
-Paperclip adapts the workflow to the sibling `maps/feature-map/` and
+Pilibala adapts the workflow to the sibling `maps/feature-map/` and
 `maps/agent-access-map/` directories and their shared access contract.
 It preserves the invocation policy in `agents/openai.yaml`, removes the
 Cursor-specific `disable-model-invocation` frontmatter field, and omits the
-separate runtime skill dependency because Paperclip supplies execution.
+separate runtime skill dependency because Pilibala supplies execution.
 No upstream Cursor built-in skills are redistributed.
 
 The imported resources include `SKILL.md` and `agents/openai.yaml`.

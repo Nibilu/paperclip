@@ -21,7 +21,7 @@ beforeEach(() => {
   container = document.createElement("div"); document.body.append(container); root = createRoot(container);
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   endpoint = { id: "endpoint", companyId: "company", assignedAgentName: "Maya", setup: { slackSetupMethod: "managed" } } as ChatEndpoint;
-  api.slackSetupOptions.mockResolvedValue({ managedAvailable: true, workspaces: [{ grantId: "grant", workspaceName: "Paperclip" }] });
+  api.slackSetupOptions.mockResolvedValue({ managedAvailable: true, workspaces: [{ grantId: "grant", workspaceName: "Pilibala" }] });
   api.provisionManagedSlack.mockResolvedValue({}); api.get.mockResolvedValue(endpoint);
   api.authorizeSlackManager.mockResolvedValue({ authorizationUrl: "https://slack.com/oauth" });
   navigation.mockImplementation(() => new Promise(() => {}));
@@ -151,7 +151,7 @@ it.each(["popup", "fallback"])("continues after manager authorization returns th
     expect(container.querySelector('a[target="_blank"]')?.textContent).toBe("Open sign-in in a new tab");
     expect(api.provisionManagedSlack).not.toHaveBeenCalled();
   }
-  api.slackSetupOptions.mockResolvedValue({ managedAvailable: true, workspaces: [{ grantId: "grant", workspaceName: "Paperclip" }] });
+  api.slackSetupOptions.mockResolvedValue({ managedAvailable: true, workspaces: [{ grantId: "grant", workspaceName: "Pilibala" }] });
   await act(async () => { window.dispatchEvent(new Event("focus")); });
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 30)); });
   expect(onSaved).toHaveBeenCalledWith(endpoint);

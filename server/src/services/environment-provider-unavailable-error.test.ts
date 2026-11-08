@@ -44,7 +44,7 @@ describe("readTransientEnvironmentProviderFailure", () => {
 
   it("reads the validated plugin RPC envelope", () => {
     const rpcError = Object.assign(new Error("rpc failed"), {
-      data: { schema: "paperclip/environment-acquire-error/v1", providerDiagnostic: { httpStatus: 429 } },
+      data: { schema: "pilibala/environment-acquire-error/v1", providerDiagnostic: { httpStatus: 429 } },
     });
     expect(readTransientEnvironmentProviderFailure(rpcError)).toEqual({ httpStatus: 429 });
   });

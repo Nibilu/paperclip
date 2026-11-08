@@ -1,4 +1,4 @@
-import { companySkillVersions, type Db } from "@paperclipai/db";
+import { companySkillVersions, type Db } from "@pilibalaai/db";
 import { and, eq, getTableColumns, sql } from "drizzle-orm";
 
 type Version = typeof companySkillVersions.$inferSelect;

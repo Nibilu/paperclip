@@ -4,9 +4,9 @@
 //
 // PR CI is the pr.yml caller of pr-trusted.yml. Reusable workflows inherit the
 // caller's GITHUB_WORKFLOW, so release, cloud-readiness, master and local runs
-// keep retry 0. PAPERCLIP_VITEST_RETRY overrides the default in any context;
+// keep retry 0. PILIBALA_VITEST_RETRY overrides the default in any context;
 // set it to 0 to switch retries off, or to N for a local reproduction.
-export const vitestRetryEnvName = "PAPERCLIP_VITEST_RETRY";
+export const vitestRetryEnvName = "PILIBALA_VITEST_RETRY";
 export const prWorkflowName = "PR";
 export const prDefaultVitestRetry = 1;
 

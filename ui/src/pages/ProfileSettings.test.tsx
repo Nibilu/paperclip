@@ -4,7 +4,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { sanitizeAssetNamespace } from "@paperclipai/shared";
+import { sanitizeAssetNamespace } from "@pilibalaai/shared";
 import { ApiError } from "@/api/client";
 import { queryKeys } from "../lib/queryKeys";
 import { markCachedSession } from "../lib/cached-session";
@@ -46,7 +46,7 @@ vi.mock("../context/BreadcrumbContext", () => ({
 vi.mock("../context/CompanyContext", () => ({
   useCompany: () => ({
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip", issuePrefix: "PAP" },
+    selectedCompany: { id: "company-1", name: "Pilibala", issuePrefix: "PAP" },
   }),
 }));
 
@@ -107,7 +107,7 @@ describe("ProfileSettings", () => {
     await act(async () => root.unmount());
   });
 
-  it("uploads a clicked avatar into Paperclip storage and persists the returned asset path", async () => {
+  it("uploads a clicked avatar into Pilibala storage and persists the returned asset path", async () => {
     const root = createRoot(container);
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -228,7 +228,7 @@ describe("ProfileSettings", () => {
     expect(container.textContent).toContain("Jane Example");
 
     mockAuthApi.getSession.mockRejectedValue(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await act(async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
@@ -238,7 +238,7 @@ describe("ProfileSettings", () => {
     expect(mockAuthApi.getSession).toHaveBeenCalledTimes(2);
     expect(container.textContent).toContain("Jane Example");
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
     expect(container.textContent).not.toContain("tenant_app_unavailable");
 
     await act(async () => root.unmount());

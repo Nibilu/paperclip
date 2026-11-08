@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { projectIdleMcpSubscriptionProof, type IdleMcpSubscriptionProofInput } from "./idle-subscription-proof.js";
 import { createMcpWakeAdmission } from "./wake-admission.js";
-import { mcpEventSubscriptions } from "@paperclipai/db";
+import { mcpEventSubscriptions } from "@pilibalaai/db";
 const context = { stackId: "stack", ownerId: "00000000-0000-4000-8000-000000000001", capabilityGeneration: "a".repeat(64), challenge: "c".repeat(64) };
-const row: typeof mcpEventSubscriptions.$inferSelect = { id: "sub", companyId: "company", grantId: "grant", name: "paperclip.task.status_changed", taskId: "task", bindingId: null,
+const row: typeof mcpEventSubscriptions.$inferSelect = { id: "sub", companyId: "company", grantId: "grant", name: "pilibala.task.status_changed", taskId: "task", bindingId: null,
   arguments: { companyId: "company", taskId: "task" }, deliveryMaterial: {}, verifiedAt: new Date(0), startsAt: new Date(0), expiresAt: new Date(10_000), stoppedAt: null, scannedAt: new Date(1000) };
 const input: IdleMcpSubscriptionProofInput = { now: 2000,
   ingress: { admission: createMcpWakeAdmission({ ...context, tokens: [] }), generation: "d".repeat(64), grantIds: ["grant"], dotBindingIds: ["binding"] },
@@ -28,7 +28,7 @@ describe("configured-idle MCP subscription proof", () => {
     expect((await projectIdleMcpSubscriptionProof([{ subscription: row, taskMatches: true }], { ...input, personal: { revision: "dirty", reconciled: false } })).blocked).toBe(true);
   });
   it("requires the exact certified Dot binding and matching Dot reconciliation", async () => {
-    const dot = { ...row, name: "paperclip.dot.mailbox_updated", taskId: null, bindingId: "binding", arguments: { companyId: "company", bindingId: "binding" } };
+    const dot = { ...row, name: "pilibala.dot.mailbox_updated", taskId: null, bindingId: "binding", arguments: { companyId: "company", bindingId: "binding" } };
     expect((await projectIdleMcpSubscriptionProof([{ subscription: dot, taskMatches: false }], input)).blocked).toBe(false);
     expect((await projectIdleMcpSubscriptionProof([{ subscription: { ...dot, bindingId: "other" }, taskMatches: false }], input)).blocked).toBe(true);
     expect((await projectIdleMcpSubscriptionProof([], { ...input, personal: { revision: "missing", reconciled: false } })).blocked).toBe(false);

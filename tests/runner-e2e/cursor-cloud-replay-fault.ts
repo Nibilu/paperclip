@@ -3,7 +3,7 @@ import { constants } from "node:fs";
 import { lstat, mkdir, open, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 
-const SCHEMA = "paperclip.cursor-cloud.replay-fault.v1";
+const SCHEMA = "pilibala.cursor-cloud.replay-fault.v1";
 const MAX_FRAME_BYTES = 1_048_576;
 const sha256 = (value: string | Uint8Array) => createHash("sha256").update(value).digest("hex");
 type Cut = { agentIdSha256: string; runIdSha256: string; eventIdSha256: string; frameSha256: string; frameBytes: number; event: string };
@@ -17,14 +17,14 @@ export interface CursorCloudReplayFaultProof {
   reconnect: { agentIdSha256: string; runIdSha256: string; lastEventIdSha256: string | null; cursorMatches: boolean; httpStatus: number; sseReady: boolean } | null;
 }
 export interface CursorCloudReplayFaultManifest {
-  schema: "paperclip.cursor-cloud.replay-instrumentation.v1";
+  schema: "pilibala.cursor-cloud.replay-instrumentation.v1";
   treatmentId: string;
   originalProxySha256: string;
   instrumentedProxySha256: string;
   reservationFile: string;
 }
 export interface CursorCloudReplayFaultReservation extends Identity {
-  schema: "paperclip.cursor-cloud.replay-reservation.v1";
+  schema: "pilibala.cursor-cloud.replay-reservation.v1";
   treatmentId: string;
   processId: number;
 }
@@ -35,7 +35,7 @@ export function createCursorCloudReplayFaultFetch(input: {
   record(proof: CursorCloudReplayFaultProof): void;
   reserve?(identity: Identity): boolean;
 }): typeof fetch {
-  const proof: CursorCloudReplayFaultProof = { schema: "paperclip.cursor-cloud.replay-fault.v1", identity: null, streamRequests: 0, cutCount: 0, cut: null, reconnect: null };
+  const proof: CursorCloudReplayFaultProof = { schema: "pilibala.cursor-cloud.replay-fault.v1", identity: null, streamRequests: 0, cutCount: 0, cut: null, reconnect: null };
   let armed = false;
   const save = () => input.record(structuredClone(proof));
   const nativeRoute = /^\/v1\/agents\/(bc-[a-f0-9-]{36})\/runs\/(run-[a-f0-9-]{36})\/stream$/iu;
@@ -150,7 +150,7 @@ function prelude(evidenceDirectory: string, treatmentId: string): string {
       try { fd = fs.openSync(reservation, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW, 0o600); }
       catch (error) { if (error.code === "EEXIST") return reserved = false; throw error; }
       try {
-        fs.writeFileSync(fd, JSON.stringify({ schema: "paperclip.cursor-cloud.replay-reservation.v1", treatmentId: ${JSON.stringify(treatmentId)}, processId: process.pid, ...identity }));
+        fs.writeFileSync(fd, JSON.stringify({ schema: "pilibala.cursor-cloud.replay-reservation.v1", treatmentId: ${JSON.stringify(treatmentId)}, processId: process.pid, ...identity }));
         fs.fsyncSync(fd);
       } finally { fs.closeSync(fd); }
       return reserved = true;
@@ -176,12 +176,12 @@ export async function installCursorCloudReplayFault(input: { bundlePath: string;
     if (!stat.isFile() || stat.size > 8_388_608 || (process.getuid && stat.uid !== process.getuid())) throw new Error("Cursor replay proxy must be an owned bounded regular file");
     original = await handle.readFile(); mode = stat.mode & 0o777;
   } finally { await handle.close(); }
-  if (original.includes(Buffer.from("paperclip.cursor-cloud.replay-fault.v1"))) throw new Error("Cursor replay instrumentation is already installed");
+  if (original.includes(Buffer.from("pilibala.cursor-cloud.replay-fault.v1"))) throw new Error("Cursor replay instrumentation is already installed");
   const treatmentId = randomUUID();
   const newline = original.indexOf(10), shebangEnd = original.subarray(0, 2).toString() === "#!" ? (newline < 0 ? original.length : newline + 1) : 0;
   const head = original.subarray(0, shebangEnd), separator = shebangEnd && newline < 0 ? Buffer.from("\n") : Buffer.alloc(0);
   const instrumented = Buffer.concat([head, separator, Buffer.from(prelude(input.evidenceDirectory, treatmentId)), original.subarray(shebangEnd)]);
-  const manifest: CursorCloudReplayFaultManifest = { schema: "paperclip.cursor-cloud.replay-instrumentation.v1", treatmentId, originalProxySha256: sha256(original), instrumentedProxySha256: sha256(instrumented), reservationFile: `reservation-${treatmentId}.json` };
+  const manifest: CursorCloudReplayFaultManifest = { schema: "pilibala.cursor-cloud.replay-instrumentation.v1", treatmentId, originalProxySha256: sha256(original), instrumentedProxySha256: sha256(instrumented), reservationFile: `reservation-${treatmentId}.json` };
   const replace = async (bytes: Buffer) => {
     const temporary = `${input.bundlePath}.${treatmentId}.tmp`;
     await writeFile(temporary, bytes, { flag: "wx", mode });
@@ -220,7 +220,7 @@ export async function readCursorCloudReplayFaultReservation(evidenceDirectory: s
     const stat = await handle.stat();
     if (!stat.isFile() || stat.size > 4_096 || (stat.mode & 0o077) !== 0 || (process.getuid && stat.uid !== process.getuid())) throw new Error("Cursor replay reservation file is unsafe");
     const value = JSON.parse(await handle.readFile("utf8")) as CursorCloudReplayFaultReservation;
-    if (value.schema !== "paperclip.cursor-cloud.replay-reservation.v1" || value.treatmentId !== manifest.treatmentId || !Number.isInteger(value.processId) || value.processId < 1
+    if (value.schema !== "pilibala.cursor-cloud.replay-reservation.v1" || value.treatmentId !== manifest.treatmentId || !Number.isInteger(value.processId) || value.processId < 1
       || !/^[a-f0-9]{64}$/u.test(value.agentIdSha256) || !/^[a-f0-9]{64}$/u.test(value.runIdSha256)
       || Object.keys(value).length !== 5) throw new Error("Cursor replay reservation evidence is invalid");
     return value;

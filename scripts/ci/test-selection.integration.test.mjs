@@ -122,8 +122,8 @@ function fixturePlan() {
     general_tests: { run: true, matrix: { include: entries }, selected: 2, total: 2 },
     verify_serialized_server: { run: false, matrix: { include: [{ task: "ci:serialized" }] } },
   } };
-  const owners = { "general-workspaces-a": { "@paperclipai/ui": files } };
-  const graphs = [{ project: "@paperclipai/ui", inventory: files, selected: [files[1]] }];
+  const owners = { "general-workspaces-a": { "@pilibalaai/ui": files } };
+  const graphs = [{ project: "@pilibalaai/ui", inventory: files, selected: [files[1]] }];
   return { files, ...refineTestPlan({ plan, head, owners, graphs }) };
 }
 
@@ -136,7 +136,7 @@ test("runner consumes the exact manifest, and rejects stale, missing, or mismatc
   const run = (selection = manifest, hash = selectionHash(manifest)) => {
     writeFileSync(file, JSON.stringify(selection));
     return spawnSync(process.execPath, ["scripts/run-vitest-stable.mjs", "--mode", "general", "--group", "general-workspaces-a", "--shard-index", "0", "--shard-count", "1", "--dry-run"], {
-      cwd: root, encoding: "utf8", env: { ...process.env, PAPERCLIP_CI_TEST_SELECTION: file, PAPERCLIP_CI_SELECTION_HASH: hash },
+      cwd: root, encoding: "utf8", env: { ...process.env, PILIBALA_CI_TEST_SELECTION: file, PILIBALA_CI_SELECTION_HASH: hash },
     });
   };
   const result = run();
@@ -144,17 +144,17 @@ test("runner consumes the exact manifest, and rejects stale, missing, or mismatc
   assert.deepEqual(JSON.parse(result.stdout).selection, manifest.lanes["general-workspaces-a"].shards[0]);
   assert.notEqual(run({ ...manifest, head: "0".repeat(40) }).status, 0);
   assert.notEqual(run(manifest, "bad-hash").status, 0);
-  assert.throws(() => selectedShard(manifest, { mode: "general", group: "general-workspaces-a", shardCount: 2 }, ["@paperclipai/ui"]));
-  assert.throws(() => selectedShard(manifest, { mode: "general", group: "general-workspaces-a", shardCount: 1 }, ["@paperclipai/server"]));
+  assert.throws(() => selectedShard(manifest, { mode: "general", group: "general-workspaces-a", shardCount: 2 }, ["@pilibalaai/ui"]));
+  assert.throws(() => selectedShard(manifest, { mode: "general", group: "general-workspaces-a", shardCount: 1 }, ["@pilibalaai/server"]));
   const duplicate = structuredClone(manifest);
   duplicate.lanes["general-workspaces-a"].shards.push(duplicate.lanes["general-workspaces-a"].shards[0]);
   assert.throws(() => validateSelection(duplicate), /assigned twice/);
   const wrongLane = { version: 1, head, lanes: { "general-server-without-chat": {
-    shards: [{ "@paperclipai/server": ["server/src/__tests__/issues-service.test.ts"] }],
+    shards: [{ "@pilibalaai/server": ["server/src/__tests__/issues-service.test.ts"] }],
   } } };
   writeFileSync(file, JSON.stringify(wrongLane));
   const misplaced = spawnSync(process.execPath, ["scripts/run-vitest-stable.mjs", "--mode", "general", "--group", "general-server-without-chat", "--shard-index", "0", "--shard-count", "1", "--dry-run"], {
-    cwd: root, encoding: "utf8", env: { ...process.env, PAPERCLIP_CI_TEST_SELECTION: file, PAPERCLIP_CI_SELECTION_HASH: selectionHash(wrongLane) },
+    cwd: root, encoding: "utf8", env: { ...process.env, PILIBALA_CI_TEST_SELECTION: file, PILIBALA_CI_SELECTION_HASH: selectionHash(wrongLane) },
   });
   assert.notEqual(misplaced.status, 0);
   assert.match(misplaced.stderr, /belongs to another server lane/);

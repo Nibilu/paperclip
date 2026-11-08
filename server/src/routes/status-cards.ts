@@ -1,5 +1,5 @@
 import { Router, type Request } from "express";
-import { companies, type Db } from "@paperclipai/db";
+import { companies, type Db } from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
 import {
   createStatusCardSchema,
@@ -9,7 +9,7 @@ import {
   STATUS_CARD_AGENT_MAX_INTEREST_PROMPT_LENGTH,
   writeStatusCardQuerySchema,
   writeStatusCardSummarySchema,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { forbidden, notFound, unprocessable } from "../errors.js";
 import { validate } from "../middleware/validate.js";
 import { authorizationDeniedDetails, issueReadSqlCondition } from "../services/authorization.js";

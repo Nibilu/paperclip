@@ -5,7 +5,7 @@ import {
   agents, budgetIncidents, budgetPolicies, budgetReservations, companies, costEvents, createDb, environmentLeases, environments,
   heartbeatRunEvents, heartbeatRuns, issues,
   activityLog, completionContracts, nativeRunFinalizations, nativeRunResults, type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { budgetService, flushBudgetEvaluationWork, recheckAdmittedRunBudgetReadOnly } from "../services/budgets.js";
 import { accountRunCost, readCostAccountingWork, reconcileRunCosts } from "../services/run-cost-accounting.js";
@@ -41,8 +41,8 @@ const support = await getEmbeddedPostgresTestSupport();
     const companyId = randomUUID(), agentId = randomUUID(), otherAgentId = randomUUID(), sourceId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Chaos Lab", issuePrefix: "CHA" });
     await db.insert(agents).values([
-      { id: agentId, companyId, name: "Claude", role: "engineer", status: "idle", adapterType: "paperclip_runner" },
-      { id: otherAgentId, companyId, name: "Codex", role: "engineer", status: "idle", adapterType: "paperclip_runner" },
+      { id: agentId, companyId, name: "Claude", role: "engineer", status: "idle", adapterType: "pilibala_runner" },
+      { id: otherAgentId, companyId, name: "Codex", role: "engineer", status: "idle", adapterType: "pilibala_runner" },
     ]);
     const [policy] = await db.insert(budgetPolicies).values({ companyId, scopeType: "company", scopeId: companyId,
       metric: "billed_cents", windowKind: "calendar_month_utc", amount: 500, notifyEnabled: false,
@@ -396,7 +396,7 @@ const support = await getEmbeddedPostgresTestSupport();
         issueId: f.issue.id, heartbeatRunId: f.run.id, provider: "daytona", providerLeaseId, leasePolicy: "ephemeral",
         status: released ? "expired" : "active", cleanupStatus: released ? "success" : null,
         releasedAt: released ? new Date() : null,
-        metadata: receipt === "none" ? {} : { remoteExecutionTermination: { schema: "paperclip.remote-termination.v1",
+        metadata: receipt === "none" ? {} : { remoteExecutionTermination: { schema: "pilibala.remote-termination.v1",
           companyId: f.companyId, runId: f.run.id, leaseId: id, provider: "daytona",
           providerLeaseId: receipt === "foreign" ? randomUUID() : providerLeaseId,
           state: receipt === "foreign" ? "destroyed" : receipt, confirmedAt: new Date().toISOString() } } });
@@ -437,7 +437,7 @@ const support = await getEmbeddedPostgresTestSupport();
     const f = await fixture({ stopEvidence: options.stopEvidence });
     const contractId = randomUUID();
     await db.insert(completionContracts).values({ id: contractId, companyId: f.companyId, issueId: f.issue.id, revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1", policyVersion: "result-worker-v1", risk: "standard",
+      schemaVersion: "pilibala.completion-contract.v1", policyVersion: "result-worker-v1", risk: "standard",
       completionAuthority: "server_arbiter", incompleteCriteriaPolicy: "preserve_non_terminal",
       contractJson: { revision: "result-worker-v1", objective: "Finish", criteria: [{ id: "objective", requirement: "Complete the task" }] },
       canonicalSha256: contractId, createdByActorType: "system", createdByActorId: "test" });
@@ -696,8 +696,8 @@ const support = await getEmbeddedPostgresTestSupport();
     expect(Number(charge?.costCents)).toBeGreaterThanOrEqual(600);
     expect(charge?.costStatus).toBe("estimated");
     // A complete receipt arriving later posts only its growth over the accepted price.
-    await persistUsageReceipt(db, { schema: "paperclip/accounting-receipt/v1", id: randomUUID(),
-      companyId: f.companyId, runId: f.run.id, adapterType: "paperclip_runner", sourceId: f.sourceId, sequence: 6,
+    await persistUsageReceipt(db, { schema: "pilibala/accounting-receipt/v1", id: randomUUID(),
+      companyId: f.companyId, runId: f.run.id, adapterType: "pilibala_runner", sourceId: f.sourceId, sequence: 6,
       receivedAt: new Date().toISOString(),
       producerEvent: { sourceEventId: randomUUID(), eventType: "turn.completed" },
       receipt: { complete: true, usageBasis: "per_run", provider: "anthropic", biller: "anthropic",
@@ -722,8 +722,8 @@ const support = await getEmbeddedPostgresTestSupport();
     expect(await reconcileRunCosts(db)).toMatchObject({ accounted: 1 });
     await flushBudgetEvaluationWork(db);
     expect((await f.block())?.reason).toMatch(/no reliable price|budget hard-stop/);
-    await persistUsageReceipt(db, { schema: "paperclip/accounting-receipt/v1", id: randomUUID(),
-      companyId: f.companyId, runId: f.run.id, adapterType: "paperclip_runner", sourceId: f.sourceId, sequence: 6,
+    await persistUsageReceipt(db, { schema: "pilibala/accounting-receipt/v1", id: randomUUID(),
+      companyId: f.companyId, runId: f.run.id, adapterType: "pilibala_runner", sourceId: f.sourceId, sequence: 6,
       receivedAt: new Date().toISOString(),
       producerEvent: { sourceEventId: randomUUID(), eventType: "turn.completed" },
       receipt: { complete: true, usageBasis: "per_run", provider: "anthropic", biller: "anthropic",
@@ -824,8 +824,8 @@ const support = await getEmbeddedPostgresTestSupport();
   it("reconciles a final receipt that arrives after the unavailable receipt settled", async () => {
     const f = await fixture();
     expect(await accountRunCost(db, f.run.id)).toBe(true);
-    await persistUsageReceipt(db, { schema: "paperclip/accounting-receipt/v1", id: randomUUID(),
-      companyId: f.companyId, runId: f.run.id, adapterType: "paperclip_runner", sourceId: f.sourceId, sequence: 2,
+    await persistUsageReceipt(db, { schema: "pilibala/accounting-receipt/v1", id: randomUUID(),
+      companyId: f.companyId, runId: f.run.id, adapterType: "pilibala_runner", sourceId: f.sourceId, sequence: 2,
       receivedAt: new Date().toISOString(), receipt: { complete: true, usageBasis: "per_run", provider: "anthropic",
         biller: "anthropic", model: "claude-sonnet-5", billingType: "metered_api",
         usage: { inputTokens: 1200, cachedInputTokens: 0, outputTokens: 80 } } });
@@ -837,8 +837,8 @@ const support = await getEmbeddedPostgresTestSupport();
   it("does not reopen the hold for a later receipt the rate card could price but that carries no price", async () => {
     const f = await fixture();
     expect(await accountRunCost(db, f.run.id)).toBe(true);
-    await persistUsageReceipt(db, { schema: "paperclip/accounting-receipt/v1", id: randomUUID(),
-      companyId: f.companyId, runId: f.run.id, adapterType: "paperclip_runner", sourceId: f.sourceId, sequence: 2,
+    await persistUsageReceipt(db, { schema: "pilibala/accounting-receipt/v1", id: randomUUID(),
+      companyId: f.companyId, runId: f.run.id, adapterType: "pilibala_runner", sourceId: f.sourceId, sequence: 2,
       receivedAt: new Date().toISOString(),
       producerEvent: { sourceEventId: randomUUID(), eventType: "turn.completed" },
       receipt: { complete: true, usageBasis: "per_run", provider: "anthropic", biller: "anthropic",
@@ -851,8 +851,8 @@ const support = await getEmbeddedPostgresTestSupport();
   it("does not reopen the hold for a later complete receipt that adds no price or usage", async () => {
     const f = await fixture();
     expect(await accountRunCost(db, f.run.id)).toBe(true);
-    await persistUsageReceipt(db, { schema: "paperclip/accounting-receipt/v1", id: randomUUID(),
-      companyId: f.companyId, runId: f.run.id, adapterType: "paperclip_runner", sourceId: f.sourceId, sequence: 2,
+    await persistUsageReceipt(db, { schema: "pilibala/accounting-receipt/v1", id: randomUUID(),
+      companyId: f.companyId, runId: f.run.id, adapterType: "pilibala_runner", sourceId: f.sourceId, sequence: 2,
       receivedAt: new Date().toISOString(),
       producerEvent: { sourceEventId: randomUUID(), eventType: "turn.completed" },
       receipt: { complete: true, usageBasis: "per_run", provider: "anthropic", biller: "anthropic",
@@ -867,8 +867,8 @@ const support = await getEmbeddedPostgresTestSupport();
   it("prices the unavailable charge when a complete rate-card receipt arrives later", async () => {
     const f = await fixture({ unpricedUsagePolicy: "block" });
     expect(await accountRunCost(db, f.run.id)).toBe(true);
-    await persistUsageReceipt(db, { schema: "paperclip/accounting-receipt/v1", id: randomUUID(),
-      companyId: f.companyId, runId: f.run.id, adapterType: "paperclip_runner", sourceId: f.sourceId, sequence: 2,
+    await persistUsageReceipt(db, { schema: "pilibala/accounting-receipt/v1", id: randomUUID(),
+      companyId: f.companyId, runId: f.run.id, adapterType: "pilibala_runner", sourceId: f.sourceId, sequence: 2,
       receivedAt: new Date().toISOString(),
       producerEvent: { sourceEventId: randomUUID(), eventType: "turn.completed" },
       receipt: { complete: true, usageBasis: "per_run", provider: "anthropic", biller: "anthropic",

@@ -18,20 +18,20 @@ function write(file, content = "x") {
 
 test("a seed keeps third-party crates and loses every unit of the workspace crate", t => {
   const target = path.join(scratch(t), "target");
-  const bins = ["paperclip-runnerd", "fake-codex-app-server"];
+  const bins = ["pilibala-runnerd", "fake-codex-app-server"];
   for (const profile of ["debug", "release"]) {
     const base = path.join(target, profile);
     write(path.join(base, ".fingerprint/serde-0123/lib-serde"));
-    write(path.join(base, ".fingerprint/paperclip-runner-core-0123/lib-paperclip_runner_core"));
-    write(path.join(base, ".fingerprint/paperclip-runner-core-4567/bin-paperclip-runnerd"));
+    write(path.join(base, ".fingerprint/pilibala-runner-core-0123/lib-pilibala_runner_core"));
+    write(path.join(base, ".fingerprint/pilibala-runner-core-4567/bin-pilibala-runnerd"));
     write(path.join(base, "deps/libserde-0123.rlib"));
-    write(path.join(base, "deps/libpaperclip_runner_core-0123.rlib"));
-    write(path.join(base, "deps/paperclip_runnerd-0123"));
+    write(path.join(base, "deps/libpilibala_runner_core-0123.rlib"));
+    write(path.join(base, "deps/pilibala_runnerd-0123"));
     write(path.join(base, "deps/fake_codex_app_server-0123.d"));
     write(path.join(base, "build/ring-0123/out/lib.a"));
-    write(path.join(base, "incremental/paperclip_runner_core-0123/s"));
-    write(path.join(base, "paperclip-runnerd"));
-    write(path.join(base, "paperclip-runnerd.d"));
+    write(path.join(base, "incremental/pilibala_runner_core-0123/s"));
+    write(path.join(base, "pilibala-runnerd"));
+    write(path.join(base, "pilibala-runnerd.d"));
     write(path.join(base, ".cargo-lock"));
   }
   write(path.join(target, "tmp/scratch"));
@@ -45,7 +45,7 @@ test("a seed keeps third-party crates and loses every unit of the workspace crat
     assert.deepEqual(readdirSync(path.join(base, "deps")), ["libserde-0123.rlib"]);
     assert.ok(existsSync(path.join(base, "build/ring-0123/out/lib.a")));
     assert.deepEqual(readdirSync(path.join(base, "incremental")), []);
-    for (const gone of ["paperclip-runnerd", "paperclip-runnerd.d", ".cargo-lock"]) assert.equal(existsSync(path.join(base, gone)), false);
+    for (const gone of ["pilibala-runnerd", "pilibala-runnerd.d", ".cargo-lock"]) assert.equal(existsSync(path.join(base, gone)), false);
   }
   assert.equal(existsSync(path.join(target, "tmp")), false);
   assert.ok(existsSync(path.join(target, "CACHEDIR.TAG")));
@@ -92,9 +92,9 @@ test("keys depend on content and repo-relative paths, not the checkout location"
 });
 
 test("the cache directory follows the environment and can be turned off", () => {
-  assert.equal(cacheRoot({ PAPERCLIP_AGENT_CACHE: "0" }), null);
-  assert.equal(cacheRoot({ PAPERCLIP_AGENT_CACHE_DIR: "/tmp/agent-cache" }), "/tmp/agent-cache");
-  assert.equal(cacheRoot({ XDG_CACHE_HOME: "/tmp/xdg" }), "/tmp/xdg/paperclip/agent-build");
+  assert.equal(cacheRoot({ PILIBALA_AGENT_CACHE: "0" }), null);
+  assert.equal(cacheRoot({ PILIBALA_AGENT_CACHE_DIR: "/tmp/agent-cache" }), "/tmp/agent-cache");
+  assert.equal(cacheRoot({ XDG_CACHE_HOME: "/tmp/xdg" }), "/tmp/xdg/pilibala/agent-build");
 });
 
 test("pruning keeps the most recently used entries and anything in use", t => {

@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { agents, agentWakeupRequests, companies, createDb, environmentLeases, executionWorkspaces,
   executionWorkspaceSnapshots, heartbeatRunEvents, heartbeatRuns, issueRecoveryActions, issues,
-  workspaceOperations, nativeRunFinalizations, approvals, issueApprovals, issueComments } from "@paperclipai/db";
+  workspaceOperations, nativeRunFinalizations, approvals, issueApprovals, issueComments } from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { requestTaskRetry } from "./task-retry.js";
 import { heartbeatService } from "./heartbeat.js";
@@ -42,17 +42,17 @@ describe("saved bootstrap continuation admission", () => {
     const sha256 = "a".repeat(64), error = "native_harness_storage_owner_missing";
     const startedAt = new Date(now - 60_000), finishedAt = new Date(now - 40_000);
     await db.insert(companies).values({ id: companyId, name: "Saved bootstrap", issuePrefix: `S${companyId.slice(0, 6)}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "paperclip_runner",
+    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "pilibala_runner",
       status: "idle", runtimeConfig: { heartbeat: { maxConcurrentRuns: 1 } } });
     await db.insert(issues).values({ id: issueId, companyId, title: "Report the existing repair status",
       status: "todo", assigneeAgentId: agentId });
     await db.insert(executionWorkspaces).values({ id: workspaceId, companyId, sourceIssueId: issueId,
       mode: "isolated_workspace", strategyType: "isolated_workspace", name: "Recovered files",
-      metadata: { remoteWorkspace: { schema: "paperclip.remote-workspace.v1", epoch: 1, snapshotId,
+      metadata: { remoteWorkspace: { schema: "pilibala.remote-workspace.v1", epoch: 1, snapshotId,
         source: { kind: "empty" }, location: null, writerRunId: null, dirty: false } } });
     await db.update(issues).set({ executionWorkspaceId: workspaceId }).where(eq(issues.id, issueId));
-    const restore = { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [leaseId] };
-    const chunk = "[paperclip] Enabled run-scoped skills from issue mentions: fixture/status-report\n";
+    const restore = { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [leaseId] };
+    const chunk = "[pilibala] Enabled run-scoped skills from issue mentions: fixture/status-report\n";
     const log = JSON.stringify({ ts: startedAt.toISOString(), attemptId: randomUUID(), stream: "stdout", chunk, seq: 1 }) + "\n";
     logs.set(`${companyId}/${agentId}/${sourceId}`, log);
     const [source] = await db.insert(heartbeatRuns).values({ id: sourceId, companyId, issueId, agentId,
@@ -61,8 +61,8 @@ describe("saved bootstrap continuation admission", () => {
       sessionIdBefore: randomUUID(),
       contextSnapshot: { issueId, skillSelectionSnapshot: true, skillVersions: { "fixture/status-report": randomUUID(),
         ...(configured ? { "fixture/configured-skill": randomUUID() } : {}) } },
-      runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" },
-        remoteWorkspace: { schema: "paperclip.remote-workspace-run.v1", workspaceId, leaseId, providerLeaseId,
+      runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" },
+        remoteWorkspace: { schema: "pilibala.remote-workspace-run.v1", workspaceId, leaseId, providerLeaseId,
           remoteCwd: "/fixture/saved-work", epoch: 1, state: "saved", snapshotId } },
       resultJson: { stopReason: "adapter_failed", executionRecovery: { kind: "bootstrap", providerWorkStarted: false },
         workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery: restore },
@@ -80,7 +80,7 @@ describe("saved bootstrap continuation admission", () => {
     await db.insert(environmentLeases).values({ id: leaseId, companyId, issueId, heartbeatRunId: sourceId,
       executionWorkspaceId: workspaceId, provider: "daytona", providerLeaseId, status: "released",
       cleanupStatus: "success", leasePolicy: "retain_on_failure", releasedAt: finishedAt,
-      metadata: { remoteExecutionTermination: { schema: "paperclip.remote-termination.v1", companyId,
+      metadata: { remoteExecutionTermination: { schema: "pilibala.remote-termination.v1", companyId,
         runId: sourceId, leaseId, provider: "daytona", providerLeaseId, state: "stopped", confirmedAt: finishedAt.toISOString() } } });
     await db.insert(executionWorkspaceSnapshots).values({ id: snapshotId, companyId, executionWorkspaceId: workspaceId,
       sourceOperationId: snapshotOperationId, sourceRunId: sourceId, generation: 1, epoch: 1, status: "committed", sha256 });
@@ -99,13 +99,13 @@ describe("saved bootstrap continuation admission", () => {
         workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery: restore,
         systemRecovery: { ...createSystemRecovery(sourceId), state: "complete", phase: "reconcile_effects", attempts: 1,
           preservationOperationIds: [recoveryOperationId] }, continuationDelivery: "invalidated",
-        workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId: sourceId, status: "recovered",
+        workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId: sourceId, status: "recovered",
           stage: "saving_receipts", attempt: 1, attemptLimit: 6, requestIds: [] } } });
     const [child] = await db.insert(heartbeatRuns).values({ id: childId, companyId, issueId, agentId,
       status: "failed", runtimeMode: "legacy", errorCode: "setup_failed", executionStage: "preparing",
       error: "The workspace still has an unfinished writer or save operation.", retryOfRunId: sourceId,
       startedAt: new Date(now - 30_000), finishedAt: new Date(now - 20_000), createdAt: new Date(now - 30_000),
-      runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+      runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
       resultJson: { stopReason: "adapter_failed", executionRecovery: { kind: "bootstrap", providerWorkStarted: false } },
       contextSnapshot: { issueId, retryOfRunId: sourceId, retryReason: "native_session_interrupted" },
     }).returning();

@@ -9,7 +9,7 @@ import { notifyVoiceChange } from "./voice/voice-recovery-notifications.js";
 import { notifyChatEndpointWork } from "./chat-work-notifications.js";
 import { notifyToolConnectionHealth } from "./tool-connection-health-notifications.js";
 import { and, eq, inArray, ne, notInArray, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   companyMemberships,
@@ -24,8 +24,8 @@ import {
   toolAccessAuditEvents,
   toolConnections,
   userSecretDeclarations,
-} from "@paperclipai/db";
-import type { PermissionKey, PrincipalType } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import type { PermissionKey, PrincipalType } from "@pilibalaai/shared";
 import { conflict } from "../errors.js";
 import { assertAssignableAgent } from "./agent-assignability.js";
 import { authorizationService, type AuthorizationActor, type AuthorizationResource } from "./authorization.js";

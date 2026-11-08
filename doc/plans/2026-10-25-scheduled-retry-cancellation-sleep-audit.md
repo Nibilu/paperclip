@@ -1,7 +1,7 @@
 # Scheduled retry cancellation sleep audit
 
 Slice 39, based on `d8e1bd97f530fc7a5119549a35b871b7b3d9f737` from
-[#17666](https://github.com/paperclipai/paperclip/pull/17666).
+[#17666](https://github.com/pilibalaai/pilibala/pull/17666).
 Inspected remote master: `5a28f7acf8a8c86536c4f5c5369bfeb49a46c41a`.
 This slice owns only interrupted cancellation of parked scheduled retries.
 The other orphan-run recovery duties remain separate work.

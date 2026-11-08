@@ -18,8 +18,8 @@ import {
   workspaceOperations,
   workspaceRuntimeServices,
   type Db,
-} from "@paperclipai/db";
-import { EXECUTION_RECONCILIATION_CAUSES } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { EXECUTION_RECONCILIATION_CAUSES } from "@pilibalaai/shared";
 import { readControllerProcess } from "../controller-process-identity.js";
 import { idleAccountingSpoolPath, idleOrphanSpoolPath } from "../idle-local-work.js";
 import {

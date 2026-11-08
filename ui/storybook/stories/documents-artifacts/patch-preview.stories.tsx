@@ -14,7 +14,7 @@ const meta = {
   title: "Tasks and conversations/Documents, attachments, and work products/Patch previews",
   parameters: {
     layout: "fullscreen",
-    paperclip: {
+    pilibala: {
       capabilities: ["documents-artifacts/attachments", "documents-artifacts/documents"],
       status: "current",
       implementation: "production",

@@ -8,7 +8,7 @@ import {tmpdir} from "node:os";
 import path from "node:path";
 import express from "express";
 import {eq,sql} from "drizzle-orm";
-import {applyPendingMigrations,createDb,closeRegisteredClients,closeLivenessDb,closeCheckpointDb,closeFileStorageDb,companies,authUsers,companyMemberships,issues,mcpOauthGrants,mcpOauthClients,mcpOauthDeviceRequests,mcpOauthClientChanges,mcpOauthClientMirrorState,mcpEventDeliveries,mcpEventSubscriptions,mcpMutationReceipts,activityLog} from "@paperclipai/db";
+import {applyPendingMigrations,createDb,closeRegisteredClients,closeLivenessDb,closeCheckpointDb,closeFileStorageDb,companies,authUsers,companyMemberships,issues,mcpOauthGrants,mcpOauthClients,mcpOauthDeviceRequests,mcpOauthClientChanges,mcpOauthClientMirrorState,mcpEventDeliveries,mcpEventSubscriptions,mcpMutationReceipts,activityLog} from "@pilibalaai/db";
 import {resolveExternalTestDatabaseUrl} from "../../lib/dedicated-test-database-url.js";
 import {publicMcpIngressRoutes,publicMcpManagementRoutes} from "../../routes/public-mcp.js";
 import {issueRoutes} from "../../routes/issues.js";
@@ -24,7 +24,7 @@ import {startMcpRevocationIndexSync} from "./revocation-index-sync.js";
 import {startMcpIngressHandoffExpiry} from "./ingress-handoff-expiry.js";
 import {readIdleMcpSleepProof,registerIdleMcpOwners} from "./idle-sleep-proof.js";
 import {createDeliveryWorkCoordinator} from "../delivery-work-coordinator.js";
-import {createPaperclipCloudConnector,type PaperclipCloudConnectorConfig} from "../paperclip-cloud-connector.js";
+import {createPilibalaCloudConnector,type PilibalaCloudConnectorConfig} from "../pilibala-cloud-connector.js";
 import {initializeCloudRuntimeIdentity,applyCloudRuntimeIdentityAssertion} from "../cloud-runtime-identity.js";
 import {initializeCloudRuntimeConfig} from "../cloud-runtime-config.js";
 import {instanceSettingsService} from "../instance-settings.js";
@@ -32,9 +32,9 @@ import {idleWorkSnapshot} from "../task-admission.js";
 import {createStorageService} from "../../storage/service.js";
 import {createLocalDiskStorageProvider} from "../../storage/local-disk-provider.js";
 
-const databaseUrl=resolveExternalTestDatabaseUrl("PAPERCLIP_MCP_CANONICAL_TEST_DATABASE_URL");
+const databaseUrl=resolveExternalTestDatabaseUrl("PILIBALA_MCP_CANONICAL_TEST_DATABASE_URL");
 if(!databaseUrl||!process.send)throw new Error("Canonical MCP fixture requires IPC and an explicit dedicated *_test database");
-type Input={origin:string;stackId:string;companyId:string;otherCompanyId:string;userId:string;taskId:string;otherTaskId:string;browserSecret:string;cloudOrigin:string;cloudLoopback:string;callbackUrl:string;callbackLoopback:string;runtimeJwks:string;runtimeAssertion:string;connector:PaperclipCloudConnectorConfig};
+type Input={origin:string;stackId:string;companyId:string;otherCompanyId:string;userId:string;taskId:string;otherTaskId:string;browserSecret:string;cloudOrigin:string;cloudLoopback:string;callbackUrl:string;callbackLoopback:string;runtimeJwks:string;runtimeAssertion:string;connector:PilibalaCloudConnectorConfig};
 let db:ReturnType<typeof createDb>|undefined,server:Server|undefined,home:string|undefined,draining=false,queryCount=0,callbackPosts=0,unregister:(()=>void)|undefined;
 let delivery:ReturnType<typeof createDeliveryWorkCoordinator>|undefined,events:ReturnType<typeof createPublicMcpEvents>|undefined,configuration:Input|undefined;
 const errors:string[]=[];
@@ -90,7 +90,7 @@ async function mappedFetch(input:Parameters<typeof fetch>[0],init?:RequestInit){
 async function initialize(input:Input){
   assert.equal(process.versions.node.split(".")[0],"24","Canonical Tenant fixture requires actual Node24 before initialization or claims");
   assert.equal(db,undefined);configuration=input;home=await mkdtemp(path.join(tmpdir(),"canonical-mcp-tenant-"));
-  Object.assign(process.env,{PAPERCLIP_HOME:home,PAPERCLIP_PUBLIC_URL:input.origin,PAPERCLIP_CLOUD_STACK_ID:input.stackId,PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS:input.runtimeJwks,PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN:randomBytes(24).toString("base64url"),PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID:input.connector.instanceId,PAPERCLIP_CLOUD_CONNECTOR_ENVIRONMENT:input.connector.environment,PAPERCLIP_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY:input.connector.signPrivateKey,PAPERCLIP_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY:input.connector.sealPrivateKey,PAPERCLIP_CLOUD_CONNECTOR_BASE_URL:input.connector.baseUrl,PAPERCLIP_SECRETS_MASTER_KEY:randomBytes(32).toString("base64")});
+  Object.assign(process.env,{PILIBALA_HOME:home,PILIBALA_PUBLIC_URL:input.origin,PILIBALA_CLOUD_STACK_ID:input.stackId,PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS:input.runtimeJwks,PILIBALA_CLOUD_TENANT_SERVER_TOKEN:randomBytes(24).toString("base64url"),PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID:input.connector.instanceId,PILIBALA_CLOUD_CONNECTOR_ENVIRONMENT:input.connector.environment,PILIBALA_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY:input.connector.signPrivateKey,PILIBALA_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY:input.connector.sealPrivateKey,PILIBALA_CLOUD_CONNECTOR_BASE_URL:input.connector.baseUrl,PILIBALA_SECRETS_MASTER_KEY:randomBytes(32).toString("base64")});
   await applyPendingMigrations(databaseUrl!);db=createDb(databaseUrl!,{maxConnections:2,applicationName:"sleep2-mcp-canonical-tenant"});
   (db.$client.options as unknown as {debug:(...args:unknown[])=>void}).debug=()=>{queryCount++;};
   await db.insert(companies).values([{id:input.companyId,name:"Selected company",issuePrefix:"SELECTED"},{id:input.otherCompanyId,name:"Primary company",issuePrefix:"PRIMARY"}]);
@@ -100,7 +100,7 @@ async function initialize(input:Input){
   await instanceSettingsService(db).updateExperimental({enablePublicMcp:true,enableOpenAiDot:false,enableGrokBot:false});
   await initializeCloudRuntimeConfig(db);
   await initializeCloudRuntimeIdentity(db);await applyCloudRuntimeIdentityAssertion({db,compactJws:input.runtimeAssertion});
-  const oauth=createPublicMcpOAuth(db,{origin:input.origin,resource:input.origin+"/mcp/paperclip"}),api=express.Router();
+  const oauth=createPublicMcpOAuth(db,{origin:input.origin,resource:input.origin+"/mcp/pilibala"}),api=express.Router();
   api.use(issueRoutes(db,createStorageService(createLocalDiskStorageProvider(path.join(home,"storage")))));
   api.use(activityRoutes(db));
   const dispatch=createMcpApiDispatch(api),app=express();app.use(express.json({limit:"1mb"}));
@@ -110,7 +110,7 @@ async function initialize(input:Input){
   server=createServer(app);server.listen(0,"127.0.0.1");await once(server,"listening");
   delivery=createDeliveryWorkCoordinator({owner:db,canRun:()=>!draining,canReconcile:()=>true,onError:error=>errors.push(error instanceof Error?error.message:String(error))});
   await events.start(delivery).ready;
-  const connector=createPaperclipCloudConnector({config:input.connector,request:mappedFetch});
+  const connector=createPilibalaCloudConnector({config:input.connector,request:mappedFetch});
   registerMirrorClient=name=>oauth.register({client_name:name,redirect_uris:["https://mirror-client.example.test/callback"],grant_types:["authorization_code","refresh_token"],response_types:["code"],token_endpoint_auth_method:"none"},"mirror-experiment");
   const publishMirror=async(value:McpClientMirrorRequest)=>{
     const experiment=mirrorExperiment;

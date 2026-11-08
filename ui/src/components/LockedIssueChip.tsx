@@ -1,5 +1,5 @@
 import { CircleHelp, Lock } from "lucide-react";
-import type { IssueLockedStub } from "@paperclipai/shared";
+import type { IssueLockedStub } from "@pilibalaai/shared";
 import { cn } from "../lib/utils";
 
 /**

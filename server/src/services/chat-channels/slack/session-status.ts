@@ -21,7 +21,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatActions,
@@ -30,7 +30,7 @@ import {
   chatEndpoints,
   chatPublications,
   heartbeatRuns,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 
 import { logger } from "../../../middleware/logger.js";
 

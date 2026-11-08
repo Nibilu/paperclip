@@ -1,7 +1,7 @@
 import express from "express";
 import request from "supertest";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AdapterEnvironmentTestContext } from "@paperclipai/adapter-utils";
+import type { AdapterEnvironmentTestContext } from "@pilibalaai/adapter-utils";
 import type { ServerAdapterModule } from "../adapters/index.js";
 
 const mockAgentService = vi.hoisted(() => ({
@@ -262,9 +262,9 @@ describe("agent test-environment route", () => {
         provider: "daytona",
         providerLeaseId: "provider-lease-1",
         metadata: {
-          remoteCwd: "/home/user/paperclip-workspace",
+          remoteCwd: "/home/user/pilibala-workspace",
           sandboxId: "sandbox-1",
-          sandboxName: "paperclip-probe",
+          sandboxName: "pilibala-probe",
           templateKind: "snapshot",
           templateRef: "snapshot-1",
         },
@@ -275,7 +275,7 @@ describe("agent test-environment route", () => {
       },
     });
     mockEnvironmentRuntime.realizeWorkspace.mockResolvedValue({
-      cwd: "/home/user/paperclip-workspace",
+      cwd: "/home/user/pilibala-workspace",
     });
     mockResolveEnvironmentExecutionTarget.mockResolvedValue(null);
     testEnvironmentSpy.mockResolvedValue({
@@ -301,18 +301,18 @@ describe("agent test-environment route", () => {
 
   it("tests the saved Cursor API controller without allocating a Computer under managed-only policy", async () => {
     const { registerServerAdapter, unregisterServerAdapter, getServerAdapter } = await import("../adapters/index.js");
-    const previous = getServerAdapter("paperclip_runner");
-    const probe = vi.fn(async () => ({ adapterType: "paperclip_runner", status: "warn" as const, testedAt: new Date().toISOString(),
+    const previous = getServerAdapter("pilibala_runner");
+    const probe = vi.fn(async () => ({ adapterType: "pilibala_runner", status: "warn" as const, testedAt: new Date().toISOString(),
       checks: [{ code: "cursor_cloud_account_ready", level: "info" as const, message: "Synthetic account probe; no prompt." }] }));
-    registerServerAdapter({ ...externalAdapter, type: "paperclip_runner", testEnvironment: probe });
+    registerServerAdapter({ ...externalAdapter, type: "pilibala_runner", testEnvironment: probe });
     try {
       const id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
       const adapterConfig = { provider: "cursor_cloud", model: "caller-model", repoUrl: "https://github.com/example/qualification", env: { CURSOR_API_KEY: "synthetic" } };
-      mockAgentService.getById.mockResolvedValue({ id, companyId: "company-1", adapterType: "paperclip_runner", adapterConfig, defaultEnvironmentId: "11111111-1111-4111-8111-111111111111" });
+      mockAgentService.getById.mockResolvedValue({ id, companyId: "company-1", adapterType: "pilibala_runner", adapterConfig, defaultEnvironmentId: "11111111-1111-4111-8111-111111111111" });
       mockInstanceSettingsService.getExperimental.mockResolvedValue({ enableManagedSandboxOnly: true });
       mockInstanceSettingsService.get.mockResolvedValue({ defaultEnvironmentId: "11111111-1111-4111-8111-111111111111" });
       const app = await createApp();
-      const response = await request(app).post("/api/companies/company-1/adapters/paperclip_runner/test-environment").send({ agentId: id, adapterConfig });
+      const response = await request(app).post("/api/companies/company-1/adapters/pilibala_runner/test-environment").send({ agentId: id, adapterConfig });
       expect(response.status, JSON.stringify(response.body)).toBe(200);
       expect(response.body).toMatchObject({ status: "warn", checks: [{ code: "cursor_cloud_account_ready" }] });
       expect(probe).toHaveBeenCalledWith(expect.objectContaining({ executionTarget: null, environmentName: null, config: adapterConfig }));
@@ -320,11 +320,11 @@ describe("agent test-environment route", () => {
       expect(mockEnvironmentRuntime.realizeWorkspace).not.toHaveBeenCalled();
       expect(mockEnvironmentService.findManagedSandboxEnvironment).not.toHaveBeenCalled();
       mockInstanceSettingsService.getGeneral.mockResolvedValue({ censorUsernameInLogs: false, executionMode: "kubernetes" });
-      const denied = await request(app).post("/api/companies/company-1/adapters/paperclip_runner/test-environment").send({ agentId: id, adapterConfig });
+      const denied = await request(app).post("/api/companies/company-1/adapters/pilibala_runner/test-environment").send({ agentId: id, adapterConfig });
       expect(denied.status).toBe(422);
       expect(denied.body.details?.code ?? denied.body.code).toBe("provider_api_kubernetes_execution_unsupported");
       expect(probe).toHaveBeenCalledOnce();
-    } finally { unregisterServerAdapter("paperclip_runner"); if (previous) registerServerAdapter(previous); }
+    } finally { unregisterServerAdapter("pilibala_runner"); if (previous) registerServerAdapter(previous); }
   });
 
   async function mockCursorSwitchProbes() {
@@ -332,8 +332,8 @@ describe("agent test-environment route", () => {
     const legacy = vi.spyOn(getServerAdapter("cursor_cloud"), "testEnvironment").mockImplementation(async () => ({
       adapterType: "cursor_cloud", status: "pass", checks: [], testedAt: new Date().toISOString(),
     }));
-    const native = vi.spyOn(getServerAdapter("paperclip_runner"), "testEnvironment").mockImplementation(async () => ({
-      adapterType: "paperclip_runner", status: "warn", testedAt: new Date().toISOString(),
+    const native = vi.spyOn(getServerAdapter("pilibala_runner"), "testEnvironment").mockImplementation(async () => ({
+      adapterType: "pilibala_runner", status: "warn", testedAt: new Date().toISOString(),
       checks: [{ code: "cursor_cloud_account_ready", level: "info", message: "Synthetic no-prompt probe" }],
     }));
     return { legacy, native, restore: () => { legacy.mockRestore(); native.mockRestore(); } };
@@ -343,7 +343,7 @@ describe("agent test-environment route", () => {
     const id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const environmentId = "22222222-2222-4222-8222-222222222222";
     const adapterConfig = { provider: "cursor_cloud", model: "caller-model", repoUrl: "https://github.com/example/qualification", env: {} };
-    mockAgentService.getById.mockResolvedValue({ id, companyId: "company-1", adapterType: "paperclip_runner",
+    mockAgentService.getById.mockResolvedValue({ id, companyId: "company-1", adapterType: "pilibala_runner",
       adapterConfig, runtimeConfig: {}, defaultEnvironmentId: "11111111-1111-4111-8111-111111111111" });
     const envVars = { CURSOR_API_KEY: { type: "secret_ref", secretId: "computer-key" } };
     mockEnvironmentService.getById.mockResolvedValue({ id: environmentId, name: "Chosen Computer",
@@ -359,7 +359,7 @@ describe("agent test-environment route", () => {
     try {
       const f = savedCursorSwitchFixture();
       const config = { ...f.adapterConfig, ...(legacyPrompt ? { promptTemplate: "Legacy prompt" } : {}) };
-      const response = await request(await createApp()).post("/api/companies/company-1/adapters/paperclip_runner/test-environment")
+      const response = await request(await createApp()).post("/api/companies/company-1/adapters/pilibala_runner/test-environment")
         .send({ agentId: f.id, runner: "legacy", environmentId: f.environmentId, adapterConfig: config });
       expect(response.status, JSON.stringify(response.body)).toBe(200);
       expect(probe).toHaveBeenCalledWith(expect.objectContaining({ environmentName: "Chosen Computer", executionTarget: null,
@@ -378,7 +378,7 @@ describe("agent test-environment route", () => {
     try {
       const f = savedCursorSwitchFixture();
       mockEnvironmentService.listBoundCompanyIds.mockResolvedValue(["company-2"]);
-      const response = await request(await createApp()).post("/api/companies/company-1/adapters/paperclip_runner/test-environment")
+      const response = await request(await createApp()).post("/api/companies/company-1/adapters/pilibala_runner/test-environment")
         .send({ agentId: f.id, runner: "legacy", environmentId: f.environmentId,
           adapterConfig: { ...f.adapterConfig, promptTemplate: "Legacy prompt" } });
       expect(response.status).toBe(403);
@@ -396,7 +396,7 @@ describe("agent test-environment route", () => {
     try {
       const f = savedCursorSwitchFixture();
       mockInstanceSettingsService.getExperimental.mockResolvedValue({ enableManagedSandboxOnly: true });
-      const response = await request(await createApp()).post("/api/companies/company-1/adapters/paperclip_runner/test-environment")
+      const response = await request(await createApp()).post("/api/companies/company-1/adapters/pilibala_runner/test-environment")
         .send({ agentId: f.id, runner: "legacy", environmentId: f.environmentId, adapterConfig: f.adapterConfig });
       expect(response.status, JSON.stringify(response.body)).toBe(200);
       expect(response.body).toMatchObject({ status: "fail", checks: expect.arrayContaining([
@@ -408,7 +408,7 @@ describe("agent test-environment route", () => {
     } finally { probes.restore(); }
   });
 
-  it("keeps an explicit Paperclip Cursor test API-only despite a selected Computer", async () => {
+  it("keeps an explicit Pilibala Cursor test API-only despite a selected Computer", async () => {
     const probes = await mockCursorSwitchProbes();
     const probe = probes.native;
     try {
@@ -416,8 +416,8 @@ describe("agent test-environment route", () => {
       const settings = { defaultEnvironmentId: null, experimental: { enableManagedSandboxOnly: true, enableNativeRunner: true } };
       mockInstanceSettingsService.get.mockResolvedValue(settings);
       mockInstanceSettingsService.getExperimental.mockResolvedValue(settings.experimental);
-      const response = await request(await createApp()).post("/api/companies/company-1/adapters/paperclip_runner/test-environment")
-        .send({ agentId: f.id, runner: "paperclip", environmentId: f.environmentId, adapterConfig: f.adapterConfig });
+      const response = await request(await createApp()).post("/api/companies/company-1/adapters/pilibala_runner/test-environment")
+        .send({ agentId: f.id, runner: "pilibala", environmentId: f.environmentId, adapterConfig: f.adapterConfig });
       expect(response.status, JSON.stringify(response.body)).toBe(200);
       expect(probe).toHaveBeenCalledWith(expect.objectContaining({ executionTarget: null, environmentName: null,
         config: expect.objectContaining({ provider: "cursor_cloud" }) }));
@@ -429,11 +429,11 @@ describe("agent test-environment route", () => {
   });
 
   it.each([
-    { patch: { model: "" }, code: "paperclip_runner_cursor_cloud_model_required" },
-    { patch: { command: "untrusted" }, code: "paperclip_runner_cursor_cloud_config_invalid" },
+    { patch: { model: "" }, code: "pilibala_runner_cursor_cloud_model_required" },
+    { patch: { command: "untrusted" }, code: "pilibala_runner_cursor_cloud_config_invalid" },
   ])("returns a useful validation error before Computer or credential work for invalid native Cursor input ($code)", async ({ patch, code }) => {
     const app = await createApp();
-    const response = await request(app).post("/api/companies/company-1/adapters/paperclip_runner/test-environment").send({
+    const response = await request(app).post("/api/companies/company-1/adapters/pilibala_runner/test-environment").send({
       adapterConfig: { provider: "cursor_cloud", model: "caller-model", repoUrl: "https://github.com/example/qualification", ...patch },
     });
     expect(response.status, JSON.stringify(response.body)).toBe(422);
@@ -445,8 +445,8 @@ describe("agent test-environment route", () => {
 
   it.each([undefined, "auto"] as const)("tests the prospective managed Cursor API default without converting saved Legacy agents (%s)", async runner => {
     const { getServerAdapter } = await import("../adapters/index.js");
-    const native = getServerAdapter("paperclip_runner");
-    const probe = vi.spyOn(native, "testEnvironment").mockImplementation(async () => ({ adapterType: "paperclip_runner", status: "warn" as const, testedAt: new Date().toISOString(),
+    const native = getServerAdapter("pilibala_runner");
+    const probe = vi.spyOn(native, "testEnvironment").mockImplementation(async () => ({ adapterType: "pilibala_runner", status: "warn" as const, testedAt: new Date().toISOString(),
       checks: [{ code: "cursor_cloud_account_ready", level: "info" as const, message: "Synthetic account probe; no prompt." }] }));
     try {
       const settings = { defaultEnvironmentId: null, experimental: { enableManagedSandboxOnly: true, enableNativeRunner: true } };
@@ -456,7 +456,7 @@ describe("agent test-environment route", () => {
       const app = await createApp();
       const response = await request(app).post("/api/companies/company-1/adapters/cursor_cloud/test-environment").send({ runner, adapterConfig });
       expect(response.status, JSON.stringify(response.body)).toBe(200);
-      expect(response.body).toMatchObject({ adapterType: "paperclip_runner", checks: [{ code: "cursor_cloud_account_ready" }] });
+      expect(response.body).toMatchObject({ adapterType: "pilibala_runner", checks: [{ code: "cursor_cloud_account_ready" }] });
       expect(probe).toHaveBeenCalledWith(expect.objectContaining({ executionTarget: null, environmentName: null,
         config: expect.objectContaining({ provider: "cursor_cloud", model: "caller-model" }) }));
       expect(mockEnvironmentService.findManagedSandboxEnvironment).not.toHaveBeenCalled();
@@ -471,7 +471,7 @@ describe("agent test-environment route", () => {
   });
 
   it("accepts a managed Dot environment without allocating an idle sandbox", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://paperclip.example");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://pilibala.example");
     mockInstanceSettingsService.getExperimental.mockResolvedValue({
       enableManagedSandboxOnly: false,
       enableOpenAiDot: true,
@@ -479,7 +479,7 @@ describe("agent test-environment route", () => {
     mockInstanceSettingsService.get.mockResolvedValue({ defaultEnvironmentId: "11111111-1111-4111-8111-111111111111" });
     const app = await createApp();
     try {
-      const res = await request(app).post("/api/companies/company-1/adapters/paperclip_runner/test-environment")
+      const res = await request(app).post("/api/companies/company-1/adapters/pilibala_runner/test-environment")
         .send({ adapterConfig: { provider: "openai_dot", allowUnmeteredProvider: true } });
       expect(res.status, JSON.stringify(res.body)).toBe(200);
       expect(res.body.checks).toContainEqual(expect.objectContaining({ code: "dot_controller", level: "info" }));
@@ -489,15 +489,15 @@ describe("agent test-environment route", () => {
   });
 
   it("fails the Cloud Dot check without a managed sandbox instead of probing the host", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://paperclip.example");
-    vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "test-cloud");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://pilibala.example");
+    vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "test-cloud");
     mockInstanceSettingsService.getExperimental.mockResolvedValue({
       enableManagedSandboxOnly: false,
       enableOpenAiDot: true,
     });
     const app = await createApp();
     try {
-      const res = await request(app).post("/api/companies/company-1/adapters/paperclip_runner/test-environment")
+      const res = await request(app).post("/api/companies/company-1/adapters/pilibala_runner/test-environment")
         .send({ adapterConfig: { provider: "openai_dot", allowUnmeteredProvider: true } });
       expect(res.status, JSON.stringify(res.body)).toBe(200);
       expect(res.body.status).toBe("fail");
@@ -509,7 +509,7 @@ describe("agent test-environment route", () => {
 
   it("lets an authorized agent editor discover Copilot models", async () => {
     mockAgentService.getById.mockResolvedValue({ id: "agent-1", companyId: "company-1" });
-    const response = await request(await createApp()).get("/api/companies/company-1/adapters/paperclip_runner/models")
+    const response = await request(await createApp()).get("/api/companies/company-1/adapters/pilibala_runner/models")
       .query({ provider: "acpx", acpxAgent: "copilot", agentId: "agent-1" });
     expect(response.status).toBe(200);
     expect(response.body).toEqual([{ id: "gpt-5.6-luna", label: "GPT-5.6 Luna" }]);
@@ -534,7 +534,7 @@ describe("agent test-environment route", () => {
     mockAgentService.getById.mockResolvedValue({ id: "agent-1", companyId: "company-1" });
     const binding = { provider: "github", method: "api_key", mode: "shared",
       connectionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", grantId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" };
-    const response = await request(await createApp(actor)).get("/api/companies/company-1/adapters/paperclip_runner/models")
+    const response = await request(await createApp(actor)).get("/api/companies/company-1/adapters/pilibala_runner/models")
       .query({ provider: "acpx", acpxAgent: "copilot", agentId: "agent-1",
         environmentId: "33333333-3333-4333-8333-333333333333", aiConnection: JSON.stringify(binding) });
     expect(response.status).toBe(403);
@@ -547,7 +547,7 @@ describe("agent test-environment route", () => {
   it.each([undefined, "33333333-3333-4333-8333-333333333333"])("uses the saved or editor-selected Copilot environment (%s)", async environmentId => {
     const savedEnvironmentId = "22222222-2222-4222-8222-222222222222";
     mockAgentService.getById.mockResolvedValue({ id: "agent-1", companyId: "company-1", defaultEnvironmentId: savedEnvironmentId });
-    const response = await request(await createApp()).get("/api/companies/company-1/adapters/paperclip_runner/models")
+    const response = await request(await createApp()).get("/api/companies/company-1/adapters/pilibala_runner/models")
       .query({ provider: "acpx", acpxAgent: "copilot", agentId: "agent-1", ...(environmentId ? { environmentId } : {}) });
     expect(response.status).toBe(200);
     expect(mockCopilotModels).toHaveBeenCalledExactlyOnceWith(expect.anything(), "company-1", "synthetic-copilot-token",
@@ -556,7 +556,7 @@ describe("agent test-environment route", () => {
 
   it("refuses model discovery for a foreign agent before selecting credentials", async () => {
     mockAgentService.getById.mockResolvedValue({ id: "agent-foreign", companyId: "company-2" });
-    const response = await request(await createApp()).get("/api/companies/company-1/adapters/paperclip_runner/models")
+    const response = await request(await createApp()).get("/api/companies/company-1/adapters/pilibala_runner/models")
       .query({ provider: "acpx", acpxAgent: "copilot", agentId: "agent-foreign" });
     expect(response.status).toBe(404);
     expect(mockSelectAiConnection).not.toHaveBeenCalled();
@@ -568,7 +568,7 @@ describe("agent test-environment route", () => {
     const { forbidden } = await import("../errors.js");
     mockAgentService.getById.mockResolvedValue({ id: "agent-1", companyId: "company-1" });
     mockSelectAiConnection.mockRejectedValueOnce(forbidden("Saved connection access denied"));
-    const response = await request(await createApp()).get("/api/companies/company-1/adapters/paperclip_runner/models")
+    const response = await request(await createApp()).get("/api/companies/company-1/adapters/pilibala_runner/models")
       .query({ provider: "acpx", acpxAgent: "copilot", agentId: "agent-1" });
     expect(response.status).toBe(403);
     expect(mockAiCredential).not.toHaveBeenCalled();
@@ -661,7 +661,7 @@ describe("agent test-environment route", () => {
       attribution: { provider: "github", method: "api_key" }, cleanup: vi.fn(),
     }));
     const app = await createApp();
-    const response = await request(app).post("/api/companies/company-1/adapters/paperclip_runner/test-environment").send({
+    const response = await request(app).post("/api/companies/company-1/adapters/pilibala_runner/test-environment").send({
       environmentId, adapterConfig: { provider: "acpx", acpxAgent: "copilot", model: "gpt-5.6-luna" },
       aiConnection: { provider: "github", method: "api_key", mode: "responsible_user" },
     });
@@ -675,7 +675,7 @@ describe("agent test-environment route", () => {
   it("refuses a Copilot test before credentials when forced Kubernetes is unavailable", async () => {
     mockInstanceSettingsService.getGeneral.mockResolvedValue({ censorUsernameInLogs: false, executionMode: "kubernetes" });
     const app = await createApp();
-    const response = await request(app).post("/api/companies/company-1/adapters/paperclip_runner/test-environment").send({
+    const response = await request(app).post("/api/companies/company-1/adapters/pilibala_runner/test-environment").send({
       adapterConfig: { provider: "acpx", acpxAgent: "copilot", model: "gpt-5.6-luna" },
       aiConnection: { provider: "github", method: "api_key", mode: "responsible_user" },
     });
@@ -871,23 +871,23 @@ describe("agent test-environment route", () => {
 
   it("passes the selected Antigravity managed home through ordinary Test and accepts its native admission receipt", async () => {
     const { registerServerAdapter, getServerAdapter, unregisterServerAdapter } = await import("../adapters/index.js");
-    const previous = getServerAdapter("paperclip_runner");
+    const previous = getServerAdapter("pilibala_runner");
     const adapterConfig = { provider: "acpx", acpxAgent: "antigravity", model: "exact-google-model" };
     const binding = { provider: "google", method: "subscription", mode: "responsible_user" };
     const agentId = "11111111-1111-4111-8111-111111111111";
-    mockAgentService.getById.mockResolvedValue({ id: agentId, companyId: "company-1", adapterType: "paperclip_runner",
+    mockAgentService.getById.mockResolvedValue({ id: agentId, companyId: "company-1", adapterType: "pilibala_runner",
       adapterConfig, runtimeConfig: { aiConnection: binding }, createdByUserId: "local-board", pauseReason: "setup" });
     mockPrepareManagedAiRuntime.mockImplementation(async (_db: unknown, input: { config: Record<string, unknown> }) => ({
       config: { ...input.config, env: { GEMINI_HOME: "/selected-private-home/provider" }, managedAiConnection: { method: "subscription" } },
       home: "/selected-private-home", cleanup: vi.fn(), accountName: "My Google subscription", attribution: { provider: "google" },
     }));
-    const nativeProbe = vi.fn(async () => ({ adapterType: "paperclip_runner", status: "pass" as const, testedAt: new Date(0).toISOString(),
+    const nativeProbe = vi.fn(async () => ({ adapterType: "pilibala_runner", status: "pass" as const, testedAt: new Date(0).toISOString(),
       checks: [{ code: "antigravity_metadata_verified", level: "info" as const, message: "Native account and model accepted without a prompt." }] }));
-    unregisterServerAdapter("paperclip_runner");
-    registerServerAdapter({ ...externalAdapter, type: "paperclip_runner", testEnvironment: nativeProbe });
+    unregisterServerAdapter("pilibala_runner");
+    registerServerAdapter({ ...externalAdapter, type: "pilibala_runner", testEnvironment: nativeProbe });
     try {
       const app = await createApp();
-      const response = await request(app).post("/api/companies/company-1/adapters/paperclip_runner/test-environment")
+      const response = await request(app).post("/api/companies/company-1/adapters/pilibala_runner/test-environment")
         .send({ adapterConfig, aiConnection: binding, agentId });
       expect(response.status, JSON.stringify(response.body)).toBe(200);
       expect(response.body.status).toBe("pass");
@@ -895,7 +895,7 @@ describe("agent test-environment route", () => {
       expect(response.body.checks).toContainEqual(expect.objectContaining({ code: "antigravity_metadata_verified" }));
       expect(response.body.checks.some((check: { code: string }) => check.code.includes("hello_probe"))).toBe(false);
     } finally {
-      unregisterServerAdapter("paperclip_runner");
+      unregisterServerAdapter("pilibala_runner");
       if (previous) registerServerAdapter(previous);
     }
   });
@@ -990,7 +990,7 @@ describe("agent test-environment route", () => {
     mockResolveEnvironmentExecutionTarget.mockResolvedValueOnce({
       kind: "remote",
       transport: "sandbox",
-      remoteCwd: "/home/user/paperclip-workspace",
+      remoteCwd: "/home/user/pilibala-workspace",
       providerKey: "fake-plugin",
       runner: { execute: vi.fn() },
     });
@@ -1050,7 +1050,7 @@ describe("agent test-environment route", () => {
         code: "sandbox_test_identity",
         level: "info",
         message: 'Environment test identity for "Sandbox QA".',
-        detail: expect.stringContaining("paperclipLeaseId=lease-1"),
+        detail: expect.stringContaining("pilibalaLeaseId=lease-1"),
       }),
       expect.objectContaining({
         code: "external_test_hello_probe_passed",
@@ -1061,7 +1061,7 @@ describe("agent test-environment route", () => {
     expect(res.body.checks[0].detail).toContain("providerLeaseId=provider-lease-1");
     expect(res.body.checks[0].detail).toContain("provider=daytona");
     expect(res.body.checks[0].detail).toContain("sandboxId=sandbox-1");
-    expect(res.body.checks[0].detail).toContain("sandboxName=paperclip-probe");
+    expect(res.body.checks[0].detail).toContain("sandboxName=pilibala-probe");
     expect(res.body.checks[0].detail).toContain("snapshotRef=snapshot-1");
     expect(mockReleaseRunLease).toHaveBeenCalledWith({
       environment: expect.objectContaining({ id: "11111111-1111-4111-8111-111111111111" }),
@@ -1107,7 +1107,7 @@ describe("agent test-environment route", () => {
     const sandboxExecutionTarget = {
       kind: "remote",
       transport: "sandbox",
-      remoteCwd: "/home/user/paperclip-workspace",
+      remoteCwd: "/home/user/pilibala-workspace",
       providerKey: "fake-plugin",
       runner: { execute: vi.fn() },
     };
@@ -1122,7 +1122,7 @@ describe("agent test-environment route", () => {
         envVars: {
           CLAUDE_CODE_OAUTH_TOKEN: { type: "secret_ref", secretId: "secret-1" },
           FOO: { type: "plain", value: "env-foo" },
-          PAPERCLIP_API_KEY: { type: "plain", value: "must-not-flow" },
+          PILIBALA_API_KEY: { type: "plain", value: "must-not-flow" },
         },
       });
       mockResolveEnvironmentExecutionTarget.mockResolvedValueOnce(sandboxExecutionTarget);
@@ -1273,7 +1273,7 @@ describe("agent test-environment route", () => {
 
     it("reports the missing agent prerequisite without acquiring a lease or probing the host", async () => {
       mockPluginEnvironmentRequiresAgent.mockResolvedValueOnce(true);
-      mockResolveNewAgentRunnerForCompany.mockResolvedValueOnce({ adapterType: "paperclip_runner", adapterConfig: { provider: "codex" } });
+      mockResolveNewAgentRunnerForCompany.mockResolvedValueOnce({ adapterType: "pilibala_runner", adapterConfig: { provider: "codex" } });
       const app = await createApp();
       const res = await request(app)
         .post("/api/companies/company-1/adapters/codex_local/test-environment")
@@ -1285,7 +1285,7 @@ describe("agent test-environment route", () => {
     });
 
     it("checks the plugin driver against the resolved Runner adapter, not the requested harness", async () => {
-      mockResolveNewAgentRunnerForCompany.mockResolvedValueOnce({ adapterType: "paperclip_runner", adapterConfig: { provider: "acpx", acpxAgent: "claude" } });
+      mockResolveNewAgentRunnerForCompany.mockResolvedValueOnce({ adapterType: "pilibala_runner", adapterConfig: { provider: "acpx", acpxAgent: "claude" } });
       const app = await createApp();
       const res = await request(app)
         .post("/api/companies/company-1/adapters/claude_local/test-environment")
@@ -1296,12 +1296,12 @@ describe("agent test-environment route", () => {
       // environment. The probe stops at the controlled task-capability check.
       expect(res.status, JSON.stringify(res.body)).toBe(200);
       expect(mockEnvironmentRuntime.acquireRunLease).toHaveBeenCalledWith(expect.objectContaining({
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         environment: expect.objectContaining({ id: pluginEnvironment.id, driver: "plugin" }),
       }));
       expect(mockEnvironmentRuntime.supportsTasks).toHaveBeenCalledWith({ lease: expect.objectContaining({ id: "lease-1" }) });
       expect(res.body).toMatchObject({
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         status: "fail",
         checks: [expect.objectContaining({ detail: "Plugin environment does not provide native Runner task execution" })],
       });
@@ -1313,13 +1313,13 @@ describe("agent test-environment route", () => {
       { name: "with a preconfigured Runner home", adapterConfig: { provider: "codex", homeMode: "preconfigured" }, message: "isolated Runner home" },
     ])("refuses a Runner-task environment $name before secrets or a lease", async ({ adapterConfig, message }) => {
       mockPluginRunnerTaskDriver.mockResolvedValueOnce({ driverKey: "tasks" });
-      mockResolveNewAgentRunnerForCompany.mockResolvedValueOnce({ adapterType: "paperclip_runner", adapterConfig });
+      mockResolveNewAgentRunnerForCompany.mockResolvedValueOnce({ adapterType: "pilibala_runner", adapterConfig });
       const app = await createApp();
       const res = await request(app)
         .post("/api/companies/company-1/adapters/codex_local/test-environment")
         .send({ adapterConfig: {}, environmentId: pluginEnvironment.id });
       expect(res.status, JSON.stringify(res.body)).toBe(200);
-      expect(res.body).toMatchObject({ adapterType: "paperclip_runner", status: "fail",
+      expect(res.body).toMatchObject({ adapterType: "pilibala_runner", status: "fail",
         checks: [{ code: "ai_connection_required", level: "error", message: expect.stringContaining(message) }] });
       expect(mockPluginRunnerTaskDriver).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ id: pluginEnvironment.id }));
       expect(mockSecretService.resolveAdapterConfigForRuntime).not.toHaveBeenCalled();
@@ -1461,7 +1461,7 @@ describe("agent test-environment route", () => {
       mockResolveEnvironmentExecutionTarget.mockResolvedValueOnce({
         kind: "remote",
         transport: "sandbox",
-        remoteCwd: "/home/user/paperclip-workspace",
+        remoteCwd: "/home/user/pilibala-workspace",
         providerKey: "fake-plugin",
         runner: { execute: vi.fn() },
       });

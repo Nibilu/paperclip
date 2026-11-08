@@ -9,22 +9,22 @@ import { getCACertificates, setDefaultCACertificates } from "node:tls";
 import { eq } from "drizzle-orm";
 import WebSocket, { WebSocketServer, type RawData } from "ws";
 import { expect, it, vi } from "vitest";
-import { completionContracts, environmentLeases, environments, executionWorkspaces, heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults } from "@paperclipai/db";
-import { environmentTaskOperationSchema, type PluginEnvironmentTaskOperation } from "@paperclipai/plugin-sdk";
+import { completionContracts, environmentLeases, environments, executionWorkspaces, heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults } from "@pilibalaai/db";
+import { environmentTaskOperationSchema, type PluginEnvironmentTaskOperation } from "@pilibalaai/plugin-sdk";
 import { readRunnerdArtifactBinding, defaultCapabilityRunnerdBinary,
-  parseNativeExecutionInput, parseNativeRuntimeContext, QUALIFIED_ACPX_PROFILES, type DurableRecoveryIdentity, type RunnerProcessHandle, type RunnerProcessLaunchSpec } from "../../vendor/paperclip-runner/index.js";
-import { createRunnerProviderLaunch, runnerLaunchRequirementsDigest, canonicalNativeRuntimeContextDigest } from "@paperclipai/paperclip-runner";
+  parseNativeExecutionInput, parseNativeRuntimeContext, QUALIFIED_ACPX_PROFILES, type DurableRecoveryIdentity, type RunnerProcessHandle, type RunnerProcessLaunchSpec } from "../../vendor/pilibala-runner/index.js";
+import { createRunnerProviderLaunch, runnerLaunchRequirementsDigest, canonicalNativeRuntimeContextDigest } from "@pilibalaai/pilibala-runner";
 import { materializeAsset } from "./runtime-context.js";
-import { spawnRunner } from "../../vendor/paperclip-runner/testing.js";
+import { spawnRunner } from "../../vendor/pilibala-runner/testing.js";
 import { describeEmbeddedPostgres, nativeRestartFixture, realProcessIt, fakeCodexAppServer, waitForCondition } from "../../__tests__/helpers/native-restart.js";
-import { executePaperclipNativeSession, cancelNativeSession, closeIdleWarmNativeSessionsForRestart, readNativeSessionIdleWork } from "./native-session-executor.js";
-import { resolvePaperclipInstanceRoot } from "../../home-paths.js";
+import { executePilibalaNativeSession, cancelNativeSession, closeIdleWarmNativeSessionsForRestart, readNativeSessionIdleWork } from "./native-session-executor.js";
+import { resolvePilibalaInstanceRoot } from "../../home-paths.js";
 import * as remoteWarmRecovery from "./remote-warm-session-recovery.js";
 import { reconcileNativeFinalizations } from "./native-finalization-reconciler.js";
 import { buildNativeCompletionContract } from "./completion-contracts.js";
 import { nativeRuntimeContextFixture } from "./runtime-context.test-fixture.js";
 
-const { createPrivateHostControlFixture } = await import(new URL("../../../../packages/paperclip-runner/test/support/private-host-control.ts", import.meta.url).href) as {
+const { createPrivateHostControlFixture } = await import(new URL("../../../../packages/pilibala-runner/test/support/private-host-control.ts", import.meta.url).href) as {
   createPrivateHostControlFixture(): {
     launch(spec: RunnerProcessLaunchSpec): RunnerProcessHandle;
     request(frame: Record<string, unknown>): Promise<{ id: string; status: string }>;
@@ -32,7 +32,7 @@ const { createPrivateHostControlFixture } = await import(new URL("../../../../pa
   };
 };
 
-const fakeAcpxSidecar = resolve(import.meta.dirname, "../../../../packages/paperclip-runner/runner/target/debug/fake-acpx-sidecar");
+const fakeAcpxSidecar = resolve(import.meta.dirname, "../../../../packages/pilibala-runner/runner/target/debug/fake-acpx-sidecar");
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
 const parkId = (source: DurableRecoveryIdentity) => `park_${sha(JSON.stringify(Object.fromEntries(Object.entries(source).sort(([a], [b]) => a.localeCompare(b)))))}`;
 
@@ -62,7 +62,7 @@ describeEmbeddedPostgres("plugin Runner release/resume through the Core executio
     runtimeContext.instructions.bundle = await materializeAsset([{ path: "AGENTS.md", mode: 0o444, content: Buffer.from("Complete only the controlled task.\n") }]);
     runtimeContext.aggregateDigest = canonicalNativeRuntimeContextDigest(runtimeContext);
     const { permissionPolicy: _permissionPolicy, ...claudeProfile } = QUALIFIED_ACPX_PROFILES.claude;
-    const execution = parseNativeExecutionInput({ schema: "paperclip.native-execution-input.v5", executionMode: "default", planningContext: null,
+    const execution = parseNativeExecutionInput({ schema: "pilibala.native-execution-input.v5", executionMode: "default", planningContext: null,
       runtimeContext, binding: { companyId, agentId, issueId, runId, executionWorkspaceId: workspaceId },
       provider: harness === "codex" ? { kind: "codex", model: "fixture-model", approvalPolicy: "never" }
         : { kind: "acpx", agent: "claude", model: "claude-sonnet-4-6", permissionMode: "approve-all", profile: claudeProfile },
@@ -70,10 +70,10 @@ describeEmbeddedPostgres("plugin Runner release/resume through the Core executio
       workspace: { cwd: workspace, repoUrl: null, repoRef: null, branchName: null },
       session: { normalizedSessionId: native.normalizedSessionId, driverKind: harness === "codex" ? "codex_app_server" : "acpx_runtime", protocolVersion: 1,
         lifecyclePolicy: { mode: "warm", idleTimeoutMs: adopted ? 5_000 : 60_000 } },
-      completionContract: { id: contract!.id, sha256: contract!.canonicalSha256, schemaVersion: "paperclip.completion-contract.v1",
+      completionContract: { id: contract!.id, sha256: contract!.canonicalSha256, schemaVersion: "pilibala.completion-contract.v1",
         contract: buildNativeCompletionContract(issue!, { revision: contract!.revision }) }, interactionResponses: [], credentialBindings: [] });
     const resultFile = join(root, "result.json"), calls = join(root, "provider-calls");
-    await writeFile(resultFile, JSON.stringify({ schema: "paperclip.run_result.v1", reportedWorkDisposition: "done", summary: "Controlled task complete.",
+    await writeFile(resultFile, JSON.stringify({ schema: "pilibala.run_result.v1", reportedWorkDisposition: "done", summary: "Controlled task complete.",
       completionClaim: { contractRevision: execution.completionContract.contract.revision, objectiveSatisfied: true,
         criteria: execution.completionContract.contract.criteria.map(c => ({ criterionId: c.id, status: "satisfied", evidenceRefs: [] })), remainingWork: [] },
       evidence: [], verification: [], artifacts: [], attentionRequests: [] }));
@@ -192,7 +192,7 @@ describeEmbeddedPostgres("plugin Runner release/resume through the Core executio
       return { kind: "accepted", taskId };
     };
     const supervisor = async () => {
-      const directory = join(resolvePaperclipInstanceRoot(), "runtime/paperclip-runner/sessions");
+      const directory = join(resolvePilibalaInstanceRoot(), "runtime/pilibala-runner/sessions");
       for (const file of await readdir(directory)) {
         const envelope = JSON.parse(await readFile(join(directory, file), "utf8"));
         if (envelope.snapshot?.identity.sessionId === native.normalizedSessionId) return envelope;
@@ -203,7 +203,7 @@ describeEmbeddedPostgres("plugin Runner release/resume through the Core executio
     const execute = async (current: typeof execution, leaseId: string) => {
       await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeExecutionInput: current }, runnerInstanceId: native.runnerInstanceId, completionContractId: contract!.id, completionContractSha256: contract!.canonicalSha256, nativeSessionId: current.session.normalizedSessionId })
         .where(eq(heartbeatRuns.id, current.binding.runId));
-      return executePaperclipNativeSession({ db, execution: current, runnerInstanceId: native.runnerInstanceId, useRunnerd: true, runnerIngressAuthorized: true,
+      return executePilibalaNativeSession({ db, execution: current, runnerInstanceId: native.runnerInstanceId, useRunnerd: true, runnerIngressAuthorized: true,
         runnerEnvironment: harness === "claude" ? { ANTHROPIC_API_KEY: "synthetic-fixture" } : {},
         managedAiCredentialHome: home, managedAiCredentialIdentity: "fixture-revision", managedAiAccountIdentity: "fixture-account", turnTimeoutMs: 15_000,
         runnerExecutionTarget: { kind: "remote", transport: "sandbox", remoteCwd: workspace, environmentId, leaseId, providerKey: "plugin:fixture:tasks", runnerTask: operation => task(operation, current.binding.runId),

@@ -3,11 +3,11 @@
  * Broker host entrypoint. Wires the tested BrokerCore to the live Tailscale
  * CLI, /proc listener-ownership check, file registry, file audit sink, and the
  * unix-socket transport. Runs as a dedicated, Tailscale-operator service
- * account — NOT as the Paperclip app/agent account.
+ * account — NOT as the Pilibala app/agent account.
  *
  * Usage:
- *   paperclip-tailscale-https-broker            # run the broker
- *   paperclip-tailscale-https-broker --doctor   # read-only preflight, no mutation
+ *   pilibala-tailscale-https-broker            # run the broker
+ *   pilibala-tailscale-https-broker --doctor   # read-only preflight, no mutation
  */
 import { FileAuditSink } from "./audit.js";
 import { BrokerCore } from "./broker-core.js";

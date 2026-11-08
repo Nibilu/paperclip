@@ -1,4 +1,4 @@
-# paperclipai
+# pilibalaai
 
 ## 0.3.1
 
@@ -6,17 +6,17 @@
 
 - Stable release preparation for 0.3.1
 - Updated dependencies
-  - @paperclipai/adapter-utils@0.3.1
-  - @paperclipai/adapter-claude-local@0.3.1
-  - @paperclipai/adapter-codex-local@0.3.1
-  - @paperclipai/adapter-cursor-local@0.3.1
-  - @paperclipai/adapter-gemini-local@0.3.1
-  - @paperclipai/adapter-openclaw-gateway@0.3.1
-  - @paperclipai/adapter-opencode-local@0.3.1
-  - @paperclipai/adapter-pi-local@0.3.1
-  - @paperclipai/db@0.3.1
-  - @paperclipai/shared@0.3.1
-  - @paperclipai/server@0.3.1
+  - @pilibalaai/adapter-utils@0.3.1
+  - @pilibalaai/adapter-claude-local@0.3.1
+  - @pilibalaai/adapter-codex-local@0.3.1
+  - @pilibalaai/adapter-cursor-local@0.3.1
+  - @pilibalaai/adapter-gemini-local@0.3.1
+  - @pilibalaai/adapter-openclaw-gateway@0.3.1
+  - @pilibalaai/adapter-opencode-local@0.3.1
+  - @pilibalaai/adapter-pi-local@0.3.1
+  - @pilibalaai/db@0.3.1
+  - @pilibalaai/shared@0.3.1
+  - @pilibalaai/server@0.3.1
 
 ## 0.3.0
 
@@ -28,16 +28,16 @@
 
 - Updated dependencies [6077ae6]
 - Updated dependencies
-  - @paperclipai/shared@0.3.0
-  - @paperclipai/adapter-utils@0.3.0
-  - @paperclipai/adapter-claude-local@0.3.0
-  - @paperclipai/adapter-codex-local@0.3.0
-  - @paperclipai/adapter-cursor-local@0.3.0
-  - @paperclipai/adapter-openclaw-gateway@0.3.0
-  - @paperclipai/adapter-opencode-local@0.3.0
-  - @paperclipai/adapter-pi-local@0.3.0
-  - @paperclipai/db@0.3.0
-  - @paperclipai/server@0.3.0
+  - @pilibalaai/shared@0.3.0
+  - @pilibalaai/adapter-utils@0.3.0
+  - @pilibalaai/adapter-claude-local@0.3.0
+  - @pilibalaai/adapter-codex-local@0.3.0
+  - @pilibalaai/adapter-cursor-local@0.3.0
+  - @pilibalaai/adapter-openclaw-gateway@0.3.0
+  - @pilibalaai/adapter-opencode-local@0.3.0
+  - @pilibalaai/adapter-pi-local@0.3.0
+  - @pilibalaai/db@0.3.0
+  - @pilibalaai/server@0.3.0
 
 ## 0.2.7
 
@@ -45,13 +45,13 @@
 
 - Version bump (patch)
 - Updated dependencies
-  - @paperclipai/shared@0.2.7
-  - @paperclipai/adapter-utils@0.2.7
-  - @paperclipai/db@0.2.7
-  - @paperclipai/adapter-claude-local@0.2.7
-  - @paperclipai/adapter-codex-local@0.2.7
-  - @paperclipai/adapter-openclaw@0.2.7
-  - @paperclipai/server@0.2.7
+  - @pilibalaai/shared@0.2.7
+  - @pilibalaai/adapter-utils@0.2.7
+  - @pilibalaai/db@0.2.7
+  - @pilibalaai/adapter-claude-local@0.2.7
+  - @pilibalaai/adapter-codex-local@0.2.7
+  - @pilibalaai/adapter-openclaw@0.2.7
+  - @pilibalaai/server@0.2.7
 
 ## 0.2.6
 
@@ -59,13 +59,13 @@
 
 - Version bump (patch)
 - Updated dependencies
-  - @paperclipai/shared@0.2.6
-  - @paperclipai/adapter-utils@0.2.6
-  - @paperclipai/db@0.2.6
-  - @paperclipai/adapter-claude-local@0.2.6
-  - @paperclipai/adapter-codex-local@0.2.6
-  - @paperclipai/adapter-openclaw@0.2.6
-  - @paperclipai/server@0.2.6
+  - @pilibalaai/shared@0.2.6
+  - @pilibalaai/adapter-utils@0.2.6
+  - @pilibalaai/db@0.2.6
+  - @pilibalaai/adapter-claude-local@0.2.6
+  - @pilibalaai/adapter-codex-local@0.2.6
+  - @pilibalaai/adapter-openclaw@0.2.6
+  - @pilibalaai/server@0.2.6
 
 ## 0.2.5
 
@@ -73,13 +73,13 @@
 
 - Version bump (patch)
 - Updated dependencies
-  - @paperclipai/shared@0.2.5
-  - @paperclipai/adapter-utils@0.2.5
-  - @paperclipai/db@0.2.5
-  - @paperclipai/adapter-claude-local@0.2.5
-  - @paperclipai/adapter-codex-local@0.2.5
-  - @paperclipai/adapter-openclaw@0.2.5
-  - @paperclipai/server@0.2.5
+  - @pilibalaai/shared@0.2.5
+  - @pilibalaai/adapter-utils@0.2.5
+  - @pilibalaai/db@0.2.5
+  - @pilibalaai/adapter-claude-local@0.2.5
+  - @pilibalaai/adapter-codex-local@0.2.5
+  - @pilibalaai/adapter-openclaw@0.2.5
+  - @pilibalaai/server@0.2.5
 
 ## 0.2.4
 
@@ -87,13 +87,13 @@
 
 - Version bump (patch)
 - Updated dependencies
-  - @paperclipai/shared@0.2.4
-  - @paperclipai/adapter-utils@0.2.4
-  - @paperclipai/db@0.2.4
-  - @paperclipai/adapter-claude-local@0.2.4
-  - @paperclipai/adapter-codex-local@0.2.4
-  - @paperclipai/adapter-openclaw@0.2.4
-  - @paperclipai/server@0.2.4
+  - @pilibalaai/shared@0.2.4
+  - @pilibalaai/adapter-utils@0.2.4
+  - @pilibalaai/db@0.2.4
+  - @pilibalaai/adapter-claude-local@0.2.4
+  - @pilibalaai/adapter-codex-local@0.2.4
+  - @pilibalaai/adapter-openclaw@0.2.4
+  - @pilibalaai/server@0.2.4
 
 ## 0.2.3
 
@@ -101,13 +101,13 @@
 
 - Version bump (patch)
 - Updated dependencies
-  - @paperclipai/shared@0.2.3
-  - @paperclipai/adapter-utils@0.2.3
-  - @paperclipai/db@0.2.3
-  - @paperclipai/adapter-claude-local@0.2.3
-  - @paperclipai/adapter-codex-local@0.2.3
-  - @paperclipai/adapter-openclaw@0.2.3
-  - @paperclipai/server@0.2.3
+  - @pilibalaai/shared@0.2.3
+  - @pilibalaai/adapter-utils@0.2.3
+  - @pilibalaai/db@0.2.3
+  - @pilibalaai/adapter-claude-local@0.2.3
+  - @pilibalaai/adapter-codex-local@0.2.3
+  - @pilibalaai/adapter-openclaw@0.2.3
+  - @pilibalaai/server@0.2.3
 
 ## 0.2.2
 
@@ -115,13 +115,13 @@
 
 - Version bump (patch)
 - Updated dependencies
-  - @paperclipai/shared@0.2.2
-  - @paperclipai/adapter-utils@0.2.2
-  - @paperclipai/db@0.2.2
-  - @paperclipai/adapter-claude-local@0.2.2
-  - @paperclipai/adapter-codex-local@0.2.2
-  - @paperclipai/adapter-openclaw@0.2.2
-  - @paperclipai/server@0.2.2
+  - @pilibalaai/shared@0.2.2
+  - @pilibalaai/adapter-utils@0.2.2
+  - @pilibalaai/db@0.2.2
+  - @pilibalaai/adapter-claude-local@0.2.2
+  - @pilibalaai/adapter-codex-local@0.2.2
+  - @pilibalaai/adapter-openclaw@0.2.2
+  - @pilibalaai/server@0.2.2
 
 ## 0.2.1
 
@@ -129,10 +129,10 @@
 
 - Version bump (patch)
 - Updated dependencies
-  - @paperclipai/shared@0.2.1
-  - @paperclipai/adapter-utils@0.2.1
-  - @paperclipai/db@0.2.1
-  - @paperclipai/adapter-claude-local@0.2.1
-  - @paperclipai/adapter-codex-local@0.2.1
-  - @paperclipai/adapter-openclaw@0.2.1
-  - @paperclipai/server@0.2.1
+  - @pilibalaai/shared@0.2.1
+  - @pilibalaai/adapter-utils@0.2.1
+  - @pilibalaai/db@0.2.1
+  - @pilibalaai/adapter-claude-local@0.2.1
+  - @pilibalaai/adapter-codex-local@0.2.1
+  - @pilibalaai/adapter-openclaw@0.2.1
+  - @pilibalaai/server@0.2.1

@@ -8,7 +8,7 @@ import {
   buildRuntimeExposureHealthUrl,
   buildRuntimeExposureUrl,
   deriveViteHmrPort,
-  derivePaperclipViteHmrPort,
+  derivePilibalaViteHmrPort,
   isAllowedRuntimeExposurePort,
   isRuntimeExposureAppPort,
   isRuntimeExposureHmrPort,
@@ -50,19 +50,19 @@ describe("runtime exposure port policy", () => {
     expect(() => deriveViteHmrPort(52000)).toThrow(RangeError);
   });
 
-  it("shares the generic Paperclip HMR derivation with high-port overflow fallback", () => {
-    expect(derivePaperclipViteHmrPort(3_100)).toBe(13_100);
-    expect(derivePaperclipViteHmrPort(55_535)).toBe(65_535);
-    expect(derivePaperclipViteHmrPort(55_536)).toBe(45_536);
-    expect(() => derivePaperclipViteHmrPort(0)).toThrow(/valid TCP port/);
+  it("shares the generic Pilibala HMR derivation with high-port overflow fallback", () => {
+    expect(derivePilibalaViteHmrPort(3_100)).toBe(13_100);
+    expect(derivePilibalaViteHmrPort(55_535)).toBe(65_535);
+    expect(derivePilibalaViteHmrPort(55_536)).toBe(45_536);
+    expect(() => derivePilibalaViteHmrPort(0)).toThrow(/valid TCP port/);
   });
 
   it("builds https URLs on the non-standard port", () => {
-    expect(buildRuntimeExposureUrl("paperclip-dev.tail29c1aa.ts.net", 42010)).toBe(
-      "https://paperclip-dev.tail29c1aa.ts.net:42010",
+    expect(buildRuntimeExposureUrl("pilibala-dev.tail29c1aa.ts.net", 42010)).toBe(
+      "https://pilibala-dev.tail29c1aa.ts.net:42010",
     );
-    expect(buildRuntimeExposureHealthUrl("paperclip-dev.tail29c1aa.ts.net", 42010)).toBe(
-      "https://paperclip-dev.tail29c1aa.ts.net:42010/api/health",
+    expect(buildRuntimeExposureHealthUrl("pilibala-dev.tail29c1aa.ts.net", 42010)).toBe(
+      "https://pilibala-dev.tail29c1aa.ts.net:42010/api/health",
     );
   });
 

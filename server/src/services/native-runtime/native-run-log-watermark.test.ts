@@ -1,15 +1,15 @@
 import { createHash, randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { eq, sql } from "drizzle-orm";
-import { closeRegisteredClients, createDb, heartbeatRunEvents, heartbeatRuns, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, type Db } from "@paperclipai/db";
+import { closeRegisteredClients, createDb, heartbeatRunEvents, heartbeatRuns, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, type Db } from "@pilibalaai/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { resolveExternalTestDatabaseUrl } from "../../__tests__/helpers/external-test-database.js";
 import { createNativeRunLogTestTables } from "../../__tests__/helpers/native-run-log-database.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
-import { canonicalProviderEventsFromCodex } from "@paperclipai/paperclip-runner";
+import { canonicalProviderEventsFromCodex } from "@pilibalaai/pilibala-runner";
 import type { RunLogHandle, RunLogStore } from "../run-log-store.js";
 import type { StorageProvider } from "../../storage/types.js";
-import { validatePrpEvent, type PrpEvent } from "../../vendor/paperclip-runner/index.js";
+import { validatePrpEvent, type PrpEvent } from "../../vendor/pilibala-runner/index.js";
 import { instanceSettingsService } from "../instance-settings.js";
 import type { CurrentUserRedactionOptions } from "../../log-redaction.js";
 import { createHeartbeatRunOutput } from "../heartbeat/run-output.js";
@@ -20,7 +20,7 @@ import { createNativeRunLogCoverageVerifier, formatNativeRunLogEvent } from "./n
 import { readRecoverableRunLog, recoverSettledNativeRunLog } from "./native-run-log-recovery.js";
 
 // Use an explicit guarded test database or a new owned embedded fixture.
-const externalUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_NATIVE_LOG_WATERMARK_DATABASE_URL");
+const externalUrl = resolveExternalTestDatabaseUrl("PILIBALA_NATIVE_LOG_WATERMARK_DATABASE_URL");
 const support = externalUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 
 function memoryProvider(): StorageProvider {
@@ -91,7 +91,7 @@ describe.skipIf(!support.supported)("native run log source watermarks", () => {
       assertWriterAuthority: async (input) => { await input.assertWriterAuthority?.(); },
     });
     const event = (seq: number): PrpEvent => ({
-      schema: "paperclip.prp.event.v1", schemaVersion: 1,
+      schema: "pilibala.prp.event.v1", schemaVersion: 1,
       runId: binding.runId, sourceInstanceId: "fixture-source", sourceEventId: `source:${seq}`,
       sourceSeq: seq, sourceKind: "runner", normalizedSessionId: "fixture-session",
       eventType: seq === 2 ? "turn.interrupted" : "item.delta", priority: 2,
@@ -114,7 +114,7 @@ describe.skipIf(!support.supported)("native run log source watermarks", () => {
 
   function toolEvent(f: Awaited<ReturnType<typeof fixture>>, output: string): PrpEvent {
     return { ...f.event(1), itemId: "tool-1", priority: 1, eventType: "tool.execution.completed", payload: {
-      schema: "paperclip.tool.execution.v1", executionId: "tool-1", transport: "process",
+      schema: "pilibala.tool.execution.v1", executionId: "tool-1", transport: "process",
       operation: "execute", status: "completed", output,
       outputBytes: Buffer.byteLength(output), outputTruncated: false, outputDigest: null, exitCode: 0,
     } };
@@ -192,7 +192,7 @@ describe.skipIf(!support.supported)("native run log source watermarks", () => {
     await store.finalize(handle);
     const prefix = await readAll(store, handle);
     const chunk = JSON.parse(prefix).chunk as string;
-    expect(chunk).toContain("[paperclip truncated run log chunk: omitted ");
+    expect(chunk).toContain("[pilibala truncated run log chunk: omitted ");
     expect(() => JSON.parse(chunk)).toThrow();
     const [durable] = await db.select({ payload: heartbeatRunEvents.payload }).from(heartbeatRunEvents)
       .where(eq(heartbeatRunEvents.runId, f.binding.runId));
@@ -233,9 +233,9 @@ describe.skipIf(!support.supported)("native run log source watermarks", () => {
     expect(entries).toHaveLength(3);
     expect(nativeSha256(JSON.parse(entries[0].chunk).event)).toBe(nativeSha256(event));
     expect(nativeSha256(JSON.parse(entries[2].chunk).event)).toBe(nativeSha256(suffix));
-    expect(entries[0].chunk).not.toContain("[paperclip truncated");
-    expect(entries[2].chunk).not.toContain("[paperclip truncated");
-    expect(entries[1].chunk).toContain("[paperclip truncated run log chunk:");
+    expect(entries[0].chunk).not.toContain("[pilibala truncated");
+    expect(entries[2].chunk).not.toContain("[pilibala truncated");
+    expect(entries[1].chunk).toContain("[pilibala truncated run log chunk:");
     expect(entries[1].chunk.length).toBeLessThan(64 * 1024);
     if (count === 256) expect(Buffer.byteLength(entries[0].chunk)).toBeGreaterThan(1024 * 1024);
     expect(entries.map(entry => entry.seq)).toEqual([1, 2, 3]);
@@ -281,7 +281,7 @@ describe.skipIf(!support.supported)("native run log source watermarks", () => {
     await f.persist(f.event(2), 5);
     const store = f.store(), handle = await store.begin(f.binding);
     const chunk = compactRunLogChunk(formatNativeRunLogEvent(event));
-    expect(chunk).toContain("[paperclip truncated run log chunk:");
+    expect(chunk).toContain("[pilibala truncated run log chunk:");
     expect(() => JSON.parse(chunk)).toThrow();
     await store.append(handle, { stream: "stdout", ts: "immutable-old-format", seq: 1, sourceCursor: 2, chunk });
     await store.finalize(handle);
@@ -591,7 +591,7 @@ describe.skipIf(!support.supported)("native run log source watermarks", () => {
       await f.persist(f.event(2), 2);
       const chunk = kind === "conflicting"
         ? formatNativeRunLogEvent({ ...f.event(1), payload: { text: "different" } })
-        : kind === "malformed" ? '{"type":"paperclip.prp.event","event":broken\n'
+        : kind === "malformed" ? '{"type":"pilibala.prp.event","event":broken\n'
         : formatNativeRunLogEvent(f.event(1));
       await store.append(handle, { stream: "stdout", ts: "original", seq: 1, chunk });
       if (kind === "duplicate") await store.append(handle, { stream: "stdout", ts: "original", seq: 2, chunk });

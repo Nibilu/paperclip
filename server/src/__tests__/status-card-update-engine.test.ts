@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { statusCardRefreshPolicySchema } from "@paperclipai/shared";
+import { statusCardRefreshPolicySchema } from "@pilibalaai/shared";
 import {
   chooseStatusCardUpdateKind,
   diffStatusCardFingerprint,

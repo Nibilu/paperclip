@@ -1,5 +1,5 @@
-import type { Db } from "@paperclipai/db";
-import type { AttentionSourceKind } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import type { AttentionSourceKind } from "@pilibalaai/shared";
 import { decisionRetentionService, DEFAULT_DECISION_ARCHIVE_DAYS } from "./decision-retention.js";
 
 type Candidate = { id: string; companyId: string; at: Date; cursorAt: string };

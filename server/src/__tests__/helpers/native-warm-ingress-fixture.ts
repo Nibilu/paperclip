@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import * as tables from "@paperclipai/db";
-import type { NativeExecutionInputV1, NativeExecutionInputV3 } from "@paperclipai/paperclip-runner";
+import * as tables from "@pilibalaai/db";
+import type { NativeExecutionInputV1, NativeExecutionInputV3 } from "@pilibalaai/pilibala-runner";
 import { startRecoveryPostgres } from "./recovery-postgres.js";
 import { prepareNativeHeartbeatRun } from "../../services/native-runtime/prepare-native-run.js";
 import { buildNativeCompletionContract } from "../../services/native-runtime/completion-contracts.js";
@@ -13,7 +13,7 @@ export async function createNativeWarmIngressFixture(base: NativeExecutionInputV
   const companyId = randomUUID(), agentId = randomUUID(), environmentId = randomUUID(), workspaceId = randomUUID();
   const providerLeaseId = `allocation-${randomUUID()}`;
   await db.insert(tables.companies).values({ id: companyId, name: "Shared ingress", issuePrefix: `I${companyId.slice(0, 7)}` });
-  await db.insert(tables.agents).values({ id: agentId, companyId, name: "Shared worker", adapterType: "paperclip_runner" });
+  await db.insert(tables.agents).values({ id: agentId, companyId, name: "Shared worker", adapterType: "pilibala_runner" });
   await db.insert(tables.environments).values({ id: environmentId, name: "Shared allocation", driver: "sandbox" });
   await db.insert(tables.executionWorkspaces).values({ id: workspaceId, companyId, name: "Shared workspace", mode: "shared_workspace",
     strategyType: "project_primary", providerType: "cloud_sandbox", cwd });
@@ -34,14 +34,14 @@ export async function createNativeWarmIngressFixture(base: NativeExecutionInputV
     await db.insert(tables.nativeRunFinalizations).values({ runId, companyId, issueId, phase: "observed" });
     await prepareNativeHeartbeatRun({ db, run, issue, environmentLeaseId: leaseId });
     const [contract] = await db.select().from(tables.completionContracts).where(eq(tables.completionContracts.issueId, issueId));
-    const execution: NativeExecutionInputV3 = { ...base, schema: "paperclip.native-execution-input.v3", executionMode: "default", planningContext: null,
+    const execution: NativeExecutionInputV3 = { ...base, schema: "pilibala.native-execution-input.v3", executionMode: "default", planningContext: null,
       runtimeContext: nativeRuntimeContextFixture(), binding: { companyId, agentId, issueId, runId, executionWorkspaceId: workspaceId },
-      completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "paperclip.completion-contract.v1",
+      completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "pilibala.completion-contract.v1",
         contract: buildNativeCompletionContract(issue, { revision: contract.revision }) },
       workspace: { cwd, repoUrl: null, repoRef: null, branchName: null },
       session: { ...base.session, normalizedSessionId: `logical-${issueId}`, lifecyclePolicy: { mode: "warm", idleTimeoutMs: 60_000 } } };
     await db.update(tables.executionWorkspaces).set({ metadata: { remoteWorkspace: {
-      schema: "paperclip.remote-workspace.v1", epoch: ++epoch, snapshotId: null, source: { kind: "empty" }, writerRunId: runId, dirty: true,
+      schema: "pilibala.remote-workspace.v1", epoch: ++epoch, snapshotId: null, source: { kind: "empty" }, writerRunId: runId, dirty: true,
       location: { environmentId, leaseId, providerLeaseId, remoteCwd: cwd },
     } } }).where(eq(tables.executionWorkspaces.id, workspaceId));
     const target = { kind: "remote" as const, transport: "sandbox" as const, providerKey: "daytona", environmentId, leaseId, remoteCwd: cwd,

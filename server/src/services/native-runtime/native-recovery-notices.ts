@@ -1,5 +1,5 @@
 import { and, asc, eq, gt, inArray, isNotNull, not, or, sql } from "drizzle-orm";
-import { environmentLeases, heartbeatRuns, issues, issueRecoveryActions, nativeRunFinalizations, nativeRunResults, workspaceOperations, type Db } from "@paperclipai/db";
+import { environmentLeases, heartbeatRuns, issues, issueRecoveryActions, nativeRunFinalizations, nativeRunResults, workspaceOperations, type Db } from "@pilibalaai/db";
 import { issueRecoveryActionService } from "../issue-recovery-actions.js";
 import type { NativeRecoveryNoticeScope } from "../native-recovery-notice-notifications.js";
 import { nativeRunnerOwnershipNotHeldCondition } from "./native-runner-ownership.js";
@@ -41,7 +41,7 @@ function completedExportRetryNotice(runId: string | typeof nativeRunFinalization
         and ${issueRecoveryActions.evidence}#>>'{workspaceExportRetry,requestId}' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
         and retry_run.result_json->'workspaceExportRetry' = ${issueRecoveryActions.evidence}->'workspaceExportRetry'
         and retry_run.runner_profile_json#>>'{nativeWorkspaceSync,schema}' in
-          ('paperclip.native-workspace-sync/v1', 'paperclip.native-workspace-sync/v2', 'paperclip.native-workspace-sync/v3')
+          ('pilibala.native-workspace-sync/v1', 'pilibala.native-workspace-sync/v2', 'pilibala.native-workspace-sync/v3')
         and retry_run.runner_profile_json#>>'{nativeWorkspaceSync,state}' = 'finalized'
         and retry_run.runner_profile_json#>>'{nativeWorkspaceSync,finalHostSha256}' ~ '^[0-9a-f]{64}$'
         and retry_run.runner_profile_json#>>'{nativeWorkspaceSync,leaseId}' = retry_lease.id::text

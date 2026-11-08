@@ -1,4 +1,4 @@
-import type { PermissionKey } from "@paperclipai/shared";
+import type { PermissionKey } from "@pilibalaai/shared";
 
 /** Domain actions use the ordinary grant evaluator, including its user ceiling. */
 export const CONNECTION_MANAGEMENT_PERMISSIONS = {

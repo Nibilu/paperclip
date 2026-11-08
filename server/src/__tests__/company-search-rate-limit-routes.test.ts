@@ -3,7 +3,7 @@ import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
 import { issueRoutes } from "../routes/issues.js";
 import { createCompanySearchRateLimiter } from "../services/company-search-rate-limit.js";
-import type { CompanySearchQuery, CompanySearchResponse } from "@paperclipai/shared";
+import type { CompanySearchQuery, CompanySearchResponse } from "@pilibalaai/shared";
 
 async function unusedExtract(): Promise<never> {
   throw new Error("Rate limit tests do not call extract");

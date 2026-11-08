@@ -16,7 +16,7 @@ export async function stopFailedNativeRun(runId: string, companyId: string) {
   if (run.id !== runId || run.companyId !== companyId) throw new Error("Stop was not accepted because the run changed.");
   const actorUserId = access.userId;
   if (!actorUserId) throw new Error("Stop was not accepted because your session changed.");
-  const key = pendingSendKeyFor(`paperclip:native-run-stop:${companyId}:${runId}`, actorUserId);
+  const key = pendingSendKeyFor(`pilibala:native-run-stop:${companyId}:${runId}`, actorUserId);
   const matchesScope = (value: unknown): value is StopScope => {
     const scope = record(value);
     return scope.runId === runId && scope.companyId === companyId && scope.actorUserId === actorUserId;

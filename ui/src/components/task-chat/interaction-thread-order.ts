@@ -1,5 +1,5 @@
 import type { IssueThreadInteraction } from "@/lib/issue-thread-interactions";
-import type { IssueDocument } from "@paperclipai/shared";
+import type { IssueDocument } from "@pilibalaai/shared";
 
 export function isOutdatedPlanConfirmation(
   interaction: IssueThreadInteraction,

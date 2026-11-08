@@ -3,7 +3,7 @@ import { readNativeSessionResumptionAgent, restoreNativeSessionExecution } from 
 import { notifyLiveRunRecovery } from "../live-run-recovery-notifications.js";
 import { NATIVE_RETAINED_OWNER_WAIT } from "./native-controller-recovery.js";
 import { notifyNativeEnvironmentSettlement } from "../native-environment-settlement-notifications.js";
-import { remoteWorkspaceRunReferenceSchema } from "@paperclipai/shared";
+import { remoteWorkspaceRunReferenceSchema } from "@pilibalaai/shared";
 import { notifyExternalAgentSettlement } from "../../modules/external-agents/index.js";
 import { notifyNativeStatusReassessment } from "../native-status-reassessment-notifications.js";
 import { notifyUnsafeWorkspaceExportRunChange } from "../unsafe-workspace-export-notifications.js";
@@ -24,7 +24,7 @@ import {
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, gt, inArray, isNotNull, isNull, lte, ne, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   environmentLeases,
@@ -32,7 +32,7 @@ import {
   heartbeatRuns,
   issues,
   nativeRunFinalizations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { REMOTE_CONTROLLER_LEASE_MS } from "./native-runner-recovery-contract.js";
 import { readProcessStartedAt } from "../hot-restart.js";
 import { ephemeralServerEnabled } from "../ephemeral-server-mode.js";
@@ -46,7 +46,7 @@ import { logger } from "../../middleware/logger.js";
 import { issueRecoveryActionService } from "../issue-recovery-actions.js";
 import { isNewTerminalRunFailure, reportRunFailure } from "../run-failure-report.js";
 import { isNativeRunnerOwnershipHeld } from "./native-runner-ownership.js";
-import { nativeRestartInterruptedTurnId, type PersistedNativeSession } from "../../vendor/paperclip-runner/index.js";
+import { nativeRestartInterruptedTurnId, type PersistedNativeSession } from "../../vendor/pilibala-runner/index.js";
 import { retireSupersededNativeRetry } from "./native-superseded-retry.js";
 import { legacyWorkspaceRecoveryNotMigrated } from "../legacy-workspace-recovery-migration.js";
 import { requestNativeStartupCleanup, readNativeStartupContext, promoteNativeStartupCleanup } from "./native-startup-cleanup.js";
@@ -904,7 +904,7 @@ export async function claimNativeRestartRecoveries(input: {
       and(
         eq(heartbeatRuns.runtimeMode, "native"),
         legacyWorkspaceRecoveryNotMigrated(),
-        eq(agents.adapterType, "paperclip_runner"),
+        eq(agents.adapterType, "pilibala_runner"),
         or(inArray(heartbeatRuns.status, ["running", "failed"]), and(
           eq(heartbeatRuns.status, "interrupted"), eq(nativeRunFinalizations.phase, "observed"),
           sql`${heartbeatRuns.resultJson}->'nativeCancellation'->>'dispatchState' = 'pending'`,

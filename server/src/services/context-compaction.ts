@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { agents, heartbeatRuns } from "@paperclipai/db";
-import type { IssueContextCompaction } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { agents, heartbeatRuns } from "@pilibalaai/db";
+import type { IssueContextCompaction } from "@pilibalaai/shared";
 
 /**
  * On-demand context compaction ("Compact now").
@@ -49,13 +49,13 @@ export function isContextCompactionRun(context: unknown): boolean {
 }
 
 /**
- * Harnesses that can compact on request. Compaction needs the Paperclip
+ * Harnesses that can compact on request. Compaction needs the Pilibala
  * runner, which resumes the provider session: Codex through its app-server,
  * Claude through ACP.
  */
 export function contextCompactionSupport(agent: AgentBinding): { supported: true } | { supported: false; reason: string } {
   const unsupported = { supported: false as const, reason: "This agent's harness can't compact on request." };
-  if (agent.adapterType !== "paperclip_runner") return unsupported;
+  if (agent.adapterType !== "pilibala_runner") return unsupported;
   const config = asRecord(agent.adapterConfig);
   const provider = typeof config.provider === "string" ? config.provider : "codex";
   if (provider === "codex") return { supported: true };

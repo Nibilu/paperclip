@@ -5,7 +5,7 @@ import type { RunnerE2EResult } from "./types.js";
 
 function result(attempt: number, cost: number, overrides: Partial<RunnerE2EResult> = {}): RunnerE2EResult {
   return {
-    schema: "paperclip.runner-e2e.result/v2",
+    schema: "pilibala.runner-e2e.result/v2",
     accountingIdentity: { campaignId: "campaign", attemptId: `attempt-${attempt}` },
     executionId: "core-compatibility.runner-codex.local.message-marker", suiteId: "core-compatibility",
     attempt, status: attempt === 1 ? "failed" : "passed", profileId: "runner-codex",
@@ -71,7 +71,7 @@ describe("retained attempt accounting", () => {
 
 it("requires exact selector provenance before admitting a carried workflow result", () => {
   const retained = result(1, 0.01, { accountingIdentity: { campaignId: "gha-123-1", attemptId: "a" },
-    source: { sha: "source", ref: "master", workflowRunUrl: "https://github.com/paperclipai/paperclip/actions/runs/123" } });
+    source: { sha: "source", ref: "master", workflowRunUrl: "https://github.com/pilibalaai/pilibala/actions/runs/123" } });
   const artifactName = `runner-e2e-123-1-${retained.executionId}`;
   const input = { requestedCampaignId: "gha-123-2", result: retained,
     relativeResultPath: `${artifactName}/gha-123-1-${retained.executionId}/attempt-1/result.json`,

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { expect, it, vi } from "vitest";
-import { agents, heartbeatRuns, issues, issueComments } from "@paperclipai/db";
+import { agents, heartbeatRuns, issues, issueComments } from "@pilibalaai/db";
 import { undeliveredConversationComments } from "../services/agent-conversations.js";
 import { DELIVERY_QUEUES, subscribeDeliveryWork } from "../services/delivery-work-notifications.js";
 import { issueService } from "../services/issues.js";

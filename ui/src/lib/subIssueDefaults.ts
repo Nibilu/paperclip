@@ -1,4 +1,4 @@
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@pilibalaai/shared";
 
 type SubIssueDefaultSource = Pick<
   Issue,

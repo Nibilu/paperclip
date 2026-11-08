@@ -7,7 +7,7 @@
  * {@link PROVIDER_RATE_LIMITS_STATE_KEY}.
  */
 export const PROVIDER_RATE_LIMITS_NOTICE_CATEGORY = "provider.rate_limits";
-export const PROVIDER_RATE_LIMITS_SCHEMA = "paperclip.provider.rate_limits.v1";
+export const PROVIDER_RATE_LIMITS_SCHEMA = "pilibala.provider.rate_limits.v1";
 export const PROVIDER_RATE_LIMITS_NOTICE_DETAIL = "rateLimits";
 export const PROVIDER_RATE_LIMITS_STATE_KEY = "providerRateLimits";
 export const PROVIDER_RATE_LIMIT_WARN_PERCENT = 80;
@@ -96,7 +96,7 @@ export function providerRateLimitSnapshotFromNotice(
   payload: Record<string, unknown>,
 ): ProviderRateLimitSnapshot | null {
   if (eventType !== "provider.notice.recorded") return null;
-  if (payload.schema !== "paperclip.provider.notice.v1" || payload.category !== PROVIDER_RATE_LIMITS_NOTICE_CATEGORY) return null;
+  if (payload.schema !== "pilibala.provider.notice.v1" || payload.category !== PROVIDER_RATE_LIMITS_NOTICE_CATEGORY) return null;
   const details = Array.isArray(payload.details) ? payload.details : [];
   const detail = details.map(obj).find((entry) => entry?.name === PROVIDER_RATE_LIMITS_NOTICE_DETAIL);
   if (typeof detail?.value !== "string") return null;
@@ -109,7 +109,7 @@ export function providerRateLimitSnapshotFromNotice(
 
 export function isProviderRateLimitNotice(eventType: string, payload: Record<string, unknown>): boolean {
   return eventType === "provider.notice.recorded"
-    && payload.schema === "paperclip.provider.notice.v1"
+    && payload.schema === "pilibala.provider.notice.v1"
     && payload.category === PROVIDER_RATE_LIMITS_NOTICE_CATEGORY;
 }
 

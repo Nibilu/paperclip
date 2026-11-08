@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { isolationAgentRunIds, isolationAgentRunSnapshot, isolationEntryMatches, isolationTaskMatches, restrictedCreateAllowed, restrictedForeignDenied, restrictedPositiveControl, workspacePairMatches, type IsolationTask } from "./company-access-contract.js";
 
-const primary = { stackId: "qa-one", stackSlug: "one", companyId: "company-one", origin: "https://one.test.paperclip.app", displayName: "One", issuePrefix: "ONE" };
-const secondary = { stackId: "qa-two", stackSlug: "two", companyId: "company-two", origin: "https://two.test.paperclip.app", displayName: "Two", issuePrefix: "TWO" };
+const primary = { stackId: "qa-one", stackSlug: "one", companyId: "company-one", origin: "https://one.test.pilibala.app", displayName: "One", issuePrefix: "ONE" };
+const secondary = { stackId: "qa-two", stackSlug: "two", companyId: "company-two", origin: "https://two.test.pilibala.app", displayName: "Two", issuePrefix: "TWO" };
 const task: IsolationTask = { id: "task-two", companyId: secondary.companyId, title: "Foreign sentinel", description: "original", identifier: "TWO-1" };
 const denied = { status: 403, task: null, contentLeaked: false };
 describe("Cloud company isolation evidence", () => {

@@ -1,4 +1,4 @@
-import type { BoardBootstrap } from "@paperclipai/shared";
+import type { BoardBootstrap } from "@pilibalaai/shared";
 import { accessApi } from "./access";
 import { ApiError, detachInflightGet } from "./client";
 import { queryKeys } from "../lib/queryKeys";

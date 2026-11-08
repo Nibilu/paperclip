@@ -36,7 +36,7 @@ export function setSentryRunLinkResolver(resolver: SentryRunLinkResolver | null)
 /** Enrich only events already associated with a run. Never read a request URL or body. */
 export async function addSentryRunLinks<T extends LinkableEvent>(event: T): Promise<T> {
   if (event.request?.headers) event.request = { ...event.request, headers: Object.fromEntries(
-    Object.entries(event.request.headers).filter(([key]) => key.toLowerCase() !== "x-paperclip-source-run-token"),
+    Object.entries(event.request.headers).filter(([key]) => key.toLowerCase() !== "x-pilibala-source-run-token"),
   ) };
   const failure = event.tags?.event_kind === "run_failure";
   if (failure) event.tags = { ...event.tags, automation_origin_status: "unknown", automation_routine_ids: "unknown", task_shareable: "unknown" };
@@ -45,7 +45,7 @@ export async function addSentryRunLinks<T extends LinkableEvent>(event: T): Prom
   if (!resolver || typeof runId !== "string" || !UUID.test(runId)) return event;
   let base: URL | null = null;
   try {
-    base = new URL(process.env.PAPERCLIP_PUBLIC_URL ?? "");
+    base = new URL(process.env.PILIBALA_PUBLIC_URL ?? "");
     if (!["http:", "https:"].includes(base.protocol) || base.username || base.password ||
         base.search || base.hash || base.pathname !== "/") base = null;
   } catch {}
@@ -80,7 +80,7 @@ export async function addSentryRunLinks<T extends LinkableEvent>(event: T): Prom
       event.tags = { ...event.tags, automation_origin_status: status,
         automation_routine_ids: routineIds.slice(0, 5).join(",") || "none",
         task_shareable: provenance.shareable === true ? "true" : provenance.shareable === false ? "false" : "unknown" };
-      event.contexts = { ...event.contexts, paperclip_creation: { status, routineIds: routineIds.slice(0, 100), shareable: provenance.shareable } };
+      event.contexts = { ...event.contexts, pilibala_creation: { status, routineIds: routineIds.slice(0, 100), shareable: provenance.shareable } };
     }
     if (!base || !/^[A-Z][A-Z0-9]*$/.test(links.companyPrefix)) return event;
     const prefix = `/${links.companyPrefix}`;
@@ -96,8 +96,8 @@ export async function addSentryRunLinks<T extends LinkableEvent>(event: T): Prom
       ...(taskUrl && taskUrl.length <= 200 ? { task_url: taskUrl } : {}),
       ...(identifier && identifier.length <= 200 && taskKey === identifier ? { task_identifier: identifier } : {}),
     };
-    event.contexts = { ...event.contexts, paperclip: {
-      ...event.contexts?.paperclip,
+    event.contexts = { ...event.contexts, pilibala: {
+      ...event.contexts?.pilibala,
       runPageUrl: runUrl,
       ...(taskUrl ? { taskUrl } : {}),
     } };

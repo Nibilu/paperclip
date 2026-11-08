@@ -22,7 +22,7 @@ export async function readDotOriginalTokenPrincipal(oauth: DotOAuthPrincipalOwne
   if (oauth.mode !== "openai_dot_agent" || input.canonicalVerifiedResource !== origin + "/mcp/runner"
     || oauth.config.origin !== origin || oauth.config.resource !== input.canonicalVerifiedResource) throw deny();
   const { grant, company } = await oauth.authenticate(input.accessToken);
-  if (grant.purpose !== "agent" || !grant.scopes.includes("paperclip:agent")
+  if (grant.purpose !== "agent" || !grant.scopes.includes("pilibala:agent")
     || !grant.id || !grant.companyId || company.id !== grant.companyId
     || !input.upstreamClientId || grant.clientId !== input.upstreamClientId
     || !input.selectingUserId || grant.userId !== input.selectingUserId

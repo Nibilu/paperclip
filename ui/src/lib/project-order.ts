@@ -1,9 +1,9 @@
-import type { Project } from "@paperclipai/shared";
+import type { Project } from "@pilibalaai/shared";
 
-export const PROJECT_ORDER_UPDATED_EVENT = "paperclip:project-order-updated";
-export const PROJECT_SORT_MODE_UPDATED_EVENT = "paperclip:project-sort-mode-updated";
-const PROJECT_ORDER_STORAGE_PREFIX = "paperclip.projectOrder";
-const PROJECT_SORT_MODE_STORAGE_PREFIX = "paperclip.projectSortMode";
+export const PROJECT_ORDER_UPDATED_EVENT = "pilibala:project-order-updated";
+export const PROJECT_SORT_MODE_UPDATED_EVENT = "pilibala:project-sort-mode-updated";
+const PROJECT_ORDER_STORAGE_PREFIX = "pilibala.projectOrder";
+const PROJECT_SORT_MODE_STORAGE_PREFIX = "pilibala.projectSortMode";
 const ANONYMOUS_USER_ID = "anonymous";
 
 export type ProjectSidebarSortMode = "top" | "alphabetical" | "recent";

@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import type { RoutineDetail } from "@paperclipai/shared";
+import type { RoutineDetail } from "@pilibalaai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { accessApi } from "@/api/access";
 import { ApiError } from "@/api/client";

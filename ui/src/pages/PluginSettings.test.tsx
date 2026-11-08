@@ -32,7 +32,7 @@ vi.mock("@/context/BreadcrumbContext", () => ({
 
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
-    selectedCompany: { id: "company-1", name: "Paperclip", issuePrefix: "PAP" },
+    selectedCompany: { id: "company-1", name: "Pilibala", issuePrefix: "PAP" },
     selectedCompanyId: "company-1",
   }),
 }));
@@ -65,16 +65,16 @@ async function flushReact() {
 function basePlugin(overrides: Record<string, unknown> = {}) {
   return {
     id: "plugin-1",
-    pluginKey: "paperclip.e2b-sandbox-provider",
-    packageName: "@paperclipai/plugin-e2b",
+    pluginKey: "pilibala.e2b-sandbox-provider",
+    packageName: "@pilibalaai/plugin-e2b",
     version: "0.1.0",
     status: "error",
     categories: ["automation"],
     manifestJson: {
       displayName: "E2B Sandbox Provider",
       version: "0.1.0",
-      description: "E2B environments for Paperclip.",
-      author: "Paperclip",
+      description: "E2B environments for Pilibala.",
+      author: "Pilibala",
       capabilities: ["environment.drivers.register"],
       environmentDrivers: [
         {
@@ -186,14 +186,14 @@ describe("PluginSettings", () => {
   it("renders unconfigured manifest local folders with required paths", async () => {
     const declaration = wikiFolderDeclaration();
     mockPluginsApi.get.mockResolvedValue(basePlugin({
-      pluginKey: "paperclipai.plugin-llm-wiki",
-      packageName: "@paperclipai/plugin-llm-wiki",
+      pluginKey: "pilibalaai.plugin-llm-wiki",
+      packageName: "@pilibalaai/plugin-llm-wiki",
       status: "ready",
       manifestJson: {
         displayName: "LLM Wiki",
         version: "0.1.0",
         description: "Local-file LLM Wiki plugin.",
-        author: "Paperclip",
+        author: "Pilibala",
         capabilities: ["local.folders"],
         localFolders: [declaration],
       },
@@ -222,14 +222,14 @@ describe("PluginSettings", () => {
   it("keeps loaded local folder statuses on screen when their refetch fails transiently", async () => {
     const declaration = wikiFolderDeclaration();
     mockPluginsApi.get.mockResolvedValue(basePlugin({
-      pluginKey: "paperclipai.plugin-llm-wiki",
-      packageName: "@paperclipai/plugin-llm-wiki",
+      pluginKey: "pilibalaai.plugin-llm-wiki",
+      packageName: "@pilibalaai/plugin-llm-wiki",
       status: "ready",
       manifestJson: {
         displayName: "LLM Wiki",
         version: "0.1.0",
         description: "Local-file LLM Wiki plugin.",
-        author: "Paperclip",
+        author: "Pilibala",
         capabilities: ["local.folders"],
         localFolders: [declaration],
       },
@@ -255,7 +255,7 @@ describe("PluginSettings", () => {
     expect(container.textContent).toContain("No local folder path is configured.");
 
     mockPluginsApi.listLocalFolders.mockRejectedValue(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await act(async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.plugins.localFolders("plugin-1", "company-1") });
@@ -266,7 +266,7 @@ describe("PluginSettings", () => {
     expect(container.textContent).toContain("Wiki root");
     expect(container.textContent).toContain("No local folder path is configured.");
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
     expect(container.textContent).not.toContain("tenant_app_unavailable");
 
     await act(async () => {
@@ -306,14 +306,14 @@ describe("PluginSettings", () => {
   it("hides local folders when the instance runs agents only in the platform-managed environment", async () => {
     const declaration = wikiFolderDeclaration();
     mockPluginsApi.get.mockResolvedValue(basePlugin({
-      pluginKey: "paperclipai.plugin-llm-wiki",
-      packageName: "@paperclipai/plugin-llm-wiki",
+      pluginKey: "pilibalaai.plugin-llm-wiki",
+      packageName: "@pilibalaai/plugin-llm-wiki",
       status: "ready",
       manifestJson: {
         displayName: "LLM Wiki",
         version: "0.1.0",
         description: "Local-file LLM Wiki plugin.",
-        author: "Paperclip",
+        author: "Pilibala",
         capabilities: ["local.folders"],
         localFolders: [declaration],
       },
@@ -343,7 +343,7 @@ describe("PluginSettings", () => {
         displayName: "LLM Wiki",
         version: "0.1.0",
         description: "Local-file LLM Wiki plugin.",
-        author: "Paperclip",
+        author: "Pilibala",
         capabilities: ["local.folders"],
         localFolders: [declaration],
       },
@@ -385,7 +385,7 @@ describe("PluginSettings", () => {
         displayName: "LLM Wiki",
         version: "0.1.0",
         description: "Local-file LLM Wiki plugin.",
-        author: "Paperclip",
+        author: "Pilibala",
         capabilities: ["local.folders"],
         localFolders: [declaration],
       },
@@ -424,7 +424,7 @@ describe("PluginSettings", () => {
         displayName: "LLM Wiki",
         version: "0.1.0",
         description: "Local-file LLM Wiki plugin.",
-        author: "Paperclip",
+        author: "Pilibala",
         capabilities: ["local.folders"],
         localFolders: [declaration],
       },

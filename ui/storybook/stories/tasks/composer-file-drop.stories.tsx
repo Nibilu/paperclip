@@ -29,7 +29,7 @@ const meta = {
   component: TaskFileDrop,
   parameters: {
     layout: "fullscreen",
-    paperclip: { capabilities: ["tasks/discussion"], implementation: "production", boundary: "fixtures",
+    pilibala: { capabilities: ["tasks/discussion"], implementation: "production", boundary: "fixtures",
       notes: "Production thread, composer, and screen drop target in a task layout. Upload is a local fixture; no task or agent runs." },
   },
 } satisfies Meta<typeof TaskFileDrop>;

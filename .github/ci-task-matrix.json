@@ -145,7 +145,7 @@
       "task": "ci:sandbox-providers"
     }
   ],
-  "verify_paperclip_runner": [
+  "verify_pilibala_runner": [
     {
       "lane_label": "static checks",
       "command": "check:static",

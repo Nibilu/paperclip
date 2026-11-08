@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
-import { chatEndpoints, chatSlackRegistrations, toolConnections, type Db } from "@paperclipai/db";
-import { createPaperclipCloudConnector, paperclipCloudConnectorConfigFromEnv, PaperclipCloudConnectorError, type PaperclipCloudConnector } from "../../paperclip-cloud-connector.js";
+import { chatEndpoints, chatSlackRegistrations, toolConnections, type Db } from "@pilibalaai/db";
+import { createPilibalaCloudConnector, pilibalaCloudConnectorConfigFromEnv, PilibalaCloudConnectorError, type PilibalaCloudConnector } from "../../pilibala-cloud-connector.js";
 import type { CredentialMutationLeaseGuard } from "../../chat-credential-mutation-lease.js";
 import type { createChatCredentials } from "../credentials.js";
 import type { InternalSetupState } from "../runtime-types.js";
@@ -30,8 +30,8 @@ function slackCloudEnrollmentIsActive(endpoint: { status: string }, connection: 
 }
 
 export async function stageSlackCloudEnrollmentIntent(db: Db, endpointId: string, actorUserId: string | null | undefined) {
-  let config: ReturnType<typeof paperclipCloudConnectorConfigFromEnv>;
-  try { config = paperclipCloudConnectorConfigFromEnv(); } catch { config = null; }
+  let config: ReturnType<typeof pilibalaCloudConnectorConfigFromEnv>;
+  try { config = pilibalaCloudConnectorConfigFromEnv(); } catch { config = null; }
   const [current] = await db.select({ endpoint: chatEndpoints, connection: toolConnections }).from(chatEndpoints)
     .innerJoin(toolConnections, and(eq(toolConnections.id, chatEndpoints.connectionId), eq(toolConnections.companyId, chatEndpoints.companyId)))
     .where(eq(chatEndpoints.id, endpointId)).limit(1);
@@ -71,7 +71,7 @@ export async function stageSlackCloudEnrollmentIntent(db: Db, endpointId: string
 }
 
 export async function reconcilePendingSlackCloudEnrollments(db: Db, now: Date): Promise<number | null> {
-  const config = paperclipCloudConnectorConfigFromEnv();
+  const config = pilibalaCloudConnectorConfigFromEnv();
   if (!config) return null;
   const recoverable = and(
     sql`${chatEndpoints.setup}->'slackCloudIntent'->>'nextAttemptAt' is null`,
@@ -144,7 +144,7 @@ export async function reconcilePendingSlackCloudEnrollments(db: Db, now: Date): 
 export function createSlackCloudEnrollment(db: Db, options: {
   resolveCredentials: ReturnType<typeof createChatCredentials>["resolveCredentials"];
   runtimeGeneration(setup: InternalSetupState): number;
-  connector?: Pick<PaperclipCloudConnector, "slackEventsAvailable" | "slackEventEnrollment">;
+  connector?: Pick<PilibalaCloudConnector, "slackEventsAvailable" | "slackEventEnrollment">;
 }) {
   return async (endpointId: string, _actorUserId: string | null | undefined, lease: CredentialMutationLeaseGuard) => {
     const [current] = await db.select({ endpoint: chatEndpoints, connection: toolConnections }).from(chatEndpoints)
@@ -152,7 +152,7 @@ export function createSlackCloudEnrollment(db: Db, options: {
       .where(eq(chatEndpoints.id, endpointId)).limit(1);
     if (!current || current.endpoint.provider !== "slack") return;
     const endpoint = current.endpoint, setup = endpoint.setup as InternalSetupState, intent = setup.slackCloudIntent;
-    const config = paperclipCloudConnectorConfigFromEnv();
+    const config = pilibalaCloudConnectorConfigFromEnv();
     if (!config || !intent) return;
     const identity = { companyId: intent.companyId, endpointId: intent.endpointId, publicId: intent.publicId,
       connectionId: intent.connectionId, runtimeGeneration: intent.runtimeGeneration };
@@ -171,7 +171,7 @@ export function createSlackCloudEnrollment(db: Db, options: {
       logger.warn({ endpointId, reason: "intent_authority_changed" }, "Slack enrollment responsibility retained");
       return;
     }
-    const connector = options.connector ?? createPaperclipCloudConnector({ config });
+    const connector = options.connector ?? createPilibalaCloudConnector({ config });
     const commit = async (change: { receipt?: Record<string, unknown>; failure?: string; attention?: boolean; retryAt?: number }) => db.transaction(async tx => {
       await lease.assertOwned(tx);
       const next = change.failure ? { ...intent, attempts: Math.min(intent.attempts + 1, 1_000_000), failureCode: change.failure,
@@ -205,13 +205,13 @@ export function createSlackCloudEnrollment(db: Db, options: {
         throw new SlackEnrollmentFailure("receipt_identity_changed");
       await commit({ receipt: value });
     } catch (error) {
-      const conflict = error instanceof PaperclipCloudConnectorError && error.status === 409
+      const conflict = error instanceof PilibalaCloudConnectorError && error.status === 409
         && ["SLACK_ENROLLMENT_GENERATION_CHANGED", "SLACK_ENROLLMENT_IDENTITY_CHANGED", "SLACK_ENROLLMENT_CHANGED", "SLACK_ENROLLMENT_UNSETTLED"].includes(error.brokerReason ?? "");
       const credentialAttention = error instanceof SlackCloudReceiptError && error.code === "signing_credential_unavailable" && error.disposition === "attention";
-      const attention = credentialAttention || error instanceof SlackEnrollmentFailure || conflict || (error instanceof PaperclipCloudConnectorError && [400, 401, 403].includes(error.status ?? 0));
+      const attention = credentialAttention || error instanceof SlackEnrollmentFailure || conflict || (error instanceof PilibalaCloudConnectorError && [400, 401, 403].includes(error.status ?? 0));
       const code = credentialAttention ? "signing_credential_unavailable" : error instanceof SlackEnrollmentFailure ? error.code : attention ? "authority_required"
-        : error instanceof PaperclipCloudConnectorError && error.brokerReason === "SLACK_ENROLLMENT_DISABLED" ? "enrollment_disabled" : "broker_unavailable";
-      await commit({ failure: code, attention, retryAt: error instanceof PaperclipCloudConnectorError ? error.retryAt : undefined });
+        : error instanceof PilibalaCloudConnectorError && error.brokerReason === "SLACK_ENROLLMENT_DISABLED" ? "enrollment_disabled" : "broker_unavailable";
+      await commit({ failure: code, attention, retryAt: error instanceof PilibalaCloudConnectorError ? error.retryAt : undefined });
       logger.warn({ endpointId, reason: code }, "Slack enrollment responsibility retained");
     }
   };

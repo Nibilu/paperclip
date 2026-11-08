@@ -13,17 +13,17 @@ export function completedTeamsAction(a: string): string {
         AND ((publication.state = 'published' AND publication.published_at IS NOT NULL)
           OR (publication.state IN ('failed', 'cancelled') AND publication.next_attempt_at IS NULL))
         AND CASE WHEN ${a}.kind = 'teams_file_effect_intent' THEN
-          ${a}.payload->>'schema' = 'paperclip.teams.file-effect-intent.v1'
+          ${a}.payload->>'schema' = 'pilibala.teams.file-effect-intent.v1'
           AND ${a}.payload->>'transferId' = transfer.id::text
           AND ${a}.provider_action_id = 'teams-file-effect:' || (${a}.payload->>'attemptId')
           AND ${a}.payload->>'stage' IN ('consent', 'upload', 'file_info')
         WHEN ${a}.kind = 'teams_file_consent' THEN
-          ${a}.payload->>'schema' = 'paperclip.teams.consent-receipt.v1'
+          ${a}.payload->>'schema' = 'pilibala.teams.consent-receipt.v1'
           AND ${a}.payload->>'transferId' = transfer.id::text
           AND ${a}.payload->>'receiptDigest' = transfer.response_digest
           AND ${a}.payload->>'action' IN ('accept', 'decline')
           AND ${a}.principal_id IS NOT DISTINCT FROM transfer.principal_id
-        ELSE ${a}.payload->>'schema' = 'paperclip.teams.board-file-intent.v1'
+        ELSE ${a}.payload->>'schema' = 'pilibala.teams.board-file-intent.v1'
           AND ${a}.provider_action_id = 'teams_board_file_intent:' || publication.id::text
           AND ${a}.payload->>'issueId' = transfer.issue_id::text
           AND ${a}.payload->>'attachmentId' = transfer.attachment_id::text

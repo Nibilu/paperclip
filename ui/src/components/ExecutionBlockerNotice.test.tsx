@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { TaskInterruptionPresentation } from "@paperclipai/shared";
+import type { TaskInterruptionPresentation } from "@pilibalaai/shared";
 import { ExecutionBlockerNotice } from "./ExecutionBlockerNotice";
 
 const failed: TaskInterruptionPresentation = {
@@ -61,10 +61,10 @@ describe("ordinary task interruption", () => {
   it("names the recovery step inside a provider failure notice", async () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-20T00:00:00Z"));
     await render({ ...failed, state: "retry_scheduled", nextRetryAt: "2026-10-20T00:00:30Z", recoveryStep: "checking_previous_run",
-      providerFailure: { schema: "paperclip.provider-failure.v1", provider: "openai", phase: "startup", category: "overloaded",
+      providerFailure: { schema: "pilibala.provider-failure.v1", provider: "openai", phase: "startup", category: "overloaded",
         retryability: "unknown", message: "Try later." } });
     expect(container.textContent).toContain("Checking that the previous attempt stopped. Trying again in 30s…");
-    expect(container.textContent).not.toContain("Paperclip will retry automatically.");
+    expect(container.textContent).not.toContain("Pilibala will retry automatically.");
   });
   it("leaves genuine user decisions to their specific action surface", async () => {
     await render({ ...failed, responsibility: "user", state: "waiting_for_user", userAction: "approval", canRetry: false });
@@ -107,7 +107,7 @@ describe("ordinary task interruption", () => {
     expect(container.querySelector("button")).toBeNull();
   });
   it("shows an unknown provider's original explanation as text and preserves read-only access", async () => {
-    const providerFailure = { schema: "paperclip.provider-failure.v1" as const, provider: "new-provider", phase: "startup" as const,
+    const providerFailure = { schema: "pilibala.provider-failure.v1" as const, provider: "new-provider", phase: "startup" as const,
       category: "unknown" as const, retryability: "unknown" as const, httpStatus: 429,
       message: "Upstream failure <img src=x onerror=alert(1)>" };
     await render({ ...failed, providerFailure }, { canRetry: false });

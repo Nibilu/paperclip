@@ -19,15 +19,15 @@ import { NativeDeliverableEvidenceError, validateNativeDeliverableEvidence } fro
 import { hasPublishedGitHubReview, readInheritedGitHubReviewWait } from "../chat-channels/github/review-wait.js";
 import { lockNativeGovernanceSources, pendingNativeGovernance } from "./native-governance.js";
 import { findSupersededExternalReviewRequests, supersedeExternalReviewRequestsInTransaction } from "./superseded-external-review-requests.js";
-import { normalizePrpResultSignals, type PrpStructuredRunResult } from "../../vendor/paperclip-runner/index.js";
+import { normalizePrpResultSignals, type PrpStructuredRunResult } from "../../vendor/pilibala-runner/index.js";
 import { readNativeMonitorDelivery, readNativePreservedMonitorWait, readNativeSupersededMonitorWait, type NativeSupersededMonitorWait, type NativeMonitorDelivery, type NativePreservedMonitorWait } from "./native-monitor-delivery.js";
 import { readNativePlanWait, type NativePlanWaitSource } from "./native-plan-wait.js";
 import { activeIssueInteractionCondition } from "../issue-question-context.js";
 import { isConversation } from "../agent-conversations.js";
 import { hasPendingNativeChildCompletion, type NativeChildCompletionRecipient } from "./native-child-completion-delivery.js";
 import { and, asc, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import type { CreateIssueThreadInteraction } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import type { CreateIssueThreadInteraction } from "@pilibalaai/shared";
 import {
   agentWakeupRequests,
   agents,
@@ -44,7 +44,7 @@ import {
   statusDecisions,
   workAssessments,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   NATIVE_STATUS_ARBITER_POLICY_VERSION,
   type NativeGovernanceGate,
@@ -494,7 +494,7 @@ async function enqueueWake(input: {
         issueId: input.issueId,
         taskId: input.issueId,
         ...input.payload,
-        _paperclipWakeContext: {
+        _pilibalaWakeContext: {
           issueId: input.issueId,
           taskId: input.issueId,
           ...(input.contextSnapshot ?? {}),
@@ -1058,8 +1058,8 @@ async function materializeDecisionEffect(input: {
           sql`coalesce(
           ${agentWakeupRequests.payload} ->> 'issueId',
           ${agentWakeupRequests.payload} ->> 'taskId',
-          ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'issueId',
-          ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'taskId'
+          ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'issueId',
+          ${agentWakeupRequests.payload} -> '_pilibalaWakeContext' ->> 'taskId'
         ) = ${input.issue.id}`,
         ),
       );
@@ -1960,7 +1960,7 @@ export async function commitNativeStatusDecision(input: {
         const envelope = record(accepted?.resultJson), terminal = record(envelope.terminal);
         if (!accepted || accepted.completionContractId !== planWait.source.contractId || accepted.turnId !== planWait.source.turnId ||
           nativeSha256(envelope.result) !== nativeSha256(planWait.result) ||
-          terminal.schema !== "paperclip.prp.terminal.v1" || terminal.runTerminalState !== "succeeded" || terminal.turnTerminalState !== "completed" || terminal.reportedWorkDisposition !== "yielded") throw new NativeStatusRaceError();
+          terminal.schema !== "pilibala.prp.terminal.v1" || terminal.runTerminalState !== "succeeded" || terminal.turnTerminalState !== "completed" || terminal.reportedWorkDisposition !== "yielded") throw new NativeStatusRaceError();
         // completeRun hashes its full private binding, not the stored resultJson.
         // Preserve that accepted identity instead of inventing a new digest.
         planWaitResult = { resultId: accepted.id, resultSha256: accepted.canonicalSha256 };

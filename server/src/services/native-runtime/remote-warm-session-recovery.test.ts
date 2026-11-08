@@ -3,18 +3,18 @@ import { describeFailedAttachment, describeOwnFailedAttachment, isSettledRemoteW
 
 const identity = { runId: "run", normalizedSessionId: "session", runnerInstanceId: "runner", environmentLeaseId: "lease", turnId: "turn", itemId: "item" };
 const terminal = { eventType: "run.terminal", envelope: { ...identity } };
-const goal = { schema: "paperclip.session_goal.snapshot.v1", goal: null, workingNow: false };
-const notification = { schema: "paperclip.prp.event.v1", eventType: "session.goal.snapshot", runId: identity.runId,
+const goal = { schema: "pilibala.session_goal.snapshot.v1", goal: null, workingNow: false };
+const notification = { schema: "pilibala.prp.event.v1", eventType: "session.goal.snapshot", runId: identity.runId,
   normalizedSessionId: identity.normalizedSessionId, sourceInstanceId: "runner", sourceKind: "runner", payload: goal };
 const snapshot = { eventType: "session.goal.snapshot", envelope: { ...identity, payload: notification } };
-const notice = { schema: "paperclip.provider.notice.v1", noticeId: "codex-warning", severity: "warning", category: "warning", scope: "turn",
+const notice = { schema: "pilibala.provider.notice.v1", noticeId: "codex-warning", severity: "warning", category: "warning", scope: "turn",
   recoverable: true, userActionable: true, summary: "ignored a notification for a settled Codex turn" };
 const noticeNotification = { ...notification, eventType: "provider.notice.recorded", payload: notice };
 const lateNotice = { eventType: "provider.notice.recorded", envelope: { ...identity, payload: noticeNotification } };
 const state = (events: unknown[]) => ({ identity, commands: [{ status: "completed" }], committedEvents: events });
 
 describe("settled remote warm control evidence", () => {
-  it.each(["paperclip.prp.event.v1", "paperclip.prp.event.v2"])("accepts the terminal and an authenticated %s idle goal-read suffix without changing its order", schema => {
+  it.each(["pilibala.prp.event.v1", "pilibala.prp.event.v2"])("accepts the terminal and an authenticated %s idle goal-read suffix without changing its order", schema => {
     const suffix = { ...snapshot, envelope: { ...snapshot.envelope, payload: { ...notification, schema } } };
     const control = state([terminal, suffix]);
     expect(isSettledRemoteWarmControlState(control, identity)).toBe(true);
@@ -26,7 +26,7 @@ describe("settled remote warm control evidence", () => {
     ["active goal", { ...snapshot, envelope: { ...snapshot.envelope, payload: { ...notification, payload: { ...goal, goal: { status: "active" } } } } }],
     ["provider work", { ...snapshot, envelope: { ...snapshot.envelope, payload: { ...notification, payload: { ...goal, workingNow: true } } } }],
     ["unauthenticated event type", { ...snapshot, eventType: "unknown" }],
-    ["unknown protocol version", { ...snapshot, envelope: { ...snapshot.envelope, payload: { ...notification, schema: "paperclip.prp.event.v3" } } }],
+    ["unknown protocol version", { ...snapshot, envelope: { ...snapshot.envelope, payload: { ...notification, schema: "pilibala.prp.event.v3" } } }],
     ["new turn", { ...snapshot, eventType: "turn.started" }],
     ["foreign run", { ...snapshot, envelope: { ...snapshot.envelope, runId: "other" } }],
     ["foreign session", { ...snapshot, envelope: { ...snapshot.envelope, normalizedSessionId: "other" } }],
@@ -82,7 +82,7 @@ describe("settled remote warm control evidence", () => {
     const stored = 'native_session_recovery_failed: Error: PRP command run.attach failed: {"commandType":"run.attach","result":{"code":"command_execution_failed","message":"run.attach requires a settled Codex provider session: active_turn"},"status":"failed"}';
     const pointer = describeFailedAttachment(stored);
     expect(pointer).toContain("run.attach requires a settled Codex provider session: active_turn");
-    expect(pointer).toContain("https://github.com/paperclipai/paperclip/blob/master/doc/execution-semantics.md#session-settlement-after-a-run");
+    expect(pointer).toContain("https://github.com/pilibalaai/pilibala/blob/master/doc/execution-semantics.md#session-settlement-after-a-run");
     expect(describeFailedAttachment("run.attach requires the restored Codex provider process")).toContain("restored Codex provider process");
     const quoted = `PRP command run.attach failed: ${JSON.stringify({ result: { message: 'run.attach provider is invalid: unknown "value" here' } })}`;
     expect(describeFailedAttachment(quoted)).toContain('run.attach provider is invalid: unknown "value" here. A later run');

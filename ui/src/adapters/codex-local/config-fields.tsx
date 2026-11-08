@@ -5,8 +5,8 @@ import { GrokBotConnection } from "../../components/GrokBotConnection";
 import { DotRunnerConnection } from "../../components/DotRunnerConnection";
 import { configFieldsForSection } from "../config-sections";
 import type { AdapterConfigFieldsProps } from "../types";
-import type { CreateConfigValues } from "@paperclipai/adapter-utils";
-import { buildCodexLocalConfig } from "@paperclipai/adapter-codex-local/ui";
+import type { CreateConfigValues } from "@pilibalaai/adapter-utils";
+import { buildCodexLocalConfig } from "@pilibalaai/adapter-codex-local/ui";
 import {
   Field,
   ToggleField,
@@ -22,18 +22,18 @@ import {
   isCodexLocalFastModeSupported,
   isCodexLocalManualModel,
   resolveCodexLocalCliPolicy,
-} from "@paperclipai/adapter-codex-local";
+} from "@pilibalaai/adapter-codex-local";
 import {
-  PAPERCLIP_RUNNER_IDLE_TIMEOUT_DEFAULT_MS,
-  PAPERCLIP_RUNNER_IDLE_TIMEOUT_MAX_MS,
-  PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES,
-  PAPERCLIP_RUNNER_ACPX_PROFILES,
-  isPaperclipRunnerProvider,
-  resolvePaperclipRunnerIdleTimeoutMs,
-  resolvePaperclipRunnerPermissionMode,
-  type PaperclipRunnerPermissionMode,
-  type PaperclipRunnerPermissionCapability,
-} from "@paperclipai/adapter-utils";
+  PILIBALA_RUNNER_IDLE_TIMEOUT_DEFAULT_MS,
+  PILIBALA_RUNNER_IDLE_TIMEOUT_MAX_MS,
+  PILIBALA_RUNNER_PERMISSION_CAPABILITIES,
+  PILIBALA_RUNNER_ACPX_PROFILES,
+  isPilibalaRunnerProvider,
+  resolvePilibalaRunnerIdleTimeoutMs,
+  resolvePilibalaRunnerPermissionMode,
+  type PilibalaRunnerPermissionMode,
+  type PilibalaRunnerPermissionCapability,
+} from "@pilibalaai/adapter-utils";
 
 const inputClass =
   "w-full rounded-md border border-border px-2.5 py-1.5 bg-transparent outline-none text-sm font-mono placeholder:text-muted-foreground/40";
@@ -63,8 +63,8 @@ export function buildCodexRunnerConfig(values: CreateConfigValues): Record<strin
   return {
     ...config,
     ...(values.codexPermissionMode !== undefined ? { codexPermissionMode: values.codexPermissionMode } : {}),
-    ...(values.paperclipRunnerLifecycleMode !== undefined ? { lifecycleMode: values.paperclipRunnerLifecycleMode } : {}),
-    ...(values.paperclipRunnerIdleTimeoutMs !== undefined ? { idleTimeoutMs: values.paperclipRunnerIdleTimeoutMs } : {}),
+    ...(values.pilibalaRunnerLifecycleMode !== undefined ? { lifecycleMode: values.pilibalaRunnerLifecycleMode } : {}),
+    ...(values.pilibalaRunnerIdleTimeoutMs !== undefined ? { idleTimeoutMs: values.pilibalaRunnerIdleTimeoutMs } : {}),
   };
 }
 
@@ -85,11 +85,11 @@ export function CodexLocalConfigFields({
   managedSandboxOnly,
   hideRunnerHarness,
 }: AdapterConfigFieldsProps) {
-  const runnerManaged = adapterType === "paperclip_runner";
+  const runnerManaged = adapterType === "pilibala_runner";
   // The execution engine picks which binary runs on the execution host, and the
   // ACP sub-fields below name host paths. The platform-managed environment owns
   // both, so the managed-sandbox-only policy hides them the same way
-  // `runnerManaged` already does for the Paperclip Runner.
+  // `runnerManaged` already does for the Pilibala Runner.
   const hideEngineChoice = runnerManaged || managedSandboxOnly === true;
   const configuredRunnerProvider = runnerManaged
     ? isCreate
@@ -97,9 +97,9 @@ export function CodexLocalConfigFields({
       : eff("adapterConfig", "provider", config.provider === "acpx" && config.acpxAgent === "codex" ? "codex" : config.provider ?? "codex")
     : "codex";
   const runnerProvider = String(configuredRunnerProvider ?? "codex");
-  const runnerPermissionCapability: PaperclipRunnerPermissionCapability =
-    isPaperclipRunnerProvider(runnerProvider)
-      ? PAPERCLIP_RUNNER_PERMISSION_CAPABILITIES[runnerProvider]
+  const runnerPermissionCapability: PilibalaRunnerPermissionCapability =
+    isPilibalaRunnerProvider(runnerProvider)
+      ? PILIBALA_RUNNER_PERMISSION_CAPABILITIES[runnerProvider]
       : { configurable: false, defaultMode: "provider-managed", options: [], description: "Unknown provider configuration is preserved." };
   const isMuse = runnerProvider === "muse";
   const isCursorCloud = runnerProvider === "cursor_cloud";
@@ -128,8 +128,8 @@ export function CodexLocalConfigFields({
     );
   const runnerPermissionMode =
     runnerManaged && runnerPermissionCapability.configurable
-      ? resolvePaperclipRunnerPermissionMode(
-          isPaperclipRunnerProvider(runnerProvider) ? runnerProvider : "codex",
+      ? resolvePilibalaRunnerPermissionMode(
+          isPilibalaRunnerProvider(runnerProvider) ? runnerProvider : "codex",
           configuredRunnerPermissionMode,
         )
       : runnerPermissionCapability.defaultMode;
@@ -153,7 +153,7 @@ export function CodexLocalConfigFields({
   // harnesses warm for the default idle window and runs others turn by turn.
   const runnerLifecycleMode: "automatic" | "per_turn" | "warm" = runnerManaged
     ? isCreate
-      ? (values!.paperclipRunnerLifecycleMode ?? "automatic")
+      ? (values!.pilibalaRunnerLifecycleMode ?? "automatic")
       : eff(
           "adapterConfig",
           "lifecycleMode",
@@ -161,12 +161,12 @@ export function CodexLocalConfigFields({
         ) ?? "automatic"
     : "per_turn";
   const runnerIdleTimeoutMs = runnerManaged
-    ? resolvePaperclipRunnerIdleTimeoutMs(
+    ? resolvePilibalaRunnerIdleTimeoutMs(
         isCreate
-          ? values!.paperclipRunnerIdleTimeoutMs
+          ? values!.pilibalaRunnerIdleTimeoutMs
           : eff("adapterConfig", "idleTimeoutMs", config.idleTimeoutMs),
       )
-    : PAPERCLIP_RUNNER_IDLE_TIMEOUT_DEFAULT_MS;
+    : PILIBALA_RUNNER_IDLE_TIMEOUT_DEFAULT_MS;
   const rawEngine = runnerManaged
     ? "cli"
     : isCreate
@@ -196,7 +196,7 @@ export function CodexLocalConfigFields({
     ? "Fast mode will be passed through for this manual model. If Codex rejects it, turn the toggle off."
     : fastModeSupported
       ? "Fast mode consumes credits/tokens much faster than standard Codex runs."
-      : `Fast mode currently only works on ${supportedModelsLabel} or manual model IDs. Paperclip will ignore this toggle until the model is switched.`;
+      : `Fast mode currently only works on ${supportedModelsLabel} or manual model IDs. Pilibala will ignore this toggle until the model is switched.`;
 
   return configFieldsForSection(section, (
     <>
@@ -240,7 +240,7 @@ export function CodexLocalConfigFields({
             value={runnerProvider === "acpx" && runnerSchemaValue("acpxAgent", "claude") === "grok" ? "grok" : runnerProvider}
             onValueChange={(value) => {
               const grok = value === "grok";
-              const provider = grok ? "acpx" : isPaperclipRunnerProvider(value)
+              const provider = grok ? "acpx" : isPilibalaRunnerProvider(value)
                 ? value
                 : "codex";
               const cloudResetKeys = ["codexPermissionMode", "opencodePermissionMode", "acpxPermissionMode", "acpxAgent", "command", "extraArgs", "idleTimeoutMs", "modelReasoningEffort", "reasoningEffort", "effort", "modelParams", "homeMode"];
@@ -291,7 +291,7 @@ export function CodexLocalConfigFields({
           >
             <SelectTrigger className="w-full" aria-label="Harness"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {!isPaperclipRunnerProvider(runnerProvider) && <SelectItem value={runnerProvider} disabled>{runnerProvider} (unknown provider)</SelectItem>}
+              {!isPilibalaRunnerProvider(runnerProvider) && <SelectItem value={runnerProvider} disabled>{runnerProvider} (unknown provider)</SelectItem>}
               {runnerHarnessOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   <AdapterMark type={option.adapter} className="size-4" />
@@ -304,7 +304,7 @@ export function CodexLocalConfigFields({
       )}
       {runnerManaged && runnerProvider === "grok_bot" && <GrokBotConnection companyId={companyId} agentId={agentId} />}
       {runnerManaged && isCursorCloud && <>
-        <p className="text-sm text-muted-foreground">Experimental. Cursor hosts this agent’s execution environment. A Paperclip computer is not required. Cursor manages command permissions; effective model identity is unavailable. Agent environment settings support only CURSOR_API_KEY. Configure hosted secrets in your Cursor Cloud environment.</p>
+        <p className="text-sm text-muted-foreground">Experimental. Cursor hosts this agent’s execution environment. A Pilibala computer is not required. Cursor manages command permissions; effective model identity is unavailable. Agent environment settings support only CURSOR_API_KEY. Configure hosted secrets in your Cursor Cloud environment.</p>
         {[
           { key: "repoUrl", label: "GitHub repository", fallback: "", legacy: undefined, placeholder: "https://github.com/your-org/repo", hint: "Select a repository or a named Cursor cloud environment." },
           { key: "repoRef", label: "Starting ref", fallback: config.repoStartingRef ?? "", legacy: "repoStartingRef", placeholder: "Repository default" },
@@ -332,14 +332,14 @@ export function CodexLocalConfigFields({
           checked={runnerSchemaValue("dotAttachmentAccess", false) === true} onChange={value => updateRunnerSchemaValue("dotAttachmentAccess", value)} />
         <ToggleField label="Workspace files and commands" hint="Let Dot read and write its assigned workspace and publish files. Requires a local Runner. Commands are available only on Linux with bubblewrap; they cannot read your home directory or use injected credentials."
           checked={runnerSchemaValue("dotWorkspaceAccess", false) === true} onChange={value => updateRunnerSchemaValue("dotWorkspaceAccess", value)} />
-        <ToggleField label="Allow externally billed provider" hint="Dot does not report token usage or cost. Paperclip cannot enforce a provider spend ceiling; known company and agent budget limits still apply."
+        <ToggleField label="Allow externally billed provider" hint="Dot does not report token usage or cost. Pilibala cannot enforce a provider spend ceiling; known company and agent budget limits still apply."
           checked={runnerSchemaValue("allowUnmeteredProvider", false) === true} onChange={value => updateRunnerSchemaValue("allowUnmeteredProvider", value)} />
       </>}
       {runnerManaged && isMuse && <>
         <Field configSection="adapter" label="Muse connection" hint="Pairing, receiver contact, background reply, and agent setup are verified separately.">
           <MuseRunnerConnection companyId={companyId} agentId={agentId} />
         </Field>
-        <ToggleField label="Allow externally billed provider" hint="Muse does not report usage or cost. Paperclip cannot enforce a Muse spend ceiling; known company and agent budget limits still apply."
+        <ToggleField label="Allow externally billed provider" hint="Muse does not report usage or cost. Pilibala cannot enforce a Muse spend ceiling; known company and agent budget limits still apply."
           checked={runnerSchemaValue("allowUnmeteredProvider", false) === true} onChange={value => updateRunnerSchemaValue("allowUnmeteredProvider", value)} />
       </>}
       {runnerManaged && !hideRunnerHarness && runnerProvider === "acpx" && runnerSchemaValue("acpxAgent", "claude") !== "grok" && (
@@ -347,7 +347,7 @@ export function CodexLocalConfigFields({
           <Select
             value={String(isCreate ? values!.adapterSchemaValues?.acpxAgent ?? "claude" : eff("adapterConfig", "acpxAgent", config.acpxAgent ?? "claude"))}
             onValueChange={(value) => {
-              const profile = PAPERCLIP_RUNNER_ACPX_PROFILES.find(entry => entry.value === value);
+              const profile = PILIBALA_RUNNER_ACPX_PROFILES.find(entry => entry.value === value);
               const acpxSessionMode = profile?.value === "cursor" ? "agent" : undefined;
               const piThinkingLevel = profile?.value === "pi" ? "low" : undefined;
               if (!profile?.qualified) return;
@@ -357,7 +357,7 @@ export function CodexLocalConfigFields({
             }}>
             <SelectTrigger className="w-full" aria-label="ACP agent"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {PAPERCLIP_RUNNER_ACPX_PROFILES.map(profile => (
+              {PILIBALA_RUNNER_ACPX_PROFILES.map(profile => (
                 <SelectItem key={profile.value} value={profile.value} disabled={!profile.qualified}>
                   <AdapterMark type={profile.value === "cursor" ? "cursor" : `${profile.value}_local`} className="size-4" />
                   {profile.label}{profile.qualified ? "" : " — qualification pending"}
@@ -454,7 +454,7 @@ export function CodexLocalConfigFields({
           </Field>
           <Field
             label="Estimated session ceiling (USD)"
-            hint="Paperclip estimate; AWS does not provide a per-session currency hard stop."
+            hint="Pilibala estimate; AWS does not provide a per-session currency hard stop."
           >
             <DraftNumberInput
               value={Number(runnerSchemaValue("maxEstimatedSessionCostUsd", 1))}
@@ -527,7 +527,7 @@ export function CodexLocalConfigFields({
       {runnerManaged && !isExternal && runnerPermissionCapability.configurable && (runnerPermissionCapability.options.length > 1 || runnerPermissionModeUnsupported) && (
         <Field
           label="Permission mode"
-          hint={`${runnerPermissionCapability.description} The selected mode does not widen Paperclip's workspace, network, credential, or planning boundaries.`}
+          hint={`${runnerPermissionCapability.description} The selected mode does not widen Pilibala's workspace, network, credential, or planning boundaries.`}
         >
           <Select
             value={
@@ -536,10 +536,10 @@ export function CodexLocalConfigFields({
                 : runnerPermissionMode
             }
             onValueChange={(selectedMode) => {
-              const value = resolvePaperclipRunnerPermissionMode(
-                isPaperclipRunnerProvider(runnerProvider) ? runnerProvider : "codex",
+              const value = resolvePilibalaRunnerPermissionMode(
+                isPilibalaRunnerProvider(runnerProvider) ? runnerProvider : "codex",
                 selectedMode,
-              ) as PaperclipRunnerPermissionMode;
+              ) as PilibalaRunnerPermissionMode;
               if (isCreate) {
                 set!({
                   adapterSchemaValues: {
@@ -578,7 +578,7 @@ export function CodexLocalConfigFields({
           </Select>
           {runnerPermissionModeUnsupported && runnerProvider === "codex" && (
             <p className="mt-1 text-xs text-destructive" role="alert">
-              This saved Codex mode cannot start or recover a Paperclip Runner
+              This saved Codex mode cannot start or recover a Pilibala Runner
               run. Select Automatic (isolated) to remediate it.
             </p>
           )}
@@ -595,7 +595,7 @@ export function CodexLocalConfigFields({
             onValueChange={(next) => {
               const value = next === "warm" || next === "per_turn" ? next : undefined;
               isCreate
-                ? set!({ paperclipRunnerLifecycleMode: value })
+                ? set!({ pilibalaRunnerLifecycleMode: value })
                 : mark("adapterConfig", "lifecycleMode", value);
             }}
             options={[
@@ -615,13 +615,13 @@ export function CodexLocalConfigFields({
             <input
               type="number"
               min={1}
-              max={PAPERCLIP_RUNNER_IDLE_TIMEOUT_MAX_MS}
+              max={PILIBALA_RUNNER_IDLE_TIMEOUT_MAX_MS}
               className={inputClass}
               value={runnerIdleTimeoutMs}
               onChange={(event) =>
                 set!({
-                  paperclipRunnerIdleTimeoutMs:
-                    resolvePaperclipRunnerIdleTimeoutMs(
+                  pilibalaRunnerIdleTimeoutMs:
+                    resolvePilibalaRunnerIdleTimeoutMs(
                       Number(event.target.value),
                     ),
                 })
@@ -631,12 +631,12 @@ export function CodexLocalConfigFields({
             <DraftNumberInput
               value={runnerIdleTimeoutMs}
               min={1}
-              max={PAPERCLIP_RUNNER_IDLE_TIMEOUT_MAX_MS}
+              max={PILIBALA_RUNNER_IDLE_TIMEOUT_MAX_MS}
               onCommit={(value) =>
                 mark(
                   "adapterConfig",
                   "idleTimeoutMs",
-                  resolvePaperclipRunnerIdleTimeoutMs(value),
+                  resolvePilibalaRunnerIdleTimeoutMs(value),
                 )
               }
               immediate
@@ -731,7 +731,7 @@ export function CodexLocalConfigFields({
           {!managedSandboxOnly && (
             <Field
               label="ACP state directory"
-              hint="Optional ACP session state directory. Defaults to Paperclip-managed organization/agent scoped storage."
+              hint="Optional ACP session state directory. Defaults to Pilibala-managed organization/agent scoped storage."
             >
               <div className="flex items-center gap-2">
                 <DraftInput

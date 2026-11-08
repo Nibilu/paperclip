@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq, gt, or, sql } from "drizzle-orm";
-import { companySkills, type Db } from "@paperclipai/db";
+import { companySkills, type Db } from "@pilibalaai/db";
 import { z } from "zod";
 import type { AuthorizationActor } from "../authorization.js";
 import { skillAccessService } from "../skill-access.js";

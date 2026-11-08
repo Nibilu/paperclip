@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { IssueThreadInteraction, IssueWorkMode } from "@paperclipai/shared";
+import type { IssueThreadInteraction, IssueWorkMode } from "@pilibalaai/shared";
 import { TaskChatComposer } from "@/components/task-chat/TaskChatComposer";
 import { TaskChatComposerDock } from "@/components/task-chat/TaskChatComposerDock";
 import { TaskChatInteractionCard } from "@/components/task-chat/TaskChatInteractionCard";
@@ -15,7 +15,7 @@ import {
 } from "@/components/task-chat/TaskChatTurnStatusIsland";
 import type { TaskChatProtocolStep } from "@/components/task-chat/task-chat-model";
 import { composerAgentAppearance, composerAgents } from "../../prototypes/composer-model-picker/fixtures";
-import { storybookAgentMap } from "../../fixtures/paperclipData";
+import { storybookAgentMap } from "../../fixtures/pilibalaData";
 
 type Status = TaskChatProtocolStep["status"];
 
@@ -252,7 +252,7 @@ const meta = {
           "The agent's checklist for the current turn, docked above the composer. It is built from canonical `plan.updated` provider events, so every harness that reports a native plan renders the same way.",
       },
     },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "tasks/discussion",
         "runs-adapters/runs"

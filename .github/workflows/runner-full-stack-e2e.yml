@@ -13,7 +13,7 @@ on:
         options: [manual, daily, weekly]
         default: manual
       target_branch:
-        description: "Branch in paperclipai/paperclip to test; the trusted workflow still runs from master"
+        description: "Branch in pilibalaai/pilibala to test; the trusted workflow still runs from master"
         type: string
         required: false
       max_parallel:
@@ -188,7 +188,7 @@ jobs:
         run: |
           set -euo pipefail
           github_runner='ubuntu-latest'
-          aws_runner='runs-on/fleet=paperclip-public-pr-x64/env=public-ci'
+          aws_runner='runs-on/fleet=pilibala-public-pr-x64/env=public-ci'
           bounded=false
           if [ "$EVENT_NAME" = schedule ] || [ "$EVAL_CADENCE" != manual ]; then
             if [ "$REPOSITORY_PRIVATE" != false ]; then
@@ -338,7 +338,7 @@ jobs:
       - uses: allure-framework/setup-allurectl@2d89ee0b7ba2f59dbe9849b6df5763cab78e14db # v1
         with:
           allurectl-version: '2.23.1'
-          allure-endpoint: https://paperclip.testops.cloud
+          allure-endpoint: https://pilibala.testops.cloud
           allure-project-id: '1'
           allure-token: ${{ secrets.ALLURE_TOKEN }}
       - name: Resolve only admitted plan cases before provider jobs
@@ -628,8 +628,8 @@ jobs:
         env:
           NEEDS_DAYTONA: ${{ needs.catalog.outputs.needs_daytona }}
           IMAGE_CONTENT_ID: ${{ needs.catalog.outputs.daytona_image_content_id }}
-          IMAGE_TAG: ghcr.io/paperclipai/paperclip-daytona-runner:e2e-content-${{ needs.catalog.outputs.daytona_image_content_id }}
-          IMAGE_CACHE: ghcr.io/paperclipai/paperclip-daytona-runner:e2e-buildcache-amd64
+          IMAGE_TAG: ghcr.io/pilibalaai/pilibala-daytona-runner:e2e-content-${{ needs.catalog.outputs.daytona_image_content_id }}
+          IMAGE_CACHE: ghcr.io/pilibalaai/pilibala-daytona-runner:e2e-buildcache-amd64
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           TARGET_LOCK_SHA256: ${{ needs.target_lock.outputs.lock_sha256 }}
           TARGET_REF: ${{ needs.authorize.outputs.target_ref }}
@@ -680,9 +680,9 @@ jobs:
             fi
             docker buildx build \
               --platform linux/amd64 \
-              --build-arg "PAPERCLIP_RUNNER_CONTENT_ID=${IMAGE_CONTENT_ID}" \
-              --build-arg "PAPERCLIP_RUNNER_SOURCE_REVISION=${TARGET_SHA}" \
-              --build-arg "PAPERCLIP_RUNNER_LOCK_SHA256=${TARGET_LOCK_SHA256}" \
+              --build-arg "PILIBALA_RUNNER_CONTENT_ID=${IMAGE_CONTENT_ID}" \
+              --build-arg "PILIBALA_RUNNER_SOURCE_REVISION=${TARGET_SHA}" \
+              --build-arg "PILIBALA_RUNNER_LOCK_SHA256=${TARGET_LOCK_SHA256}" \
               --file docker/daytona-runner/Dockerfile \
               --tag "$IMAGE_TAG" \
               "${cache_args[@]}" \
@@ -706,7 +706,7 @@ jobs:
           docker logout ghcr.io >/dev/null
           image_config="$(docker buildx imagetools inspect "$immutable" \
             --format '{{json .Image}}')"
-          published_content_id="$(jq -r '.config.Labels["io.paperclip.runner.content-id"] // empty' <<< "$image_config")"
+          published_content_id="$(jq -r '.config.Labels["io.pilibala.runner.content-id"] // empty' <<< "$image_config")"
           source_revision="$(jq -r '.config.Labels["org.opencontainers.image.revision"] // empty' <<< "$image_config")"
           test "$published_content_id" = "$IMAGE_CONTENT_ID"
           [[ "$source_revision" =~ ^[0-9a-f]{40}$ ]]
@@ -714,7 +714,7 @@ jobs:
             '.architecture == "amd64" and
              .os == "linux" and
              .config.User == "daytona" and
-             (.config.Env | any(startswith("PAPERCLIP_RUNNER_PROVIDER_PACK_ROOT=")))' \
+             (.config.Env | any(startswith("PILIBALA_RUNNER_PROVIDER_PACK_ROOT=")))' \
             <<< "$image_config" >/dev/null
           {
             echo "image=$immutable"
@@ -790,12 +790,12 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$NEEDS_RUNNER_TYPESCRIPT" = true ]; then
-            pnpm --filter @paperclipai/paperclip-runner build:typescript
+            pnpm --filter @pilibalaai/pilibala-runner build:typescript
           else
-            pnpm --filter @paperclipai/paperclip-eval-kernel build
+            pnpm --filter @pilibalaai/pilibala-eval-kernel build
           fi
           if [ "$NEEDS_NATIVE_BINARIES" = true ]; then
-            pnpm --filter @paperclipai/paperclip-runner build:runner-binaries
+            pnpm --filter @pilibalaai/pilibala-runner build:runner-binaries
           fi
 
       - name: Package immutable campaign outputs
@@ -804,20 +804,20 @@ jobs:
           NEEDS_NATIVE_BINARIES: ${{ needs.catalog.outputs.needs_native_binaries }}
         run: |
           set -euo pipefail
-          binary_root="packages/paperclip-runner/runner/target/debug"
+          binary_root="packages/pilibala-runner/runner/target/debug"
           binaries=(
             conformance-tracer
-            paperclip-runnerd
+            pilibala-runnerd
             fake-harness
             fake-codex-app-server
             fake-acpx-sidecar
           )
           archive_paths=(
-            packages/paperclip-eval-kernel/dist
+            packages/pilibala-eval-kernel/dist
           )
           if [ "$NEEDS_RUNNER_TYPESCRIPT" = true ]; then
-            test -d packages/paperclip-runner/dist
-            archive_paths+=(packages/paperclip-runner/dist)
+            test -d packages/pilibala-runner/dist
+            archive_paths+=(packages/pilibala-runner/dist)
           fi
           if [ "$NEEDS_NATIVE_BINARIES" = true ]; then
             for binary in "${binaries[@]}"; do
@@ -923,7 +923,7 @@ jobs:
 
       - name: Materialize verified pinned OpenCode executable
         if: needs.catalog.outputs.needs_remote_provider_pack == 'true'
-        run: node packages/paperclip-runner/scripts/materialize-opencode-binary.mjs
+        run: node packages/pilibala-runner/scripts/materialize-opencode-binary.mjs
 
       - name: Download immutable shared campaign outputs
         if: needs.catalog.outputs.needs_remote_provider_pack == 'true'
@@ -943,8 +943,8 @@ jobs:
           tar --extract --gzip \
             --file runner-e2e-build/runner-e2e-build-bundle.tar.gz \
             --directory "$GITHUB_WORKSPACE"
-          test -d packages/paperclip-eval-kernel/dist
-          test -d packages/paperclip-runner/dist
+          test -d packages/pilibala-eval-kernel/dist
+          test -d packages/pilibala-runner/dist
 
       - name: Assemble native remote provider pack
         if: needs.catalog.outputs.needs_remote_provider_pack == 'true'
@@ -952,8 +952,8 @@ jobs:
           # A reused image can have an older source revision with the same
           # content ID. Matching that revision lets remote execution reuse the
           # verified pack already installed in the immutable image.
-          PAPERCLIP_RUNNER_SOURCE_REVISION: ${{ needs.daytona_image.outputs.source_revision }}
-        run: node packages/paperclip-runner/scripts/build-provider-pack.mjs packages/paperclip-runner/provider-pack
+          PILIBALA_RUNNER_SOURCE_REVISION: ${{ needs.daytona_image.outputs.source_revision }}
+        run: node packages/pilibala-runner/scripts/build-provider-pack.mjs packages/pilibala-runner/provider-pack
 
       - name: Package verified remote provider pack
         if: needs.catalog.outputs.needs_remote_provider_pack == 'true'
@@ -961,16 +961,16 @@ jobs:
           IMAGE_SOURCE_REVISION: ${{ needs.daytona_image.outputs.source_revision }}
         run: |
           set -euo pipefail
-          test -f packages/paperclip-runner/provider-pack/provider-pack.json
+          test -f packages/pilibala-runner/provider-pack/provider-pack.json
           jq -e \
             --arg revision "$IMAGE_SOURCE_REVISION" \
-            '.schema == "paperclip-runner/remote-provider-pack/v1" and
+            '.schema == "pilibala-runner/remote-provider-pack/v1" and
              .payload.runnerSourceRevision == $revision and
              (.digest | test("^sha256:[0-9a-f]{64}$"))' \
-            packages/paperclip-runner/provider-pack/provider-pack.json >/dev/null
+            packages/pilibala-runner/provider-pack/provider-pack.json >/dev/null
           tar --create --gzip \
             --file runner-e2e-provider-pack.tar.gz \
-            packages/paperclip-runner/provider-pack
+            packages/pilibala-runner/provider-pack
           sha256sum runner-e2e-provider-pack.tar.gz > runner-e2e-provider-pack.tar.gz.sha256
 
       - name: Name immutable remote provider pack
@@ -1118,7 +1118,7 @@ jobs:
         working-directory: .manual-private-trusted
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           TARGET_ROOT: ${{ github.workspace }}
@@ -1148,7 +1148,7 @@ jobs:
         working-directory: .manual-private-trusted
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           TARGET_ROOT: ${{ github.workspace }}
@@ -1185,14 +1185,14 @@ jobs:
           test ! -L "$daytona_root"
           test ! -L "$sdk_root"
           test -f "$daytona_root/pnpm-lock.yaml"
-          test "$(jq -r .name "$daytona_root/package.json")" = "@paperclipai/plugin-daytona"
-          test "$(jq -r .name "$sdk_root/package.json")" = "@paperclipai/plugin-sdk"
+          test "$(jq -r .name "$daytona_root/package.json")" = "@pilibalaai/plugin-daytona"
+          test "$(jq -r .name "$sdk_root/package.json")" = "@pilibalaai/plugin-sdk"
           (
             cd "$daytona_root"
             pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts
           )
           node scripts/link-plugin-dev-sdk.mjs
-          test "$(realpath "$daytona_root/node_modules/@paperclipai/plugin-sdk")" = "$(realpath "$sdk_root")"
+          test "$(realpath "$daytona_root/node_modules/@pilibalaai/plugin-sdk")" = "$(realpath "$sdk_root")"
           pnpm --dir "$daytona_root" build
           test -f "$daytona_root/dist/manifest.js"
           test -f "$daytona_root/dist/worker.js"
@@ -1200,11 +1200,11 @@ jobs:
 
       - name: Materialize verified pinned OpenCode executable
         if: matrix.environmentId == 'local' && (matrix.profileId == 'legacy-opencode' || startsWith(matrix.profileId, 'runner-opencode') || matrix.suiteId == 'openrouter-model-breadth')
-        run: node packages/paperclip-runner/scripts/materialize-opencode-binary.mjs
+        run: node packages/pilibala-runner/scripts/materialize-opencode-binary.mjs
 
       - name: Install checksum-verified Grok executable
         if: matrix.environmentId == 'local' && (matrix.profileId == 'runner-acpx-grok' || matrix.profileId == 'runner-acpx-grok-subscription')
-        run: sudo node packages/paperclip-runner/scripts/provision-grok.mjs /opt/paperclip/providers/grok/1.0.13/grok
+        run: sudo node packages/pilibala-runner/scripts/provision-grok.mjs /opt/pilibala/providers/grok/1.0.13/grok
 
       - name: Download immutable campaign outputs
         if: startsWith(matrix.profileId, 'runner-') || matrix.suiteId == 'openrouter-model-breadth'
@@ -1234,12 +1234,12 @@ jobs:
           tar --extract --gzip \
             --file runner-e2e-build/runner-e2e-build-bundle.tar.gz \
             --directory "$GITHUB_WORKSPACE"
-          test -d packages/paperclip-eval-kernel/dist
+          test -d packages/pilibala-eval-kernel/dist
           if [ "$NEEDS_RUNNER_TYPESCRIPT" = true ]; then
-            test -d packages/paperclip-runner/dist
+            test -d packages/pilibala-runner/dist
           fi
           if [ "$NEEDS_NATIVE_BINARY" = true ]; then
-            test -x packages/paperclip-runner/runner/target/debug/paperclip-runnerd
+            test -x packages/pilibala-runner/runner/target/debug/pilibala-runnerd
           fi
 
       - name: Verify and restore remote provider pack
@@ -1257,10 +1257,10 @@ jobs:
             --directory "$GITHUB_WORKSPACE"
           jq -e \
             --arg revision "$IMAGE_SOURCE_REVISION" \
-            '.schema == "paperclip-runner/remote-provider-pack/v1" and
+            '.schema == "pilibala-runner/remote-provider-pack/v1" and
              .payload.runnerSourceRevision == $revision and
              (.digest | test("^sha256:[0-9a-f]{64}$"))' \
-            packages/paperclip-runner/provider-pack/provider-pack.json >/dev/null
+            packages/pilibala-runner/provider-pack/provider-pack.json >/dev/null
 
       - name: Qualify local provider Node interpreter
         if: matrix.environmentId == 'local' && (startsWith(matrix.profileId, 'runner-opencode') || startsWith(matrix.profileId, 'runner-acpx-') || matrix.suiteId == 'openrouter-model-breadth')
@@ -1337,7 +1337,7 @@ jobs:
           try { restricted = readFileSync("/proc/sys/kernel/apparmor_restrict_unprivileged_userns", "utf8").trim(); } catch {}
           if (restricted !== "1") process.exit(0);
           const root = realpathSync(process.env.GITHUB_WORKSPACE);
-          const runnerRequire = createRequire(path.join(root, "packages/paperclip-runner/package.json"));
+          const runnerRequire = createRequire(path.join(root, "packages/pilibala-runner/package.json"));
           const acpRequire = createRequire(runnerRequire.resolve("@agentclientprotocol/codex-acp/package.json"));
           const codexRequire = createRequire(acpRequire.resolve("@openai/codex/package.json"));
           const arch = process.arch === "x64" ? "x64" : process.arch === "arm64" ? "arm64" : null;
@@ -1349,8 +1349,8 @@ jobs:
           if (!binary.startsWith(root + "/node_modules/.pnpm/") || !binary.endsWith(suffix) || !/^[/A-Za-z0-9_.@+\-]+$/.test(binary)) {
             throw new Error("Codex executable is outside the resolved dependency tree");
           }
-          const name = `paperclip-e2e-codex-${createHash("sha256").update(binary).digest("hex").slice(0,16)}`;
-          const profilePath = path.join(process.env.RUNNER_TEMP, "paperclip-codex-userns.apparmor");
+          const name = `pilibala-e2e-codex-${createHash("sha256").update(binary).digest("hex").slice(0,16)}`;
+          const profilePath = path.join(process.env.RUNNER_TEMP, "pilibala-codex-userns.apparmor");
           writeFileSync(profilePath, `abi <abi/4.0>,\ninclude <tunables/global>\nprofile ${name} "${binary}" flags=(unconfined) {\n  userns,\n}\n`, {mode:0o600, flag:"wx"});
           execFileSync("sudo", ["-n", "apparmor_parser", "-r", profilePath], {timeout:15000, stdio:"pipe"});
           NODE
@@ -1395,21 +1395,21 @@ jobs:
           EVAL_OPERATIONS_ENABLED: ${{ vars.RUNNER_FULL_STACK_E2E_OPERATIONS_ENABLED }}
           EVAL_OPERATING_OVERHEAD_JSON: ${{ needs.catalog.outputs.operating_overhead }}
           EVAL_TEST_RUNNER: ${{ needs.authorize.outputs.test_runner }}
-          PAPERCLIP_E2E_BRAINTRUST_PROJECT_ID: ${{ vars.RUNNER_E2E_BRAINTRUST_PROJECT_ID }}
+          PILIBALA_E2E_BRAINTRUST_PROJECT_ID: ${{ vars.RUNNER_E2E_BRAINTRUST_PROJECT_ID }}
         run: node cli/node_modules/tsx/dist/cli.mjs tests/runner-e2e/scheduled-operations.ts prepare
 
       - name: Run bounded campaign and retain feedback review
         if: needs.catalog.outputs.operations_cadence != ''
         env:
           BRAINTRUST_API_KEY: ${{ secrets.BRAINTRUST_API_KEY }}
-          PAPERCLIP_E2E_BRAINTRUST_PROJECT_ID: ${{ vars.RUNNER_E2E_BRAINTRUST_PROJECT_ID }}
-          PAPERCLIP_RUNNER_E2E_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
-          PAPERCLIP_RUNNER_E2E_SOURCE_REF: ${{ needs.authorize.outputs.target_ref }}
-          PAPERCLIP_PLAYWRIGHT_CHANNEL: ${{ needs.authorize.outputs.playwright_channel }}
+          PILIBALA_E2E_BRAINTRUST_PROJECT_ID: ${{ vars.RUNNER_E2E_BRAINTRUST_PROJECT_ID }}
+          PILIBALA_RUNNER_E2E_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
+          PILIBALA_RUNNER_E2E_SOURCE_REF: ${{ needs.authorize.outputs.target_ref }}
+          PILIBALA_PLAYWRIGHT_CHANNEL: ${{ needs.authorize.outputs.playwright_channel }}
         run: |
           set +e
           args=(--max-parallel 1 --max-automatic-retries 0)
-          while IFS= read -r id; do args+=(--id "$id"); done < <(jq -r '.executionIds[]' "$PAPERCLIP_E2E_OPERATIONS_MANIFEST")
+          while IFS= read -r id; do args+=(--id "$id"); done < <(jq -r '.executionIds[]' "$PILIBALA_E2E_OPERATIONS_MANIFEST")
           pnpm test:e2e:runner -- "${args[@]}"
           run_status=$?
           node cli/node_modules/tsx/dist/cli.mjs tests/runner-e2e/scheduled-finalization.ts
@@ -1419,7 +1419,7 @@ jobs:
       - name: Run paid cell
         if: needs.catalog.outputs.operations_cadence == '' && (steps.manual_cell_route.outputs.route == 'actions' || steps.manual_private_verified.outcome == 'success')
         env:
-          PAPERCLIP_RUNNER_E2E_PRIVATE_PREFLIGHT: ${{ steps.manual_private_verified.outcome == 'success' && format('{0}/preflight.json', steps.manual_private.outputs.root) || '' }}
+          PILIBALA_RUNNER_E2E_PRIVATE_PREFLIGHT: ${{ steps.manual_private_verified.outcome == 'success' && format('{0}/preflight.json', steps.manual_private.outputs.root) || '' }}
           PRIVATE_EVIDENCE_ROOT: ${{ steps.manual_private.outputs.root }}
           OPENAI_API_KEY: ${{ matrix.credentialName == 'OPENAI_API_KEY' && secrets.OPENAI_API_KEY || '' }}
           ANTHROPIC_API_KEY: ${{ matrix.credentialName == 'ANTHROPIC_API_KEY' && secrets.ANTHROPIC_API_KEY || '' }}
@@ -1428,15 +1428,15 @@ jobs:
           GROK_AUTH_JSON: ${{ matrix.credentialName == 'GROK_AUTH_JSON' && secrets.GROK_AUTH_JSON || '' }}
           COPILOT_GITHUB_TOKEN: ${{ matrix.credentialName == 'COPILOT_GITHUB_TOKEN' && secrets.COPILOT_GITHUB_TOKEN || '' }}
           DAYTONA_API_KEY: ${{ matrix.environmentId == 'daytona' && secrets.DAYTONA_API_KEY || '' }}
-          PAPERCLIP_E2E_DAYTONA_IMAGE: ${{ needs.daytona_image.outputs.image }}
-          PAPERCLIP_RUNNER_REMOTE_PROVIDER_PACK_PATH: ${{ github.workspace }}/packages/paperclip-runner/provider-pack
-          PAPERCLIP_E2E_CAMPAIGN_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.executionId }}
-          PAPERCLIP_E2E_ACCOUNTING_CAMPAIGN_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}
-          PAPERCLIP_RUNNER_E2E_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
-          PAPERCLIP_RUNNER_E2E_SOURCE_REF: ${{ needs.authorize.outputs.target_ref }}
-          PAPERCLIP_PLAYWRIGHT_CHANNEL: ${{ needs.authorize.outputs.playwright_channel }}
+          PILIBALA_E2E_DAYTONA_IMAGE: ${{ needs.daytona_image.outputs.image }}
+          PILIBALA_RUNNER_REMOTE_PROVIDER_PACK_PATH: ${{ github.workspace }}/packages/pilibala-runner/provider-pack
+          PILIBALA_E2E_CAMPAIGN_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.executionId }}
+          PILIBALA_E2E_ACCOUNTING_CAMPAIGN_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}
+          PILIBALA_RUNNER_E2E_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
+          PILIBALA_RUNNER_E2E_SOURCE_REF: ${{ needs.authorize.outputs.target_ref }}
+          PILIBALA_PLAYWRIGHT_CHANNEL: ${{ needs.authorize.outputs.playwright_channel }}
         run: |
-          if [ -n "$PAPERCLIP_RUNNER_E2E_PRIVATE_PREFLIGHT" ]; then
+          if [ -n "$PILIBALA_RUNNER_E2E_PRIVATE_PREFLIGHT" ]; then
             pnpm test:e2e:runner -- --id "${{ matrix.executionId }}" > "$PRIVATE_EVIDENCE_ROOT/launcher-output.log" 2>&1
           else
             pnpm test:e2e:runner -- --id "${{ matrix.executionId }}"
@@ -1475,7 +1475,7 @@ jobs:
         working-directory: .manual-private-trusted
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           TARGET_ROOT: ${{ github.workspace }}
@@ -1577,7 +1577,7 @@ jobs:
         if: needs.authorize.outputs.evidence_retention == 'private'
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET: ${{ vars.RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET }}
@@ -1616,7 +1616,7 @@ jobs:
         if: steps.manual_read_credentials_0.outcome == 'success'
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET: ${{ vars.RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET }}
@@ -1648,7 +1648,7 @@ jobs:
         if: steps.manual_read_credentials_1.outcome == 'success'
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET: ${{ vars.RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET }}
@@ -1680,7 +1680,7 @@ jobs:
         if: steps.manual_read_credentials_2.outcome == 'success'
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET: ${{ vars.RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET }}
@@ -1712,7 +1712,7 @@ jobs:
         if: steps.manual_read_credentials_3.outcome == 'success'
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET: ${{ vars.RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET }}
@@ -1744,7 +1744,7 @@ jobs:
         if: steps.manual_read_credentials_4.outcome == 'success'
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET: ${{ vars.RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET }}
@@ -1776,7 +1776,7 @@ jobs:
         if: steps.manual_read_credentials_5.outcome == 'success'
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET: ${{ vars.RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET }}
@@ -1808,7 +1808,7 @@ jobs:
         if: steps.manual_read_credentials_6.outcome == 'success'
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET: ${{ vars.RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET }}
@@ -1840,7 +1840,7 @@ jobs:
         if: steps.manual_read_credentials_7.outcome == 'success'
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET: ${{ vars.RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET }}
@@ -1860,7 +1860,7 @@ jobs:
         if: steps.manual_report.outcome == 'success'
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           PRIVATE_REPORT_ROOT: ${{ github.workspace }}
@@ -1930,12 +1930,12 @@ jobs:
       - name: Select latest workflow attempt per cell
         if: always() && needs.catalog.outputs.operations_cadence == '' && needs.authorize.outputs.evidence_retention == 'actions'
         env:
-          PAPERCLIP_RUNNER_E2E_ARTIFACT_ROOT: ${{ github.workspace }}/downloaded-runner-e2e
-          PAPERCLIP_RUNNER_E2E_SELECTED_ROOT: ${{ github.workspace }}/selected-runner-e2e
-          PAPERCLIP_RUNNER_E2E_JOBS_JSON: ${{ github.workspace }}/runner-e2e-jobs.json
-          PAPERCLIP_RUNNER_E2E_EXPECTED_IDS: ${{ needs.catalog.outputs.execution_ids }}
-          PAPERCLIP_RUNNER_E2E_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
-          PAPERCLIP_RUNNER_E2E_SOURCE_REF: ${{ needs.authorize.outputs.target_ref }}
+          PILIBALA_RUNNER_E2E_ARTIFACT_ROOT: ${{ github.workspace }}/downloaded-runner-e2e
+          PILIBALA_RUNNER_E2E_SELECTED_ROOT: ${{ github.workspace }}/selected-runner-e2e
+          PILIBALA_RUNNER_E2E_JOBS_JSON: ${{ github.workspace }}/runner-e2e-jobs.json
+          PILIBALA_RUNNER_E2E_EXPECTED_IDS: ${{ needs.catalog.outputs.execution_ids }}
+          PILIBALA_RUNNER_E2E_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
+          PILIBALA_RUNNER_E2E_SOURCE_REF: ${{ needs.authorize.outputs.target_ref }}
         run: node cli/node_modules/tsx/dist/cli.mjs tests/runner-e2e/select-rerun-artifacts.ts
 
       - name: Preserve bounded campaign evidence and journal
@@ -1946,15 +1946,15 @@ jobs:
           set -euo pipefail
           artifact="downloaded-runner-e2e/runner-e2e-$RUN_ID-1-scheduled-campaign"
           directory="$GITHUB_WORKSPACE/selected-runner-e2e/runner-e2e-$RUN_ID-1-scheduled-campaign/scheduled"
-          echo "PAPERCLIP_E2E_OPERATIONS_LEDGER=$directory/ledger.jsonl" >> "$GITHUB_ENV"
+          echo "PILIBALA_E2E_OPERATIONS_LEDGER=$directory/ledger.jsonl" >> "$GITHUB_ENV"
           test -d "$artifact"
           mkdir -p selected-runner-e2e
           cp -R "$artifact" selected-runner-e2e/
           if [ -f "$directory/feedback-review.json" ]; then
-            echo "PAPERCLIP_E2E_FEEDBACK_REVIEW=$directory/feedback-review.json" >> "$GITHUB_ENV"
+            echo "PILIBALA_E2E_FEEDBACK_REVIEW=$directory/feedback-review.json" >> "$GITHUB_ENV"
           fi
           if [ -f "$directory/experiment-receipt.json" ]; then
-            echo "PAPERCLIP_E2E_BRAINTRUST_EXPERIMENT=$directory/experiment-receipt.json" >> "$GITHUB_ENV"
+            echo "PILIBALA_E2E_BRAINTRUST_EXPERIMENT=$directory/experiment-receipt.json" >> "$GITHUB_ENV"
           fi
 
       - name: Collect blob reports
@@ -1972,7 +1972,7 @@ jobs:
       - name: Merge Playwright HTML and JUnit
         if: always()
         env:
-          PAPERCLIP_RUNNER_E2E_MERGED_REPORT_DIR: ${{ github.workspace }}/runner-e2e-merged-report
+          PILIBALA_RUNNER_E2E_MERGED_REPORT_DIR: ${{ github.workspace }}/runner-e2e-merged-report
         run: |
           if [ "${{ needs.authorize.outputs.evidence_retention }}" = private ]; then
             mkdir -p runner-e2e-merged-report
@@ -1984,14 +1984,14 @@ jobs:
       - name: Aggregate normalized campaign results
         if: always()
         env:
-          PAPERCLIP_RUNNER_E2E_REPORT_ROOT: ${{ github.workspace }}/selected-runner-e2e
-          PAPERCLIP_RUNNER_E2E_REPORT_OUT: ${{ github.workspace }}/runner-e2e-merged-report/normalized
-          PAPERCLIP_RUNNER_E2E_EXPECTED_IDS: ${{ needs.catalog.outputs.execution_ids }}
-          PAPERCLIP_E2E_CAMPAIGN_ID: ${{ needs.catalog.outputs.operations_cadence != '' && format('gha-{0}-1-scheduled-campaign', github.run_id) || format('gha-{0}-{1}', github.run_id, github.run_attempt) }}
-          PAPERCLIP_RUNNER_E2E_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
-          PAPERCLIP_RUNNER_E2E_SOURCE_REF: ${{ needs.authorize.outputs.target_ref }}
-          PAPERCLIP_RUNNER_E2E_HISTORY_PUBLIC_BASE_URL: ${{ needs.catalog.outputs.operations_cadence == '' && needs.authorize.outputs.evidence_retention == 'actions' && vars.RUNNER_E2E_HISTORY_PUBLIC_BASE_URL || '' }}
-          PAPERCLIP_RUNNER_E2E_HISTORY_PREFIX: ${{ vars.RUNNER_E2E_HISTORY_PREFIX || 'runner-e2e' }}
+          PILIBALA_RUNNER_E2E_REPORT_ROOT: ${{ github.workspace }}/selected-runner-e2e
+          PILIBALA_RUNNER_E2E_REPORT_OUT: ${{ github.workspace }}/runner-e2e-merged-report/normalized
+          PILIBALA_RUNNER_E2E_EXPECTED_IDS: ${{ needs.catalog.outputs.execution_ids }}
+          PILIBALA_E2E_CAMPAIGN_ID: ${{ needs.catalog.outputs.operations_cadence != '' && format('gha-{0}-1-scheduled-campaign', github.run_id) || format('gha-{0}-{1}', github.run_id, github.run_attempt) }}
+          PILIBALA_RUNNER_E2E_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
+          PILIBALA_RUNNER_E2E_SOURCE_REF: ${{ needs.authorize.outputs.target_ref }}
+          PILIBALA_RUNNER_E2E_HISTORY_PUBLIC_BASE_URL: ${{ needs.catalog.outputs.operations_cadence == '' && needs.authorize.outputs.evidence_retention == 'actions' && vars.RUNNER_E2E_HISTORY_PUBLIC_BASE_URL || '' }}
+          PILIBALA_RUNNER_E2E_HISTORY_PREFIX: ${{ vars.RUNNER_E2E_HISTORY_PREFIX || 'runner-e2e' }}
           EVIDENCE_RETENTION: ${{ needs.authorize.outputs.evidence_retention }}
           EVAL_OPERATIONS_CADENCE: ${{ needs.catalog.outputs.operations_cadence }}
         run: |
@@ -2055,7 +2055,7 @@ jobs:
         if: always() && steps.manual_report_credentials.outcome == 'success' && steps.manual_cells_downloaded.outcome == 'success'
         env:
           MANUAL_PRIVATE_IDS: ${{ needs.authorize.outputs.manual_private_ids }}
-          PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: v1
+          PILIBALA_MANUAL_DISPATCH_AUTHORITY: v1
           MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: ${{ vars.RUNNER_E2E_ALLOWED_ACTOR_IDS }}
           TARGET_SHA: ${{ needs.authorize.outputs.target_sha }}
           RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET: ${{ vars.RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET }}
@@ -2130,7 +2130,7 @@ jobs:
         if: always()
         with:
           allurectl-version: '2.23.1'
-          allure-endpoint: https://paperclip.testops.cloud
+          allure-endpoint: https://pilibala.testops.cloud
           allure-project-id: '1'
           allure-token: ${{ secrets.ALLURE_TOKEN }}
       - name: Project original verdicts and explicitly report missing results
@@ -2207,7 +2207,7 @@ jobs:
 
       - name: Publish trusted summary and declared screenshots to public bundles
         env:
-          PAPERCLIP_RUNNER_E2E_REPORT_DIR: ${{ github.workspace }}/runner-e2e-merged-report/normalized
+          PILIBALA_RUNNER_E2E_REPORT_DIR: ${{ github.workspace }}/runner-e2e-merged-report/normalized
           RUNNER_E2E_HISTORY_S3_BUCKET: ${{ vars.RUNNER_E2E_HISTORY_S3_BUCKET }}
           RUNNER_E2E_HISTORY_PREFIX: ${{ vars.RUNNER_E2E_HISTORY_PREFIX || 'runner-e2e' }}
           RUNNER_E2E_HISTORY_PUBLIC_BASE_URL: ${{ vars.RUNNER_E2E_HISTORY_PUBLIC_BASE_URL }}

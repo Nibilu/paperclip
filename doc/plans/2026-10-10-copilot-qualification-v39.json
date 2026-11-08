@@ -1,5 +1,5 @@
 {
-  "schema": "paperclip.copilot.production-progress/v39",
+  "schema": "pilibala.copilot.production-progress/v39",
   "sourceRevision": "254926af530819fa3e5e27037c717761d2b2f76a",
   "runtimeSourceRevision": "254926af530819fa3e5e27037c717761d2b2f76a",
   "masterBaseline": "0726a00e80f392598b17b847a2bb7fa663f25dcd",
@@ -330,7 +330,7 @@
   "cloudBuild": {
     "runId": 37986730659,
     "sourceRevision": "254926af530819fa3e5e27037c717761d2b2f76a",
-    "url": "https://github.com/paperclipai/paperclip/actions/runs/37986730659",
+    "url": "https://github.com/pilibalaai/pilibala/actions/runs/37986730659",
     "dockerBuildsLocal": 0,
     "publicationRequested": false
   },

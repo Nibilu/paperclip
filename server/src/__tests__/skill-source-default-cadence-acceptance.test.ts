@@ -7,7 +7,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { describe, expect, it } from 'vitest';
-import { applyPendingMigrations, createDb } from '@paperclipai/db';
+import { applyPendingMigrations, createDb } from '@pilibalaai/db';
 import { resolveExternalTestDatabaseUrl } from './helpers/external-test-database.js';
 import { githubFixture } from './helpers/github-skills.js';
 import { startMaintenanceServer, withMaintenanceProvider } from './helpers/maintenance/server-harness.js';
@@ -15,18 +15,18 @@ import { createMaintenanceS3Boundary } from './helpers/maintenance/s3-boundary.j
 import { provisionManagedSleepCompany, managedTenantActor } from './helpers/maintenance/managed-profile.js';
 import { startDefaultCadenceBridge } from './helpers/maintenance/default-cadence-bridge.js';
 
-const enabled = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_ACCEPTANCE === '1';
-const stage = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_STAGE ?? 'two-cycle';
+const enabled = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_ACCEPTANCE === '1';
+const stage = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_STAGE ?? 'two-cycle';
 if (enabled && !['bootstrap', 'two-cycle'].includes(stage)) throw new Error('Default cadence stage must be bootstrap or two-cycle');
 if (enabled) installDefaultCadenceNetwork();
-const databaseUrl = resolveExternalTestDatabaseUrl('PAPERCLIP_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL');
-const cloudDatabaseUrl = resolveExternalTestDatabaseUrl('PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL');
-const cloudCheckout = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT;
-const cloudSha = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_SHA;
-const cloudNode = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_NODE;
-const evidence = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_EVIDENCE;
+const databaseUrl = resolveExternalTestDatabaseUrl('PILIBALA_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL');
+const cloudDatabaseUrl = resolveExternalTestDatabaseUrl('PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL');
+const cloudCheckout = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT;
+const cloudSha = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_SHA;
+const cloudNode = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_NODE;
+const evidence = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_EVIDENCE;
 if (enabled && (!databaseUrl || !cloudDatabaseUrl || !cloudCheckout || !cloudNode || !evidence || !/^[a-f0-9]{40}$/.test(cloudSha ?? '')
-  || process.env.PAPERCLIP_MAINTENANCE_KEEP_ARTIFACTS !== '1')) throw new Error('Default cadence witness requires two explicit owned DBs, pinned Cloud checkout/Node22, and retained evidence');
+  || process.env.PILIBALA_MAINTENANCE_KEEP_ARTIFACTS !== '1')) throw new Error('Default cadence witness requires two explicit owned DBs, pinned Cloud checkout/Node22, and retained evidence');
 
 
 
@@ -176,7 +176,7 @@ describe.skipIf(!enabled)('default skill cadence actual signed host handoff', ()
     } finally {
       try { await bridge?.close(); } finally { await server?.stop(); }
       expect(defaultCadenceNetwork().offhostAttempts).toEqual([]);
-      const events = (await readFile(process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG!, 'utf8')).trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
+      const events = (await readFile(process.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG!, 'utf8')).trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
       expect(events.filter(event => event.event === 'blocked')).toEqual([]);
       for (const pid of [process.pid, process.ppid, ...childPids]) {
         expect(events).toContainEqual(expect.objectContaining({ event: 'preloaded', pid, sourceHash: defaultCadenceNetwork().sourceHash }));

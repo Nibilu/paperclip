@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
-import { environmentLeases, heartbeatRuns, executionWorkspaces, executionWorkspaceSnapshots, type Db } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority, remoteWorkspaceRunReferenceSchema, type EnvironmentLease } from "@paperclipai/shared";
+import { environmentLeases, heartbeatRuns, executionWorkspaces, executionWorkspaceSnapshots, type Db } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority, remoteWorkspaceRunReferenceSchema, type EnvironmentLease } from "@pilibalaai/shared";
 import { hasRemoteTerminationReceipt } from "./remote-execution-termination.js";
 
 type Workspace = Pick<typeof executionWorkspaces.$inferSelect, "id" | "companyId" | "metadata">;

@@ -45,9 +45,9 @@ export const LOCKED_PROVIDERS = ["packages/plugins/sandbox-providers/daytona"];
 export const PROGRAMS = [
   "packages/db/tsconfig.test.json",
   "packages/kv-demo-mcp-server/tsconfig.test.json",
-  "packages/paperclip-runner/tsconfig.browser.test.json",
-  "packages/paperclip-runner/tsconfig.surfaces.test.json",
-  "packages/paperclip-runner/tsconfig.test.json",
+  "packages/pilibala-runner/tsconfig.browser.test.json",
+  "packages/pilibala-runner/tsconfig.surfaces.test.json",
+  "packages/pilibala-runner/tsconfig.test.json",
   "packages/plugins/examples/plugin-orchestration-smoke-example/tsconfig.test.json",
   "packages/plugins/plugin-workspace-diff/tsconfig.test.json",
   "packages/plugins/sdk/tsconfig.test.json",
@@ -60,8 +60,8 @@ export const PROGRAMS = [
 export const CHECKED_ELSEWHERE = ["server/src/"];
 
 const PREPARE_STEPS = [
-  ["--filter", "@paperclipai/plugin-sdk", "ensure-build-deps"],
-  ["--filter", "@paperclipai/paperclip-runner", "run", "ensure:eval-build-deps"],
+  ["--filter", "@pilibalaai/plugin-sdk", "ensure-build-deps"],
+  ["--filter", "@pilibalaai/pilibala-runner", "run", "ensure:eval-build-deps"],
 ];
 // Replacing a provider's standalone node_modules would otherwise ask for confirmation.
 const INSTALL_ARGS = ["install", "--frozen-lockfile", "--ignore-scripts", "--prefer-offline", "--config.confirmModulesPurge=false"];

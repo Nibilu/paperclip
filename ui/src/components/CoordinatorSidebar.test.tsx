@@ -3,7 +3,7 @@ import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Agent, AttentionFeed, AttentionItem } from "@paperclipai/shared";
+import type { Agent, AttentionFeed, AttentionItem } from "@pilibalaai/shared";
 import { buildPinnedNavigationItems, CoordinatorSidebar } from "./CoordinatorSidebar";
 import { TooltipProvider } from "./ui/tooltip";
 import { coordinatorAttentionQueryKey, coordinatorAttentionSummaryQueryKey } from "@/lib/coordinator-attention";
@@ -108,11 +108,11 @@ describe("Coordinator pinned pages", () => {
   it("keeps mixed pins in stored order and prevents native link dragging", async () => {
     fixture.agents = [{ id: "cto", companyId: "company", name: "CTO", urlKey: "cto", role: "cto", status: "idle" } as Agent];
     const saved = ["agent-chat:company:cto", "agent-chat:another-company:hidden", "/artifacts", "/dashboard"];
-    localStorage.setItem("paperclip.coordinator.pinned-nav.v1:reviewer", JSON.stringify(saved));
+    localStorage.setItem("pilibala.coordinator.pinned-nav.v1:reviewer", JSON.stringify(saved));
     await renderSidebar();
     const links = [...container.querySelectorAll<HTMLAnchorElement>(".design-sidebar-pins a")];
     expect(links.map(link => link.textContent)).toEqual(["CTO", "Artifacts", "Dashboard"]);
-    expect(JSON.parse(localStorage.getItem("paperclip.coordinator.pinned-nav.v1:reviewer")!)).toEqual(saved);
+    expect(JSON.parse(localStorage.getItem("pilibala.coordinator.pinned-nav.v1:reviewer")!)).toEqual(saved);
     const nativeDrag = new Event("dragstart", { bubbles: true, cancelable: true });
     act(() => links[1].dispatchEvent(nativeDrag));
     expect(nativeDrag.defaultPrevented).toBe(true);
@@ -163,7 +163,7 @@ describe("Coordinator pinned pages", () => {
   });
 
   it("keeps pins personal and only renders known destinations", async () => {
-    localStorage.setItem("paperclip.coordinator.pinned-nav.v1:reviewer", JSON.stringify(["/routines", "/projects", "/unknown", "https://example.com"]));
+    localStorage.setItem("pilibala.coordinator.pinned-nav.v1:reviewer", JSON.stringify(["/routines", "/projects", "/unknown", "https://example.com"]));
     await renderSidebar();
     expect(Array.from(navigation().querySelectorAll("a")).map(link => link.getAttribute("href")))
       .toEqual(["/chats", "/issues", "/decisions", "/routines", "/projects"]);
@@ -177,7 +177,7 @@ describe("Coordinator pinned pages", () => {
 
   it("reflects pins changed in another browser tab", async () => {
     await renderSidebar();
-    const key = "paperclip.coordinator.pinned-nav.v1:reviewer";
+    const key = "pilibala.coordinator.pinned-nav.v1:reviewer";
     await act(async () => {
       localStorage.setItem(key, JSON.stringify(["/agents/all"]));
       window.dispatchEvent(new StorageEvent("storage", { key }));
@@ -269,7 +269,7 @@ describe("Coordinator task status glyphs (BUG-07)", () => {
   const glyph = (href: string) => container.querySelector<SVGElement>(`a[href="${href}"] svg[role="img"]`);
 
   it("shows a covered-blocked recent task with the same queued glyph and label as the task pane", async () => {
-    fixture.recentTasks = [{ id: "task-1", companyId: "company", identifier: "ONB-1", title: "Paperclip onboarding",
+    fixture.recentTasks = [{ id: "task-1", companyId: "company", identifier: "ONB-1", title: "Pilibala onboarding",
       status: "blocked", displayStatus: "blocked", externalConversationState: null, blockerAttention: covered, recordedAt: 1 }];
     await renderSidebar();
     expect(glyph("/issues/ONB-1")?.style.color).toBe("var(--status-task-icon-in_queue)");

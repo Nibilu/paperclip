@@ -13,7 +13,7 @@ if (send) process.send = function(message: unknown, ...args: unknown[]) {
   const value = message && typeof message === 'object' ? { ...message, defaultCadenceGuard: defaultCadenceNetwork() } : message;
   return Reflect.apply(send, process, [value, ...args]);
 } as NonNullable<typeof process.send>;
-const origin = process.env.PAPERCLIP_MAINTENANCE_GITHUB_ORIGIN;
+const origin = process.env.PILIBALA_MAINTENANCE_GITHUB_ORIGIN;
 assert(origin && new URL(origin).hostname === '127.0.0.1');
 const actual = await import('../../../services/skill-source-git-snapshot.js');
 const open: typeof openGitSkillSnapshot = async (input, options = {}) => {

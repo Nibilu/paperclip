@@ -5,13 +5,13 @@ import { markCachedSession, verifyCachedSession, hasUnverifiedSession } from "./
 import { queryKeys } from "./queryKeys";
 import { createUuid } from "./uuid";
 
-export const QUERY_CACHE_PREFIX = "paperclip:query-cache:v1:";
+export const QUERY_CACHE_PREFIX = "pilibala:query-cache:v1:";
 export const QUERY_CACHE_ACTIVE = `${QUERY_CACHE_PREFIX}active`;
-export const QUERY_CACHE_CLEARED = "paperclip:query-cache-cleared";
+export const QUERY_CACHE_CLEARED = "pilibala:query-cache-cleared";
 export const QUERY_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 export const QUERY_CACHE_MAX_ISSUES = 20;
 const MAX_RECORD_BYTES = 2 * 1024 * 1024;
-const REVISION_PREFIX = "paperclip:query-cache-revision:";
+const REVISION_PREFIX = "pilibala:query-cache-revision:";
 const controllers = new WeakMap<QueryClient, { clear: () => void }>();
 type CacheStorage = Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length">;
 type Envelope = { version: 1; userId: string; companyId: string | null; buildId: string; revision: string | null; savedAt: number; state: DehydratedState };

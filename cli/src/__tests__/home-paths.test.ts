@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   describeLocalInstancePaths,
   expandHomePrefix,
-  resolvePaperclipHomeDir,
-  resolvePaperclipInstanceId,
+  resolvePilibalaHomeDir,
+  resolvePilibalaInstanceId,
 } from "../config/home.js";
 
 const ORIGINAL_ENV = { ...process.env };
@@ -16,10 +16,10 @@ describe("home path resolution", () => {
     process.env = { ...ORIGINAL_ENV };
   });
 
-  it("defaults to ~/.paperclip and default instance", () => {
-    const home = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-home-paths-"));
-    process.env.PAPERCLIP_HOME = home;
-    delete process.env.PAPERCLIP_INSTANCE_ID;
+  it("defaults to ~/.pilibala and default instance", () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "pilibala-home-paths-"));
+    process.env.PILIBALA_HOME = home;
+    delete process.env.PILIBALA_INSTANCE_ID;
 
     const paths = describeLocalInstancePaths();
     expect(paths.homeDir).toBe(home);
@@ -27,16 +27,16 @@ describe("home path resolution", () => {
     expect(paths.configPath).toBe(path.resolve(home, "instances", "default", "config.json"));
   });
 
-  it("supports PAPERCLIP_HOME and explicit instance ids", () => {
-    process.env.PAPERCLIP_HOME = "~/paperclip-home";
+  it("supports PILIBALA_HOME and explicit instance ids", () => {
+    process.env.PILIBALA_HOME = "~/pilibala-home";
 
-    const home = resolvePaperclipHomeDir();
-    expect(home).toBe(path.resolve(os.homedir(), "paperclip-home"));
-    expect(resolvePaperclipInstanceId("dev_1")).toBe("dev_1");
+    const home = resolvePilibalaHomeDir();
+    expect(home).toBe(path.resolve(os.homedir(), "pilibala-home"));
+    expect(resolvePilibalaInstanceId("dev_1")).toBe("dev_1");
   });
 
   it("rejects invalid instance ids", () => {
-    expect(() => resolvePaperclipInstanceId("bad/id")).toThrow(/Invalid PAPERCLIP_INSTANCE_ID/);
+    expect(() => resolvePilibalaInstanceId("bad/id")).toThrow(/Invalid PILIBALA_INSTANCE_ID/);
   });
 
   it("expands ~ prefixes", () => {

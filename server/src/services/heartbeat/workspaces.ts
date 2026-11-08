@@ -13,12 +13,12 @@ import { addNestedRepositoryWorktree, isVerifiedNestedRepositoryBase, nestedRepo
 export { materializeManagedProjectWorkspace } from "../managed-repository-checkout.js";
 import { sql } from "drizzle-orm";
 import { materializeIsolatedTaskDirectory } from "../isolated-task-directory.js";
-import { readConnectionFailure, type GitConnectionFailure } from "@paperclipai/adapter-utils/connection-failure";
+import { readConnectionFailure, type GitConnectionFailure } from "@pilibalaai/adapter-utils/connection-failure";
 import { managedAiSessionFingerprintConfig } from "../ai-connection-runtime.js";
 import {
   PROJECT_REPOSITORIES_DIR,
   readGitWorkspaceSnapshot,
-} from "@paperclipai/adapter-utils/git-workspace-sync";
+} from "@pilibalaai/adapter-utils/git-workspace-sync";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { localRepositoryPath } from "../local-repository-path.js";
@@ -33,18 +33,18 @@ import {
   asc,
   eq,
 } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   type ExecutionWorkspace,
   type ExecutionWorkspaceConfig,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   agents,
   heartbeatRuns,
   issues,
   projects,
   projectWorkspaces,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { logger } from "../../middleware/logger.js";
 import {
   createGitRemoteAuthProvider,
@@ -58,7 +58,7 @@ import {
 import {
   resolveDefaultAgentWorkspaceDir,
   resolveManagedProjectWorkspaceDir,
-  resolvePaperclipInstanceRoot,
+  resolvePilibalaInstanceRoot,
 } from "../../home-paths.js";
 import {
   formatManagedGitWorktreeBranchInspection,
@@ -99,13 +99,13 @@ import {
 
 const execFile = promisify(execFileCallback);
 
-const REPO_ONLY_CWD_SENTINEL = "/__paperclip_repo_only__";
+const REPO_ONLY_CWD_SENTINEL = "/__pilibala_repo_only__";
 
 
 export const WORKSPACE_VALIDATION_FAILURE_CODE = "workspace_validation_failed";
 
 const GITHUB_PR_WORKFLOW_SKILL_KEY =
-  "paperclipai/bundled/software-development/github-pr-workflow";
+  "pilibalaai/bundled/software-development/github-pr-workflow";
 
 const GITHUB_PR_WORKFLOW_SKILL_SLUG = "github-pr-workflow";
 
@@ -566,7 +566,7 @@ export async function prepareProjectRepositoryWorkspaces(input: {
   const active = new Set(results.map((repo) => path.basename(repo.cwd)));
   for (const entry of await fs.readdir(root)) {
     if (active.has(entry) || entry.startsWith("task-repo-") || entry.includes(".clone-")) continue;
-    const retained = path.join(input.cwd, ".paperclip-runtime", "detached-repositories", randomUUID());
+    const retained = path.join(input.cwd, ".pilibala-runtime", "detached-repositories", randomUUID());
     const linked = await readLinkedNestedCheckout(path.join(root, entry)).catch(() => null);
     await fs.mkdir(path.dirname(retained), { recursive: true });
     await fs.rename(path.join(root, entry), retained);
@@ -1001,7 +1001,7 @@ export async function assertGitWorktreeBaseWorkspaceReady(input: {
       materializationFailures.length > 0
         ? "git_worktree_base_materialization_failed"
         : "git_worktree_base_agent_home",
-      `Issue ${issueLabel} requested ${input.requestedExecutionWorkspaceMode} with git_worktree, but no usable project repository was available${sourceFailure ? ` (${sourceFailure})` : ""}; refusing to create a git worktree from Paperclip fallback directory "${input.base.baseCwd}". Repair the configured project workspace or repository access, then retry.`,
+      `Issue ${issueLabel} requested ${input.requestedExecutionWorkspaceMode} with git_worktree, but no usable project repository was available${sourceFailure ? ` (${sourceFailure})` : ""}; refusing to create a git worktree from Pilibala fallback directory "${input.base.baseCwd}". Repair the configured project workspace or repository access, then retry.`,
       { baseCwdFallback: input.anchor?.baseCwdFallback ?? false, materializationFailures },
     );
   }
@@ -1447,7 +1447,7 @@ export function buildAnchorFallbackWorkspaceNotes(input: {
 
 /**
  * Build the plural workspace list that a run exposes to the agent through the
- * `PAPERCLIP_WORKSPACES_JSON` environment variable. The list joins the anchor
+ * `PILIBALA_WORKSPACES_JSON` environment variable. The list joins the anchor
  * project's alternative workspace rows with the read-only referenced (mentioned)
  * project workspaces, so every execution target receives the referenced project
  * paths through the same channel the run already uses for the anchor project.
@@ -1503,7 +1503,7 @@ export function prioritizeProjectWorkspaceCandidatesForRun<
  * the anchor project's workspace exactly as before — the referenced set is inert.
  */
 export const MULTI_PROJECT_WORKSPACE_SYNC_ENV =
-  "PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC";
+  "PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC";
 
 /**
  * True when an environment value explicitly turns a flag off. An unset value is
@@ -1556,7 +1556,7 @@ export function isRemoteExecutionEnvironmentDriver(
  * runs no referenced-project authorization or staging and reverts to the remote drop path.
  */
 export const MULTI_PROJECT_WORKSPACE_SYNC_REMOTE_ENV =
-  "PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE";
+  "PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE";
 
 export function isMultiProjectWorkspaceSyncRemoteEnabled(
   env: Record<string, string | undefined> = process.env,
@@ -2122,21 +2122,21 @@ export function resolveRuntimeSessionParamsForWorkspace(input: {
   };
 }
 
-const SESSION_AI_CREDENTIAL_IDENTITY_KEY = "paperclipAiCredentialIdentity";
+const SESSION_AI_CREDENTIAL_IDENTITY_KEY = "pilibalaAiCredentialIdentity";
 
-const SESSION_CONFIGURED_MODEL_KEY = "__paperclipConfiguredModel";
+const SESSION_CONFIGURED_MODEL_KEY = "__pilibalaConfiguredModel";
 
-const SESSION_CONFIG_FINGERPRINT_KEY = "__paperclipConfigFingerprint";
+const SESSION_CONFIG_FINGERPRINT_KEY = "__pilibalaConfigFingerprint";
 
 const SESSION_CONFIG_FINGERPRINT_VERSION_KEY =
-  "__paperclipConfigFingerprintVersion";
+  "__pilibalaConfigFingerprintVersion";
 
-const SESSION_CONFIG_CATEGORIES_KEY = "__paperclipConfigCategories";
+const SESSION_CONFIG_CATEGORIES_KEY = "__pilibalaConfigCategories";
 
 const SESSION_CONFIG_CATEGORY_FINGERPRINTS_KEY =
-  "__paperclipConfigCategoryFingerprints";
+  "__pilibalaConfigCategoryFingerprints";
 
-const PAPERCLIP_SESSION_METADATA_KEYS = new Set([
+const PILIBALA_SESSION_METADATA_KEYS = new Set([
   SESSION_AI_CREDENTIAL_IDENTITY_KEY,
   SESSION_CONFIGURED_MODEL_KEY,
   SESSION_CONFIG_FINGERPRINT_KEY,
@@ -2639,7 +2639,7 @@ export function buildWorkspaceConfigFreshnessOperation(
       previousWorkspaceId: input.previousWorkspaceId,
       activeWorkspaceId: input.activeWorkspaceId,
     },
-    system: `[paperclip] ${(input.workspaceReused && input.decision.action === "replace"
+    system: `[pilibala] ${(input.workspaceReused && input.decision.action === "replace"
       ? "reused execution workspace" : workspaceConfigFreshnessActionLabel(input.decision.action))} after config freshness check${categorySummary}: ${reasonSummary}\n`,
   };
 }
@@ -2887,7 +2887,7 @@ export async function buildEffectiveRunSessionConfigMetadata(input: {
   // agents. Fingerprint an unset lifecycle as that stored value so clearing it
   // keeps saved task sessions and their provider history. An explicit change
   // to warm still starts a new session.
-  if (input.adapterType === "paperclip_runner" && effectiveAdapterConfig.lifecycleMode === undefined) {
+  if (input.adapterType === "pilibala_runner" && effectiveAdapterConfig.lifecycleMode === undefined) {
     effectiveAdapterConfig.lifecycleMode = "per_turn";
   }
   if (input.managedInstructions && !input.retainManagedInstructionPaths) {
@@ -2902,8 +2902,8 @@ export async function buildEffectiveRunSessionConfigMetadata(input: {
       ? { key: skill.key, runtimeName: skill.runtimeName, versionId: skill.versionId }
       : entry;
   }) : value;
-  if (effectiveAdapterConfig.paperclipRuntimeSkills !== undefined) {
-    effectiveAdapterConfig.paperclipRuntimeSkills = versionedSkills(effectiveAdapterConfig.paperclipRuntimeSkills);
+  if (effectiveAdapterConfig.pilibalaRuntimeSkills !== undefined) {
+    effectiveAdapterConfig.pilibalaRuntimeSkills = versionedSkills(effectiveAdapterConfig.pilibalaRuntimeSkills);
   }
   const categoryValues = buildSessionConfigCategoryValues({
     adapterType: input.adapterType,
@@ -3187,7 +3187,7 @@ export function readConfiguredModelFromAdapterConfig(
   return readNonEmptyString(adapterConfig?.model);
 }
 
-export function attachPaperclipSessionMetadataToSessionParams(
+export function attachPilibalaSessionMetadataToSessionParams(
   sessionParams: Record<string, unknown> | null | undefined,
   configuredModel: string | null,
   configMetadata?: EffectiveRunSessionConfigMetadata | null,
@@ -3231,12 +3231,12 @@ export function stripConfiguredModelFromSessionParams(
   return next;
 }
 
-export function stripPaperclipSessionMetadataFromSessionParams(
+export function stripPilibalaSessionMetadataFromSessionParams(
   sessionParams: Record<string, unknown> | null | undefined,
 ) {
   if (!sessionParams) return null;
   const next = { ...sessionParams };
-  for (const key of PAPERCLIP_SESSION_METADATA_KEYS) {
+  for (const key of PILIBALA_SESSION_METADATA_KEYS) {
     delete next[key];
   }
   return next;
@@ -3437,7 +3437,7 @@ export function createHeartbeatWorkspaceResolver(db: Db) {
       workspace,
       boundProjectWorkspace,
       candidateBaseCwds,
-      managedSourceRoot: resolvePaperclipInstanceRoot(),
+      managedSourceRoot: resolvePilibalaInstanceRoot(),
       materializeOriginalRepository: workspace.repoUrl && workspace.projectId ? async () => {
         const original = await ensureManagedProjectWorkspace({
           companyId: agent.companyId,
@@ -3547,7 +3547,7 @@ export function createHeartbeatWorkspaceResolver(db: Db) {
       repoRef: readNonEmptyString(workspace.repoRef),
     }));
 
-    if (opts?.executionEnvironmentDriver === "plugin" && agent.adapterType === "paperclip_runner") {
+    if (opts?.executionEnvironmentDriver === "plugin" && agent.adapterType === "pilibala_runner") {
       if (workspaceProjectId) {
         const project = await db.select({ id: projects.id }).from(projects).where(and(
           eq(projects.companyId, agent.companyId), eq(projects.id, workspaceProjectId),
@@ -3701,7 +3701,7 @@ export function createHeartbeatWorkspaceResolver(db: Db) {
     const warnings: string[] = [];
     if (configuredWorkspaceUnavailable) {
       warnings.push(
-        `WARNING: Configured project workspace is unavailable (${configuredWorkspaceUnavailable}). Continuing with project_primary in Paperclip-managed fallback directory "${cwd}"; the configured project workspace was not used. A git_worktree strategy still requires an available configured repository. Repair the configured path or repository access.`,
+        `WARNING: Configured project workspace is unavailable (${configuredWorkspaceUnavailable}). Continuing with project_primary in Pilibala-managed fallback directory "${cwd}"; the configured project workspace was not used. A git_worktree strategy still requires an available configured repository. Repair the configured path or repository access.`,
       );
     } else if (sessionCwd && sessionCwdLooksUnsafe) {
       warnings.push(
@@ -3784,7 +3784,7 @@ export function createHeartbeatWorkspaceResolver(db: Db) {
         onBehalfOfUserId: responsibleUserId === "local-board" ? null : responsibleUserId },
       issues: issueService(db), projects: projectService(db), access: authorizationService(db),
     };
-    if (executionEnvironmentDriver === "plugin" && agent.adapterType === "paperclip_runner" &&
+    if (executionEnvironmentDriver === "plugin" && agent.adapterType === "pilibala_runner" &&
         issueId && isMultiProjectWorkspaceSyncRemoteEnabled()) {
       const referenced = await resolveRunReferencedProjects(issueId, anchor.projectId, referencedOptions);
       return { ...anchor, additionalWorkspaces: [],

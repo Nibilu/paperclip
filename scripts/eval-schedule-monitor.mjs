@@ -5,7 +5,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { pathToFileURL } from "node:url";
 
-export const MONITORED_REPOSITORY = "paperclipai/paperclip";
+export const MONITORED_REPOSITORY = "pilibalaai/pilibala";
 export const MONITORED_WORKFLOW = "runner-full-stack-e2e.yml";
 export const MONITORED_SCHEDULES = { daily: "47 8 * * *", weekly: "47 9 * * 0" };
 const hour = 3_600_000;

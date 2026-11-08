@@ -1,6 +1,6 @@
-import { readPaperclipSkillSyncPreference } from "@paperclipai/adapter-utils/server-utils";
+import { readPilibalaSkillSyncPreference } from "@pilibalaai/adapter-utils/server-utils";
 import path from "node:path";
-import { resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "./delivery-work-notifications.js";
 
 export function notifySkillVersionRetention(tx: object, companyId: string) {
@@ -19,7 +19,7 @@ export function onSkillVersionCacheChange(listener: (change: CacheChange) => voi
 }
 
 export function noteSkillVersionCacheChange(directory: string, change: { occurredAt?: number; source?: "access" | "publication" } = {}) {
-  const root = path.resolve(resolvePaperclipInstanceRoot(), "skills");
+  const root = path.resolve(resolvePilibalaInstanceRoot(), "skills");
   const [companyId, versions] = path.relative(root, directory).split(path.sep);
   if (versions !== "__versions__" || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(companyId)) return;
   const suppliedAt = change.occurredAt ?? Date.now();
@@ -28,8 +28,8 @@ export function noteSkillVersionCacheChange(directory: string, change: { occurre
 }
 
 export async function notifySkillVersionPinChange(tx: object, companyId: string, before: Record<string, unknown>, after: Record<string, unknown>) {
-  if (JSON.stringify(readPaperclipSkillSyncPreference(before).desiredSkillEntries)
-    !== JSON.stringify(readPaperclipSkillSyncPreference(after).desiredSkillEntries)) {
+  if (JSON.stringify(readPilibalaSkillSyncPreference(before).desiredSkillEntries)
+    !== JSON.stringify(readPilibalaSkillSyncPreference(after).desiredSkillEntries)) {
     await notifySkillVersionRetention(tx, companyId);
   }
 }

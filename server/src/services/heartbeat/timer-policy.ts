@@ -1,5 +1,5 @@
-import { agents, heartbeatRuns, costEvents, issues, type Db } from "@paperclipai/db";
-import { AGENT_DEFAULT_MAX_CONCURRENT_RUNS, compareCents } from "@paperclipai/shared";
+import { agents, heartbeatRuns, costEvents, issues, type Db } from "@pilibalaai/db";
+import { AGENT_DEFAULT_MAX_CONCURRENT_RUNS, compareCents } from "@pilibalaai/shared";
 import { and, eq, gte, lt, notInArray, sql, isNull, inArray, type SQL } from "drizzle-orm";
 import { asBoolean, asNumber, parseObject } from "../../adapters/utils.js";
 import { isHeartbeatWakeOnDemandEnabled } from "../heartbeat-policy.js";
@@ -47,7 +47,7 @@ export function parseHeartbeatPolicy(agent: typeof agents.$inferSelect) {
     enabled: asBoolean(heartbeat.enabled, false),
     intervalSec: Math.max(0, asNumber(heartbeat.intervalSec, 0)),
     wakeOnDemand: isHeartbeatWakeOnDemandEnabled(agent),
-    maxConcurrentRuns: agent.adapterType === "paperclip_runner" &&
+    maxConcurrentRuns: agent.adapterType === "pilibala_runner" &&
       ["openai_dot", "grok_bot", "muse"].includes(String(parseObject(agent.adapterConfig).provider))
       ? 1 : normalizeMaxConcurrentRuns(heartbeat.maxConcurrentRuns),
     skipTimerWhenNoActionableWork: asBoolean(

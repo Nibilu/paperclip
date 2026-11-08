@@ -1,7 +1,7 @@
 import path from "node:path";
 import { and, eq } from "drizzle-orm";
-import { companySkillSources, type Db, type SkillPackageRestoreRecipe } from "@paperclipai/db";
-import type { CompanySkillVersionFileInventoryEntry } from "@paperclipai/shared";
+import { companySkillSources, type Db, type SkillPackageRestoreRecipe } from "@pilibalaai/db";
+import type { CompanySkillVersionFileInventoryEntry } from "@pilibalaai/shared";
 import { forbidden } from "../errors.js";
 import { assertSkillSnapshotPath } from "./skill-snapshot.js";
 import { packageSha256, skillPackageManifest, validateSkillPackageManifest } from "./skill-package-files.js";

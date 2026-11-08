@@ -103,7 +103,7 @@ dates without a shared rollover initialization write.
 
 Migrate direct raw-counter budget consumers in `email-channels.ts`,
 `external-agents/dot.ts`, `muse.ts`, `native-broker.ts` and
-`native-runtime/paperclip-runner-tool-authority.ts`. Budget authority comes from
+`native-runtime/pilibala-runner-tool-authority.ts`. Budget authority comes from
 the shared eligibility contract; display totals come from ledger aggregation.
 Audit all other readers before retiring fields. Keep old columns temporarily
 for migration compatibility, but make them non-authoritative.

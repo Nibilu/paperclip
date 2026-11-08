@@ -39,7 +39,7 @@ const present = (value: unknown): value is string => typeof value === "string" &
 const revisionId = (point?: SettingsSnapshot) => point?.file?.revision?.id;
 function snapshotBound(point: SettingsSnapshot | undefined, scope: AgentSettingsScope, entry?: string) {
   return Boolean(point && point.agent?.id === scope.agentId && point.agent.companyId === scope.companyId
-    && point.agent.name === scope.agentName && point.agent.adapterType === "paperclip_runner"
+    && point.agent.name === scope.agentName && point.agent.adapterType === "pilibala_runner"
     && point.agent.adapterConfig?.provider === scope.provider && point.agent.adapterConfig?.model === scope.model
     && point.bundle?.agentId === scope.agentId && point.bundle.companyId === scope.companyId
     && point.bundle.mode === "managed" && point.bundle.editable === true && present(point.bundle.entryFile)
@@ -96,7 +96,7 @@ export function gradeAgentSettings(scope: AgentSettingsScope, value: AgentSettin
     && run.agentId === scope.agentId && boundIssue(run) === issue.id && run.status === "succeeded"
     && run.runtimeMode === "native" && run.nativePhase === "committed"
     && provider?.kind === scope.provider && provider.model === scope.model
-    && run.contextSnapshot?.paperclipEnvironment?.id === scope.environmentId);
+    && run.contextSnapshot?.pilibalaEnvironment?.id === scope.environmentId);
   const document = task?.document, revision = task?.revision;
   const output = configured && issue && issue.status === "done" && !issue.executionRunId && !issue.scheduledRetry && !issue.activeRecoveryAction
     && Array.isArray(task!.interactions) && task!.interactions.every(row => row.status !== "pending")

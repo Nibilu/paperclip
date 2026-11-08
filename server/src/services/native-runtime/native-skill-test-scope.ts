@@ -1,4 +1,4 @@
-import type { AgentApiKeyScope } from "@paperclipai/shared";
+import type { AgentApiKeyScope } from "@pilibalaai/shared";
 import { forbidden } from "../../errors.js";
 
 const taskTools = new Set([
@@ -21,10 +21,10 @@ export function nativeRunKeyScope(input: {
   workMode?: string;
 }): AgentApiKeyScope {
   const snapshot = record(input.contextSnapshot);
-  const admitted = record(snapshot.paperclipAgentJwtScope);
+  const admitted = record(snapshot.pilibalaAgentJwtScope);
   const skillTest = admitted.kind === "skill_test" || (admitted.kind !== "standard"
-    && (Boolean(snapshot.paperclipSkillTest) || input.workMode === "skill_test"
-      || record(snapshot.paperclipIssue).workMode === "skill_test"));
+    && (Boolean(snapshot.pilibalaSkillTest) || input.workMode === "skill_test"
+      || record(snapshot.pilibalaIssue).workMode === "skill_test"));
   return skillTest ? { kind: "skill_test", issueId: input.issueId } : { kind: "standard" };
 }
 

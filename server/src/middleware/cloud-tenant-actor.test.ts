@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import express, { type Request } from "express";
 import request from "supertest";
 import { and, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   authUsers,
   companies,
@@ -10,7 +10,7 @@ import {
   instanceSettings,
   instanceUserRoles,
   principalPermissionGrants,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { actorMiddleware, cloudActorHeaderSourceFromHeaders, resolveCloudTenantActor } from "./auth.js";
 import { idleAdmissionMiddleware, trackIdleRequestHandlers } from "./idle-admission.js";
 import { idleWorkSnapshot, startTaskDrain, stopTaskDrain } from "../services/task-admission.js";
@@ -132,11 +132,11 @@ function fakeReq(headers: Record<string, string>): Request {
 }
 
 const VALID_HEADERS = {
-  "x-paperclip-cloud-tenant-token": "test-server-token",
-  "x-paperclip-cloud-user-id": "user-123",
-  "x-paperclip-cloud-user-email": "Owner@Example.com",
-  "x-paperclip-cloud-stack-id": "stack-abc",
-  "x-paperclip-cloud-stack-role": "owner",
+  "x-pilibala-cloud-tenant-token": "test-server-token",
+  "x-pilibala-cloud-user-id": "user-123",
+  "x-pilibala-cloud-user-email": "Owner@Example.com",
+  "x-pilibala-cloud-stack-id": "stack-abc",
+  "x-pilibala-cloud-stack-role": "owner",
 };
 
 const MANAGED_CONFIG_FLAG_ON = JSON.stringify({
@@ -157,12 +157,12 @@ const MANAGED_CONFIG_FLAG_OFF = JSON.stringify({
 
 describe("resolveCloudTenantActor (shared-pool hardening)", () => {
   beforeEach(() => {
-    process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
+    process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
   });
   afterEach(() => {
     stopTaskDrain();
-    delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
-    delete process.env.PAPERCLIP_MANAGED_CONFIG;
+    delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
+    delete process.env.PILIBALA_MANAGED_CONFIG;
   });
 
   it("does not grant instance admin by default (flag off)", async () => {
@@ -247,7 +247,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
   it("resyncs an A to B to A context transition inside the debounce window", async () => {
     const { db, insertedTables } = createFakeDb();
     const contextA = VALID_HEADERS;
-    const contextB = { ...VALID_HEADERS, "x-paperclip-cloud-stack-role": "member" };
+    const contextB = { ...VALID_HEADERS, "x-pilibala-cloud-stack-role": "member" };
 
     await resolveCloudTenantActor(db, fakeReq(contextA));
     await resolveCloudTenantActor(db, fakeReq(contextB));
@@ -289,7 +289,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
     } });
     const first = resolveCloudTenantActor(db, fakeReq(VALID_HEADERS));
     await started;
-    const second = resolveCloudTenantActor(db, fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-stack-role": "member" }));
+    const second = resolveCloudTenantActor(db, fakeReq({ ...VALID_HEADERS, "x-pilibala-cloud-stack-role": "member" }));
     const third = resolveCloudTenantActor(db, fakeReq(VALID_HEADERS));
     release();
     const actors = await Promise.all([first, second, third]);
@@ -309,7 +309,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
     const slow = resolveCloudTenantActor(db, fakeReq(VALID_HEADERS));
     await started;
     try {
-      const other = await resolveCloudTenantActor(db, fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-user-id": "other-user" }));
+      const other = await resolveCloudTenantActor(db, fakeReq({ ...VALID_HEADERS, "x-pilibala-cloud-user-id": "other-user" }));
       expect(other?.userId).toBe("other-user");
     } finally {
       release();
@@ -324,7 +324,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
     } });
     await resolveCloudTenantActor(db, fakeReq(VALID_HEADERS));
     fail = true;
-    await expect(resolveCloudTenantActor(db, fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-stack-role": "member" })))
+    await expect(resolveCloudTenantActor(db, fakeReq({ ...VALID_HEADERS, "x-pilibala-cloud-stack-role": "member" })))
       .rejects.toThrow("partial sync failed");
     fail = false;
     const repaired = await resolveCloudTenantActor(db, fakeReq(VALID_HEADERS));
@@ -348,7 +348,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
 
   it("keeps default-grant repair and the input role when a guarded upsert returns no row", async () => {
     const { db, insertedTables } = createFakeDb({ unchangedMembership: true });
-    const actor = await resolveCloudTenantActor(db, fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-stack-role": "member" }));
+    const actor = await resolveCloudTenantActor(db, fakeReq({ ...VALID_HEADERS, "x-pilibala-cloud-stack-role": "member" }));
     expect(actor?.memberships?.[0]?.membershipRole).toBe("member");
     expect(insertedTables).toContain(principalPermissionGrants);
   });
@@ -357,15 +357,15 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
     const first = createFakeDb();
     const second = createFakeDb();
     await Promise.all([resolveCloudTenantActor(first.db, fakeReq(VALID_HEADERS)), resolveCloudTenantActor(second.db, fakeReq(VALID_HEADERS))]);
-    await resolveCloudTenantActor(first.db, fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-stack-id": "stack-other" }));
+    await resolveCloudTenantActor(first.db, fakeReq({ ...VALID_HEADERS, "x-pilibala-cloud-stack-id": "stack-other" }));
     expect(first.insertedTables.filter(table => table === companyMemberships)).toHaveLength(2);
     expect(second.insertedTables.filter(table => table === companyMemberships)).toHaveLength(1);
   });
 
   it("resyncs when the requested company name changes", async () => {
     const { db, insertedTables } = createFakeDb();
-    await resolveCloudTenantActor(db, fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-paperclip-company-name": "First" }));
-    await resolveCloudTenantActor(db, fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-paperclip-company-name": "Second" }));
+    await resolveCloudTenantActor(db, fakeReq({ ...VALID_HEADERS, "x-pilibala-cloud-pilibala-company-name": "First" }));
+    await resolveCloudTenantActor(db, fakeReq({ ...VALID_HEADERS, "x-pilibala-cloud-pilibala-company-name": "Second" }));
     expect(insertedTables.filter(table => table === companyMemberships)).toHaveLength(2);
   });
 
@@ -385,7 +385,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
   });
 
   it("returns null when the server token is unset", async () => {
-    delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+    delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
     const { db } = createFakeDb();
     const actor = await resolveCloudTenantActor(db, fakeReq(VALID_HEADERS));
     expect(actor).toBeNull();
@@ -398,7 +398,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
     const { db } = createFakeDb();
     const rawHeaders: Record<string, string | string[] | undefined> = {};
     for (const [k, v] of Object.entries(VALID_HEADERS)) rawHeaders[k.toLowerCase()] = v;
-    rawHeaders["x-paperclip-cloud-user-name"] = ["Cloud Owner", "ignored-duplicate"];
+    rawHeaders["x-pilibala-cloud-user-name"] = ["Cloud Owner", "ignored-duplicate"];
     const actor = await resolveCloudTenantActor(db, cloudActorHeaderSourceFromHeaders(rawHeaders));
     expect(actor).not.toBeNull();
     expect(actor!.userId).toBe("user-123");
@@ -412,7 +412,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
     });
     const actor = await resolveCloudTenantActor(
       db,
-      fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-stack-role": "member" }),
+      fakeReq({ ...VALID_HEADERS, "x-pilibala-cloud-stack-role": "member" }),
     );
     expect(actor!.isInstanceAdmin).toBe(false);
     expect(actor?.memberships?.[0]?.membershipRole).toBe("member");
@@ -424,7 +424,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
       const { db, insertedTables } = createFakeDb();
       const actor = await resolveCloudTenantActor(
         db,
-        fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-stack-role": stackRole }),
+        fakeReq({ ...VALID_HEADERS, "x-pilibala-cloud-stack-role": stackRole }),
       );
       expect(actor?.canManageExperimentalSettings).toBe(stackRole === "admin");
       expect(actor?.isInstanceAdmin).toBe(false);
@@ -436,11 +436,11 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
     const { db } = createFakeDb();
     const admin = await resolveCloudTenantActor(
       db,
-      fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-stack-role": "admin" }),
+      fakeReq({ ...VALID_HEADERS, "x-pilibala-cloud-stack-role": "admin" }),
     );
     const member = await resolveCloudTenantActor(
       db,
-      fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-stack-role": "member" }),
+      fakeReq({ ...VALID_HEADERS, "x-pilibala-cloud-stack-role": "member" }),
     );
     expect(admin?.canManageExperimentalSettings).toBe(true);
     expect(member?.canManageExperimentalSettings).toBe(false);
@@ -532,7 +532,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
         });
         const actor = await resolveCloudTenantActor(
           db,
-          fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-stack-role": stackRole }),
+          fakeReq({ ...VALID_HEADERS, "x-pilibala-cloud-stack-role": stackRole }),
         );
         expect(actor).not.toBeNull();
         expect(actor!.isInstanceAdmin).toBe(false);
@@ -540,7 +540,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
     );
 
     it("resolves the flag through the managed overlay: overlay on elevates over a DB value of off", async () => {
-      process.env.PAPERCLIP_MANAGED_CONFIG = MANAGED_CONFIG_FLAG_ON;
+      process.env.PILIBALA_MANAGED_CONFIG = MANAGED_CONFIG_FLAG_ON;
       const { db } = createFakeDb({
         settingsRow: settingsRowWith({ enableOwnerInstanceAdmin: false }),
       });
@@ -549,7 +549,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
     });
 
     it("resolves the flag through the managed overlay: overlay off wins over a DB value of on", async () => {
-      process.env.PAPERCLIP_MANAGED_CONFIG = MANAGED_CONFIG_FLAG_OFF;
+      process.env.PILIBALA_MANAGED_CONFIG = MANAGED_CONFIG_FLAG_OFF;
       const { db } = createFakeDb({
         settingsRow: settingsRowWith({ enableOwnerInstanceAdmin: true }),
       });

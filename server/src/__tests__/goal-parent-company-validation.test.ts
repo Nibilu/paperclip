@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { eq, sql } from "drizzle-orm";
-import { companies, createDb, goals } from "@paperclipai/db";
+import { companies, createDb, goals } from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -21,7 +21,7 @@ describeDatabase("goal parent company validation", () => {
   let sequence = 0;
 
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-goal-parent-company-");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-goal-parent-company-");
     db = createDb(database.connectionString, { maxConnections: 6 });
   }, 20_000);
   afterEach(async () => {

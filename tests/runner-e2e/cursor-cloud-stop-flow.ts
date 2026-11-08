@@ -64,12 +64,12 @@ export async function runCursorCloudStopFlow(input: {
     await stop.click();
     await input.evidence("cursor-cloud-stop-pending-recheck.json", { checkedAt: pendingCheckedAt, executionId: beforeStop!.executionId,
       commandSha256: beforeStop!.commandSha256, identity: cursorCloudIdentityProof(beforeStop!.identity), remoteStatus: beforeStop!.remoteStatus });
-    await pollUntil({ label: "Cloud and Paperclip cancellation", deadlineAt: input.deadlineAt, intervalMs: 500, retryOnError: () => false,
+    await pollUntil({ label: "Cloud and Pilibala cancellation", deadlineAt: input.deadlineAt, intervalMs: 500, retryOnError: () => false,
       load: async () => { await load(); return { local: runs[0], remote: await observer.client.getRun(active.identity.agentId, active.identity.runId!) }; },
       accept: value => value.local?.status === "cancelled" && value.remote.status === "CANCELLED",
       reject: value => ["FINISHED", "ERROR", "EXPIRED"].includes(value.remote.status) ? "Cloud run ended without verified cancellation" : undefined });
     const receipt = runs[0]!.resultJson?.nativeCancellation;
-    expect(receipt).toMatchObject({ schema: "paperclip.native-cancellation.v1", companyId: fixtures.company.id, issueId: issue.id, runId: active.localRunId, scope: "run", dispatched: true, dispatchState: "acknowledged", reasonCode: "cancellation_run_only" });
+    expect(receipt).toMatchObject({ schema: "pilibala.native-cancellation.v1", companyId: fixtures.company.id, issueId: issue.id, runId: active.localRunId, scope: "run", dispatched: true, dispatchState: "acknowledged", reasonCode: "cancellation_run_only" });
     const samples: Array<{ elapsedMs: number; providerCancelled: boolean; artifactAbsent: boolean; localCancelled: boolean }> = [];
     const quietStart = Date.now();
     do {

@@ -2,7 +2,7 @@ import {
   defaultGitHubReviewPolicy,
   type GitHubChatConfiguration,
   type GitHubTaskReview,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import type {
   ChatEndpoint,
   ChatEndpointResource,
@@ -10,7 +10,7 @@ import type {
   ChatIdentityLink,
 } from "@/api/chatEndpoints";
 import { STORYBOOK_COMPANY_ID } from "../../fixtures/onboardingDraft";
-import { storybookAgents } from "../../fixtures/paperclipData";
+import { storybookAgents } from "../../fixtures/pilibalaData";
 
 export const agent = { ...storybookAgents[0], name: "Maya" };
 export const endpoint: ChatEndpoint = {
@@ -90,8 +90,8 @@ export const links: ChatIdentityLink[] = [
     githubUserId: "42",
     githubLogin: "mayacoder",
     externalLabel: "mayacoder",
-    paperclipUserId: "user-board",
-    paperclipUserLabel: "Maya Chen",
+    pilibalaUserId: "user-board",
+    pilibalaUserLabel: "Maya Chen",
     status: "linked",
   },
   {
@@ -100,8 +100,8 @@ export const links: ChatIdentityLink[] = [
     githubUserId: "43",
     githubLogin: "vin-dev",
     externalLabel: "vin-dev",
-    paperclipUserId: "vin-member",
-    paperclipUserLabel: "Vin Patel",
+    pilibalaUserId: "vin-member",
+    pilibalaUserLabel: "Vin Patel",
     status: "linked",
   },
 ];

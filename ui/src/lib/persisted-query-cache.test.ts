@@ -1,5 +1,5 @@
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError, api, detachInflightGets } from "@/api/client";
 import { bindAccount } from "./account-scope";
@@ -50,9 +50,9 @@ describe("persisted read cache", () => {
     expect([...first.storage.values.keys()].some(key => key.startsWith(QUERY_CACHE_PREFIX))).toBe(false);
   });
 
-  it.each([QUERY_CACHE_CLEARED, "paperclip:query-cache-revision:alice"])("revokes a stamped tab through exported sign-out cleanup in an unstamped build (%s)", async eventKey => {
+  it.each([QUERY_CACHE_CLEARED, "pilibala:query-cache-revision:alice"])("revokes a stamped tab through exported sign-out cleanup in an unstamped build (%s)", async eventKey => {
     const first = setup(); seed(first.client); first.handle.flush();
-    first.storage.setItem("paperclip:private-draft", "draft retained");
+    first.storage.setItem("pilibala:private-draft", "draft retained");
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const events = new EventTarget();
     const other = startPersistedQueryCache(client, { storage: first.storage, buildId: "build-one", eventTarget: events as Window });
@@ -70,7 +70,7 @@ describe("persisted read cache", () => {
     expect(account.isCurrentScope()).toBe(false);
     other.flush();
     expect(first.storage.getItem(QUERY_CACHE_ACTIVE)).toBeNull();
-    expect(first.storage.getItem("paperclip:private-draft")).toBe("draft retained");
+    expect(first.storage.getItem("pilibala:private-draft")).toBe("draft retained");
   });
 
   it("rejects a stamped tab's delayed flush after unstamped sign-out before storage events arrive", async () => {
@@ -469,12 +469,12 @@ describe("persisted read cache", () => {
 
   it("clears query records on sign-out, retains drafts and resumes caching only after a new verified login", async () => {
     const first = setup(); seed(first.client); first.handle.flush();
-    first.storage.setItem("paperclip:private-draft", "draft retained");
+    first.storage.setItem("pilibala:private-draft", "draft retained");
     clearPersistedQueryCache(first.client);
     first.client.setQueryData(queryKeys.health, { status: "ok" });
     first.handle.flush();
     expect(first.storage.getItem(QUERY_CACHE_ACTIVE)).toBeNull();
-    expect(first.storage.getItem("paperclip:private-draft")).toBe("draft retained");
+    expect(first.storage.getItem("pilibala:private-draft")).toBe("draft retained");
     await first.client.fetchQuery({ queryKey: queryKeys.auth.session, queryFn: async () => session("bob"), staleTime: 0 });
     first.handle.flush();
     expect(first.storage.getItem(QUERY_CACHE_ACTIVE)).toBe("bob");
@@ -574,7 +574,7 @@ describe("persisted read cache", () => {
     expect(hasUnverifiedSession(restored.client)).toBe(false);
   });
 
-  it.each([QUERY_CACHE_CLEARED, "paperclip:query-cache-revision:alice"])("removes another tab's restored account data on the %s sign-out event", eventKey => {
+  it.each([QUERY_CACHE_CLEARED, "pilibala:query-cache-revision:alice"])("removes another tab's restored account data on the %s sign-out event", eventKey => {
     const first = setup(); seed(first.client); first.handle.flush();
     const client = new QueryClient();
     const events = new EventTarget();

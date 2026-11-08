@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PrpEvent, PrpTerminalState } from "../../vendor/paperclip-runner/index.js";
+import type { PrpEvent, PrpTerminalState } from "../../vendor/pilibala-runner/index.js";
 import { createNativeProviderFailureObservation, NATIVE_MODEL_REJECTION_DIAGNOSTIC, NATIVE_MODEL_REJECTION_MESSAGE, NATIVE_PROVIDER_OVERLOADED_MESSAGE, readNativeTurnFailureDiagnostic } from "./native-provider-failure.js";
 
 const model = "test-model";
@@ -8,20 +8,20 @@ const response = {
   error: { type: "invalid_request_error", message: `The '${model}' model is not supported when using Codex with a ChatGPT account.` },
 };
 const event: PrpEvent = {
-  schema: "paperclip.prp.event.v1", runId: "run", normalizedSessionId: "session", turnId: "turn",
+  schema: "pilibala.prp.event.v1", runId: "run", normalizedSessionId: "session", turnId: "turn",
   sourceInstanceId: "runner", sourceEventId: "failure", sourceSeq: 1, sourceKind: "runner",
   eventType: "turn.failed", schemaVersion: 1, priority: 0, emittedAt: "2026-01-01T00:00:00.000Z",
   payload: { status: "failed", error: { message: JSON.stringify(response), codexErrorInfo: "other" } },
 };
 const terminal: PrpTerminalState = {
-  schema: "paperclip.prp.terminal.v1", turnTerminalState: "failed", runTerminalState: "failed", reportedWorkDisposition: "blocked",
+  schema: "pilibala.prp.terminal.v1", turnTerminalState: "failed", runTerminalState: "failed", reportedWorkDisposition: "blocked",
 };
 const observation = () => createNativeProviderFailureObservation({ kind: "codex", model });
 
 describe("native provider failure observation", () => {
   it.each(["acpx", "codex", "opencode"])("retains a typed explanation for %s without granting recovery authority", kind => {
     const observed = createNativeProviderFailureObservation({ kind });
-    const providerFailure = { schema: "paperclip.provider-failure.v1", provider: "new-provider", phase: "turn",
+    const providerFailure = { schema: "pilibala.provider-failure.v1", provider: "new-provider", phase: "turn",
       category: "unknown", message: "An unfamiliar provider rejection.", retryability: "unknown" };
     const failed = { ...event, payload: { status: "failed", error: { providerFailure } } };
     observed.observe({ ...failed, sourceKind: "control_plane" });
@@ -34,7 +34,7 @@ describe("native provider failure observation", () => {
   });
   it.each(["opencode", "codex"])("classifies an action-required model_unavailable failure from %s as a model rejection", kind => {
     const observed = createNativeProviderFailureObservation({ kind });
-    const providerFailure = { schema: "paperclip.provider-failure.v1", provider: "openrouter", phase: "turn",
+    const providerFailure = { schema: "pilibala.provider-failure.v1", provider: "openrouter", phase: "turn",
       category: "model_unavailable", message: "vendor/private-model is not a valid model ID", retryability: "requires_action", httpStatus: 400 };
     observed.observe({ ...event, payload: { status: "failed", error: { providerFailure } } });
     const result = observed.forTerminal("turn", terminal);
@@ -49,7 +49,7 @@ describe("native provider failure observation", () => {
   });
   it.each(["transient", "unknown"])("does not treat a %s model_unavailable failure as a model rejection", retryability => {
     const observed = createNativeProviderFailureObservation({ kind: "opencode" });
-    observed.observe({ ...event, payload: { status: "failed", error: { providerFailure: { schema: "paperclip.provider-failure.v1", provider: "openrouter", phase: "turn", category: "model_unavailable", message: "busy", retryability } } } });
+    observed.observe({ ...event, payload: { status: "failed", error: { providerFailure: { schema: "pilibala.provider-failure.v1", provider: "openrouter", phase: "turn", category: "model_unavailable", message: "busy", retryability } } } });
     expect(observed.forTerminal("turn", terminal)).toBeNull();
   });
   it("surfaces a structured capacity failure without copying arbitrary provider text", () => {
@@ -219,7 +219,7 @@ describe("native provider failure observation", () => {
 
   it("records an OpenCode upstream provider failure's closed fields without its message or code", () => {
     const observed = createNativeProviderFailureObservation({ kind: "opencode", model });
-    const providerFailure = { schema: "paperclip.provider-failure.v1", provider: "openrouter", phase: "turn",
+    const providerFailure = { schema: "pilibala.provider-failure.v1", provider: "openrouter", phase: "turn",
       category: "unknown", message: "Private upstream explanation", providerCode: "private_provider_type",
       httpStatus: 502, retryability: "unknown" };
     observed.observe({ ...event, payload: { status: "failed", error: {

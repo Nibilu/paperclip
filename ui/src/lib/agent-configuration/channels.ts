@@ -1,4 +1,4 @@
-import type { AgentConfigurationDocument } from "@paperclipai/shared";
+import type { AgentConfigurationDocument } from "@pilibalaai/shared";
 import { chatEndpointsApi } from "../../api/chatEndpoints";
 import { equal, type AgentConfigurationSnapshot } from "./load";
 import { requireItem, requireExplicitFields, unique, type AddConfigurationStep } from "./steps";

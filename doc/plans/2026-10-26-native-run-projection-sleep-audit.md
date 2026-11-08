@@ -1,7 +1,7 @@
 # Committed native run projection: sleep audit
 
 Date: 2026-10-26. Slice 54 starts at `1fc2e8c5b61173203abbd50b1b03346abc629218`,
-[parent #17748](https://github.com/paperclipai/paperclip/pull/17748).
+[parent #17748](https://github.com/pilibalaai/pilibala/pull/17748).
 Branch: `codex/sleep-54-native-run-projection`. This is one duty from the
 [recurring-server stack](2026-10-24-recurring-server-sleep-stack.md).
 

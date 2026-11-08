@@ -23,7 +23,7 @@ vi.mock("../services/environment-execution-target.js", () => ({
   resolveEnvironmentExecutionTransport: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock("@paperclipai/adapter-utils/execution-target", () => ({
+vi.mock("@pilibalaai/adapter-utils/execution-target", () => ({
   adapterExecutionTargetToRemoteSpec: mockAdapterExecutionTargetToRemoteSpec,
 }));
 
@@ -71,7 +71,7 @@ import {
   EnvironmentRunError,
 } from "../services/environment-run-orchestrator.ts";
 import { REMOTE_RUNNER_RECONNECT_GRACE_MS } from "../services/native-runtime/native-runner-recovery-contract.js";
-import type { Environment, EnvironmentLease, ExecutionWorkspace } from "@paperclipai/shared";
+import type { Environment, EnvironmentLease, ExecutionWorkspace } from "@pilibalaai/shared";
 import type { RealizedExecutionWorkspace } from "../services/workspace-runtime.ts";
 import type { EnvironmentRuntimeService } from "../services/environment-runtime.ts";
 
@@ -288,10 +288,10 @@ describe("environmentRunOrchestrator — realizeForRun", () => {
     const environment = { ...makeEnvironment("sandbox"), id: randomUUID() };
     const lease = makeLease({ id: randomUUID(), environmentId: environment.id, provider: "daytona", providerLeaseId: "sandbox-allocation" });
     const workspace = makePersistedExecutionWorkspace({ id: randomUUID(), providerType: "cloud_sandbox", metadata: {
-      remoteWorkspace: { schema: "paperclip.remote-workspace.v1", epoch: 1, source: { kind: "empty" },
+      remoteWorkspace: { schema: "pilibala.remote-workspace.v1", epoch: 1, source: { kind: "empty" },
         writerRunId: randomUUID(), dirty: false, snapshotId: null, location: null },
     } });
-    const remoteRoot = `/sandbox/.paperclip-workspaces/${workspace.id}`;
+    const remoteRoot = `/sandbox/.pilibala-workspaces/${workspace.id}`;
     const savedLease = { ...lease, metadata: { remoteCwd: remoteRoot } };
     const target = { kind: "remote", transport: "sandbox", remoteCwd: "/sandbox", runner: { execute: vi.fn() } };
     mockResolveEnvironmentExecutionTarget.mockResolvedValue(target);
@@ -302,7 +302,7 @@ describe("environmentRunOrchestrator — realizeForRun", () => {
     } as never);
     try {
       const runtime = makeMockRuntime();
-      const input = { ...makeRealizeInput({ environment, lease, persistedExecutionWorkspace: workspace }), adapterType: "paperclip_runner" };
+      const input = { ...makeRealizeInput({ environment, lease, persistedExecutionWorkspace: workspace }), adapterType: "pilibala_runner" };
       const result = await environmentRunOrchestrator(mockDb, { environmentRuntime: runtime }).realizeForRun(input);
       expect(prepare).toHaveBeenCalledWith(expect.objectContaining({ workspace, target, source: { kind: "empty" } }));
       expect(mockBuildWorkspaceRealizationRequest).not.toHaveBeenCalled();
@@ -440,7 +440,7 @@ describe("environmentRunOrchestrator — realizeForRun", () => {
       providerKey: "plugin", remoteCwd: "provider/project", runnerTask: vi.fn() });
     const runtime = makeMockRuntime({ supportsTasks: vi.fn().mockResolvedValue(true) });
     const orchestrator = environmentRunOrchestrator(mockDb, { environmentRuntime: runtime });
-    const input = { ...makeRealizeInput({ environment }), adapterType: "paperclip_runner",
+    const input = { ...makeRealizeInput({ environment }), adapterType: "pilibala_runner",
       runnerTaskProjectIds: ["anchor", "authorized-reference", "anchor"] };
     input.executionWorkspace.projectId = "anchor";
     const result = await orchestrator.realizeForRun(input);
@@ -814,7 +814,7 @@ describe("native runner lifecycle changes before lease acquisition", () => {
       lease: makeLease({ leasePolicy: input.environment.config.runnerLifecycleMode === "warm" ? "reuse_by_environment" : "ephemeral" }), leaseContext: { executionWorkspaceId: null, executionWorkspaceMode: null } }));
     const orchestrator = environmentRunOrchestrator({} as never, { environmentRuntime: makeMockRuntime({ acquireRunLease }) });
     const result = await orchestrator.acquireForRun({ companyId: "company-1", selectedEnvironmentId: "env-1", localEnvironmentId: "local",
-      adapterType: "paperclip_runner", adapterConfig: { lifecycleMode: "warm" }, managedAiCredentialIdentity,
+      adapterType: "pilibala_runner", adapterConfig: { lifecycleMode: "warm" }, managedAiCredentialIdentity,
       issueId: "task-1", heartbeatRunId: "run-1", agentId: "agent-1", persistedExecutionWorkspace: null, executionWorkspaceSettings: null });
     expect(result.environment.config.runnerLifecycleMode).toBe(managedAiCredentialIdentity ? "warm" : "per_turn");
     expect(result.lease.leasePolicy).toBe(managedAiCredentialIdentity ? "reuse_by_environment" : "ephemeral");
@@ -832,7 +832,7 @@ describe("native runner lifecycle changes before lease acquisition", () => {
     const orchestrator = environmentRunOrchestrator({} as never, { environmentRuntime: makeMockRuntime({ acquireRunLease }) });
     const input = {
       companyId: "company-1", selectedEnvironmentId: "env-1", localEnvironmentId: "local",
-      adapterType: "paperclip_runner", issueId: "existing-task", heartbeatRunId: "run-1", agentId: "agent-1",
+      adapterType: "pilibala_runner", issueId: "existing-task", heartbeatRunId: "run-1", agentId: "agent-1",
       runnerTaskProjectIds:["anchor","authorized-reference"],
       persistedExecutionWorkspace: { id: "existing-workspace", mode: "shared_workspace" as const },
       executionWorkspaceSettings: null,
@@ -852,11 +852,11 @@ describe("native runner lifecycle changes before lease acquisition", () => {
   });
 
   it.each([
-    ["paperclip_runner", undefined, undefined, false],
-    ["paperclip_runner", "inherit", "per_turn", false],
-    ["paperclip_runner", "per_turn", "warm", false],
-    ["paperclip_runner", "warm", "per_turn", true],
-    ["paperclip_runner", "inherit", "warm", true],
+    ["pilibala_runner", undefined, undefined, false],
+    ["pilibala_runner", "inherit", "per_turn", false],
+    ["pilibala_runner", "per_turn", "warm", false],
+    ["pilibala_runner", "warm", "per_turn", true],
+    ["pilibala_runner", "inherit", "warm", true],
     ["codex_local", "inherit", "warm", false],
   ])("respects environment precedence and adapter scope (%s, %s, %s)", async (adapterType, runnerLifecycleMode, lifecycleMode, expectedReuse) => {
     const environment = { ...makeEnvironment("sandbox"), config: { provider: "daytona", reuseLease: false, runnerLifecycleMode } };
@@ -874,9 +874,9 @@ describe("native runner lifecycle changes before lease acquisition", () => {
   // RC-54: a per-turn remote runner sandbox must outlive a controller outage
   // the host still recovers, so acquisition forwards the reconnect grace.
   it.each([
-    ["paperclip_runner", "sandbox", REMOTE_RUNNER_RECONNECT_GRACE_MS],
+    ["pilibala_runner", "sandbox", REMOTE_RUNNER_RECONNECT_GRACE_MS],
     ["claude_local", "sandbox", undefined],
-    ["paperclip_runner", "local", undefined],
+    ["pilibala_runner", "local", undefined],
   ] as const)("forwards the remote runner reconnect grace for %s on %s", async (adapterType, driver, expected) => {
     const environment = { ...makeEnvironment(driver), config: driver === "sandbox"
       ? { provider: "daytona", reuseLease: false, runnerLifecycleMode: "per_turn" } : {} };
@@ -904,7 +904,7 @@ describe("admitted native lifecycle recovery", () => {
     const orchestrator = environmentRunOrchestrator({} as never, { environmentRuntime: makeMockRuntime({ acquireRunLease }) });
     await orchestrator.acquireForRun({
       companyId: "company-1", selectedEnvironmentId: "env-1", localEnvironmentId: "local",
-      adapterType: "paperclip_runner", adapterConfig: { lifecycleMode }, admittedLifecycleMode,
+      adapterType: "pilibala_runner", adapterConfig: { lifecycleMode }, admittedLifecycleMode,
       issueId: "task-1", heartbeatRunId: "run-1", agentId: "agent-1",
       persistedExecutionWorkspace: null, executionWorkspaceSettings: null,
     });
@@ -916,7 +916,7 @@ describe("admitted native lifecycle recovery", () => {
 describe("live remote runner lease reattachment", () => {
   const input = {
     companyId: "company-1", selectedEnvironmentId: "env-1", localEnvironmentId: "local",
-    adapterType: "paperclip_runner", admittedLifecycleMode: "per_turn" as const,
+    adapterType: "pilibala_runner", admittedLifecycleMode: "per_turn" as const,
     issueId: "task-1", heartbeatRunId: "run-1", agentId: "agent-1",
     persistedExecutionWorkspace: { id: "ew-1", mode: "shared_workspace" as const },
     executionWorkspaceSettings: null,

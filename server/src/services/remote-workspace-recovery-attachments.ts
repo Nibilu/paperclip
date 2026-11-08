@@ -1,13 +1,13 @@
 import { lstat, mkdir, mkdtemp, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import type { AdapterSandboxExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
+import type { AdapterSandboxExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
 import { hasRemoteRecoveryAttachment } from "./remote-workspace-transport.js";
 import { removeTaskDirectoryTree } from "./isolated-task-directory-snapshot.js";
 import { LEGACY_WORKSPACE_RECOVERY_MIGRATION } from "./legacy-workspace-recovery-migration.js";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { executionWorkspaceSnapshots, executionWorkspaces, heartbeatRuns, workspaceOperations, type Db } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority, remoteWorkspaceRunReferenceSchema } from "@paperclipai/shared";
+import { executionWorkspaceSnapshots, executionWorkspaces, heartbeatRuns, workspaceOperations, type Db } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority, remoteWorkspaceRunReferenceSchema } from "@pilibalaai/shared";
 import { readSnapshot, verifiedWorkspaceSnapshotReceipt } from "./workspace-recovery-snapshot.js";
 import { recoveryRunAncestry } from "./recovery-run-ancestry.js";
 import { immutableRemoteWorkspaceRecoveryAttachment } from "./workspace-recovery-receipt.js";
@@ -69,10 +69,10 @@ export async function attachPreservedRemoteWorkspaceSnapshots(input: {
       workspaceId: remote.workspaceId, snapshotId: remote.snapshotId });
     if (!saved || saved.sha256 !== proof.sha256 || saved.generation !== proof.generation)
       throw new Error("remote_workspace_recovery_snapshot_missing");
-    const provenance = JSON.stringify({ schema: "paperclip.remote-workspace-recovery-attachment.v1",
+    const provenance = JSON.stringify({ schema: "pilibala.remote-workspace-recovery-attachment.v1",
       operationId, sourceRunId: source.id, workspaceId: remote.workspaceId,
       snapshotId: remote.snapshotId, sha256: saved.sha256 });
-    const parent = path.join(await realpath(input.cwd), ".paperclip-recovered");
+    const parent = path.join(await realpath(input.cwd), ".pilibala-recovered");
     await mkdir(parent, { mode: 0o700 }).catch((error: NodeJS.ErrnoException) => { if (error.code !== "EEXIST") throw error; });
     if ((await lstat(parent)).isSymbolicLink() || await realpath(parent) !== parent)
       throw new Error("remote_workspace_recovery_attachment_invalid");
@@ -145,7 +145,7 @@ async function retainedRecoveryAttachmentProvenance(input: {
       leaseId: saved.leaseId, sha256: saved.archive.sha256 }) : null;
   } else if (operation?.phase === "workspace_recovery") {
     const proof = await immutableRemoteWorkspaceRecoveryAttachment(input.db, source);
-    provenance = proof?.operationId === operation.id ? JSON.stringify({ schema: "paperclip.remote-workspace-recovery-attachment.v1",
+    provenance = proof?.operationId === operation.id ? JSON.stringify({ schema: "pilibala.remote-workspace-recovery-attachment.v1",
       operationId: proof.operationId, sourceRunId: source.id, workspaceId: proof.workspaceId,
       snapshotId: proof.snapshotId, sha256: proof.sha256 }) : null;
   }
@@ -186,7 +186,7 @@ export async function retainRemoteRecoveryAttachments(input: {
       await input.assertOwned?.();
     }
     if (!snapshotFiles) return false;
-    const directory = path.join(snapshotFiles, ".paperclip-recovered", operationId);
+    const directory = path.join(snapshotFiles, ".pilibala-recovered", operationId);
     if (await realpath(directory).catch(() => null) !== directory) return false;
     const file = path.join(directory, "provenance.json"), stat = await lstat(file).catch(() => null);
     return Boolean(stat?.isFile() && !stat.isSymbolicLink() && stat.nlink === 1 && stat.size <= 16_384
@@ -197,7 +197,7 @@ export async function retainRemoteRecoveryAttachments(input: {
     for (const value of Array.isArray(retained) ? retained : []) {
       const item = record(value);
       if (typeof item.operationId !== "string" || !/^[a-f0-9-]{36}$/.test(item.operationId)
-        || typeof item.sourceRunId !== "string" || item.path !== `.paperclip-recovered/${item.operationId}`)
+        || typeof item.sourceRunId !== "string" || item.path !== `.pilibala-recovered/${item.operationId}`)
         throw new Error("remote_workspace_recovered_files_invalid");
       if (input.recoveredFiles.some(current => current.operationId === item.operationId)) continue;
       let provenance = typeof item.provenance === "string" ? item.provenance : null;

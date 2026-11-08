@@ -12,8 +12,8 @@ import {
   issueAttachments,
   issueDocuments,
   issues,
-} from "@paperclipai/db";
-import { artifactReviewDocumentKey } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { artifactReviewDocumentKey } from "@pilibalaai/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -56,7 +56,7 @@ describeEmbeddedPostgres("artifactReviewDocumentService", () => {
   let db!: ReturnType<typeof createDb>;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-artifact-review-docs-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-artifact-review-docs-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -95,7 +95,7 @@ describeEmbeddedPostgres("artifactReviewDocumentService", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -143,7 +143,7 @@ describeEmbeddedPostgres("artifactReviewDocumentService", () => {
       companyId,
       issueId,
       type: "artifact" as const,
-      provider: "paperclip",
+      provider: "pilibala",
       metadata: {
         attachmentId,
         contentType,
@@ -300,7 +300,7 @@ describeEmbeddedPostgres("artifactReviewDocumentService", () => {
     expect(unchanged.document.latestRevisionNumber).toBe(3);
   });
 
-  it("rejects work products that are not attachment-backed Paperclip artifacts", async () => {
+  it("rejects work products that are not attachment-backed Pilibala artifacts", async () => {
     const fixture = await seedFixture();
     await expect(
       fixture.svc.ensureForWorkProduct({

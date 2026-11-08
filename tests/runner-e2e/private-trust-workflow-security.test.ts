@@ -72,7 +72,7 @@ describe("private archive and TestOps workflow trust", () => {
     expect(callers.map(([name]) => name)).toEqual(["chat-catalog-testops.yml"]);
     const dispatcher = callers[0]![1];
     expect(dispatcher).toMatch(/^on:\n {2}workflow_dispatch:/mu);
-    expect(dispatcher).toContain("github.workflow_ref == 'paperclipai/paperclip/.github/workflows/chat-catalog-testops.yml@refs/heads/master'");
+    expect(dispatcher).toContain("github.workflow_ref == 'pilibalaai/pilibala/.github/workflows/chat-catalog-testops.yml@refs/heads/master'");
     expect(dispatcher.split("\n  authorize:")[1]!.split("\n  select:")[0]).toContain("run: node tests/runner-e2e/chat-completion-testops-cli.mjs guard");
     const cellJobs = dispatcher.split(/\n(?= {2}[a-z_]+:\n)/u).filter(job => job.includes("uses: ./.github/workflows/chat-catalog-testops-case.yml"));
     expect(cellJobs).toHaveLength(2);

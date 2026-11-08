@@ -22,7 +22,7 @@ export async function inspectRepositoryBundle(bytes: Buffer, input: { sourceComm
   if (!/^[a-f0-9]{40}$/.test(input.sourceCommit) || bytes.length < 32 || bytes.length > 262_144
     || !/^# v[23] git bundle\n/.test(bytes.subarray(0, 32).toString("ascii"))
     || input.files.some(file => !/^[A-Za-z0-9][A-Za-z0-9.-]{0,120}$/.test(file))) throw new Error("invalid_repository_bundle");
-  const root = await mkdtemp(path.join(os.tmpdir(), "paperclip-qa-repository-inspection-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "pilibala-qa-repository-inspection-"));
   const gitDir = path.join(root, "objects.git"), bundle = path.join(root, "proof.bundle");
   const git = async (...args: string[]) => (await execFile("git", ["--no-replace-objects", "-c", "core.hooksPath=/dev/null",
     "-c", "core.fsmonitor=false", "-c", "protocol.allow=never", "-c", "protocol.file.allow=always", "--git-dir", gitDir, ...args], {

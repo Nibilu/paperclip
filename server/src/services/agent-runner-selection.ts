@@ -1,20 +1,20 @@
 import { assertProviderApiPlacementPolicy, managedCursorApiDefaultEnabled, resolveProviderApiPlacement } from "./native-runtime/provider-api-placement.js";
-import type { Db } from "@paperclipai/db";
-import { agentHarnessType, paperclipRunnerProfileForHarness, isEnvironmentDriverSupportedForAdapter, paperclipRunnerSupportsPlatform, type AgentRunnerChoice, type AgentRunnerAvailability } from "@paperclipai/shared";
-import { normalizeLegacyRunnerProvider, PAPERCLIP_RUNNER_DEFAULT_MODELS } from "@paperclipai/adapter-utils";
-import { resolveClaudeModel } from "@paperclipai/adapter-claude-local";
-import { DEFAULT_GROK_LOCAL_MODEL } from "@paperclipai/adapter-grok-local";
+import type { Db } from "@pilibalaai/db";
+import { agentHarnessType, pilibalaRunnerProfileForHarness, isEnvironmentDriverSupportedForAdapter, pilibalaRunnerSupportsPlatform, type AgentRunnerChoice, type AgentRunnerAvailability } from "@pilibalaai/shared";
+import { normalizeLegacyRunnerProvider, PILIBALA_RUNNER_DEFAULT_MODELS } from "@pilibalaai/adapter-utils";
+import { resolveClaudeModel } from "@pilibalaai/adapter-claude-local";
+import { DEFAULT_GROK_LOCAL_MODEL } from "@pilibalaai/adapter-grok-local";
 import { findActiveServerAdapter, hasActiveAdapterOverride, waitForExternalAdapters } from "../adapters/registry.js";
 import { getDisabledAdapterTypes } from "./adapter-plugin-store.js";
 import { adapterSettingsService, effectiveDisabledAdapterTypes } from "./adapter-settings.js";
 import { listServerAdapters } from "../adapters/registry.js";
 import { isCloudManagedInstance } from "./cloud-instance.js";
-import { claudeRunnerUnsupportedSettings, PaperclipRunnerProviderProfileError, resolvePaperclipRunnerNativeProviderInput } from "./native-runtime/provider-profile.js";
+import { claudeRunnerUnsupportedSettings, PilibalaRunnerProviderProfileError, resolvePilibalaRunnerNativeProviderInput } from "./native-runtime/provider-profile.js";
 import { forbidden, unprocessable } from "../errors.js";
-import { runSshCommand } from "@paperclipai/adapter-utils/ssh";
+import { runSshCommand } from "@pilibalaai/adapter-utils/ssh";
 import { parseEnvironmentDriverConfig, resolveEnvironmentDriverConfigForRuntime, resolveSandboxProviderSecretRefPaths } from "./environment-config.js";
 import { localAgentRunnerTarget } from "../lib/agent-runner-platform.js";
-import { normalizeClaudeRunnerOptions, type AgentConfigurationWarning } from "@paperclipai/shared";
+import { normalizeClaudeRunnerOptions, type AgentConfigurationWarning } from "@pilibalaai/shared";
 import { usesManagedCloudSandboxImage } from "./sandbox-snapshot-qualification.js";
 import { environmentCustomImageTemplateMatchesBaseConfig } from "./environment-custom-image-runtime.js";
 import type { ExecutionPolicy } from "./execution-allowlist.js";
@@ -22,13 +22,13 @@ import { pluginEnvironmentRunnerTaskDriver } from "./plugin-runner-ai-connection
 
 export type RunnerTarget = {
   driver: string; platform?: string; architecture?: string; libc?: "glibc" | "musl" | "unknown"; glibcVersion?: string;
-  /** A plugin environment whose driver declares Runner task execution. It runs agents only through Paperclip Runner. */
+  /** A plugin environment whose driver declares Runner task execution. It runs agents only through Pilibala Runner. */
   runnerTasks?: boolean;
   managedCloudImage?: boolean;
   warmTaskVersion?: 1;
   executionMode?: ExecutionPolicy["executionMode"];
 };
-export const AGENT_RUNNER_SSH_PLATFORM_COMMAND = "uname -s; uname -m; if paperclip_glibc_version=$(getconf GNU_LIBC_VERSION 2>/dev/null) && [ -n \"$paperclip_glibc_version\" ]; then printf 'glibc\\n%s\\n' \"$paperclip_glibc_version\"; else case \"$(ldd --version 2>&1)\" in *musl*) printf 'musl\\n' ;; *) printf 'unknown\\n' ;; esac; fi";
+export const AGENT_RUNNER_SSH_PLATFORM_COMMAND = "uname -s; uname -m; if pilibala_glibc_version=$(getconf GNU_LIBC_VERSION 2>/dev/null) && [ -n \"$pilibala_glibc_version\" ]; then printf 'glibc\\n%s\\n' \"$pilibala_glibc_version\"; else case \"$(ldd --version 2>&1)\" in *musl*) printf 'musl\\n' ;; *) printf 'unknown\\n' ;; esac; fi";
 export interface AgentRunnerSelection {
   adapterType?: string | null;
   disabledTypes?: string[];
@@ -47,11 +47,11 @@ function localDisabledTypes(): string[] {
 
 function runnerAdaptersAvailable(harness: string, driver: string, disabledTypes: string[]): boolean {
   const disabled = new Set(disabledTypes);
-  return !!paperclipRunnerProfileForHarness(harness)
-    && !disabled.has(harness) && !disabled.has("paperclip_runner")
-    && !!findActiveServerAdapter(harness) && !!findActiveServerAdapter("paperclip_runner")
-    && !hasActiveAdapterOverride(harness) && !hasActiveAdapterOverride("paperclip_runner")
-    && isEnvironmentDriverSupportedForAdapter("paperclip_runner", driver);
+  return !!pilibalaRunnerProfileForHarness(harness)
+    && !disabled.has(harness) && !disabled.has("pilibala_runner")
+    && !!findActiveServerAdapter(harness) && !!findActiveServerAdapter("pilibala_runner")
+    && !hasActiveAdapterOverride(harness) && !hasActiveAdapterOverride("pilibala_runner")
+    && isEnvironmentDriverSupportedForAdapter("pilibala_runner", driver);
 }
 
 export function agentRunnerAvailability(harness: string, target: RunnerTarget = localAgentRunnerTarget(), disabledTypes: string[] = localDisabledTypes()): AgentRunnerAvailability {
@@ -59,29 +59,29 @@ export function agentRunnerAvailability(harness: string, target: RunnerTarget = 
     if (target.executionMode === "kubernetes") return { supportedRunners: [], defaultRunner: "legacy" };
     const controller = localAgentRunnerTarget();
     const supported = runnerAdaptersAvailable(harness, "local", disabledTypes)
-      && paperclipRunnerSupportsPlatform(harness, controller.platform, controller.architecture, controller.libc, controller.glibcVersion);
+      && pilibalaRunnerSupportsPlatform(harness, controller.platform, controller.architecture, controller.libc, controller.glibcVersion);
     const legacy = isEnvironmentDriverSupportedForAdapter(harness, target.driver);
-    return { supportedRunners: [...(supported ? ["paperclip" as const] : []), ...(legacy ? ["legacy" as const] : [])],
-      defaultRunner: legacy || !supported ? "legacy" : "paperclip" };
+    return { supportedRunners: [...(supported ? ["pilibala" as const] : []), ...(legacy ? ["legacy" as const] : [])],
+      defaultRunner: legacy || !supported ? "legacy" : "pilibala" };
   }
   if (target.driver === "unavailable") return { supportedRunners: [], defaultRunner: "legacy" };
   if (target.runnerTasks || target.managedCloudImage) {
     return runnerAdaptersAvailable(harness, target.driver, disabledTypes)
-      ? { supportedRunners: target.runnerTasks ? ["paperclip"] : ["paperclip", "legacy"], defaultRunner: "paperclip" }
+      ? { supportedRunners: target.runnerTasks ? ["pilibala"] : ["pilibala", "legacy"], defaultRunner: "pilibala" }
       : { supportedRunners: ["legacy"], defaultRunner: "legacy" };
   }
   const supported = runnerAdaptersAvailable(harness, target.driver, disabledTypes)
     && (target.driver !== "sandbox" || Boolean(target.platform && target.architecture
       && (target.platform !== "linux" || (target.libc === "glibc" && target.glibcVersion))))
     && (["claude_local", "grok_local"].includes(harness)
-      ? !!target.platform && paperclipRunnerSupportsPlatform(harness, target.platform, target.architecture ?? "", target.libc, target.glibcVersion)
-      : !target.platform || paperclipRunnerSupportsPlatform(harness, target.platform, target.architecture ?? "", target.libc, target.glibcVersion));
+      ? !!target.platform && pilibalaRunnerSupportsPlatform(harness, target.platform, target.architecture ?? "", target.libc, target.glibcVersion)
+      : !target.platform || pilibalaRunnerSupportsPlatform(harness, target.platform, target.architecture ?? "", target.libc, target.glibcVersion));
   const automatic = supported && !(harness === "claude_local" && target.driver === "ssh" && target.platform === "darwin");
-  return { supportedRunners: supported ? ["paperclip", "legacy"] : ["legacy"], defaultRunner: automatic ? "paperclip" : "legacy" };
+  return { supportedRunners: supported ? ["pilibala", "legacy"] : ["legacy"], defaultRunner: automatic ? "pilibala" : "legacy" };
 }
 
 function incompatible(fields: string[]): never {
-  throw unprocessable(`Paperclip Runner cannot honor these settings: ${fields.join(", ")}. Remove them before retrying.`, { code: "agent_runner_config_incompatible", fields });
+  throw unprocessable(`Pilibala Runner cannot honor these settings: ${fields.join(", ")}. Remove them before retrying.`, { code: "agent_runner_config_incompatible", fields });
 }
 
 function resolveGrokRunnerConfig(config: Record<string, unknown>): Record<string, unknown> {
@@ -179,7 +179,7 @@ function resolveClaudeRunnerConfig(config: Record<string, unknown>): Record<stri
 
 export function resolveNewAgentRunner(input: AgentRunnerSelection): { adapterType: string; adapterConfig: Record<string, unknown> } {
   const result = resolveAgentRunner(input);
-  if (result.adapterType === "paperclip_runner" && agentHarnessType(result.adapterType, result.adapterConfig) === "claude_local") {
+  if (result.adapterType === "pilibala_runner" && agentHarnessType(result.adapterType, result.adapterConfig) === "claude_local") {
     const normalized = normalizeClaudeRunnerOptions(input.adapterConfig ?? {});
     result.adapterConfig = normalizeClaudeRunnerOptions(result.adapterConfig).config;
     input.onConfigurationWarnings?.(normalized.warnings);
@@ -192,12 +192,12 @@ function resolveAgentRunner(input: AgentRunnerSelection): { adapterType: string;
   let config = { ...input.adapterConfig };
   const disabledTypes = input.disabledTypes ?? localDisabledTypes();
   const harness = agentHarnessType(adapterType, config);
-  const native = adapterType === "paperclip_runner";
-  if (paperclipRunnerProfileForHarness(adapterType) && disabledTypes.includes(adapterType)) throw unprocessable(`${adapterType === "grok_local" ? "Grok Build" : adapterType === "pi_local" ? "Pi" : adapterType === "opencode_local" ? "OpenCode" : adapterType === "claude_local" ? "Claude" : "Codex"} is disabled on this instance. Enable its adapter or choose another harness.`, { code: "agent_runner_unavailable" });
-  if (native && (input.runner === undefined || input.runner === "paperclip" || (harness !== "codex_local" && input.runner !== "legacy"))) return { adapterType, adapterConfig: normalizeLegacyRunnerProvider(config) };
+  const native = adapterType === "pilibala_runner";
+  if (pilibalaRunnerProfileForHarness(adapterType) && disabledTypes.includes(adapterType)) throw unprocessable(`${adapterType === "grok_local" ? "Grok Build" : adapterType === "pi_local" ? "Pi" : adapterType === "opencode_local" ? "OpenCode" : adapterType === "claude_local" ? "Claude" : "Codex"} is disabled on this instance. Enable its adapter or choose another harness.`, { code: "agent_runner_unavailable" });
+  if (native && (input.runner === undefined || input.runner === "pilibala" || (harness !== "codex_local" && input.runner !== "legacy"))) return { adapterType, adapterConfig: normalizeLegacyRunnerProvider(config) };
   const availability = agentRunnerAvailability(harness, input.target, disabledTypes);
   const choice = input.runner ?? "auto";
-  const useNative = choice === "paperclip" || (choice === "auto" && harness !== "cursor_cloud" && availability.defaultRunner === "paperclip");
+  const useNative = choice === "pilibala" || (choice === "auto" && harness !== "cursor_cloud" && availability.defaultRunner === "pilibala");
   if (!useNative) {
     if (harness === "cursor_cloud") {
       if (!native) {
@@ -233,7 +233,7 @@ function resolveAgentRunner(input: AgentRunnerSelection): { adapterType: string;
         ...(config.acpxSessionMode !== undefined ? ["acpxSessionMode"] : []),
         ...(!["off", "minimal", "low", "medium", "high", "xhigh"].includes(String(thinking)) ? [config.thinking !== undefined ? "thinking" : "piThinkingLevel"] : []),
       ];
-      if (unsupported.length) throw unprocessable(`Legacy Pi cannot honor these settings: ${unsupported.join(", ")}. Keep Paperclip Runner or explicitly choose compatible settings.`, { code: "agent_runner_config_incompatible", fields: unsupported });
+      if (unsupported.length) throw unprocessable(`Legacy Pi cannot honor these settings: ${unsupported.join(", ")}. Keep Pilibala Runner or explicitly choose compatible settings.`, { code: "agent_runner_config_incompatible", fields: unsupported });
       for (const key of ["provider", "acpxAgent", "acpxPermissionMode", "acpxSessionMode", "piThinkingLevel", "lifecycleMode", "idleTimeoutMs"]) delete config[key];
       return { adapterType: "pi_local", adapterConfig: { ...config, thinking } };
     }
@@ -261,10 +261,10 @@ function resolveAgentRunner(input: AgentRunnerSelection): { adapterType: string;
     for (const key of ["provider", "codexPermissionMode", "opencodePermissionMode", "acpxPermissionMode", "lifecycleMode", "idleTimeoutMs"]) delete config[key];
     return { adapterType: "codex_local", adapterConfig: { ...config, dangerouslyBypassApprovalsAndSandbox: config.dangerouslyBypassApprovalsAndSandbox ?? true } };
   }
-  if (native && harness !== "codex_local" && choice === "paperclip") return { adapterType, adapterConfig: normalizeLegacyRunnerProvider(config) };
-  if (!availability.supportedRunners.includes("paperclip")) throw unprocessable(input.target?.driver === "sandbox"
-    ? "Paperclip Runner is unavailable for this sandbox. Choose an immutable OCI image digest and run its environment connection probe to qualify the OS, architecture and libc."
-    : "Paperclip Runner is unavailable for this harness and environment. Choose a supported harness or environment.", { code: "agent_runner_unavailable" });
+  if (native && harness !== "codex_local" && choice === "pilibala") return { adapterType, adapterConfig: normalizeLegacyRunnerProvider(config) };
+  if (!availability.supportedRunners.includes("pilibala")) throw unprocessable(input.target?.driver === "sandbox"
+    ? "Pilibala Runner is unavailable for this sandbox. Choose an immutable OCI image digest and run its environment connection probe to qualify the OS, architecture and libc."
+    : "Pilibala Runner is unavailable for this harness and environment. Choose a supported harness or environment.", { code: "agent_runner_unavailable" });
   if (native) return { adapterType, adapterConfig: normalizeLegacyRunnerProvider(config) };
   if (harness === "cursor_cloud") {
     const unsupported = ["promptTemplate", "bootstrapPromptTemplate"].filter(key => typeof config[key] === "string" && config[key].trim());
@@ -277,52 +277,52 @@ function resolveAgentRunner(input: AgentRunnerSelection): { adapterType: string;
       delete config[legacy];
     }
     config = { ...config, provider: "cursor_cloud", lifecycleMode: "per_turn" };
-    if (input.setupOnly && !config.model) return { adapterType: "paperclip_runner", adapterConfig: config };
-    try { resolvePaperclipRunnerNativeProviderInput({ backend: "cursor_cloud_api", adapterConfig: config }); }
+    if (input.setupOnly && !config.model) return { adapterType: "pilibala_runner", adapterConfig: config };
+    try { resolvePilibalaRunnerNativeProviderInput({ backend: "cursor_cloud_api", adapterConfig: config }); }
     catch (error) {
-      if (error instanceof PaperclipRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
+      if (error instanceof PilibalaRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
       throw error;
     }
-    return { adapterType: "paperclip_runner", adapterConfig: config };
+    return { adapterType: "pilibala_runner", adapterConfig: config };
   }
   if (harness === "grok_local") {
     config = resolveGrokRunnerConfig(config);
-    try { resolvePaperclipRunnerNativeProviderInput({ backend: "acpx_runtime", adapterConfig: config }); }
+    try { resolvePilibalaRunnerNativeProviderInput({ backend: "acpx_runtime", adapterConfig: config }); }
     catch (error) {
-      if (error instanceof PaperclipRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
+      if (error instanceof PilibalaRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
       throw error;
     }
-    return { adapterType: "paperclip_runner", adapterConfig: config };
+    return { adapterType: "pilibala_runner", adapterConfig: config };
   }
   if (harness === "pi_local") {
     config = resolvePiRunnerConfig(config);
-    if (input.setupOnly && !config.model) return { adapterType: "paperclip_runner", adapterConfig: config };
+    if (input.setupOnly && !config.model) return { adapterType: "pilibala_runner", adapterConfig: config };
     if (typeof config.model !== "string" || !/^[^/\s]+\/\S+$/.test(config.model)) throw unprocessable("Pi requires an explicit provider/model. Select a model before testing or hiring.", { code: "agent_runner_config_incompatible", fields: ["model"] });
-    try { resolvePaperclipRunnerNativeProviderInput({ backend: "acpx_runtime", adapterConfig: config }); }
+    try { resolvePilibalaRunnerNativeProviderInput({ backend: "acpx_runtime", adapterConfig: config }); }
     catch (error) {
-      if (error instanceof PaperclipRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
+      if (error instanceof PilibalaRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
       throw error;
     }
-    return { adapterType: "paperclip_runner", adapterConfig: config };
+    return { adapterType: "pilibala_runner", adapterConfig: config };
   }
   if (harness === "opencode_local") {
     config = resolveOpenCodeRunnerConfig(config);
-    if (input.setupOnly && !config.model) return { adapterType: "paperclip_runner", adapterConfig: config };
-    try { resolvePaperclipRunnerNativeProviderInput({ backend: "opencode_server", adapterConfig: config }); }
+    if (input.setupOnly && !config.model) return { adapterType: "pilibala_runner", adapterConfig: config };
+    try { resolvePilibalaRunnerNativeProviderInput({ backend: "opencode_server", adapterConfig: config }); }
     catch (error) {
-      if (error instanceof PaperclipRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
+      if (error instanceof PilibalaRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
       throw error;
     }
-    return { adapterType: "paperclip_runner", adapterConfig: config };
+    return { adapterType: "pilibala_runner", adapterConfig: config };
   }
   if (harness === "claude_local") {
     config = resolveClaudeRunnerConfig(config);
-    try { resolvePaperclipRunnerNativeProviderInput({ backend: "acpx_runtime", adapterConfig: config }); }
+    try { resolvePilibalaRunnerNativeProviderInput({ backend: "acpx_runtime", adapterConfig: config }); }
     catch (error) {
-      if (error instanceof PaperclipRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
+      if (error instanceof PilibalaRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
       throw error;
     }
-    return { adapterType: "paperclip_runner", adapterConfig: config };
+    return { adapterType: "pilibala_runner", adapterConfig: config };
   }
   const aliasSources = new Map<string, string>();
   for (const [canonical, alias] of [
@@ -358,24 +358,24 @@ function resolveAgentRunner(input: AgentRunnerSelection): { adapterType: string;
   if (unsupported.length) incompatible(unsupported.map(field => aliasSources.get(field) ?? field));
   const env = config.env && typeof config.env === "object" && !Array.isArray(config.env)
     ? config.env as Record<string, unknown> : {};
-  const network = env.PAPERCLIP_CODEX_ACP_NETWORK_ACCESS;
+  const network = env.PILIBALA_CODEX_ACP_NETWORK_ACCESS;
   const binding = network && typeof network === "object" && !Array.isArray(network)
     ? network as Record<string, unknown> : null;
   if (config.engine !== "cli" && (network === "false"
     || (binding?.type === "plain" && binding.value === "false")
     || binding?.type === "secret_ref" || binding?.type === "user_secret_ref")) {
-    incompatible(["env.PAPERCLIP_CODEX_ACP_NETWORK_ACCESS"]);
+    incompatible(["env.PILIBALA_CODEX_ACP_NETWORK_ACCESS"]);
   }
   const effort = config.modelReasoningEffort ?? config.reasoningEffort ?? config.effort;
   for (const key of ["engine", "command", "extraArgs", "args", "agentCommand", "mode", "nonInteractivePermissions", "stateDir", "warmHandleIdleMs", "dangerouslyBypassApprovalsAndSandbox", "dangerouslyBypassSandbox", "fastMode", "reasoningEffort", "effort"]) delete config[key];
   if (config.model !== undefined && typeof config.model !== "string") incompatible(["model"]);
-  config = { ...config, provider: "codex", model: typeof config.model === "string" && config.model.trim() ? config.model.trim() : PAPERCLIP_RUNNER_DEFAULT_MODELS.codex, codexPermissionMode: config.codexPermissionMode ?? "never", ...(config.lifecycleMode === undefined ? {} : { lifecycleMode: config.lifecycleMode }), ...(effort === undefined ? {} : { modelReasoningEffort: effort }) };
-  try { resolvePaperclipRunnerNativeProviderInput({ backend: "codex_app_server", adapterConfig: config }); }
+  config = { ...config, provider: "codex", model: typeof config.model === "string" && config.model.trim() ? config.model.trim() : PILIBALA_RUNNER_DEFAULT_MODELS.codex, codexPermissionMode: config.codexPermissionMode ?? "never", ...(config.lifecycleMode === undefined ? {} : { lifecycleMode: config.lifecycleMode }), ...(effort === undefined ? {} : { modelReasoningEffort: effort }) };
+  try { resolvePilibalaRunnerNativeProviderInput({ backend: "codex_app_server", adapterConfig: config }); }
   catch (error) {
-    if (error instanceof PaperclipRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
+    if (error instanceof PilibalaRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
     throw error;
   }
-  return { adapterType: "paperclip_runner", adapterConfig: config };
+  return { adapterType: "pilibala_runner", adapterConfig: config };
 }
 
 export async function resolveNewAgentRunnerForCompany(db: Db, companyId: string, input: AgentRunnerSelection & { defaultEnvironmentId?: string | null }) {
@@ -383,7 +383,7 @@ export async function resolveNewAgentRunnerForCompany(db: Db, companyId: string,
   input = { ...input, disabledTypes };
   const cursor = agentHarnessType(input.adapterType ?? "process", input.adapterConfig) === "cursor_cloud";
   const nativeCursor = cursor && input.runner !== "legacy"
-    && (input.adapterType === "paperclip_runner" || input.runner === "paperclip");
+    && (input.adapterType === "pilibala_runner" || input.runner === "pilibala");
   const cursorSetupDefault = cursor && input.setupOnly === true
     && (input.runner === undefined || input.runner === "auto");
   if (nativeCursor || cursorSetupDefault) {
@@ -393,21 +393,21 @@ export async function resolveNewAgentRunnerForCompany(db: Db, companyId: string,
     // legacy agents still require an explicit conversion decision.
     const useSetupDefault = cursorSetupDefault && managedCursorApiDefaultEnabled(settings.experimental);
     if (nativeCursor || useSetupDefault) {
-      if (disabledTypes.includes("cursor_cloud") || disabledTypes.includes("paperclip_runner")) {
+      if (disabledTypes.includes("cursor_cloud") || disabledTypes.includes("pilibala_runner")) {
         throw unprocessable("Cursor Cloud is disabled on this instance. Enable its adapter or choose another harness.", { code: "agent_runner_unavailable" });
       }
       assertProviderApiPlacementPolicy(settings.general ?? {});
-      const selected = resolveNewAgentRunner({ ...input, ...(useSetupDefault ? { runner: "paperclip" as const } : {}), target: localAgentRunnerTarget() });
+      const selected = resolveNewAgentRunner({ ...input, ...(useSetupDefault ? { runner: "pilibala" as const } : {}), target: localAgentRunnerTarget() });
       try { if (!input.setupOnly) resolveProviderApiPlacement({ agent: selected }); }
       catch (error) {
-        if (error instanceof PaperclipRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
+        if (error instanceof PilibalaRunnerProviderProfileError) throw unprocessable(error.message, { code: error.code });
         throw error;
       }
       return { ...selected, defaultEnvironmentId: null };
     }
   }
-  if (!paperclipRunnerProfileForHarness(agentHarnessType(input.adapterType ?? "process", input.adapterConfig))
-    || input.runner === "legacy" || (input.adapterType === "paperclip_runner" && (input.runner === undefined || input.runner === "paperclip"))) return resolveNewAgentRunner(input);
+  if (!pilibalaRunnerProfileForHarness(agentHarnessType(input.adapterType ?? "process", input.adapterConfig))
+    || input.runner === "legacy" || (input.adapterType === "pilibala_runner" && (input.runner === undefined || input.runner === "pilibala"))) return resolveNewAgentRunner(input);
   const target = await resolveAgentRunnerTargetForCompany(db, companyId, input.defaultEnvironmentId, input.disabledTypes);
   return resolveNewAgentRunner({ ...input, target });
 }
@@ -481,7 +481,7 @@ async function resolveAgentEnvironmentForCompany(db: Db, companyId: string, defa
   let environment = environmentId ? await envs.getById(environmentId) : null;
   if (settings.experimental?.enableManagedSandboxOnly && (!environment || environment.driver === "local")) {
     environment = await envs.findManagedSandboxEnvironment(companyId);
-    if (!environment) throw unprocessable("The managed sandbox is unavailable. Restore Paperclip Sandbox and retry.", {
+    if (!environment) throw unprocessable("The managed sandbox is unavailable. Restore Pilibala Sandbox and retry.", {
       code: "managed_sandbox_unavailable", ...(executionMode ? { executionMode } : {}),
     });
   }

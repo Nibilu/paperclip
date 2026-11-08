@@ -38,9 +38,9 @@ describe("issue-reference", () => {
     expect(parseIssuePathIdFromPath("http://remote.example.test:3103/PAPA/issues/PAPA-115#comment-850083f3-24de-43e7-a8cd-bc01f7cc9f0d")).toBeNull();
   });
 
-  it("does not treat GitHub issue URLs as internal Paperclip issue links", () => {
-    expect(parseIssuePathIdFromPath("https://github.com/paperclipai/paperclip/issues/1778")).toBeNull();
-    expect(parseIssueReferenceFromHref("https://github.com/paperclipai/paperclip/issues/1778")).toBeNull();
+  it("does not treat GitHub issue URLs as internal Pilibala issue links", () => {
+    expect(parseIssuePathIdFromPath("https://github.com/pilibalaai/pilibala/issues/1778")).toBeNull();
+    expect(parseIssueReferenceFromHref("https://github.com/pilibalaai/pilibala/issues/1778")).toBeNull();
   });
 
   it("ignores placeholder issue paths", () => {
@@ -79,7 +79,7 @@ describe("issue-reference", () => {
     });
   });
 
-  it("preserves absolute Paperclip issue URLs so origin, port, and hash are not lost", () => {
+  it("preserves absolute Pilibala issue URLs so origin, port, and hash are not lost", () => {
     expect(parseIssueReferenceFromHref("http://localhost:3100/PAP/issues/PAP-1179")).toBeNull();
     expect(parseIssueReferenceFromHref("http://remote.example.test:3103/PAPA/issues/PAPA-115#comment-850083f3-24de-43e7-a8cd-bc01f7cc9f0d")).toBeNull();
   });

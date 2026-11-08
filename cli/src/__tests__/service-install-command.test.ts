@@ -24,8 +24,8 @@ describe("service install command", () => {
       supported: true,
       manager: {
         platform: "systemd",
-        serviceName: "paperclipai.service",
-        definitionPath: "/service/paperclipai.service",
+        serviceName: "pilibalaai.service",
+        definitionPath: "/service/pilibalaai.service",
         install,
       } as unknown as ServiceManager,
     });
@@ -43,8 +43,8 @@ describe("service install command", () => {
       installed: true,
       changed: true,
       platform: "systemd",
-      serviceName: "paperclipai.service",
-      definitionPath: "/service/paperclipai.service",
+      serviceName: "pilibalaai.service",
+      definitionPath: "/service/pilibalaai.service",
       lingerEnabled: false,
     }, null, 2));
   });
@@ -53,7 +53,7 @@ describe("service install command", () => {
     vi.mocked(ensureServiceShim).mockResolvedValue({ ok: false, installedNow: false, reason: "missing shim" });
 
     await expect(runInstall("--json")).rejects.toThrow(
-      "Background service not installed: missing shim. Run `paperclipai install`, then `paperclipai service install`.",
+      "Background service not installed: missing shim. Run `pilibalaai install`, then `pilibalaai service install`.",
     );
     expect(install).not.toHaveBeenCalled();
     expect(console.log).not.toHaveBeenCalled();

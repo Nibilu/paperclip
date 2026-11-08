@@ -44,8 +44,8 @@ describe("evaluation report navigation", () => {
     history.campaigns = [{campaignId:"campaign-a",publicUrl:"/custom/reports/campaigns/campaign-a/"} as typeof history.campaigns[number]];
     expect(reportHistoryHref(history,"campaign-a")).toBe("/custom/reports/");
     expect(reportHistoryHref(undefined,"campaign-a")).toBe("https://d1p6rlowie26tp.cloudfront.net/runner-e2e/");
-    history.campaigns[0]!.publicUrl = "https://pages.paperclip.ing/standalone-report/";
+    history.campaigns[0]!.publicUrl = "https://pages.pilibala.in/standalone-report/";
     expect(reportHistoryHref(history,"campaign-a")).toBe("https://d1p6rlowie26tp.cloudfront.net/runner-e2e/");
-    expect(page).toContain('class="brand-lockup report-brand" href="https://pages.paperclip.ing/evals/"');
+    expect(page).toContain('class="brand-lockup report-brand" href="https://pages.pilibala.in/evals/"');
   });
 });

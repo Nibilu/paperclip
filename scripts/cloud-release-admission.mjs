@@ -2,7 +2,7 @@ import { appendFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { createActionsReader } from "./github-actions-reader.mjs";
 
-const repository = "paperclipai/paperclip";
+const repository = "pilibalaai/pilibala";
 const repositoryId = 1170821064;
 const workflows = new Set(["docker.yml", "release.yml", "cloud-readiness.yml", "cloud-migrator-artifacts.yml"]);
 export const sourceAdmissionJob = "Cloud candidate admission v1";
@@ -129,7 +129,7 @@ export async function requestDeferredProducer({ file, sha, admissionJob, api, re
 
 export function createReleaseRerunner(token, fetchImpl = fetch) {
   return async path => {
-    if (!/^\/repos\/paperclipai\/paperclip\/actions\/runs\/[1-9]\d*\/rerun$/.test(path)) throw new Error("Invalid release retry path.");
+    if (!/^\/repos\/pilibalaai\/pilibala\/actions\/runs\/[1-9]\d*\/rerun$/.test(path)) throw new Error("Invalid release retry path.");
     const response = await fetchImpl(`https://api.github.com${path}`, { method: "POST", redirect: "error",
       headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" }, signal: AbortSignal.timeout(30_000) });
     if (!response.ok) throw Object.assign(new Error(`Could not admit deferred release work: HTTP ${response.status}.`), { status: response.status });

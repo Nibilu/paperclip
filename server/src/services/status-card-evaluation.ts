@@ -1,7 +1,7 @@
 import { readIdleStatusCardSchedule } from "./status-card-idle-schedule.js";
 import type { DeadlineReconciliationSnapshot } from "./deadline-reconciliation.js";
 import { and, asc, eq, isNotNull, isNull } from "drizzle-orm";
-import { companies, statusCards, type Db } from "@paperclipai/db";
+import { companies, statusCards, type Db } from "@pilibalaai/db";
 import { logger } from "../middleware/logger.js";
 import { registerDeadlineWork } from "./deadline-work.js";
 import type { createDeliveryWorkCoordinator } from "./delivery-work-coordinator.js";

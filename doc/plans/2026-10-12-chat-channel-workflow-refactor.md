@@ -4,7 +4,7 @@ The user authorized six hours of sustained work starting at 2026-10-13 02:14 UTC
 with a target of fewer than 8,000 lines in `server/src/services/chat-channels.ts`.
 The starting commit is `7eaa9cfa9ce04398a5eb0211a86aacaaa01959dd`: 19,153 lines,
 762,442 bytes. At kickoff, the preceding ten PRs were reviewed and green, but not yet merged.
-The user authorizes publishing and merging reviewed changes to paperclipai/paperclip.
+The user authorizes publishing and merging reviewed changes to pilibalaai/pilibala.
 
 The previous plan prioritized too many small helper cuts. This plan prioritizes
 complete workflows, provider ownership, and meaningful reductions per PR. Shared

@@ -14,7 +14,7 @@ const cleanups: Array<() => Promise<void>> = [];
 afterEach(async () => { while (cleanups.length) await cleanups.pop()?.(); });
 
 async function database() {
-  const database = await startEmbeddedPostgresTestDatabase("paperclip-injection-migration-");
+  const database = await startEmbeddedPostgresTestDatabase("pilibala-injection-migration-");
   cleanups.push(database.cleanup);
   const sql = postgres(database.connectionString, { max: 1, onnotice: () => {} });
   cleanups.push(async () => { await sql.end(); });

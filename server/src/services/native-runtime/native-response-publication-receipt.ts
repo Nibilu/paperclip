@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { heartbeatRuns, type Db } from "@paperclipai/db";
+import { heartbeatRuns, type Db } from "@pilibalaai/db";
 import { logActivity } from "../activity-log.js";
 import { appendHeartbeatRunEvent } from "../heartbeat-run-events.js";
 
@@ -13,7 +13,7 @@ import { appendHeartbeatRunEvent } from "../heartbeat-run-events.js";
  * done. The comment write itself stays idempotent through the presentation
  * decision's `commentId`, so retries never double-post.
  */
-export const NATIVE_RESPONSE_PUBLICATION_SCHEMA = "paperclip.native_response_publication.v1";
+export const NATIVE_RESPONSE_PUBLICATION_SCHEMA = "pilibala.native_response_publication.v1";
 export const NATIVE_RESPONSE_PUBLICATION_FAILED = "native_response_publication_failed";
 export const NATIVE_RESPONSE_PUBLICATION_MAX_ATTEMPTS = 6;
 const BASE_DELAY_MS = 30_000;

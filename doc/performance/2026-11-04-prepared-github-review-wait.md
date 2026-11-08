@@ -98,7 +98,7 @@ and are diagnostic only. The accepted numbers above come from the final
 exclusive-window run. Setup failures are not counted as passing tests.
 
 The first shared-consumer integration import and direct server typecheck lacked
-built workspace SDK/Runner outputs. Building `@paperclipai/plugin-sdk` (including
+built workspace SDK/Runner outputs. Building `@pilibalaai/plugin-sdk` (including
 its shared-package prerequisite) resolved the SDK import. An overly broad run of
 the full external-chat integration file was interrupted to run only its affected
 consumer test. That interrupted run is not a passing suite. Full repository

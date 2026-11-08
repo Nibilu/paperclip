@@ -550,7 +550,7 @@ describe("instance settings routes", () => {
     });
 
     it("keeps operator-hidden experimental settings locked for stack admins", async () => {
-      vi.stubEnv("PAPERCLIP_HIDDEN_SETTINGS", "instance.experimental.enableFastResponses");
+      vi.stubEnv("PILIBALA_HIDDEN_SETTINGS", "instance.experimental.enableFastResponses");
       const app = createApp(stackAdmin);
       await request(app).patch("/api/instance/settings/experimental")
         .send({ enableFastResponses: true }).expect(403);
@@ -660,10 +660,10 @@ describe("instance settings routes", () => {
     };
 
     beforeEach(() => {
-      process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
+      process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
     });
     afterEach(() => {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
     });
 
     it("rejects a write that changes executionMode", async () => {
@@ -726,7 +726,7 @@ describe("instance settings routes", () => {
     });
 
     it("keeps executionMode writable on self-hosted instances", async () => {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
       const app = await createApp({
         type: "board",
         userId: "admin-1",
@@ -753,11 +753,11 @@ describe("instance settings routes", () => {
     };
 
     afterEach(() => {
-      delete process.env.PAPERCLIP_HIDDEN_SETTINGS;
+      delete process.env.PILIBALA_HIDDEN_SETTINGS;
     });
 
     it("rejects a write that changes a hidden general field", async () => {
-      process.env.PAPERCLIP_HIDDEN_SETTINGS = "instance.general.censorUsernameInLogs";
+      process.env.PILIBALA_HIDDEN_SETTINGS = "instance.general.censorUsernameInLogs";
       const app = await createApp(adminActor);
 
       const res = await request(app)
@@ -770,7 +770,7 @@ describe("instance settings routes", () => {
     });
 
     it("allows a same-value echo of a hidden general field", async () => {
-      process.env.PAPERCLIP_HIDDEN_SETTINGS = "instance.general.censorUsernameInLogs";
+      process.env.PILIBALA_HIDDEN_SETTINGS = "instance.general.censorUsernameInLogs";
       const app = await createApp(adminActor);
 
       const res = await request(app)
@@ -785,7 +785,7 @@ describe("instance settings routes", () => {
     });
 
     it("deep-compares hidden backupRetention echoes instead of rejecting them", async () => {
-      process.env.PAPERCLIP_HIDDEN_SETTINGS = "instance.general.backupRetention";
+      process.env.PILIBALA_HIDDEN_SETTINGS = "instance.general.backupRetention";
       mockInstanceSettingsService.getGeneral.mockResolvedValue({
         censorUsernameInLogs: false,
         feedbackDataSharingPreference: "prompt",
@@ -806,7 +806,7 @@ describe("instance settings routes", () => {
     });
 
     it("rejects a write that changes a hidden experimental toggle", async () => {
-      process.env.PAPERCLIP_HIDDEN_SETTINGS = "instance.experimental.enableEnvironments";
+      process.env.PILIBALA_HIDDEN_SETTINGS = "instance.experimental.enableEnvironments";
       const app = await createApp(adminActor);
 
       const res = await request(app)
@@ -819,7 +819,7 @@ describe("instance settings routes", () => {
     });
 
     it("enforces a wildcard allowlist at the API and preserves hidden values", async () => {
-      process.env.PAPERCLIP_HIDDEN_SETTINGS =
+      process.env.PILIBALA_HIDDEN_SETTINGS =
         "instance.experimental.*,!instance.experimental.enableIsolatedWorkspaces";
       const app = await createApp(adminActor);
 
@@ -841,7 +841,7 @@ describe("instance settings routes", () => {
     });
 
     it("does not let an allowlist exception bypass an explicit API restriction", async () => {
-      process.env.PAPERCLIP_HIDDEN_SETTINGS =
+      process.env.PILIBALA_HIDDEN_SETTINGS =
         "instance.experimental.*,!instance.experimental.enableEnvironments,instance.experimental.enableEnvironments";
       const app = await createApp(adminActor);
       const res = await request(app)
@@ -853,7 +853,7 @@ describe("instance settings routes", () => {
     });
 
     it("allows writes to non-hidden experimental toggles while others are hidden", async () => {
-      process.env.PAPERCLIP_HIDDEN_SETTINGS =
+      process.env.PILIBALA_HIDDEN_SETTINGS =
         "instance.experimental.enableEnvironments,instance.experimental.enableServerInfoDebugView";
       const app = await createApp(adminActor);
 
@@ -868,7 +868,7 @@ describe("instance settings routes", () => {
     });
 
     it("floors every experimental toggle when the whole Experimental page is hidden", async () => {
-      process.env.PAPERCLIP_HIDDEN_SETTINGS = "instance.experimental";
+      process.env.PILIBALA_HIDDEN_SETTINGS = "instance.experimental";
       const app = await createApp(adminActor);
 
       const res = await request(app)
@@ -897,23 +897,23 @@ describe("instance settings routes", () => {
 
   describe("Cloud staging experiments", () => {
     it.each([
-      ["team.staging.paperclip.app", 200],
-      ["team.paperclip.app", 403],
+      ["team.staging.pilibala.app", 200],
+      ["team.pilibala.app", 403],
     ] as const)(
       "keeps private Notebook operator-only under the real hidden wildcard on %s",
       async (primaryHost, visibleExperimentStatus) => {
-        vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "tenant-token");
-        vi.stubEnv("PAPERCLIP_PRIMARY_HOST", primaryHost);
-        vi.stubEnv("PAPERCLIP_HIDDEN_SETTINGS", "instance.experimental.*");
+        vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "tenant-token");
+        vi.stubEnv("PILIBALA_PRIMARY_HOST", primaryHost);
+        vi.stubEnv("PILIBALA_HIDDEN_SETTINGS", "instance.experimental.*");
         mockInstanceSettingsService.getExperimental.mockResolvedValue({
-          enablePaperclipNotebook: false, enableChatConnectors: false,
+          enablePilibalaNotebook: false, enableChatConnectors: false,
         });
         const app = createApp({
           type: "board", userId: "stack-admin-1", source: "cloud_tenant",
           companyIds: ["company-1"], isInstanceAdmin: false, canManageExperimentalSettings: true,
         });
         const denied = await request(app).patch("/api/instance/settings/experimental")
-          .send({ enablePaperclipNotebook: true }).expect(403);
+          .send({ enablePilibalaNotebook: true }).expect(403);
         expect(denied.body.details).toMatchObject({ code: "settings_operator_managed" });
         expect(mockInstanceSettingsService.updateExperimental).not.toHaveBeenCalled();
         expect(mockLogActivity).not.toHaveBeenCalled();
@@ -928,7 +928,7 @@ describe("instance settings routes", () => {
       },
     );
 
-    it.each(["team.staging.paperclip.app", "team.paperclip.app"])(
+    it.each(["team.staging.pilibala.app", "team.pilibala.app"])(
       "reads Cloud-enabled isolation and rejects disabling it through the real service on %s",
       async (primaryHost) => {
         const { instanceSettingsService } = await vi.importActual<typeof import("../services/instance-settings.js")>(
@@ -943,8 +943,8 @@ describe("instance settings routes", () => {
           update,
         } as unknown as Parameters<typeof instanceSettingsService>[0];
         const service = instanceSettingsService(db, { runtimeEnv: {
-          PAPERCLIP_PRIMARY_HOST: primaryHost,
-          PAPERCLIP_MANAGED_CONFIG: JSON.stringify({
+          PILIBALA_PRIMARY_HOST: primaryHost,
+          PILIBALA_MANAGED_CONFIG: JSON.stringify({
             v: 1, mode: "cloud", catalogVersion: "test",
             features: { enableIsolatedWorkspaces: true }, plugins: { autoInstall: [] },
           }),
@@ -973,9 +973,9 @@ describe("instance settings routes", () => {
     it.each(["instance.experimental", "instance.experimental.*"])(
       "keeps hidden Cloud sandbox policy protected when staging reveals %s",
       async (hidden) => {
-        vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "tenant-token");
-        vi.stubEnv("PAPERCLIP_PRIMARY_HOST", "team.staging.paperclip.app");
-        vi.stubEnv("PAPERCLIP_HIDDEN_SETTINGS", hidden);
+        vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "tenant-token");
+        vi.stubEnv("PILIBALA_PRIMARY_HOST", "team.staging.pilibala.app");
+        vi.stubEnv("PILIBALA_HIDDEN_SETTINGS", hidden);
         mockInstanceSettingsService.getExperimental.mockResolvedValue({ enableManagedSandboxOnly: true });
         const app = createApp(localAdminActor());
         await request(app).patch("/api/instance/settings/experimental")
@@ -985,9 +985,9 @@ describe("instance settings routes", () => {
     );
 
     it("lets a staging admin change hidden experiments but keeps general settings locked", async () => {
-      vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "tenant-token");
-      vi.stubEnv("PAPERCLIP_PRIMARY_HOST", "team.staging.paperclip.app");
-      vi.stubEnv("PAPERCLIP_HIDDEN_SETTINGS", "instance.experimental,instance.experimental.*,instance.general.censorUsernameInLogs");
+      vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "tenant-token");
+      vi.stubEnv("PILIBALA_PRIMARY_HOST", "team.staging.pilibala.app");
+      vi.stubEnv("PILIBALA_HIDDEN_SETTINGS", "instance.experimental,instance.experimental.*,instance.general.censorUsernameInLogs");
       const app = createApp({
         type: "board", userId: "admin-1", source: "cloud_tenant",
         isInstanceAdmin: false, canManageExperimentalSettings: true,
@@ -999,18 +999,18 @@ describe("instance settings routes", () => {
     });
 
     it("keeps production locked even with a staging request hostname", async () => {
-      vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "tenant-token");
-      vi.stubEnv("PAPERCLIP_PRIMARY_HOST", "team.paperclip.app");
-      vi.stubEnv("PAPERCLIP_HIDDEN_SETTINGS", "instance.experimental.*");
+      vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "tenant-token");
+      vi.stubEnv("PILIBALA_PRIMARY_HOST", "team.pilibala.app");
+      vi.stubEnv("PILIBALA_HIDDEN_SETTINGS", "instance.experimental.*");
       const app = createApp(localAdminActor());
       await request(app).patch("/api/instance/settings/experimental")
-        .set("Host", "team.staging.paperclip.app").send({ enableChatConnectors: true }).expect(403);
+        .set("Host", "team.staging.pilibala.app").send({ enableChatConnectors: true }).expect(403);
       expect(mockInstanceSettingsService.updateExperimental).not.toHaveBeenCalled();
     });
 
     it("still denies ordinary board members on staging", async () => {
-      vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "tenant-token");
-      vi.stubEnv("PAPERCLIP_PRIMARY_HOST", "team.staging.paperclip.app");
+      vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "tenant-token");
+      vi.stubEnv("PILIBALA_PRIMARY_HOST", "team.staging.pilibala.app");
       const app = createApp({ type: "board", userId: "member-1", source: "session", isInstanceAdmin: false });
       await request(app).patch("/api/instance/settings/experimental").send({ enableChatConnectors: true }).expect(403);
       expect(mockInstanceSettingsService.updateExperimental).not.toHaveBeenCalled();
@@ -1182,8 +1182,8 @@ describe("instance settings routes", () => {
         return `${header}.${payload}.${sign(null, Buffer.from(`${header}.${payload}`, "ascii"), keyPair.privateKey).toString("base64url")}`;
       }
       beforeEach(() => {
-        vi.stubEnv("PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS", JSON.stringify({ keys: [publicJwk] }));
-        vi.stubEnv("PAPERCLIP_CLOUD_STACK_ID", "stack-idle-route-test");
+        vi.stubEnv("PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS", JSON.stringify({ keys: [publicJwk] }));
+        vi.stubEnv("PILIBALA_CLOUD_STACK_ID", "stack-idle-route-test");
         routeModules.value.controlIdentity.resetCloudControlReplayFenceForTests();
         mockHeartbeatService.getTaskDrainStatus.mockReturnValue(idleStatus);
         mockReadIdleSleepSafety.mockResolvedValue({ version: 3, backgroundWork: "none" });
@@ -1194,7 +1194,7 @@ describe("instance settings routes", () => {
         const token = assertion();
         const response = await request(createControlApp({ type: "none" }))
           .get(`${path}&incomingWake=${encodeURIComponent(JSON.stringify({ ...catalog.incomingWake, generation: "b".repeat(64) }))}`)
-          .set("x-paperclip-cloud-control", token)
+          .set("x-pilibala-cloud-control", token)
           .send({ idleCapabilities: { incomingWake: { ...catalog.incomingWake, ownerId: randomUUID() } } }).expect(200);
         expect(response.body.idleSleepSafety).toEqual({ version: 3, backgroundWork: "none" });
         expect(mockReadIdleSleepSafety).toHaveBeenCalledExactlyOnceWith(mockDb, expect.any(Function), Date.now,
@@ -1205,13 +1205,13 @@ describe("instance settings routes", () => {
         expect(Object.isFrozen(options.incomingWake)).toBe(true);
         expect(Object.isFrozen(options.incomingWake.incomingWake)).toBe(true);
         expect(Object.isFrozen(options.incomingWake.incomingWake.routes)).toBe(true);
-        await request(createControlApp({ type: "none" })).get(path).set("x-paperclip-cloud-control", token).expect(401);
+        await request(createControlApp({ type: "none" })).get(path).set("x-pilibala-cloud-control", token).expect(401);
         expect(mockReadIdleSleepSafety).toHaveBeenCalledTimes(1);
       });
 
       it("passes the signed deadline catalog only for its explicit named query", async () => {
         await request(createControlApp({ type: "none" })).get(`${path}&scheduledWake=domain-deadlines-v1`)
-          .set("x-paperclip-cloud-control", assertion()).expect(200);
+          .set("x-pilibala-cloud-control", assertion()).expect(200);
         expect(mockReadIdleSleepSafety).toHaveBeenCalledExactlyOnceWith(mockDb, expect.any(Function), Date.now,
           ownerId, expect.any(Function), undefined, undefined, true, true,
           { incomingWake: catalog, deadlineCapability: catalog, prepareLocalWork: expect.any(Function) });
@@ -1226,7 +1226,7 @@ describe("instance settings routes", () => {
         ["expired", () => ({ iat: Math.floor(Date.now() / 1000) - 600, exp: Math.floor(Date.now() / 1000) - 300 })],
         ["unsupported catalog", () => ({ idleCapabilities: { incomingWake: { ...catalog.incomingWake, routes: ["unverified-path"] } } })],
       ])("rejects %s before safety inspection", async (_name, claims) => {
-        await request(createControlApp(adminActor)).get(path).set("x-paperclip-cloud-control", assertion(claims())).expect(401);
+        await request(createControlApp(adminActor)).get(path).set("x-pilibala-cloud-control", assertion(claims())).expect(401);
         expect(mockReadIdleSleepSafety).not.toHaveBeenCalled();
       });
 
@@ -1235,13 +1235,13 @@ describe("instance settings routes", () => {
         const changed = JSON.parse(Buffer.from(payload!, "base64url").toString());
         changed.idleCapabilities.incomingWake.generation = "b".repeat(64);
         const tampered = `${header}.${Buffer.from(JSON.stringify(changed)).toString("base64url")}.${signature}`;
-        await request(createControlApp(adminActor)).get(path).set("x-paperclip-cloud-control", tampered).expect(401);
+        await request(createControlApp(adminActor)).get(path).set("x-pilibala-cloud-control", tampered).expect(401);
         expect(mockReadIdleSleepSafety).not.toHaveBeenCalled();
       });
 
       it("leaves legacy signed reads without a catalog conservative", async () => {
         await request(createControlApp({ type: "none" })).get(path)
-          .set("x-paperclip-cloud-control", assertion({ idleCapabilities: undefined })).expect(200);
+          .set("x-pilibala-cloud-control", assertion({ idleCapabilities: undefined })).expect(200);
         expect(mockReadIdleSleepSafety.mock.calls[0][9]).toEqual({ incomingWake: undefined, deadlineCapability: undefined, prepareLocalWork: expect.any(Function) });
       });
 
@@ -1299,13 +1299,13 @@ describe("instance settings routes", () => {
 
     it("reserves managed checkpoint creation for verified Cloud control actors", async () => {
       const backup = vi.fn(async () => true);
-      process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "fixture-managed-signal";
+      process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN = "fixture-managed-signal";
       mockHeartbeatService.getTaskDrainStatus.mockReturnValue(idleStatus);
       try {
         for (const source of ["session", "cloud_tenant", "local_implicit"]) {
           const tenantAdmin = createApp({ ...adminActor, source }, undefined, backup);
           await request(tenantAdmin).get("/api/instance/task-drain?idleSleepSafety=1&ownerId=fixture-owner")
-            .set("x-paperclip-cloud-control", "unverified-header").expect(403);
+            .set("x-pilibala-cloud-control", "unverified-header").expect(403);
         }
         expect(mockReadIdleSleepSafety).not.toHaveBeenCalled();
         expect(backup).not.toHaveBeenCalled();
@@ -1314,7 +1314,7 @@ describe("instance settings routes", () => {
         expect(mockReadIdleSleepSafety).toHaveBeenCalledWith(mockDb, expect.any(Function), Date.now,
           "fixture-owner", expect.any(Function), undefined, backup, false, false, { incomingWake: undefined, deadlineCapability: undefined, prepareLocalWork: expect.any(Function) });
       } finally {
-        delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+        delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
       }
     });
 
@@ -1709,7 +1709,7 @@ describe("instance settings routes", () => {
     const STACK_ID = "stack-lifecycle-routes";
     const adminActor = {
       type: "board",
-      userId: "paperclip-cloud",
+      userId: "pilibala-cloud",
       source: "cloud_control",
       isInstanceAdmin: true,
       companyIds: [],
@@ -1725,8 +1725,8 @@ describe("instance settings routes", () => {
     let primaryId: string;
 
     beforeEach(async () => {
-      process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
-      process.env.PAPERCLIP_CLOUD_STACK_ID = STACK_ID;
+      process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
+      process.env.PILIBALA_CLOUD_STACK_ID = STACK_ID;
       const { cloudTenantPrimaryCompanyId } = await vi.importActual<
         typeof import("../services/cloud-instance.js")
       >("../services/cloud-instance.js");
@@ -1734,8 +1734,8 @@ describe("instance settings routes", () => {
       mockCompanyRows = [];
     });
     afterEach(() => {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
-      delete process.env.PAPERCLIP_CLOUD_STACK_ID;
+      delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.PILIBALA_CLOUD_STACK_ID;
     });
 
     it("reports the primary company status and how many other companies are not archived", async () => {
@@ -1778,8 +1778,8 @@ describe("instance settings routes", () => {
     });
 
     it("answers 404 when the instance is not cloud-managed", async () => {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
-      delete process.env.PAPERCLIP_CLOUD_STACK_ID;
+      delete process.env.PILIBALA_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.PILIBALA_CLOUD_STACK_ID;
       const readRes = await request(await createApp(adminActor)).get("/api/instance/lifecycle");
       expect(readRes.status).toBe(404);
 
@@ -1805,7 +1805,7 @@ describe("instance settings routes", () => {
       expect(mockCompanyService.update).toHaveBeenCalledWith(
         primaryId,
         { status: "active" },
-        { actorType: "system", actorId: "paperclip-cloud", agentId: null, runId: null },
+        { actorType: "system", actorId: "pilibala-cloud", agentId: null, runId: null },
       );
     });
 

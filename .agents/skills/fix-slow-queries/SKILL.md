@@ -1,7 +1,7 @@
 ---
 name: fix-slow-queries
 description: >-
-  Diagnose and fix slow Paperclip PostgreSQL queries using Cloud and Neon evidence,
+  Diagnose and fix slow Pilibala PostgreSQL queries using Cloud and Neon evidence,
   local reproduction, performance and result comparisons, regression tests, and
   a PR with passing checks. Use for costly queries, repeated database work, or
   slow requests with a suspected database cause.
@@ -17,7 +17,7 @@ is an intermediate result. Respect a narrower request for diagnosis only.
 
 - Resolve the reported URL, environment, company/workspace, deployed revision,
   owning repository, and local checkout. Read its `AGENTS.md` and scoped rules.
-  Paperclip and the private `paperclip-cloud` control plane have different rules.
+  Pilibala and the private `pilibala-cloud` control plane have different rules.
 - Work in a dedicated branch/worktree. Reuse suitable existing work; keep the
   checkout running a live server out of branch switching and benchmark setup.
 - Select a bounded batch, usually the top two or three query families. Record
@@ -29,7 +29,7 @@ is an intermediate result. Respect a narrower request for diagnosis only.
 ## 2. Find the actual database and rank the work
 
 Read [Cloud discovery](references/cloud-discovery.md) when starting from a hosted
-workspace. Follow the chain from Paperclip Cloud fleet admin to the stack's Neon
+workspace. Follow the chain from Pilibala Cloud fleet admin to the stack's Neon
 project, branch, endpoint, database, and runtime role. Record the corresponding
 application deployment and time window. Do not reuse IDs from a previous run.
 
@@ -142,10 +142,10 @@ what completed locally versus on the final commit in CI.
 
 ## 7. Create the PR and carry it through checks
 
-Use [prepare-paperclip-pr](../prepare-paperclip-pr/SKILL.md) for public Paperclip
+Use [prepare-pilibala-pr](../prepare-pilibala-pr/SKILL.md) for public Pilibala
 changes, [check-pr](../check-pr/SKILL.md) for feedback, and
 [prcheckloop](../prcheckloop/SKILL.md) for checks. Follow the owning repository's
-workflow instead when the fix belongs in `paperclip-cloud`.
+workflow instead when the fix belongs in `pilibala-cloud`.
 
 - Use the full PR template. Include cause, contract, benchmark command, baseline
   revision, fixture, before/after timings, equality evidence, regression results,
@@ -174,13 +174,13 @@ permission to comment, close, merge, deploy, resize, or mutate a hosted database
 
 - your solution should not require a migration script to be run unless there is a serious reason - in almost all cases a migration script is a non starter
 - similarly you should not add some new boot script - e.g. dont' work around migration scripts by running the migration on every boot
-- if you add migrations, you should also have a sense on the time it will take on a large paperclip instance with thousands of tasks. the best option is to test on a clone of a production-size database and time it. if you don't have that you should make one. migrations that take an unacceptably large time to run (e.g. more than 1 or 2 minutes) must be flagged - first try to optimize the migration and then flag for a human if that's impossible
+- if you add migrations, you should also have a sense on the time it will take on a large pilibala instance with thousands of tasks. the best option is to test on a clone of a production-size database and time it. if you don't have that you should make one. migrations that take an unacceptably large time to run (e.g. more than 1 or 2 minutes) must be flagged - first try to optimize the migration and then flag for a human if that's impossible
 
 ## 8. Hand off the evidence
 
 Report each PR URL and final head, measured gains and neutral paths, correctness
 comparison, completed local checks, latest-head CI/review status, and limitations.
-If working from a Paperclip issue, attach evidence/work products using the
+If working from a Pilibala issue, attach evidence/work products using the
 repository's artifact workflow. Keep private identifiers and tenant data out of
 public PRs. State whether anything was deployed.
 

@@ -158,7 +158,7 @@ describe("CLI parsing", () => {
 });
 
 describe("Daytona options", () => {
-  const image = `ghcr.io/paperclipai/paperclip-daytona-runner@sha256:${"a".repeat(64)}`;
+  const image = `ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:${"a".repeat(64)}`;
   it("defaults to 4 vCPU sandboxes, excludes B5, and keeps the image in the plan", () => {
     const parsed = parseCommand(["--env", "daytona", "--daytona-image", image, "--concurrency", "10"]);
     expect(parsed).toMatchObject({ mode: "wave", options: { daytonaImage: image, daytonaCpu: 4, concurrency: 10 } });

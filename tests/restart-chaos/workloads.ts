@@ -167,7 +167,7 @@ export const workloadDefinitions: Record<WorkloadId, WorkloadDefinition> = {
 /** Files committed into the `chaos-sandbox` fixture repository. */
 export function fixtureRepositoryFiles(benchSeconds = 240): Record<string, { content: string; mode?: number }> {
   return {
-    "README.md": { content: "# chaos-sandbox\n\nFixture repository for the Paperclip restart chaos harness.\n" },
+    "README.md": { content: "# chaos-sandbox\n\nFixture repository for the Pilibala restart chaos harness.\n" },
     "chaoscli/__init__.py": { content: "" },
     "chaoscli/__main__.py": { content: "from chaoscli.cli import main\n\nraise SystemExit(main())\n" },
     "chaoscli/cli.py": { content: [

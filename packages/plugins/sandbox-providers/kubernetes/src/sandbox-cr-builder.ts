@@ -2,16 +2,16 @@
  * Builds a kubernetes-sigs/agent-sandbox Sandbox CR manifest.
  *
  * The Sandbox CR creates a long-lived pod (sleep infinity entrypoint) into
- * which paperclip-server can exec arbitrary commands. This solves the
+ * which pilibala-server can exec arbitrary commands. This solves the
  * architectural mismatch with the batch/v1 Job backend, which only supports
  * a single one-shot entrypoint — not the multi-command adapter-install pattern
- * used by paperclip-server.
+ * used by pilibala-server.
  *
  * Security baseline is identical to buildJobManifest (pod-spec-builder.ts):
  * non-root, drop ALL caps, read-only rootFS, Tini PID 1, seccomp
  * RuntimeDefault, fsGroupChangePolicy OnRootMismatch, automountSAToken=false.
  *
- * NOTE: paperclip-server runs OUTSIDE the cluster, so we cannot set ownerReferences
+ * NOTE: pilibala-server runs OUTSIDE the cluster, so we cannot set ownerReferences
  * on the Sandbox CR (the owner would need to be an in-cluster resource). The
  * release path is explicit delete via sandboxCrOrchestrator.release().
  */
@@ -37,7 +37,7 @@ export function buildSandboxCrManifest(
 ): Record<string, unknown> {
   const podLabels: Record<string, string> = {
     ...input.labels,
-    "paperclip.io/role": "agent",
+    "pilibala.io/role": "agent",
   };
   return {
     apiVersion: "agents.x-k8s.io/v1alpha1",
@@ -46,7 +46,7 @@ export function buildSandboxCrManifest(
       name: input.sandboxName,
       namespace: input.namespace,
       labels: { ...input.labels },
-      // No ownerReferences: paperclip-server is out-of-cluster. Release is
+      // No ownerReferences: pilibala-server is out-of-cluster. Release is
       // explicit delete.
     },
     spec: {
@@ -56,7 +56,7 @@ export function buildSandboxCrManifest(
         },
         spec: {
           serviceAccountName: input.serviceAccountName,
-          // Agent containers call back to paperclip-server via HTTPS egress;
+          // Agent containers call back to pilibala-server via HTTPS egress;
           // they never call the Kubernetes API, so mounting an SA token is
           // unnecessary attack surface.
           automountServiceAccountToken: false,
@@ -86,7 +86,7 @@ export function buildSandboxCrManifest(
               name: "agent",
               image: input.image,
               imagePullPolicy: "IfNotPresent",
-              // sleep infinity keeps the pod running; paperclip-server execs
+              // sleep infinity keeps the pod running; pilibala-server execs
               // commands into it via Kubernetes exec API. Tini as PID 1 for
               // proper signal forwarding and zombie reaping.
               command: [
@@ -100,7 +100,7 @@ export function buildSandboxCrManifest(
                // HOME=/home/node is inside the readOnly root filesystem.
                // Claude (and most agent runtimes) silently exit with code 0
                // and no output when HOME is unwritable, so set this explicitly.
-              env: [{ name: "HOME", value: "/home/paperclip" }],
+              env: [{ name: "HOME", value: "/home/pilibala" }],
               envFrom: [{ secretRef: { name: input.envSecretName } }],
               securityContext: {
                 runAsNonRoot: true,
@@ -122,8 +122,8 @@ export function buildSandboxCrManifest(
               },
               volumeMounts: [
                 { name: "workspace", mountPath: "/workspace" },
-                { name: "home", mountPath: "/home/paperclip" },
-                { name: "cache", mountPath: "/home/paperclip/.cache" },
+                { name: "home", mountPath: "/home/pilibala" },
+                { name: "cache", mountPath: "/home/pilibala/.cache" },
                 { name: "tmp", mountPath: "/tmp" },
               ],
             },

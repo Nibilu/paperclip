@@ -28,8 +28,8 @@ import {
   issues,
   nativeRunFinalizations,
   projects,
-} from "@paperclipai/db";
-import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY } from "@pilibalaai/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -50,7 +50,7 @@ import { costService } from "../../../services/costs.js";
 // feeds the mapped facts back through the real gate to prove the wiring
 // produces the same suppression a caller would have seen before this module
 // existed.
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_RUN_DISPATCH_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_RUN_DISPATCH_TEST_DATABASE_URL");
 const embeddedPostgresSupport = external ? { supported: true, reason: undefined } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 
@@ -66,7 +66,7 @@ describeEmbeddedPostgres("run-dispatch postgres adapter", () => {
 
   beforeAll(async () => {
     if (external) await applyPendingMigrations(external);
-    else tempDb = await startEmbeddedPostgresTestDatabase("paperclip-run-dispatch-postgres-adapter-");
+    else tempDb = await startEmbeddedPostgresTestDatabase("pilibala-run-dispatch-postgres-adapter-");
     db = createDb(external ?? tempDb!.connectionString);
   }, 20_000);
 
@@ -101,7 +101,7 @@ describeEmbeddedPostgres("run-dispatch postgres adapter", () => {
     const agentId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -907,7 +907,7 @@ describeEmbeddedPostgres("run-dispatch postgres adapter", () => {
       }).where(eq(nativeRunFinalizations.runId, f.runId));
       await db.update(heartbeatRuns).set({ resultJson: mode === "fresh" ? {} : {
         startupCancellation: { beforeNativeSelection: false, errorCode: "cancelled", requestedAt: new Date().toISOString() },
-        nativeCancellation: { schema: "paperclip.native-cancellation.v1", companyId: f.companyId, runId: f.runId,
+        nativeCancellation: { schema: "pilibala.native-cancellation.v1", companyId: f.companyId, runId: f.runId,
           issueId: mode === "foreign-intent" ? randomUUID() : f.issueId, scope: "run", reasonCode: "cancellation_run_only",
           intentId: `native-cancellation:${randomUUID()}`, intentAuditId: mode === "missing-audit" ? randomUUID() : intentAuditId,
           dispatchState: "pending", dispatched: false, effects: ["release_run_resources"] },
@@ -1230,7 +1230,7 @@ describeEmbeddedPostgres("run-dispatch postgres adapter", () => {
           issueId,
           wakeReason: "issue_assigned",
           ...(source === undefined ? {} : { source }),
-          paperclipWake: { privateTestMarker: "not-for-the-status-effect" },
+          pilibalaWake: { privateTestMarker: "not-for-the-status-effect" },
         },
       });
       const outcome = await createPostgresRunDispatchAdapter(db).cancelStaleQueuedRun({
@@ -1264,7 +1264,7 @@ describeEmbeddedPostgres("run-dispatch postgres adapter", () => {
         .then((rows) => rows[0]);
       expect(persisted?.status).toBe("cancelled");
       expect(persisted?.contextSnapshot).toMatchObject({
-        paperclipWake: { privateTestMarker: "not-for-the-status-effect" },
+        pilibalaWake: { privateTestMarker: "not-for-the-status-effect" },
       });
     });
 

@@ -1,13 +1,13 @@
-import type { AgentAppearance } from "@paperclipai/shared";
-import { HEARTBEAT_RUN_LIST_DEFAULT_LIMIT } from "@paperclipai/shared";
-import type { IssueRecoveryAction } from "@paperclipai/shared";
+import type { AgentAppearance } from "@pilibalaai/shared";
+import { HEARTBEAT_RUN_LIST_DEFAULT_LIMIT } from "@pilibalaai/shared";
+import type { IssueRecoveryAction } from "@pilibalaai/shared";
 import type {
   HeartbeatRun,
   HeartbeatRunEvent,
   WorkspaceOperation,
   ProviderTraceFrame,
   ProviderTraceMetadata,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { tenantSessionRecovery } from "@/lib/tenant-session-recovery";
 import { api, type RequestOptions } from "./client";
 
@@ -109,7 +109,7 @@ export type RuntimeRequestResolution =
   | { action: "accept" | "accept_for_session" | "decline" | "cancel" }
   | { action: "submit"; answers: Record<string, { answers: string[] }> }
   | { action: "submit"; content: Record<string, unknown> }
-  | { action: "submit"; response: import("@paperclipai/adapter-utils").PaperclipQuestionResponse };
+  | { action: "submit"; response: import("@pilibalaai/adapter-utils").PilibalaQuestionResponse };
 
 export interface HeartbeatRunListOptions {
   latestFailuresOnly?: boolean;
@@ -221,7 +221,7 @@ export const heartbeatsApi = {
     if (options && run?.status !== "cancelled") {
       const value = run?.resultJson?.nativeCancellation;
       const intent = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
-      const pending = run?.id === runId && intent?.schema === "paperclip.native-cancellation.v1"
+      const pending = run?.id === runId && intent?.schema === "pilibala.native-cancellation.v1"
         && intent.runId === runId && intent.companyId === run.companyId
         && intent.intentId === `native-cancellation:${options.cancellationRequestId}` && intent.scope === "run"
         && intent.dispatchState === "pending" && intent.dispatched === false

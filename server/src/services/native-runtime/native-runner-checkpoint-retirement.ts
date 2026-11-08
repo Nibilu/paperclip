@@ -1,4 +1,4 @@
-const schema = "paperclip.native-runner-checkpoint-retirement.v1";
+const schema = "pilibala.native-runner-checkpoint-retirement.v1";
 export const MAX_NATIVE_CHECKPOINT_RETIREMENT_RUNS = 100;
 export type NativeCheckpointRetirement = {
   schema: typeof schema;
@@ -17,7 +17,7 @@ export function readNativeCheckpointRetirement(
   const record = value as Record<string, unknown>;
   if (
     typeof record.schema !== "string" ||
-    !record.schema.startsWith("paperclip.native-runner-checkpoint-retirement.")
+    !record.schema.startsWith("pilibala.native-runner-checkpoint-retirement.")
   )
     return null;
   if (

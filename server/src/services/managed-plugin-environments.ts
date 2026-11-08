@@ -5,7 +5,7 @@
  * Each declared entry owns exactly one row, identified by the marker
  * `metadata.managedPluginEnvironment = "<pluginKey>:<driverKey>"` (unique
  * index `environments_managed_plugin_environment_idx`) next to
- * `managedByPaperclip: true`, which puts the row behind the environments-route
+ * `managedByPilibala: true`, which puts the row behind the environments-route
  * write floor on cloud-managed instances.
  *
  * - The first ensure adopts an existing unmarked row for the same plugin and
@@ -23,9 +23,9 @@
  */
 
 import { and, eq, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { companies, environments } from "@paperclipai/db";
-import type { PluginEnvironmentConfig } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { companies, environments } from "@pilibalaai/db";
+import type { PluginEnvironmentConfig } from "@pilibalaai/shared";
 import { logActivity, publishActivity, type ActivityPublication } from "./activity-log.js";
 import { normalizeEnvironmentConfig } from "./environment-config.js";
 import { validatePluginEnvironmentDriverConfig } from "./plugin-environment-driver.js";
@@ -188,7 +188,7 @@ export async function ensureManagedPluginEnvironment(
           status: "active",
           config: desiredConfig,
           envVars: {},
-          metadata: { managedByPaperclip: true, [MANAGED_PLUGIN_ENVIRONMENT_MARKER_KEY]: marker },
+          metadata: { managedByPilibala: true, [MANAGED_PLUGIN_ENVIRONMENT_MARKER_KEY]: marker },
           createdAt: now,
           updatedAt: now,
         })
@@ -211,7 +211,7 @@ export async function ensureManagedPluginEnvironment(
     const currentMetadata = metadataOf(row);
     const desiredMetadata = {
       ...currentMetadata,
-      managedByPaperclip: true,
+      managedByPilibala: true,
       [MANAGED_PLUGIN_ENVIRONMENT_MARKER_KEY]: marker,
     };
     const matches =

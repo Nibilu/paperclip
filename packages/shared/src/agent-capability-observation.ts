@@ -3,7 +3,7 @@ import { z } from "zod";
 /**
  * Adapter capability observation contract (SPEC-implementation 11.2).
  * Adapter-specific evidence about what a configured endpoint could do at check
- * time. Never a task status; never a Paperclip run status.
+ * time. Never a task status; never a Pilibala run status.
  */
 
 export const AGENT_CAPABILITY_OBSERVATION_STATES = [
@@ -22,7 +22,7 @@ export const AGENT_CAPABILITY_OBSERVATION_STATES = [
 export const agentCapabilityObservationStateSchema = z.enum(AGENT_CAPABILITY_OBSERVATION_STATES);
 export type AgentCapabilityObservationState = (typeof AGENT_CAPABILITY_OBSERVATION_STATES)[number];
 
-/** Operation vocabulary Paperclip admission cares about. */
+/** Operation vocabulary Pilibala admission cares about. */
 export const AGENT_CAPABILITY_OPERATIONS = [
   "create",
   "status",

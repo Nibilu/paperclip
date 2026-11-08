@@ -29,7 +29,7 @@ function InlineLinksGallery() {
       "The fix is ready at https://github.com/acme/web/pull/241. It closes https://github.com/acme/web/issues/42 and updates https://github.com/acme/web. Please take a look before the next release."
     } />
     <Sample label="Repository · Pull request · Issue · GitHub" markdown={
-      "https://github.com/paperclipai/paperclip\n\nhttps://github.com/paperclipai/paperclip/pull/4099\n\nhttps://github.com/paperclipai/paperclip/issues/1778\n\n[GitHub Actions](https://github.com/features/actions)"
+      "https://github.com/pilibalaai/pilibala\n\nhttps://github.com/pilibalaai/pilibala/pull/4099\n\nhttps://github.com/pilibalaai/pilibala/issues/1778\n\n[GitHub Actions](https://github.com/features/actions)"
     } />
     <Sample label="Your words stay yours" markdown={
       '[Review the changes](https://github.com/acme/web/pull/241) and [**read** the issue](https://github.com/acme/web/issues/42).\n\n[Jump to the review comment](https://github.com/acme/web/pull/241/files?diff=split#discussion_r123 "Review comment on the exact diff") or open the [repository](https://github.com/acme/web).'
@@ -51,7 +51,7 @@ const meta = {
   title: "Tasks and conversations/Task creation and lifecycle/Inline links",
   component: InlineLinksGallery,
   parameters: {
-    paperclip: {
+    pilibala: {
       capabilities: ["tasks/discussion"],
       status: "current",
       implementation: "production",

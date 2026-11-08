@@ -38,7 +38,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatActions,
@@ -47,11 +47,11 @@ import {
   chatEndpoints,
   chatSdkState,
   toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   ChatEndpointSetupState,
   ToolCredentialSecretRef,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import {
   conflict,
@@ -493,7 +493,7 @@ export function createGitHubWebhookIngress(db: Db, options: GitHubWebhookIngress
                   eventKind,
                   state: "filtered",
                   processedAt: new Date(),
-                  redactedError: "Destination is not enabled in Paperclip",
+                  redactedError: "Destination is not enabled in Pilibala",
                   normalizedEvent: {
                     providerEventId,
                     kind: eventKind,
@@ -869,7 +869,7 @@ export function createGitHubWebhookIngress(db: Db, options: GitHubWebhookIngress
         record.endpoint.publicId,
         "github",
         new Request(
-          `https://paperclip.internal/api/chat-webhooks/${record.endpoint.publicId}/github`,
+          `https://pilibala.internal/api/chat-webhooks/${record.endpoint.publicId}/github`,
           {
             method: "POST",
             headers: {

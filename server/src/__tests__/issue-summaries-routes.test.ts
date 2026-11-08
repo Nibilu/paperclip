@@ -5,19 +5,19 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, expect, it, vi } from "vitest";
 import {
   agents, chatConversations, chatEndpoints, heartbeatRuns, issueRelations, issues, toolApplications, toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { issueRoutes } from "../routes/issues.js";
 import * as issueServices from "../services/issues.js";
 import { errorHandler } from "../middleware/index.js";
 import { describeEmbeddedPostgres, seedCompanyWithBoardAccess, useEmbeddedPostgres, type BoardActor } from "./helpers/route-test-harness.js";
 
 describeEmbeddedPostgres("bounded issue summaries", () => {
-  const ctx = useEmbeddedPostgres("paperclip-issue-summaries-");
-  const oldPrivacy = process.env.PAPERCLIP_ISSUE_PRIVACY_MODE;
-  beforeAll(() => { process.env.PAPERCLIP_ISSUE_PRIVACY_MODE = "enforce"; });
+  const ctx = useEmbeddedPostgres("pilibala-issue-summaries-");
+  const oldPrivacy = process.env.PILIBALA_ISSUE_PRIVACY_MODE;
+  beforeAll(() => { process.env.PILIBALA_ISSUE_PRIVACY_MODE = "enforce"; });
   afterAll(() => {
-    if (oldPrivacy === undefined) delete process.env.PAPERCLIP_ISSUE_PRIVACY_MODE;
-    else process.env.PAPERCLIP_ISSUE_PRIVACY_MODE = oldPrivacy;
+    if (oldPrivacy === undefined) delete process.env.PILIBALA_ISSUE_PRIVACY_MODE;
+    else process.env.PILIBALA_ISSUE_PRIVACY_MODE = oldPrivacy;
   });
 
   async function fixture() {

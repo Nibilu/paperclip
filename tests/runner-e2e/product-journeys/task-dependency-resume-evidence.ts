@@ -28,7 +28,7 @@ const exactId = (rows: unknown, id: string) => Array.isArray(rows) && rows.lengt
 const runFacts = (run: Row) => JSON.stringify([run.id, run.companyId, run.agentId, dependencyRunIssueId(run), run.status,
   run.runtimeMode, run.nativePhase, run.invocationSource, run.triggerDetail, run.startedAt,
   run.contextSnapshot?.wakeReason, run.contextSnapshot?.source, run.contextSnapshot?.resolvedBlockerIssueId,
-  run.contextSnapshot?.blockerIssueIds, run.contextSnapshot?.paperclipEnvironment?.id,
+  run.contextSnapshot?.blockerIssueIds, run.contextSnapshot?.pilibalaEnvironment?.id,
   run.runnerProfileJson?.nativeExecutionInput?.provider?.kind, run.runnerProfileJson?.nativeExecutionInput?.provider?.model]);
 export function dependencyNewAgentRuns(runs: Row[], startingRuns: Row[]) {
   const priorIds = new Set(startingRuns.map(run => run.id));
@@ -110,7 +110,7 @@ export function gradeTaskDependencyResume(value: DependencyEvidence | undefined)
   const runtime = boundRun && run?.runtimeMode === "native" && run.nativePhase === "committed"
     && run.runnerProfileJson?.nativeExecutionInput?.provider?.kind === s.provider
     && run.runnerProfileJson?.nativeExecutionInput?.provider?.model === s.model
-    && run.contextSnapshot?.paperclipEnvironment?.id === s.environmentId;
+    && run.contextSnapshot?.pilibalaEnvironment?.id === s.environmentId;
   const documentMatches = (p: DependencyPoint) => p.document && p.revision
     && nonempty(p.document.id) && p.document.companyId === s.companyId && p.document.issueId === s.dependentId
     && p.document.key === s.documentKey && p.document.createdByAgentId === s.agentId && p.document.createdByUserId === null

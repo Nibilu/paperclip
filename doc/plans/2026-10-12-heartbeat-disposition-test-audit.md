@@ -59,7 +59,7 @@ has identical bytes in both revisions.
 ```sh
 base=ef04ba1592a5932d2d971e09b09467f878572d7a
 candidate=1daaa7496b67c9d38eb7ee4f3eec9e1a3e27cd86
-git fetch https://github.com/paperclipai/paperclip.git "$base" "$candidate"
+git fetch https://github.com/pilibalaai/pilibala.git "$base" "$candidate"
 git diff --check "$base" "$candidate"
 git diff --numstat "$base" "$candidate" -- server/src/__tests__/heartbeat-process-recovery.test.ts
 git show "$base":server/src/__tests__/heartbeat-process-recovery.test.ts | shasum -a 256
@@ -75,10 +75,10 @@ clarification records static checks, not a new local runtime or mutation run.
 
 ## Reproduce historical controls
 
-Use isolated PAPERCLIP_HOME, PAPERCLIP_CONFIG and TMPDIR values and the checked-in root/server Vitest configuration:
+Use isolated PILIBALA_HOME, PILIBALA_CONFIG and TMPDIR values and the checked-in root/server Vitest configuration:
 
 ```sh
-node node_modules/vitest/vitest.mjs run --project @paperclipai/server \
+node node_modules/vitest/vitest.mjs run --project @pilibalaai/server \
   server/src/__tests__/heartbeat-process-recovery.test.ts --exclude '**/dist/**'
 ```
 

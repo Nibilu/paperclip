@@ -9,20 +9,20 @@ import { getCACertificates, setDefaultCACertificates } from "node:tls";
 import { eq, sql } from "drizzle-orm";
 import WebSocket, { WebSocketServer, type RawData } from "ws";
 import { beforeAll, expect, it, vi } from "vitest";
-import { completionContracts, executionWorkspaces, heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults } from "@paperclipai/db";
-import type { RunnerIngressEndpoint } from "@paperclipai/adapter-utils/runner-connectivity";
-import { environmentRunnerIngressErrorData, JsonRpcCallError, PluginEnvironmentRunnerIngressError } from "@paperclipai/plugin-sdk";
+import { completionContracts, executionWorkspaces, heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults } from "@pilibalaai/db";
+import type { RunnerIngressEndpoint } from "@pilibalaai/adapter-utils/runner-connectivity";
+import { environmentRunnerIngressErrorData, JsonRpcCallError, PluginEnvironmentRunnerIngressError } from "@pilibalaai/plugin-sdk";
 import { canonicalNativeRuntimeContextDigest, createNativeSessionBackend, createRunnerdCodexTransport, parseNativeExecutionInput,
-  type RunnerProcessHandle } from "../../vendor/paperclip-runner/index.js";
+  type RunnerProcessHandle } from "../../vendor/pilibala-runner/index.js";
 import { nativeRestartFixture, describeEmbeddedPostgres, stopOwnedProcessGroup } from "../../__tests__/helpers/native-restart.js";
 import { canonicalNativeJson, nativeSha256 } from "./canonical.js";
-import { executePaperclipNativeSession, nativeSessionWorkspaceScope, resolveNativeBilling } from "./native-session-executor.js";
+import { executePilibalaNativeSession, nativeSessionWorkspaceScope, resolveNativeBilling } from "./native-session-executor.js";
 import { createNativeRunnerExecutionDriver } from "./native-runner-execution-driver.js";
 import { claimNativeSessionResumptions, reconcileNativeFinalizations } from "./native-finalization-reconciler.js";
 import { currentNativeControllerIdentity } from "./native-restart-recovery.js";
 import { loadNativeRunnerCheckpoint } from "./native-runner-checkpoint.js";
 import { buildNativeCompletionContract } from "./completion-contracts.js";
-import { releaseMaterializedNativeRuntimeSkills, spawnRunner } from "../../vendor/paperclip-runner/testing.js";
+import { releaseMaterializedNativeRuntimeSkills, spawnRunner } from "../../vendor/pilibala-runner/testing.js";
 import { materializeAsset } from "./runtime-context.js";
 import { nativeRuntimeContextFixture } from "./runtime-context.test-fixture.js";
 import { createNativeUsageDelivery } from "./native-usage-delivery.js";
@@ -30,15 +30,15 @@ import { accountRunCost } from "../run-cost-accounting.js";
 
 describeEmbeddedPostgres("native ingress bootstrap retry through the real Runner", () => {
   const environment = nativeRestartFixture();
-  const runnerWorkspace = resolve(import.meta.dirname, "../../../../packages/paperclip-runner/runner");
-  const runnerBinary = join(runnerWorkspace, "target/release/paperclip-runnerd");
+  const runnerWorkspace = resolve(import.meta.dirname, "../../../../packages/pilibala-runner/runner");
+  const runnerBinary = join(runnerWorkspace, "target/release/pilibala-runnerd");
   const fakeProvider = join(runnerWorkspace, "target/release/fake-codex-app-server");
 
   beforeAll(() => {
     execFileSync(process.execPath, [resolve(runnerWorkspace, "../scripts/build-verified-provider-entrypoints.mjs")],
       { cwd: resolve(runnerWorkspace, ".."), stdio: "pipe", timeout: 30_000 });
-    execFileSync("cargo", ["build", "--release", "--locked", "-p", "paperclip-runner-core",
-      "--bin", "paperclip-runnerd", "--bin", "fake-codex-app-server"],
+    execFileSync("cargo", ["build", "--release", "--locked", "-p", "pilibala-runner-core",
+      "--bin", "pilibala-runnerd", "--bin", "fake-codex-app-server"],
     { cwd: runnerWorkspace, stdio: "ignore", timeout: 600_000 });
   }, 660_000);
 
@@ -66,7 +66,7 @@ describeEmbeddedPostgres("native ingress bootstrap retry through the real Runner
       versionId: "fixture-v1", bundle: await materializeAsset([{ path: "SKILL.md", mode: 0o444, content: Buffer.from(skillContent) }]) }];
     runtimeContext.aggregateDigest = canonicalNativeRuntimeContextDigest(runtimeContext);
     const execution = parseNativeExecutionInput({
-      schema: "paperclip.native-execution-input.v5", executionMode: "default", planningContext: null, runtimeContext,
+      schema: "pilibala.native-execution-input.v5", executionMode: "default", planningContext: null, runtimeContext,
       binding: { companyId, agentId, issueId, runId, executionWorkspaceId: runId },
       provider: provider === "codex" ? { kind: "codex", model: "fixture-model", approvalPolicy: "never" }
         : { kind: "opencode", model: "openrouter/deepseek/deepseek-v4.1-flash-1017", permissionMode: "allow" },
@@ -75,12 +75,12 @@ describeEmbeddedPostgres("native ingress bootstrap retry through the real Runner
       workspace: { cwd: sandbox, repoUrl: null, repoRef: null, branchName: null },
       session: { normalizedSessionId: native.normalizedSessionId, driverKind: provider === "codex" ? "codex_app_server" : "opencode_server", protocolVersion: 1,
         lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null } },
-      completionContract: { id: contract!.id, sha256: contract!.canonicalSha256, schemaVersion: "paperclip.completion-contract.v1",
+      completionContract: { id: contract!.id, sha256: contract!.canonicalSha256, schemaVersion: "pilibala.completion-contract.v1",
         contract: buildNativeCompletionContract(issue!, { revision: contract!.revision }) }, interactionResponses: [], credentialBindings: [],
     });
     await db.update(heartbeatRuns).set({ runnerProfileJson: sql`coalesce(${heartbeatRuns.runnerProfileJson}, '{}'::jsonb)
       || ${JSON.stringify({ nativeExecutionInput: execution })}::jsonb` }).where(eq(heartbeatRuns.id, runId));
-    const root = join(stateBase, nativeSha256({ schema: "paperclip.native-session-scope.v2", companyId, agentId,
+    const root = join(stateBase, nativeSha256({ schema: "pilibala.native-session-scope.v2", companyId, agentId,
       workspace: nativeSessionWorkspaceScope(execution), provider: { driverKind: execution.session.driverKind,
         identity: { kind: provider } }, normalizedSessionId: native.normalizedSessionId }));
     const digest = (file: string) => `sha256:${createHash("sha256").update(readFileSync(file)).digest("hex")}`;
@@ -110,7 +110,7 @@ describeEmbeddedPostgres("native ingress bootstrap retry through the real Runner
       expect((await stat(join(root, "codex-home", "skills", "retry-fixture"))).mode & 0o222).toBe(0);
     };
     const resultFile = join(sandbox, "fixture-result.json");
-    await writeFile(resultFile, canonicalNativeJson({ schema: "paperclip.run_result.v1", reportedWorkDisposition: "done",
+    await writeFile(resultFile, canonicalNativeJson({ schema: "pilibala.run_result.v1", reportedWorkDisposition: "done",
       summary: "Controlled retry completed.", completionClaim: { contractRevision: execution.completionContract.contract.revision,
         objectiveSatisfied: true, criteria: execution.completionContract.contract.criteria.map(criterion => ({
           criterionId: criterion.id, status: "satisfied", evidenceRefs: [] })), remainingWork: [] },
@@ -170,7 +170,7 @@ describeEmbeddedPostgres("native ingress bootstrap retry through the real Runner
     const handles: RunnerProcessHandle[] = [];
     const diagnostics: string[] = [];
     let usageDelivery: Awaited<ReturnType<typeof createNativeUsageDelivery>> | undefined;
-    vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", stateBase);
+    vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", stateBase);
     const endpoint: () => Promise<RunnerIngressEndpoint> = async () => {
       const response = await fetch(`https://127.0.0.1:${previewAddress.port}/preview`);
       if (!response.ok) {
@@ -220,7 +220,7 @@ describeEmbeddedPostgres("native ingress bootstrap retry through the real Runner
         bundles.push(bundle); return bundle.transport;
       },
     });
-    const execute = (leaseOwner?: string) => executePaperclipNativeSession({ db, execution,
+    const execute = (leaseOwner?: string) => executePilibalaNativeSession({ db, execution,
       runnerInstanceId: native.runnerInstanceId, useRunnerd: true, runnerExecutionTarget: target,
       backend: backend(), leaseOwner, turnTimeoutMs: 15_000 });
     try {

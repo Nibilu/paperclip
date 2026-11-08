@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
-import { agents, budgetReservations, heartbeatRuns, nativeRunFinalizations, type Db } from "@paperclipai/db";
-import { centsToUnits, unitsToCents } from "@paperclipai/shared";
+import { agents, budgetReservations, heartbeatRuns, nativeRunFinalizations, type Db } from "@pilibalaai/db";
+import { centsToUnits, unitsToCents } from "@pilibalaai/shared";
 import { conflict, notFound } from "../errors.js";
 import { withOperationAccountingTransaction } from "./accounting-transaction.js";
 import { queueBudgetEvaluation } from "./budget-evaluation-work.js";

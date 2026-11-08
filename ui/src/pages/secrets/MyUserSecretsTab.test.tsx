@@ -3,7 +3,7 @@
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { UserSecretDefinition } from "@paperclipai/shared";
+import type { UserSecretDefinition } from "@pilibalaai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MyUserSecretsTab } from "./MyUserSecretsTab";
 import { ApiError } from "../../api/client";
@@ -35,7 +35,7 @@ function definition(overrides: Partial<UserSecretDefinition> = {}): UserSecretDe
     description: "Used for private repo access",
     status: "active",
     provider: "local_encrypted",
-    managedMode: "paperclip_managed",
+    managedMode: "pilibala_managed",
     providerConfigId: null,
     providerMetadata: null,
     usageGuidance: null,
@@ -51,7 +51,7 @@ function definition(overrides: Partial<UserSecretDefinition> = {}): UserSecretDe
 }
 
 const transientError = () =>
-  new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" });
+  new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" });
 
 async function act(callback: () => void | Promise<void>) {
   let result: void | Promise<void> = undefined;
@@ -124,7 +124,7 @@ describe("MyUserSecretsTab", () => {
     expect(mockSecretsApi.listMyUserSecrets).toHaveBeenCalledTimes(2);
     expect(container.textContent).toContain("Personal GitHub token");
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
   });
 
   it("shows readable copy and a Retry button when the list fails to load", async () => {

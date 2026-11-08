@@ -9,7 +9,7 @@ export interface PluginEnvironmentResumeErrorDiagnostic {
   errorCode?: string;
 }
 
-const SCHEMA = "paperclip/environment-resume-error/v1";
+const SCHEMA = "pilibala/environment-resume-error/v1";
 // Closed errno-style set. Provider text and identifiers never cross.
 const ERROR_CODES = new Set([
   "ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "EPIPE", "ENOTFOUND", "EAI_AGAIN", "ENETUNREACH",

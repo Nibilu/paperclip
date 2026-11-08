@@ -10,7 +10,7 @@ Retired: `removes the separate always-installed controls from Permissions`.
 
 Keeper: `renders searchable action groups with three-way permission toggles`.
 
-Both cases use the same enclosing beforeEach, connection, catalog, profiles, grants, install state and spies. Their two pre-assertion statements are byte-identical: select the permissions tab, then await the same complete AppDetail render. Neither case changes a fixture or takes a user action before its assertions. Both permission observations were updated by [PR #12802](https://github.com/paperclipai/paperclip/pull/12802).
+Both cases use the same enclosing beforeEach, connection, catalog, profiles, grants, install state and spies. Their two pre-assertion statements are byte-identical: select the permissions tab, then await the same complete AppDetail render. Neither case changes a fixture or takes a user action before its assertions. Both permission observations were updated by [PR #12802](https://github.com/pilibalaai/pilibala/pull/12802).
 
 All three retired observations move unchanged into the keeper, immediately after render and before its existing assertions:
 
@@ -22,7 +22,7 @@ The keeper also retains its original fixed action-group counts, action names, re
 
 App.tsx mounts AppDetail at `apps/:connectionId/:tab`. AppDetail's actual permissions path renders AgentAccessSection and ActionsSection in PermissionsPanel. AgentAccessSection supplies the question and access controls. The install API is used by the explicit AI-connection save path, so a no-write-on-read check is a separate observation from absent UI copy. Both fixed guards remain in the keeper. The grouped action-control sibling suite remains unchanged.
 
-The test stays in the `@paperclipai/ui` project and the `general-workspaces-a` lane. This cut removes a collected test and its full query-client/root render; it changes no suite inclusion or CI routing. No wall-time improvement is claimed.
+The test stays in the `@pilibalaai/ui` project and the `general-workspaces-a` lane. This cut removes a collected test and its full query-client/root render; it changes no suite inclusion or CI routing. No wall-time improvement is claimed.
 
 ## Proof
 

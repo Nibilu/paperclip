@@ -3,7 +3,7 @@ import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { agentApiKeys, agents, budgetPolicies, chatDeliveries, chatEndpoints, companies,
   companyTransferRuns, connectionEventDeliveries, createDb, heartbeatRuns, issues,
-  routineTriggers, routines, toolApplications, toolConnections, type Db } from "@paperclipai/db";
+  routineTriggers, routines, toolApplications, toolConnections, type Db } from "@pilibalaai/db";
 import { queueBudgetEvaluation } from "../services/budget-evaluation-work.js";
 import { readIdleSleepSafety } from "../services/idle-sleep-safety.js";
 import { EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
@@ -15,7 +15,7 @@ const hold = () => ({ ownerId, draining: true, startedAt: new Date(now - 1000),
   expiresAt: new Date(now + 60_000), activeRuns: 0, pendingWakes: 0 });
 const localNone = async () => "none" as const;
 
-const externalDatabaseUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_IDLE_SLEEP_DIAGNOSTICS_TEST_DATABASE_URL");
+const externalDatabaseUrl = resolveExternalTestDatabaseUrl("PILIBALA_IDLE_SLEEP_DIAGNOSTICS_TEST_DATABASE_URL");
 const support = externalDatabaseUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 if (!support.supported) console.warn(`Skipping idle sleep diagnostics Postgres tests: ${support.reason}`);
 (support.supported ? describe : describe.skip)("existing-instance sleep blocker diagnostics", () => {

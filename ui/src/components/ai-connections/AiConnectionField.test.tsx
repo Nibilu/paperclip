@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
-import type { AiManagedConnectionSummary } from "@paperclipai/shared";
+import type { AiManagedConnectionSummary } from "@pilibalaai/shared";
 import type { AiProviderSetup } from "./AiProviderSetup";
 import { AiConnectionField } from "./AiConnectionField";
 import { AiConnectionField, aiProviderForAdapter } from "./AiConnectionField";
@@ -240,12 +240,12 @@ it.each(["openai", "anthropic", "google", "openrouter"] as const)("keeps a match
 it("keeps loaded connections usable when a refetch fails during an outage", async () => {
   await mount([account()]);
   expect(document.body.textContent).toContain("Reconnect account");
-  mocks.list.mockRejectedValue(new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }));
+  mocks.list.mockRejectedValue(new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }));
   await client.invalidateQueries();
   await settle();
   expect(document.body.textContent).toContain("Reconnect account");
   expect(document.body.textContent).not.toContain("Retry connections");
-  expect(document.body.textContent).not.toContain("Paperclip is restarting.");
+  expect(document.body.textContent).not.toContain("Pilibala is restarting.");
   expect(document.querySelector('[data-query-view="error"]')).toBeNull();
 });
 

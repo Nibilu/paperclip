@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { AiConnectionLoginIntent } from "@paperclipai/shared";
+import type { AiConnectionLoginIntent } from "@pilibalaai/shared";
 import { agentsApi } from "../api/agents";
 
 type AdapterLoginTarget = { environmentId: string; aiConnection?: AiConnectionLoginIntent };

@@ -1,5 +1,5 @@
 import { sql, type SQL } from "drizzle-orm";
-import { heartbeatRuns } from "@paperclipai/db";
+import { heartbeatRuns } from "@pilibalaai/db";
 
 /** Used when a native run reaches `failed` and no writer recorded a more specific cause. */
 export const NATIVE_RUN_FAILED_UNEXPLAINED = {

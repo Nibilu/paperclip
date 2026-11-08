@@ -5,7 +5,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { retryTransientOnly } from "@/lib/query-client";
 
 export function useStagingCommit(menuOpen: boolean) {
-  const isStaging = window.location.hostname.endsWith(".staging.paperclip.app");
+  const isStaging = window.location.hostname.endsWith(".staging.pilibala.app");
   const query = useQuery({
     // Keep optional menu refresh failures separate from the board's access gate.
     queryKey: queryKeys.stagingCommit,

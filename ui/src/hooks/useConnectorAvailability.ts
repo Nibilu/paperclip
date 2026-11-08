@@ -1,7 +1,7 @@
 import { useQueryView } from "@/components/QueryView";
 import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { isConnectorFeatureEnabled, type AppDefinition } from "@paperclipai/shared";
+import { isConnectorFeatureEnabled, type AppDefinition } from "@pilibalaai/shared";
 import { instanceSettingsApi } from "@/api/instanceSettings";
 import { queryKeys } from "@/lib/queryKeys";
 

@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import type { InstanceExperimentalSettings, Issue, IssueComment } from "@paperclipai/shared";
+import type { InstanceExperimentalSettings, Issue, IssueComment } from "@pilibalaai/shared";
 import { issuesApi } from "@/api/issues";
 import { getIssueRecentCommentsQueryOptions } from "./issue-comment-window-query";
 import { queryKeys } from "@/lib/queryKeys";

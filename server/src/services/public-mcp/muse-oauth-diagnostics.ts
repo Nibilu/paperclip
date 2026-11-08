@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { activityLog, mcpOauthGrants, mcpOauthRequests, museAgentBindings, type Db } from "@paperclipai/db";
+import { activityLog, mcpOauthGrants, mcpOauthRequests, museAgentBindings, type Db } from "@pilibalaai/db";
 import { withExternalAdmissionGuard } from "../../modules/external-agents/index.js";
 import { logger } from "../../middleware/logger.js";
 import { logActivity, publishActivity, type ActivityPublication } from "../activity-log.js";

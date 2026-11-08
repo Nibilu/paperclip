@@ -15,7 +15,7 @@ const meta = {
   title: "Agents and reusable capabilities/Runs, harnesses, and model accounts/AI Connections/Review",
   component: AiConnectionsReview,
   parameters: { layout: "fullscreen",
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "runs-adapters/validation"
       ],
@@ -271,7 +271,7 @@ const connectorDefaultAccounts = AI_REVIEW_CONNECTIONS.map(account => account.id
 
 export const ConnectorDefaultMenu: Story = {
   args: { host: "connections", initialConnections: connectorDefaultAccounts },
-  parameters: { paperclip: { capabilities: ["runs-adapters/validation", "connection-setup/catalog"], status: "current", implementation: "production", boundary: "fixtures",
+  parameters: { pilibala: { capabilities: ["runs-adapters/validation", "connection-setup/catalog"], status: "current", implementation: "production", boundary: "fixtures",
     notes: "Production Browse/ConnectorCard crown and dropdown. Fixture API persists one default per owner/provider across methods; provider authentication and real API authorization are not exercised." } },
   play: async ({ canvasElement }) => {
     const heading = await within(canvasElement).findByRole("heading", { name: "OpenAI" });

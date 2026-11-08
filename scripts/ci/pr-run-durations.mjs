@@ -7,11 +7,11 @@ import { stripVTControlCharacters } from "node:util";
 // e2e and the Runner package lane never run on master. Their weights come from
 // PR-workflow runs of PRs that merged into master, pinned to the final head SHA.
 // Logs are parsed as data; nothing from a run is executed.
-export const repository = "paperclipai/paperclip";
+export const repository = "pilibalaai/pilibala";
 export const repositoryId = 1170821064;
 const api = `/repos/${repository}`;
 
-export const runnerPackageRoot = "packages/paperclip-runner";
+export const runnerPackageRoot = "packages/pilibala-runner";
 export const e2eManifest = "scripts/e2e-shard-durations.json";
 export const runnerManifest = `${runnerPackageRoot}/scripts/vitest-lane-durations.json`;
 
@@ -41,11 +41,11 @@ export function e2eShardJob(name) {
   return match ? { index: Number(match[1]), count: Number(match[2]) } : null;
 }
 
-// Before #19646: "ci / Verify Paperclip Runner (vitest package)", one lane.
-// Since #19646: "ci / Verify Paperclip Runner (vitest package (K/N))".
+// Before #19646: "ci / Verify Pilibala Runner (vitest package)", one lane.
+// Since #19646: "ci / Verify Pilibala Runner (vitest package (K/N))".
 export function runnerPackageJob(name) {
-  if (name === "ci / Verify Paperclip Runner (vitest package)") return { index: 1, count: 1 };
-  const match = /^ci \/ Verify Paperclip Runner \((?:vitest )?package \((\d+)\/(\d+)\)\)$/.exec(name);
+  if (name === "ci / Verify Pilibala Runner (vitest package)") return { index: 1, count: 1 };
+  const match = /^ci \/ Verify Pilibala Runner \((?:vitest )?package \((\d+)\/(\d+)\)\)$/.exec(name);
   return match ? { index: Number(match[1]), count: Number(match[2]) } : null;
 }
 

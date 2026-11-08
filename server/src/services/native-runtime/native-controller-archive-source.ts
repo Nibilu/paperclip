@@ -1,6 +1,6 @@
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
-import { agentTaskSessions, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { agentTaskSessions, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { nativeSha256 } from "./canonical.js";
 import { findNativeSessionResumeRun } from "./native-session-resume.js";
 import { readLegacyNativeControllerArchiveDigests, readLegacyNativeControllerArchiveSource } from "./native-controller-migration.js";

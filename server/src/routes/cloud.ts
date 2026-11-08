@@ -40,9 +40,9 @@ export function cloudRoutes(opts: {
       });
     }
 
-    const tenantToken = runtimeEnv.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN?.trim();
+    const tenantToken = runtimeEnv.PILIBALA_CLOUD_TENANT_SERVER_TOKEN?.trim();
     if (!context.cloudOrigin || !context.stackId || !tenantToken) {
-      throw new HttpError(503, "Paperclip Cloud portfolio is not configured", {
+      throw new HttpError(503, "Pilibala Cloud portfolio is not configured", {
         code: "cloud_portfolio_not_configured",
       });
     }
@@ -64,7 +64,7 @@ export function cloudRoutes(opts: {
     try {
       portfolioUrl = new URL(CLOUD_PORTFOLIO_PATH, context.cloudOrigin);
     } catch {
-      throw new HttpError(503, "Paperclip Cloud portfolio is not configured", {
+      throw new HttpError(503, "Pilibala Cloud portfolio is not configured", {
         code: "cloud_portfolio_not_configured",
       });
     }
@@ -95,8 +95,8 @@ export function cloudRoutes(opts: {
             headers: {
               accept: "application/json",
               authorization: `Bearer ${tenantToken}`,
-              "x-paperclip-cloud-user-id": actorUserId,
-              "x-paperclip-cloud-stack-id": context.stackId,
+              "x-pilibala-cloud-user-id": actorUserId,
+              "x-pilibala-cloud-stack-id": context.stackId,
             },
             signal: upstreamSignal,
           });
@@ -106,7 +106,7 @@ export function cloudRoutes(opts: {
           if (attempt > 1 || !RETRYABLE_FETCH_RESET_CODES.has(String(diagnostics.networkCode))) throw error;
           logger.warn(
             { cloudPortfolio: diagnostics },
-            "Paperclip Cloud portfolio connection reset; retrying once",
+            "Pilibala Cloud portfolio connection reset; retrying once",
           );
         }
       }
@@ -116,7 +116,7 @@ export function cloudRoutes(opts: {
         const error = portfolioError("upstream");
         logger.warn(
           { cloudPortfolio: error.diagnostics },
-          "Paperclip Cloud portfolio request failed",
+          "Pilibala Cloud portfolio request failed",
         );
         throw error;
       }
@@ -140,7 +140,7 @@ export function cloudRoutes(opts: {
       const reportableError = portfolioError("upstream", error);
       logger.warn(
         { cloudPortfolio: reportableError.diagnostics },
-        "Paperclip Cloud portfolio request failed",
+        "Pilibala Cloud portfolio request failed",
       );
       throw reportableError;
     }

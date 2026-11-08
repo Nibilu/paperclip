@@ -34,7 +34,7 @@
 // the clones share disk blocks with the entry. Elsewhere the copy falls back
 // to `cp --reflink=auto` or a plain copy.
 //
-// PAPERCLIP_AGENT_CACHE_DIR moves the cache; PAPERCLIP_AGENT_CACHE=0 turns it
+// PILIBALA_AGENT_CACHE_DIR moves the cache; PILIBALA_AGENT_CACHE=0 turns it
 // off. Keep the cache on the same volume as the worktrees so clones work.
 
 import { execFileSync } from "node:child_process";
@@ -44,9 +44,9 @@ import { existsSync, globSync, lstatSync, mkdirSync, readdirSync, readFileSync, 
 import os from "node:os";
 import path from "node:path";
 
-export const CACHE_SCHEMA = "paperclip.agent-build-cache.v1";
-export const RUNNER_PACKAGE = "packages/paperclip-runner";
-export const EVAL_KERNEL_PACKAGE = "packages/paperclip-eval-kernel";
+export const CACHE_SCHEMA = "pilibala.agent-build-cache.v1";
+export const RUNNER_PACKAGE = "packages/pilibala-runner";
+export const EVAL_KERNEL_PACKAGE = "packages/pilibala-eval-kernel";
 // Entries are touched on every hit, so these keep the most recently used ones.
 // A seed is about 2 GB of mostly shared clone blocks; the others are 30-100 MB.
 const KEEP_ENTRIES = { "cargo-seed": 2, "runner-dist": 12, "runner-debug-bins": 12 };
@@ -54,9 +54,9 @@ const KEEP_ENTRIES = { "cargo-seed": 2, "runner-dist": 12, "runner-debug-bins": 
 const IN_USE_MS = 30 * 60 * 1000;
 
 export function cacheRoot(env = process.env) {
-  if (env.PAPERCLIP_AGENT_CACHE === "0") return null;
-  if (env.PAPERCLIP_AGENT_CACHE_DIR) return path.resolve(env.PAPERCLIP_AGENT_CACHE_DIR);
-  return path.join(env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "paperclip", "agent-build");
+  if (env.PILIBALA_AGENT_CACHE === "0") return null;
+  if (env.PILIBALA_AGENT_CACHE_DIR) return path.resolve(env.PILIBALA_AGENT_CACHE_DIR);
+  return path.join(env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache"), "pilibala", "agent-build");
 }
 
 function run(command, args, options = {}) {
@@ -224,7 +224,7 @@ export function pruneKind(cache, kind, keep, now = Date.now()) {
  * executable target names.
  */
 export function scrubSeed(target, bins) {
-  const names = ["paperclip-runner-core", "paperclip_runner_core", ...bins.flatMap(bin => [bin, bin.replaceAll("-", "_")])];
+  const names = ["pilibala-runner-core", "pilibala_runner_core", ...bins.flatMap(bin => [bin, bin.replaceAll("-", "_")])];
   const owned = name => names.some(prefix => name === prefix || name.startsWith(`${prefix}-`) || name.startsWith(`${prefix}.`)
     || name.startsWith(`lib${prefix}-`));
   let removed = 0;
@@ -258,7 +258,7 @@ export function seedIsScrubbed(target) {
   for (const profile of ["debug", "release"]) {
     const fingerprints = path.join(target, profile, ".fingerprint");
     if (!existsSync(fingerprints)) continue;
-    if (readdirSync(fingerprints).some(name => name.startsWith("paperclip-runner-core-"))) return false;
+    if (readdirSync(fingerprints).some(name => name.startsWith("pilibala-runner-core-"))) return false;
   }
   return true;
 }

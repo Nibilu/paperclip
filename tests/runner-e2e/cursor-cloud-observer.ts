@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { CursorCloudClient, CursorCloudClientError, isCursorCloudRunActive } from "../../packages/paperclip-runner/src/drivers/cursor-cloud/cloud-client.js";
+import { CursorCloudClient, CursorCloudClientError, isCursorCloudRunActive } from "../../packages/pilibala-runner/src/drivers/cursor-cloud/cloud-client.js";
 import { pollUntil, type RunnerApi } from "./api.js";
 import { collectRunEvents } from "./run-observations.js";
 import type { CleanupCheck } from "./cleanup-verification.js";
@@ -14,10 +14,10 @@ export function readCursorCloudRemoteIdentity(events: readonly unknown[], ownerR
   for (const value of events) {
     const row = record(value), event = record(record(row.payload).prpEvent), payload = record(event.payload);
     if (row.runId !== ownerRunId || row.protocolSchemaVersion !== 1 || event.sourceKind !== "runner"
-      || event.schema !== "paperclip.prp.event.v1" || event.schemaVersion !== 1 || event.runId !== ownerRunId
+      || event.schema !== "pilibala.prp.event.v1" || event.schemaVersion !== 1 || event.runId !== ownerRunId
       || event.eventType !== "provider.notice.recorded" || typeof payload.summary !== "string" || payload.summary.length > 4096) continue;
     let identity: Row; try { identity = record(JSON.parse(payload.summary)); } catch { continue; }
-    if (identity.schema !== "paperclip.cursor-cloud.remote-identity.v1") continue;
+    if (identity.schema !== "pilibala.cursor-cloud.remote-identity.v1") continue;
     if (identity.provider !== "cursor_cloud" || identity.ownerRunId !== ownerRunId
       || typeof identity.agentId !== "string" || !new RegExp(`^bc-${uuid}$`, "u").test(identity.agentId)
       || !(identity.runId === null || typeof identity.runId === "string" && new RegExp(`^run-${uuid}$`, "u").test(identity.runId))

@@ -1,5 +1,5 @@
-import type { AdapterEnvironmentTestResult } from "@paperclipai/adapter-utils";
-import type { Db } from "@paperclipai/db";
+import type { AdapterEnvironmentTestResult } from "@pilibalaai/adapter-utils";
+import type { Db } from "@pilibalaai/db";
 import { parseEnvironmentDriverConfig } from "./environment-config.js";
 
 /**

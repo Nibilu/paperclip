@@ -3,11 +3,11 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { eq, sql } from "drizzle-orm";
-import { environmentTaskOperationSchema } from "@paperclipai/plugin-sdk";
+import { environmentTaskOperationSchema } from "@pilibalaai/plugin-sdk";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { agents, companies, completionContracts, createDb, environmentLeases, environments, heartbeatRuns, issues, nativeRunFinalizations,
-  nativeRunResults, nativeRunnerCheckpoints, plugins } from "@paperclipai/db";
-import { parseNativeExecutionInput, runnerProviderLaunchRequirements, DurablePrpControlPlane, type DurablePrpCheckpoint, type NativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+  nativeRunResults, nativeRunnerCheckpoints, plugins } from "@pilibalaai/db";
+import { parseNativeExecutionInput, runnerProviderLaunchRequirements, DurablePrpControlPlane, type DurablePrpCheckpoint, type NativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 import { recoveryPostgresSupport, startRecoveryPostgres } from "../../__tests__/helpers/recovery-postgres.js";
 import { createIsolatedTestHome } from "../../__tests__/helpers/isolated-test-home.js";
 import { executeEnvironmentTask, resolvePluginTaskResume } from "../environment-task-runtime.js";
@@ -24,17 +24,17 @@ import { nativeRuntimeContextFixture } from "./runtime-context.test-fixture.js";
 describe.skipIf(!recoveryPostgresSupport.supported)("stopped source admission under the current native owner", () => {
   let database: Awaited<ReturnType<typeof startRecoveryPostgres>>, db: ReturnType<typeof createDb>;
   let home: ReturnType<typeof createIsolatedTestHome>, root: string;
-  const originalHome = process.env.PAPERCLIP_HOME;
+  const originalHome = process.env.PILIBALA_HOME;
   const contexts: NativeExecutionContext[] = [];
   beforeAll(async () => {
-    home = createIsolatedTestHome(); process.env.PAPERCLIP_HOME = home.home;
+    home = createIsolatedTestHome(); process.env.PILIBALA_HOME = home.home;
     root = await mkdtemp(join(tmpdir(), "plugin-source-recovery-"));
     database = await startRecoveryPostgres("plugin-source-recovery-"); db = createDb(database.connectionString);
   }, 60_000);
   afterEach(() => { for (const context of contexts.splice(0)) context.finish(); });
   afterAll(async () => {
     await database?.cleanup(); if (root) await rm(root, { recursive: true, force: true }); home?.cleanup();
-    if (originalHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = originalHome;
+    if (originalHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = originalHome;
   });
 
   async function fixture(provider: "codex" | "claude" | "acpx_codex" = "codex", currentModel?: string) {
@@ -42,7 +42,7 @@ describe.skipIf(!recoveryPostgresSupport.supported)("stopped source admission un
     const sourceLeaseId = randomUUID(), leaseId = randomUUID(), environmentId = randomUUID(), pluginId = randomUUID();
     const controller = await currentNativeControllerIdentity(), oldOwner = { bootId: controller.bootId, generation: 1, leaseOwner: randomUUID() };
     await db.insert(companies).values({ id: companyId, name: "Source admission", issuePrefix: `S${companyId.slice(0, 6)}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Source worker", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Source worker", adapterType: "pilibala_runner" });
     await db.insert(issues).values({ id: issueId, companyId, title: "Continue once", status: "in_progress", assigneeAgentId: agentId });
     const [sourceRun] = await db.insert(heartbeatRuns).values({ id: sourceRunId, companyId, agentId, nativeIssueId: issueId,
       status: "running", runtimeMode: "native" }).returning();
@@ -53,7 +53,7 @@ describe.skipIf(!recoveryPostgresSupport.supported)("stopped source admission un
       provider: selected === "codex" ? "codex" : "acpx", acpxAgent: selected === "claude" ? "claude" : "codex",
       ...(selected === "codex" ? {} : { model: selected === "claude" ? "claude-sonnet-4-6" : "gpt-6" }), issue: { id: issueId, identifier: "SOURCE-1", title: "Continue once", description: null, workMode: "standard" },
       taskPrompt: "Continue once", workspace: { id, cwd: "/workspace", repoUrl: null, repoRef: null, branchName: null },
-      completionContract: { id: prepared.completionContractId!, sha256: prepared.completionContractSha256!, schemaVersion: "paperclip.run-result.v1", contract: contract.contractJson as never },
+      completionContract: { id: prepared.completionContractId!, sha256: prepared.completionContractSha256!, schemaVersion: "pilibala.run-result.v1", contract: contract.contractJson as never },
       runtimeContext: nativeRuntimeContextFixture() });
     const sourceExecution = build(sourceRunId), execution = build(runId);
     if (currentModel !== undefined) execution.provider.model = currentModel;
@@ -105,7 +105,7 @@ describe.skipIf(!recoveryPostgresSupport.supported)("stopped source admission un
       return { kind: "accepted", taskId: p.taskId };
     }) };
     const operation = environmentTaskOperationSchema.parse({ kind: "prepare" as const, resumeFrom: input.resumeFrom,
-      accountIdentity: input.accountIdentity, projectIds: [], requirements: provider === "codex" ? { schema: "paperclip.runner.launch-requirements.v1" as const,
+      accountIdentity: input.accountIdentity, projectIds: [], requirements: provider === "codex" ? { schema: "pilibala.runner.launch-requirements.v1" as const,
         identity, provider: "codex" as const, model: null, instructions: "Source policy", runtimeContext: null, settings: {}, approvalPolicy: "never" as const,
         readOnly: false, preparedConversation: false, includeCollaborationModeInstructions: false } : runnerProviderLaunchRequirements({
           provider: "acpx", acpxAgent: provider === "claude" ? "claude" : "codex",
@@ -357,11 +357,11 @@ describe.skipIf(!recoveryPostgresSupport.supported)("stopped source admission un
       sql`jsonb_set(${heartbeatRuns.runnerProfileJson}, '{nativeExecutionInput,binding,issueId}', ${JSON.stringify(randomUUID())}::jsonb)` })
       .where(eq(heartbeatRuns.id, mode === "source-profile" ? f.sourceRunId : f.runId));
     if (mode === "workspace-export") await db.update(heartbeatRuns).set({ runnerProfileJson: sql`${heartbeatRuns.runnerProfileJson} || ${JSON.stringify({ nativeWorkspaceSync: {
-      schema: "paperclip.native-workspace-sync/v3", state: "prepared", leaseId: f.sourceLeaseId, providerLeaseId: f.resumeFrom,
+      schema: "pilibala.native-workspace-sync/v3", state: "prepared", leaseId: f.sourceLeaseId, providerLeaseId: f.resumeFrom,
       workspaceId: f.issueId, remoteCwd: "/workspace", resourceDisposition: "keep_running", descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
     } })}::jsonb` }).where(eq(heartbeatRuns.id, f.sourceRunId));
     if (mode === "legacy-settlement") await db.update(environmentLeases).set({ metadata: sql`${environmentLeases.metadata} || ${JSON.stringify({ legacyShutdownWorkspaceSettlement: {
-      schema: "paperclip.legacy-shutdown-workspace-settlement.v1", state: "pending", runId: f.sourceRunId, deadlineAt: new Date(Date.now() + 60_000).toISOString(),
+      schema: "pilibala.legacy-shutdown-workspace-settlement.v1", state: "pending", runId: f.sourceRunId, deadlineAt: new Date(Date.now() + 60_000).toISOString(),
     } })}::jsonb` }).where(eq(environmentLeases.id, f.sourceLeaseId));
     await expect(claimPluginTaskSourceRecovery(db, { ...f, ...(mode === "capability" ? { codexSourceRecoveryVersion: undefined } : {}) })).rejects.toThrow();
     const [source] = await db.select().from(environmentLeases).where(eq(environmentLeases.id, f.sourceLeaseId));

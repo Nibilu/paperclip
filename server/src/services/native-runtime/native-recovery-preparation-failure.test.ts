@@ -4,13 +4,13 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   agents, applyPendingMigrations, companies, createDb, heartbeatRunEvents, heartbeatRuns, issueComments,
   issueRecoveryActions, issues, nativeRunFinalizations, type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { resolveExternalTestDatabaseUrl } from "../../__tests__/helpers/external-test-database.js";
 import { admitExplicitNativeContinuation } from "../explicit-native-continuation.js";
 import { settleFailedNativeRecoveryPreparation } from "./native-recovery-preparation-failure.js";
 
-const externalUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_NATIVE_RECOVERY_PREPARATION_TEST_DATABASE_URL");
+const externalUrl = resolveExternalTestDatabaseUrl("PILIBALA_NATIVE_RECOVERY_PREPARATION_TEST_DATABASE_URL");
 const support = externalUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 
 /** RC-58: a failed re-preparation after a restart must leave a working Retry. */
@@ -31,7 +31,7 @@ describe.skipIf(!support.supported)("failed native recovery preparation", () => 
     const leaseOwner = `boot:2:${randomUUID()}`;
     await db.insert(companies).values({ id: companyId, name: "Recovery preparation", defaultResponsibleUserId: "board",
       issuePrefix: `P${companyId.replaceAll("-", "").slice(0, 8)}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Native", role: "engineer", adapterType: "paperclip_runner",
+    await db.insert(agents).values({ id: agentId, companyId, name: "Native", role: "engineer", adapterType: "pilibala_runner",
       status: "idle", runtimeConfig: { heartbeat: { maxConcurrentRuns: 1 } } });
     await db.insert(issues).values({ id: issueId, companyId, title: "Write the report", status: "blocked", assigneeAgentId: agentId });
     // The restart claimed the run (bootstrap_incomplete); its re-preparation then failed.

@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
-import { instanceExperimentalSettingsSchema } from "@paperclipai/shared";
-import type { Db } from "@paperclipai/db";
+import { instanceExperimentalSettingsSchema } from "@pilibalaai/shared";
+import type { Db } from "@pilibalaai/db";
 import { projectIdleStatusCardSchedule, readIdleStatusCardSchedule, type IdleStatusCardRow } from "../services/status-card-idle-schedule.js";
 
 vi.mock("../services/status-cards.js", () => ({ statusCardService: vi.fn(() => ({ tickDueStatusCards: vi.fn() })) }));

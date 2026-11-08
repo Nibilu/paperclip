@@ -1,5 +1,5 @@
 import { appendHeartbeatRunEvent } from "./heartbeat-run-events.js";
-import { heartbeatRunEvents, agents, approvals, costEvents, issueApprovals, environmentLeases, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, agentWakeupRequests, workspaceOperations, issueThreadInteractions, executionWorkspaces, executionWorkspaceSnapshots } from "@paperclipai/db";
+import { heartbeatRunEvents, agents, approvals, costEvents, issueApprovals, environmentLeases, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, agentWakeupRequests, workspaceOperations, issueThreadInteractions, executionWorkspaces, executionWorkspaceSnapshots } from "@pilibalaai/db";
 import { terminalizeLegacyExecution } from "./legacy-execution-recovery.js";
 import * as recoverySources from "./workspace-recovery-source.js";
 import { requestedRunCancellation } from "./run-cancellation.js";
@@ -16,8 +16,8 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import { finalizeNativeRun } from "./native-runtime/native-run-finalizer.js";
 import { issueRecoveryActionService } from "./issue-recovery-actions.js";
-import type { AdapterSandboxExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import type { EnvironmentLease } from "@paperclipai/shared";
+import type { AdapterSandboxExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import type { EnvironmentLease } from "@pilibalaai/shared";
 import { remoteTerminationReceipt } from "./remote-execution-termination.js";
 import { recoverRetainedWorkspace, requestWorkspaceRecovery, scheduleRecoveredWorkspaceCleanup, reconcileRetainedWorkspaces } from "./workspace-recovery.js";
 import { heartbeatService } from "./heartbeat.js";
@@ -109,7 +109,7 @@ describe("automatic retained workspace recovery", () => {
     await db.update(heartbeatRuns).set({ runtimeMode: "legacy", status: "interrupted", executionStage: "preparing",
       startedAt: new Date(Date.now() - 60_000), finishedAt: new Date(), controllerBootId: randomUUID(),
       errorCode: "lease_released_before_terminal", error: "Lease released before preparation settled",
-      runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+      runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
       resultJson: { cancellation: { source: "unknown", expected: false, initiator: { type: "system" },
         reason: "Lease released before preparation settled", recordedAt: new Date().toISOString() } },
     }).where(eq(heartbeatRuns.id, interruptedId));
@@ -147,7 +147,7 @@ describe("automatic retained workspace recovery", () => {
 
   it.each(["local", "none"])("continues verified interrupted preparation with %s leases", async provider => {
     const f = await interruptedRemotePreparation();
-    await db.update(heartbeatRuns).set({ runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+    await db.update(heartbeatRuns).set({ runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
       resultJson: null }).where(eq(heartbeatRuns.id, f.runId));
     if (provider === "none") await db.delete(environmentLeases).where(eq(environmentLeases.id, f.lease.id));
     else await db.update(environmentLeases).set({ provider: "local", metadata: {} }).where(eq(environmentLeases.id, f.lease.id));
@@ -464,7 +464,7 @@ describe("automatic retained workspace recovery", () => {
     targets.get(f.lease.id)!.remoteCwd = remoteCwd;
     f.runtime.resumeRunLease.mockImplementation(async () => ({ providerLeaseId: f.providerLeaseId, metadata: { remoteCwd } }));
     const workspaceId = randomUUID();
-    let authority = { schema: "paperclip.remote-workspace.v1", epoch: 1, snapshotId: null as string | null,
+    let authority = { schema: "pilibala.remote-workspace.v1", epoch: 1, snapshotId: null as string | null,
       source: { kind: "empty" }, writerRunId: f.runId, dirty: true,
       location: { environmentId: f.lease.environmentId!, leaseId: f.lease.id,
         providerLeaseId: f.providerLeaseId, remoteCwd } };
@@ -514,7 +514,7 @@ describe("automatic retained workspace recovery", () => {
     if (runtimeMode === "legacy") await writeFile(path.join(f.remote, "pre-native-change.txt"), "current preparation wrote these files\n");
     await db.update(heartbeatRuns).set({ status, runnerProfileJson: { ...before.runnerProfileJson,
       ...(status === "failed" && runtimeMode === "native" ? { nativeResourceDisposition: "destroy" } : {}),
-      remoteWorkspace: { schema: "paperclip.remote-workspace-run.v1", workspaceId, leaseId: f.lease.id,
+      remoteWorkspace: { schema: "pilibala.remote-workspace-run.v1", workspaceId, leaseId: f.lease.id,
         providerLeaseId: f.providerLeaseId, remoteCwd, epoch: authority.epoch, state: "prepared", snapshotId: authority.snapshotId } },
       resultJson: { ...before.resultJson, ...(status === "cancelled" ? {
         nativeCancellation: { dispatchState: "acknowledged", requestedAt: new Date().toISOString() },
@@ -579,12 +579,12 @@ describe("automatic retained workspace recovery", () => {
       const [stopped] = await db.select().from(environmentLeases).where(eq(environmentLeases.id, f.lease.id));
       const termination = stopped.metadata!.remoteExecutionTermination as Record<string, unknown>;
       await db.update(environmentLeases).set({ leasePolicy: "reuse_by_environment", releasedAt: new Date(String(termination.confirmedAt)), metadata: { ...stopped.metadata,
-        sandboxStopAndRetainReceipt: { ...termination, schema: "paperclip.sandbox-stop-and-retain-receipt.v1",
+        sandboxStopAndRetainReceipt: { ...termination, schema: "pilibala.sandbox-stop-and-retain-receipt.v1",
           pluginId: stopped.metadata!.pluginId, method: "environmentStopLease", requestId: randomUUID() },
       } }).where(eq(environmentLeases.id, f.lease.id));
       const [later] = await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: before.agentId,
         issueId: f.issueId, runtimeMode: "legacy", status: "failed", errorCode: "setup_failed", finishedAt: new Date(),
-        executionStage: "preparing", runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+        executionStage: "preparing", runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
         createdAt: new Date(before.createdAt.getTime() + 1), contextSnapshot: { issueId: f.issueId },
         resultJson: { executionRecovery: { kind: "bootstrap", providerWorkStarted: false } },
       }).returning();

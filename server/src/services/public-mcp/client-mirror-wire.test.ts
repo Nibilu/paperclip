@@ -78,7 +78,7 @@ test("actual domain packers preserve every record, page sequence and normal200/4
   const pages=mcpClientMirrorClientPages(identity,7,clients);
   assert.deepEqual(pages.map(page=>page.sequence),[7,8]);
   assert.deepEqual(pages.flatMap(page=>page.changes),clients);
-  const entries=Array.from({length:1000},(_,index)=>({...device,requestId:`00000000-0000-4000-8000-${String(index).padStart(12,"0")}`,clientId:"legacy-client",resource:origin+"/mcp/paperclip"}));
+  const entries=Array.from({length:1000},(_,index)=>({...device,requestId:`00000000-0000-4000-8000-${String(index).padStart(12,"0")}`,clientId:"legacy-client",resource:origin+"/mcp/pilibala"}));
   const devicePages=mcpClientMirrorDevicePages(identity,entries);
   assert.deepEqual(devicePages.flatMap(page=>page.entries),entries);
   assert.deepEqual(devicePages.map(page=>page.sequence),devicePages.map((_,index)=>index));

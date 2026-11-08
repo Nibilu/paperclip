@@ -7,8 +7,8 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const controls = process.argv.slice(2).join(' ') === '--controls';
 if (!controls && process.argv.length > 2) throw new Error('Use no arguments for the witness or --controls for finite PG0 controls');
-const names = ['PAPERCLIP_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL', 'PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL'];
-if (!controls && process.env.PAPERCLIP_MAINTENANCE_PG0_CONTROLS) throw new Error('PG0 controls flag is forbidden for the witness');
+const names = ['PILIBALA_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL', 'PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL'];
+if (!controls && process.env.PILIBALA_MAINTENANCE_PG0_CONTROLS) throw new Error('PG0 controls flag is forbidden for the witness');
 if (!controls) {
   const urls = names.map(name => {
     if (!process.env[name]) throw new Error(`${name} requires an explicit dedicated test database`);
@@ -19,12 +19,12 @@ if (!controls) {
     return url;
   });
   if (urls[0].pathname === urls[1].pathname) throw new Error('App and Cloud require distinct test databases');
-  const cloud = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT;
+  const cloud = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT;
   if (!cloud || !path.isAbsolute(cloud) || !existsSync(path.join(cloud, 'dist/sleep/fixtures/default-cadence-bridge.js'))) throw new Error('Set the exact compiled Cloud checkout');
-  if (!path.isAbsolute(process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_NODE || '')) throw new Error('Set the actual Node22 executable');
-  if (!/^[a-f0-9]{40}$/.test(process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_SHA || '')) throw new Error('Set exact Cloud source SHA');
+  if (!path.isAbsolute(process.env.PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_NODE || '')) throw new Error('Set the actual Node22 executable');
+  if (!/^[a-f0-9]{40}$/.test(process.env.PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_SHA || '')) throw new Error('Set exact Cloud source SHA');
 }
-const log = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG;
+const log = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG;
 if (!log || !path.isAbsolute(log) || !existsSync(path.dirname(log))) throw new Error('Set an absolute guard log in the existing evidence directory');
 if (existsSync(log) && statSync(log).size !== 0) throw new Error('Use a fresh per-attempt guard log');
 if (!process.version.startsWith('v24.')) throw new Error('Launch acceptance with the actual Node24 executable');
@@ -35,13 +35,13 @@ const guard = path.join(root, 'scripts/fixtures/skill-default-cadence-network-gu
 require(guard);
 const vitest = path.join(path.dirname(require.resolve('vitest/package.json')), 'vitest.mjs');
 const env = { PATH: process.env.PATH, HOME: process.env.HOME, LANG: process.env.LANG, TMPDIR: process.env.TMPDIR,
-  NODE_ENV: 'test', NODE_OPTIONS: `--require=${guard}`, PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG: log };
-if (controls) env.PAPERCLIP_MAINTENANCE_PG0_CONTROLS = '1';
+  NODE_ENV: 'test', NODE_OPTIONS: `--require=${guard}`, PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG: log };
+if (controls) env.PILIBALA_MAINTENANCE_PG0_CONTROLS = '1';
 if (!controls) {
-  for (const name of [...names, 'PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT', 'PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_NODE',
-    'PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_SHA', 'PAPERCLIP_SKILL_DEFAULT_CADENCE_EVIDENCE', 'PAPERCLIP_SKILL_DEFAULT_CADENCE_STAGE',
-    'PAPERCLIP_TEST_POSTGRES_ADMIN_URL']) if (process.env[name]) env[name] = process.env[name];
-  env.PAPERCLIP_SKILL_DEFAULT_CADENCE_ACCEPTANCE = '1'; env.PAPERCLIP_MAINTENANCE_KEEP_ARTIFACTS = '1';
+  for (const name of [...names, 'PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT', 'PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_NODE',
+    'PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_SHA', 'PILIBALA_SKILL_DEFAULT_CADENCE_EVIDENCE', 'PILIBALA_SKILL_DEFAULT_CADENCE_STAGE',
+    'PILIBALA_TEST_POSTGRES_ADMIN_URL']) if (process.env[name]) env[name] = process.env[name];
+  env.PILIBALA_SKILL_DEFAULT_CADENCE_ACCEPTANCE = '1'; env.PILIBALA_MAINTENANCE_KEEP_ARTIFACTS = '1';
 }
 const files = controls ? ['server/src/__tests__/skill-default-cadence-prewire.test.ts', 'server/src/__tests__/maintenance-harness-resources.test.ts',
   'server/src/__tests__/maintenance-postgres-proxy.test.ts', 'server/src/services/skill-source-idle-schedule.test.ts']

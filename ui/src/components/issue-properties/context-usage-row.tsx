@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { IssueContextCompaction, IssueContextUsage } from "@paperclipai/shared";
+import type { IssueContextCompaction, IssueContextUsage } from "@pilibalaai/shared";
 import { issuesApi } from "../../api/issues";
 import { queryKeys } from "../../lib/queryKeys";
 import { useOptionalToastActions } from "../../context/ToastContext";

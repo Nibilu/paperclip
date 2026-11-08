@@ -54,8 +54,8 @@ it("keeps a case that steers an active turn on a steering-capable driver", async
   // queue-steer requires a 2xx same-turn steer. The OpenCode server driver
   // declares steering false, so the route answers steering_unsupported there.
   const { readFile } = await import("node:fs/promises");
-  const openCode = await readFile(new URL("../../packages/paperclip-runner/src/drivers/opencode/opencode-server-driver.ts", import.meta.url), "utf8");
-  const codex = await readFile(new URL("../../packages/paperclip-runner/src/drivers/codex/codex-app-server-driver-impl.ts", import.meta.url), "utf8");
+  const openCode = await readFile(new URL("../../packages/pilibala-runner/src/drivers/opencode/opencode-server-driver.ts", import.meta.url), "utf8");
+  const codex = await readFile(new URL("../../packages/pilibala-runner/src/drivers/codex/codex-app-server-driver-impl.ts", import.meta.url), "utf8");
   expect(openCode).toMatch(/\n {2}steering: false,\n/);
   expect(codex).toMatch(/\n {6}steering: true,\n/);
   const steering = runnerMatrix.find(execution => execution.id === reliabilityDefinitions.find(row => row.name === "queue-steer")!.executionId)!;
@@ -97,11 +97,11 @@ it("reports the real reliability grader output through the standing projection w
     const matcherResults = checks.map(check => ({ matcher: { kind: "json_path" as const, path: check.id, expected: true }, passed: check.passed, detail: "contract control" }));
     for (const result of matcherResults) expect(productReportingMatcherKinds).toContain(result.matcher.kind);
     const sourceSha = "b".repeat(40);
-    const raw: RunnerE2EResult = { schema: "paperclip.runner-e2e.result/v2", executionId: row.executionId, suiteId: row.suite, caseId: row.name,
+    const raw: RunnerE2EResult = { schema: "pilibala.runner-e2e.result/v2", executionId: row.executionId, suiteId: row.suite, caseId: row.name,
       profileId: row.profile, environmentId: row.environment, source: { sha: sourceSha, ref: null, workflowRunUrl: null },
       attempt: 1, status: "failed", failureClass: "candidate_failure", cleanup: "passed", model: row.model, provider: "opencode",
       runtimeMode: "native", startedAt: "2026-11-06T00:00:00Z", finishedAt: "2026-11-06T00:00:01Z", durationMs: 1000, matcherResults };
-    const projected = projectProductResults({ schema: "paperclip.runner-e2e.campaign/v2", campaignId: "gha-123-1", source: { sha: sourceSha },
+    const projected = projectProductResults({ schema: "pilibala.runner-e2e.campaign/v2", campaignId: "gha-123-1", source: { sha: sourceSha },
       expected: [row.executionId], results: [raw] }, { runId: "123", attempt: "1", workflowSha: "a".repeat(40), cases: [row] }, sourceSha);
     expect(projected.summary).toMatchObject({ selected: 1, passed: 0, failed: 1, plan: "reliability", fullPlan: false });
     expect(projected.records[1]!.value.checks?.map(check => check.passed)).toEqual(matcherResults.map(check => check.passed));

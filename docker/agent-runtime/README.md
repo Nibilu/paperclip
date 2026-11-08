@@ -1,6 +1,6 @@
 # Agent Runtime Image Family
 
-Container images for running coding-agent harnesses in sandboxed environments (for example the kubernetes sandbox provider, stage 1 of the k8s contribution). Images are named `agent-runtime-{harness}:{version}` and published to `ghcr.io/paperclipai/` by the `agent-runtime-images` workflow. The registry is overridable: every reference flows through the `REGISTRY` bake variable.
+Container images for running coding-agent harnesses in sandboxed environments (for example the kubernetes sandbox provider, stage 1 of the k8s contribution). Images are named `agent-runtime-{harness}:{version}` and published to `ghcr.io/pilibalaai/` by the `agent-runtime-images` workflow. The registry is overridable: every reference flows through the `REGISTRY` bake variable.
 
 ## Image Lineup
 
@@ -19,7 +19,7 @@ Container images for running coding-agent harnesses in sandboxed environments (f
 - Node.js 24 (via NodeSource APT repo)
 - git
 - tini (PID-1 init, ensures signal propagation)
-- Non-root user `paperclip` (uid/gid 1000)
+- Non-root user `pilibala` (uid/gid 1000)
 
 The NodeSource install puts `node` on the default `PATH`. The agent shim in this
 image runs the harness directly with that `PATH`. The shim does not source a
@@ -29,14 +29,14 @@ sandbox providers instead wrap each command in a login shell. That shell sources
 exec path sources `nvm`. For the full exec-path contract, see
 `packages/plugins/sandbox-providers/SANDBOX-REQUIREMENTS.md`.
 
-**Paperclip Binaries:**
-- `/usr/local/bin/paperclip-agent-shim`: Go binary compiled from `tools/agent-shim/`. Reads `/run/paperclip/runtime-command.json` and `syscall.Exec`s the harness CLI.
+**Pilibala Binaries:**
+- `/usr/local/bin/pilibala-agent-shim`: Go binary compiled from `tools/agent-shim/`. Reads `/run/pilibala/runtime-command.json` and `syscall.Exec`s the harness CLI.
 
 **Defaults:**
-- `USER`: 1000:1000 (paperclip, non-root)
+- `USER`: 1000:1000 (pilibala, non-root)
 - `WORKDIR`: `/workspace` (mount workspace volumes here)
 - `ENTRYPOINT`: `/usr/bin/tini --` (PID-1 reaper, forwards signals)
-- `CMD`: `/usr/local/bin/paperclip-agent-shim`
+- `CMD`: `/usr/local/bin/pilibala-agent-shim`
 
 ## Building Locally
 
@@ -59,14 +59,14 @@ Build and verify the `agent-runtime-claude` image runs locally:
 
 ```bash
 docker buildx bake -f docker/agent-runtime/buildx-bake.hcl base claude --load
-docker run --rm ghcr.io/paperclipai/agent-runtime-claude:dev claude-code --version
+docker run --rm ghcr.io/pilibalaai/agent-runtime-claude:dev claude-code --version
 ```
 
-## Agent Container (paperclip-agent-shim)
+## Agent Container (pilibala-agent-shim)
 
 The main agent process runs as the shim (PID 1 under tini). The shim:
 
-1. Reads `/run/paperclip/runtime-command.json` (path overridable via `-spec`), a JSON file mounted by whatever schedules the run
+1. Reads `/run/pilibala/runtime-command.json` (path overridable via `-spec`), a JSON file mounted by whatever schedules the run
 2. Parses `{ "command", "args" }`: the harness CLI and arguments
 3. Resolves the command on PATH and `syscall.Exec`s it, replacing itself
 4. SIGTERM from the kubelet propagates directly to the harness (no zombie processes)

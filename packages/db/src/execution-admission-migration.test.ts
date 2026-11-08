@@ -15,11 +15,11 @@ const describePostgres = support.supported ? describe : describe.skip;
 
 describePostgres("execution admission migration", () => {
   it("adds empty admission storage without changing existing projects or runs", async () => {
-    const database = await startEmbeddedPostgresTestDatabase("paperclip-execution-admission-migration-");
+    const database = await startEmbeddedPostgresTestDatabase("pilibala-execution-admission-migration-");
     const sql = postgres(database.connectionString, { max: 1, onnotice: () => {} });
     try {
       await sql`DROP TABLE execution_admission_project_charges, execution_admissions, project_task_execution_policies`;
-      await sql`DROP FUNCTION paperclip_execution_admission_project_set_immutable`;
+      await sql`DROP FUNCTION pilibala_execution_admission_project_set_immutable`;
       await sql`DELETE FROM drizzle.__drizzle_migrations WHERE hash IN (${migrationHash}, ${await hashMigration(retainedSetMigration)})`;
       const companyId = randomUUID(), agentId = randomUUID(), projectId = randomUUID();
       await sql`INSERT INTO companies (id, name, issue_prefix) VALUES (${companyId}, 'Upgrade', 'UPG')`;
@@ -55,11 +55,11 @@ describePostgres("execution admission migration", () => {
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
 
   it("keeps the admitted sets of shipped 0426 rows that still have charges and marks settled ones unknown", async () => {
-    const database = await startEmbeddedPostgresTestDatabase("paperclip-execution-admission-sets-");
+    const database = await startEmbeddedPostgresTestDatabase("pilibala-execution-admission-sets-");
     const sql = postgres(database.connectionString, { max: 1, onnotice: () => {} });
     try {
-      await sql`DROP TRIGGER paperclip_execution_admission_project_set_immutable ON execution_admissions`;
-      await sql`DROP FUNCTION paperclip_execution_admission_project_set_immutable`;
+      await sql`DROP TRIGGER pilibala_execution_admission_project_set_immutable ON execution_admissions`;
+      await sql`DROP FUNCTION pilibala_execution_admission_project_set_immutable`;
       await sql`ALTER TABLE execution_admissions DROP CONSTRAINT execution_admissions_project_set_check, DROP COLUMN admitted_project_ids`;
       await sql`DELETE FROM drizzle.__drizzle_migrations WHERE hash = ${await hashMigration(retainedSetMigration)}`;
       const companyId = randomUUID(), agentId = randomUUID();

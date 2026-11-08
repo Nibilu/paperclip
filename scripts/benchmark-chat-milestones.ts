@@ -349,20 +349,20 @@ let db: Db | undefined;
 let baselineDir: string | undefined;
 async function startDatabase() {
   if (!dockerPostgres) return startEmbeddedPostgresTestDatabase("chat-milestone-benchmark-");
-  const container = `paperclip-chat-milestones-${randomUUID()}`;
+  const container = `pilibala-chat-milestones-${randomUUID()}`;
   const docker = (...args: string[]) => execFileSync("docker", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
-  docker("run", "--detach", "--rm", "--name", container, "--label", "paperclip.benchmark=chat-milestones", "--publish", "127.0.0.1::5432",
-    "--env", "POSTGRES_USER=paperclip", "--env", "POSTGRES_PASSWORD=paperclip", "--env", "POSTGRES_DB=paperclip", "postgres:17");
+  docker("run", "--detach", "--rm", "--name", container, "--label", "pilibala.benchmark=chat-milestones", "--publish", "127.0.0.1::5432",
+    "--env", "POSTGRES_USER=pilibala", "--env", "POSTGRES_PASSWORD=pilibala", "--env", "POSTGRES_DB=pilibala", "postgres:17");
   const cleanup = async () => { docker("rm", "--force", container); };
   try {
     let ready = false;
     for (let attempt = 0; attempt < 100; attempt++) {
-      try { docker("exec", container, "pg_isready", "-h", "127.0.0.1", "-U", "paperclip"); ready = true; break; }
+      try { docker("exec", container, "pg_isready", "-h", "127.0.0.1", "-U", "pilibala"); ready = true; break; }
       catch { await new Promise(resolve => setTimeout(resolve, 100)); }
     }
     assert.ok(ready, "Disposable Docker PostgreSQL did not become ready");
     const port = docker("port", container, "5432/tcp").split(":").at(-1);
-    const connectionString = `postgres://paperclip:paperclip@127.0.0.1:${port}/paperclip`;
+    const connectionString = `postgres://pilibala:pilibala@127.0.0.1:${port}/pilibala`;
     await applyPendingMigrations(connectionString);
     return { connectionString, cleanup };
   } catch (error) { await cleanup(); throw error; }

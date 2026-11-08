@@ -91,7 +91,7 @@ describe("restart sample guard", () => {
 
   it("keeps a shell call open until it ends, and ignores other tools", () => {
     expect(ids([
-      tool("tool.execution.started", "mcp-1", { name: "paperclip.issue.comment", operation: "unknown" }),
+      tool("tool.execution.started", "mcp-1", { name: "pilibala.issue.comment", operation: "unknown" }),
       tool("tool.execution.started", "sh-1", { name: "Bash", operation: "execute" }),
       tool("tool.execution.progressed", "sh-1"),
     ]).map(call => call.executionId)).toEqual(["sh-1"]);

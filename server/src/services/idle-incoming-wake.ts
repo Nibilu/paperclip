@@ -10,13 +10,13 @@ import {
   connectionGrants,
   toolConnections,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   IdleIncomingWakeCapability,
   VerifiedIdleCapabilities,
 } from "./idle-incoming-wake-capability.js";
 import { githubConnectionEventBindings } from "./github-connection-events.js";
-import { paperclipCloudConnectorConfigFromEnv } from "./paperclip-cloud-connector.js";
+import { pilibalaCloudConnectorConfigFromEnv } from "./pilibala-cloud-connector.js";
 import { hasConnectionEventWakeReceiver } from "./connection-event-wake.js";
 
 export interface IdleIncomingWakeProof {
@@ -86,7 +86,7 @@ export async function readIdleIncomingWakeProof(
     remaining();
   };
   if (capability.routes.includes("tenant-api-http-v2")) {
-    const stackId = process.env.PAPERCLIP_CLOUD_STACK_ID;
+    const stackId = process.env.PILIBALA_CLOUD_STACK_ID;
     if (!stackId || !capability.apiKeyProof) throw new Error("API wake challenge is missing");
     await beforeRead();
     const rows = await tx.execute<{ keyHash: string; expiresAt: Date | null }>(sql`
@@ -103,7 +103,7 @@ export async function readIdleIncomingWakeProof(
     });
   }
   if (capability.routes.includes("mcp-oauth-http-v1")) {
-    const stackId = process.env.PAPERCLIP_CLOUD_STACK_ID;
+    const stackId = process.env.PILIBALA_CLOUD_STACK_ID;
     if (!stackId || !capability.mcpOAuthProof) throw new Error("MCP wake challenge is missing");
     proof.mcp = await readIdleMcpSleepProof(tx, input.receiverOwner, { stackId, ownerId: input.ownerId,
       capabilityGeneration: capability.generation, challenge: capability.mcpOAuthProof.challenge, now: inspectionNow, budget: { beforeRead, check: () => { remaining(); } } });
@@ -115,7 +115,7 @@ export async function readIdleIncomingWakeProof(
     return proof;
   }
   const broker = capability.githubBroker;
-  const config = paperclipCloudConnectorConfigFromEnv();
+  const config = pilibalaCloudConnectorConfigFromEnv();
   if (
     !broker ||
     config?.instanceId !== broker.instanceId ||

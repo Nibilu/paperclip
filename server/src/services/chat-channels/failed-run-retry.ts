@@ -36,7 +36,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   createDurableChatWakeupRequest,
   assertDurableChatWakeupReceipt,
@@ -61,15 +61,15 @@ import {
   issueThreadInteractions,
   issueQuestionResponseDeliveries,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type {
   ChatProvider,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   isAgentStatusInvokable,
   CHAT_PROVIDERS,
   isUuidLike,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import {
   nativeFailedRunRetryStateIsSafe,
@@ -253,7 +253,7 @@ export function createChatFailedRunRetry(db: Db, options: ChatFailedRunRetryOpti
       (!failedRetry && !workspacePreparation && run.errorCode !== "setup_failed") ||
       run.status !== "failed" || !run.finishedAt ||
       (failedRetry && run.sessionIdBefore !== null) ||
-      (dispatchOnlyProfile && JSON.stringify(run.runnerProfileJson) !== JSON.stringify({ adapterDispatch: { adapterType: "paperclip_runner" } })) ||
+      (dispatchOnlyProfile && JSON.stringify(run.runnerProfileJson) !== JSON.stringify({ adapterDispatch: { adapterType: "pilibala_runner" } })) ||
       !diagnostic || run.error !== diagnostic ||
       (workspacePreparation && run.usageJson !== null &&
         Object.keys(run.usageJson).some(key => key !== "ledgerScope")) ||
@@ -933,12 +933,12 @@ export function createChatFailedRunRetry(db: Db, options: ChatFailedRunRetryOpti
             accepted.canonicalSha256) ||
         (input.committedResponse.decisionId !== undefined &&
           input.committedResponse.decisionId !== coordinator.decisionId) ||
-        result?.schema !== "paperclip.run_result.v1" ||
+        result?.schema !== "pilibala.run_result.v1" ||
         result.reportedWorkDisposition !== "yielded" ||
         !Array.isArray(result.attentionRequests) ||
         result.attentionRequests.length !== 0 ||
         continuation?.kind !== "response_wake" ||
-        terminal?.schema !== "paperclip.prp.terminal.v1" ||
+        terminal?.schema !== "pilibala.prp.terminal.v1" ||
         terminal.turnTerminalState !== "completed" ||
         terminal.runTerminalState !== "succeeded" ||
         terminal.reportedWorkDisposition !== "yielded"

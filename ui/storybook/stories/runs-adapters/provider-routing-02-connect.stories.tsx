@@ -12,7 +12,7 @@ const meta = {
   title: "Agents and reusable capabilities/Runs, harnesses, and model accounts/AI Connections/Provider routing/02 Connect",
   component: ConnectionSetup,
   parameters: { layout: "fullscreen",
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "runs-adapters/validation"
       ],

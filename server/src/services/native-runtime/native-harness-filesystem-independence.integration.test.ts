@@ -3,15 +3,15 @@ import { chmod, cp, lstat, mkdir, mkdtemp, readFile, realpath, rename, rm, symli
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { and, eq } from "drizzle-orm";
-import type { CompanySkillVersionFileInventoryEntry } from "@paperclipai/shared";
+import type { CompanySkillVersionFileInventoryEntry } from "@pilibalaai/shared";
 import { afterAll, afterEach, beforeAll, expect, it, vi } from "vitest";
 import { activityLog, agentTaskSessions, agents, companies, companySkills, companySkillVersions, companySkillRepositorySnapshots, createDb, environmentLeases,
-  heartbeatRuns, issues, nativeHarnessBackups, nativeRunnerCheckpoints, nativeRunFinalizations, nativeRunResults } from "@paperclipai/db";
+  heartbeatRuns, issues, nativeHarnessBackups, nativeRunnerCheckpoints, nativeRunFinalizations, nativeRunResults } from "@pilibalaai/db";
 import { describeEmbeddedPostgres } from "../../__tests__/helpers/native-restart.js";
 import { startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { createLocalDiskStorageProvider } from "../../storage/local-disk-provider.js";
 import { createStorageService } from "../../storage/service.js";
-import { canonicalNativeRuntimeContextDigest, captureLegacyDurablePrpCheckpoint, DurablePrpControlPlane, parseNativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+import { canonicalNativeRuntimeContextDigest, captureLegacyDurablePrpCheckpoint, DurablePrpControlPlane, parseNativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 import { materializeAsset } from "./runtime-context.js";
 import { nativeRuntimeContextFixture } from "./runtime-context.test-fixture.js";
 import { preserveRuntimeSkillAssets } from "./runtime-skill-preservation.js";
@@ -44,18 +44,18 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
   afterAll(async () => { await db?.$client.end({ timeout: 1 }); await database?.cleanup(); });
 
   async function fixture(kind: "unversioned" | "repository" | "package" | "deleted" | "none" | "many-web-files" = "unversioned", managedWorkspace = false) {
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "61".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "61".repeat(32));
     const mount = await realpath(await mkdtemp(join(tmpdir(), "native-harness-original-"))); roots.push(mount);
     const companyId = randomUUID(), agentId = randomUUID(), issueId = randomUUID(), runId = randomUUID(), sessionId = randomUUID(), runnerId = randomUUID();
     const projectId = randomUUID(), serviceId = randomUUID(), environmentId = randomUUID(), volumeId = randomUUID(), deploymentId = randomUUID();
-    for (const [key, value] of Object.entries({ PAPERCLIP_HOME: mount, PAPERCLIP_INSTANCE_ID: "default", RAILWAY_PROJECT_ID: projectId,
+    for (const [key, value] of Object.entries({ PILIBALA_HOME: mount, PILIBALA_INSTANCE_ID: "default", RAILWAY_PROJECT_ID: projectId,
       RAILWAY_SERVICE_ID: serviceId, RAILWAY_ENVIRONMENT_ID: environmentId, RAILWAY_VOLUME_ID: volumeId,
       RAILWAY_DEPLOYMENT_ID: deploymentId, RAILWAY_VOLUME_MOUNT_PATH: mount,
-      PAPERCLIP_RUNNER_STATE_DIR: join(mount, "instances/default/runtime/paperclip-runner/durable-sessions") })) vi.stubEnv(key, value);
-    await mkdir(process.env.PAPERCLIP_RUNNER_STATE_DIR!, { recursive: true, mode: 0o700 });
+      PILIBALA_RUNNER_STATE_DIR: join(mount, "instances/default/runtime/pilibala-runner/durable-sessions") })) vi.stubEnv(key, value);
+    await mkdir(process.env.PILIBALA_RUNNER_STATE_DIR!, { recursive: true, mode: 0o700 });
     await mkdir(join(mount, "instances/default/recovery"), { recursive: true, mode: 0o700 });
     const m = await lstat(mount), instance = await lstat(join(mount, "instances/default"));
-    const anchor: OriginalHarnessVolumeAnchor = { schema: "paperclip.native-harness-original-volume-anchor.v1", nonce: "b".repeat(64),
+    const anchor: OriginalHarnessVolumeAnchor = { schema: "pilibala.native-harness-original-volume-anchor.v1", nonce: "b".repeat(64),
       projectId, serviceId, environmentId, volumeId, volumeInstanceId: randomUUID(), mountPath: mount,
       mountIdentity: { dev: m.dev, ino: m.ino }, instanceIdentity: { dev: instance.dev, ino: instance.ino },
       createdFrom: { deploymentId: randomUUID(), commit: "c".repeat(40), providerWitnessSha256: "d".repeat(64) }, createdAt: new Date().toISOString() };
@@ -102,12 +102,12 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
       runtimeContext.skills = [{ key: "retained", runtimeName: "retained", versionId, bundle }];
       runtimeContext.aggregateDigest = canonicalNativeRuntimeContextDigest(runtimeContext);
     }
-    const execution = parseNativeExecutionInput({ schema: "paperclip.native-execution-input.v3", executionMode: "default", planningContext: null,
+    const execution = parseNativeExecutionInput({ schema: "pilibala.native-execution-input.v3", executionMode: "default", planningContext: null,
       binding: { companyId, agentId, issueId, runId, executionWorkspaceId: managedWorkspace ? randomUUID() : runId }, provider: { kind: "codex", model: null },
       task: { identifier: "FS-1", title: "Retain failure", description: null, prompt: "Retain failure", workMode: "standard" },
       workspace: { cwd: "/workspace", repoUrl: null, repoRef: null, branchName: null },
       session: { normalizedSessionId: sessionId, driverKind: "codex_app_server", protocolVersion: 1, lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null } },
-      completionContract: { id: "contract", sha256: "saved", schemaVersion: "paperclip.completion-contract.v1",
+      completionContract: { id: "contract", sha256: "saved", schemaVersion: "pilibala.completion-contract.v1",
         contract: { revision: "1", objective: "Retain failure", criteria: [{ id: "retain", requirement: "Retain failure" }] } },
       runtimeContext, interactionResponses: [], credentialBindings: [] });
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, nativeIssueId: issueId, nativeSessionId: sessionId, runnerInstanceId: runnerId,
@@ -117,15 +117,15 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
         identity: { companyId, agentId, issueId, runId, sessionId }, activeTurnId: null, cursor: "2", goal: null,
       } } });
     await db.insert(nativeRunFinalizations).values({ companyId, issueId, runId, phase: "terminal_failure", recoveryState: "blocked" });
-    const [selection] = await db.insert(agentTaskSessions).values({ companyId, agentId, adapterType: "paperclip_runner", taskKey: issueId,
+    const [selection] = await db.insert(agentTaskSessions).values({ companyId, agentId, adapterType: "pilibala_runner", taskKey: issueId,
       lastRunId: runId, lastError: "existing provider failure" }).returning();
     const scopeDigest = basename(scopedRunnerdStateRoot(execution)), leaseId = randomUUID(), providerLeaseId = `destroyed-${randomUUID()}`;
     await db.insert(environmentLeases).values({ id: leaseId, companyId, issueId, heartbeatRunId: runId, provider: "daytona", providerLeaseId,
       status: "released", cleanupStatus: "success", releasedAt: new Date(), metadata: {
-        nativeHarnessBackup: { schema: "paperclip.native-harness-backup-stamp.v2", normalizedSessionId: sessionId, runnerInstanceId: runnerId,
+        nativeHarnessBackup: { schema: "pilibala.native-harness-backup-stamp.v2", normalizedSessionId: sessionId, runnerInstanceId: runnerId,
           sessionScopeSha256: scopeDigest, sourceProviderLeaseId: providerLeaseId, authorizedProviderLeaseId: providerLeaseId,
           manifestSha256: `sha256:${"f".repeat(64)}`, completedAt: new Date().toISOString() },
-        remoteExecutionTermination: { schema: "paperclip.remote-termination.v1", companyId, runId, leaseId, provider: "daytona", providerLeaseId,
+        remoteExecutionTermination: { schema: "pilibala.remote-termination.v1", companyId, runId, leaseId, provider: "daytona", providerLeaseId,
           state: "destroyed", confirmedAt: new Date().toISOString() },
       } });
     if (kind !== "none") {
@@ -180,7 +180,7 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
     await control.stop();
     const controllerPath = join(f.sourceRoot, "control-plane/control-plane-state.json");
     await writeFile(controllerPath, raw, { mode: 0o600 });
-    const supervisor = JSON.stringify({ schema: "paperclip.native-session-supervisor.v1", configDigest: descriptor.configDigest,
+    const supervisor = JSON.stringify({ schema: "pilibala.native-session-supervisor.v1", configDigest: descriptor.configDigest,
       processConfigDigest: null, snapshot });
     await mkdir(join(descriptor.supervisorPath, ".."), { recursive: true, mode: 0o700 });
     await writeFile(descriptor.supervisorPath, supervisor, { mode: 0o600 });
@@ -211,7 +211,7 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
     expect(await hasLocalNativeHarnessObligations(db)).toBe(false);
     const [run] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId));
     const receipt = run!.runnerProfileJson!.nativeHarnessFilesystemIndependence as { schema: string; controller: { archive: { id: string } } };
-    expect(receipt.schema).toBe("paperclip.native-harness-web-evidence.v1");
+    expect(receipt.schema).toBe("pilibala.native-harness-web-evidence.v1");
     const [archive] = await db.select().from(nativeHarnessBackups).where(eq(nativeHarnessBackups.id, receipt.controller.archive.id));
     const target = join(f.mount, "isolated-web-evidence");
     expect(await restoreDurableNativeHarnessBackup({ db, storage: f.storage, companyId: f.input.companyId,
@@ -227,7 +227,7 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
     expect(await db.select().from(environmentLeases).where(eq(environmentLeases.companyId, f.input.companyId))).toEqual(beforeLeases);
     expect(await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.companyId, f.input.companyId))).toEqual(beforeRuns.map(r => ({ ...r,
       runnerProfileJson: { ...r.runnerProfileJson, nativeHarnessFilesystemIndependence: run!.runnerProfileJson!.nativeHarnessFilesystemIndependence } })));
-    vi.stubEnv("PAPERCLIP_HOME", join(f.mount, "absent-web")); vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", join(f.mount, "absent-web/state"));
+    vi.stubEnv("PILIBALA_HOME", join(f.mount, "absent-web")); vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", join(f.mount, "absent-web/state"));
     vi.stubEnv("RAILWAY_VOLUME_ID", ""); vi.spyOn(f.storage, "getObject").mockRejectedValue(new Error("replacement must not read storage"));
     expect(await hasValidNativeHarnessFilesystemIndependence(db, f.input)).toBe(true);
     expect(result.receiptDigest).toMatch(/^[a-f0-9]{64}$/);
@@ -279,8 +279,8 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
       }));
     }
     expect(await db.select().from(environmentLeases).where(eq(environmentLeases.companyId, f.input.companyId))).toEqual(originalLeases);
-    vi.stubEnv("PAPERCLIP_HOME", join(f.mount, "absent-many-web-files"));
-    vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", join(f.mount, "absent-many-web-files/state")); vi.stubEnv("RAILWAY_VOLUME_ID", "");
+    vi.stubEnv("PILIBALA_HOME", join(f.mount, "absent-many-web-files"));
+    vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", join(f.mount, "absent-many-web-files/state")); vi.stubEnv("RAILWAY_VOLUME_ID", "");
     vi.spyOn(f.storage, "getObject").mockRejectedValue(new Error("database validation must not read storage"));
     expect(await hasValidNativeHarnessFilesystemIndependence(db, f.input)).toBe(true);
     expect(result.receiptDigest).toMatch(/^[a-f0-9]{64}$/);
@@ -295,7 +295,7 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
     const entries: NativeControllerHistoryManifestEntry[] = [{ path: "web-home", mode: 0o700, type: "directory" },
       ...Array.from({ length: 127 }, (_, index) => ({ path: `web-home/entry-${index}`, mode: 0o700, type: "directory" as const }))];
     const descriptor = webDescriptor(entries);
-    const manifest = JSON.stringify({ schema: "paperclip.legacy-controller-archive.v1", companyId: "company", issueId: "issue",
+    const manifest = JSON.stringify({ schema: "pilibala.legacy-controller-archive.v1", companyId: "company", issueId: "issue",
       runId: "run", reason: "original_volume_source_evidence", files: {}, web: { entries, bindingDigest: "a".repeat(64), controllerAbsent: true } });
     expect(descriptor.manifest).toBe(manifest);
     expect(descriptor.manifestSha256).toBe(`sha256:${createHash("sha256").update(manifest).digest("hex")}`);
@@ -366,8 +366,8 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
     await expect(lstat(join(target, "current/control-plane-state.json"))).rejects.toMatchObject({ code: "ENOENT" });
     expect(await readFile(join(target, "current/supervisor.json"), "utf8")).toBe(f.supervisor);
     expect(await db.select().from(nativeRunnerCheckpoints).where(eq(nativeRunnerCheckpoints.runId, f.runId))).toEqual(before);
-    vi.stubEnv("PAPERCLIP_HOME", join(f.mount, "absent-supervisor-host"));
-    vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", join(f.mount, "absent-supervisor-host/state")); vi.stubEnv("RAILWAY_VOLUME_ID", "");
+    vi.stubEnv("PILIBALA_HOME", join(f.mount, "absent-supervisor-host"));
+    vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", join(f.mount, "absent-supervisor-host/state")); vi.stubEnv("RAILWAY_VOLUME_ID", "");
     expect(await hasValidNativeHarnessFilesystemIndependence(db, f.input)).toBe(true);
   });
 
@@ -523,7 +523,7 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
       }
       await writeFile(join(f.sourceRoot, path), contents, { mode: 0o600 });
       const runner = includeRunnerState ? { path: join("authority-epochs", epoch, "runner-state.json"), contents: JSON.stringify({
-        schema: "paperclip.runner.durable.state.v1", ...JSON.parse(contents).identity, lifecycle: "suspended",
+        schema: "pilibala.runner.durable.state.v1", ...JSON.parse(contents).identity, lifecycle: "suspended",
         nextSourceSeq: 2, ackedSourceSeq: 1, lastControllerCommandSeq: 4, reconnectCount: 0,
         outbox: [{ sourceSeq: 2, sourceEventId: `retired-outbox-${index}`, eventType: "item.delta",
           payload: { text: `Suspended historical outbox ${index}` } }], processedCommands: {}, diagnostics: ["retained suspended authority"],
@@ -542,7 +542,7 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
       await db.insert(environmentLeases).values({ ...lease!, id: leaseId, heartbeatRunId: runId, providerLeaseId,
         metadata: { ...lease!.metadata, nativeHarnessBackup: { ...(lease!.metadata!.nativeHarnessBackup as Record<string, unknown>),
           sourceProviderLeaseId: providerLeaseId, authorizedProviderLeaseId: providerLeaseId },
-        remoteExecutionTermination: { schema: "paperclip.remote-termination.v1", companyId: f.input.companyId, runId, leaseId,
+        remoteExecutionTermination: { schema: "pilibala.remote-termination.v1", companyId: f.input.companyId, runId, leaseId,
           provider: "daytona", providerLeaseId, state: "destroyed", confirmedAt: new Date().toISOString() } } });
       entries.push({ path, contents, runId, header: header!, runner });
     }
@@ -575,7 +575,7 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
       .toEqual(beforeRuns.map(run => run.id === f.runId ? { ...run, runnerProfileJson: { ...run.runnerProfileJson,
         nativeHarnessFilesystemIndependence: anchor!.runnerProfileJson!.nativeHarnessFilesystemIndependence } } : run).sort((a, b) => a.id.localeCompare(b.id)));
     expect(await db.select().from(environmentLeases).where(eq(environmentLeases.companyId, f.input.companyId))).toEqual(beforeLeases);
-    vi.stubEnv("PAPERCLIP_HOME", join(f.mount, "absent-replacement")); vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", join(f.mount, "absent-replacement/state"));
+    vi.stubEnv("PILIBALA_HOME", join(f.mount, "absent-replacement")); vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", join(f.mount, "absent-replacement/state"));
     vi.stubEnv("RAILWAY_VOLUME_ID", ""); vi.spyOn(f.storage, "getObject").mockRejectedValue(new Error("replacement must not read storage"));
     expect(await hasValidNativeHarnessFilesystemIndependence(db, f.input)).toBe(true);
     expect(result.receiptDigest).toMatch(/^[a-f0-9]{64}$/);
@@ -655,7 +655,7 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
     await preserveNativeHarnessFilesystemIndependence(db, f.input);
     expect(await hasValidNativeHarnessFilesystemIndependence(db, f.input)).toBe(true);
     await db.delete(nativeRunnerCheckpoints).where(and(eq(nativeRunnerCheckpoints.runId, f.entries[0]!.runId), eq(nativeRunnerCheckpoints.part, "header")));
-    vi.stubEnv("PAPERCLIP_HOME", join(f.mount, "absent-replacement")); vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", join(f.mount, "absent-replacement/state"));
+    vi.stubEnv("PILIBALA_HOME", join(f.mount, "absent-replacement")); vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", join(f.mount, "absent-replacement/state"));
     expect(await hasValidNativeHarnessFilesystemIndependence(db, f.input)).toBe(false);
     expect(await readFile(join(f.sourceRoot, f.entries[0]!.path), "utf8")).toBe(f.entries[0]!.contents);
   });
@@ -675,7 +675,7 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
       }
       await db.update(heartbeatRuns).set({ runnerProfileJson: profile }).where(eq(heartbeatRuns.id, f.runId));
     }
-    vi.stubEnv("PAPERCLIP_HOME", join(f.mount, "absent-replacement")); vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", join(f.mount, "absent-replacement/state"));
+    vi.stubEnv("PILIBALA_HOME", join(f.mount, "absent-replacement")); vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", join(f.mount, "absent-replacement/state"));
     expect(await hasValidNativeHarnessFilesystemIndependence(db, f.input)).toBe(false);
     expect(await readFile(join(f.sourceRoot, f.entries[0]!.path), "utf8")).toBe(f.entries[0]!.contents);
   });
@@ -740,7 +740,7 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
     expect(await readFile(join(f.sourceRoot, "codex-home/skills/retained/SKILL.md"), "utf8")).toBe("# original immutable skill\n");
     expect((await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, unrelated!.id)))[0]!.status).toBe("running");
     const replacement = await realpath(await mkdtemp(join(tmpdir(), "native-harness-replacement-"))); roots.push(replacement);
-    vi.stubEnv("PAPERCLIP_HOME", replacement); vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", join(replacement, "state"));
+    vi.stubEnv("PILIBALA_HOME", replacement); vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", join(replacement, "state"));
     vi.stubEnv("RAILWAY_VOLUME_ID", ""); vi.stubEnv("RAILWAY_DEPLOYMENT_ID", randomUUID());
     const get = vi.spyOn(f.storage, "getObject").mockRejectedValue(new Error("startup must not read objects"));
     expect(await hasLocalNativeHarnessObligations(db)).toBe(false); expect(get).not.toHaveBeenCalled();
@@ -861,8 +861,8 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
     expect(await readFile(join(restored, "current/control-plane-state.json"), "utf8")).toBe(f.raw);
     expect(await readFile(join(restored, "current/supervisor.json"), "utf8")).toBe(f.supervisor);
     expect(JSON.parse(await readFile(join(restored, "current/manifest.json"), "utf8")))
-      .toMatchObject({ schema: "paperclip.legacy-controller-archive.v1", reason: "original_volume_source_evidence" });
-    expect(await readFile(join(restored, "current/manifest.json"), "utf8")).toBe(JSON.stringify({ schema: "paperclip.legacy-controller-archive.v1",
+      .toMatchObject({ schema: "pilibala.legacy-controller-archive.v1", reason: "original_volume_source_evidence" });
+    expect(await readFile(join(restored, "current/manifest.json"), "utf8")).toBe(JSON.stringify({ schema: "pilibala.legacy-controller-archive.v1",
       companyId: f.input.companyId, issueId: f.issueId, runId: f.runId, reason: "original_volume_source_evidence",
       files: { "control-plane-state.json": createHash("sha256").update(f.raw).digest("hex"),
         "supervisor.json": createHash("sha256").update(f.supervisor).digest("hex") } }));
@@ -877,7 +877,7 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
   });
   it.each(["codex-home", "opencode", "acpx"])("retains omitted %s history after switching to a preconfigured home", async directory => {
     const f = await fixture("none");
-    const execution = parseNativeExecutionInput({ ...f.execution, schema: "paperclip.native-execution-input.v7", homeMode: "preconfigured",
+    const execution = parseNativeExecutionInput({ ...f.execution, schema: "pilibala.native-execution-input.v7", homeMode: "preconfigured",
       provider: { kind: "codex", model: null, approvalPolicy: "never" } });
     expect(scopedRunnerdStateRoot(execution)).toBe(f.sourceRoot);
     const [before] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId));
@@ -894,7 +894,7 @@ describeEmbeddedPostgres("owner-verified native harness filesystem independence"
   });
   it("permits a preconfigured home only when no omitted provider directory remains", async () => {
     const f = await fixture("none");
-    const execution = parseNativeExecutionInput({ ...f.execution, schema: "paperclip.native-execution-input.v7", homeMode: "preconfigured",
+    const execution = parseNativeExecutionInput({ ...f.execution, schema: "pilibala.native-execution-input.v7", homeMode: "preconfigured",
       provider: { kind: "codex", model: null, approvalPolicy: "never" } });
     expect(scopedRunnerdStateRoot(execution)).toBe(f.sourceRoot);
     const [before] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId));

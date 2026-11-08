@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { agents, environmentLeases, environments, executionWorkspaces, heartbeatRuns, issues, nativeRunFinalizations,
-  nativeRunResults, statusDecisions, workAssessments, workspaceOperations, type Db } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority, remoteWorkspaceRunReferenceSchema } from "@paperclipai/shared";
+  nativeRunResults, statusDecisions, workAssessments, workspaceOperations, type Db } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority, remoteWorkspaceRunReferenceSchema } from "@pilibalaai/shared";
 import type { NativeControllerIdentity } from "./native-restart-recovery.js";
 import { currentNativeWorkspaceRecoveryResult } from "./native-workspace-recovery-binding.js";
 import { nativeWorkspaceFinalizationOwnerCanUpgrade } from "./native-workspace-finalization-ownership.js";
@@ -45,7 +45,7 @@ export async function readNativeFinalizationUpgradeReadiness(db: Db, input: {
       .where(and(eq(heartbeatRuns.id, input.runId), eq(heartbeatRuns.companyId, input.companyId))).limit(1);
     if (!row) return false;
     const { run, coordinator, issue } = row;
-    if (run.runtimeMode !== "native" || run.status !== "running" || row.adapter !== "paperclip_runner"
+    if (run.runtimeMode !== "native" || run.status !== "running" || row.adapter !== "pilibala_runner"
       || isNativeRunnerOwnershipHeld(run) || !coordinator.resultId || run.nativeIssueId !== issue.id
       || coordinator.controllerBootId !== input.controller.bootId || coordinator.controllerPid !== input.controller.pid
       || coordinator.controllerProcessStartedAt?.getTime() !== input.controller.processStartedAt.getTime()

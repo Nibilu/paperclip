@@ -1,4 +1,4 @@
-import { onNativeSessionCleanupQuarantined } from "../../vendor/paperclip-runner/index.js";
+import { onNativeSessionCleanupQuarantined } from "../../vendor/pilibala-runner/index.js";
 
 type QuarantineLogger = { warn: (details: Record<string, unknown>, message: string) => void };
 

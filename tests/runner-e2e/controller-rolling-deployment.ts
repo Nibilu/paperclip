@@ -8,7 +8,7 @@ export const isRollingWebDeployment = (execution: Pick<MatrixExecution, "suite">
   [ROLLING_WEB_DEPLOYMENT_SUITE, ROLLING_WEB_DEPLOYMENT_WARM_SUITE].includes(execution.suite.id);
 
 export interface ControllerRollingDeploymentReceipt extends Omit<ControllerOutageReceipt, "schema" | "holdMs" | "signal"> {
-  schema: "paperclip.e2e.controller-rolling-deployment/v1";
+  schema: "pilibala.e2e.controller-rolling-deployment/v1";
   signal: "SIGTERM";
   gracefulShutdown?: boolean;
   trafficSwitchedAfterMs?: number;
@@ -21,7 +21,7 @@ export function validControllerRollingDeploymentReceipt(value: unknown, requestI
   if (!value || typeof value !== "object") return false;
   const r = value as ControllerRollingDeploymentReceipt;
   const times = [r.replacementStartedAfterMs, r.readyAfterMs, r.trafficSwitchedAfterMs, r.stoppedAfterMs, r.homeDeletedAfterMs];
-  return r.schema === "paperclip.e2e.controller-rolling-deployment/v1" && r.signal === "SIGTERM"
+  return r.schema === "pilibala.e2e.controller-rolling-deployment/v1" && r.signal === "SIGTERM"
     && /^[A-Za-z0-9._:-]{1,200}$/.test(r.requestId) && (requestId === undefined || r.requestId === requestId)
     && Number.isFinite(Date.parse(r.startedAt))
     && Number.isSafeInteger(r.previousPid) && r.previousPid > 0
@@ -46,7 +46,7 @@ export async function rollController<T extends { pid?: number }>(input: {
   cancelled: () => boolean; record: (receipt: ControllerRollingDeploymentReceipt) => Promise<void>;
 }): Promise<ControllerRollingDeploymentReceipt> {
   const started = performance.now();
-  const receipt: ControllerRollingDeploymentReceipt = { schema: "paperclip.e2e.controller-rolling-deployment/v1",
+  const receipt: ControllerRollingDeploymentReceipt = { schema: "pilibala.e2e.controller-rolling-deployment/v1",
     requestId: input.requestId, previousPid: input.previousPid, startedAt: new Date().toISOString(), signal: "SIGTERM" };
   const elapsed = () => performance.now() - started;
   const check = () => { if (input.cancelled()) throw new Error("Wrapper shutdown interrupted the rolling deployment"); };

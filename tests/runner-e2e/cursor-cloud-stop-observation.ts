@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { CursorCloudClient, CursorCloudSseEvent } from "../../packages/paperclip-runner/src/drivers/cursor-cloud/cloud-client.js";
+import type { CursorCloudClient, CursorCloudSseEvent } from "../../packages/pilibala-runner/src/drivers/cursor-cloud/cloud-client.js";
 
 export interface CursorCloudPendingCommand { callId: string; toolName: string; commandSha256: string }
 type Row = Record<string, any>;
@@ -65,10 +65,10 @@ export class CursorCloudStopCommandObserver {
 export function readPendingCursorCloudStopExecution(events: readonly Row[], runId: string, pending?: CursorCloudPendingCommand): string | undefined {
   if (!pending) return;
   const canonical = events.filter(row => row.runId === runId && row.protocolSchemaVersion === 1).map(row => row.payload?.prpEvent)
-    .filter(event => event?.schema === "paperclip.prp.event.v1" && event.schemaVersion === 1 && event.sourceKind === "runner" && event.runId === runId);
+    .filter(event => event?.schema === "pilibala.prp.event.v1" && event.schemaVersion === 1 && event.sourceKind === "runner" && event.runId === runId);
   if (canonical.some(event => ["turn.completed", "turn.failed", "turn.cancelled", "turn.interrupted"].includes(event.eventType))) return;
   const matches = canonical.filter(event => event.payload?.executionId === pending.callId);
   if (matches.some(event => event.eventType === "tool.execution.completed" || event.eventType === "tool.execution.progressed" && event.payload.status !== "running")) return;
   const starts = matches.filter(event => event.eventType === "tool.execution.started");
-  return starts.length > 0 && starts.every(event => event.payload.schema === "paperclip.tool.execution.v1" && event.payload.transport === "builtin" && event.payload.status === "running" && event.payload.name === pending.toolName) ? pending.callId : undefined;
+  return starts.length > 0 && starts.every(event => event.payload.schema === "pilibala.tool.execution.v1" && event.payload.transport === "builtin" && event.payload.status === "running" && event.payload.name === pending.toolName) ? pending.callId : undefined;
 }

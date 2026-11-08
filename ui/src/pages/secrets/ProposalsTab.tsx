@@ -9,7 +9,7 @@ import {
   Link2,
   Loader2,
 } from "lucide-react";
-import type { CompanySecretProviderConfig, SecretProposalView } from "@paperclipai/shared";
+import type { CompanySecretProviderConfig, SecretProposalView } from "@pilibalaai/shared";
 import { QueryErrorState, useQueryView } from "@/components/QueryView";
 import { secretsApi } from "../../api/secrets";
 import { queryKeys } from "../../lib/queryKeys";

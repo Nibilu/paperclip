@@ -2,8 +2,8 @@
 
 Plan: [`doc/plans/2026-11-06-control-plane-restart-chaos.md`](../../doc/plans/2026-11-06-control-plane-restart-chaos.md).
 
-A script, not an LLM. It starts an isolated Paperclip control plane (temporary
-`PAPERCLIP_HOME`, wrapper-owned embedded Postgres, its own port), seeds a
+A script, not an LLM. It starts an isolated Pilibala control plane (temporary
+`PILIBALA_HOME`, wrapper-owned embedded Postgres, its own port), seeds a
 "Chaos Lab" company, launches real agent tasks, kills or restarts the control
 plane during those tasks, and grades every task on R1–R6 plus a deterministic
 T-oracle.
@@ -12,7 +12,7 @@ T-oracle.
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm --filter @paperclipai/paperclip-runner run build:runner-binaries   # native runner (debug)
+pnpm --filter @pilibalaai/pilibala-runner run build:runner-binaries   # native runner (debug)
 set -a; source ~/.secrets; set +a                                   # provider keys, process env only
 node cli/node_modules/tsx/dist/cli.mjs tests/restart-chaos/main.ts --env local \
   --adapters codex,claude,opencode --concurrency 4 --tasks 8 --faults K1,K2,K4 --seed 42
@@ -63,11 +63,11 @@ immutable runner image. No Docker is needed.
 ```sh
 set -a; source ~/.secrets; set +a        # DAYTONA_API_KEY plus provider keys, process env only
 node cli/node_modules/tsx/dist/cli.mjs tests/restart-chaos/main.ts --env daytona \
-  --daytona-image ghcr.io/paperclipai/paperclip-daytona-runner@sha256:<digest> \
+  --daytona-image ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:<digest> \
   --adapters codex,claude --tasks 3 --concurrency 2 --faults K1 --seed 11
 ```
 
-`PAPERCLIP_E2E_DAYTONA_IMAGE` can replace `--daytona-image`. B5 is local-only
+`PILIBALA_E2E_DAYTONA_IMAGE` can replace `--daytona-image`. B5 is local-only
 (its oracle reads the live workspace, which is inside the sandbox).
 
 **vCPU budget.** The Daytona org is shared with the live Cloud fleet. Chaos
@@ -79,14 +79,14 @@ HTTP 400 "Total CPU limit exceeded", so use 8 there and `--daytona-cpu 2`.
 
 **Fleet safety.** The harness never stops, archives or deletes a Daytona
 sandbox. Its Daytona client is a frozen wrapper that exposes only a
-label-filtered `list`. `assertHarnessMayMutate` refuses `paperclip-create-*`
+label-filtered `list`. `assertHarnessMayMutate` refuses `pilibala-create-*`
 names (every plugin-created sandbox has one) and `fleet-sbx-*` snapshots, so a
 future mutating path cannot act on fleet sandboxes either. Cleanup goes only
-through Paperclip, by deleting the wave's own environment.
+through Pilibala, by deleting the wave's own environment.
 
 **Image matching.** The controller needs the image's own Linux amd64
-`/usr/local/bin/paperclip-runnerd` (`PAPERCLIP_RUNNER_REMOTE_BINARY_PATH`) and
-`/opt/paperclip-runner/provider-pack/` (`PAPERCLIP_RUNNER_REMOTE_PROVIDER_PACK_PATH`).
+`/usr/local/bin/pilibala-runnerd` (`PILIBALA_RUNNER_REMOTE_BINARY_PATH`) and
+`/opt/pilibala-runner/provider-pack/` (`PILIBALA_RUNNER_REMOTE_PROVIDER_PACK_PATH`).
 `daytona-image.ts` gets them without a daemon: `skopeo copy --override-os linux
 --override-arch amd64 docker://<image> dir:<cache>`, then walks the layers from
 top to bottom (honouring `.wh.` and `.wh..wh..opq` whiteouts), extracts only
@@ -95,7 +95,7 @@ records their digests in `receipt.json`, and deletes the layer blobs. The result
 is cached in `results/daytona-images/<digest>/`, so it runs once per image.
 Run it alone with `node cli/node_modules/tsx/dist/cli.mjs tests/restart-chaos/daytona-image.ts <image>`.
 
-Before starting, the harness compares the image's `io.paperclip.runner.content-id`
+Before starting, the harness compares the image's `io.pilibala.runner.content-id`
 label with the content ID of this checkout (`pnpm test:e2e:runner:image-id`,
 which hashes every runner input) and refuses to run on a mismatch. To get an
 image for the current master, dispatch a narrow image build and reject its paid
@@ -105,7 +105,7 @@ gate:
 gh workflow run runner-full-stack-e2e.yml --ref master -f cadence=manual -f all=false \
   -f id=core-compatibility.runner-codex.daytona.message-marker
 # when the run waits on the paid environment:
-gh api -X POST repos/paperclipai/paperclip/actions/runs/<run>/pending_deployments \
+gh api -X POST repos/pilibalaai/pilibala/actions/runs/<run>/pending_deployments \
   -F "environment_ids[]=20786721735" -f state=rejected -f comment="Image build only"
 ```
 
@@ -117,7 +117,7 @@ prepared outside the root workspace as CI does), the `daytona` environment
 fixture from `catalog.ts`, and the native Codex platform-qualification probe.
 
 **R6 sweep.** After the wave, `daytona-sweep.ts` lists (read-only) the
-sandboxes whose `paperclip-company-id` and `paperclip-environment-id` labels
+sandboxes whose `pilibala-company-id` and `pilibala-environment-id` labels
 both equal the UUIDs this wave's isolated instance minted, re-checks every row,
 and reconciles them with the environment's leases. It retries for the product's
 pending-cleanup backoff plus 90 seconds (6.5 minutes, capped at 8) before
@@ -126,7 +126,7 @@ lease was released is expected (the plugin archives on release and Daytona
 deletes it after 60 minutes). Any other live sandbox without a held lease, or
 an `active`/`pending_cleanup` lease, is a leak: it fails R6 for the
 task whose run owns it, or the wave when no task does. The harness then deletes
-the wave's environment through Paperclip and lists again: a wave sandbox that
+the wave's environment through Pilibala and lists again: a wave sandbox that
 is still neither archived nor destroyed after 90 seconds fails the wave and is
 reported for a person to act on (the environment's 60-minute ttl also expires
 it). An environment DELETE that returns 409 because a sandbox cleanup is still
@@ -168,7 +168,7 @@ re-arms the task's own triggered faults instead of using their offsets.
 | `workloads.ts` | A1 brief document, B1 python CLI with tests, B5 long bench, C1 comment while running, with their T-oracles. |
 | `evidence.ts`, `ledger.ts` | Evidence bundle for each failure and the JSONL ledger plus `SUMMARY.md`. |
 | `daytona-image.ts` | Docker-free extraction of the image's runnerd and provider pack, cached per digest, and the controller/image content-ID check. |
-| `daytona-sweep.ts` | Daytona R6: read-only reconciliation of this wave's labelled sandboxes with leases; cleanup only through Paperclip. |
+| `daytona-sweep.ts` | Daytona R6: read-only reconciliation of this wave's labelled sandboxes with leases; cleanup only through Pilibala. |
 
 ## Output (gitignored)
 
@@ -203,6 +203,6 @@ re-arms the task's own triggered faults instead of using their offsets.
 - Faults are serialized; each one hits every task running at that moment.
 - A `todo` or `in_progress` task with no live run and no named wait is not a rest. The observer keeps watching it until it resumes or passes the R5 stall limit.
 - R5 also fails a run that stays `running` with no live evidence (no new run event, `lastUsefulActionAt` or `execution.lastConfirmedActivityAt`, and no start) for more than 3 minutes after the server is ready. A `running` status alone is not proof of life. A quiet run is still live while a tool it started has not ended (for example a 4-minute `bench.sh`) or while its recorded local runner process still runs with the same PID and start time.
-- The wave fingerprints the checkout and `packages/paperclip-runner/dist` at start and after every fault. A build, install or branch switch during a wave would make later restarts run different code, so it fails the wave as a harness error (`worktree_changed_mid_wave`). The baseline is taken after the harness's own setup (preflight rebuilds provider entrypoints) and covers the tracked diff, untracked file contents, the runner `dist` and the runnerd binary. Build before the wave, never during it.
+- The wave fingerprints the checkout and `packages/pilibala-runner/dist` at start and after every fault. A build, install or branch switch during a wave would make later restarts run different code, so it fails the wave as a harness error (`worktree_changed_mid_wave`). The baseline is taken after the harness's own setup (preflight rebuilds provider entrypoints) and covers the tracked diff, untracked file contents, the runner `dist` and the runnerd binary. Build before the wave, never during it.
 - `faults.json` and `task-faults.json` (each task's launch time and the faults that crossed it) are written after every fault, so `--replay` of a task in an interrupted or wedged wave, or a storm task, re-fires the faults that crossed it at the same offsets.
 - A fault that fails to complete fails the wave as a harness error (exit 2), even when recovery brings the server back.

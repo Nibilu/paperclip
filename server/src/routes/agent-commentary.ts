@@ -1,7 +1,7 @@
 import { Router, type Request } from "express";
-import { companies, type Db } from "@paperclipai/db";
+import { companies, type Db } from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
-import { agentCommentaryQuerySchema, isUuidLike } from "@paperclipai/shared";
+import { agentCommentaryQuerySchema, isUuidLike } from "@pilibalaai/shared";
 import { badRequest, forbidden, notFound } from "../errors.js";
 import { submitAgentCommentary } from "../services/agent-commentary.js";
 import { agentCommentaryReader } from "../services/agent-commentary-reader.js";

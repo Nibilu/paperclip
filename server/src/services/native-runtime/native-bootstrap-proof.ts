@@ -5,8 +5,8 @@
  */
 
 export const RUNNERD_CONTROL_PLANE_STATE_SCHEMAS: ReadonlySet<string> = new Set([
-  "paperclip.runner.durable.control-plane-state.v1",
-  "paperclip.runner.durable.control-plane-state.v2",
+  "pilibala.runner.durable.control-plane-state.v1",
+  "pilibala.runner.durable.control-plane-state.v2",
 ]);
 
 const RUNNERD_BOOTSTRAP_COMMAND_TYPES = new Set(["run.prepare", "session.open"]);

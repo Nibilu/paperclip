@@ -1,12 +1,12 @@
 import type { McpClientMirrorReceipt } from "./client-mirror-contract.js";
 import type { McpDiscovery } from "./discovery.js";
 import { createHash } from "node:crypto";
-import { PUBLIC_MCP_SCOPES, DOT_RUNNER_MCP_SCOPES } from "@paperclipai/shared";
+import { PUBLIC_MCP_SCOPES, DOT_RUNNER_MCP_SCOPES } from "@pilibalaai/shared";
 import { and, asc, eq, gt, isNull, or, sql } from "drizzle-orm";
 import {
   agents, authUsers, companies, companyMemberships, dotAgentBindings,
   mcpOauthGrants, mcpOauthTokens, type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { mcpRevocationAuthorityId, parseMcpRevocationIndexReceipt, type McpRevocationIndexReceipt } from "./revocation-index-contract.js";
 import { createMcpWakeAdmission, type McpWakeAdmission, type McpWakeProfile, type McpWakeTokenKind } from "./wake-admission.js";
 
@@ -62,9 +62,9 @@ export function projectIdleMcpWakeProof(rows: IdleMcpCredentialRow[], input: Idl
   for (const row of rows) {
     input.budget?.check();
     const personal = input.personalEnabled && row.resource === input.personalResource && row.purpose === "personal"
-      && row.scopes.includes("paperclip:read") && row.scopes.every(scope => (PUBLIC_MCP_SCOPES as readonly string[]).includes(scope));
+      && row.scopes.includes("pilibala:read") && row.scopes.every(scope => (PUBLIC_MCP_SCOPES as readonly string[]).includes(scope));
     const dot = input.dotEnabled && row.resource === input.dotResource && row.purpose === "agent"
-      && row.scopes.includes("paperclip:agent") && row.scopes.every(scope => (DOT_RUNNER_MCP_SCOPES as readonly string[]).includes(scope)) && row.membershipRole !== "viewer"
+      && row.scopes.includes("pilibala:agent") && row.scopes.every(scope => (DOT_RUNNER_MCP_SCOPES as readonly string[]).includes(scope)) && row.membershipRole !== "viewer"
       && row.dotProvider === "openai_dot" && ["connected", "ready"].includes(row.dotStatus ?? "")
       && row.dotBindingId !== null && row.dotGeneration !== null && Number.isSafeInteger(row.dotGeneration) && row.dotGeneration > 0
       && row.dotPairingHash === null && row.dotChallengeHash === null
@@ -136,9 +136,9 @@ export async function readIdleMcpWakeProof(tx: Pick<Db, "select">, input: IdleMc
     input.budget?.check();
     const grant = row.grant;
     const personal = input.personalEnabled && grant.purpose === "personal" && grant.resource === input.personalResource
-      && grant.scopes.includes("paperclip:read") && grant.scopes.every(scope => (PUBLIC_MCP_SCOPES as readonly string[]).includes(scope));
+      && grant.scopes.includes("pilibala:read") && grant.scopes.every(scope => (PUBLIC_MCP_SCOPES as readonly string[]).includes(scope));
     const dot = input.dotEnabled && grant.purpose === "agent" && grant.resource === input.dotResource
-      && grant.scopes.includes("paperclip:agent") && grant.scopes.every(scope => (DOT_RUNNER_MCP_SCOPES as readonly string[]).includes(scope))
+      && grant.scopes.includes("pilibala:agent") && grant.scopes.every(scope => (DOT_RUNNER_MCP_SCOPES as readonly string[]).includes(scope))
       && row.membershipRole !== "viewer" && row.dotProvider === "openai_dot" && ["connected", "ready"].includes(row.dotStatus ?? "")
       && row.dotBindingId !== null && row.dotGeneration !== null && Number.isSafeInteger(row.dotGeneration) && row.dotGeneration > 0
       && row.dotPairingHash === null && row.dotChallengeHash === null && row.agentStatus !== null && !["terminated", "pending_approval"].includes(row.agentStatus);

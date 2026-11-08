@@ -99,7 +99,7 @@ describe("applyManagedEnvironments plugin entries", () => {
       workerManager: workerManager(),
       environments,
       resolveEnvironmentPlugin: readyPlugin(),
-      autoInstalledPluginKeys: ["paperclip.daytona-sandbox-provider"],
+      autoInstalledPluginKeys: ["pilibala.daytona-sandbox-provider"],
     })).rejects.toThrow(/uses plugin "example.remote-host-plugin", which no "plugins.autoInstall" catalog entry installs/);
     expect(environments.ensureManagedPluginEnvironment).not.toHaveBeenCalled();
   });
@@ -108,7 +108,7 @@ describe("applyManagedEnvironments plugin entries", () => {
     // "remote-host" is not in this build's bundled catalog and the test root
     // has no distribution catalog, so the catalog lookup refuses.
     await expect(applyManagedEnvironments(noDb, configWith([pluginEntry()]), {
-      env: { PAPERCLIP_BUNDLED_PLUGIN_ROOT: "/nonexistent-paperclip-catalog" },
+      env: { PILIBALA_BUNDLED_PLUGIN_ROOT: "/nonexistent-pilibala-catalog" },
       workerManager: workerManager(),
       environments: environmentsSeam(),
     })).rejects.toThrow(/auto-install key "remote-host" is not in the bundled catalog/);
@@ -116,7 +116,7 @@ describe("applyManagedEnvironments plugin entries", () => {
 
   it("does not claim the sandbox slot, so a forced execution mode can coexist with plugin-only entries", async () => {
     await expect(applyManagedEnvironments(noDb, configWith([pluginEntry()]), {
-      env: { PAPERCLIP_EXECUTION_MODE: "kubernetes" },
+      env: { PILIBALA_EXECUTION_MODE: "kubernetes" },
       workerManager: workerManager(),
       environments: environmentsSeam(),
       resolveEnvironmentPlugin: readyPlugin(),

@@ -1,4 +1,4 @@
-import { executionWorkspaces, withDedicatedDbConnection, type Db } from "@paperclipai/db";
+import { executionWorkspaces, withDedicatedDbConnection, type Db } from "@pilibalaai/db";
 import { eq, sql } from "drizzle-orm";
 import { isDeepStrictEqual } from "node:util";
 import { workspaceSourceIdentities, withWorkspaceSourceLocks } from "./workspace-source-lock.js";

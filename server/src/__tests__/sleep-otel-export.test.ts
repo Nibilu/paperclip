@@ -7,7 +7,7 @@ import { withMaintenanceProvider } from './helpers/maintenance/server-harness.js
 
 // Opt-in qualification must fail when the SDK falls back to no-op. The ordinary
 // bootstrap tests separately retain coverage for the supported missing-peer mode.
-it.skipIf(process.env.PAPERCLIP_SLEEP_CONFIGURED_ACCEPTANCE !== '1')('exports an actual named span with no metric or log traffic over 90 real seconds', async () => {
+it.skipIf(process.env.PILIBALA_SLEEP_CONFIGURED_ACCEPTANCE !== '1')('exports an actual named span with no metric or log traffic over 90 real seconds', async () => {
   const spans: string[] = [], paths: string[] = [];
   const collector = createServer(async (req, res) => {
     const chunks: Buffer[] = [];

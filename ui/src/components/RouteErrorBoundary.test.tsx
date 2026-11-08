@@ -36,8 +36,8 @@ vi.mock("@/lib/chunk-load-recovery", async (importOriginal) => {
 
 function seedReloadAttempts(attempts: number) {
   const startedAt = Date.now();
-  window.sessionStorage.setItem("paperclip:chunk-load-reload-at", String(startedAt));
-  window.sessionStorage.setItem("paperclip:chunk-load-reload-attempts", `${startedAt}:${attempts}`);
+  window.sessionStorage.setItem("pilibala:chunk-load-reload-at", String(startedAt));
+  window.sessionStorage.setItem("pilibala:chunk-load-reload-attempts", `${startedAt}:${attempts}`);
 }
 
 function Boom(): never {
@@ -90,7 +90,7 @@ describe("RouteErrorBoundary", () => {
 
   it("reloads once for a failed route CSS preload instead of reporting it", async () => {
     const FailedPage = lazy(async () => {
-      throw new Error("Unable to preload CSS for https://paperclip.example/assets/issue-detail-CIbQo9zW.css");
+      throw new Error("Unable to preload CSS for https://pilibala.example/assets/issue-detail-CIbQo9zW.css");
     });
     const root = createRoot(container);
     await act(async () => { root.render(<RouteErrorBoundary><FailedPage /></RouteErrorBoundary>); });
@@ -105,7 +105,7 @@ describe("RouteErrorBoundary", () => {
     vi.useFakeTimers();
     try {
       const FailedPage = lazy(async () => {
-        throw new Error("Unable to preload CSS for https://paperclip.example/assets/issue-detail-CIbQo9zW.css");
+        throw new Error("Unable to preload CSS for https://pilibala.example/assets/issue-detail-CIbQo9zW.css");
       });
       const root = createRoot(container);
       await act(async () => { root.render(<RouteErrorBoundary><FailedPage /></RouteErrorBoundary>); });

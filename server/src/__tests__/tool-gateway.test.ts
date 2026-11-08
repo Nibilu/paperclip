@@ -44,8 +44,8 @@ import {
   secretAccessEvents,
   userSecretDeclarations,
   userSecretDefinitions,
-} from "@paperclipai/db";
-import { buildPaperclipRuntimeMcpServers } from "../services/heartbeat.js";
+} from "@pilibalaai/db";
+import { buildPilibalaRuntimeMcpServers } from "../services/heartbeat.js";
 import { resolveNativeRuntimeMcpSnapshot } from "../services/native-runtime/runtime-context.js";
 import type { PluginToolDispatcher } from "../services/plugin-tool-dispatcher.js";
 import { mcpGatewayProtocolRoutes, toolGatewayRoutes } from "../routes/tool-gateway.js";
@@ -66,7 +66,7 @@ import {
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
 
-const externalTestDatabase = resolveExternalTestDatabaseUrl("PAPERCLIP_TOOL_GATEWAY_TEST_DATABASE_URL");
+const externalTestDatabase = resolveExternalTestDatabaseUrl("PILIBALA_TOOL_GATEWAY_TEST_DATABASE_URL");
 const embeddedPostgresSupport = externalTestDatabase ? { supported: true } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 const testToolActionSigningSecret = "test-tool-action-signing-secret";
@@ -556,7 +556,7 @@ describeEmbeddedPostgres("tool gateway acceptance", () => {
 
   beforeAll(async () => {
     if (externalTestDatabase) { db = createDb(externalTestDatabase); return; }
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-tool-gateway-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-tool-gateway-");
     db = createDb(tempDb.connectionString);
   }, 90_000);
 
@@ -904,7 +904,7 @@ describeEmbeddedPostgres("tool gateway acceptance", () => {
       const app = createGatewayRouteApp(db, gateway);
       const publicEndpoint = created.endpointPath;
       const queryOnly = await request(app)
-        .post(`${publicEndpoint}?paperclip_capability=${encodeURIComponent(token.token)}`)
+        .post(`${publicEndpoint}?pilibala_capability=${encodeURIComponent(token.token)}`)
         .send({ jsonrpc: "2.0", id: "query-only", method: "tools/list" })
         .expect(401);
       expect(queryOnly.body.error).toBe("Bearer token is required");
@@ -1158,7 +1158,7 @@ describeEmbeddedPostgres("tool gateway acceptance", () => {
         .expect(200);
       expect(resources.body.result.resources).toHaveLength(1);
       expect(resources.body.result.resources[0]).toMatchObject({
-        uri: expect.stringMatching(new RegExp(`^paperclip-resource://${assigned.connection.id}/`)),
+        uri: expect.stringMatching(new RegExp(`^pilibala-resource://${assigned.connection.id}/`)),
         name: "Assigned context: Note one",
       });
       const resourceUri = resources.body.result.resources[0].uri as string;
@@ -1182,7 +1182,7 @@ describeEmbeddedPostgres("tool gateway acceptance", () => {
       const wrapper = await request(app)
         .post(`/api/tool-gateway/gateways/${created.id}/mcp`)
         .set("authorization", `Bearer ${token.token}`)
-        .send({ jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "paperclip_get_prompt", arguments: { name: promptName } } })
+        .send({ jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "pilibala_get_prompt", arguments: { name: promptName } } })
         .expect(200);
       expect(wrapper.body.result.structuredContent).toMatchObject({ description: "Summary prompt" });
       expect(remote.requests.filter((entry) => entry.body?.method === "resources/read")[0]?.body?.params).toEqual({ uri: "notes://one" });
@@ -1248,7 +1248,7 @@ describeEmbeddedPostgres("tool gateway acceptance", () => {
     const first = await request(app)
       .post(`/mcp/gateways/${created.gatewayPublicId}`)
       .set("authorization", `Bearer ${badToken}`)
-      .set("x-paperclip-client-name", "Noisy client")
+      .set("x-pilibala-client-name", "Noisy client")
       .set("x-request-id", "auth-throttle-test")
       .send({ jsonrpc: "2.0", id: 1, method: "tools/list" })
       .expect(401);
@@ -1257,7 +1257,7 @@ describeEmbeddedPostgres("tool gateway acceptance", () => {
     const throttled = await request(app)
       .post(`/mcp/gateways/${created.gatewayPublicId}`)
       .set("authorization", `Bearer ${badToken}`)
-      .set("x-paperclip-client-name", "Noisy client")
+      .set("x-pilibala-client-name", "Noisy client")
       .set("x-request-id", "auth-throttle-test")
       .send({ jsonrpc: "2.0", id: 2, method: "tools/list" })
       .expect(429);
@@ -1360,7 +1360,7 @@ describeEmbeddedPostgres("tool gateway acceptance", () => {
     const throttled = await request(createGatewayRouteApp(db, serviceB))
       .post(`/mcp/gateways/${created.gatewayPublicId}`)
       .set("authorization", `Bearer ${badToken}`)
-      .set("x-paperclip-client-name", "Shared counter client")
+      .set("x-pilibala-client-name", "Shared counter client")
       .set("x-request-id", "auth-limiter-shared-test")
       .send({ jsonrpc: "2.0", id: 2, method: "tools/list" })
       .expect(429);
@@ -1461,7 +1461,7 @@ describeEmbeddedPostgres("tool gateway acceptance", () => {
         .expect(200);
       expect(initialized.body.result).toMatchObject({
         capabilities: { tools: {}, resources: {}, prompts: {} },
-        _meta: { "paperclip/mcp-app-ui": "unsupported" },
+        _meta: { "pilibala/mcp-app-ui": "unsupported" },
       });
       const setupLimited = await request(app)
         .post(endpoint)
@@ -1589,7 +1589,7 @@ describeEmbeddedPostgres("tool gateway acceptance", () => {
     await db.insert(agentWakeupRequests).values({ id: intentId, companyId: company.id, agentId: agent.id,
       runId: run.id, source: "on_demand", reason: "task_retry", status: "coalesced",
       requestedByActorType: "user", requestedByActorId: "board",
-      payload: { issueId: issue.id, taskRetry: { schema: "paperclip.task-retry.v1",
+      payload: { issueId: issue.id, taskRetry: { schema: "pilibala.task-retry.v1",
         generationId: intentId, sourceRunId: source.id, actorId: "board", strategy: "fresh_isolated_workspace" } } });
     const [uncertain] = await db.insert(toolInvocations).values({ companyId: company.id,
       issueId: issue.id, runId: source.id, agentId: agent.id, connectionId: remote.connection.id,
@@ -1864,7 +1864,7 @@ describeEmbeddedPostgres("tool gateway acceptance", () => {
 
   it("passes only approved env values to local stdio MCP processes", async () => {
     const previousDatabaseUrl = process.env.DATABASE_URL;
-    process.env.DATABASE_URL = "postgres://server-secret.example/paperclip";
+    process.env.DATABASE_URL = "postgres://server-secret.example/pilibala";
     try {
       const company = await createCompany(db);
       const agent = await createAgent(db, company.id);
@@ -2177,7 +2177,7 @@ rl.on("line", (line) => {
       key: definitionKey,
       name: `Personal Test token ${randomUUID()}`,
       provider: "local_encrypted",
-      managedMode: "paperclip_managed",
+      managedMode: "pilibala_managed",
     }).returning();
     const personalSecret = await secretService(db).createCurrentUserSecretValue(company.id, userId, {
       definitionId: definition.id,
@@ -2323,7 +2323,7 @@ rl.on("line", (line) => {
       const gateway = createTestToolGatewayService(db);
       const session = await gateway.createSession({ companyId: company.id, agentId: agent.id, runId: run.id });
       const tool = (await gateway.listToolsForSession(session.token)).find((entry) => entry.catalogEntryId === catalogEntry.id)!;
-      expect(`mcp__paperclip-assigned__${tool.name}`.length).toBeLessThanOrEqual(128);
+      expect(`mcp__pilibala-assigned__${tool.name}`.length).toBeLessThanOrEqual(128);
       expect((await gateway.listToolsForSession(session.token)).find((entry) => entry.catalogEntryId === catalogEntry.id)?.name).toBe(tool.name);
       await gateway.executeTool({ sessionToken: session.token, tool: tool.name, parameters: {} });
     } finally {
@@ -2606,8 +2606,8 @@ rl.on("line", (line) => {
   });
 
   it("starts with another user's personal app and requests authorization only when used", async () => {
-    const originalApiUrl = process.env.PAPERCLIP_API_URL;
-    process.env.PAPERCLIP_API_URL = "http://paperclip.example.test";
+    const originalApiUrl = process.env.PILIBALA_API_URL;
+    process.env.PILIBALA_API_URL = "http://pilibala.example.test";
     const company = await createCompany(db);
     const agent = await createAgent(db, company.id);
     const { issue, run } = await createIssueAndRun(db, company.id, agent.id);
@@ -2646,7 +2646,7 @@ rl.on("line", (line) => {
       });
       const snapshot = await resolveNativeRuntimeMcpSnapshot({ db, agent, runId: run.id });
       expect(snapshot.bindingId).toBe(`native-mcp:${run.id}`);
-      const runtime = await buildPaperclipRuntimeMcpServers({ db, agent, runId: run.id, expectedAssignmentDigest: snapshot.digest });
+      const runtime = await buildPilibalaRuntimeMcpServers({ db, agent, runId: run.id, expectedAssignmentDigest: snapshot.digest });
       expect(runtime).toHaveLength(1);
       // Startup and tool discovery never contact the provider or ask Carol to sign in.
       expect(fake.requests).toHaveLength(0);
@@ -2715,8 +2715,8 @@ rl.on("line", (line) => {
         eq(toolConnections.id, connection.id),
       )).resolves.toEqual([{ healthStatus: "ok" }]);
     } finally {
-      if (originalApiUrl === undefined) delete process.env.PAPERCLIP_API_URL;
-      else process.env.PAPERCLIP_API_URL = originalApiUrl;
+      if (originalApiUrl === undefined) delete process.env.PILIBALA_API_URL;
+      else process.env.PILIBALA_API_URL = originalApiUrl;
       await fake.close();
     }
   });
@@ -2990,9 +2990,9 @@ rl.on("line", (line) => {
       expect(fakeRequest.headers.authorization).toBe(`Bearer ${credentialValue}`);
       expect(fakeRequest.headers["x-client-request-id"]).toBe("caller-123");
       expect(fakeRequest.headers["x-static-mode"]).toBe("canary");
-      expect(fakeRequest.headers["x-paperclip-agent-id"]).toBe(agent.id);
-      expect(fakeRequest.headers["x-paperclip-issue-id"]).toBe(issue.id);
-      expect(fakeRequest.headers["x-paperclip-tool-gateway-token"]).toBeUndefined();
+      expect(fakeRequest.headers["x-pilibala-agent-id"]).toBe(agent.id);
+      expect(fakeRequest.headers["x-pilibala-issue-id"]).toBe(issue.id);
+      expect(fakeRequest.headers["x-pilibala-tool-gateway-token"]).toBeUndefined();
       expect(fakeRequest.headers["x-unlisted-header"]).toBeUndefined();
       return {
         body: {
@@ -3030,7 +3030,7 @@ rl.on("line", (line) => {
             headerPolicy: {
               allowManagedCredentialOverride: true,
               passthrough: {
-                allowedHeaders: ["x-client-request-id", "authorization", "x-paperclip-tool-gateway-token"],
+                allowedHeaders: ["x-client-request-id", "authorization", "x-pilibala-tool-gateway-token"],
                 allowManagedCredentialOverride: true,
               },
               staticHeaders: [{ name: "x-static-mode", value: "canary" }],
@@ -3053,7 +3053,7 @@ rl.on("line", (line) => {
         callerHeaders: {
           authorization: "Bearer caller-must-not-win",
           "x-client-request-id": "caller-123",
-          "x-paperclip-tool-gateway-token": "caller-session-token",
+          "x-pilibala-tool-gateway-token": "caller-session-token",
           "x-unlisted-header": "drop-me",
         },
       });
@@ -3068,14 +3068,14 @@ rl.on("line", (line) => {
           passthroughHeaderNames: ["x-client-request-id"],
           droppedPassthroughHeaderNames: expect.arrayContaining([
             "authorization",
-            "x-paperclip-tool-gateway-token",
+            "x-pilibala-tool-gateway-token",
             "x-unlisted-header",
           ]),
           staticHeaderNames: ["x-static-mode"],
-          metadataHeaderNames: ["x-paperclip-agent-id", "x-paperclip-issue-id"],
+          metadataHeaderNames: ["x-pilibala-agent-id", "x-pilibala-issue-id"],
           collisionRules: expect.arrayContaining([
             { header: "authorization", source: "caller", action: "kept_managed_credential" },
-            { header: "x-paperclip-tool-gateway-token", source: "caller", action: "dropped_sensitive_header" },
+            { header: "x-pilibala-tool-gateway-token", source: "caller", action: "dropped_sensitive_header" },
           ]),
         },
       });
@@ -3093,14 +3093,14 @@ rl.on("line", (line) => {
     }
   });
 
-  it("drops auth-bearing and Paperclip session headers from passthrough allowlists", async () => {
+  it("drops auth-bearing and Pilibala session headers from passthrough allowlists", async () => {
     const company = await createCompany(db);
     const agent = await createAgent(db, company.id);
     const { run } = await createIssueAndRun(db, company.id, agent.id);
     const fake = await startFakeRemoteMcpServer((fakeRequest) => {
       expect(fakeRequest.headers.authorization).toBeUndefined();
       expect(fakeRequest.headers["x-auth-token"]).toBeUndefined();
-      expect(fakeRequest.headers["x-paperclip-tool-gateway-token"]).toBeUndefined();
+      expect(fakeRequest.headers["x-pilibala-tool-gateway-token"]).toBeUndefined();
       expect(fakeRequest.headers["x-client-request-id"]).toBe("caller-456");
       return {
         body: {
@@ -3126,7 +3126,7 @@ rl.on("line", (line) => {
                   "authorization",
                   "x-auth-token",
                   "x-client-request-id",
-                  "x-paperclip-tool-gateway-token",
+                  "x-pilibala-tool-gateway-token",
                 ],
               },
             },
@@ -3148,7 +3148,7 @@ rl.on("line", (line) => {
           authorization: "Bearer caller-should-drop",
           "x-auth-token": "drop-auth-token",
           "x-client-request-id": "caller-456",
-          "x-paperclip-tool-gateway-token": "drop-gateway-token",
+          "x-pilibala-tool-gateway-token": "drop-gateway-token",
         },
       });
 
@@ -3163,12 +3163,12 @@ rl.on("line", (line) => {
           droppedPassthroughHeaderNames: expect.arrayContaining([
             "authorization",
             "x-auth-token",
-            "x-paperclip-tool-gateway-token",
+            "x-pilibala-tool-gateway-token",
           ]),
           collisionRules: expect.arrayContaining([
             { header: "authorization", source: "caller", action: "dropped_sensitive_header" },
             { header: "x-auth-token", source: "caller", action: "dropped_sensitive_header" },
-            { header: "x-paperclip-tool-gateway-token", source: "caller", action: "dropped_sensitive_header" },
+            { header: "x-pilibala-tool-gateway-token", source: "caller", action: "dropped_sensitive_header" },
           ]),
         },
       });
@@ -3422,7 +3422,7 @@ rl.on("line", (line) => {
         connectionConfig: {
           sourceTemplateKey: "shopify",
           connectionMethodKey: "ucp-commerce",
-          methodConfig: { storeDomain: "paperclip-demo.myshopify.com" },
+          methodConfig: { storeDomain: "pilibala-demo.myshopify.com" },
         },
       });
       const toolName = expectedConnectedToolName({
@@ -3535,7 +3535,7 @@ rl.on("line", (line) => {
         connectionConfig: {
           sourceTemplateKey: "shopify",
           connectionMethodKey: "ucp-commerce",
-          methodConfig: { storeDomain: "paperclip-demo.myshopify.com" },
+          methodConfig: { storeDomain: "pilibala-demo.myshopify.com" },
         },
       });
       const toolName = expectedConnectedToolName({
@@ -3794,7 +3794,7 @@ rl.on("line", (line) => {
         connectionConfig: {
           sourceTemplateKey: "shopify",
           connectionMethodKey: "ucp-commerce",
-          methodConfig: { storeDomain: "paperclip-demo.myshopify.com" },
+          methodConfig: { storeDomain: "pilibala-demo.myshopify.com" },
         },
       });
       await allowToolsForAgent(db, company.id, agent.id, [
@@ -3991,7 +3991,7 @@ rl.on("line", (line) => {
             httpMethod: "POST",
             endpoint: fake.url,
             mcpMethod: "tools/call",
-            requestId: expect.stringMatching(/^paperclip-tool-/),
+            requestId: expect.stringMatching(/^pilibala-tool-/),
             upstreamToolName: "kv_set",
             dispatched: true,
           },
@@ -4957,7 +4957,7 @@ rl.on("line", (line) => {
 
     const listWithHeaderToken = await request(app)
       .get("/api/tool-gateway/tools")
-      .set("x-paperclip-tool-gateway-token", session.token);
+      .set("x-pilibala-tool-gateway-token", session.token);
     expect(listWithHeaderToken.status).toBe(200);
   });
 
@@ -4982,7 +4982,7 @@ rl.on("line", (line) => {
 
     const beforeRevoke = await request(app)
       .get("/api/tool-gateway/tools")
-      .set("x-paperclip-tool-gateway-token", session.token);
+      .set("x-pilibala-tool-gateway-token", session.token);
     expect(beforeRevoke.status).toBe(200);
 
     const revoked = await request(app)
@@ -4997,7 +4997,7 @@ rl.on("line", (line) => {
 
     const afterRevoke = await request(app)
       .get("/api/tool-gateway/tools")
-      .set("x-paperclip-tool-gateway-token", session.token);
+      .set("x-pilibala-tool-gateway-token", session.token);
     expect(afterRevoke.status).toBe(401);
     expect(afterRevoke.body.reasonCode).toBe("session_revoked");
 
@@ -5062,7 +5062,7 @@ rl.on("line", (line) => {
 
     const stillActive = await request(app)
       .get("/api/tool-gateway/tools")
-      .set("x-paperclip-tool-gateway-token", session.token);
+      .set("x-pilibala-tool-gateway-token", session.token);
     expect(stillActive.status).toBe(200);
 
     const revokedRows = await db
@@ -5104,7 +5104,7 @@ rl.on("line", (line) => {
 
     const otherRunStillActive = await request(app)
       .get("/api/tool-gateway/tools")
-      .set("x-paperclip-tool-gateway-token", otherRunSession.token);
+      .set("x-pilibala-tool-gateway-token", otherRunSession.token);
     expect(otherRunStillActive.status).toBe(200);
 
     const ownRun = await request(app)
@@ -5114,7 +5114,7 @@ rl.on("line", (line) => {
 
     const ownRunDenied = await request(app)
       .get("/api/tool-gateway/tools")
-      .set("x-paperclip-tool-gateway-token", session.token);
+      .set("x-pilibala-tool-gateway-token", session.token);
     expect(ownRunDenied.status).toBe(401);
     expect(ownRunDenied.body.reasonCode).toBe("session_revoked");
   });
@@ -5806,7 +5806,7 @@ rl.on("line", (line) => {
     const [idleSlot] = await db.select().from(toolRuntimeSlots).where(eq(toolRuntimeSlots.companyId, company.id));
     expect(idleSlot).toMatchObject({
       status: "idle",
-      commandTemplateKey: "paperclip.slow-stateful-stdio",
+      commandTemplateKey: "pilibala.slow-stateful-stdio",
       healthStatus: "ok",
     });
     expect(idleSlot.metadata).toMatchObject({
@@ -5919,7 +5919,7 @@ rl.on("line", (line) => {
     }));
     const local = await createLocalStdioMcpTool(db, company.id, {
       applicationKey: "cognee", toolName: "recall",
-      connectionConfig: { templateId: "paperclip.cognee-cloud" }, credentialSecretRefs: refs,
+      connectionConfig: { templateId: "pilibala.cognee-cloud" }, credentialSecretRefs: refs,
     });
     await allowAllToolsForAgent(db, company.id, agent.id);
     const bridge = vi.spyOn(cogneeBridge, "callCogneeCloud")

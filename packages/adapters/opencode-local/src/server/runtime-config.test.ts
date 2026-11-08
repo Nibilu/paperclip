@@ -4,7 +4,7 @@ import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { OPENROUTER_ATTRIBUTION_HEADERS } from "@paperclipai/adapter-utils/openrouter-attribution";
+import { OPENROUTER_ATTRIBUTION_HEADERS } from "@pilibalaai/adapter-utils/openrouter-attribution";
 import { prepareOpenCodeRuntimeConfig } from "./runtime-config.js";
 
 const cleanupPaths = new Set<string>();
@@ -19,7 +19,7 @@ afterEach(async () => {
 });
 
 async function makeConfigHome(initialConfig?: Record<string, unknown>) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-opencode-test-"));
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-opencode-test-"));
   cleanupPaths.add(root);
   const configDir = path.join(root, "opencode");
   await fs.mkdir(configDir, { recursive: true });
@@ -200,7 +200,7 @@ describe("prepareOpenCodeRuntimeConfig", () => {
     await expect(fs.access(prepared.env.XDG_CONFIG_HOME)).rejects.toThrow();
   });
 
-  it("merges custom providers from PAPERCLIP_OPENCODE_PROVIDERS into the config", async () => {
+  it("merges custom providers from PILIBALA_OPENCODE_PROVIDERS into the config", async () => {
     const configHome = await makeConfigHome({ permission: { read: "allow" } });
     const providers = {
       bifrost: {
@@ -217,7 +217,7 @@ describe("prepareOpenCodeRuntimeConfig", () => {
     const prepared = await prepareOpenCodeRuntimeConfig({
       env: {
         XDG_CONFIG_HOME: configHome,
-        PAPERCLIP_OPENCODE_PROVIDERS: JSON.stringify(providers),
+        PILIBALA_OPENCODE_PROVIDERS: JSON.stringify(providers),
       },
       config: {},
     });
@@ -234,10 +234,10 @@ describe("prepareOpenCodeRuntimeConfig", () => {
     await prepared.cleanup();
   });
 
-  it("reads PAPERCLIP_OPENCODE_PROVIDERS from process.env when absent from the run env", async () => {
+  it("reads PILIBALA_OPENCODE_PROVIDERS from process.env when absent from the run env", async () => {
     const configHome = await makeConfigHome({ permission: { read: "allow" } });
     const providers = { bifrost: { npm: "@ai-sdk/openai-compatible", models: { "example/model-a": {} } } };
-    process.env.PAPERCLIP_OPENCODE_PROVIDERS = JSON.stringify(providers);
+    process.env.PILIBALA_OPENCODE_PROVIDERS = JSON.stringify(providers);
     try {
       const prepared = await prepareOpenCodeRuntimeConfig({
         env: { XDG_CONFIG_HOME: configHome },
@@ -250,7 +250,7 @@ describe("prepareOpenCodeRuntimeConfig", () => {
       expect(runtimeConfig).toMatchObject({ provider: providers });
       await prepared.cleanup();
     } finally {
-      delete process.env.PAPERCLIP_OPENCODE_PROVIDERS;
+      delete process.env.PILIBALA_OPENCODE_PROVIDERS;
     }
   });
 
@@ -264,7 +264,7 @@ describe("prepareOpenCodeRuntimeConfig", () => {
       },
     };
     const prepared = await prepareOpenCodeRuntimeConfig({
-      env: { XDG_CONFIG_HOME: configHome, PAPERCLIP_OPENCODE_PROVIDERS: JSON.stringify(providers), ANTHROPIC_API_KEY: "sk-bf-REALVK" },
+      env: { XDG_CONFIG_HOME: configHome, PILIBALA_OPENCODE_PROVIDERS: JSON.stringify(providers), ANTHROPIC_API_KEY: "sk-bf-REALVK" },
       config: {},
     });
     cleanupPaths.add(prepared.env.XDG_CONFIG_HOME);
@@ -281,7 +281,7 @@ describe("prepareOpenCodeRuntimeConfig", () => {
     const configHome = await makeConfigHome({ permission: { read: "allow" } });
     const providers = { bifrost: { options: { apiKey: "{env:DEFINITELY_UNSET_VAR_XYZ}" }, models: { "x/y": {} } } };
     const prepared = await prepareOpenCodeRuntimeConfig({
-      env: { XDG_CONFIG_HOME: configHome, PAPERCLIP_OPENCODE_PROVIDERS: JSON.stringify(providers) },
+      env: { XDG_CONFIG_HOME: configHome, PILIBALA_OPENCODE_PROVIDERS: JSON.stringify(providers) },
       config: {},
     });
     cleanupPaths.add(prepared.env.XDG_CONFIG_HOME);
@@ -292,10 +292,10 @@ describe("prepareOpenCodeRuntimeConfig", () => {
     await prepared.cleanup();
   });
 
-  it("pins small_model from PAPERCLIP_OPENCODE_SMALL_MODEL", async () => {
+  it("pins small_model from PILIBALA_OPENCODE_SMALL_MODEL", async () => {
     const configHome = await makeConfigHome({ permission: { read: "allow" } });
     const prepared = await prepareOpenCodeRuntimeConfig({
-      env: { XDG_CONFIG_HOME: configHome, PAPERCLIP_OPENCODE_SMALL_MODEL: "example/model-a" },
+      env: { XDG_CONFIG_HOME: configHome, PILIBALA_OPENCODE_SMALL_MODEL: "example/model-a" },
       config: {},
     });
     cleanupPaths.add(prepared.env.XDG_CONFIG_HOME);
@@ -306,36 +306,36 @@ describe("prepareOpenCodeRuntimeConfig", () => {
     await prepared.cleanup();
   });
 
-  it("ignores malformed PAPERCLIP_OPENCODE_PROVIDERS without writing a provider block and surfaces a note", async () => {
+  it("ignores malformed PILIBALA_OPENCODE_PROVIDERS without writing a provider block and surfaces a note", async () => {
     const configHome = await makeConfigHome({ permission: { read: "allow" } });
     const prepared = await prepareOpenCodeRuntimeConfig({
-      env: { XDG_CONFIG_HOME: configHome, PAPERCLIP_OPENCODE_PROVIDERS: "not json" },
+      env: { XDG_CONFIG_HOME: configHome, PILIBALA_OPENCODE_PROVIDERS: "not json" },
       config: {},
     });
     cleanupPaths.add(prepared.env.XDG_CONFIG_HOME);
     const runtimeConfig = JSON.parse(
       await fs.readFile(path.join(prepared.env.XDG_CONFIG_HOME, "opencode", "opencode.json"), "utf8"),
     ) as Record<string, unknown>;
-    expect(runtimeConfig.provider).toMatchObject({ openrouter: { options: { headers: { "HTTP-Referer": "https://paperclip.ing" } } } });
+    expect(runtimeConfig.provider).toMatchObject({ openrouter: { options: { headers: { "HTTP-Referer": "https://pilibala.in" } } } });
     expect(prepared.notes).toContain(
-      "PAPERCLIP_OPENCODE_PROVIDERS contains invalid JSON; custom providers ignored.",
+      "PILIBALA_OPENCODE_PROVIDERS contains invalid JSON; custom providers ignored.",
     );
     await prepared.cleanup();
   });
 
-  it("surfaces a note when PAPERCLIP_OPENCODE_PROVIDERS is valid JSON but not an object", async () => {
+  it("surfaces a note when PILIBALA_OPENCODE_PROVIDERS is valid JSON but not an object", async () => {
     const configHome = await makeConfigHome({ permission: { read: "allow" } });
     const prepared = await prepareOpenCodeRuntimeConfig({
-      env: { XDG_CONFIG_HOME: configHome, PAPERCLIP_OPENCODE_PROVIDERS: "[1,2,3]" },
+      env: { XDG_CONFIG_HOME: configHome, PILIBALA_OPENCODE_PROVIDERS: "[1,2,3]" },
       config: {},
     });
     cleanupPaths.add(prepared.env.XDG_CONFIG_HOME);
     const runtimeConfig = JSON.parse(
       await fs.readFile(path.join(prepared.env.XDG_CONFIG_HOME, "opencode", "opencode.json"), "utf8"),
     ) as Record<string, unknown>;
-    expect(runtimeConfig.provider).toMatchObject({ openrouter: { options: { headers: { "HTTP-Referer": "https://paperclip.ing" } } } });
+    expect(runtimeConfig.provider).toMatchObject({ openrouter: { options: { headers: { "HTTP-Referer": "https://pilibala.in" } } } });
     expect(prepared.notes).toContain(
-      "PAPERCLIP_OPENCODE_PROVIDERS is set but is not a JSON object; custom providers ignored.",
+      "PILIBALA_OPENCODE_PROVIDERS is set but is not a JSON object; custom providers ignored.",
     );
     await prepared.cleanup();
   });
@@ -345,7 +345,7 @@ describe("prepareOpenCodeRuntimeConfig", () => {
     const prepared = await prepareOpenCodeRuntimeConfig({
       env: {
         XDG_CONFIG_HOME: configHome,
-        PAPERCLIP_OPENCODE_PROVIDERS: JSON.stringify({
+        PILIBALA_OPENCODE_PROVIDERS: JSON.stringify({
           bifrost: "http://gateway.example/v1",
           usable: { options: { baseURL: "http://gateway.example/v1" } },
         }),
@@ -359,7 +359,7 @@ describe("prepareOpenCodeRuntimeConfig", () => {
     expect(runtimeConfig.provider?.usable).toBeDefined();
     expect(runtimeConfig.provider?.bifrost).toBeUndefined();
     expect(prepared.notes).toContain(
-      "PAPERCLIP_OPENCODE_PROVIDERS: skipped provider(s) with non-object values: bifrost.",
+      "PILIBALA_OPENCODE_PROVIDERS: skipped provider(s) with non-object values: bifrost.",
     );
     await prepared.cleanup();
   });
@@ -369,7 +369,7 @@ describe("prepareOpenCodeRuntimeConfig", () => {
     const prepared = await prepareOpenCodeRuntimeConfig({
       env: {
         XDG_CONFIG_HOME: configHome,
-        PAPERCLIP_OPENCODE_PROVIDERS: JSON.stringify({ bifrost: "http://gateway.example/v1" }),
+        PILIBALA_OPENCODE_PROVIDERS: JSON.stringify({ bifrost: "http://gateway.example/v1" }),
       },
       config: {},
     });
@@ -377,9 +377,9 @@ describe("prepareOpenCodeRuntimeConfig", () => {
     const runtimeConfig = JSON.parse(
       await fs.readFile(path.join(prepared.env.XDG_CONFIG_HOME, "opencode", "opencode.json"), "utf8"),
     ) as Record<string, unknown>;
-    expect(runtimeConfig.provider).toMatchObject({ openrouter: { options: { headers: { "HTTP-Referer": "https://paperclip.ing" } } } });
+    expect(runtimeConfig.provider).toMatchObject({ openrouter: { options: { headers: { "HTTP-Referer": "https://pilibala.in" } } } });
     expect(prepared.notes).toContain(
-      "PAPERCLIP_OPENCODE_PROVIDERS: skipped provider(s) with non-object values: bifrost.",
+      "PILIBALA_OPENCODE_PROVIDERS: skipped provider(s) with non-object values: bifrost.",
     );
     await prepared.cleanup();
   });
@@ -416,7 +416,7 @@ describe("prepareOpenCodeRuntimeConfig", () => {
     const prepared = await prepareOpenCodeRuntimeConfig({
       env: {
         XDG_CONFIG_HOME: configHome,
-        PAPERCLIP_OPENCODE_PROVIDERS: JSON.stringify(providers),
+        PILIBALA_OPENCODE_PROVIDERS: JSON.stringify(providers),
       },
       config: { model: "openrouter/openai/gpt-oss-120b:nitro" },
     });
@@ -443,7 +443,7 @@ describe("prepareOpenCodeRuntimeConfig", () => {
     const runtimeConfig = JSON.parse(
       await fs.readFile(path.join(prepared.env.XDG_CONFIG_HOME, "opencode", "opencode.json"), "utf8"),
     ) as Record<string, unknown>;
-    expect(runtimeConfig.provider).toMatchObject({ openrouter: { options: { headers: { "HTTP-Referer": "https://paperclip.ing" } } } });
+    expect(runtimeConfig.provider).toMatchObject({ openrouter: { options: { headers: { "HTTP-Referer": "https://pilibala.in" } } } });
     await prepared.cleanup();
   });
 
@@ -456,7 +456,7 @@ describe("prepareOpenCodeRuntimeConfig", () => {
 
     const config = JSON.parse(await fs.readFile(path.join(prepared.env.XDG_CONFIG_HOME, "opencode", "opencode.json"), "utf8"));
     expect(config.permission).toBeUndefined();
-    expect(config.provider.openrouter.options.headers["HTTP-Referer"]).toBe("https://paperclip.ing");
+    expect(config.provider.openrouter.options.headers["HTTP-Referer"]).toBe("https://pilibala.in");
     await prepared.cleanup();
   });
 });

@@ -14,7 +14,7 @@ export const cases = Object.freeze([
   { key: 'defaults', scenario: 'projects.project-defaults', name: 'Save project defaults for future work', checks: 11, minimumRuns: 3, maximumRuns: 3 },
   { key: 'work', scenario: 'projects.project-work', name: 'Create and delegate project work through chat', checks: 15, minimumRuns: 1, maximumRuns: 3 },
 ].map(row => Object.freeze({ ...row, executionId: `chat-features.runner-opencode.local.${row.scenario}`,
-  fullName: `paperclip.Product E2E.chat-features.${row.scenario}` })));
+  fullName: `pilibala.Product E2E.chat-features.${row.scenario}` })));
 export const positive = value => Number.isSafeInteger(value) && value > 0;
 export function catalogDefinition(context = {}) {
   if (context.catalog === 'full') return { cases: fullCatalogCases, planName: fullCatalogPlanName,
@@ -35,12 +35,12 @@ export function admitDispatch(env, event, triggeringActorId) {
   try { allowed = JSON.parse(env.TESTOPS_ALLOWED_ACTOR_IDS); } catch { reject('actor'); }
   const branch = event.repository?.default_branch;
   const operation = event.inputs?.operation ?? 'evaluate';
-  const full = env.GITHUB_WORKFLOW_REF === `paperclipai/paperclip/${catalogWorkflow}@refs/heads/master`;
+  const full = env.GITHUB_WORKFLOW_REF === `pilibalaai/pilibala/${catalogWorkflow}@refs/heads/master`;
   const definition = catalogDefinition(full ? { catalog: 'full' } : {});
   if (env.GITHUB_ACTIONS !== 'true' || env.GITHUB_EVENT_NAME !== 'workflow_dispatch'
-    || env.GITHUB_REPOSITORY !== 'paperclipai/paperclip' || event.repository?.full_name !== 'paperclipai/paperclip'
+    || env.GITHUB_REPOSITORY !== 'pilibalaai/pilibala' || event.repository?.full_name !== 'pilibalaai/pilibala'
     || event.repository?.private !== false || branch !== 'master' || env.GITHUB_REF !== 'refs/heads/master'
-    || event.ref !== env.GITHUB_REF || env.GITHUB_WORKFLOW_REF !== `paperclipai/paperclip/${definition.workflow}@refs/heads/master`
+    || event.ref !== env.GITHUB_REF || env.GITHUB_WORKFLOW_REF !== `pilibalaai/pilibala/${definition.workflow}@refs/heads/master`
     || !/^[a-f0-9]{40}$/.test(env.GITHUB_SHA ?? '') || env.GITHUB_RUN_ATTEMPT !== '1'
     || !numeric(env.GITHUB_RUN_ID) || !numeric(env.GITHUB_ACTOR_ID) || event.sender?.id !== Number(env.GITHUB_ACTOR_ID)
     || !Array.isArray(allowed) || !allowed.length || allowed.some(v => !positive(v))
@@ -73,7 +73,7 @@ export function selectedCases(rows, context = {}) {
 
 export function validateSelection(selection, context, jobRunId) {
   const definition = catalogDefinition(context);
-  if (selection.schema !== 'paperclip.chat-completion-testops-selection/v1' || selection.projectId !== 1
+  if (selection.schema !== 'pilibala.chat-completion-testops-selection/v1' || selection.projectId !== 1
     || selection.runId !== context.runId || selection.attempt !== '1' || selection.workflowSha !== context.workflowSha
     || selection.targetSha !== definition.targetSha || selection.catalog !== context.catalog || selection.allureJobRunId !== jobRunId || !numeric(jobRunId)
     || ['planId', 'jobId', 'launchId'].some(key => !positive(selection[key]))) reject('selection_binding');
@@ -87,5 +87,5 @@ export function evidencePolicy(selection, context, jobRunId) {
   const selected = validateSelection(selection, context, jobRunId);
   return { version: 1, approvals: [{ workflowSha: context.workflowSha, targetSha: catalogDefinition(context).targetSha,
     runId: context.runId, attempt: '1', executionIds: selected.map(row => row.executionId),
-    protocol: 'paperclip.manual-private-evidence/v1', launchSha256: context.catalog === 'full' ? catalogDefinition(context).launchSha256 : launchSha256 }] };
+    protocol: 'pilibala.manual-private-evidence/v1', launchSha256: context.catalog === 'full' ? catalogDefinition(context).launchSha256 : launchSha256 }] };
 }

@@ -178,7 +178,7 @@ continuations; a change during a held page; drain/resume; and shutdown joining.
 Existing cache cases retain byte restoration, symlink, late-pin, lock-contention,
 legacy manifest, native-finalization, and interrupted-trash protection coverage.
 
-The related in-flight [PR #17907](https://github.com/paperclipai/paperclip/pull/17907)
+The related in-flight [PR #17907](https://github.com/pilibalaai/pilibala/pull/17907)
 adds keepalive for an actively held skill-cache advisory-lock transaction. That is
 an independent lock-liveness repair. This slice preserves that lock boundary and
 does not duplicate its implementation. An active-operation keepalive is distinct

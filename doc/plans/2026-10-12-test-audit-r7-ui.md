@@ -2,7 +2,7 @@
 
 This UI batch removes **364 net test lines and one registered invocation** from three files. It changes **zero production lines**. Of the 364 lines, 320 come from helper cleanup and 44 from retiring the duplicate after its fixture/assertion migration. The helper cleanup reduces maintenance code; it makes no wall-time or CI-speed claim. The one retired invocation avoids one duplicate rendered roster scenario.
 
-The branch starts at pinned parent `e868e6645ce0d598d756d3458f0b3d71afd6db4a`, the head of [Round 6, PR #16047](https://github.com/paperclipai/paperclip/pull/16047). It follows OpenClaw's [test-audit skill](https://github.com/openclaw/openclaw/blob/main/.agents/skills/test-audit/SKILL.md) and [campaign process](https://github.com/openclaw/openclaw/blob/main/.agents/skills/test-audit/CAMPAIGN.md). All ten Round 6 test files were excluded. Prior cleanup remains in the parent history.
+The branch starts at pinned parent `e868e6645ce0d598d756d3458f0b3d71afd6db4a`, the head of [Round 6, PR #16047](https://github.com/pilibalaai/pilibala/pull/16047). It follows OpenClaw's [test-audit skill](https://github.com/openclaw/openclaw/blob/main/.agents/skills/test-audit/SKILL.md) and [campaign process](https://github.com/openclaw/openclaw/blob/main/.agents/skills/test-audit/CAMPAIGN.md). All ten Round 6 test files were excluded. Prior cleanup remains in the parent history.
 
 ## Scope and cost
 

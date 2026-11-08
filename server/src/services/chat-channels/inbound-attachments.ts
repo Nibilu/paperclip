@@ -21,7 +21,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   assets,
@@ -30,7 +30,7 @@ import {
   chatDeliveries,
   issueComments,
   issueAttachments,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 
 import {
   isAllowedContentType,

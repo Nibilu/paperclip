@@ -75,7 +75,7 @@ Source pointers: [project attachment](../../server/src/services/projects.ts),
 
 `company-skills.ts::runtimeVersionInventory` selects the entire repository snapshot,
 then `repositorySkillProjection` builds a generated discovery wrapper plus the full
-original tree under `.paperclip-repository/`.
+original tree under `.pilibala-repository/`.
 
 | Consumer | Current unnecessary or amplified work | Replacement |
 | --- | --- | --- |
@@ -125,15 +125,15 @@ for every slow request.
 
 ## Why this implementation arose
 
-- [#14713](https://github.com/paperclipai/paperclip/pull/14713), September 30, introduced
+- [#14713](https://github.com/pilibalaai/pilibala/pull/14713), September 30, introduced
   GitHub-synchronized skills on the existing immutable-version foundation.
-- [#15731](https://github.com/paperclipai/paperclip/pull/15731), October 12, fixed missing
+- [#15731](https://github.com/pilibalaai/pilibala/pull/15731), October 12, fixed missing
   shared scripts, policies, sibling skills and credits by preserving repository packages.
   It explicitly chose shared database snapshots and self-contained per-skill delivery.
-- [#16066](https://github.com/paperclipai/paperclip/pull/16066), October 13, extended that
+- [#16066](https://github.com/pilibalaai/pilibala/pull/16066), October 13, extended that
   behavior to automatic project imports and refresh.
-- [#16308](https://github.com/paperclipai/paperclip/pull/16308) preserved referenced files
-  for oversized repositories. [#16433](https://github.com/paperclipai/paperclip/pull/16433)
+- [#16308](https://github.com/pilibalaai/pilibala/pull/16308) preserved referenced files
+  for oversized repositories. [#16433](https://github.com/pilibalaai/pilibala/pull/16433)
   subsequently made old disk copies disposable, with database restoration as the guarantee.
 
 The #15731 description reports strong byte/mode, offline, pinning and real runtime proof,
@@ -264,7 +264,7 @@ the hashed manifest, including unexpected files and modes, without rereading SQL
 Audit continues to inspect actual content and may require new policy scans independently
 of package immutability.
 
-Keep the current self-contained `.paperclip-repository` skill layout initially. Build it
+Keep the current self-contained `.pilibala-repository` skill layout initially. Build it
 from the shared package cache and reuse the manifest in materialization and audit. Preserve
 the existing company cache lock through final publication and durable run pinning. Stage
 slow downloads before that lock, then recheck authority/version identity inside it; if

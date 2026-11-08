@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { environmentTaskErrorCodeData, JsonRpcCallError, PluginEnvironmentTaskError } from "@paperclipai/plugin-sdk";
+import { environmentTaskErrorCodeData, JsonRpcCallError, PluginEnvironmentTaskError } from "@pilibalaai/plugin-sdk";
 import { probePluginRunnerEnvironment } from "./plugin-runner-probe.js";
 import { assertHarnessTestPassed } from "../agent-harness-verification.js";
 
 const probe = (runnerTask: () => Promise<unknown>) => probePluginRunnerEnvironment({
-  companyId: "fixture-company", adapterType: "paperclip_runner", config: { provider: "codex", model: "fixture-model" },
+  companyId: "fixture-company", adapterType: "pilibala_runner", config: { provider: "codex", model: "fixture-model" },
   executionTarget: { kind: "remote", transport: "sandbox", remoteCwd: ".", leaseId: "probe-lease",
     runnerTaskProbe: { runId: "probe-run", sessionId: "probe-session" }, runnerTask },
 } as Parameters<typeof probePluginRunnerEnvironment>[0]);

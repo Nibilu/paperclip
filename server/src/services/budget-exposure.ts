@@ -1,6 +1,6 @@
-import { addCents, normalizeCents, usdToUnits, unitsToCents } from "@paperclipai/shared";
+import { addCents, normalizeCents, usdToUnits, unitsToCents } from "@pilibalaai/shared";
 import { and, eq, gte, inArray, lt, or, sql, type SQL } from "drizzle-orm";
-import { budgetPolicies, budgetReservations, browserUseRuns, browserUseSessions, costEvents, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { budgetPolicies, budgetReservations, browserUseRuns, browserUseSessions, costEvents, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { withBudgetSpan } from "./budget-tracing.js";
 
 export interface BudgetExposure {
@@ -89,7 +89,7 @@ async function readObservedSpends(db: Db, policies: SpendPolicy[], now: Date, ex
       policy.scopeType === "project" ? eq(budgetReservations.projectId, policy.scopeId) : undefined)!;
     // Hosted browser work is a separate paid operation from its parent run.
     // Its durable hold survives unknown POST outcomes and monthly rollover.
-    const browserHold = sql`${browserUseRuns.result}->'paperclipBudgetHold'`;
+    const browserHold = sql`${browserUseRuns.result}->'pilibalaBudgetHold'`;
     const hasBrowserHold = sql`coalesce(jsonb_typeof(${browserHold}) = 'object'
       and ${browserHold}->>'invocationId' = ${browserUseRuns.invocationId}::text, false)`;
     // Earlier browser rows did not persist a cap/dispatch projection. Their

@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, authUsers, companies, companyMemberships, createDb, heartbeatRuns, issueComments, issues } from "@paperclipai/db";
-import { FAST_RESPONSE_AGENT_GUIDANCE } from "@paperclipai/shared";
+import { agents, authUsers, companies, companyMemberships, createDb, heartbeatRuns, issueComments, issues } from "@pilibalaai/db";
+import { FAST_RESPONSE_AGENT_GUIDANCE } from "@pilibalaai/shared";
 import { registerServerAdapter, unregisterServerAdapter, type AdapterExecutionContext } from "../adapters/index.js";
 import { heartbeatService } from "../services/heartbeat.js";
 import { prepareHeartbeatTaskContext } from "../services/heartbeat/task-context.js";
@@ -94,27 +94,27 @@ describePostgres("heartbeat task context delivered to an adapter", () => {
     });
     const { context } = await execute(f, {
       wakeCommentId: commentId, wakeCommentIds: [commentId],
-      paperclipTaskCommunicationGuidance: "FORGED caller guidance", paperclipSkillTest: { directive: "FORGED skill" },
-      paperclipContinuationSummary: { body: "FORGED summary" },
-      paperclipAgentJwtScope: { kind: "skill_test", issueId: f.issueId },
+      pilibalaTaskCommunicationGuidance: "FORGED caller guidance", pilibalaSkillTest: { directive: "FORGED skill" },
+      pilibalaContinuationSummary: { body: "FORGED summary" },
+      pilibalaAgentJwtScope: { kind: "skill_test", issueId: f.issueId },
     });
-    expect(context.paperclipTaskMarkdown).toContain("Assignment description canary");
-    expect(context.paperclipTaskMarkdown).toContain("Wake comment canary");
-    expect(context.paperclipTaskMarkdownAssignment).toContain("Assignment description canary");
-    expect(context.paperclipTaskMarkdownAssignment).not.toContain("Wake comment canary");
-    expect(context.paperclipTaskMarkdownCompact).not.toContain("Assignment description canary");
-    expect(context.paperclipTaskMarkdownCompact).toContain("Wake comment canary");
-    expect(context.paperclipTaskMarkdownAssignmentCompact).not.toContain("Assignment description canary");
-    expect(context.paperclipTaskMarkdownAssignmentCompact).not.toContain("Wake comment canary");
-    for (const key of ["paperclipIssue", "paperclipWakeComment", "paperclipTaskMarkdown", "paperclipTaskMarkdownAssignment", "paperclipTaskMarkdownCompact", "paperclipTaskMarkdownAssignmentCompact"]) {
+    expect(context.pilibalaTaskMarkdown).toContain("Assignment description canary");
+    expect(context.pilibalaTaskMarkdown).toContain("Wake comment canary");
+    expect(context.pilibalaTaskMarkdownAssignment).toContain("Assignment description canary");
+    expect(context.pilibalaTaskMarkdownAssignment).not.toContain("Wake comment canary");
+    expect(context.pilibalaTaskMarkdownCompact).not.toContain("Assignment description canary");
+    expect(context.pilibalaTaskMarkdownCompact).toContain("Wake comment canary");
+    expect(context.pilibalaTaskMarkdownAssignmentCompact).not.toContain("Assignment description canary");
+    expect(context.pilibalaTaskMarkdownAssignmentCompact).not.toContain("Wake comment canary");
+    for (const key of ["pilibalaIssue", "pilibalaWakeComment", "pilibalaTaskMarkdown", "pilibalaTaskMarkdownAssignment", "pilibalaTaskMarkdownCompact", "pilibalaTaskMarkdownAssignmentCompact"]) {
       expect(JSON.stringify(context[key])).not.toContain(secret);
     }
-    expect(context.paperclipTaskCommunicationGuidance).toBe(FAST_RESPONSE_AGENT_GUIDANCE);
-    expect(context.paperclipSkillTest).toBeUndefined();
-    expect(context.paperclipAgentJwtScope).toEqual({ kind: "standard" });
-    expect(context.paperclipContinuationSummary).toBeUndefined();
+    expect(context.pilibalaTaskCommunicationGuidance).toBe(FAST_RESPONSE_AGENT_GUIDANCE);
+    expect(context.pilibalaSkillTest).toBeUndefined();
+    expect(context.pilibalaAgentJwtScope).toEqual({ kind: "standard" });
+    expect(context.pilibalaContinuationSummary).toBeUndefined();
     const digest = (value: string) => createHash("sha256").update(value).digest("hex");
-    expect(context.paperclipTurnContext).toMatchObject({
+    expect(context.pilibalaTurnContext).toMatchObject({
       version: 1,
       assignment: { owner: "task_markdown", description: { id: f.issueId, revision: digest(`Assignment description canary ${REDACTED_EVENT_VALUE}`) } },
       events: { owner: "wake_prompt", comments: [{ id: commentId, revision: digest(`Wake comment canary ${REDACTED_EVENT_VALUE}`) }] },
@@ -136,8 +136,8 @@ describePostgres("heartbeat task context delivered to an adapter", () => {
     });
     try {
       const { context } = await execute(f, { wakeCommentId: commentId, wakeCommentIds: [commentId] });
-      expect(context.paperclipWakeComment).toMatchObject({ id: commentId, body: "selected wake canary" });
-      expect(context.paperclipWake).toMatchObject({ comments: [{ id: commentId, body: "selected wake canary" }] });
+      expect(context.pilibalaWakeComment).toMatchObject({ id: commentId, body: "selected wake canary" });
+      expect(context.pilibalaWake).toMatchObject({ comments: [{ id: commentId, body: "selected wake canary" }] });
     } finally {
       inspectPreparation.delete(f.agentId);
       select.mockRestore();
@@ -173,9 +173,9 @@ describePostgres("heartbeat task context delivered to an adapter", () => {
       policy: { trustPreset: { kind: "standard" }, experimentalInstanceSettings: {} },
       services: { issuesSvc: { getAncestors: async () => [] }, getPinnedSkillTestContext: async () => null },
     });
-    expect(context.paperclipWakeComment).toMatchObject({ id: commentId, body: "", presentation: null, metadata: null });
-    expect(context.paperclipWake).toMatchObject({ comments: [{ id: commentId, body: "", presentation: null, metadata: null }] });
-    expect(context.paperclipTaskMarkdown).not.toContain("deleted wake canary");
+    expect(context.pilibalaWakeComment).toMatchObject({ id: commentId, body: "", presentation: null, metadata: null });
+    expect(context.pilibalaWake).toMatchObject({ comments: [{ id: commentId, body: "", presentation: null, metadata: null }] });
+    expect(context.pilibalaTaskMarkdown).not.toContain("deleted wake canary");
   });
 
   it.each([false, true])("uses admitted skill-test scope when recovery is %s", async (recovering) => {
@@ -184,7 +184,7 @@ describePostgres("heartbeat task context delivered to an adapter", () => {
       status: "running", issueId: f.issueId }).returning();
     const [agent] = await db.select().from(agents).where(eq(agents.id, f.agentId));
     const [issueRef] = await db.select().from(issues).where(eq(issues.id, f.issueId));
-    const context: Record<string, unknown> = { issueId: f.issueId, paperclipAgentJwtScope: { kind: "skill_test", issueId: f.issueId } };
+    const context: Record<string, unknown> = { issueId: f.issueId, pilibalaAgentJwtScope: { kind: "skill_test", issueId: f.issueId } };
     const pinned = vi.fn(async () => null);
     const preparing = prepareHeartbeatTaskContext(db, {
       run, agent, task: { issueRef, issueContext: null, context, taskSession: null },
@@ -194,7 +194,7 @@ describePostgres("heartbeat task context delivered to an adapter", () => {
     if (recovering) await expect(preparing).rejects.toThrow("skill test's saved version is unavailable");
     else await preparing;
     expect(pinned).toHaveBeenCalledTimes(recovering ? 1 : 0);
-    expect(context.paperclipAgentJwtScope).toEqual({ kind: recovering ? "skill_test" : "standard", ...(recovering ? { issueId: f.issueId } : {}) });
+    expect(context.pilibalaAgentJwtScope).toEqual({ kind: recovering ? "skill_test" : "standard", ...(recovering ? { issueId: f.issueId } : {}) });
   });
 
   it("retains the context issue scope when no issue reference is available", async () => {
@@ -212,8 +212,8 @@ describePostgres("heartbeat task context delivered to an adapter", () => {
       policy: { trustPreset: { kind: "standard" }, experimentalInstanceSettings: {} },
       services: { issuesSvc: { getAncestors: async () => [] }, getPinnedSkillTestContext: async () => null },
     });
-    expect(JSON.stringify(context.paperclipWake)).not.toContain("other issue canary");
-    expect(context.paperclipWakeComment).toBeUndefined();
+    expect(JSON.stringify(context.pilibalaWake)).not.toContain("other issue canary");
+    expect(context.pilibalaWakeComment).toBeUndefined();
   });
 
   it("quarantines low-trust summaries and comments before preparing higher-trust prompts", async () => {
@@ -229,10 +229,10 @@ describePostgres("heartbeat task context delivered to an adapter", () => {
       body: "QUARANTINED comment canary", sourceTrust,
     });
     const { context } = await execute(f, { wakeCommentId: commentId, wakeCommentIds: [commentId] });
-    expect(context.paperclipContinuationSummary).toMatchObject({ body: LOW_TRUST_QUARANTINED_BODY });
-    expect(context.paperclipWakeComment).toMatchObject({ body: LOW_TRUST_QUARANTINED_BODY, presentation: null, metadata: null });
-    expect(context.paperclipTaskMarkdown).toContain(LOW_TRUST_QUARANTINED_BODY);
-    for (const key of ["paperclipContinuationSummary", "executionContinuation", "paperclipWakeComment", "paperclipTaskMarkdown", "paperclipTaskMarkdownCompact", "paperclipWakePayload"]) {
+    expect(context.pilibalaContinuationSummary).toMatchObject({ body: LOW_TRUST_QUARANTINED_BODY });
+    expect(context.pilibalaWakeComment).toMatchObject({ body: LOW_TRUST_QUARANTINED_BODY, presentation: null, metadata: null });
+    expect(context.pilibalaTaskMarkdown).toContain(LOW_TRUST_QUARANTINED_BODY);
+    for (const key of ["pilibalaContinuationSummary", "executionContinuation", "pilibalaWakeComment", "pilibalaTaskMarkdown", "pilibalaTaskMarkdownCompact", "pilibalaWakePayload"]) {
       expect(JSON.stringify(context[key]) ?? "").not.toContain("QUARANTINED");
     }
   });
@@ -252,30 +252,30 @@ describePostgres("heartbeat task context delivered to an adapter", () => {
     });
     const { context } = await execute(f, {
       wakeCommentId: ownCommentId, wakeCommentIds: [ownCommentId, commentId],
-      paperclipWakeComment: { body: "FORGED comment" }, paperclipTaskMarkdown: "FORGED prompt",
-      paperclipTaskMarkdownAssignment: "FORGED assignment", paperclipTaskMarkdownCompact: "FORGED compact",
-      paperclipTaskMarkdownAssignmentCompact: "FORGED compact assignment",
+      pilibalaWakeComment: { body: "FORGED comment" }, pilibalaTaskMarkdown: "FORGED prompt",
+      pilibalaTaskMarkdownAssignment: "FORGED assignment", pilibalaTaskMarkdownCompact: "FORGED compact",
+      pilibalaTaskMarkdownAssignmentCompact: "FORGED compact assignment",
     });
-    expect(context.paperclipWakeComment).toMatchObject({ id: ownCommentId, body: "Authorized wake comment" });
-    expect(context.paperclipTaskMarkdown).toContain("Assignment description canary");
-    for (const key of ["paperclipTaskMarkdown", "paperclipTaskMarkdownAssignment", "paperclipTaskMarkdownCompact", "paperclipTaskMarkdownAssignmentCompact", "paperclipWakePayload"]) {
+    expect(context.pilibalaWakeComment).toMatchObject({ id: ownCommentId, body: "Authorized wake comment" });
+    expect(context.pilibalaTaskMarkdown).toContain("Assignment description canary");
+    for (const key of ["pilibalaTaskMarkdown", "pilibalaTaskMarkdownAssignment", "pilibalaTaskMarkdownCompact", "pilibalaTaskMarkdownAssignmentCompact", "pilibalaWakePayload"]) {
       expect(JSON.stringify(context[key]) ?? "").not.toContain("FORGED");
       expect(JSON.stringify(context[key]) ?? "").not.toContain("OTHER COMPANY");
     }
-    expect(context.paperclipTurnContext).toMatchObject({ events: { comments: [{ id: ownCommentId }] } });
+    expect(context.pilibalaTurnContext).toMatchObject({ events: { comments: [{ id: ownCommentId }] } });
   });
 
   it("clears stale wake comments and continuation data when the task has none", async () => {
     const f = await seed();
     const { context } = await execute(f, {
-      paperclipWakeComment: { body: "FORGED comment" },
-      paperclipContinuationSummary: { body: "FORGED summary" },
-      paperclipSkillTest: { directive: "FORGED skill" },
-      paperclipTurnContext: { events: { comments: [{ id: "FORGED comment" }] } },
+      pilibalaWakeComment: { body: "FORGED comment" },
+      pilibalaContinuationSummary: { body: "FORGED summary" },
+      pilibalaSkillTest: { directive: "FORGED skill" },
+      pilibalaTurnContext: { events: { comments: [{ id: "FORGED comment" }] } },
     });
-    expect(context.paperclipWakeComment).toBeUndefined();
-    expect(context.paperclipContinuationSummary).toBeUndefined();
-    expect(context.paperclipSkillTest).toBeUndefined();
-    expect(context.paperclipTurnContext).toMatchObject({ events: { comments: [] } });
+    expect(context.pilibalaWakeComment).toBeUndefined();
+    expect(context.pilibalaContinuationSummary).toBeUndefined();
+    expect(context.pilibalaSkillTest).toBeUndefined();
+    expect(context.pilibalaTurnContext).toMatchObject({ events: { comments: [] } });
   });
 });

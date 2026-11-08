@@ -17,11 +17,11 @@ const candidate = (extra = {}) => ({
   number: 42, state: "OPEN", isDraft: false, headRefOid: head, baseRefOid: base,
   baseRefName: "master", changedFiles: 1, statusCheckRollup: [check("ci / verify"), check("ci / e2e")], ...extra,
 });
-const event = (extra = {}) => ({ repository: { full_name: "paperclipai/paperclip" }, sha: head, ...extra });
+const event = (extra = {}) => ({ repository: { full_name: "pilibalaai/pilibala" }, sha: head, ...extra });
 const trustedRun = (extra = {}) => ({
-  id: 7, repository: { full_name: "paperclipai/paperclip" }, path: ".github/workflows/pr.yml",
+  id: 7, repository: { full_name: "pilibalaai/pilibala" }, path: ".github/workflows/pr.yml",
   event: "pull_request", head_sha: head, status: "completed", conclusion: "success", check_suite_id: 8,
-  referenced_workflows: [{ path: "paperclipai/paperclip/.github/workflows/pr-trusted.yml@master",
+  referenced_workflows: [{ path: "pilibalaai/pilibala/.github/workflows/pr-trusted.yml@master",
     ref: "refs/heads/master", sha: base }], ...extra,
 });
 const files = [{ filename: "README.md" }];
@@ -124,7 +124,7 @@ test("requires genuine suite, caller, revision, and master reusable workflow pro
     { head_sha: "c".repeat(40) }, { status: "in_progress" }, { conclusion: "failure" },
     { repository: { full_name: "attacker/repo" } }, { check_suite_id: 99 },
     { referenced_workflows: [] },
-    { referenced_workflows: [{ path: "paperclipai/paperclip/.github/workflows/pr-trusted.yml@master",
+    { referenced_workflows: [{ path: "pilibalaai/pilibala/.github/workflows/pr-trusted.yml@master",
       ref: "refs/pull/42/merge", sha: base }] },
   ]) {
     assert.equal(trustedVerification(candidate(), deps({ read: () => trustedRun(changes) })), false);
@@ -197,7 +197,7 @@ test("sends only identifiers, a bearer header, and a stable head/base idempotenc
   assert.equal(calls[0].headers["Idempotency-Key"], calls[1].headers["Idempotency-Key"]);
   assert.equal(calls[0].body, calls[1].body);
   assert.deepEqual(JSON.parse(calls[0].body), { variables: {
-    pr_url: "https://github.com/paperclipai/paperclip/pull/42", pr_number: "42", head_sha: head, base_sha: base,
+    pr_url: "https://github.com/pilibalaai/pilibala/pull/42", pr_number: "42", head_sha: head, base_sha: base,
   } });
   await deliver(candidate({ baseRefOid: "c".repeat(40) }), options);
   assert.notEqual(calls[0].headers["Idempotency-Key"], calls[2].headers["Idempotency-Key"]);
@@ -229,7 +229,7 @@ test("command failures cannot print a private URL, token, or event payload", () 
     writeFileSync(file, "PRIVATE_EVENT_INVALID_JSON");
     const run = spawnSync(process.execPath, [".github/scripts/notify-pr-merge-review.mjs"], {
       encoding: "utf8", env: { ...process.env, GITHUB_EVENT_PATH: file,
-        PAPERCLIP_PR_REVIEW_WEBHOOK_URL: "PRIVATE_URL_SENTINEL", PAPERCLIP_PR_REVIEW_WEBHOOK_TOKEN: "PRIVATE_TOKEN_SENTINEL" },
+        PILIBALA_PR_REVIEW_WEBHOOK_URL: "PRIVATE_URL_SENTINEL", PILIBALA_PR_REVIEW_WEBHOOK_TOKEN: "PRIVATE_TOKEN_SENTINEL" },
     });
     assert.equal(run.status, 0);
     assert.doesNotMatch(run.stdout + run.stderr, /PRIVATE_/);
@@ -247,7 +247,7 @@ test("workflow uses read permissions, a protected environment, trusted checkout,
     assert.ok(workflow.includes(`  ${permission}: read`), `Missing ${permission}: read`);
   }
   assert.doesNotMatch(workflow, /: write|download-artifact|restore@|pull_request_target:/);
-  for (const name of ["PAPERCLIP_PR_REVIEW_WEBHOOK_URL", "PAPERCLIP_PR_REVIEW_WEBHOOK_TOKEN"]) {
+  for (const name of ["PILIBALA_PR_REVIEW_WEBHOOK_URL", "PILIBALA_PR_REVIEW_WEBHOOK_TOKEN"]) {
     assert.ok(workflow.includes(`secrets.${name}`));
     assert.ok(!workflow.includes(`vars.${name}`));
   }
@@ -280,15 +280,15 @@ test("workflow skips non-final events before runner allocation and collapses bur
   assert.match(condition, /fromJSON\('\["success","skipped","neutral"\]'\), github\.event\.workflow_run\.conclusion/);
   assert.match(condition, /github\.event_name == 'status' && github\.event\.state == 'success'/);
   assert.match(condition, /github\.event\.workflow_run\.event == 'pull_request'/);
-  assert.match(condition, /github\.repository == 'paperclipai\/paperclip'/);
+  assert.match(condition, /github\.repository == 'pilibalaai\/pilibala'/);
   // Evaluate the condition for real events so an operator change cannot reopen the flood.
   const schedules = jobCondition(condition.replace(/^ {4}if: >-/, ""));
-  const repository = { full_name: "paperclipai/paperclip" };
-  const run = (event, conclusion) => ({ event_name: "workflow_run", repository: "paperclipai/paperclip",
+  const repository = { full_name: "pilibalaai/pilibala" };
+  const run = (event, conclusion) => ({ event_name: "workflow_run", repository: "pilibalaai/pilibala",
     event: { repository, workflow_run: { event, conclusion, head_sha: head } } });
-  const checkRun = (appId, conclusion) => ({ event_name: "check_run", repository: "paperclipai/paperclip",
+  const checkRun = (appId, conclusion) => ({ event_name: "check_run", repository: "pilibalaai/pilibala",
     event: { repository, check_run: { app: { id: appId }, conclusion, head_sha: head } } });
-  const status = (state) => ({ event_name: "status", repository: "paperclipai/paperclip",
+  const status = (state) => ({ event_name: "status", repository: "pilibalaai/pilibala",
     event: { repository, state, sha: head } });
   for (const accepted of [run("pull_request", "success"), run("pull_request_target", "neutral"),
     run("pull_request", "skipped"), checkRun(867647, "success"), checkRun(156372, "neutral"), status("success")]) {

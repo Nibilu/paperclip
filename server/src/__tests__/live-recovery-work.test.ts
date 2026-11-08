@@ -7,7 +7,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { agents, authUsers, companies, companyMemberships, createDb, closeLivenessDb, closeCheckpointDb,
   heartbeatRuns, heartbeatRunEvents, nativeRunFinalizations, environmentLeases, issueThreadInteractions, applyPendingMigrations,
-  issueRecoveryActions, issues, activityLog, agentWakeupRequests, reconcileDatabaseWork } from "@paperclipai/db";
+  issueRecoveryActions, issues, activityLog, agentWakeupRequests, reconcileDatabaseWork } from "@pilibalaai/db";
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { createDeliveryWorkCoordinator } from "../services/delivery-work-coordinator.js";
@@ -39,7 +39,7 @@ import { nativeRuntimeContextFixture } from "../services/native-runtime/runtime-
 import * as nativeStopEvidence from "../services/acknowledged-native-stop.js";
 import { remoteTerminationReceipt } from "../services/remote-execution-termination.js";
 import { subscribeCompanyLiveEvents } from "../services/live-events.js";
-import type { LiveEvent } from "@paperclipai/shared";
+import type { LiveEvent } from "@pilibalaai/shared";
 import { logger } from "../middleware/logger.js";
 
 vi.setConfig({ testTimeout: 90_000 });
@@ -54,7 +54,7 @@ describe("residual recovery production matrix", () => {
   const timeline: unknown[] = [];
   const extraStops: Array<() => Promise<void>> = [];
   beforeAll(async () => {
-    const external = resolveExternalTestDatabaseUrl("PAPERCLIP_LIVE_RECOVERY_TEST_DATABASE_URL");
+    const external = resolveExternalTestDatabaseUrl("PILIBALA_LIVE_RECOVERY_TEST_DATABASE_URL");
     if (!external) temporary = await startEmbeddedPostgresTestDatabase("live-recovery-");
     else await applyPendingMigrations(external);
     db = createDb(external ?? temporary!.connectionString, { maxConnections: 6, idleTimeoutSeconds: 0, maxLifetimeSeconds: 0 });
@@ -164,7 +164,7 @@ describe("residual recovery production matrix", () => {
       const [run] = await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: f.agent.id,
         status: "failed", runtimeMode: "native", nativeIssueId: f.issue.id, contextSnapshot: { issueId: f.issue.id },
         finishedAt: new Date(), errorCode: "saved_native_failure",
-        runnerProfileJson: remote ? { nativeWorkspaceSync: { schema: "paperclip.native-workspace-sync/v1",
+        runnerProfileJson: remote ? { nativeWorkspaceSync: { schema: "pilibala.native-workspace-sync/v1",
           state: "prepared", descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64),
           workspaceId: randomUUID(), leaseId: randomUUID(), providerLeaseId: "remote-retry-fixture", remoteCwd: "/workspace" } } : null,
       }).returning();
@@ -202,9 +202,9 @@ describe("residual recovery production matrix", () => {
       phase: "observed", recoveryState: "awaiting_evidence", leaseExpiresAt: new Date(Date.now() + 60_000) });
     await db.insert(issueThreadInteractions).values({ companyId: f.companyId, issueId: f.issue.id, kind: "ask_user_questions",
       sourceRunId: run.id, status: "pending", continuationPolicy: "none",
-      idempotencyKey: `paperclip-runner-question:${run.id}:question-1`, payload: {
+      idempotencyKey: `pilibala-runner-question:${run.id}:question-1`, payload: {
         version: 1, questions: [{ id: "continue", prompt: "Continue?", selectionMode: "single", required: true, allowOther: false, options: [{ id: "yes", label: "Yes" }] }],
-        questionSet: { schema: "paperclip.question_set.v1", questions: [{ id: "continue", prompt: "Continue?", required: true, answerMode: "single_select", options: [{ id: "yes", label: "Yes" }] }] }, runtimeRequestId: "question-1",
+        questionSet: { schema: "pilibala.question_set.v1", questions: [{ id: "continue", prompt: "Continue?", required: true, answerMode: "single_select", options: [{ id: "yes", label: "Yes" }] }] }, runtimeRequestId: "question-1",
       } });
     await start(); await issueService(db).update(f.issue.id, { status: "done" });
     await vi.waitFor(async () => expect((await getRun(run.id)).status).toBe("cancelled"), { timeout: 15_000 });
@@ -236,7 +236,7 @@ describe("residual recovery production matrix", () => {
       companyId: f.companyId, agentId: f.agent.id, runtimeMode: "native", nativeIssueId: f.issue.id,
       status: "failed", finishedAt: new Date(), nativePhase: "terminal_failure",
       contextSnapshot: { nativeQuestionCancellation: marker }, resultJson: { nativeCancellation: {
-        schema: "paperclip.native-cancellation.v1", runId: randomUUID(), companyId: f.companyId, issueId: f.issue.id,
+        schema: "pilibala.native-cancellation.v1", runId: randomUUID(), companyId: f.companyId, issueId: f.issue.id,
         scope: "run", intentId: randomUUID(), intentAuditId: randomUUID(), dispatched: false, dispatchState: "pending",
       } },
     }))).returning();
@@ -244,7 +244,7 @@ describe("residual recovery production matrix", () => {
       runId: row.id, phase: "terminal_failure", failureCode: "native_retry_cancelled", recoveryState: "blocked" })));
     draining = true; await start();
     expect(await db.transaction(tx => requestNativeQuestionRunCancellation(tx, { companyId: f.companyId,
-      issueId: f.issue.id, sourceRunId: run.id, idempotencyKey: `paperclip-runner-question:${run.id}:raced-question`,
+      issueId: f.issue.id, sourceRunId: run.id, idempotencyKey: `pilibala-runner-question:${run.id}:raced-question`,
       payload: { questionSet: {}, runtimeRequestId: "raced-question" },
     }, { kind: "issue_terminal", issueStatus: "done" }))).toBe(run.id);
     expect((await getRun(run.id)).contextSnapshot?.nativeQuestionCancellation).toMatchObject(marker);
@@ -380,12 +380,12 @@ describe("residual recovery production matrix", () => {
       extraStops.push(stopChild);
       const recordedAt = new Date().toISOString();
       const nativeExecutionInput = buildNativeExecutionInput({ companyId: f.companyId, agentId: f.agent.id, runId,
-        provider: "cursor_cloud", model: "explicit-model", cursorCloud: { schema: "paperclip.cursor-cloud.config.v1",
+        provider: "cursor_cloud", model: "explicit-model", cursorCloud: { schema: "pilibala.cursor-cloud.config.v1",
           repos: [{ url: "https://github.com/example/qualification" }] },
         issue: { id: f.issue.id, identifier: "API-1", title: f.issue.title, description: null, workMode: "standard" },
         taskPrompt: "Stop the foreground command", normalizedSessionId: sessionId,
         workspace: { id: randomUUID(), cwd: "/private/controller", repoUrl: null, repoRef: null, branchName: null },
-        completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "paperclip.run-result.v1",
+        completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "pilibala.run-result.v1",
           contract: { revision: "1", objective: "Stop the foreground command", criteria: [{ id: "stop", requirement: "Stop the foreground command" }] } },
         runtimeContext: nativeRuntimeContextFixture(),
       });
@@ -393,17 +393,17 @@ describe("residual recovery production matrix", () => {
         runtimeMode: "native", driverKind: "cursor_cloud_api", nativeIssueId: f.issue.id, nativeSessionId: sessionId,
         runnerInstanceId: runnerId, status: "cancelled", finishedAt: new Date(),
         runnerProfileJson: { backend: "cursor_cloud_api", nativeExecutionInput, sessionCheckpoint: { providerSessionId: "cloud-agent" },
-          executionPlacement: { kind: "provider_api", provider: "cursor_cloud", controller: "paperclip" } },
+          executionPlacement: { kind: "provider_api", provider: "cursor_cloud", controller: "pilibala" } },
         resultJson: { executionCancellation: { state: "requested", requestedAt: recordedAt },
           cancelledByActorType: "user", cancelledByUserId: f.actorId, nativeCancellation: {
-            schema: "paperclip.native-cancellation.v1", companyId: f.companyId, runId, issueId: f.issue.id,
+            schema: "pilibala.native-cancellation.v1", companyId: f.companyId, runId, issueId: f.issue.id,
             scope: "run", reasonCode: "cancellation_run_only", dispatchState: "acknowledged", dispatched: true,
             effects: ["release_run_resources"], recordedAt, acknowledgedAt: recordedAt,
             intentAuditId: randomUUID(), acknowledgementAuditId: randomUUID() } } });
       await persistHeartbeatRunProcessMetadata(db, runId, { pid: child.pid!, processGroupId: child.pid!, startedAt: recordedAt, targetKind: "local" });
       await db.insert(nativeRunFinalizations).values({ companyId: f.companyId, issueId: f.issue.id, runId, phase: "committed" });
       const appendTerminal = async (target: typeof db = db) => {
-        const terminal = { schema: "paperclip.prp.event.v1", schemaVersion: 1, eventType: "turn.interrupted",
+        const terminal = { schema: "pilibala.prp.event.v1", schemaVersion: 1, eventType: "turn.interrupted",
           sourceKind: "runner", sourceInstanceId: runnerId, sourceEventId: `${runnerId}:${runId}:1`, sourceSeq: 1,
           runId, turnId: "stopped-turn", normalizedSessionId: sessionId, emittedAt: new Date().toISOString(), priority: 1,
           payload: { status: "interrupted", error: null, ...(mode === "unproven_terminal" ? { providerTerminalObserved: false } : {}) } };
@@ -700,7 +700,7 @@ describe("residual recovery production matrix", () => {
     expect((await getLease(lease.id)).leasePolicy).toBe("retain_on_failure");
     expect((await getLease(lease.id)).metadata?.workspaceRestoreRecovery).toBeTruthy();
     expect((await getLease(lease.id)).providerLeaseId).toBe(lease.providerLeaseId);
-    expect((await getLease(lease.id)).metadata).toMatchObject({ workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", runId: run.id } });
+    expect((await getLease(lease.id)).metadata).toMatchObject({ workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", runId: run.id } });
     await quiet();
   });
   it("settles stranded agent status at its saved grace", async () => {
@@ -864,7 +864,7 @@ describe("residual recovery production matrix", () => {
       heartbeatRunId: run.id, issueId: f.issue.id, status: "active", provider: "daytona",
       providerLeaseId: `sandbox-${run.id}`, metadata: { driver: "sandbox", remoteCwd: "/workspace" }, updatedAt: old }).returning();
     await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeWorkspaceSync: {
-      schema: "paperclip.native-workspace-sync/v3", state: "prepared", descriptorSha256: "a".repeat(64),
+      schema: "pilibala.native-workspace-sync/v3", state: "prepared", descriptorSha256: "a".repeat(64),
       baselineSha256: "b".repeat(64), finalHostSha256: null, workspaceId: randomUUID(), leaseId: lease.id,
       providerLeaseId: lease.providerLeaseId, remoteCwd: "/workspace", resourceDisposition: "destroy",
     } } }).where(eq(heartbeatRuns.id, run.id));
@@ -961,7 +961,7 @@ describe("residual recovery production matrix", () => {
   });
   it("parks suppressed worktree recovery without probes and reconstructs it on the committed feature change", async () => {
     const f = await fixture(), old = new Date(Date.now() - 6 * 60_000);
-    const runtimeEnv = { PAPERCLIP_IN_WORKTREE: "true", PAPERCLIP_INSTANCE_ID: "live-recovery-worktree" };
+    const runtimeEnv = { PILIBALA_IN_WORKTREE: "true", PILIBALA_INSTANCE_ID: "live-recovery-worktree" };
     const settings = instanceSettingsService(db, { runtimeEnv });
     await settings.updateExperimental({ enableWorktreeRunExecution: false });
     heartbeat = heartbeatService(db, { runtimeEnv });

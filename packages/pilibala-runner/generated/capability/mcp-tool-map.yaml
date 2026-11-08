@@ -1,0 +1,383 @@
+{
+  "schemaVersion": 1,
+  "rows": [
+    {
+      "id": "mcp:pilibalaMe",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaMe",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L290:pilibalame",
+      "primaryDisposition": "control_plane_owned",
+      "semanticOperation": "injected_actor_context",
+      "expectedMockState": "runtime_decision_record"
+    },
+    {
+      "id": "mcp:pilibalaInboxLite",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaInboxLite",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L296:pilibalainboxlite",
+      "primaryDisposition": "control_plane_owned",
+      "semanticOperation": "runner_work_selection",
+      "expectedMockState": "runtime_decision_record"
+    },
+    {
+      "id": "mcp:pilibalaListAgents",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaListAgents",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L302:pilibalalistagents",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "list_agents",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaListSkills",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaListSkills",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L308:pilibalalistskills",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "list_company_skills",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaGetAgent",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaGetAgent",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L314:pilibalagetagent",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "get_agent",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaListIssues",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaListIssues",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L323:pilibalalistissues",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "search_tasks",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaGetIssue",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaGetIssue",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L338:pilibalagetissue",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "get_task_context",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaGetHeartbeatContext",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaGetHeartbeatContext",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L344:pilibalagetheartbeatcontext",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "get_task_context",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaListComments",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaListComments",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L353:pilibalalistcomments",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "get_task_history",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaGetComment",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaGetComment",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L366:pilibalagetcomment",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "get_task_history",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaListIssueApprovals",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaListIssueApprovals",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L373:pilibalalistissueapprovals",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "get_task_context",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaListDocuments",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaListDocuments",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L379:pilibalalistdocuments",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "list_documents",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaGetDocument",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaGetDocument",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L385:pilibalagetdocument",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "read_document",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaListDocumentRevisions",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaListDocumentRevisions",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L392:pilibalalistdocumentrevisions",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "list_document_revisions",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaListProjects",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaListProjects",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L402:pilibalalistprojects",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "list_projects",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaGetProject",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaGetProject",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L408:pilibalagetproject",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "get_project",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaGetIssueWorkspaceRuntime",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaGetIssueWorkspaceRuntime",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L417:pilibalagetissueworkspaceruntime",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "get_workspace_runtime",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaControlIssueWorkspaceServices",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaControlIssueWorkspaceServices",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L423:pilibalacontrolissueworkspaceservices",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "control_workspace_service",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaWaitForIssueWorkspaceService",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaWaitForIssueWorkspaceService",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L440:pilibalawaitforissueworkspaceservice",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "wait_for_workspace_service",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaListGoals",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaListGoals",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L466:pilibalalistgoals",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "list_goals",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaGetGoal",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaGetGoal",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L472:pilibalagetgoal",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "get_goal",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaListApprovals",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaListApprovals",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L478:pilibalalistapprovals",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "list_approvals",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaCreateApproval",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaCreateApproval",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L487:pilibalacreateapproval",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "request_approval",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaGetApproval",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaGetApproval",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L496:pilibalagetapproval",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "get_approval",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaGetApprovalIssues",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaGetApprovalIssues",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L502:pilibalagetapprovalissues",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "get_approval_context",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaListApprovalComments",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaListApprovalComments",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L508:pilibalalistapprovalcomments",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "get_approval_context",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaCreateIssue",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaCreateIssue",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L514:pilibalacreateissue",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "create_task",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaUpdateIssue",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaUpdateIssue",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L521:pilibalaupdateissue",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "semantic_task_disposition",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaCheckoutIssue",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaCheckoutIssue",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L528:pilibalacheckoutissue",
+      "primaryDisposition": "control_plane_owned",
+      "semanticOperation": "atomic_checkout",
+      "expectedMockState": "runtime_decision_record"
+    },
+    {
+      "id": "mcp:pilibalaReleaseIssue",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaReleaseIssue",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L540:pilibalareleaseissue",
+      "primaryDisposition": "control_plane_owned",
+      "semanticOperation": "runtime_release",
+      "expectedMockState": "runtime_decision_record"
+    },
+    {
+      "id": "mcp:pilibalaAddComment",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaAddComment",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L546:pilibalaaddcomment",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "report_progress",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaSuggestTasks",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaSuggestTasks",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L553:pilibalasuggesttasks",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "request_human_input",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaAskUserQuestions",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaAskUserQuestions",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L565:pilibalaaskuserquestions",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "request_human_input",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaRequestConfirmation",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaRequestConfirmation",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L577:pilibalarequestconfirmation",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "request_human_input",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaRequestCheckboxConfirmation",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaRequestCheckboxConfirmation",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L589:pilibalarequestcheckboxconfirmation",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "request_human_input",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaUpsertIssueDocument",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaUpsertIssueDocument",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L601:pilibalaupsertissuedocument",
+      "primaryDisposition": "always_agent_tool",
+      "semanticOperation": "write_document",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaRestoreIssueDocumentRevision",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaRestoreIssueDocumentRevision",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L612:pilibalarestoreissuedocumentrevision",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "restore_document_revision",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaLinkIssueApproval",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaLinkIssueApproval",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L627:pilibalalinkissueapproval",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "link_approval",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaUnlinkIssueApproval",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaUnlinkIssueApproval",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L636:pilibalaunlinkissueapproval",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "unlink_approval",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaApprovalDecision",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaApprovalDecision",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L646:pilibalaapprovaldecision",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "decide_approval",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaAddApprovalComment",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaAddApprovalComment",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L668:pilibalaaddapprovalcomment",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "comment_on_approval",
+      "expectedMockState": "operation_result"
+    },
+    {
+      "id": "mcp:pilibalaApiRequest",
+      "kind": "legacy_mcp_tool",
+      "name": "pilibalaApiRequest",
+      "sourceAnchor": "packages/mcp-server/src/tools.ts#L677:pilibalaapirequest",
+      "primaryDisposition": "optional_agent_tool",
+      "semanticOperation": "test_only_api_escape_hatch",
+      "expectedMockState": "operation_result"
+    }
+  ]
+}

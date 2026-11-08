@@ -1,5 +1,5 @@
 import { and, eq, gt, inArray, isNull, ne, not, or, sql } from "drizzle-orm";
-import { heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults, type Db } from "@paperclipai/db";
+import { heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults, type Db } from "@pilibalaai/db";
 import { getNativeReviewAssignment } from "./native-review-participant.js";
 
 export async function currentNativeWorkspaceRecoveryResult(db: Db, input: {

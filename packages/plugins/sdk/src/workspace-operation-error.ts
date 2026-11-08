@@ -29,7 +29,7 @@ export const WORKSPACE_OPERATION_FAILURE_REASONS = [
 ] as const;
 export type PluginWorkspaceOperationFailureReason = typeof WORKSPACE_OPERATION_FAILURE_REASONS[number];
 
-const SCHEMA = "paperclip/workspace-operation-error/v1";
+const SCHEMA = "pilibala/workspace-operation-error/v1";
 
 function ownField(value: unknown, name: string): unknown {
   if (!value || typeof value !== "object") return undefined;

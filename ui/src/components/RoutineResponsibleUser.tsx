@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { RoutineDetail } from "@paperclipai/shared";
+import type { RoutineDetail } from "@pilibalaai/shared";
 import { Check, ChevronDown, UserRound } from "lucide-react";
 import { accessApi } from "@/api/access";
 import { ApiError } from "@/api/client";

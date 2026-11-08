@@ -1,5 +1,5 @@
 import { sql, type SQL } from "drizzle-orm";
-import { approvals, issues } from "@paperclipai/db";
+import { approvals, issues } from "@pilibalaai/db";
 import { executionIssueCondition } from "./issue-visibility.js";
 
 export function firstApprovalIssueId(): SQL<string | null> {

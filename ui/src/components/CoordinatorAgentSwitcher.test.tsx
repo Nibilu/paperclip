@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { Agent, Issue } from "@paperclipai/shared";
+import type { Agent, Issue } from "@pilibalaai/shared";
 import { queryKeys } from "@/lib/queryKeys";
 import { CoordinatorAgentSwitcher } from "./CoordinatorAgentSwitcher";
 

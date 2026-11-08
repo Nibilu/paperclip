@@ -2,11 +2,11 @@
 
 ## 目标
 
-为所有使用共享 ACP engine 的 agent 增加 host-side runtime identity broker，使 ACP 进程可以跨 Paperclip run 复用，同时保证每个 API 请求都使用正确的 run-scoped 身份。
+为所有使用共享 ACP engine 的 agent 增加 host-side runtime identity broker，使 ACP 进程可以跨 Pilibala run 复用，同时保证每个 API 请求都使用正确的 run-scoped 身份。
 
 ## 当前适用范围基线
 
-当前仓库静态入口检查显示，共享 `@paperclipai/adapter-utils/acpx-engine/execute` / `createAcpxEngineExecutor` 的 ACP adapter 为：
+当前仓库静态入口检查显示，共享 `@pilibalaai/adapter-utils/acpx-engine/execute` / `createAcpxEngineExecutor` 的 ACP adapter 为：
 
 - `claude-local`
 - `codex-local`
@@ -24,13 +24,13 @@
 - 为每个 ACP session 创建隔离 broker/channel。
 - 支持 bind、refresh、revoke、close。
 - broker 状态只保存在 host 内存。
-- 不持久化真实 Paperclip JWT。
+- 不持久化真实 Pilibala JWT。
 
 ### 需求 2：动态 API 转发
 
 - ACP 使用稳定的 broker URL/capability。
-- broker 根据当前 channel 注入 `Authorization` 和 `X-Paperclip-Run-Id`。
-- 只允许 Paperclip API 的受控路径。
+- broker 根据当前 channel 注入 `Authorization` 和 `X-Pilibala-Run-Id`。
+- 只允许 Pilibala API 的受控路径。
 - 禁止任意 URL 代理和跨 company 转发。
 
 ### 需求 3：串行 run 约束
@@ -45,7 +45,7 @@
 
 ### 需求 4：sandbox/remote bridge
 
-- 复用现有 Paperclip callback/process-session bridge。
+- 复用现有 Pilibala callback/process-session bridge。
 - 不直接暴露 host broker 端口到远程网络。
 - bridge 断开时 broker channel 自动撤销。
 - remote/sandbox 请求与 host 请求使用同一身份绑定规则。
@@ -57,12 +57,12 @@
 ```text
 JWT company_id == run.company_id
 JWT agent_id == run.agent_id
-JWT run_id == X-Paperclip-Run-Id
+JWT run_id == X-Pilibala-Run-Id
 run 未取消、未过期、未撤销
 issue/task 在当前 scope 内
 ```
 
-broker 不得替代 Paperclip 服务端授权。
+broker 不得替代 Pilibala 服务端授权。
 
 ### 需求 6：并发、取消和超时
 
@@ -72,7 +72,7 @@ broker 不得替代 Paperclip 服务端授权。
 - run 被取消时撤销 channel；
 - provider timeout 后关闭 channel；
 - broker 请求排空；
-- late request 不得写入 Paperclip；
+- late request 不得写入 Pilibala；
 - broker 重启后全部旧 capability 失效。
 
 ### 需求 7：安全与诊断
@@ -104,7 +104,7 @@ Lucy → Hermi 的 handoff 必须经过 task context，而不是把 Lucy 的隐�
 5. broker 重启后旧 capability 全部失效。
 6. token 不出现在 prompt、持久化 session、日志和 artifact 中。
 7. Lucy/Codex local、Hermi 可用的 ACP/local 路径、Claude/Cursor/Gemini/Kimi 等共享 ACP engine 路径通过同一套测试。
-8. sandbox 和 remote execution 不能绕过 broker 访问真实 Paperclip API。
+8. sandbox 和 remote execution 不能绕过 broker 访问真实 Pilibala API。
 9. system prompt、developer prompt、工具 schema 和 ACP conversation 不因身份刷新被无谓修改。
 10. 同一 task 从 Lucy 切换到 Hermi 时，task context、workspace、artifacts 和 handoff summary 可恢复；不要求 provider-specific ACP session 直接复用。
 

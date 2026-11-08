@@ -17,7 +17,7 @@ const CONNECTORS_ANNOUNCEMENT = {
     "Connect Gmail, GitHub, Notion, and more. Choose which agents get access, which accounts they use, and which actions they can take.",
   image: {
     path: "assets/59dd6169b4f7a0e3af527801853abac554e80c59519f556c9d234385682a65ee.png",
-    alt: "Paperclip agents with their own sets of connected apps.",
+    alt: "Pilibala agents with their own sets of connected apps.",
   },
   primaryAction: { kind: "route", label: "Explore connectors", path: "/apps" },
 };
@@ -80,7 +80,7 @@ async function firstTask(request: APIRequestContext, name: string) {
   );
   const issue = await json(
     await request.post(`/api/companies/${company.id}/issues`, {
-      data: { title: "Paperclip onboarding", status: "backlog", assigneeAgentId: lead.id },
+      data: { title: "Pilibala onboarding", status: "backlog", assigneeAgentId: lead.id },
     }),
   );
   return { company, issue };
@@ -97,7 +97,7 @@ test.describe("Announcement placement on a new company's first task", () => {
 
       const composer = page.getByTestId("task-chat-composer-dock");
       await expect(composer).toBeVisible({ timeout: 30_000 });
-      const announcement = page.getByRole("complementary", { name: "Paperclip announcements" });
+      const announcement = page.getByRole("complementary", { name: "Pilibala announcements" });
       await expect(announcement.getByRole("heading", { name: CONNECTORS_ANNOUNCEMENT.title })).toBeVisible({
         timeout: 15_000,
       });
@@ -138,14 +138,14 @@ test.describe("Announcement placement on a new company's first task", () => {
     // The narrowest supported sidebar width on a short laptop window.
     // Classic and Coordinator workspaces persist the width under different keys.
     await page.addInitScript(() => {
-      localStorage.setItem("paperclip.sidebar.width", "208");
-      localStorage.setItem("paperclip.coordinator.sidebar-width", "208");
+      localStorage.setItem("pilibala.sidebar.width", "208");
+      localStorage.setItem("pilibala.coordinator.sidebar-width", "208");
     });
     const viewport = { width: 1280, height: 720 };
     await page.setViewportSize(viewport);
     await page.goto(`/${company.issuePrefix}/issues/${issue.identifier}`);
 
-    const announcement = page.getByRole("complementary", { name: "Paperclip announcements" });
+    const announcement = page.getByRole("complementary", { name: "Pilibala announcements" });
     await expect(announcement.getByRole("heading", { name: long.title })).toBeVisible({ timeout: 30_000 });
     await page.waitForTimeout(500);
 

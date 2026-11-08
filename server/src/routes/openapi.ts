@@ -1,14 +1,14 @@
-import { MUSE_ASSET_VERSION, museStopBoundarySchema, museDetectorCleanupAttestationSchema, createGrokInvitationSchema, configureGrokRoutineSchema, verifyGrokRoutineSchema, recoverGrokRoutineSchema, pairGrokBindingSchema, stopGrokWorkSchema, retryGrokDeliverySchema, updateFastResponseSchema } from "@paperclipai/shared";
-import { slackTestMessageSchema, slackTestMessageResultSchema, slackManagerAuthorizationSchema, slackSetupOptionsSchema, slackManagedProvisionSchema, slackManagedResultSchema, slackRegistrationSchema, slackSetupActionSchema, slackInstallAuthorizationSchema, slackRegistrationStateSchema, slackAppConfigurationSchema, slackAvatarStateSchema, slackAccountStateSchema } from "@paperclipai/shared";
+import { MUSE_ASSET_VERSION, museStopBoundarySchema, museDetectorCleanupAttestationSchema, createGrokInvitationSchema, configureGrokRoutineSchema, verifyGrokRoutineSchema, recoverGrokRoutineSchema, pairGrokBindingSchema, stopGrokWorkSchema, retryGrokDeliverySchema, updateFastResponseSchema } from "@pilibalaai/shared";
+import { slackTestMessageSchema, slackTestMessageResultSchema, slackManagerAuthorizationSchema, slackSetupOptionsSchema, slackManagedProvisionSchema, slackManagedResultSchema, slackRegistrationSchema, slackSetupActionSchema, slackInstallAuthorizationSchema, slackRegistrationStateSchema, slackAppConfigurationSchema, slackAvatarStateSchema, slackAccountStateSchema } from "@pilibalaai/shared";
 import { experimentalApiMetadata } from "./experimental-api-metadata.js";
-import { ATTENTION_SOURCE_KINDS } from "@paperclipai/shared";
-import { agentCaseHandoffSchema, caseWorkflowDocumentTextSchema, doneCaseHandoffSchema, createWorkflowSchema, updateWorkflowSchema, listWorkflowsSchema, readWorkflowQuerySchema } from "@paperclipai/shared";
+import { ATTENTION_SOURCE_KINDS } from "@pilibalaai/shared";
+import { agentCaseHandoffSchema, caseWorkflowDocumentTextSchema, doneCaseHandoffSchema, createWorkflowSchema, updateWorkflowSchema, listWorkflowsSchema, readWorkflowQuerySchema } from "@pilibalaai/shared";
 import {
   experimentalApiPaths,
   experimentalApiQueries,
 } from "./experimental-api-paths.js";
 import { Router } from "express";
-import { subscriptionPriceSchema, mergeSubscriptionsSchema } from "@paperclipai/shared";
+import { subscriptionPriceSchema, mergeSubscriptionsSchema } from "@pilibalaai/shared";
 import { z } from "zod";
 import {
   gitHubRepositoryPageQuerySchema,
@@ -345,13 +345,13 @@ import {
   resolveChatPublicationSchema,
   replaceChatEndpointResourcesSchema,
   updateChatEndpointSchema,
-} from "@paperclipai/shared";
-import { aggregatorAppsSyncSchema, aggregatorAppsRefreshSchema, arcadeDiscoverySetupSchema } from "@paperclipai/shared/aggregator-apps";
-import { composioAppsSyncSchema, composioAppsRefreshSchema, composioAppSetupSchema, composioAppAccountSchema } from "@paperclipai/shared/composio-app-setup";
+} from "@pilibalaai/shared";
+import { aggregatorAppsSyncSchema, aggregatorAppsRefreshSchema, arcadeDiscoverySetupSchema } from "@pilibalaai/shared/aggregator-apps";
+import { composioAppsSyncSchema, composioAppsRefreshSchema, composioAppSetupSchema, composioAppAccountSchema } from "@pilibalaai/shared/composio-app-setup";
 import {
   COMPANY_IMPORT_TRANSFERS_API_PATH,
   companyImportTransferDeclarationSchema,
-} from "@paperclipai/shared/company-import-transfer";
+} from "@pilibalaai/shared/company-import-transfer";
 
 type JsonSchema = Record<string, unknown>;
 type OpenApiResponse = Record<string, unknown>;
@@ -953,9 +953,9 @@ const chatPrincipalLinkResponseSchema = z
     principalId: z.string().uuid(),
     externalLabel: z.string(),
     externalDetail: z.string(),
-    paperclipUserId: z.string().nullable(),
-    paperclipUserLabel: z.string().nullable(),
-    paperclipUserImage: z.string().nullable(),
+    pilibalaUserId: z.string().nullable(),
+    pilibalaUserLabel: z.string().nullable(),
+    pilibalaUserImage: z.string().nullable(),
     status: chatIdentityLinkStatusSchema,
   })
   .strict();
@@ -1061,7 +1061,7 @@ const chatActivityResponseSchema = z
 
 const safeExternalChatCardResponseSchema = z
   .object({
-    schema: z.literal("paperclip.chat.card.v1"),
+    schema: z.literal("pilibala.chat.card.v1"),
     kind: z.enum(["status", "question", "confirmation"]),
     title: z.string(),
     body: z.string().optional(),
@@ -1301,8 +1301,8 @@ function paramsSchemaFromPath(
 }
 
 function registerCurrentRoute(input: {
-  "x-paperclip-transport"?: "rest" | "protocol";
-  "x-paperclip-connection-management"?: string;
+  "x-pilibala-transport"?: "rest" | "protocol";
+  "x-pilibala-connection-management"?: string;
   method: string;
   path: string;
   tags: string[];
@@ -1324,7 +1324,7 @@ function registerCurrentRoute(input: {
   registry.registerPath({
     method: input.method,
     path: input.path,
-    ...(input["x-paperclip-transport"] ? { "x-paperclip-transport": input["x-paperclip-transport"], "x-paperclip-connection-management": input["x-paperclip-connection-management"] } : {}),
+    ...(input["x-pilibala-transport"] ? { "x-pilibala-transport": input["x-pilibala-transport"], "x-pilibala-connection-management": input["x-pilibala-connection-management"] } : {}),
     tags: input.tags,
     summary: input.summary,
     ...(input.description ? { description: input.description } : {}),
@@ -1717,9 +1717,9 @@ function applyDocumentFixups(document: any): any {
     [BOARD_SESSION_AUTH_SCHEME]: {
       type: "apiKey",
       in: "cookie",
-      name: "paperclip_session",
+      name: "pilibala_session",
       description:
-        "Board session cookie in authenticated mode. Paperclip uses Better Auth; cookie transport may vary by deployment.",
+        "Board session cookie in authenticated mode. Pilibala uses Better Auth; cookie transport may vary by deployment.",
     },
     [BOARD_API_KEY_AUTH_SCHEME]: {
       type: "http",
@@ -1733,7 +1733,7 @@ function applyDocumentFixups(document: any): any {
       scheme: "bearer",
       bearerFormat: "Agent API Key or Agent JWT",
       description:
-        "Agent API key or Paperclip-issued local agent JWT presented in the Authorization bearer header.",
+        "Agent API key or Pilibala-issued local agent JWT presented in the Authorization bearer header.",
     },
     [RUNTIME_TOOLS_BEARER_AUTH_SCHEME]: {
       type: "http",
@@ -1746,7 +1746,7 @@ function applyDocumentFixups(document: any): any {
       type: "http",
       scheme: "bearer",
       bearerFormat: "Task-bound agent JWT",
-      description: "Paperclip-issued JWT bound to an active task run. Agent API keys, board sessions, and connection-only tokens are rejected.",
+      description: "Pilibala-issued JWT bound to an active task run. Agent API keys, board sessions, and connection-only tokens are rejected.",
     },
   };
   document.security = AUTHENTICATED_SECURITY;
@@ -1755,7 +1755,7 @@ function applyDocumentFixups(document: any): any {
     for (const [method, operation] of Object.entries(
       pathItem as Record<string, any>,
     )) {
-      const authLevel = operation["x-paperclip-connection-management"] ? "authenticated" : resolveOperationAuthLevel(method, path);
+      const authLevel = operation["x-pilibala-connection-management"] ? "authenticated" : resolveOperationAuthLevel(method, path);
       if (authLevel === "public") {
         operation.security = [];
       } else if (authLevel === "agent_run") {
@@ -1770,7 +1770,7 @@ function applyDocumentFixups(document: any): any {
         operation.security = BOARD_SECURITY;
       }
 
-      operation["x-paperclip-authorization"] =
+      operation["x-pilibala-authorization"] =
         authLevel === "instance_admin"
           ? { actor: "board", instanceAdmin: true }
           : authLevel === "board"
@@ -1787,7 +1787,7 @@ function applyDocumentFixups(document: any): any {
 
       if (isVoiceSessionOperation(path)) {
         operation.security = [{[BOARD_SESSION_AUTH_SCHEME]: []}];
-        operation["x-paperclip-authorization"] = {actor: "board", sessionBound: true};
+        operation["x-pilibala-authorization"] = {actor: "board", sessionBound: true};
       }
 
       const key = operationKey(method, path);
@@ -1918,7 +1918,7 @@ registry.registerPath({
         cloud: z
           .object({
             managed: z.literal(true),
-            managedBy: z.literal("paperclip-cloud"),
+            managedBy: z.literal("pilibala-cloud"),
             stackSlug: z.string().nullable(),
             stackDisplayName: z.string().optional(),
             cloudBaseUrl: z.string().nullable(),
@@ -2253,7 +2253,7 @@ for (const [method,path,summary,body,response] of [
 // Explicit task-bound email. Board setup and agent actions share the same vaulted
 // connection, while automatic chat publication never applies to these endpoints.
 registry.registerPath({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/email/connections/{connectionId}/check-address",
   tags: ["Email"],
@@ -2286,7 +2286,7 @@ for (const [method, path, summary, body, success] of [
 ] as const) {
   registry.registerPath({ method, path, tags: ["Email"], summary,
     ...(!path.includes("/send") && !path.includes("/tasks/") && !path.includes("/deliveries/") && !(method === "get" && path.endsWith("/inboxes"))
-      ? { "x-paperclip-transport": "rest", "x-paperclip-connection-management": method === "get" ? "connections:read" : "connections:configure" } : {}),
+      ? { "x-pilibala-transport": "rest", "x-pilibala-connection-management": method === "get" ? "connections:read" : "connections:configure" } : {}),
     description: "AgentMail email connection. Available without the experimental chat setting. Internal comments never send email. Agent sends require assigned inbox and task ownership, active run authority, and configured action policies. Preserve the same idempotencyKey and payload across retries. New conversations create an email child task; replies require conversationId and replyToMessageId. Reply-all is deliberate and never includes Bcc.",
     request: { params: z.object(Object.fromEntries([...path.matchAll(/\{([^}]+)\}/g)].map(match => [match[1], z.string().uuid()]))), ...(body ? { body: jsonBody(body) } : {}) },
     responses: { [success]: r.ok(), 400: r.badRequest, 401: r.unauthorized, 403: r.forbidden, 404: r.notFound, 409: r.conflict },
@@ -2318,8 +2318,8 @@ registry.registerPath({ method: "get", path: "/api/slack/search/callback", tags:
 // ─── Chat Channels ─────────────────────────────────────────────────────────
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/chat-endpoints",
   tags: ["chat-channels"],
@@ -2335,14 +2335,14 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/chat-endpoints",
   tags: ["chat-channels"],
   summary: "Create a chat endpoint",
   description:
-    "Creates one provider bot endpoint bound permanently to one Paperclip agent. Provider setup and verification happen in later calls.",
+    "Creates one provider bot endpoint bound permanently to one Pilibala agent. Provider setup and verification happen in later calls.",
   request: {
     params: z.object({ companyId: z.string().uuid() }),
     body: jsonBody(createChatEndpointSchema),
@@ -2358,8 +2358,8 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/chat-endpoints/{endpointId}",
   tags: ["chat-channels"],
@@ -2437,8 +2437,8 @@ const githubBotOperations: Array<{
     response: chatEndpointResponseSchema,
   },
   {
-    method: "get", suffix: "reviews", summary: "List review evidence attached to Paperclip tasks",
-    description: "Returns up to 100 newest review records for this endpoint. Each review references ordinary Paperclip tasks and runs; it is not an independent scheduler.",
+    method: "get", suffix: "reviews", summary: "List review evidence attached to Pilibala tasks",
+    description: "Returns up to 100 newest review records for this endpoint. Each review references ordinary Pilibala tasks and runs; it is not an independent scheduler.",
     response: z.array(githubReviewResponseSchema),
   },
   {
@@ -2476,7 +2476,7 @@ const githubBotOperations: Array<{
   },
   {
     method: "post", suffix: "repositories/refresh", summary: "Refresh repositories available to the bot installation",
-    description: "Fetches current installation access from GitHub and reconciles resources while preserving Paperclip repository enablement. Return parameters alone never prove installation access.",
+    description: "Fetches current installation access from GitHub and reconciles resources while preserving Pilibala repository enablement. Return parameters alone never prove installation access.",
     response: z.array(chatEndpointResourceResponseSchema),
   },
   {
@@ -2500,7 +2500,7 @@ for (const operation of githubBotOperations) {
   registry.registerPath({
     method: operation.method,
     path: `/api/chat-endpoints/{endpointId}/github/${operation.suffix}`,
-    ...(!["identity", "identity/confirm"].includes(operation.suffix) ? { "x-paperclip-transport": "rest", "x-paperclip-connection-management": operation.method === "get" ? "connections:read" : "connections:configure" } : {}),
+    ...(!["identity", "identity/confirm"].includes(operation.suffix) ? { "x-pilibala-transport": "rest", "x-pilibala-connection-management": operation.method === "get" ? "connections:read" : "connections:configure" } : {}),
     tags: ["chat-channels"], summary: operation.summary, description: operation.description,
     request: {
       params: z.object({ endpointId: z.string().uuid(), ...(operation.suffix.includes("{reviewId}") ? { reviewId: z.string().uuid() } : {}) }),
@@ -2517,8 +2517,8 @@ for (const operation of githubBotOperations) {
 }
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "patch",
   path: "/api/chat-endpoints/{endpointId}",
   tags: ["chat-channels"],
@@ -2539,14 +2539,14 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/chat-endpoints/{endpointId}/setup",
   tags: ["chat-channels"],
   summary: "Configure or change chat endpoint lifecycle state",
   description:
-    "Runs a setup or lifecycle action. `configure` and `reconnect` accept provider credentials (Slack: `botToken`, `signingSecret`; GitHub: `appId`, `privateKey` after Paperclip generates the webhook secret; Discord: `applicationId`, `guildId`, `botToken`; Microsoft Teams: `clientId`, `tenantId`, `clientSecret`; Telegram: `botToken`; iMessage Photon: `projectSecret`, with nonsecret `photon.projectId` and `photon.lineId` configuration). Agent-supplied signing secrets, webhook secrets, private keys, client secrets, and project secrets return a saved human credential-entry handoff without changing credentials. Authorized write-only bot tokens and API keys remain supported. Credentials are stored as Paperclip secret references and are never returned. Other actions do not require credentials.",
+    "Runs a setup or lifecycle action. `configure` and `reconnect` accept provider credentials (Slack: `botToken`, `signingSecret`; GitHub: `appId`, `privateKey` after Pilibala generates the webhook secret; Discord: `applicationId`, `guildId`, `botToken`; Microsoft Teams: `clientId`, `tenantId`, `clientSecret`; Telegram: `botToken`; iMessage Photon: `projectSecret`, with nonsecret `photon.projectId` and `photon.lineId` configuration). Agent-supplied signing secrets, webhook secrets, private keys, client secrets, and project secrets return a saved human credential-entry handoff without changing credentials. Authorized write-only bot tokens and API keys remain supported. Credentials are stored as Pilibala secret references and are never returned. Other actions do not require credentials.",
   request: {
     params: z.object({ endpointId: z.string().uuid() }),
     body: jsonBody(configureChatEndpointSchema),
@@ -2566,23 +2566,23 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get", path: "/api/companies/{companyId}/chat-slack/setup-options", tags: ["chat-channels"],
   summary: "Discover Slack setup methods and the current user's authorized workspaces",
   description: "Managed setup is advertised only for approved Cloud deployments with the broker profile enabled. Self-hosted discovery makes no hosted-service requests. Grants are personal and company scoped.",
   request: { params: z.object({ companyId: z.string().uuid() }) }, responses: { 200: r.ok(slackSetupOptionsSchema), 401: r.unauthorized, 403: r.forbidden },
 });
 for (const action of ["authorize", "provision"] as const) registry.registerPath({
-  method: "post", path: `/api/chat-endpoints/{endpointId}/slack/managed/${action}`, "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:configure", tags: ["chat-channels"],
+  method: "post", path: `/api/chat-endpoints/{endpointId}/slack/managed/${action}`, "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:configure", tags: ["chat-channels"],
   summary: action === "authorize" ? "Authorize a personal Slack manager workspace grant" : "Provision the saved managed Slack app",
   description: "Requires the selected managed method, company membership, connection-management permission and Cloud availability. Authorization state is actor/session bound and single use. Provisioning accepts a personal grant ID and idempotent request ID; no provider credentials or arbitrary manifests are accepted. Explicit reconnect uses reconnect=true with a fresh request ID to reinstall the saved app. Repeating that reconnect request returns its saved result without reinstalling a healthy connection.",
   request: { params: z.object({ endpointId: z.string().uuid() }), body: jsonBody(action === "authorize" ? slackSetupActionSchema : slackManagedProvisionSchema) },
   responses: { 200: r.ok(action === "authorize" ? slackManagerAuthorizationSchema : slackManagedResultSchema), 400: r.badRequest, 401: r.unauthorized, 403: r.forbidden, 404: r.notFound, 409: r.conflict, 422: r.unprocessable },
 });
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "delete", path: "/api/companies/{companyId}/chat-slack/manager-grants/{grantId}", tags: ["chat-channels"],
   summary: "Revoke the current user's workspace grant for future managed provisioning",
   description: "Removes local manager credentials and invalidates pending manager authorization. Installed bots remain connected; this does not uninstall Slack apps.",
@@ -2597,8 +2597,8 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:test",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:test",
   method: "post", path: "/api/chat-endpoints/{endpointId}/slack/test-message", tags: ["chat-channels"],
   summary: "Connect the current user's Slack identity and send a test DM",
   description: "Requires a board connection manager and active company membership. Reuses only the actor's verified identity in the same workspace; otherwise returns paginated account choices and sends a private connection challenge. The account holder must confirm it while signed in before linking or test delivery. Revoked and conflicting links cannot be overwritten. The request ID prevents duplicate or ambiguous sends from being replayed.",
@@ -2608,7 +2608,7 @@ registry.registerPath({
 
 for (const action of ["registration", "install", "resume"] as const) {
   registry.registerPath({
-    method: "post", path: `/api/chat-endpoints/{endpointId}/slack/${action}`, "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:configure", tags: ["chat-channels"],
+    method: "post", path: `/api/chat-endpoints/{endpointId}/slack/${action}`, "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:configure", tags: ["chat-channels"],
     summary: { registration: "Create a Slack app for a saved draft", install: "Authorize installation of the saved Slack app", resume: "Connect already-vaulted Slack installation credentials" }[action],
     description: "Requires a board session, company membership, connection-management permission, and the chat connector rollout gate. Secrets are never returned. Creation request IDs are idempotent; uncertain creation requires an explicit checked-no-app confirmation before a new attempt. OAuth installation is bound to the initiating actor/session and expires in ten minutes.",
     request: { params: z.object({ endpointId: z.string().uuid() }), body: jsonBody(action === "registration" ? slackRegistrationSchema : slackSetupActionSchema) },
@@ -2618,14 +2618,14 @@ for (const action of ["registration", "install", "resume"] as const) {
 registry.registerPath({
   method: "get", path: "/api/chat-slack/oauth/callback", tags: ["chat-channels"],
   summary: "Complete Slack bot installation and return to the saved wizard",
-  description: "Authenticated, actor/session-bound OAuth callback. State is claimed once before exchanging the code. Installation links the Slack installer to the initiating Paperclip account; reauthorization preserves an established account link. Cross-site browser navigation may receive a same-origin continuation before exchange.",
+  description: "Authenticated, actor/session-bound OAuth callback. State is claimed once before exchanging the code. Installation links the Slack installer to the initiating Pilibala account; reauthorization preserves an established account link. Cross-site browser navigation may receive a same-origin continuation before exchange.",
   request: { query: z.object({ state: z.string(), code: z.string().optional(), error: z.string().optional() }) },
   responses: { 200: { description: "Same-origin continuation page" }, 303: { description: "Return to saved Slack setup" }, 400: r.badRequest, 401: r.unauthorized, 403: r.forbidden, 409: r.conflict },
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/chat-endpoints/{endpointId}/setup-secret",
   tags: ["chat-channels"],
@@ -2645,8 +2645,8 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/chat-endpoints/{endpointId}/photon/inspect",
   tags: ["chat-channels"],
@@ -2682,8 +2682,8 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post", path: "/api/chat-endpoints/{endpointId}/finish", tags: ["chat-channels"],
   summary: "Finish Slack or GitHub onboarding with an optional conversation test",
   description: "Requires verified provider delivery and an authorized identity linked to the current user. GitHub also checks the assigned agent’s current bot capabilities. Records that a full conversation test was not required.",
@@ -2691,8 +2691,8 @@ registry.registerPath({
   responses: { 200: r.ok(chatEndpointResponseSchema), 401: r.unauthorized, 403: r.forbidden, 404: r.notFound, 409: r.conflict },
 });
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get", path: "/api/chat-endpoints/{endpointId}/test-status", tags: ["chat-channels"],
   summary: "Check for the current user's first setup message",
   request: { params: z.object({ endpointId: z.string().uuid() }) },
@@ -2707,14 +2707,14 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/chat-endpoints/{endpointId}/test",
   tags: ["chat-channels"],
   summary: "Complete a chat endpoint setup test",
   description:
-    "Activates a verifying endpoint only after Paperclip has received a real provider event since the server-issued setup test boundary. iMessage Photon additionally requires a fresh linked sender's task and a successful outbound agent publication.",
+    "Activates a verifying endpoint only after Pilibala has received a real provider event since the server-issued setup test boundary. iMessage Photon additionally requires a fresh linked sender's task and a successful outbound agent publication.",
   request: { params: z.object({ endpointId: z.string().uuid() }) },
   responses: {
     200: r.ok(chatEndpointResponseSchema),
@@ -2726,8 +2726,8 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/chat-endpoints/{endpointId}/resources",
   tags: ["chat-channels"],
@@ -2744,8 +2744,8 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "put",
   path: "/api/chat-endpoints/{endpointId}/resources",
   tags: ["chat-channels"],
@@ -2768,14 +2768,14 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/chat-endpoints/{endpointId}/principals",
   tags: ["chat-channels"],
   summary: "List external identities seen by a chat endpoint",
   description:
-    "Lists provider identities and their explicit Paperclip identity-link status for this endpoint's provider account.",
+    "Lists provider identities and their explicit Pilibala identity-link status for this endpoint's provider account.",
   request: { params: z.object({ endpointId: z.string().uuid() }) },
   responses: {
     200: r.ok(z.array(chatPrincipalLinkResponseSchema)),
@@ -2786,14 +2786,14 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/chat-endpoints/{endpointId}/principals/{principalId}/link-intent",
   tags: ["chat-channels"],
   summary: "Create an external identity-link intent",
   description:
-    "Creates a short-lived confirmation URL for a human external identity belonging to this endpoint. The signed-in Paperclip user must confirm the link separately.",
+    "Creates a short-lived confirmation URL for a human external identity belonging to this endpoint. The signed-in Pilibala user must confirm the link separately.",
   request: {
     params: z.object({
       endpointId: z.string().uuid(),
@@ -2813,8 +2813,8 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "delete",
   path: "/api/chat-endpoints/{endpointId}/principals/{principalId}/link",
   tags: ["chat-channels"],
@@ -2860,7 +2860,7 @@ registry.registerPath({
   tags: ["chat-channels"],
   summary: "Confirm an external identity link",
   description:
-    "Links the token's external identity to the currently signed-in Paperclip user after rechecking active company membership and canonical-link conflicts.",
+    "Links the token's external identity to the currently signed-in Pilibala user after rechecking active company membership and canonical-link conflicts.",
   request: { body: jsonBody(confirmChatIdentityLinkSchema) },
   responses: {
     200: r.ok(chatIdentityLinkConfirmationResponseSchema),
@@ -2873,14 +2873,14 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/chat-endpoints/{endpointId}/conversations",
   tags: ["chat-channels"],
   summary: "List external conversations and bound tasks",
   description:
-    "Lists each durable provider conversation-to-Paperclip-task binding for the endpoint, including provider and task links and the latest publication state.",
+    "Lists each durable provider conversation-to-Pilibala-task binding for the endpoint, including provider and task links and the latest publication state.",
   request: { params: z.object({ endpointId: z.string().uuid() }) },
   responses: {
     200: r.ok(z.array(chatConversationResponseSchema)),
@@ -2891,8 +2891,8 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:audit",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:audit",
   method: "get",
   path: "/api/chat-endpoints/{endpointId}/activity",
   tags: ["chat-channels"],
@@ -2984,7 +2984,7 @@ registry.registerPath({
   tags: ["chat-channels"],
   summary: "Resolve an unconfirmed provider action",
   description:
-    "After checking the provider, an operator may mark an ambiguous durable provider reply delivered, retry it while accepting duplicate risk, or cancel it. Slack slash-command task starts support explicit retry or cancel only. Paperclip never replays an ambiguous provider action automatically, and every resolution is audited.",
+    "After checking the provider, an operator may mark an ambiguous durable provider reply delivered, retry it while accepting duplicate risk, or cancel it. Slack slash-command task starts support explicit retry or cancel only. Pilibala never replays an ambiguous provider action automatically, and every resolution is audited.",
   request: {
     params: z.object({
       endpointId: z.string().uuid(),
@@ -3007,9 +3007,9 @@ registry.registerPath({
   method: "post",
   path: "/api/chat-endpoints/{endpointId}/conversations/{conversationId}/publications",
   tags: ["chat-channels"],
-  summary: "Publish a Paperclip task comment to an external conversation",
+  summary: "Publish a Pilibala task comment to an external conversation",
   description:
-    "Explicitly projects an eligible comment from the bound Paperclip task into the provider conversation. The endpoint, conversation, and comment must belong to the same binding. A Board send with an already-bound attachment returns 409 with code chat_board_send_attachments_already_bound and request-scoped details (endpointId, conversationId, idempotencyKey, attachmentIds). This durable rejection queues no publication and is replayed for the same key even if the file later becomes unbound. Correcting it requires an explicit new send identity. Other errors do not establish non-delivery.",
+    "Explicitly projects an eligible comment from the bound Pilibala task into the provider conversation. The endpoint, conversation, and comment must belong to the same binding. A Board send with an already-bound attachment returns 409 with code chat_board_send_attachments_already_bound and request-scoped details (endpointId, conversationId, idempotencyKey, attachmentIds). This durable rejection queues no publication and is replayed for the same key even if the file later becomes unbound. Correcting it requires an explicit new send identity. Other errors do not establish non-delivery.",
   request: {
     params: z.object({
       endpointId: z.string().uuid(),
@@ -3029,7 +3029,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/issues/{issueId}/chat-binding",
   tags: ["chat-channels", "issues"],
@@ -3047,8 +3047,8 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:test",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:test",
   method: "get",
   path: "/api/chat-endpoints/{endpointId}/conversations/{conversationId}/publications/{publicationId}/status",
   tags: ["chat-channels"],
@@ -3170,7 +3170,7 @@ registry.registerPath({
   path: "/api/agent-avatars/{version}/{palette}/{file}",
   tags: ["agents"],
   summary: "Render or retrieve a public preset agent portrait",
-  description: "On-demand PNG artwork; no agent or company lookup. Logical size determines face detail independently of density. Background defaults to transparent; paperclip-dark supplies the opaque Paperclip dark-mode background for Slack exports. Successful URLs are immutable for one year and return a content-derived ETag. Cache entries regenerate after deletion.",
+  description: "On-demand PNG artwork; no agent or company lookup. Logical size determines face detail independently of density. Background defaults to transparent; pilibala-dark supplies the opaque Pilibala dark-mode background for Slack exports. Successful URLs are immutable for one year and return a content-derived ETag. Cache entries regenerate after deletion.",
   request: {
     params: z.object({
       version: z.literal("cap-v1"),
@@ -3180,7 +3180,7 @@ registry.registerPath({
     query: z.object({
       size: z.enum(AGENT_AVATAR_SIZES.map(String)).optional().default("512"),
       scale: z.enum(["1", "2"]).optional().default("1"),
-      background: z.enum(["transparent", "paperclip-dark"]).optional().default("transparent"),
+      background: z.enum(["transparent", "pilibala-dark"]).optional().default("transparent"),
     }).strict(),
   },
   responses: {
@@ -4023,7 +4023,7 @@ registry.registerPath({
   tags: ["agents"],
   summary: "Wake up an agent",
   description:
-    "Board failed-run retries supply failedRunId with reason retry_failed_run. Paperclip derives the exact request and current authorization; a chat retry may return a durable queued/deferred receipt before a run exists. Caller task/comment markers and fresh-session overrides do not authorize replay.",
+    "Board failed-run retries supply failedRunId with reason retry_failed_run. Pilibala derives the exact request and current authorization; a chat retry may return a durable queued/deferred receipt before a run exists. Caller task/comment markers and fresh-session overrides do not authorize replay.",
   request: {
     params: z.object({ id: z.string() }),
     body: jsonBody(wakeAgentSchema),
@@ -4162,7 +4162,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/adapters/{type}/login-sessions",
   tags: ["adapters"],
@@ -4181,7 +4181,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/adapters/{type}/login-sessions/active",
   tags: ["adapters"],
@@ -4198,7 +4198,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/adapters/{type}/login-sessions/{sessionId}",
   tags: ["adapters"],
@@ -4219,7 +4219,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/adapters/{type}/login-sessions/{sessionId}/cancel",
   tags: ["adapters"],
@@ -5345,8 +5345,8 @@ registry.registerPath({
   request: {
     params: z.object({ publicId: z.string() }),
     headers: z.object({
-      "X-Paperclip-Source-Run-Token": z.string().optional().describe("Optional current Paperclip run JWT. It establishes creation provenance only; the trigger still requires its own authentication."),
-      "X-Paperclip-Idempotency-Scope": z.enum(["trigger", "routine"]).optional().describe("Scope of a stable Idempotency-Key. Default: trigger. Timestamped HMAC always uses trigger scope."),
+      "X-Pilibala-Source-Run-Token": z.string().optional().describe("Optional current Pilibala run JWT. It establishes creation provenance only; the trigger still requires its own authentication."),
+      "X-Pilibala-Idempotency-Scope": z.enum(["trigger", "routine"]).optional().describe("Scope of a stable Idempotency-Key. Default: trigger. Timestamped HMAC always uses trigger scope."),
       "Idempotency-Key": z.string().optional().describe("Stable sender event identity, reused on retries."),
     }),
     body: jsonBody(z.record(z.string(), z.unknown())),
@@ -5851,7 +5851,7 @@ registry.registerPath({
   path: "/api/companies/{companyId}/agent-commentary",
   tags: ["agents"],
   summary: "Submit internally attributed agent feedback",
-  description: "Requires an active legacy agent run: a run-bound agent JWT, or an agent API key with X-Paperclip-Run-Id. Attribution is derived from authority; ownership fields are rejected. Equivalent replay returns the existing acknowledgement. Native runs use their bound feedback tools. Failure must not interrupt the primary task or trigger retries.",
+  description: "Requires an active legacy agent run: a run-bound agent JWT, or an agent API key with X-Pilibala-Run-Id. Attribution is derived from authority; ownership fields are rejected. Equivalent replay returns the existing acknowledgement. Native runs use their bound feedback tools. Failure must not interrupt the primary task or trigger retries.",
   request: {
     params: z.object({ companyId: z.string() }),
     body: jsonBody(submitAgentCommentarySchema),
@@ -6188,7 +6188,7 @@ registry.registerPath({
   path: "/api/issues/{id}/context/compact",
   tags: ["issues"],
   summary: "Ask the assignee agent to compact its context window",
-  description: "Board only. Queues a short run that resumes the assignee's runner session and compacts it (Codex and Claude on the Paperclip runner). Unavailable while the agent is running on the task.",
+  description: "Board only. Queues a short run that resumes the assignee's runner session and compacts it (Codex and Claude on the Pilibala runner). Unavailable while the agent is running on the task.",
   request: { params: z.object({ id: z.string() }) },
   responses: { 202: r.ok(), 401: r.unauthorized, 403: r.forbidden, 404: r.notFound, 409: r.conflict, 422: r.unprocessable },
 });
@@ -7922,7 +7922,7 @@ registry.registerPath({
   method: "post",
   path: "/api/heartbeat-runs/{runId}/runtime-requests/{requestId}/resolve",
   tags: ["runs"],
-  summary: "Resolve a pending Paperclip runner runtime request",
+  summary: "Resolve a pending Pilibala runner runtime request",
   request: {
     params: z.object({ runId: heartbeatRunIdParamSchema, requestId: z.string() }),
     body: jsonBody(
@@ -8092,7 +8092,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/setup-token-login-sessions",
   tags: ["companies"],
@@ -8112,7 +8112,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/setup-token-login-sessions/active",
   tags: ["companies"],
@@ -8127,7 +8127,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/setup-token-login-sessions/{sessionId}",
   tags: ["companies"],
@@ -8144,7 +8144,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/setup-token-login-sessions/{sessionId}/prompt",
   tags: ["companies"],
@@ -8180,7 +8180,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/setup-token-login-sessions/{sessionId}/completion",
   tags: ["companies"],
@@ -8198,7 +8198,7 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/setup-token-login-sessions/{sessionId}/cancel",
   tags: ["companies"],
@@ -8563,7 +8563,7 @@ registry.registerPath({
   method: "post",
   path: "/api/companies/{companyId}/onboarding-seed",
   tags: ["companies"],
-  summary: "Apply the onboarding seed Paperclip Cloud collected at signup",
+  summary: "Apply the onboarding seed Pilibala Cloud collected at signup",
   request: { params: z.object({ companyId: z.string() }) },
   responses: { 200: r.ok(), 401: r.unauthorized, 422: r.unprocessable },
 });
@@ -10068,8 +10068,8 @@ registry.registerPath({
     "JSON `meta` field, or a bare `application/zip` body with the `meta` JSON in the `meta` " +
     "query parameter); the zip is unzipped server-side into the same import bundle. " +
     "Callers can opt into asynchronous processing: trusted Cloud tenants set the " +
-    "`x-paperclip-cloud-async-import: 1` header (browsers cannot — the Cloud harness proxy " +
-    "strips inbound `x-paperclip-cloud-*` headers), while board sessions use the proxy-safe " +
+    "`x-pilibala-cloud-async-import: 1` header (browsers cannot — the Cloud harness proxy " +
+    "strips inbound `x-pilibala-cloud-*` headers), while board sessions use the proxy-safe " +
     "`?async=1` query parameter. Either way the server responds 202 with a job id and status " +
     "URL instead of holding the connection open for the whole import. While a board actor " +
     "already has an async job running, a resubmit returns 409 carrying the running job's id " +
@@ -10450,7 +10450,7 @@ registerCurrentRoute({
   path: "/api/health/dev-server/restart",
   tags: ["health"],
   summary: "Request a managed dev-server instance restart",
-  description: "Request a restart of this Paperclip instance through its managed development-server supervisor. In authenticated deployments this requires a board identity; an agent credential does not inherit board access from its responsible user or from a chat request. Hand that operation to an authorized board/operator when the route denies the current agent. Returns 404 when no managed supervisor is available and 409 when no restart is required. Acceptance is not proof that the restart completed. This operation does not delete stored conversations or task comments.",
+  description: "Request a restart of this Pilibala instance through its managed development-server supervisor. In authenticated deployments this requires a board identity; an agent credential does not inherit board access from its responsible user or from a chat request. Hand that operation to an authorized board/operator when the route denies the current agent. Returns 404 when no managed supervisor is available and 409 when no restart is required. Acceptance is not proof that the restart completed. This operation does not delete stored conversations or task comments.",
   responses: {
     202: r.ok(),
     403: r.forbidden,
@@ -11345,8 +11345,8 @@ registerCurrentRoute({
 // --- AI runtime connections -------------------------------------------------
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/ai-connection-pools",
   tags: ["ai-connections"],
@@ -11355,8 +11355,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/ai-connection-pools",
   tags: ["ai-connections"],
@@ -11366,8 +11366,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "delete",
   path: "/api/companies/{companyId}/ai-connection-pools/{poolId}",
   tags: ["ai-connections"],
@@ -11377,8 +11377,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/ai-connection-pools/{poolId}/inspection",
   tags: ["ai-connections"],
@@ -11387,8 +11387,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/ai-connections/{connectionId}/identity",
   tags: ["ai-connections"],
@@ -11398,8 +11398,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/ai-connections/{connectionId}/usage",
   tags: ["ai-connections"],
@@ -11409,8 +11409,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/ai-connections",
   tags: ["ai-connections"],
@@ -11420,8 +11420,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/ai-connections",
   tags: ["ai-connections"],
@@ -11431,8 +11431,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "put",
   path: "/api/companies/{companyId}/ai-connections/default",
   tags: ["ai-connections"],
@@ -11442,8 +11442,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/ai-connections/{connectionId}/active-runs",
   tags: ["ai-connections"],
@@ -11452,8 +11452,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/ai-connections/login/{sessionId}",
   tags: ["ai-connections"],
@@ -11463,7 +11463,7 @@ registerCurrentRoute({
 
 registerCurrentRoute({
   method: "get", path: "/api/companies/{companyId}/ai-connections/login/{sessionId}/setup",
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:read",
   tags: ["ai-connections"], summary: "Reopen an owned saved AI sign-in with its original account and environment",
   responses: { 200: r.ok(), 401: r.unauthorized, 403: r.forbidden, 404: r.notFound },
 });
@@ -11557,8 +11557,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/tools/gallery",
   tags: ["tool-access"],
@@ -11566,8 +11566,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/tools/apps/{galleryKey}/preflight",
   tags: ["tool-access"],
@@ -11576,8 +11576,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/tools/apps/connect",
   tags: ["tool-access"],
@@ -11594,8 +11594,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/tools/apps/{connectionId}/finish",
   tags: ["tool-access"],
@@ -11612,8 +11612,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/tools/apps/{connectionId}/finalize-oauth-access",
   tags: ["tool-access"],
@@ -11630,8 +11630,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/tools/apps/attention",
   tags: ["tool-access"],
@@ -11639,8 +11639,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/tools/action-requests",
   tags: ["tool-access"],
@@ -11648,8 +11648,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/tools/examples",
   tags: ["tool-access"],
@@ -11657,8 +11657,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/tools/examples/{id}/install",
   tags: ["tool-access"],
@@ -11688,8 +11688,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/tools/applications",
   tags: ["tool-access"],
@@ -11697,8 +11697,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/tools/applications",
   tags: ["tool-access"],
@@ -11713,8 +11713,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "patch",
   path: "/api/tool-applications/{applicationId}",
   tags: ["tool-access"],
@@ -11723,8 +11723,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "delete",
   path: "/api/tool-applications/{applicationId}",
   tags: ["tool-access"],
@@ -11732,8 +11732,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/tools/connections",
   tags: ["tool-access"],
@@ -11741,8 +11741,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/tools/connections",
   tags: ["tool-access"],
@@ -11757,8 +11757,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/tool-connections/{connectionId}",
   tags: ["tool-access"],
@@ -11766,8 +11766,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/tools/connections/{connectionId}/start-authorization",
   tags: ["tool-access"],
@@ -11776,7 +11776,7 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/agents/me/connections/{connectionId}/start-authorization",
   tags: ["tool-access"],
@@ -11785,8 +11785,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/tool-connections/{connectionId}/grants",
   tags: ["tool-access"],
@@ -11794,8 +11794,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "post",
   path: "/api/tool-connections/{connectionId}/grants/installations",
   tags: ["tool-access"],
@@ -11810,8 +11810,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "post",
   path: "/api/tool-connections/{connectionId}/grants/{grantId}/delegations",
   tags: ["tool-access"],
@@ -11827,8 +11827,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "delete",
   path: "/api/tool-connections/{connectionId}/grants/{grantId}/delegations/{delegationId}",
   tags: ["tool-access"],
@@ -11836,8 +11836,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "delete",
   path: "/api/tool-connections/{connectionId}/grants/{grantId}",
   tags: ["tool-access"],
@@ -11845,8 +11845,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/tool-connections/{connectionId}/review-counts",
   tags: ["tool-access"],
@@ -11854,8 +11854,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/tool-connections/{connectionId}/usage",
   tags: ["tool-access"],
@@ -11863,8 +11863,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "put",
   path: "/api/tool-connections/{connectionId}/grants/{grantId}/members",
   tags: ["tool-access"],
@@ -11872,8 +11872,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/tool-connections/{connectionId}/railway/ssh",
   tags: ["tool-access"],
@@ -11891,8 +11891,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "get",
   path: "/api/tool-connections/{connectionId}/installs",
   tags: ["tool-access"],
@@ -11900,8 +11900,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "put",
   path: "/api/tool-connections/{connectionId}/installs",
   tags: ["tool-access"],
@@ -11910,8 +11910,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "patch",
   path: "/api/tool-connections/{connectionId}",
   tags: ["tool-access"],
@@ -11920,8 +11920,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "delete",
   path: "/api/tool-connections/{connectionId}",
   tags: ["tool-access"],
@@ -11929,8 +11929,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/tool-connections/{connectionId}/health-check",
   tags: ["tool-access"],
@@ -11938,8 +11938,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/tool-connections/{connectionId}/reconnect",
   tags: ["tool-access"],
@@ -11955,8 +11955,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/tool-connections/{connectionId}/catalog/refresh",
   tags: ["tool-access"],
@@ -11964,8 +11964,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/tool-connections/{connectionId}/catalog",
   tags: ["tool-access"],
@@ -11973,8 +11973,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:audit",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:audit",
   method: "get",
   path: "/api/tool-connections/{connectionId}/activity",
   tags: ["tool-access"],
@@ -11983,48 +11983,48 @@ registerCurrentRoute({
 
 for (const provider of ["aggregator", "composio"] as const) {
   registerCurrentRoute({
-    "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:read",
+    "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:read",
     method: "get", path: `/api/tool-connections/{connectionId}/${provider}/apps`, tags: ["tool-access"],
     summary: "List upstream account observations for the current connection manager",
   });
   registerCurrentRoute({
-    "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:configure",
+    "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:configure",
     method: "post", path: `/api/tool-connections/{connectionId}/${provider}/apps/sync`, tags: ["tool-access"],
     summary: "Start upstream account discovery without changing tool access",
     body: provider === "aggregator" ? aggregatorAppsSyncSchema : composioAppsSyncSchema,
   });
   registerCurrentRoute({
-    "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:configure",
+    "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:configure",
     method: "post", path: `/api/tool-connections/{connectionId}/${provider}/apps/refresh`, tags: ["tool-access"],
     summary: "Refresh upstream account observations",
     body: provider === "aggregator" ? aggregatorAppsRefreshSchema : composioAppsRefreshSchema,
   });
 }
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "put", path: "/api/tool-connections/{connectionId}/aggregator/discovery", tags: ["tool-access"],
   summary: "Save manager-owned optional Arcade account discovery credentials",
   body: arcadeDiscoverySetupSchema,
 });
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post", path: "/api/tool-connections/{connectionId}/composio/apps/{toolkit}/setup", tags: ["tool-access"],
   summary: "Start or verify Composio app authorization through a saved gateway",
   body: composioAppSetupSchema,
 });
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post", path: "/api/tool-connections/{connectionId}/composio/apps/{toolkit}/accounts", tags: ["tool-access"],
   summary: "Manage a Composio account through a saved gateway",
   body: composioAppAccountSchema,
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/tool-connections/{connectionId}/test-agents",
   tags: ["tool-access"],
@@ -12032,8 +12032,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/tool-connections/{connectionId}/test-agents/{agentId}/access",
   tags: ["tool-access"],
@@ -12041,8 +12041,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:test",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:test",
   method: "post",
   path: "/api/tool-connections/{connectionId}/test-calls",
   tags: ["tool-access"],
@@ -12060,8 +12060,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:test",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:test",
   method: "get",
   path: "/api/tool-connections/{connectionId}/test-calls/{actionRequestId}",
   tags: ["tool-access"],
@@ -12077,8 +12077,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/tools/oauth/{connectionId}/start",
   tags: ["tool-access"],
@@ -12097,28 +12097,28 @@ registerCurrentRoute({
   method: "get",
   path: "/api/tools/oauth/cloud-connector/callback",
   tags: ["tool-access"],
-  summary: "Handle a brokered Paperclip Cloud OAuth callback",
+  summary: "Handle a brokered Pilibala Cloud OAuth callback",
 });
 
 registerCurrentRoute({
   method: "get",
-  path: "/api/tools/oauth/paperclip-id/callback",
+  path: "/api/tools/oauth/pilibala-id/callback",
   tags: ["tool-access"],
-  summary: "Handle a legacy brokered Paperclip ID OAuth callback",
+  summary: "Handle a legacy brokered Pilibala ID OAuth callback",
 });
 
 registerCurrentRoute({
   method: "get",
   path: "/api/tools/oauth/cloud-connector/enrollment",
   tags: ["tool-access"],
-  summary: "Get Paperclip Cloud connector enrollment status",
+  summary: "Get Pilibala Cloud connector enrollment status",
 });
 
 registerCurrentRoute({
   method: "post",
   path: "/api/tools/oauth/cloud-connector/enrollment",
   tags: ["tool-access"],
-  summary: "Start Paperclip Cloud connector enrollment",
+  summary: "Start Pilibala Cloud connector enrollment",
   body: z
     .object({ companyId: z.string().min(1), label: z.string().optional() })
     .strict(),
@@ -12135,7 +12135,7 @@ registerCurrentRoute({
   method: "get",
   path: "/api/tools/oauth/cloud-connector/enrollment-callback",
   tags: ["tool-access"],
-  summary: "Complete Paperclip Cloud connector enrollment",
+  summary: "Complete Pilibala Cloud connector enrollment",
   query: z
     .object({
       enrollment_id: z.string().min(1),
@@ -12153,8 +12153,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "get",
   path: "/api/tool-connections/{connectionId}/profile-configuration",
   tags: ["tool-access"],
@@ -12162,8 +12162,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "get",
   path: "/api/companies/{companyId}/tools/profiles",
   tags: ["tool-access"],
@@ -12171,8 +12171,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "post",
   path: "/api/companies/{companyId}/tools/profiles",
   tags: ["tool-access"],
@@ -12187,8 +12187,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "get",
   path: "/api/companies/{companyId}/tools/profiles/effective/agents/{agentId}",
   tags: ["tool-access"],
@@ -12196,8 +12196,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "get",
   path: "/api/tool-profiles/{profileId}/new-tools",
   tags: ["tool-access"],
@@ -12205,8 +12205,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "patch",
   path: "/api/tool-profiles/{profileId}",
   tags: ["tool-access"],
@@ -12215,8 +12215,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "post",
   path: "/api/tool-profiles/{profileId}/duplicate",
   tags: ["tool-access"],
@@ -12231,8 +12231,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "delete",
   path: "/api/tool-profiles/{profileId}",
   tags: ["tool-access"],
@@ -12247,8 +12247,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "post",
   path: "/api/tool-profiles/{profileId}/new-tools/review",
   tags: ["tool-access"],
@@ -12263,8 +12263,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "post",
   path: "/api/tool-profiles/{profileId}/entries",
   tags: ["tool-access"],
@@ -12279,8 +12279,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "patch",
   path: "/api/tool-profile-entries/{entryId}",
   tags: ["tool-access"],
@@ -12289,8 +12289,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "delete",
   path: "/api/tool-profile-entries/{entryId}",
   tags: ["tool-access"],
@@ -12298,8 +12298,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "post",
   path: "/api/companies/{companyId}/tools/profiles/{profileId}/bind",
   tags: ["tool-access"],
@@ -12316,8 +12316,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "post",
   path: "/api/companies/{companyId}/tools/profiles/{profileId}/unbind",
   tags: ["tool-access"],
@@ -12327,8 +12327,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:runtime",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:runtime",
   method: "get",
   path: "/api/companies/{companyId}/tools/runtime-slots",
   tags: ["tool-access"],
@@ -12336,8 +12336,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:runtime",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:runtime",
   method: "post",
   path: "/api/companies/{companyId}/tools/runtime-slots/{id}/stop",
   tags: ["tool-access"],
@@ -12345,8 +12345,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:runtime",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:runtime",
   method: "post",
   path: "/api/companies/{companyId}/tools/runtime-slots/{id}/restart",
   tags: ["tool-access"],
@@ -12354,8 +12354,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:runtime",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:runtime",
   method: "get",
   path: "/api/companies/{companyId}/tools/runtime-health",
   tags: ["tool-access"],
@@ -12363,8 +12363,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:audit",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:audit",
   method: "get",
   path: "/api/companies/{companyId}/tools/runs/{runId}/decisions",
   tags: ["tool-access"],
@@ -12372,8 +12372,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "get",
   path: "/api/companies/{companyId}/tools/trust-rules",
   tags: ["tool-access"],
@@ -12381,8 +12381,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "get",
   path: "/api/companies/{companyId}/tools/policies",
   tags: ["tool-access"],
@@ -12390,8 +12390,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "post",
   path: "/api/companies/{companyId}/tools/policies/reorder",
   tags: ["tool-access"],
@@ -12400,8 +12400,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "post",
   path: "/api/companies/{companyId}/tools/policies",
   tags: ["tool-access"],
@@ -12416,8 +12416,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "post",
   path: "/api/companies/{companyId}/tools/policies/{policyId}/duplicate",
   tags: ["tool-access"],
@@ -12432,8 +12432,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "patch",
   path: "/api/companies/{companyId}/tools/policies/{policyId}",
   tags: ["tool-access"],
@@ -12442,8 +12442,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "delete",
   path: "/api/companies/{companyId}/tools/policies/{policyId}",
   tags: ["tool-access"],
@@ -12465,8 +12465,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:profiles",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:profiles",
   method: "post",
   path: "/api/companies/{companyId}/tools/trust-rules/{policyId}/revoke",
   tags: ["tool-access"],
@@ -12475,7 +12475,7 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest", "x-paperclip-connection-management": "connections:read",
+  "x-pilibala-transport": "rest", "x-pilibala-connection-management": "connections:read",
   method: "get",
   path: "/api/companies/{companyId}/tools/stdio-templates",
   tags: ["tool-access"],
@@ -12521,8 +12521,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/tools/policy/test",
   tags: ["tool-access"],
@@ -12585,8 +12585,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:gateway",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:gateway",
   method: "get",
   path: "/api/companies/{companyId}/tools/gateways",
   tags: ["tool-gateway"],
@@ -12594,8 +12594,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:gateway",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:gateway",
   method: "post",
   path: "/api/companies/{companyId}/tools/gateways",
   tags: ["tool-gateway"],
@@ -12611,8 +12611,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:gateway",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:gateway",
   method: "patch",
   path: "/api/tool-gateway/gateways/{gatewayId}",
   tags: ["tool-gateway"],
@@ -12629,8 +12629,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:gateway",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:gateway",
   method: "post",
   path: "/api/tool-gateway/gateways/{gatewayId}/tokens",
   tags: ["tool-gateway"],
@@ -12647,8 +12647,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:gateway",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:gateway",
   method: "post",
   path: "/api/tool-gateway/gateway-tokens/{tokenId}/revoke",
   tags: ["tool-gateway"],
@@ -12769,7 +12769,7 @@ registerCurrentRoute({
 });
 registerCurrentRoute({
   method: "delete", path: "/api/companies/{companyId}/agents/{agentId}/dot-binding", tags: ["agents"],
-  summary: "Revoke a Dot connection and fence its active Paperclip assignments",
+  summary: "Revoke a Dot connection and fence its active Pilibala assignments",
   responses: { 204: { description: "Dot connection revoked; external stop is unconfirmed" },
     400: r.badRequest, 401: r.unauthorized, 403: r.forbidden, 404: r.notFound },
 });
@@ -12823,7 +12823,7 @@ registerCurrentRoute({
 });
 registerCurrentRoute({
   method: "post", path: "/api/companies/{companyId}/agents/{agentId}/grok-binding/stop", tags: ["agents"],
-  summary: "Revoke Paperclip work-session authority without confirming remote termination",
+  summary: "Revoke Pilibala work-session authority without confirming remote termination",
   body: stopGrokWorkSchema,
   responses: { 200: r.ok(),
     400: r.badRequest, 401: r.unauthorized, 403: r.forbidden, 404: r.notFound, 409: r.conflict },
@@ -13004,8 +13004,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:runtime",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:runtime",
   method: "get",
   path: "/api/tool-gateway/runtime-slots",
   tags: ["tool-gateway"],
@@ -13014,8 +13014,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:runtime",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:runtime",
   method: "post",
   path: "/api/tool-gateway/runtime-slots/{slotId}/stop",
   tags: ["tool-gateway"],
@@ -13025,8 +13025,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:runtime",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:runtime",
   method: "post",
   path: "/api/tool-gateway/runtime-slots/{slotId}/restart",
   tags: ["tool-gateway"],
@@ -13036,8 +13036,8 @@ registerCurrentRoute({
 });
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:audit",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:audit",
   method: "get",
   path: "/api/tool-gateway/audit",
   tags: ["tool-gateway"],
@@ -13160,9 +13160,9 @@ export function buildOpenApiDocument(): any {
   return applyDocumentFixups({
     openapi: "3.0.0",
     info: {
-      title: "Paperclip API",
+      title: "Pilibala API",
       version: "1.0.0",
-      description: "REST API for the Paperclip AI agent management platform",
+      description: "REST API for the Pilibala AI agent management platform",
     },
     servers: [{ url: "/" }],
     components: registry.buildComponents(),
@@ -13181,8 +13181,8 @@ export function openApiRoutes() {
 }
 
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/ai-connections/local",
   tags: ["ai-connections"],
@@ -13191,8 +13191,8 @@ registerCurrentRoute({
   responses: { 201: r.ok(), 400: r.badRequest, 401: r.unauthorized, 403: r.forbidden, 422: r.unprocessable },
 });
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/ai-connections/local/attempts",
   tags: ["ai-connections"], summary: "Prepare an isolated local subscription sign-in",
@@ -13200,16 +13200,16 @@ registerCurrentRoute({
   responses: { 201: r.ok(), 400: r.badRequest, 401: r.unauthorized, 403: r.forbidden, 422: r.unprocessable },
 });
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "delete",
   path: "/api/companies/{companyId}/ai-connections/local/attempts/{sessionId}",
   tags: ["ai-connections"], summary: "Cancel an owned local subscription sign-in",
   responses: { 200: r.ok(), 401: r.unauthorized, 403: r.forbidden, 404: r.notFound },
 });
 registerCurrentRoute({
-  "x-paperclip-transport": "rest",
-  "x-paperclip-connection-management": "connections:configure",
+  "x-pilibala-transport": "rest",
+  "x-pilibala-connection-management": "connections:configure",
   method: "post",
   path: "/api/companies/{companyId}/ai-connections/local/check",
   tags: ["ai-connections"], summary: "Check an owned local subscription sign-in without saving a connection",

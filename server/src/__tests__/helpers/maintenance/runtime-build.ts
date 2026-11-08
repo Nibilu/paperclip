@@ -10,8 +10,8 @@ export function prepareMaintenanceRuntime() {
     const command = javascript ? process.execPath : script ?? "pnpm";
     const prefix = javascript ? [script!] : [];
     for (const args of [
-      ["--filter", "@paperclipai/plugin-sdk", "ensure-build-deps"],
-      ["--filter", "@paperclipai/paperclip-runner", "build:typescript"],
+      ["--filter", "@pilibalaai/plugin-sdk", "ensure-build-deps"],
+      ["--filter", "@pilibalaai/pilibala-runner", "build:typescript"],
     ]) await promisify(execFile)(command, [...prefix, ...args], {
       cwd: fileURLToPath(new URL("../../../../..", import.meta.url)), env: process.env,
       timeout: 90_000, maxBuffer: 8 * 1024 * 1024,

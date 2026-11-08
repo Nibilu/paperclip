@@ -1,7 +1,7 @@
 import { fileRowSourceFromAttachment, fileRowSourceFromWorkProduct } from "@/components/artifacts/v1/adapters";
 import { isImageLikeOutput } from "@/lib/issue-output";
 import type { TaskChatItem, TaskChatMaterializedResourceItem } from "./task-chat-model";
-import type { IssueAttachment, IssueWorkProduct } from "@paperclipai/shared";
+import type { IssueAttachment, IssueWorkProduct } from "@pilibalaai/shared";
 import type { IssueChatComment } from "@/lib/issue-chat-messages";
 
 export function imagePreparationReceiptIds(
@@ -28,7 +28,7 @@ export function imagePreparationReceiptIds(
       image?.createdByRunId === attachment.originatingRunId && isPreparation &&
       (comment.runId ?? comment.createdByRunId) === attachment.originatingRunId &&
       comment.authorAgentId === attachment.createdByAgentId &&
-      comment.metadata?.authorizationReason === "paperclip_runner_protocol") ids.add(comment.id);
+      comment.metadata?.authorizationReason === "pilibala_runner_protocol") ids.add(comment.id);
   }
   return ids;
 }

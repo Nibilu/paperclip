@@ -6,7 +6,7 @@ import type {
   AdapterExecutionContext,
   AdapterEnvironmentCheck,
   AdapterRuntimeMcpServer,
-} from "@paperclipai/adapter-utils";
+} from "@pilibalaai/adapter-utils";
 import {
   adapterExecutionTargetUsesManagedHome,
   maybeRunSandboxInstallCommand,
@@ -14,9 +14,9 @@ import {
   runAdapterExecutionTargetShellCommand,
   type AdapterExecutionTarget,
   type AdapterExecutionTargetShellOptions,
-} from "@paperclipai/adapter-utils/execution-target";
-import { resolvePaperclipInstanceRootForAdapter } from "@paperclipai/adapter-utils/server-utils";
-import { shellQuote } from "@paperclipai/adapter-utils/ssh";
+} from "@pilibalaai/adapter-utils/execution-target";
+import { resolvePilibalaInstanceRootForAdapter } from "@pilibalaai/adapter-utils/server-utils";
+import { shellQuote } from "@pilibalaai/adapter-utils/ssh";
 import { classifyThrownErrorClass, logSandboxProbeDiagnostic } from "./probe-diagnostics.js";
 
 const SEEDED_SHARED_FILES = ["settings.json", "CLAUDE.md"] as const;
@@ -142,9 +142,9 @@ export function resolveManagedClaudeConfigSeedDir(
   env: NodeJS.ProcessEnv,
   companyId?: string,
 ): string {
-  const instanceRoot = resolvePaperclipInstanceRootForAdapter({
-    homeDir: nonEmpty(env.PAPERCLIP_HOME) ?? undefined,
-    instanceId: nonEmpty(env.PAPERCLIP_INSTANCE_ID) ?? undefined,
+  const instanceRoot = resolvePilibalaInstanceRootForAdapter({
+    homeDir: nonEmpty(env.PILIBALA_HOME) ?? undefined,
+    instanceId: nonEmpty(env.PILIBALA_INSTANCE_ID) ?? undefined,
     env,
   });
   return companyId
@@ -157,15 +157,15 @@ export function resolveManagedClaudeRuntimeStateDir(
   companyId: string,
   agentId: string,
 ): string {
-  const instanceRoot = resolvePaperclipInstanceRootForAdapter({
-    homeDir: nonEmpty(env.PAPERCLIP_HOME) ?? undefined,
-    instanceId: nonEmpty(env.PAPERCLIP_INSTANCE_ID) ?? undefined,
+  const instanceRoot = resolvePilibalaInstanceRootForAdapter({
+    homeDir: nonEmpty(env.PILIBALA_HOME) ?? undefined,
+    instanceId: nonEmpty(env.PILIBALA_INSTANCE_ID) ?? undefined,
     env,
   });
   return path.join(instanceRoot, "companies", companyId, "agents", agentId, "claude-runtime");
 }
 
-export async function writePaperclipClaudeMcpConfig(input: {
+export async function writePilibalaClaudeMcpConfig(input: {
   stateDir: string;
   runId: string;
   servers: AdapterRuntimeMcpServer[];
@@ -218,12 +218,12 @@ export async function prepareClaudeConfigSeed(
   if (copiedFiles.length > 0) {
     await onLog(
       "stdout",
-      `[paperclip] Prepared Claude config seed "${targetDir}" from "${sourceDir}" (${copiedFiles.map((file) => file.name).join(", ")}).\n`,
+      `[pilibala] Prepared Claude config seed "${targetDir}" from "${sourceDir}" (${copiedFiles.map((file) => file.name).join(", ")}).\n`,
     );
   } else {
     await onLog(
       "stdout",
-      `[paperclip] No local Claude config seed files were found in "${sourceDir}". Remote Claude auth may still require login.\n`,
+      `[pilibala] No local Claude config seed files were found in "${sourceDir}". Remote Claude auth may still require login.\n`,
     );
   }
 
@@ -248,7 +248,7 @@ export const CLAUDE_TOOL_SHELL_PREFIX_SCRIPT = [
   "",
 ].join("\n");
 
-const CLAUDE_TOOL_SHELL_PREFIX_INSTALLED_MARKER = "[paperclip] Installed the Claude tool shell prefix.";
+const CLAUDE_TOOL_SHELL_PREFIX_INSTALLED_MARKER = "[pilibala] Installed the Claude tool shell prefix.";
 
 export function buildRemoteClaudeConfigMaterializationCommand(input: {
   remoteClaudeConfigDir: string;
@@ -364,7 +364,7 @@ export async function overrideRemoteClaudeLocalPermissionMode(input: {
     );
   const applied = await writeRemote(overridden);
   if (applied.exitCode !== 0 || applied.timedOut) {
-    await input.options.onLog?.("stderr", "[paperclip] Could not apply the Claude permission mode to the sandbox workspace settings.\n");
+    await input.options.onLog?.("stderr", "[pilibala] Could not apply the Claude permission mode to the sandbox workspace settings.\n");
   }
   return {
     beforeRestore: async () => {
@@ -385,14 +385,14 @@ export async function overrideRemoteClaudeLocalPermissionMode(input: {
           await writeRemote(withClaudeLocalDefaultMode(current, originalMode));
         }
       } catch {
-        await input.options.onLog?.("stderr", "[paperclip] Could not reset the Claude permission mode in the sandbox workspace settings.\n");
+        await input.options.onLog?.("stderr", "[pilibala] Could not reset the Claude permission mode in the sandbox workspace settings.\n");
       }
     },
     afterRestore: async () => {
       const current = parseClaudeLocalSettings(await fs.readFile(localPath, "utf8").catch(() => null));
       if (current?.permissions.defaultMode !== input.defaultMode) return;
       await fs.writeFile(localPath, withClaudeLocalDefaultMode(current, originalMode)).catch(async () => {
-        await input.options.onLog?.("stderr", "[paperclip] Could not restore the host Claude workspace settings after the sandbox run.\n");
+        await input.options.onLog?.("stderr", "[pilibala] Could not restore the host Claude workspace settings after the sandbox run.\n");
       });
     },
   };
@@ -405,7 +405,7 @@ function isNonEmptyString(value: unknown): value is string {
 /**
  * Prepare the sandbox runtime that a Claude hello probe needs. The step
  * installs the Claude CLI in the sandbox when the CLI is absent, and it
- * materializes the Paperclip-managed Claude config directory. Both the CLI
+ * materializes the Pilibala-managed Claude config directory. Both the CLI
  * Test lane and the ACP Test lane call this helper, so the two lanes probe
  * the same login state. The Claude CLI and the Claude ACP engine share the
  * same stored Claude login.
@@ -452,7 +452,7 @@ export async function prepareSandboxClaudeProbeRuntime(input: {
       const managedRemoteCwd =
         input.target?.kind === "remote" ? input.target.remoteCwd : input.cwd;
       tempWorkspaceDir = await fs.mkdtemp(
-        path.join(os.tmpdir(), "paperclip-claude-envtest-workspace-"),
+        path.join(os.tmpdir(), "pilibala-claude-envtest-workspace-"),
       );
       preparedRuntime = await prepareAdapterExecutionTargetRuntime({
         runId: input.runId,
@@ -473,7 +473,7 @@ export async function prepareSandboxClaudeProbeRuntime(input: {
       });
       const runtimeRootDir =
         preparedRuntime.runtimeRootDir ??
-        path.posix.join(managedRemoteCwd, ".paperclip-runtime", "claude");
+        path.posix.join(managedRemoteCwd, ".pilibala-runtime", "claude");
       const remoteClaudeConfigSeedDir =
         preparedRuntime.assetDirs["config-seed"] ??
         path.posix.join(runtimeRootDir, "config-seed");
@@ -495,7 +495,7 @@ export async function prepareSandboxClaudeProbeRuntime(input: {
       checks.push({
         code: "claude_managed_config_dir",
         level: "info",
-        message: "The environment probe is using Paperclip-managed Claude config materialization.",
+        message: "The environment probe is using Pilibala-managed Claude config materialization.",
         detail: remoteClaudeConfigDir,
       });
     } catch (err) {
@@ -503,14 +503,14 @@ export async function prepareSandboxClaudeProbeRuntime(input: {
       // only the fixed context, the allowlisted classification, and a safe
       // error class name.
       logSandboxProbeDiagnostic(
-        "Could not materialize Paperclip-managed Claude config for the environment probe",
+        "Could not materialize Pilibala-managed Claude config for the environment probe",
         "spawn_error",
         { errorClass: classifyThrownErrorClass(err) },
       );
       checks.push({
         code: "claude_managed_config_dir_failed",
         level: "error",
-        message: "Could not materialize Paperclip-managed Claude config for the environment probe.",
+        message: "Could not materialize Pilibala-managed Claude config for the environment probe.",
         hint: "Retry the Test. If the failure repeats, check the server log for the redacted diagnostic.",
       });
     } finally {

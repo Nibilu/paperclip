@@ -69,7 +69,7 @@ that bound runtime directory without traversal or URI encodings, and `skill_file
 must be empty. The receipt must be successful, untruncated and byte-complete.
 Other unknown operations, raw dynamic calls and unbound loaders still fail.
 
-The first-party `paperclip_read_assigned_skill` tool can also supply the read.
+The first-party `pilibala_read_assigned_skill` tool can also supply the read.
 Its complete `inputText` result must contain the exact canonical skill key,
 immutable created version, `SKILL.md` path, original Markdown, byte size and
 SHA-256 checksum. `nextOffset` must be null. The same dual assignment and

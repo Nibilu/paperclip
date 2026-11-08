@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { PROVIDER_QUOTA_MONITOR_SERVICE_NAME } from "@paperclipai/shared";
+import { PROVIDER_QUOTA_MONITOR_SERVICE_NAME } from "@pilibalaai/shared";
 import {
   costEvents,
   activityLog,
@@ -22,14 +22,14 @@ import {
   issueDocuments,
   issues,
   workspaceRuntimeServices,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
 import { heartbeatService } from "../services/heartbeat.ts";
 import { normalizeIssueExecutionPolicy, parseIssueExecutionState } from "../services/issue-execution-policy.ts";
-import { PaperclipRunnerToolAuthority } from "../services/native-runtime/paperclip-runner-tool-authority.js";
+import { PilibalaRunnerToolAuthority } from "../services/native-runtime/pilibala-runner-tool-authority.js";
 
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
 // These process fixtures do not consume skills. Keep the real scheduler,
@@ -47,7 +47,7 @@ vi.mock("../services/company-skills.js", async importOriginal => {
     } };
   } };
 });
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_ISSUE_MONITOR_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_ISSUE_MONITOR_TEST_DATABASE_URL");
 const embeddedPostgresSupport = external ? { supported: true, reason: undefined } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 
@@ -63,7 +63,7 @@ describeEmbeddedPostgres("issue monitor scheduler", () => {
   const seededAgentIds = new Set<string>();
 
   beforeAll(async () => {
-    if (!external) tempDb = await startEmbeddedPostgresTestDatabase("paperclip-issue-monitor-");
+    if (!external) tempDb = await startEmbeddedPostgresTestDatabase("pilibala-issue-monitor-");
     db = createDb(external ?? tempDb!.connectionString);
   }, 20_000);
 
@@ -190,7 +190,7 @@ describeEmbeddedPostgres("issue monitor scheduler", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -370,7 +370,7 @@ describeEmbeddedPostgres("issue monitor scheduler", () => {
       runtimeMode: "native", status: "running", contextSnapshot: { issueId } });
     await db.update(issues).set({ executionRunId: runId, executionPolicy: null, executionState: null,
       monitorNextCheckAt: null, monitorNotes: null, monitorScheduledBy: null }).where(eq(issues.id, issueId));
-    const authority = new PaperclipRunnerToolAuthority(db, { companyId, issueId, agentId, runId });
+    const authority = new PilibalaRunnerToolAuthority(db, { companyId, issueId, agentId, runId });
     const monitor = { nextCheckAt: new Date(Date.now() + 60_000).toISOString(), notes: "Inspect pending CI." };
     const call = (arguments_: Record<string, unknown>) => authority.execute({
       tool: "set_task_monitor", callId: randomUUID(), arguments: arguments_,

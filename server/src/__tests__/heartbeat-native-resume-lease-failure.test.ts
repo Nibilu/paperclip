@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { agents, authUsers, companyMemberships, environments, heartbeatRuns, issues, nativeRunFinalizations } from "@paperclipai/db";
+import { agents, authUsers, companyMemberships, environments, heartbeatRuns, issues, nativeRunFinalizations } from "@pilibalaai/db";
 import { beforeAll, expect, it, vi } from "vitest";
 import { heartbeatService } from "../services/heartbeat.js";
 import { classifyEnvironmentCapabilities, environmentRuntimeService } from "../services/environment-runtime.js";
@@ -35,7 +35,7 @@ describeEmbeddedPostgres("heartbeat native session resume environment failure", 
         taskPrompt: "Continue the original task.", provider: "codex",
         workspace: { id: f.runId, cwd: "/workspace", repoUrl: null, repoRef: null, branchName: null },
         normalizedSessionId: f.native.normalizedSessionId, runtimeContext: nativeRuntimeContextFixture(),
-        completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "paperclip.run-result.v1",
+        completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "pilibala.run-result.v1",
           contract: { revision: "1", objective: "Resume", criteria: [{ id: "objective", requirement: "Resume the session" }] } } });
       const identity = { companyId, issueId: f.issueId, runId: f.runId, agentId, sessionId: f.native.normalizedSessionId };
       // An earlier provider failure left a retryable, result-less run for same-run resume.
@@ -64,7 +64,7 @@ describeEmbeddedPostgres("heartbeat native session resume environment failure", 
       const backendFactory = vi.fn(() => { throw new Error("No provider backend may be created"); });
       await settings.updateExperimental({ enableNativeRunner: true });
       heartbeat = heartbeatService(db, { environmentRuntime: runtime, nativeSessionBackendFactory: backendFactory,
-        runtimeEnv: { PAPERCLIP_INSTANCE_ID: "default" } });
+        runtimeEnv: { PILIBALA_INSTANCE_ID: "default" } });
 
       await heartbeat.reapOrphanedRuns({ staleThresholdMs: 0 });
       await heartbeat.drainActiveRunExecutions();

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
-import { agentTaskSessions, environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { agentTaskSessions, environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { adapterExecutionControls } from "../adapter-execution-control.js";
 import { nativeSha256 } from "./canonical.js";
 import { tryLockNativeWorkspaceFinalization } from "./native-workspace-finalization-ownership.js";
@@ -45,7 +45,7 @@ export async function settledNativeHarnessBackupOwner(db: Db, input: {
   const selected = await db.select({ id: agentTaskSessions.id, lastRunId: agentTaskSessions.lastRunId }).from(agentTaskSessions)
     .innerJoin(heartbeatRuns, and(eq(heartbeatRuns.companyId, agentTaskSessions.companyId), eq(heartbeatRuns.agentId, agentTaskSessions.agentId),
       eq(heartbeatRuns.id, agentTaskSessions.lastRunId))).where(and(eq(agentTaskSessions.companyId, input.companyId),
-      eq(agentTaskSessions.agentId, run.agentId), eq(agentTaskSessions.adapterType, "paperclip_runner"),
+      eq(agentTaskSessions.agentId, run.agentId), eq(agentTaskSessions.adapterType, "pilibala_runner"),
       eq(heartbeatRuns.nativeIssueId, input.issueId), eq(heartbeatRuns.nativeSessionId, input.sessionId))).limit(2);
   if (selected.length !== 1 || !selected[0]!.lastRunId) return null;
   const leases = await db.select().from(environmentLeases).where(and(eq(environmentLeases.companyId, input.companyId),
@@ -75,7 +75,7 @@ export async function assertSettledNativeHarnessBackupSource(db: Db, owner: Sett
   if (!coordinator || !settled(coordinator) || coordinatorDigest(coordinator) !== owner.coordinatorDigest) fail();
   const [selection] = await db.select().from(agentTaskSessions).where(and(eq(agentTaskSessions.companyId, owner.companyId),
     eq(agentTaskSessions.agentId, owner.agentId), eq(agentTaskSessions.id, owner.selectedSessionId),
-    eq(agentTaskSessions.adapterType, "paperclip_runner"),
+    eq(agentTaskSessions.adapterType, "pilibala_runner"),
     eq(agentTaskSessions.lastRunId, owner.selectedLastRunId))).for("share");
   const [selectedRun] = await db.select({ id: heartbeatRuns.id }).from(heartbeatRuns).where(and(eq(heartbeatRuns.companyId, owner.companyId),
     eq(heartbeatRuns.agentId, owner.agentId), eq(heartbeatRuns.id, owner.selectedLastRunId),

@@ -55,7 +55,7 @@ exporting plaintext. The public adapter has 53 focused authority/export/workflow
 controls and 39 API/CLI/result controls passing, plus owning typechecking and
 workflow lint. Unchanged controls are reused after narrow source corrections.
 The independent composition source peer passed.
-The public infrastructure [PR 18322](https://github.com/paperclipai/paperclip/pull/18322)
+The public infrastructure [PR 18322](https://github.com/pilibalaai/pilibala/pull/18322)
 is open. Its first normal CI run rejected the new workflow in the existing paid
 workflow allowlist and reported a separate heartbeat scheduling assertion; both
 failures remain recorded. The policy correction preserves the older workflow

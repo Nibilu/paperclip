@@ -7,20 +7,20 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { eq } from "drizzle-orm";
 import { expect, it, vi } from "vitest";
-import { SLACK_CHAT_BOT_SCOPES, type ToolCredentialSecretRef } from "@paperclipai/shared";
-import { activityLog, agents, applyPendingMigrations, authUsers, chatEndpoints, chatSlackRegistrations, closeCheckpointDb, closeFileStorageDb, closeLivenessDb, companies, companyMemberships, companySecrets, createDb, toolApplications, toolConnections } from "@paperclipai/db";
+import { SLACK_CHAT_BOT_SCOPES, type ToolCredentialSecretRef } from "@pilibalaai/shared";
+import { activityLog, agents, applyPendingMigrations, authUsers, chatEndpoints, chatSlackRegistrations, closeCheckpointDb, closeFileStorageDb, closeLivenessDb, companies, companyMemberships, companySecrets, createDb, toolApplications, toolConnections } from "@pilibalaai/db";
 import { resolveExternalTestDatabaseUrl } from "../../../lib/dedicated-test-database-url.js";
 import { heartbeatService } from "../../heartbeat.js";
 import { chatChannelService } from "../../chat-channels.js";
 import { createDeliveryWorkCoordinator } from "../../delivery-work-coordinator.js";
 import { githubConnectionEventService } from "../../github-connection-events.js";
 import { registerGitHubConnectionEventWork } from "../../github-connection-work.js";
-import { createPaperclipCloudConnector, paperclipCloudConnectorConfigFromEnv } from "../../paperclip-cloud-connector.js";
+import { createPilibalaCloudConnector, pilibalaCloudConnectorConfigFromEnv } from "../../pilibala-cloud-connector.js";
 import { secretService } from "../../secrets.js";
 import type { InternalSetupState } from "../runtime-types.js";
 import { guardSlackFixtureNetwork } from "../../../__tests__/helpers/slack-cloud/transport.js";
 
-const appUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_SLACK_TEST_DATABASE_URL");
+const appUrl = resolveExternalTestDatabaseUrl("PILIBALA_SLACK_TEST_DATABASE_URL");
 const cloudUrl = resolveExternalTestDatabaseUrl("SLACK_EVENT_TEST_DATABASE_URL");
 const cloudDist = process.env.SLACK_TEST_CLOUD_DIST;
 
@@ -68,9 +68,9 @@ it.skipIf(!appUrl || !cloudUrl || !cloudDist)("normal notifications enroll the f
   const endpoint = async () => (await db.select().from(chatEndpoints).where(eq(chatEndpoints.id, endpointId)))[0]!;
   const setup = async () => (await endpoint()).setup as InternalSetupState;
   const configureIdentity = (index: number) => {
-    vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID", stackIds[index]!);
-    vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", keys[index]!.sign.privateKey.export({ format: "jwk" }).d!);
-    vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", keys[index]!.seal.privateKey.export({ format: "jwk" }).d!);
+    vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID", stackIds[index]!);
+    vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", keys[index]!.sign.privateKey.export({ format: "jwk" }).d!);
+    vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", keys[index]!.seal.privateKey.export({ format: "jwk" }).d!);
   };
   try {
     for (const [index, stackId] of stackIds.entries()) {
@@ -79,7 +79,7 @@ it.skipIf(!appUrl || !cloudUrl || !cloudDist)("normal notifications enroll the f
         owner: { id: actor, email: `${id}@example.test` },
         stack: { stackId, accountGroupId: `account-${stackId}`, stackSlug: stackId, displayName: "Transition", kind: "demo", primaryHost: `${stackId}.example.test`, region: "us-east-1" },
         versionPlan: { appVersion: "fixture", schemaVersion: "fixture", rolloutTrack: "stable" },
-        sleepPolicy: { desiredState: "awake" }, primaryCompany: { paperclipCompanyId: index === 0 ? companyId : randomUUID(), displayName: "Transition", defaultBudgetCents: 0 },
+        sleepPolicy: { desiredState: "awake" }, primaryCompany: { pilibalaCompanyId: index === 0 ? companyId : randomUUID(), displayName: "Transition", defaultBudgetCents: 0 },
       });
       await store.putCloudStackInstance({ id: stackId, kind: "cloud_stack", companyStackId: stackId, ownerUserId: actor, environment: "test",
         signPublicKey: keys[index]!.sign.publicKey.export({ format: "jwk" }).x!, sealPublicKey: keys[index]!.seal.publicKey.export({ format: "jwk" }).x!,
@@ -92,8 +92,8 @@ it.skipIf(!appUrl || !cloudUrl || !cloudDist)("normal notifications enroll the f
       providers: providerRegistryFromEnvironment({}, "test"), secrets: { resolve: async () => undefined },
       authenticate: async () => ({ globalUserId: actor }), slackEvents: { secrets, secretRefPrefix: "secret:///test/transition" },
       eventWakeEnrollmentEnabled: true, eventWakeDeliveryEnabled: true, wakeCloudStack: async () => {} });
-    vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_BASE_URL", base); vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_ENVIRONMENT", "test");
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY_FILE", path.join(directory, "master.key")); configureIdentity(0);
+    vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_BASE_URL", base); vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_ENVIRONMENT", "test");
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY_FILE", path.join(directory, "master.key")); configureIdentity(0);
     await db.insert(companies).values({ id: companyId, name: "Transition", issuePrefix: `T${id.slice(0, 7)}` });
     await db.insert(authUsers).values({ id: actor, name: "Owner", email: `${id}@owner.example.test`, emailVerified: true, createdAt: new Date(), updatedAt: new Date() });
     await db.insert(companyMemberships).values({ companyId, principalType: "user", principalId: actor, status: "active", membershipRole: "operator" });
@@ -136,7 +136,7 @@ it.skipIf(!appUrl || !cloudUrl || !cloudDist)("normal notifications enroll the f
     expect(await broker.slackEvents.current(instanceA, publicId)).toBeUndefined();
     expect((await store.listWebhookBindings(instanceA)).every((binding: { receivesEvents: boolean }) => !binding.receivesEvents)).toBe(true);
     const retired = await setup(); configureIdentity(1);
-    const foreign = createPaperclipCloudConnector({ config: paperclipCloudConnectorConfigFromEnv()! });
+    const foreign = createPilibalaCloudConnector({ config: pilibalaCloudConnectorConfigFromEnv()! });
     await expect(foreign.slackEventEnrollment({ subject: `foreign-${actor}`, companyId, enrollment: {
       active: true, companyId, endpointId, publicId, connectionId, runtimeGeneration: 3, teamId: "TTEST", appId: "ATEST", signingSecret,
     } })).rejects.toMatchObject({ status: 403 });

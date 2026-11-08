@@ -38,7 +38,7 @@ jobs:
     # Actions app 15368 checks arrive through workflow_run), and successful
     # commit statuses. One PR push previously queued about 60 runner jobs.
     if: >-
-      github.repository == 'paperclipai/paperclip' &&
+      github.repository == 'pilibalaai/pilibala' &&
       ((github.event_name == 'workflow_run' &&
         (github.event.workflow_run.event == 'pull_request' ||
           github.event.workflow_run.event == 'pull_request_target') &&
@@ -71,6 +71,6 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          PAPERCLIP_PR_REVIEW_WEBHOOK_URL: ${{ secrets.PAPERCLIP_PR_REVIEW_WEBHOOK_URL }}
-          PAPERCLIP_PR_REVIEW_WEBHOOK_TOKEN: ${{ secrets.PAPERCLIP_PR_REVIEW_WEBHOOK_TOKEN }}
+          PILIBALA_PR_REVIEW_WEBHOOK_URL: ${{ secrets.PILIBALA_PR_REVIEW_WEBHOOK_URL }}
+          PILIBALA_PR_REVIEW_WEBHOOK_TOKEN: ${{ secrets.PILIBALA_PR_REVIEW_WEBHOOK_TOKEN }}
         run: node .github/scripts/notify-pr-merge-review.mjs

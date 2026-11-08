@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ONBOARDING_FIRST_TASK_ORIGIN_KIND } from "@paperclipai/shared";
+import { ONBOARDING_FIRST_TASK_ORIGIN_KIND } from "@pilibalaai/shared";
 import { cn } from "@/lib/utils";
 import { useAccountIdentity } from "@/api/companies-query";
 import type { HealthStatus } from "@/api/health";
@@ -74,7 +74,7 @@ export function AnnouncementWell({ health, placement = "floating" }: { health?: 
   if (!announcement || modalOpen || (toasts?.length ?? 0) > 0) return null;
   return (
     <aside
-      aria-label="Paperclip announcements"
+      aria-label="Pilibala announcements"
       data-placement={placement}
       className={cn(
         "announcement-well",

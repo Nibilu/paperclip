@@ -1,6 +1,6 @@
 import { projectInstanceSecretService } from "./project-instance-secrets.js";
 import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { createOwnedDatabaseListener, type OwnedDatabaseListener, agents, companies, pluginCompanySettings, pluginConfig, plugins, projects, type Db } from "@paperclipai/db";
+import { createOwnedDatabaseListener, type OwnedDatabaseListener, agents, companies, pluginCompanySettings, pluginConfig, plugins, projects, type Db } from "@pilibalaai/db";
 import { logger } from "../middleware/logger.js";
 import { pluginLifecycleInbox } from "./plugin-lifecycle-inbox.js";
 import { DELIVERY_QUEUES } from "./delivery-work-notifications.js";
@@ -98,7 +98,7 @@ export function registerPluginLifecycleDelivery(
           if (!types) continue;
           const { plugin, companyId } = target;
           if (types.includes("agent_runtime") && !refreshedRuntimeCompanies.has(companyId)) {
-            await db.execute(sql`SELECT paperclip_invalidate_company_agent_runtimes(${companyId}::uuid)`);
+            await db.execute(sql`SELECT pilibala_invalidate_company_agent_runtimes(${companyId}::uuid)`);
             refreshedRuntimeCompanies.add(companyId);
           }
           const inbox = pluginLifecycleInbox(db, plugin.id);
@@ -221,7 +221,7 @@ export function registerPluginLifecycleDelivery(
       if (disposed || held || isIdleTaskDrainActive()) return;
       try {
         listenerClient ??= createOwnedDatabaseListener(db);
-        listening ??= await listenerClient.listen("paperclip_plugin_lifecycle", wake, wake);
+        listening ??= await listenerClient.listen("pilibala_plugin_lifecycle", wake, wake);
         listenerFailure = false;
       } catch (error) { listenerFailure = true; throw error; }
     });

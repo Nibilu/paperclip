@@ -78,7 +78,7 @@ const meta = {
           "Static snapshot coverage for shared ui/ primitives not exercised by existing stories: alert-dialog, avatar, breadcrumb, collapsible, command, dropdown-menu, radio-card, scroll-area, sheet, skeleton.",
       },
     },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "developer-labs/design"
       ],
@@ -121,9 +121,9 @@ export const NativeSelects: Story = {
 
 function StoryFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="paperclip-story">
-      <main className="paperclip-story__inner">
-        <section className="paperclip-story__frame p-6">{children}</section>
+    <div className="pilibala-story">
+      <main className="pilibala-story__inner">
+        <section className="pilibala-story__frame p-6">{children}</section>
       </main>
     </div>
   );
@@ -161,7 +161,7 @@ export const BreadcrumbTrail: Story = {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="#">Paperclip</BreadcrumbLink>
+            <BreadcrumbLink href="#">Pilibala</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>

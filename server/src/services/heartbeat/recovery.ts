@@ -35,7 +35,7 @@ import {
   revokeExpiredLegacyControllerWithState,
 } from "../legacy-controller-lease.js";
 import { remoteTerminationReceipt } from "../remote-execution-termination.js";
-import { readEnvironmentStopFailure, type PluginEnvironmentStopFailure } from "@paperclipai/plugin-sdk";
+import { readEnvironmentStopFailure, type PluginEnvironmentStopFailure } from "@pilibalaai/plugin-sdk";
 import { runUsedConversationAdapter } from "../conversation-continuation.js";
 import { legacyExecutionNeedsReconciliationWithEvidence, terminalizeLegacyExecution } from "../legacy-execution-recovery.js";
 import { reconcileRetainedWorkspaces } from "../workspace-recovery.js";
@@ -56,7 +56,7 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   environmentLeases,
@@ -64,7 +64,7 @@ import {
   heartbeatRuns,
   issues,
   nativeRunFinalizations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { logger } from "../../middleware/logger.js";
 import {
   claimNativeRestartRecoveries,
@@ -613,7 +613,7 @@ export function createHeartbeatRecovery(db: Db, dependencies: HeartbeatRecoveryD
     const nativeRunIds = activeRuns
       .filter(
         ({ run, adapterType }) =>
-          adapterType === "paperclip_runner" &&
+          adapterType === "pilibala_runner" &&
           isNativeSessionId(run.nativeSessionId),
       )
       .map(({ run }) => run.id);
@@ -796,7 +796,7 @@ export function createHeartbeatRecovery(db: Db, dependencies: HeartbeatRecoveryD
         continue;
       }
 
-      if (run.runtimeMode === "native" && adapterType === "paperclip_runner") {
+      if (run.runtimeMode === "native" && adapterType === "pilibala_runner") {
         classify(candidate, "skipped", "native_restart_recovery_owned", patch);
         continue;
       }
@@ -1190,7 +1190,7 @@ export function createHeartbeatRecovery(db: Db, dependencies: HeartbeatRecoveryD
       if (isNativeRunnerOwnershipHeld(run)) return;
       if (
         run.runtimeMode === "native" &&
-        agent.adapterType === "paperclip_runner"
+        agent.adapterType === "pilibala_runner"
       ) {
         const [owner] = await db.select({ bootId: nativeRunFinalizations.controllerBootId })
           .from(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, run.id));
@@ -2281,7 +2281,7 @@ export function createHeartbeatRecovery(db: Db, dependencies: HeartbeatRecoveryD
         : await dispatchNativeSessionResumptions({
             db,
             runnerInstanceId:
-              runtimeEnv.PAPERCLIP_INSTANCE_ID?.trim() || "paperclip-heartbeat",
+              runtimeEnv.PILIBALA_INSTANCE_ID?.trim() || "pilibala-heartbeat",
             now,
             runIds: [...claimableNativeRunIds],
             deferIneligible: !scope.runId,
@@ -2534,7 +2534,7 @@ export function createHeartbeatRecovery(db: Db, dependencies: HeartbeatRecoveryD
         !resumedRunIds.has(run.id) &&
         !locallyTracked;
       // Persisted numeric process identifiers prove only that some process is
-      // alive, not that Paperclip still owns it. Likewise an observed native
+      // alive, not that Pilibala still owns it. Likewise an observed native
       // coordinator without a live in-process execution has no durable proof
       // that its prior provider owner stopped. Keep both cases running but
       // blocked: never signal, finalize, or retry them automatically. This gate

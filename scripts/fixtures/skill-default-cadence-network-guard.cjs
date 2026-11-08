@@ -3,8 +3,8 @@ const fs = require('node:fs'), path = require('node:path'), os = require('node:o
 const net = require('node:net'), tls = require('node:tls'), http = require('node:http'), https = require('node:https'), dns = require('node:dns');
 const { createHash } = require('node:crypto');
 const { threadId, isMainThread } = require('node:worker_threads');
-const key = Symbol.for('paperclip.skill.default-cadence.prewire');
-const log = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG;
+const key = Symbol.for('pilibala.skill.default-cadence.prewire');
+const log = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG;
 if (!log) throw new Error('Default cadence preload requires an explicit guard log');
 if (globalThis[key]) { if (globalThis[key].log !== log) throw new Error('Default cadence guard log changed'); return; }
 const loopback = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
@@ -26,8 +26,8 @@ function allowDatabase(value) {
     || ['options', 'database', 'dbname'].some(k => url.searchParams.has(k))) deny('invalid dedicated database');
   const endpoint = `${url.hostname}:${url.port || 5432}`; endpoints.add(endpoint); pgEndpoints.add(endpoint);
 }
-for (const name of ['PAPERCLIP_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL', 'PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL', 'DATABASE_URL']) if (process.env[name]) allowDatabase(process.env[name]);
-for (const value of JSON.parse(process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_ORIGINS || '[]')) allowOrigin(value);
+for (const name of ['PILIBALA_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL', 'PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL', 'DATABASE_URL']) if (process.env[name]) allowDatabase(process.env[name]);
+for (const value of JSON.parse(process.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_ORIGINS || '[]')) allowOrigin(value);
 function check(host = 'localhost', port, protocol) {
   local(host);
   if (protocol && !['http:', 'https:'].includes(protocol)) deny(`protocol ${protocol}`);

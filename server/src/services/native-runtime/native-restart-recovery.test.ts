@@ -285,33 +285,33 @@ describe("native controller takeover fencing", () => {
     afterEach(() => vi.unstubAllEnvs());
 
     it("keep the local dead-PID proof on a single-host server and flag the fallback", async () => {
-      vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", "");
+      vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", "");
       await expect(evaluateNativeControllerTakeover({ owner: { ...owner(), controllerHostHash: null }, now,
         isProcessAlive: () => false })).resolves.toEqual({ allowed: true, reason: "controller_process_dead", legacyHostFallback: true });
     });
 
     it("are unprovable on an ephemeral server, whatever a local probe says", async () => {
-      vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", "true");
+      vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", "true");
       await expect(evaluateNativeControllerTakeover({ owner: { ...owner(), controllerHostHash: null }, now,
         isProcessAlive: () => false })).resolves.toEqual({ allowed: false, reason: "controller_host_unrecorded" });
     });
 
     it("stay unprovable on another host in either mode", async () => {
       for (const mode of ["", "true"]) {
-        vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", mode);
+        vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", mode);
         await expect(evaluateNativeControllerTakeover({ owner: { ...owner(), controllerHostHash: "another-host-pid-space" }, now,
           isProcessAlive: () => false })).resolves.toEqual({ allowed: false, reason: "controller_host_unprovable" });
       }
     });
 
     it("accept a board confirmation that the exact controller stopped", async () => {
-      vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", "true");
+      vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", "true");
       await expect(evaluateNativeControllerTakeover({ owner: { ...owner(), controllerHostHash: "operator_attested" }, now,
         isProcessAlive: () => true })).resolves.toEqual({ allowed: true, reason: "operator_attested_controller_stopped" });
     });
 
     it("leave receipt owners that never stored a host unchanged", async () => {
-      vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", "true");
+      vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", "true");
       await expect(evaluateNativeControllerTakeover({ owner: owner(), now, isProcessAlive: () => false }))
         .resolves.toEqual({ allowed: true, reason: "controller_process_dead" });
     });

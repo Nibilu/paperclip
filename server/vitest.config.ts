@@ -6,15 +6,15 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: /^@paperclipai\/paperclip-runner\/live$/,
+        find: /^@pilibalaai\/pilibala-runner\/live$/,
         replacement: fileURLToPath(
-          new URL("../packages/paperclip-runner/src/live/index.ts", import.meta.url),
+          new URL("../packages/pilibala-runner/src/live/index.ts", import.meta.url),
         ),
       },
       {
-        find: /^@paperclipai\/paperclip-runner$/,
+        find: /^@pilibalaai\/pilibala-runner$/,
         replacement: fileURLToPath(
-          new URL("../packages/paperclip-runner/src/index.ts", import.meta.url),
+          new URL("../packages/pilibala-runner/src/index.ts", import.meta.url),
         ),
       },
     ],

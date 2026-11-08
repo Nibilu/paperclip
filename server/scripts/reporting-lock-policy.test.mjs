@@ -10,7 +10,7 @@ import { prepareReportLock } from '../../tests/runner-e2e/prepare-report-lock.mj
 // A Dependabot lockfile is not in the proof yet. The pr-trusted policy job verifies that it comes from
 // a verified Dependabot commit, and the lockfile refresh renews the proof after it merges.
 // See .github/scripts/lockfile-trust.mjs.
-const pendingDependabotLock = process.env.PAPERCLIP_CI_PR_AUTHOR === 'dependabot[bot]';
+const pendingDependabotLock = process.env.PILIBALA_CI_PR_AUTHOR === 'dependabot[bot]';
 
 it.skipIf(pendingDependabotLock)('admits the committed controller lock through the reviewed reporting policy before paid execution', async () => {
   const repository = fileURLToPath(new URL('../../', import.meta.url));

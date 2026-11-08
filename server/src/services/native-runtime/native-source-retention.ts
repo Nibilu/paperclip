@@ -1,5 +1,5 @@
 import { and, desc, eq, or, sql } from "drizzle-orm";
-import { agentWakeupRequests, environmentLeases, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { agentWakeupRequests, environmentLeases, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { persistActivity } from "../activity-log.js";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "../delivery-work-notifications.js";
 import { hasRemoteTerminationReceipt } from "../remote-execution-termination.js";
@@ -59,7 +59,7 @@ export async function retainNativeRecoverySource(db: Db, input: WorkspaceRecover
       const source = inspected.sources[0];
       if (!source?.reference || source.reference.state !== "prepared" || source.reference.resourceDisposition !== "keep_running"
         || source.lease.leasePolicy !== "reuse_by_environment" || !["released", "retained"].includes(source.lease.status)) return null;
-      const marker = { schema: "paperclip.native-source-retention.v1", sourceRunId: run.id, actionId: action.id,
+      const marker = { schema: "pilibala.native-source-retention.v1", sourceRunId: run.id, actionId: action.id,
         requestId: request.id, leaseId: source.lease.id, providerLeaseId: source.lease.providerLeaseId,
         descriptorSha256: source.reference.descriptorSha256, baselineSha256: source.reference.baselineSha256,
         workspaceId: source.reference.workspaceId, originalLeasePolicy: "reuse_by_environment" };
@@ -98,7 +98,7 @@ export async function settleRecoveredNativeSourceRetention(db: Db, input: Worksp
   const [lease] = await db.select().from(environmentLeases).where(and(eq(environmentLeases.companyId, input.companyId),
     eq(environmentLeases.id, reference.leaseId), eq(environmentLeases.heartbeatRunId, run.id)));
   const marker = lease?.metadata?.nativeSourceRetention as Record<string, unknown> | undefined;
-  if (!lease || marker?.schema !== "paperclip.native-source-retention.v1" || marker.sourceRunId !== run.id
+  if (!lease || marker?.schema !== "pilibala.native-source-retention.v1" || marker.sourceRunId !== run.id
     || marker.actionId !== input.actionId || marker.leaseId !== lease.id || marker.providerLeaseId !== reference.providerLeaseId
     || lease.providerLeaseId !== reference.providerLeaseId || lease.metadata?.remoteCwd !== reference.remoteCwd
     || marker.baselineSha256 !== reference.baselineSha256 || marker.workspaceId !== reference.workspaceId

@@ -47,7 +47,7 @@ the disposable instance's `max_connections` from 100 to 20 restored the preview;
 no system limits or shared instances were changed.
 The running preview was not deployed to the shared development instance.
 
-PR: https://github.com/paperclipai/paperclip/pull/16976.
+PR: https://github.com/pilibalaai/pilibala/pull/16976.
 CI found missing OpenAPI inventory coverage and an outdated General-settings
 expectation; both are fixed and tested. Review found credential-outage fallback
 and a stale decision-history link; both are fixed, with 121 focused regression

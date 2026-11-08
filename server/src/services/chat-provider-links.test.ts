@@ -24,26 +24,26 @@ describe("chat provider conversation links", () => {
     expect(
       chatProviderConversationUrl({
         provider: "github",
-        threadId: "github:paperclipai/paperclip:issue:42",
+        threadId: "github:pilibalaai/pilibala:issue:42",
         providerMessageId: "99",
       }),
     ).toBe(
-      "https://github.com/paperclipai/paperclip/issues/42#issuecomment-99",
+      "https://github.com/pilibalaai/pilibala/issues/42#issuecomment-99",
     );
     expect(
       chatProviderConversationUrl({
         provider: "github",
-        threadId: "github:paperclipai/paperclip:43",
+        threadId: "github:pilibalaai/pilibala:43",
         providerMessageId: "100",
       }),
-    ).toBe("https://github.com/paperclipai/paperclip/pull/43#issuecomment-100");
+    ).toBe("https://github.com/pilibalaai/pilibala/pull/43#issuecomment-100");
     expect(
       chatProviderConversationUrl({
         provider: "github",
-        threadId: "github:paperclipai/paperclip:43:rc:101",
+        threadId: "github:pilibalaai/pilibala:43:rc:101",
         providerMessageId: "102",
       }),
-    ).toBe("https://github.com/paperclipai/paperclip/pull/43#discussion_r101");
+    ).toBe("https://github.com/pilibalaai/pilibala/pull/43#discussion_r101");
   });
 
   it("links Teams channel threads and chats using verified activity IDs", () => {
@@ -122,9 +122,9 @@ describe("chat provider conversation links", () => {
         provider: "telegram",
         threadId: "telegram:-100123456:77",
         providerMessageId: "88",
-        raw: { message_id: 88, chat: { username: "paperclip_e2e" } },
+        raw: { message_id: 88, chat: { username: "pilibala_e2e" } },
       }),
-    ).toBe("https://t.me/paperclip_e2e/77/88");
+    ).toBe("https://t.me/pilibala_e2e/77/88");
     expect(
       chatProviderConversationUrl({
         provider: "telegram",

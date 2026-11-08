@@ -1,4 +1,4 @@
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import { ONBOARDING_AGENT_STEP } from "./onboarding-route";
 
 /** Resume only the draft this browser saved, while no completed agent exists. */

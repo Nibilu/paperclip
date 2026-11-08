@@ -88,7 +88,7 @@ vi.mock("@/context/SidebarContext", () => ({
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip" },
+    selectedCompany: { id: "company-1", name: "Pilibala" },
   }),
 }));
 
@@ -131,7 +131,7 @@ describe("CompanyAccess", () => {
           updatedAt: "2026-04-10T00:00:00.000Z",
           user: {
             id: "user-1",
-            email: "codexcoder@paperclip.local",
+            email: "codexcoder@pilibala.local",
             name: "Codex Coder",
             image: "/api/assets/avatar-1/content",
           },
@@ -148,7 +148,7 @@ describe("CompanyAccess", () => {
           updatedAt: "2026-04-10T00:00:00.000Z",
           user: {
             id: "user-2",
-            email: "board@paperclip.local",
+            email: "board@pilibala.local",
             name: "Board User",
             image: null,
           },
@@ -169,11 +169,11 @@ describe("CompanyAccess", () => {
         createdAt: "2026-04-10T00:00:00.000Z",
         requesterUser: {
           id: "user-2",
-          email: "board@paperclip.local",
+          email: "board@pilibala.local",
           name: "Board User",
           image: null,
         },
-        requestEmailSnapshot: "board@paperclip.local",
+        requestEmailSnapshot: "board@pilibala.local",
         requestingUserId: "user-2",
         invite: {
           allowedJoinTypes: "human",
@@ -240,7 +240,7 @@ describe("CompanyAccess", () => {
     await flushReact();
     await flushReact();
 
-    expect(container.textContent).not.toContain("Manage the people who can work in Paperclip");
+    expect(container.textContent).not.toContain("Manage the people who can work in Pilibala");
     expect(container.textContent).not.toContain("Members can collaborate across the company by default");
     expect(container.textContent).not.toContain("Core keeps this page focused on membership");
     expect(container.textContent).not.toContain("Manage human company memberships and status here");
@@ -393,7 +393,7 @@ describe("CompanyAccess", () => {
           updatedAt: "2026-04-10T00:00:00.000Z",
           user: {
             id: "admin-user",
-            email: "admin@paperclip.local",
+            email: "admin@pilibala.local",
             name: "Admin User",
             image: null,
           },
@@ -589,7 +589,7 @@ describe("CompanyAccess invites tab", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     client.setQueryData(["health"], {
       hiddenSettings: ["company.invites"],
-      cloud: { managed: true, managedBy: "paperclip-cloud", cloudBaseUrl, stackSlug: "old-slug" },
+      cloud: { managed: true, managedBy: "pilibala-cloud", cloudBaseUrl, stackSlug: "old-slug" },
     });
     return client;
   }
@@ -660,7 +660,7 @@ describe("CompanyAccess invites tab", () => {
     const root = await renderPage(client);
     expect(container.textContent).toContain("Invite people");
     listCloudStacksMock.mockRejectedValue(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await act(async () => { await client.invalidateQueries({ queryKey: ["cloud", "stacks"] }); });
     await flushReact();
@@ -689,7 +689,7 @@ describe("CompanyAccess read resilience", () => {
           membershipRole: "owner",
           createdAt: "2026-04-10T00:00:00.000Z",
           updatedAt: "2026-04-10T00:00:00.000Z",
-          user: { id: "user-1", email: "codexcoder@paperclip.local", name: "Codex Coder", image: null },
+          user: { id: "user-1", email: "codexcoder@pilibala.local", name: "Codex Coder", image: null },
           grants: [],
         },
       ],
@@ -726,7 +726,7 @@ describe("CompanyAccess read resilience", () => {
     expect(container.textContent).toContain("Codex Coder");
 
     listMembersMock.mockRejectedValue(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await act(async () => {
       await client.invalidateQueries({ queryKey: queryKeys.access.companyMembers("company-1") });
@@ -736,7 +736,7 @@ describe("CompanyAccess read resilience", () => {
     expect(listMembersMock).toHaveBeenCalledTimes(2);
     expect(container.textContent).toContain("Codex Coder");
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
     expect(container.textContent).not.toContain("tenant_app_unavailable");
 
     await act(async () => root.unmount());

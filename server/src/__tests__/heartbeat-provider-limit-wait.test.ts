@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, authUsers, companies, companyMemberships, createDb, heartbeatRunEvents, heartbeatRuns, issues } from "@paperclipai/db";
+import { agents, authUsers, companies, companyMemberships, createDb, heartbeatRunEvents, heartbeatRuns, issues } from "@pilibalaai/db";
 import { registerServerAdapter, unregisterServerAdapter } from "../adapters/index.js";
 import { heartbeatService } from "../services/heartbeat.js";
 import { createProviderLimitWait } from "../services/heartbeat/provider-limit-wait.js";
@@ -24,14 +24,14 @@ describePostgres("heartbeat provider usage limit wait", () => {
   let heartbeat: ReturnType<typeof heartbeatService>;
   const adapterType = "codex_local";
   const dispatched = new Set<string>();
-  const oldHome = process.env.PAPERCLIP_HOME;
+  const oldHome = process.env.PILIBALA_HOME;
   let home: string;
 
   beforeAll(async () => {
     temporary = await startRecoveryPostgres("heartbeat-provider-limit-");
     db = createDb(temporary.connectionString);
-    home = await mkdtemp(path.join(tmpdir(), "paperclip-provider-limit-"));
-    process.env.PAPERCLIP_HOME = home;
+    home = await mkdtemp(path.join(tmpdir(), "pilibala-provider-limit-"));
+    process.env.PILIBALA_HOME = home;
     heartbeat = heartbeatService(db);
     registerServerAdapter({
       type: adapterType, supportsLocalAgentJwt: false,
@@ -49,7 +49,7 @@ describePostgres("heartbeat provider usage limit wait", () => {
     unregisterServerAdapter(adapterType);
     await db?.$client.end({ timeout: 0 });
     await temporary?.cleanup();
-    if (oldHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = oldHome;
+    if (oldHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = oldHome;
     if (home) await rm(home, { recursive: true, force: true });
   });
 
@@ -82,7 +82,7 @@ describePostgres("heartbeat provider usage limit wait", () => {
     startedAt: new Date(Date.now() - (minutesAgo + 2) * 60_000),
     finishedAt: new Date(Date.now() - minutesAgo * 60_000),
     errorCode: "provider_session_open_rejected",
-    resultJson: { providerFailure: { schema: "paperclip.provider-failure.v1", provider: "anthropic", phase: "startup",
+    resultJson: { providerFailure: { schema: "pilibala.provider-failure.v1", provider: "anthropic", phase: "startup",
       category: "rate_limit", httpStatus: 429, retryability: "unknown",
       message: "API error: 429 This request would exceed your account's rate limit. Please try again later", ...overrides } },
   });
@@ -190,7 +190,7 @@ describePostgres("heartbeat provider usage limit wait", () => {
     expect(dispatched.has((await wake(expired)).id)).toBe(true);
 
     const unrelated = await seed([{ ...rateLimited(5), resultJson: { providerFailure: {
-      schema: "paperclip.provider-failure.v1", provider: "anthropic", phase: "turn", category: "unknown",
+      schema: "pilibala.provider-failure.v1", provider: "anthropic", phase: "turn", category: "unknown",
       retryability: "unknown", message: "ACP agent reported a terminal limit failure." } } }]);
     expect(dispatched.has((await wake(unrelated)).id)).toBe(true);
   }, 60_000);

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { agents, companies, createDb, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, completionContracts } from "@paperclipai/db";
+import { agents, companies, createDb, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, completionContracts } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { executionProjectionsForRuns } from "./execution-projection.js";
 
@@ -18,7 +18,7 @@ describe.skipIf(!support.supported)("persisted stopped-workspace projection", ()
   it("reads recovered files on a cancelled run through the real batched query", async () => {
     const companyId = randomUUID(), agentId = randomUUID(), issueId = randomUUID(), runId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Stopped workspace", issuePrefix: "SWP" });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Reviewer", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Reviewer", adapterType: "pilibala_runner" });
     await db.insert(issues).values({ id: issueId, companyId, title: "Review current changes", assigneeAgentId: agentId });
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, nativeIssueId: issueId,
       runtimeMode: "native", status: "cancelled", finishedAt: new Date(),
@@ -30,7 +30,7 @@ describe.skipIf(!support.supported)("persisted stopped-workspace projection", ()
       nextAction: "The original sandbox is retained for workspace repair.",
       evidence: { runId, continuationDelivery: "invalidated",
         automaticRecovery: { replay: "blocked", actionOutcome: "unknown", policy: "preserve_without_replay_v1" },
-        workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId, status: "recovered",
+        workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId, status: "recovered",
           stage: "saving_receipts", attempt: 1, attemptLimit: 6, retryable: true, requestIds: [] },
       } });
     const projections = await executionProjectionsForRuns(db, companyId, [runId]);
@@ -40,7 +40,7 @@ describe.skipIf(!support.supported)("persisted stopped-workspace projection", ()
   it("advertises Stop for a failed native retry from the real batched coordinator read", async () => {
     const companyId = randomUUID(), agentId = randomUUID(), issueId = randomUUID(), runId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Pending native retry", issuePrefix: "PNR" });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "pilibala_runner" });
     await db.insert(issues).values({ id: issueId, companyId, title: "Pending retry", assigneeAgentId: agentId });
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, nativeIssueId: issueId,
       runtimeMode: "native", status: "failed", finishedAt: new Date(), contextSnapshot: { issueId } });
@@ -63,7 +63,7 @@ describe.skipIf(!support.supported)("persisted stopped-workspace projection", ()
     }
     await db.update(nativeRunFinalizations).set({ phase: "retryable_failure" }).where(eq(nativeRunFinalizations.runId, runId));
     const [contract] = await db.insert(completionContracts).values({ companyId, issueId, revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1", policyVersion: "test", risk: "low", completionAuthority: "server",
+      schemaVersion: "pilibala.completion-contract.v1", policyVersion: "test", risk: "low", completionAuthority: "server",
       incompleteCriteriaPolicy: "deny", contractJson: {}, canonicalSha256: randomUUID(), createdByActorType: "agent", createdByActorId: agentId }).returning();
     await db.update(heartbeatRuns).set({ completionContractId: contract.id }).where(eq(heartbeatRuns.id, runId));
     const [accepted] = await db.insert(nativeRunResults).values({ companyId, issueId, runId, completionContractId: contract.id,
@@ -82,7 +82,7 @@ describe.skipIf(!support.supported)("persisted stopped-workspace projection", ()
     const companyId = randomUUID(), agentId = randomUUID(), issueId = randomUUID();
     const stoppedRunId = randomUUID(), successorRunId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Stopped predecessor", issuePrefix: "SPR" });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Worker", adapterType: "pilibala_runner" });
     await db.insert(issues).values({ id: issueId, companyId, title: "Long foreground tool", assigneeAgentId: agentId });
     await db.insert(heartbeatRuns).values({ id: stoppedRunId, companyId, agentId, nativeIssueId: issueId,
       runtimeMode: "native", status: "cancelled", finishedAt: new Date(), contextSnapshot: { issueId } });
@@ -111,7 +111,7 @@ describe.skipIf(!support.supported)("persisted stopped-workspace projection", ()
     });
     // Another agent's held run on the same task is not this turn's predecessor.
     const otherAgentId = randomUUID(), otherRunId = randomUUID();
-    await db.insert(agents).values({ id: otherAgentId, companyId, name: "Other", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: otherAgentId, companyId, name: "Other", adapterType: "pilibala_runner" });
     await db.insert(heartbeatRuns).values({ id: otherRunId, companyId, agentId: otherAgentId, nativeIssueId: issueId,
       runtimeMode: "native", status: "cancelled", finishedAt: new Date(), contextSnapshot: { issueId } });
     await db.insert(nativeRunFinalizations).values({ companyId, issueId, runId: otherRunId, phase: "observed",

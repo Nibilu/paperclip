@@ -1,5 +1,5 @@
 import { mock } from 'node:test';
-import { DEFAULT_ANNOUNCEMENT_FEED_URL, announcementManifestSchema } from '@paperclipai/shared';
+import { DEFAULT_ANNOUNCEMENT_FEED_URL, announcementManifestSchema } from '@pilibalaai/shared';
 
 /** Test-child transport seam: actual route/feed/cache, no DNS or HTTPS claim. */
 export async function installMaintenanceAnnouncementBoundary() {

@@ -28,8 +28,8 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 function catalogTeam(overrides: Record<string, unknown> = {}) {
   return {
-    id: "paperclipai:bundled:software-development:product-engineering",
-    key: "paperclipai/bundled/software-development/product-engineering",
+    id: "pilibalaai:bundled:software-development:product-engineering",
+    key: "pilibalaai/bundled/software-development/product-engineering",
     kind: "bundled",
     category: "software-development",
     slug: "product-engineering",
@@ -58,8 +58,8 @@ function catalogTeam(overrides: Record<string, unknown> = {}) {
 
 function installedCatalogTeam(overrides: Record<string, unknown> = {}) {
   return {
-    catalogId: "paperclipai:bundled:software-development:product-engineering",
-    catalogKey: "paperclipai/bundled/software-development/product-engineering",
+    catalogId: "pilibalaai:bundled:software-development:product-engineering",
+    catalogKey: "pilibalaai/bundled/software-development/product-engineering",
     present: true,
     currentContentHash: "sha256:catalog-team",
     installedOriginHashes: ["sha256:catalog-team"],
@@ -76,9 +76,9 @@ describe("teams CLI commands", () => {
 
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV };
-    delete process.env.PAPERCLIP_API_URL;
-    delete process.env.PAPERCLIP_API_KEY;
-    delete process.env.PAPERCLIP_COMPANY_ID;
+    delete process.env.PILIBALA_API_URL;
+    delete process.env.PILIBALA_API_KEY;
+    delete process.env.PILIBALA_COMPANY_ID;
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
@@ -105,18 +105,18 @@ describe("teams CLI commands", () => {
       "--query",
       "engineering",
       "--api-base",
-      "http://paperclip.test",
+      "http://pilibala.test",
       "--api-key",
       "token",
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://paperclip.test/api/teams/catalog?kind=bundled&category=software-development&q=engineering",
+      "http://pilibala.test/api/teams/catalog?kind=bundled&category=software-development&q=engineering",
       expect.objectContaining({ method: "GET" }),
     );
     const rendered = logSpy.mock.calls.map((call: unknown[]) => String(call[0])).join("\n");
     expect(rendered).toContain("id");
-    expect(rendered).toContain("paperclipai:bundled:software-development:product-engineering");
+    expect(rendered).toContain("pilibalaai:bundled:software-development:product-engineering");
   });
 
   it("searches catalog teams as JSON", async () => {
@@ -130,14 +130,14 @@ describe("teams CLI commands", () => {
       "--kind",
       "bundled",
       "--api-base",
-      "http://paperclip.test",
+      "http://pilibala.test",
       "--api-key",
       "token",
       "--json",
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://paperclip.test/api/teams/catalog?kind=bundled&q=engineering",
+      "http://pilibala.test/api/teams/catalog?kind=bundled&q=engineering",
       expect.objectContaining({ method: "GET" }),
     );
     expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toEqual(rows);
@@ -148,8 +148,8 @@ describe("teams CLI commands", () => {
       .mockResolvedValueOnce(jsonResponse([
         catalogTeam(),
         catalogTeam({
-          id: "paperclipai:optional:content:content-machine",
-          key: "paperclipai/optional/content/content-machine",
+          id: "pilibalaai:optional:content:content-machine",
+          key: "pilibalaai/optional/content/content-machine",
           kind: "optional",
           category: "content",
           slug: "content-machine",
@@ -173,19 +173,19 @@ describe("teams CLI commands", () => {
       "--company-id",
       "company-1",
       "--api-base",
-      "http://paperclip.test",
+      "http://pilibala.test",
       "--api-key",
       "token",
     ]);
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      "http://paperclip.test/api/teams/catalog?kind=bundled",
+      "http://pilibala.test/api/teams/catalog?kind=bundled",
       expect.objectContaining({ method: "GET" }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      "http://paperclip.test/api/companies/company-1/teams/catalog/installed",
+      "http://pilibala.test/api/companies/company-1/teams/catalog/installed",
       expect.objectContaining({ method: "GET" }),
     );
     const rendered = logSpy.mock.calls.map((call: unknown[]) => String(call[0])).join("\n");
@@ -200,8 +200,8 @@ describe("teams CLI commands", () => {
       .mockResolvedValueOnce(jsonResponse([
         installedCatalogTeam(),
         installedCatalogTeam({
-          catalogId: "paperclipai:removed:team",
-          catalogKey: "paperclipai/removed/team",
+          catalogId: "pilibalaai:removed:team",
+          catalogKey: "pilibalaai/removed/team",
           present: false,
           currentContentHash: null,
           installedOriginHashes: ["sha256:removed"],
@@ -215,7 +215,7 @@ describe("teams CLI commands", () => {
       "--company-id",
       "company-1",
       "--api-base",
-      "http://paperclip.test",
+      "http://pilibala.test",
       "--api-key",
       "token",
       "--json",
@@ -224,15 +224,15 @@ describe("teams CLI commands", () => {
     const rows = JSON.parse(String(logSpy.mock.calls[0]?.[0]));
     expect(rows).toMatchObject([
       {
-        catalogId: "paperclipai:bundled:software-development:product-engineering",
-        catalogKey: "paperclipai/bundled/software-development/product-engineering",
+        catalogId: "pilibalaai:bundled:software-development:product-engineering",
+        catalogKey: "pilibalaai/bundled/software-development/product-engineering",
         installedStatus: "installed",
         installedAgentCount: 3,
         outOfDate: false,
       },
       {
-        catalogId: "paperclipai:removed:team",
-        catalogKey: "paperclipai/removed/team",
+        catalogId: "pilibalaai:removed:team",
+        catalogKey: "pilibalaai/removed/team",
         installedStatus: "installed_missing",
         installedAgentCount: 2,
         present: false,
@@ -247,16 +247,16 @@ describe("teams CLI commands", () => {
     await runCommand([
       "teams",
       "inspect",
-      "paperclipai/bundled/software-development/product-engineering",
+      "pilibalaai/bundled/software-development/product-engineering",
       "--api-base",
-      "http://paperclip.test",
+      "http://pilibala.test",
       "--api-key",
       "token",
       "--json",
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://paperclip.test/api/teams/catalog/ref?ref=paperclipai%2Fbundled%2Fsoftware-development%2Fproduct-engineering",
+      "http://pilibala.test/api/teams/catalog/ref?ref=pilibalaai%2Fbundled%2Fsoftware-development%2Fproduct-engineering",
       expect.objectContaining({ method: "GET" }),
     );
     expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toEqual(detail);
@@ -286,14 +286,14 @@ describe("teams CLI commands", () => {
       "--company-id",
       "company-1",
       "--api-base",
-      "http://paperclip.test",
+      "http://pilibala.test",
       "--api-key",
       "token",
       "--json",
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://paperclip.test/api/companies/company-1/teams/catalog/ref/preview?ref=product-engineering",
+      "http://pilibala.test/api/companies/company-1/teams/catalog/ref/preview?ref=product-engineering",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
@@ -309,7 +309,7 @@ describe("teams CLI commands", () => {
     const result = {
       team: catalogTeam(),
       portabilityImport: {
-        company: { id: "company-1", name: "Paperclip", action: "unchanged" },
+        company: { id: "company-1", name: "Pilibala", action: "unchanged" },
         agents: [],
         projects: [],
         envInputs: [],
@@ -337,14 +337,14 @@ describe("teams CLI commands", () => {
       "--company-id",
       "company/1",
       "--api-base",
-      "http://paperclip.test",
+      "http://pilibala.test",
       "--api-key",
       "token",
       "--json",
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://paperclip.test/api/companies/company%2F1/teams/catalog/ref/install?ref=product-engineering",
+      "http://pilibala.test/api/companies/company%2F1/teams/catalog/ref/install?ref=product-engineering",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
@@ -394,7 +394,7 @@ describe("teams CLI commands", () => {
       "--approval-issue-id",
       "11111111-1111-4111-8111-111111111111",
       "--api-base",
-      "http://paperclip.test",
+      "http://pilibala.test",
       "--api-key",
       "token",
       "--json",
@@ -402,7 +402,7 @@ describe("teams CLI commands", () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      "http://paperclip.test/api/companies/company-1/teams/catalog/ref/install?ref=product-engineering",
+      "http://pilibala.test/api/companies/company-1/teams/catalog/ref/install?ref=product-engineering",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
@@ -415,7 +415,7 @@ describe("teams CLI commands", () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      "http://paperclip.test/api/companies/company-1/approvals",
+      "http://pilibala.test/api/companies/company-1/approvals",
       expect.objectContaining({
         method: "POST",
         body: expect.any(String),
@@ -458,8 +458,8 @@ describe("teams CLI commands", () => {
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
-  it("auto-requests board approval for forbidden installs inside a Paperclip task run", async () => {
-    process.env.PAPERCLIP_TASK_ID = "11111111-1111-4111-8111-111111111111";
+  it("auto-requests board approval for forbidden installs inside a Pilibala task run", async () => {
+    process.env.PILIBALA_TASK_ID = "11111111-1111-4111-8111-111111111111";
     const approval = {
       id: "approval-2",
       companyId: "company-1",
@@ -485,7 +485,7 @@ describe("teams CLI commands", () => {
       "--company-id",
       "company-1",
       "--api-base",
-      "http://paperclip.test",
+      "http://pilibala.test",
       "--api-key",
       "token",
       "--json",
@@ -493,7 +493,7 @@ describe("teams CLI commands", () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      "http://paperclip.test/api/companies/company-1/approvals",
+      "http://pilibala.test/api/companies/company-1/approvals",
       expect.objectContaining({
         method: "POST",
         body: expect.any(String),
@@ -532,14 +532,14 @@ describe("teams CLI commands", () => {
       "company-1",
       "--request-approval-on-forbidden",
       "--api-base",
-      "http://paperclip.test",
+      "http://pilibala.test",
       "--api-key",
       "token",
     ])).rejects.toThrow("exit:1");
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://paperclip.test/api/companies/company-1/teams/catalog/ref/install?ref=product-engineering",
+      "http://pilibala.test/api/companies/company-1/teams/catalog/ref/install?ref=product-engineering",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({}),
@@ -563,13 +563,13 @@ describe("teams CLI commands", () => {
       "--company-id",
       "company-1",
       "--api-base",
-      "http://paperclip.test",
+      "http://pilibala.test",
       "--api-key",
       "token",
     ])).rejects.toThrow("exit:1");
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://paperclip.test/api/companies/company-1/teams/catalog/ref/install?ref=unsafe-local-team",
+      "http://pilibala.test/api/companies/company-1/teams/catalog/ref/install?ref=unsafe-local-team",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({}),

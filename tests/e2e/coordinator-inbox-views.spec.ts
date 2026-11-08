@@ -11,7 +11,7 @@ for (const mobile of [false, true]) test(`Mine retains Inbox behavior inside Tas
   test.setTimeout(90_000);
   await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1280, height: 900 });
   await page.addInitScript(() => {
-    if (!localStorage.getItem("paperclip:inbox:issue-columns")) localStorage.setItem("paperclip:inbox:issue-columns", JSON.stringify(["status", "id", "project", "updated"]));
+    if (!localStorage.getItem("pilibala:inbox:issue-columns")) localStorage.setItem("pilibala:inbox:issue-columns", JSON.stringify(["status", "id", "project", "updated"]));
   });
   const company = await json(await request.post("/api/companies", { data: { name: "Personal Tasks verification" } }));
   const preferences = await json(await request.get("/api/workspace-preferences/me"));

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, companies, createDb, heartbeatRuns, issues } from "@paperclipai/db";
+import { agents, companies, createDb, heartbeatRuns, issues } from "@pilibalaai/db";
 import {
   ContextCompactionError,
   contextCompactionService,
@@ -11,12 +11,12 @@ import {
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 
 describe("context compaction support", () => {
-  it("supports Codex and Claude on the Paperclip runner only", () => {
-    expect(contextCompactionSupport({ adapterType: "paperclip_runner", adapterConfig: { provider: "codex" } }).supported).toBe(true);
-    expect(contextCompactionSupport({ adapterType: "paperclip_runner", adapterConfig: {} }).supported).toBe(true);
-    expect(contextCompactionSupport({ adapterType: "paperclip_runner", adapterConfig: { provider: "acpx", acpxAgent: "claude" } }).supported).toBe(true);
-    expect(contextCompactionSupport({ adapterType: "paperclip_runner", adapterConfig: { provider: "acpx", acpxAgent: "pi" } }).supported).toBe(false);
-    expect(contextCompactionSupport({ adapterType: "paperclip_runner", adapterConfig: { provider: "opencode" } }).supported).toBe(false);
+  it("supports Codex and Claude on the Pilibala runner only", () => {
+    expect(contextCompactionSupport({ adapterType: "pilibala_runner", adapterConfig: { provider: "codex" } }).supported).toBe(true);
+    expect(contextCompactionSupport({ adapterType: "pilibala_runner", adapterConfig: {} }).supported).toBe(true);
+    expect(contextCompactionSupport({ adapterType: "pilibala_runner", adapterConfig: { provider: "acpx", acpxAgent: "claude" } }).supported).toBe(true);
+    expect(contextCompactionSupport({ adapterType: "pilibala_runner", adapterConfig: { provider: "acpx", acpxAgent: "pi" } }).supported).toBe(false);
+    expect(contextCompactionSupport({ adapterType: "pilibala_runner", adapterConfig: { provider: "opencode" } }).supported).toBe(false);
     expect(contextCompactionSupport({ adapterType: "codex_local", adapterConfig: {} }).supported).toBe(false);
   });
 
@@ -40,7 +40,7 @@ suite("context compaction availability", () => {
   }, 60_000);
   afterAll(async () => { await temporaryDb?.cleanup(); });
 
-  async function fixture(adapterConfig: Record<string, unknown> = { provider: "codex" }, adapterType = "paperclip_runner") {
+  async function fixture(adapterConfig: Record<string, unknown> = { provider: "codex" }, adapterType = "pilibala_runner") {
     const companyId = randomUUID(), agentId = randomUUID(), issueId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Compaction fixture", issuePrefix: `C${companyId.slice(0, 6)}` });
     await db.insert(agents).values({ id: agentId, companyId, name: "Codie", role: "engineer", status: "idle", adapterType, adapterConfig });

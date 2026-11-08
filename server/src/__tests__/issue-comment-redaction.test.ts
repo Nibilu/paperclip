@@ -21,11 +21,11 @@ import {
   issueComments,
   issueReferenceMentions,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   companySearchQuerySchema,
   LOW_TRUST_REVIEW_PRESET,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -33,12 +33,12 @@ import {
 import { errorHandler } from "../middleware/index.js";
 import { issueRoutes } from "../routes/issues.js";
 import { companySearchService } from "../services/company-search.js";
-import { buildPaperclipWakePayload } from "../services/heartbeat.js";
+import { buildPilibalaWakePayload } from "../services/heartbeat.js";
 import { issueReferenceService } from "../services/issue-references.js";
 import { issueService } from "../services/issues.js";
 import type { StorageService } from "../storage/types.js";
 
-const externalTestDatabaseUrl = process.env.PAPERCLIP_TEST_DATABASE_URL;
+const externalTestDatabaseUrl = process.env.PILIBALA_TEST_DATABASE_URL;
 const embeddedPostgresSupport = externalTestDatabaseUrl
   ? { supported: true }
   : await getEmbeddedPostgresTestSupport();
@@ -63,7 +63,7 @@ describeEmbeddedPostgres("deleted issue comment redaction", () => {
       db = createDb(externalTestDatabaseUrl);
     } else {
       tempDb = await startEmbeddedPostgresTestDatabase(
-        "paperclip-comment-redaction-",
+        "pilibala-comment-redaction-",
       );
       db = createDb(tempDb.connectionString);
     }
@@ -204,7 +204,7 @@ describeEmbeddedPostgres("deleted issue comment redaction", () => {
       "secret metadata",
     );
 
-    const wakePayload = await buildPaperclipWakePayload({
+    const wakePayload = await buildPilibalaWakePayload({
       db,
       companyId,
       contextSnapshot: {
@@ -259,7 +259,7 @@ describeEmbeddedPostgres("deleted issue comment redaction", () => {
       ])
       .returning();
 
-    const wakePayload = await buildPaperclipWakePayload({
+    const wakePayload = await buildPilibalaWakePayload({
       db,
       companyId,
       contextSnapshot: {
@@ -414,7 +414,7 @@ describeEmbeddedPostgres("deleted issue comment redaction", () => {
       });
     }
 
-    const wakePayload = await buildPaperclipWakePayload({
+    const wakePayload = await buildPilibalaWakePayload({
       db,
       companyId,
       contextSnapshot: {
@@ -457,7 +457,7 @@ describeEmbeddedPostgres("deleted issue comment redaction", () => {
     expect(JSON.stringify(wakePayload)).not.toContain("other-company.txt");
     expect(JSON.stringify(wakePayload)).not.toContain("quarantined.txt");
 
-    const lowTrustWakePayload = await buildPaperclipWakePayload({
+    const lowTrustWakePayload = await buildPilibalaWakePayload({
       db,
       companyId,
       contextSnapshot: {

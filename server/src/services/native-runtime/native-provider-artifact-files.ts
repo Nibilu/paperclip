@@ -10,7 +10,7 @@ import {
   type ProviderPackIdentity,
 } from "./remote-provider-pack-verification.js";
 
-export const schema = "paperclip.native-provider-artifacts.v1";
+export const schema = "pilibala.native-provider-artifacts.v1";
 export const names = [
   "nodeCommand",
   "opencodeProxy",
@@ -96,7 +96,7 @@ export function receiptFor(
 
 export function manifestIdentity(manifest: ProviderPackIdentity) {
   if (
-    manifest?.schema !== "paperclip-runner/remote-provider-pack/v1" ||
+    manifest?.schema !== "pilibala-runner/remote-provider-pack/v1" ||
     !manifest.payload ||
     manifest.digest !== digest(canonicalProviderPackJson(manifest.payload))
   )
@@ -131,7 +131,7 @@ export function launchRootIdentity(
     posix.normalize(root) !== root ||
     /[\\\u0000-\u001f\u007f]/u.test(root) ||
     !root.endsWith(
-      `/.paperclip-runtime/paperclip-runner/provider-artifacts/${manifest.digest.slice(7)}`,
+      `/.pilibala-runtime/pilibala-runner/provider-artifacts/${manifest.digest.slice(7)}`,
     )
   )
     fail("launch_root_invalid");

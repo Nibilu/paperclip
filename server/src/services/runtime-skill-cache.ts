@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { constants, promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { CompanySkill } from "@paperclipai/shared";
+import type { CompanySkill } from "@pilibalaai/shared";
 import { controllerProcessExited, currentControllerProcessStamp, readControllerProcess } from "./controller-process-identity.js";
 
 const FORMAT = 1;

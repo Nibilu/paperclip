@@ -4,7 +4,7 @@ import {
   getCloudRuntimeIdentity,
   verifyCloudControlAssertion,
 } from "../../services/cloud-runtime-identity.js";
-import { paperclipCloudConnectorConfigFromEnv } from "../../services/paperclip-cloud-connector.js";
+import { pilibalaCloudConnectorConfigFromEnv } from "../../services/pilibala-cloud-connector.js";
 
 export const dotPrincipalControlPath = "/mcp/runner/oauth/cloud-principal";
 export const dotPrincipalControlBodySchema = z
@@ -24,7 +24,7 @@ export function dotPrincipalControlDigest(body: DotPrincipalControlBody) {
   return createHash("sha256")
     .update(
       JSON.stringify([
-        "paperclip-dot-original-principal-v1",
+        "pilibala-dot-original-principal-v1",
         "mcp-dot:principal",
         body.expectedInstanceId,
         body.canonicalVerifiedResource,
@@ -74,7 +74,7 @@ export function verifyDotPrincipalControl(
 }
 export function readDotPrincipalControlAuthority() {
   const identity = getCloudRuntimeIdentity(),
-    connector = paperclipCloudConnectorConfigFromEnv();
+    connector = pilibalaCloudConnectorConfigFromEnv();
   return identity && connector
     ? {
         stackId: identity.stackId,

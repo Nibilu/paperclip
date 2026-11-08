@@ -1,6 +1,6 @@
 # Native workspace finalization sleep audit
 
-Slice 52. Parent: [#17717](https://github.com/paperclipai/paperclip/pull/17717)
+Slice 52. Parent: [#17717](https://github.com/pilibalaai/pilibala/pull/17717)
 at `d0036fce3e039e91ab2bf2602e3e6a87a4476491`.
 Branch: `codex/sleep-52-native-workspace-finalization`.
 Inspected remote master: `a1f77821b9cd5c9c846fdf7a0fa5cc620ad2b6bb`.
@@ -44,7 +44,7 @@ this slice alone does not make the whole orphan pass quiet.
 
 | Obligation / transition | Producer or durable source | Wake and stop condition |
 | --- | --- | --- |
-| First accepted result | `PaperclipControlPlanePort.completeRun` and `NativeRunCoordinatorStore.completeRun` (including terminal-event reconstruction) | Intent in the result's transaction; outer commit wakes, rollback creates no work |
+| First accepted result | `PilibalaControlPlanePort.completeRun` and `NativeRunCoordinatorStore.completeRun` (including terminal-event reconstruction) | Intent in the result's transaction; outer commit wakes, rollback creates no work |
 | Saved retry or finalization transition | Existing native-finalization notification fanout, coordinator and finalizer writers | Reconstruct `nextAttemptAt`; do not advance it on inspection |
 | Finalization lease | Existing coordinator row | Wait for the saved expiry; execution re-reads it before copy-back |
 | Workspace-operation progress/completion | Workspace recorder's `workspace_finalize` writes | Same-transaction scoped notification; any successful barrier disarms this worker |
@@ -110,7 +110,7 @@ review failures remain in the main stack ledger. No stack PR is merged by this w
 
 ## Publication and follow-up verification
 
-Draft [#17734](https://github.com/paperclipai/paperclip/pull/17734) was published
+Draft [#17734](https://github.com/pilibalaai/pilibala/pull/17734) was published
 at `ad2b4bc9d87bb9c8e7cd6cba4abc122702ea7c5c`, on #17717. Workspace-wide types
 and build passed at that checkpoint. The final eight-suite command reported
 582 passing cases and 88 failures in the board-action suite. That command

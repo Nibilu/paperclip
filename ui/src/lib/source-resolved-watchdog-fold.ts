@@ -1,4 +1,4 @@
-import type { HeartbeatRun } from "@paperclipai/shared";
+import type { HeartbeatRun } from "@pilibalaai/shared";
 
 export type SourceResolvedFoldCleanupOutcome =
   | "terminated"

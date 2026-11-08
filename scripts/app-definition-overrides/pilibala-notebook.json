@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "slug": "pilibala-notebook",
+  "experimentalFeatureKey": "enablePilibalaNotebook",
+  "name": "Pilibala Notebook",
+  "description": "Publish, find, and share reports, files, and interactive pages with your Pilibala Cloud account.",
+  "categories": [
+    "content",
+    "productivity"
+  ],
+  "featured": true,
+  "branding": {
+    "logoUrl": "/brands/apps/pilibala-notebook.svg",
+    "darkLogoUrl": "/brands/apps/pilibala-notebook-dark.svg"
+  },
+  "urlPatterns": [
+    "https://notebook.pilibala.app/*"
+  ],
+  "availability": {
+    "available": true
+  },
+  "methods": [
+    {
+      "key": "mcp-oauth",
+      "transport": "mcp_remote",
+      "auth": "oauth",
+      "ownershipModes": [
+        "dcr"
+      ],
+      "oauthClientRegistration": "dcr",
+      "grantKinds": [
+        "user"
+      ],
+      "whenToUse": "Sign in with Pilibala Cloud and let your assigned agents publish and manage your Notebook pages.",
+      "defaults": {
+        "serverUrl": "https://notebook.pilibala.app/mcp",
+        "scopesHint": [
+          "notebook:read",
+          "notebook:write",
+          "notebook:share",
+          "notebook:delete"
+        ],
+        "mcpSessionRequired": true
+      },
+      "guidanceMd": "Connect your Pilibala Cloud account. Assigned agents can read available pages, publish and update your pages, change sharing including making pages public, manage versions, and delete or restore your pages. Manage individual actions in Permissions.",
+      "riskTier": "S3"
+    }
+  ],
+  "redirectConstraints": "https-or-loopback-http"
+}

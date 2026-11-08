@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
-import { environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
-import { remoteWorkspaceRunReferenceSchema } from "@paperclipai/shared";
+import { environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
+import { remoteWorkspaceRunReferenceSchema } from "@pilibalaai/shared";
 import { appendHeartbeatRunEvent } from "../heartbeat-run-events.js";
 import { notifyLiveRunRecovery } from "../live-run-recovery-notifications.js";
 import { isNativeRunnerOwnershipHeld } from "./native-runner-ownership.js";
@@ -24,7 +24,7 @@ import { logger } from "../../middleware/logger.js";
  * so preparation resumes that exact sandbox instead of acquiring another one.
  */
 export const NATIVE_INHERITED_RUNNER_RETIREMENT_KEY = "nativeInheritedRunnerRetirement";
-const RETIREMENT_SCHEMA = "paperclip.native-inherited-runner-retirement.v1";
+const RETIREMENT_SCHEMA = "pilibala.native-inherited-runner-retirement.v1";
 
 const TERMINAL_RUN_STATUSES = ["succeeded", "failed", "cancelled", "timed_out", "interrupted"];
 

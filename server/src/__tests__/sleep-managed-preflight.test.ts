@@ -5,7 +5,7 @@ import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createDb } from '@paperclipai/db';
+import { createDb } from '@pilibalaai/db';
 import { resolveExternalTestDatabaseUrl } from './helpers/external-test-database.js';
 import { prepareMaintenanceRuntime } from './helpers/maintenance/runtime-build.js';
 import { startMaintenanceServer, withMaintenanceProvider } from './helpers/maintenance/server-harness.js';
@@ -14,11 +14,11 @@ import { createMaintenanceS3Boundary } from './helpers/maintenance/s3-boundary.j
 import { stabilizeEarlyDiagnostics } from './helpers/maintenance/early-diagnostic-stabilization.js';
 import { CLOUD_CONTROL_AUDIENCE, CLOUD_CONTROL_HEADER, CLOUD_CONTROL_JWS_TYPE, CLOUD_RUNTIME_IDENTITY_ISSUER } from '../services/cloud-runtime-identity.js';
 
-const requested = process.env.PAPERCLIP_SLEEP_MANAGED_PREFLIGHT === '1';
-const databaseUrl = resolveExternalTestDatabaseUrl('PAPERCLIP_SLEEP_MANAGED_PREFLIGHT_TEST_DATABASE_URL');
+const requested = process.env.PILIBALA_SLEEP_MANAGED_PREFLIGHT === '1';
+const databaseUrl = resolveExternalTestDatabaseUrl('PILIBALA_SLEEP_MANAGED_PREFLIGHT_TEST_DATABASE_URL');
 if (requested && !databaseUrl) throw new Error('Managed preflight requires an explicit dedicated external *_test URL; no embedded allocation');
-if (requested && process.env.PAPERCLIP_MAINTENANCE_KEEP_ARTIFACTS !== '1') throw new Error('Managed preflight requires retained raw evidence');
-const cloudCheckout = process.env.PAPERCLIP_SLEEP_CLOUD_CHECKOUT, cloudSha = process.env.PAPERCLIP_SLEEP_CLOUD_SHA;
+if (requested && process.env.PILIBALA_MAINTENANCE_KEEP_ARTIFACTS !== '1') throw new Error('Managed preflight requires retained raw evidence');
+const cloudCheckout = process.env.PILIBALA_SLEEP_CLOUD_CHECKOUT, cloudSha = process.env.PILIBALA_SLEEP_CLOUD_SHA;
 if (requested && (!cloudCheckout || !/^[a-f0-9]{40}$/.test(cloudSha ?? ''))) throw new Error('Managed preflight requires the exact reviewed private Cloud checkout/SHA');
 
 describe.skipIf(!requested)('actual managed fixture preflight (no browser, cooldown or quiet claim)', () => {
@@ -35,7 +35,7 @@ describe.skipIf(!requested)('actual managed fixture preflight (no browser, coold
         const jwk = { ...pair.publicKey.export({ format: 'jwk' }), kid: 'managed-preflight', alg: 'EdDSA', use: 'sig' };
         const configuration = managedSleepConfiguration(origin, true);
         const server = await startMaintenanceServer(databaseUrl!, { ...managedSleepServerOptions(configuration, JSON.stringify({ keys: [jwk] }), s3Origin, broker),
-          captureIdleWork: process.env.PAPERCLIP_SLEEP_MANAGED_PREFLIGHT_DIAGNOSTICS === '1' });
+          captureIdleWork: process.env.PILIBALA_SLEEP_MANAGED_PREFLIGHT_DIAGNOSTICS === '1' });
         const fixture = createDb(databaseUrl!, { maxConnections: 1 });
         const control = (action: string, idleCapabilities?: unknown) => {
           const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url'), now = Math.floor(Date.now() / 1000);
@@ -58,7 +58,7 @@ describe.skipIf(!requested)('actual managed fixture preflight (no browser, coold
           await expect.poll(async () => (await broker.binding())?.bindings.length, { timeout: 30_000 }).toBe(1);
           const brokerBinding = await broker.binding();
           await writeFile(path.join(server.directory, 'managed-preflight-binding.json'), JSON.stringify({ githubContinuity, brokerBinding, boundary: broker.boundary }, null, 2));
-          expect(brokerBinding?.instanceId).toBe(broker.variables.PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID);
+          expect(brokerBinding?.instanceId).toBe(broker.variables.PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID);
           expect(brokerBinding?.bindings).toEqual([[`${github.grantId}_101`, company.id, managedTenantActor.userId,
             'github.code', '101', github.connectionId, github.grantId]]);
           const agent = await server.api<{ id: string }>('POST', `/companies/${company.id}/agents`, { name: 'Managed preflight process', role: 'general', adapterType: 'process',

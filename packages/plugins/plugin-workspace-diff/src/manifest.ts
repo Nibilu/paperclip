@@ -1,15 +1,15 @@
-import type { PaperclipPluginManifestV1 } from "@paperclipai/plugin-sdk";
+import type { PilibalaPluginManifestV1 } from "@pilibalaai/plugin-sdk";
 
-const PLUGIN_ID = "paperclip.workspace-diff";
+const PLUGIN_ID = "pilibala.workspace-diff";
 const CHANGES_TAB_SLOT_ID = "workspace-changes-tab";
 
-const manifest: PaperclipPluginManifestV1 = {
+const manifest: PilibalaPluginManifestV1 = {
   id: PLUGIN_ID,
   apiVersion: 1,
   version: "0.1.0",
   displayName: "Workspace Changes",
   description: "Adds a Changes tab to execution and project workspaces using plugin-local Git diff computation and @pierre/diffs.",
-  author: "Paperclip",
+  author: "Pilibala",
   categories: ["workspace", "ui"],
   capabilities: [
     "ui.detailTab.register",

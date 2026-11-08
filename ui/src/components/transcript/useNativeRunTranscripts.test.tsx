@@ -56,7 +56,7 @@ describe("useNativeRunTranscripts", () => {
     let state: ReturnType<typeof useNativeRunTranscripts>;
     const event = (seq: number, text: string) => ({
       id: `event-${seq}`, runId: "old", companyId: "company", seq, eventType: "item.completed", createdAt: new Date().toISOString(),
-      payload: { prpEvent: { schema: "paperclip.prp.event.v1", eventType: "item.completed", runId: "old", schemaVersion: 1, emittedAt: new Date().toISOString(), itemId: `item-${seq}`, payload: { kind: "agentMessage", text } } },
+      payload: { prpEvent: { schema: "pilibala.prp.event.v1", eventType: "item.completed", runId: "old", schemaVersion: 1, emittedAt: new Date().toISOString(), itemId: `item-${seq}`, payload: { kind: "agentMessage", text } } },
     });
     conversationEventsMock.mockResolvedValue([event(3, "Latest answer")]);
     eventsMock.mockImplementation((id) => Promise.resolve(id === "old" ? [event(1, "Earlier answer"), event(3, "Latest answer")] : []));
@@ -79,7 +79,7 @@ describe("useNativeRunTranscripts", () => {
     const client = new QueryClient();
     let latest!: ReturnType<typeof useNativeRunTranscripts>;
     const row = (seq: number) => ({ id: `event-${seq}`, runId: "saved", companyId: "company", createdAt: new Date().toISOString(), seq, eventType: "item.completed", payload: { prpEvent: {
-      schema: "paperclip.prp.event.v1", schemaVersion: 1, eventType: "item.completed", runId: "saved",
+      schema: "pilibala.prp.event.v1", schemaVersion: 1, eventType: "item.completed", runId: "saved",
       emittedAt: new Date().toISOString(), itemId: `answer-${seq}`, payload: { kind: "agentMessage", text: `Answer ${seq}` },
     } } });
     function Saved({ companyId = "company", compact = true, status = "succeeded", extra = false }) {

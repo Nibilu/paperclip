@@ -172,7 +172,7 @@ test("an initial Mine 429 has a scoped retry and does not take the app offline",
   // Keep the inherited 429 backoff and Retry-After policy. The explicit Retry
   // action appears after that bounded automatic retry window is exhausted.
   await expect(page.getByText("Unable to load the inbox: Inbox source is busy", { exact: true })).toBeVisible({ timeout: 45_000 });
-  await expect(page.getByText("Reconnecting to Paperclip", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Reconnecting to Pilibala", { exact: true })).toHaveCount(0);
   busy = false;
   await page.getByRole("button", { name: "Retry", exact: true }).click();
   await expect(childLink(page)).toBeVisible();
@@ -195,7 +195,7 @@ test("a background Mine 429 preserves readable rows and a retry does not duplica
   await expect.poll(() => busyReads).toBeGreaterThan(0);
   await expect(childLink(page)).toBeVisible();
   expect(await node!.evaluate(element => element.isConnected)).toBe(true);
-  await expect(page.getByText("Reconnecting to Paperclip", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Reconnecting to Pilibala", { exact: true })).toHaveCount(0);
   const retry = page.getByRole("button", { name: "Retry missing items", exact: true });
   await expect(retry).toBeVisible({ timeout: 45_000 });
   await expect(childLink(page)).toBeVisible();

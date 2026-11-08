@@ -5,10 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
-import { agents, companies, companySkills, companySkillVersions, companySkillSources, heartbeatRuns, issues } from "@paperclipai/db";
+import { agents, companies, companySkills, companySkillVersions, companySkillSources, heartbeatRuns, issues } from "@pilibalaai/db";
 import { startRecoveryPostgres } from "../../__tests__/helpers/recovery-postgres.js";
-import { createDb } from "@paperclipai/db";
-import { PaperclipRunnerToolAuthority } from "./paperclip-runner-tool-authority.js";
+import { createDb } from "@pilibalaai/db";
+import { PilibalaRunnerToolAuthority } from "./pilibala-runner-tool-authority.js";
 import { skillPackagePaths, skillPackageStore } from "../skill-package-store.js";
 import { withSkillVersionCacheLock } from "../skill-version-cache.js";
 import { getStorageService } from "../../storage/index.js";
@@ -19,9 +19,9 @@ describe("native company skill discovery", () => {
   let home: string;
   beforeAll(async () => {
     home = await mkdtemp(join(tmpdir(), "native-skill-library-"));
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    vi.stubEnv("PAPERCLIP_STORAGE_PROVIDER", "local_disk");
-    vi.stubEnv("PAPERCLIP_STORAGE_LOCAL_DIR", join(home, "objects"));
+    vi.stubEnv("PILIBALA_HOME", home);
+    vi.stubEnv("PILIBALA_STORAGE_PROVIDER", "local_disk");
+    vi.stubEnv("PILIBALA_STORAGE_LOCAL_DIR", join(home, "objects"));
     temporary = await startRecoveryPostgres("native-skill-library-");
     db = createDb(temporary.connectionString);
   }, 60_000);
@@ -33,12 +33,12 @@ describe("native company skill discovery", () => {
   async function fixture() {
     const companyId = randomUUID(), agentId = randomUUID(), issueId = randomUUID(), runId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Skill library", issuePrefix: `S${companyId.slice(0, 8)}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Reviewer", adapterType: "paperclip_runner", status: "active", adapterConfig: { provider: "codex" } });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Reviewer", adapterType: "pilibala_runner", status: "active", adapterConfig: { provider: "codex" } });
     await db.insert(issues).values({ id: issueId, companyId, title: "Review", status: "in_progress", assigneeAgentId: agentId });
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, nativeIssueId: issueId, status: "running", runtimeMode: "native", invocationSource: "assignment", triggerDetail: "system", contextSnapshot: { issueId, skillVersions: {} } });
     await db.update(issues).set({ executionRunId: runId }).where(eq(issues.id, issueId));
     const binding = { companyId, agentId, issueId, runId, apiToolsEnabled: false };
-    const authority = new PaperclipRunnerToolAuthority(db, binding);
+    const authority = new PilibalaRunnerToolAuthority(db, binding);
     const call = (tool: string, args: Record<string, unknown> = {}) => authority.execute({ tool, callId: randomUUID(), arguments: args });
     return { ...binding, authority, call };
   }
@@ -96,8 +96,8 @@ describe("native company skill discovery", () => {
       ? { repositorySnapshotId: packageId, repositorySkillPath: `${root}SKILL.md` }
       : { packageSnapshotId: packageId }) }).where(eq(companySkillVersions.id, s.versionId));
     const first = await f.call("load_skill", { skill: s.id, versionId: s.versionId }) as any;
-    expect(first.text).toContain(repository ? ".paperclip-repository/skills/review/SKILL.md" : "Use [checks]");
-    const path = `${repository ? ".paperclip-repository/" : ""}${root}references/checks.md`;
+    expect(first.text).toContain(repository ? ".pilibala-repository/skills/review/SKILL.md" : "Use [checks]");
+    const path = `${repository ? ".pilibala-repository/" : ""}${root}references/checks.md`;
     expect(first.files).toContainEqual({ path, kind: "reference" });
     expect(await f.call("load_skill", { skill: s.id, versionId: s.versionId, path })).toMatchObject({ text: "These bytes came from saved storage." });
     expect(await f.authority.recover({ tool: "load_skill", callId: "recover-read", arguments: { skill: s.id, versionId: s.versionId, path } })).toMatchObject({ result: { text: "These bytes came from saved storage." } });
@@ -129,7 +129,7 @@ describe("native company skill discovery", () => {
     await db.update(companySkillVersions).set({ fileInventory: [], ...(repository
       ? { repositorySnapshotId: packageId, repositorySkillPath: "SKILL.md" }
       : { packageSnapshotId: packageId }) }).where(eq(companySkillVersions.id, s.versionId));
-    const path = `${repository ? ".paperclip-repository/" : ""}checks.md`;
+    const path = `${repository ? ".pilibala-repository/" : ""}checks.md`;
     const open = vi.spyOn(fs, "open"), read = vi.spyOn(fs, "readFile");
     const bodyReads = () => [...open.mock.calls, ...read.mock.calls].filter(args => String(args[0]).endsWith("/checks.md")).length;
     try {
@@ -170,7 +170,7 @@ describe("native company skill discovery", () => {
       await Promise.race([
         (async () => {
           expect(await f.call("load_skill", { skill: s.id })).toMatchObject({ path: "SKILL.md" });
-          expect(await f.call("load_skill", { skill: s.id, versionId: s.versionId, path: ".paperclip-repository/checks.md" }))
+          expect(await f.call("load_skill", { skill: s.id, versionId: s.versionId, path: ".pilibala-repository/checks.md" }))
             .toMatchObject({ text: "Repository checks." });
         })(),
         new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error("Skill read waited for the startup lock")), 3000); }),
@@ -195,7 +195,7 @@ describe("native company skill discovery", () => {
     }
     const open = vi.spyOn(fs, "open"), read = vi.spyOn(fs, "readFile");
     try {
-      const path = `${storage === "repository" ? ".paperclip-repository/" : ""}${root}references/oversized.md`;
+      const path = `${storage === "repository" ? ".pilibala-repository/" : ""}${root}references/oversized.md`;
       for (const offset of [0, 6000]) {
         expect(await f.call("load_skill", { skill: s.id, versionId: s.versionId, path, offset }))
           .toMatchObject({ outcome: "failed", code: "runner_skill_file_size_limit" });
@@ -277,11 +277,11 @@ describe("native company skill discovery", () => {
   it("preserves the closed Muse, skill-test and completion-review profiles", async () => {
     const f = await fixture();
     for (const extra of [{ museRuntime: true }, { workMode: "skill_test" as const }, { nativeReview: {} as any }]) {
-      const names = new PaperclipRunnerToolAuthority(db, { ...f, ...extra }).definitions().map(t => t.name);
+      const names = new PilibalaRunnerToolAuthority(db, { ...f, ...extra }).definitions().map(t => t.name);
       expect(names).not.toContain("search_skills"); expect(names).not.toContain("load_skill");
     }
     for (const workMode of ["ask", "planning"] as const) {
-      expect(new PaperclipRunnerToolAuthority(db, { ...f, workMode }).definitions().map(t => t.name)).toEqual(expect.arrayContaining(["search_skills", "load_skill"]));
+      expect(new PilibalaRunnerToolAuthority(db, { ...f, workMode }).definitions().map(t => t.name)).toEqual(expect.arrayContaining(["search_skills", "load_skill"]));
     }
   });
 });

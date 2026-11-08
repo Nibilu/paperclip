@@ -5,13 +5,13 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 import {
   agents, agentWakeupRequests, approvals, companies, createDb, heartbeatRuns,
   issueApprovals, issueRecoveryActions, issueRelations, issueThreadInteractions, issues, type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { collectDispositionRepairSourceState, readDispositionRepairDurableWaitingState } from "../services/recovery/disposition-repair.js";
 import { recoveryService } from "../services/recovery/service.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
 
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_RECOVERY_ACTION_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_RECOVERY_ACTION_TEST_DATABASE_URL");
 const support = external ? { supported: true } : await getEmbeddedPostgresTestSupport();
 const pendingExecution = { status: "pending", currentStageId: null, currentStageIndex: null,
   currentStageType: null, currentParticipant: null, returnAssignee: null, completedStageIds: [],

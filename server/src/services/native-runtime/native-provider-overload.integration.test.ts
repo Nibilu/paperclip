@@ -1,20 +1,20 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, agentWakeupRequests, companies, completionContracts, createDb, environmentLeases, heartbeatRuns, issueComments, issueRecoveryActions, issues, nativeRunFinalizations, statusDecisionEffects, statusDecisions } from "@paperclipai/db";
-import type { ControlPlanePort, NativeExecutionInputV1, PrpEvent, PrpTerminalState } from "@paperclipai/paperclip-runner";
+import { agents, agentWakeupRequests, companies, completionContracts, createDb, environmentLeases, heartbeatRuns, issueComments, issueRecoveryActions, issues, nativeRunFinalizations, statusDecisionEffects, statusDecisions } from "@pilibalaai/db";
+import type { ControlPlanePort, NativeExecutionInputV1, PrpEvent, PrpTerminalState } from "@pilibalaai/pilibala-runner";
 import { startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
-import { CONTROL_PLANE_CONFORMANCE_RESULT } from "../../vendor/paperclip-runner/testing.js";
+import { CONTROL_PLANE_CONFORMANCE_RESULT } from "../../vendor/pilibala-runner/testing.js";
 
 const provider = vi.hoisted(() => ({ execute: vi.fn() }));
 const sentry = vi.hoisted(() => ({ captureRunFailure: vi.fn() }));
 vi.mock("../../sentry.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../sentry.js")>()), captureRunFailure: sentry.captureRunFailure,
 }));
-vi.mock("../../vendor/paperclip-runner/index.js", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../vendor/paperclip-runner/index.js")>()), executeNativeSession: provider.execute,
+vi.mock("../../vendor/pilibala-runner/index.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../vendor/pilibala-runner/index.js")>()), executeNativeSession: provider.execute,
 }));
-import { executePaperclipNativeSession } from "./native-session-executor.js";
+import { executePilibalaNativeSession } from "./native-session-executor.js";
 import { buildNativeCompletionContract } from "./completion-contracts.js";
 import { prepareNativeHeartbeatRun } from "./prepare-native-run.js";
 import { finalizeNativeRun } from "./native-run-finalizer.js";
@@ -33,13 +33,13 @@ describe("durable native provider capacity retry", () => {
   const companyId = randomUUID(), agentId = randomUUID(), otherAgentId = randomUUID();
   const providerDisplayMessage = "Distinctive upstream explanation for the task display only.";
   beforeAll(async () => {
-    vi.stubEnv("PAPERCLIP_SENTRY_RUN_FAILURES", "unexpected");
+    vi.stubEnv("PILIBALA_SENTRY_RUN_FAILURES", "unexpected");
     temporary = await startEmbeddedPostgresTestDatabase("native-capacity-retry-");
     db = createDb(temporary.connectionString);
     await db.insert(companies).values({ id: companyId, name: "Capacity regression", issuePrefix: "CAP" });
     await db.insert(agents).values([
-      { id: agentId, companyId, name: "Capacity worker", status: "active", adapterType: "paperclip_runner", adapterConfig: { provider: "codex", model: "test-model" } },
-      { id: otherAgentId, companyId, name: "New owner", status: "active", adapterType: "paperclip_runner" },
+      { id: agentId, companyId, name: "Capacity worker", status: "active", adapterType: "pilibala_runner", adapterConfig: { provider: "codex", model: "test-model" } },
+      { id: otherAgentId, companyId, name: "New owner", status: "active", adapterType: "pilibala_runner" },
     ]);
   });
   afterAll(async () => { vi.unstubAllEnvs(); await temporary?.cleanup(); });
@@ -53,23 +53,23 @@ describe("durable native provider capacity retry", () => {
     const contractInput = buildNativeCompletionContract(issue, { revision: contract.revision });
     await db.insert(nativeRunFinalizations).values({ runId, companyId, issueId, phase: "observed" });
     const execution: NativeExecutionInputV1 = {
-      schema: "paperclip.native-execution-input.v1", binding: { companyId, runId, issueId, agentId, executionWorkspaceId: runId },
+      schema: "pilibala.native-execution-input.v1", binding: { companyId, runId, issueId, agentId, executionWorkspaceId: runId },
       provider: { kind: "codex", model: "test-model" },
       task: { identifier: issueId, title: issue.title, description: null, prompt: "Continue the task using its history.", workMode: "standard" },
       workspace: { cwd: "/tmp", repoUrl: null, repoRef: null, branchName: null },
       session: { normalizedSessionId: native.normalizedSessionId, driverKind: "codex_app_server", protocolVersion: 1, lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null } },
-      completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "paperclip.completion-contract.v1", contract: contractInput },
+      completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "pilibala.completion-contract.v1", contract: contractInput },
       interactionResponses: [], credentialBindings: [],
     };
     await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeExecutionInput: execution } }).where(eq(heartbeatRuns.id, runId));
-    const providerFailure = { schema: "paperclip.provider-failure.v1", provider: "openai", phase: "turn",
+    const providerFailure = { schema: "pilibala.provider-failure.v1", provider: "openai", phase: "turn",
       category: "overloaded", message: providerDisplayMessage, retryability: "transient" };
     const event: PrpEvent = {
-      schema: "paperclip.prp.event.v1", runId, normalizedSessionId: native.normalizedSessionId, turnId: native.turnId,
+      schema: "pilibala.prp.event.v1", runId, normalizedSessionId: native.normalizedSessionId, turnId: native.turnId,
       sourceInstanceId: native.runnerInstanceId, sourceEventId: "overload", sourceSeq: 1, sourceKind: "runner", eventType: "turn.failed", schemaVersion: 1, priority: 0, emittedAt: new Date().toISOString(),
       payload: { status: "failed", error: { codexErrorInfo: "serverOverloaded", message: NATIVE_PROVIDER_OVERLOADED_MESSAGE, providerFailure } },
     };
-    const terminal: PrpTerminalState = { schema: "paperclip.prp.terminal.v1", turnTerminalState: "failed", runTerminalState: "failed", reportedWorkDisposition: "needs_review" };
+    const terminal: PrpTerminalState = { schema: "pilibala.prp.terminal.v1", turnTerminalState: "failed", runTerminalState: "failed", reportedWorkDisposition: "needs_review" };
     const result = { ...CONTROL_PLANE_CONFORMANCE_RESULT, reportedWorkDisposition: "needs_review" as const,
       summary: "I started investigating the task.", completionClaim: { ...CONTROL_PLANE_CONFORMANCE_RESULT.completionClaim, contractRevision: contractInput.revision } };
     provider.execute.mockReset().mockImplementation(async (options: { controlPlane: ControlPlanePort }) => {
@@ -79,7 +79,7 @@ describe("durable native provider capacity retry", () => {
       return { result, terminal, turnId: native.turnId, normalizedSessionId: native.normalizedSessionId, providerSessionId: "fixture-session", driverKind: "codex_app_server", driverVersion: "fixture", nativeEventCount: 1, highestContiguousSourceSeq: 1, usage: null };
     });
     const unexpected = async () => { throw new Error("Unexpected provider call"); };
-    const adapter = await executePaperclipNativeSession({ db, execution, runnerInstanceId: native.runnerInstanceId, backend: { descriptor: unexpected, openSession: unexpected } });
+    const adapter = await executePilibalaNativeSession({ db, execution, runnerInstanceId: native.runnerInstanceId, backend: { descriptor: unexpected, openSession: unexpected } });
     expect(adapter).toMatchObject({ errorCode: "native_provider_overloaded", errorMessage: NATIVE_PROVIDER_OVERLOADED_MESSAGE });
     const [persisted] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, runId));
     expect(persisted.errorCode).toBeNull(); // Restart before adapter metadata is saved.
@@ -151,7 +151,7 @@ describe("durable native provider capacity retry", () => {
     await db.insert(issueComments).values({ id: commentId, companyId, issueId, authorUserId: "capacity-owner", authorType: "user", body: "Continue the investigation." });
     const consumedContext = { issueId, wakeCommentId: commentId, wakeCommentIds: [commentId],
       explicitUserContinuation: { previousRunId: olderRunId, commentId },
-      previousRunId: olderRunId, resumeIntent: "continue", paperclipTurnContext: "Previously delivered context" };
+      previousRunId: olderRunId, resumeIntent: "continue", pilibalaTurnContext: "Previously delivered context" };
     await db.insert(heartbeatRuns).values([
       { id: olderRunId, companyId, agentId, status: "failed", contextSnapshot: { issueId } },
       { id: runId, companyId, agentId, responsibleUserId: "capacity-owner", contextSnapshot: consumedContext },
@@ -161,7 +161,7 @@ describe("durable native provider capacity retry", () => {
     expect(retry.contextSnapshot).not.toHaveProperty("explicitUserContinuation");
     expect(retry.contextSnapshot).not.toHaveProperty("wakeCommentId");
     expect(retry.contextSnapshot).not.toHaveProperty("resumeIntent");
-    expect(retry.contextSnapshot).not.toHaveProperty("paperclipTurnContext");
+    expect(retry.contextSnapshot).not.toHaveProperty("pilibalaTurnContext");
     const continuation = await buildExecutionContinuation({ db, companyId, issueId, agentId,
       runId: retry.id, context: retry.contextSnapshot!, summary: null, exposeLowTrustRaw: false });
     expect(continuation).toMatchObject({ trigger: { sourceRunId: runId }, objective: "Continue the investigation.",

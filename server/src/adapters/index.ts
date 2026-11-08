@@ -31,5 +31,5 @@ export type {
   UsageSummary,
   AdapterAgent,
   AdapterRuntime,
-} from "@paperclipai/adapter-utils";
+} from "@pilibalaai/adapter-utils";
 export { runningProcesses } from "./utils.js";

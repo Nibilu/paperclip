@@ -5,7 +5,7 @@ import path from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { agents, closeRegisteredClients, companies, createDb, environmentLeases, executionWorkspaceSnapshots,
-  executionWorkspaces, heartbeatRuns, issues, nativeRunFinalizations, workspaceOperations } from "@paperclipai/db";
+  executionWorkspaces, heartbeatRuns, issues, nativeRunFinalizations, workspaceOperations } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { createStorageService } from "../storage/service.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
@@ -27,8 +27,8 @@ describe.skipIf(!support.supported)("legacy workspace publication ownership cont
     database = await startEmbeddedPostgresTestDatabase("workspace-import-order-");
     db = createDb(database.connectionString);
     root = await mkdtemp(path.join(os.tmpdir(), "workspace-import-order-"));
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "62".repeat(32));
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "true");
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "62".repeat(32));
+    vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "true");
   }, 60_000);
   afterAll(async () => {
     if (database) await closeRegisteredClients(database.connectionString);
@@ -40,14 +40,14 @@ describe.skipIf(!support.supported)("legacy workspace publication ownership cont
   async function fixture() {
     const companyId = randomUUID(), runId = randomUUID(), workspaceId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Legacy publication", issuePrefix: `L${companyId.slice(0, 6)}` });
-    const [agent] = await db.insert(agents).values({ companyId, name: "Historical worker", adapterType: "paperclip_runner" }).returning();
+    const [agent] = await db.insert(agents).values({ companyId, name: "Historical worker", adapterType: "pilibala_runner" }).returning();
     const [issue] = await db.insert(issues).values({ companyId, title: "Retain local work", status: "blocked" }).returning();
     const cwd = path.join(root, workspaceId); await mkdir(cwd);
     await writeFile(path.join(cwd, "saved.txt"), "original local work\n");
     await db.insert(executionWorkspaces).values({ id: workspaceId, companyId, sourceIssueId: issue.id,
       mode: "isolated_workspace", strategyType: "project_primary", providerType: "local_fs", name: "Legacy files", cwd, providerRef: cwd });
     await db.update(issues).set({ executionWorkspaceId: workspaceId }).where(eq(issues.id, issue.id));
-    const reference = { schema: "paperclip.native-workspace-sync/v3", state: "prepared", workspaceId,
+    const reference = { schema: "pilibala.native-workspace-sync/v3", state: "prepared", workspaceId,
       leaseId: randomUUID(), providerLeaseId: randomUUID(), remoteCwd: "/workspaces/task",
       descriptorSha256: "12".repeat(32), baselineSha256: "34".repeat(32), finalHostSha256: null, resourceDisposition: "stop_and_retain" };
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId: agent.id, nativeIssueId: issue.id,
@@ -135,7 +135,7 @@ describe.skipIf(!support.supported)("legacy workspace publication ownership cont
         status: "released", metadata: { remoteCwd: f.reference.remoteCwd } });
       f.expectedProfile = {}; f.expectedPhase = "observed";
       await db.update(heartbeatRuns).set({ runnerProfileJson: {}, resultJson: { workspaceRestoreRecovery: {
-        schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [f.reference.leaseId] } } }).where(eq(heartbeatRuns.id, f.runId));
+        schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [f.reference.leaseId] } } }).where(eq(heartbeatRuns.id, f.runId));
       await db.update(nativeRunFinalizations).set({ phase: "observed" }).where(eq(nativeRunFinalizations.runId, f.runId));
     }
     const ready = deferred(), release = deferred();

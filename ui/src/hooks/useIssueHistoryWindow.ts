@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Issue, IssueComment } from "@paperclipai/shared";
+import type { Issue, IssueComment } from "@pilibalaai/shared";
 import { getIssueRecentCommentsQueryOptions, mergeWindowComments } from "@/lib/issue-comment-window-query";
 import { queryKeys } from "@/lib/queryKeys";
 

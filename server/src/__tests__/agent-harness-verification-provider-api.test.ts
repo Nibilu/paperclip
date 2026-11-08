@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { agents, companies, createDb, applyPendingMigrations, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS,
-  environments, environmentLeases, executionWorkspaces, heartbeatRuns, plugins, type Db } from "@paperclipai/db";
+  environments, environmentLeases, executionWorkspaces, heartbeatRuns, plugins, type Db } from "@pilibalaai/db";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireServerAdapter } from "../adapters/index.js";
 import { agentHarnessVerificationService } from "../services/agent-harness-verification.js";
@@ -15,7 +15,7 @@ import { environmentService } from "../services/environments.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
 
-const externalDatabaseUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_PROVIDER_API_LIFECYCLE_TEST_DATABASE_URL");
+const externalDatabaseUrl = resolveExternalTestDatabaseUrl("PILIBALA_PROVIDER_API_LIFECYCLE_TEST_DATABASE_URL");
 const support = externalDatabaseUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 
 describe.skipIf(!support.supported)("Cursor Cloud API controller activation", () => {
@@ -34,14 +34,14 @@ describe.skipIf(!support.supported)("Cursor Cloud API controller activation", ()
   });
 
   beforeAll(async () => {
-    home = await mkdtemp(join(tmpdir(), "paperclip-provider-api-lifecycle-"));
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    vi.stubEnv("PAPERCLIP_MANAGED_CONFIG", undefined);
-    vi.stubEnv("PAPERCLIP_SETTING_DEFAULTS", undefined);
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://callback.example.test");
+    home = await mkdtemp(join(tmpdir(), "pilibala-provider-api-lifecycle-"));
+    vi.stubEnv("PILIBALA_HOME", home);
+    vi.stubEnv("PILIBALA_MANAGED_CONFIG", undefined);
+    vi.stubEnv("PILIBALA_SETTING_DEFAULTS", undefined);
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://callback.example.test");
     if (externalDatabaseUrl) await applyPendingMigrations(externalDatabaseUrl);
     database = externalDatabaseUrl ? { connectionString: externalDatabaseUrl, cleanup: async () => {} }
-      : await startEmbeddedPostgresTestDatabase("paperclip-provider-api-lifecycle-");
+      : await startEmbeddedPostgresTestDatabase("pilibala-provider-api-lifecycle-");
     db = createDb(database.connectionString);
     await db.execute(sql`set client_min_messages = warning`);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
@@ -66,7 +66,7 @@ describe.skipIf(!support.supported)("Cursor Cloud API controller activation", ()
   });
 
   const current = (id: string) => db.select().from(agents).where(eq(agents.id, id)).then(rows => rows[0]!);
-  async function saved(adapterType = "paperclip_runner", adapterConfig = config) {
+  async function saved(adapterType = "pilibala_runner", adapterConfig = config) {
     return (await db.insert(agents).values({ companyId, name: "Saved controller", adapterType, adapterConfig,
       status: "paused", lifecycleState: "verifying" }).returning())[0]!;
   }
@@ -87,16 +87,16 @@ describe.skipIf(!support.supported)("Cursor Cloud API controller activation", ()
     }
     expect(await environmentService(db).findManagedSandboxEnvironment(companyId)).toBeNull();
     const lifecycle = createAgentLifecycle(db);
-    const draft = await lifecycle.requestHire(companyId, { name: "Cursor setup", adapterType: "paperclip_runner",
+    const draft = await lifecycle.requestHire(companyId, { name: "Cursor setup", adapterType: "pilibala_runner",
       adapterConfig: { provider: "cursor_cloud" } }, { setupOnly: true, runnerResolved: true });
     expect(draft).toMatchObject({ status: "paused", lifecycleState: "paused", lifecycleHolds: ["setup"], defaultEnvironmentId: null });
     await lifecycle.updateConfiguration(draft.id, { adapterConfig: config, runtimeConfig: { heartbeat: { enabled: false } } });
     expect(await current(draft.id)).toMatchObject({ lifecycleState: "paused", lifecycleHolds: ["setup"] });
-    const finished = await lifecycle.requestHire(companyId, { id: draft.id, name: draft.name, adapterType: "paperclip_runner",
+    const finished = await lifecycle.requestHire(companyId, { id: draft.id, name: draft.name, adapterType: "pilibala_runner",
       adapterConfig: config, runtimeConfig: { heartbeat: { enabled: false } }, defaultEnvironmentId: null }, { setupAgentId: draft.id, runnerResolved: true });
     expect(finished.id).toBe(draft.id);
     expect(finished.adapterConfig.lifecycleMode).toBe("per_turn");
-    const probe = vi.spyOn(requireServerAdapter("paperclip_runner"), "testEnvironment");
+    const probe = vi.spyOn(requireServerAdapter("pilibala_runner"), "testEnvironment");
     const driver = createLifecycleDriver(db, {} as never);
     const worker = configureAgentLifecycle(db, driver);
     workers.push(worker);
@@ -122,7 +122,7 @@ describe.skipIf(!support.supported)("Cursor Cloud API controller activation", ()
     const [computer] = await db.insert(environments).values({ name: "Required Computer", driver: "plugin", status: "active",
       config: { pluginKey: pluginId, driverKey: "tasks", driverConfig: {} } }).returning();
     await instanceSettingsService(db).update({ defaultEnvironmentId: computer.id });
-    const draft = await createAgentLifecycle(db).requestHire(companyId, { name: "Codex setup", adapterType: "paperclip_runner",
+    const draft = await createAgentLifecycle(db).requestHire(companyId, { name: "Codex setup", adapterType: "pilibala_runner",
       adapterConfig: { provider: "codex", model: "gpt-5.6-luna", lifecycleMode: "per_turn" } }, { setupOnly: true, runnerResolved: true });
     expect(draft).toMatchObject({ status: "paused", lifecycleState: "preparing", lifecycleHolds: ["setup"], adapterConfig: { lifecycleMode: "warm" } });
     expect(fetch).not.toHaveBeenCalled();
@@ -142,15 +142,15 @@ describe.skipIf(!support.supported)("Cursor Cloud API controller activation", ()
     await expect(agentHarnessVerificationService(db, {} as never).verify(agent)).rejects.toMatchObject({
       status: 422, details: { code: "provider_api_kubernetes_execution_unsupported" },
     });
-    await expect(createAgentLifecycle(db).requestHire(companyId, { name: "Forbidden hire", adapterType: "paperclip_runner", adapterConfig: config }, { runnerResolved: true }))
+    await expect(createAgentLifecycle(db).requestHire(companyId, { name: "Forbidden hire", adapterType: "pilibala_runner", adapterConfig: config }, { runnerResolved: true }))
       .rejects.toMatchObject({ status: 422, details: { code: "provider_api_kubernetes_execution_unsupported" } });
     expect(fetch).not.toHaveBeenCalled();
     await noComputerWork();
   });
 
   it("does not grant API placement to an incomplete active profile", async () => {
-    const agent = await saved("paperclip_runner", { ...config, model: "" });
-    await expect(agentHarnessVerificationService(db, {} as never).verify(agent)).rejects.toMatchObject({ code: "paperclip_runner_cursor_cloud_model_required" });
+    const agent = await saved("pilibala_runner", { ...config, model: "" });
+    await expect(agentHarnessVerificationService(db, {} as never).verify(agent)).rejects.toMatchObject({ code: "pilibala_runner_cursor_cloud_model_required" });
     expect(fetch).not.toHaveBeenCalled();
     await noComputerWork();
   });

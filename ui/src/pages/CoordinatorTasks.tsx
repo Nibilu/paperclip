@@ -33,7 +33,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { useLocation, useNavigate, useSearchParams } from "@/lib/router";
 import { loadTaskListView, saveTaskListView, taskListViews, taskListViewStorageKey, type TaskListView } from "@/lib/task-list-views";
 import { normalizeTaskViewKey, ORGANIZATION_SCOPED_PARAMS, taskView } from "@/lib/task-views";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@pilibalaai/shared";
 
 const pageSize = 200;
 

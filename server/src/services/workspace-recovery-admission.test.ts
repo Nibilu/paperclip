@@ -6,7 +6,7 @@ import { recoveryService } from "./recovery/index.js";
 import { inspectWorkspaceSource } from "./workspace-source-inspection.js";
 import { appendHeartbeatRunEvent } from "./heartbeat-run-events.js";
 import { isPreDispatchExecutionWaitVerified } from "./pre-dispatch-execution-wait.js";
-import { heartbeatRunEvents, agents, approvals, budgetPolicies, costEvents, completionContracts, issueApprovals, issueTreeHolds, issueTreeHoldMembers, companies, createDb, environmentLeases, environments, heartbeatRuns, issueComments, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, agentWakeupRequests, workspaceOperations, plugins } from "@paperclipai/db";
+import { heartbeatRunEvents, agents, approvals, budgetPolicies, costEvents, completionContracts, issueApprovals, issueTreeHolds, issueTreeHoldMembers, companies, createDb, environmentLeases, environments, heartbeatRuns, issueComments, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, agentWakeupRequests, workspaceOperations, plugins } from "@pilibalaai/db";
 import { createHeartbeatQueue, shouldDeferFollowupWakeForSameIssue, shouldQueueFollowupForRunningIssueWake } from "./heartbeat/queue.js";
 import { createHeartbeatQueueTestDependencies } from "../__tests__/helpers/heartbeat-queue.js";
 import { recordRequiredWorkspaceRestoreFailure } from "./legacy-execution-recovery.js";
@@ -29,7 +29,7 @@ import { instanceSettingsService } from "./instance-settings.js";
 import { projectTaskInterruption, taskInterruptionPresentation } from "./task-interruption-presentation.js";
 import * as nativeWorkspaceSync from "./native-runtime/native-workspace-sync.js";
 import { resumeNativeWorkspaceSync } from "./native-runtime/native-workspace-sync.js";
-import { GitShallowMetadataError } from "@paperclipai/adapter-utils/git-workspace-sync";
+import { GitShallowMetadataError } from "@pilibalaai/adapter-utils/git-workspace-sync";
 import { readSystemRecovery, createSystemRecovery, failSystemRecovery, SystemRecoveryFailure } from "./system-recovery-state.js";
 import { updateSystemRecovery } from "./system-recovery.js";
 import { getStorageService } from "../storage/index.js";
@@ -44,8 +44,8 @@ import request from "supertest";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import { resumePreservedResultFinalization } from "./preserved-result-finalization.js";
-import type { AdapterSandboxExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import type { EnvironmentLease } from "@paperclipai/shared";
+import type { AdapterSandboxExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import type { EnvironmentLease } from "@pilibalaai/shared";
 import { hasRemoteTerminationReceipt, remoteTerminationReceipt } from "./remote-execution-termination.js";
 import { prepareStoppedSandboxForRecovery, prepareSandboxStopAndRetain, settleStopOnlyCleanup, readStopOnlyCleanup } from "./sandbox-stop-and-retain.js";
 import { recoverRetainedWorkspace, requestWorkspaceRecovery, scheduleRecoveredWorkspaceCleanup, reconcileRetainedWorkspaces, retainedWorkspaceCandidates } from "./workspace-recovery.js";
@@ -88,7 +88,7 @@ describe("automatic retained workspace recovery", () => {
     await db.update(heartbeatRuns).set({ resultJson: {} }).where(eq(heartbeatRuns.id, f.runId));
     const contractId = randomUUID(), resultId = randomUUID();
     await db.insert(completionContracts).values({ id: contractId, companyId: f.companyId, issueId: f.issueId,
-      revision: 1, schemaVersion: "paperclip.completion-contract.v1", policyVersion: "test", risk: "standard",
+      revision: 1, schemaVersion: "pilibala.completion-contract.v1", policyVersion: "test", risk: "standard",
       completionAuthority: "server_arbiter", incompleteCriteriaPolicy: "preserve_non_terminal",
       contractJson: {}, canonicalSha256: "contract", createdByActorType: "system", createdByActorId: "test" });
     await db.update(heartbeatRuns).set({ completionContractId: contractId }).where(eq(heartbeatRuns.id, f.runId));
@@ -102,7 +102,7 @@ describe("automatic retained workspace recovery", () => {
     await db.update(issueRecoveryActions).set({ ownerType: "system", evidence: { ...priorAction.evidence,
       systemRecovery: failSystemRecovery(createSystemRecovery(f.runId),
         new SystemRecoveryFailure("source_binding_invalid", "service_required")),
-      workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId: f.runId, status: "blocked",
+      workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId: f.runId, status: "blocked",
         stage: "verifying_stop", attempt: 1, attemptLimit: 6, requestIds: [] },
     } }).where(eq(issueRecoveryActions.id, f.actionId));
     const request = { ...f.input, actorId: "board", idempotencyKey: randomUUID() };
@@ -171,7 +171,7 @@ describe("automatic retained workspace recovery", () => {
       id: intentId, companyId: f.companyId, agentId: source.agentId, runId: replacementId,
       source: "on_demand", triggerDetail: "manual", reason: "task_retry", status: "coalesced",
       requestedByActorType: "user", requestedByActorId: "owner-user",
-      payload: { issueId: f.issueId, taskRetry: { schema: "paperclip.task-retry.v1",
+      payload: { issueId: f.issueId, taskRetry: { schema: "pilibala.task-retry.v1",
         generationId: intentId, sourceRunId: f.runId, actorId: "owner-user", strategy: "fresh_isolated_workspace" } },
     });
     const first = path.join(root, randomUUID()), next = path.join(root, randomUUID());
@@ -256,7 +256,7 @@ describe("automatic retained workspace recovery", () => {
   it("recovers a protected retained source through the assembled environment runtime", async () => {
     const f = await seed();
     await db.update(environmentLeases).set({ metadata: { ...f.lease.metadata,
-      workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", runId: f.runId },
+      workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", runId: f.runId },
       remoteExecutionTermination: remoteTerminationReceipt(f.lease, { providerLeaseId: f.providerLeaseId, state: "stopped" }),
     } }).where(eq(environmentLeases.id, f.lease.id));
     const runtime = f.input.environmentRuntime;
@@ -305,7 +305,7 @@ describe("automatic retained workspace recovery", () => {
     const f = await seed();
     const pluginId = f.lease.metadata!.pluginId as string;
     const manifest: typeof plugins.$inferInsert.manifestJson = { id: `fixture.export-cwd.${pluginId}`, apiVersion: 1, version: "1.0.0",
-      displayName: "Fixture export provider", description: "Records provider boundary calls", author: "Paperclip",
+      displayName: "Fixture export provider", description: "Records provider boundary calls", author: "Pilibala",
       categories: ["automation"], capabilities: ["environment.drivers.register"], entrypoints: { worker: "dist/worker.js" },
       environmentDrivers: [{ driverKey: "daytona", kind: "sandbox_provider", displayName: "Fixture", configSchema: { type: "object" } }] };
     await db.insert(plugins).values({ id: pluginId, pluginKey: manifest.id,
@@ -340,7 +340,7 @@ describe("automatic retained workspace recovery", () => {
   it.each(["same", "later"])("prepares the %s task workspace from an ordinary resumed allocation root", async kind => {
     const f = await seed("native", false);
     vi.stubEnv("DATABASE_URL", connectionString);
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "62".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "62".repeat(32));
     try {
       const allocationRoot = await realpath(f.remote);
       const target = { ...targets.get(f.lease.id)!, remoteCwd: allocationRoot };
@@ -377,7 +377,7 @@ describe("automatic retained workspace recovery", () => {
         existingWorkspaceId: kind === "same" ? first.workspace.id : null });
       const prepared = await prepareRemoteWorkspace({ db, storage, workspace: nextWorkspace, runId: nextRun.id,
         lease: nextLease as EnvironmentLease, target: { ...target, remoteCwd: resumed!.metadata!.remoteCwd as string } });
-      const expectedRemoteRoot = kind === "same" ? first.remoteRoot : path.join(allocationRoot, ".paperclip-workspaces",
+      const expectedRemoteRoot = kind === "same" ? first.remoteRoot : path.join(allocationRoot, ".pilibala-workspaces",
         `${nextWorkspace.id}-${readRemoteWorkspaceAuthority(nextWorkspace.metadata)!.epoch}-${nextLease.id}`);
       expect(prepared.remoteRoot).toBe(expectedRemoteRoot);
       if (kind === "same") expect(await readFile(path.join(prepared.remoteRoot, "saved.txt"), "utf8")).toBe("prior task work\n");
@@ -447,7 +447,7 @@ describe("automatic retained workspace recovery", () => {
         automaticRecovery: { policy: "preserve_without_replay_v1", runId: f.runId, replay: "blocked", actionOutcome: "unknown" } },
     }).where(eq(issueRecoveryActions.id, f.actionId));
     const newOwnerId = randomUUID();
-    await db.insert(agents).values({ id: newOwnerId, companyId: f.companyId, name: "Reviewer", adapterType: "paperclip_runner",
+    await db.insert(agents).values({ id: newOwnerId, companyId: f.companyId, name: "Reviewer", adapterType: "pilibala_runner",
       status: "idle", runtimeConfig: { heartbeat: { maxConcurrentRuns: 1 } } });
     await db.update(issues).set({ assigneeAgentId: newOwnerId, status: "in_progress" }).where(eq(issues.id, f.issueId));
     // The new owner's queued wake reached the final dispatch gate after the hold appeared.
@@ -507,7 +507,7 @@ describe("automatic retained workspace recovery", () => {
   // run settled cancelled with a file-preservation hold, and the follow-up turn
   // (the redirect comment, or the new owner's wake) was already queued.
   async function stopBeforeSessionOpen(f: Awaited<ReturnType<typeof seed>>, options: { errorCode: string; proof?: boolean }) {
-    const nativeCancellation = { schema: "paperclip.native-cancellation.v1", runId: f.runId, companyId: f.companyId,
+    const nativeCancellation = { schema: "pilibala.native-cancellation.v1", runId: f.runId, companyId: f.companyId,
       issueId: f.issueId, scope: "run", reasonCode: "cancellation_run_only", dispatchState: "acknowledged", dispatched: true,
       intentAuditId: randomUUID(), acknowledgementAuditId: randomUUID(), acknowledgedAt: new Date().toISOString(),
       ...(options.proof === false ? {} : { beforeProviderTurn: true }) };
@@ -559,7 +559,7 @@ describe("automatic retained workspace recovery", () => {
     const f = await seed();
     await stopBeforeSessionOpen(f, { errorCode: "issue_reassigned" });
     const newOwnerId = randomUUID();
-    await db.insert(agents).values({ id: newOwnerId, companyId: f.companyId, name: "Reviewer", adapterType: "paperclip_runner",
+    await db.insert(agents).values({ id: newOwnerId, companyId: f.companyId, name: "Reviewer", adapterType: "pilibala_runner",
       status: "idle", runtimeConfig: { heartbeat: { maxConcurrentRuns: 1 } } });
     await db.update(issues).set({ assigneeAgentId: newOwnerId }).where(eq(issues.id, f.issueId));
     const handoff = await queueFollowUp(f, newOwnerId);
@@ -622,7 +622,7 @@ describe("automatic retained workspace recovery", () => {
     const finishedAt = new Date(Date.now() - 60_000);
     await db.update(heartbeatRuns).set({ status: "cancelled", errorCode: "operator_interrupted", finishedAt,
       resultJson: { ...source.resultJson, operatorInterrupted: true, interruptionSource: "issue_comment_interrupt",
-        nativeCancellation: { schema: "paperclip.native-cancellation.v1", runId: f.runId, companyId: f.companyId,
+        nativeCancellation: { schema: "pilibala.native-cancellation.v1", runId: f.runId, companyId: f.companyId,
           issueId: f.issueId, scope: "run", reasonCode: "cancellation_run_only", dispatchState: "acknowledged",
           dispatched: true, intentAuditId: randomUUID(), acknowledgementAuditId: randomUUID() } },
     }).where(eq(heartbeatRuns.id, f.runId));
@@ -646,7 +646,7 @@ describe("automatic retained workspace recovery", () => {
     await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: source.agentId,
       source: "automation", reason: "issue_execution_deferred", status: "deferred_issue_execution",
       requestedByActorType: "system", requestedByActorId: "heartbeat",
-      payload: { issueId: f.issueId, _paperclipWakeContext: { wakeCommentIds: [comment.id] },
+      payload: { issueId: f.issueId, _pilibalaWakeContext: { wakeCommentIds: [comment.id] },
         queuedCommentInterrupt: { actorId: "operator", requestedAt: new Date().toISOString() } } });
     expect(await hasPendingRunCleanup(db, f.companyId, f.runId)).toBe(kind !== "verified-stop");
     for (const interrupt of [false, true]) {
@@ -688,7 +688,7 @@ describe("automatic retained workspace recovery", () => {
     const [saved] = await db.insert(agentWakeupRequests).values({ companyId: f.companyId, agentId,
       source: "automation", reason: "issue_commented", status: "deferred_issue_execution",
       requestedByActorType: "user", requestedByActorId: "operator",
-      payload: { issueId: f.issueId, commentId: comment.id, _paperclipWakeContext: context,
+      payload: { issueId: f.issueId, commentId: comment.id, _pilibalaWakeContext: context,
         executionWait: { reason: "execution_recovery", message: "Waiting for execution recovery. Your message is saved." } } }).returning();
     await recoverRetainedWorkspace(f.input);
     expect(readSystemRecovery((await action(f.actionId)).evidence)).toMatchObject({ state: "complete" });
@@ -732,7 +732,7 @@ describe("automatic retained workspace recovery", () => {
       evidence: { ...held.evidence, automaticRecovery: { policy: "preserve_without_replay_v1", runId: f.runId, replay: "blocked" } },
     }).where(eq(issueRecoveryActions.id, f.actionId));
     const newOwnerId = randomUUID();
-    await db.insert(agents).values({ id: newOwnerId, companyId: f.companyId, name: "Reviewer", adapterType: "paperclip_runner", status: "idle" });
+    await db.insert(agents).values({ id: newOwnerId, companyId: f.companyId, name: "Reviewer", adapterType: "pilibala_runner", status: "idle" });
     await db.update(issues).set({ assigneeAgentId: newOwnerId, status: "in_progress" }).where(eq(issues.id, f.issueId));
     await recoverRetainedWorkspace(f.input);
     expect(readSystemRecovery((await action(f.actionId)).evidence)?.state).toBe("complete");
@@ -865,7 +865,7 @@ describe("automatic retained workspace recovery", () => {
     const f = await seed(mode.startsWith("legacy") ? "legacy" : "native", !mode.endsWith("_snapshot")), commentId = randomUUID(), queueId = randomUUID();
     if (mode === "native_snapshot") {
       await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeWorkspaceSync: {
-        schema: "paperclip.native-workspace-sync/v3", state: "prepared", descriptorSha256: "a".repeat(64),
+        schema: "pilibala.native-workspace-sync/v3", state: "prepared", descriptorSha256: "a".repeat(64),
         baselineSha256: "b".repeat(64), finalHostSha256: null, workspaceId: f.issueId,
         leaseId: f.lease.id, providerLeaseId: f.providerLeaseId, remoteCwd: f.remote, resourceDisposition: "destroy",
       } } }).where(eq(heartbeatRuns.id, f.runId));
@@ -886,7 +886,7 @@ describe("automatic retained workspace recovery", () => {
       authorType: "user", authorUserId: "board", body: "Confirm the existing publication. Do not publish it again." });
     await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: source.agentId,
       source: "automation", reason: "issue_commented", status: "deferred_issue_execution", requestedByActorType: "user", requestedByActorId: "board",
-      payload: { issueId: f.issueId, commentId, _paperclipWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentIds: [commentId], wakeCommentId: commentId } } });
+      payload: { issueId: f.issueId, commentId, _pilibalaWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentIds: [commentId], wakeCommentId: commentId } } });
     await recoverRetainedWorkspace(f.input);
     const service = heartbeatService(db);
     await Promise.all([service.resumeRemoteStopComments(await run(f.runId)), service.resumeRemoteStopComments(await run(f.runId))]);
@@ -913,7 +913,7 @@ describe("automatic retained workspace recovery", () => {
   it.each(["stopped", "unverified_stop"])("retries a recovered snapshot with sibling holds once: %s", async state => {
     const f = await seed("native", false);
     await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeWorkspaceSync: {
-      schema: "paperclip.native-workspace-sync/v3", state: "prepared", descriptorSha256: "a".repeat(64),
+      schema: "pilibala.native-workspace-sync/v3", state: "prepared", descriptorSha256: "a".repeat(64),
       baselineSha256: "b".repeat(64), finalHostSha256: null, workspaceId: f.issueId,
       leaseId: f.lease.id, providerLeaseId: f.providerLeaseId, remoteCwd: f.remote, resourceDisposition: "keep_running",
     } } }).where(eq(heartbeatRuns.id, f.runId));
@@ -990,7 +990,7 @@ describe("automatic retained workspace recovery", () => {
     await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: source.agentId,
       source: "on_demand", reason: "issue_commented", status: "deferred_issue_execution",
       requestedByActorType: "user", requestedByActorId: "local-board",
-      payload: { issueId: f.issueId, commentId, _paperclipWakeContext: { issueId: f.issueId,
+      payload: { issueId: f.issueId, commentId, _pilibalaWakeContext: { issueId: f.issueId,
         wakeReason: "issue_commented", wakeCommentIds: [commentId], wakeCommentId: commentId } } });
     const request = await requestTaskRetry({ db, companyId: f.companyId, issueId: f.issueId, actorId: "local-board",
       actorSource: "local_implicit", observedRunId: f.runId, idempotencyKey: randomUUID() });
@@ -1031,7 +1031,7 @@ describe("automatic retained workspace recovery", () => {
       const [additional] = await db.insert(environmentLeases).values({ ...f.lease, id: randomUUID(),
         providerLeaseId: randomUUID(), status: "pending_cleanup", cleanupStatus: "failed", releasedAt: null }).returning();
       leaseIds.push(additional.id);
-      const recovery = { schema: "paperclip.workspace-restore-recovery.v1", leaseIds };
+      const recovery = { schema: "pilibala.workspace-restore-recovery.v1", leaseIds };
       await db.update(heartbeatRuns).set({ resultJson: sql`${heartbeatRuns.resultJson} || ${JSON.stringify({ workspaceRestoreRecovery: recovery })}::jsonb` })
         .where(eq(heartbeatRuns.id, f.runId));
       await db.update(issueRecoveryActions).set({ evidence: sql`${issueRecoveryActions.evidence} || ${JSON.stringify({ workspaceRestoreRecovery: recovery })}::jsonb` })
@@ -1046,12 +1046,12 @@ describe("automatic retained workspace recovery", () => {
     const request = await requestTaskRetry({ db, companyId: f.companyId, issueId: f.issueId, actorId: "local-board",
       actorSource: "local_implicit", observedRunId: f.runId, idempotencyKey: randomUUID() });
     const { privateKey, publicKey } = generateKeyPairSync("ed25519");
-    vi.stubEnv("PAPERCLIP_CLOUD_STACK_ID", "fixture-stack");
-    vi.stubEnv("PAPERCLIP_CLOUD_API_ORIGIN", "https://cloud.example");
-    vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "fixture-token");
-    vi.stubEnv("PAPERCLIP_PRIMARY_HOST", "fixture.paperclip.test");
-    vi.stubEnv("PAPERCLIP_AUTH_SECRET", "fixture-auth-secret");
-    vi.stubEnv("PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS", JSON.stringify({ keys: [{
+    vi.stubEnv("PILIBALA_CLOUD_STACK_ID", "fixture-stack");
+    vi.stubEnv("PILIBALA_CLOUD_API_ORIGIN", "https://cloud.example");
+    vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "fixture-token");
+    vi.stubEnv("PILIBALA_PRIMARY_HOST", "fixture.pilibala.test");
+    vi.stubEnv("PILIBALA_AUTH_SECRET", "fixture-auth-secret");
+    vi.stubEnv("PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS", JSON.stringify({ keys: [{
       ...publicKey.export({ format: "jwk" }), kid: "absence-test", alg: "EdDSA", use: "sig",
     }] }));
     const originalFetch = globalThis.fetch;
@@ -1064,8 +1064,8 @@ describe("automatic retained workspace recovery", () => {
       if (mode === "interrupted" && binding.leaseId === f.lease.id && observed.length > 2) return new Response(null, { status: 503 });
       if (interrupted && binding.leaseId !== f.lease.id) return new Response(null, { status: 503 });
       const seconds = Math.floor(Date.now() / 1000);
-      const header = Buffer.from(JSON.stringify({ alg: "EdDSA", typ: "paperclip-sandbox-absence+jwt", kid: "absence-test" })).toString("base64url");
-      const payload = Buffer.from(JSON.stringify({ v: 1, iss: "paperclip-cloud", aud: "paperclip-sandbox-absence/v1",
+      const header = Buffer.from(JSON.stringify({ alg: "EdDSA", typ: "pilibala-sandbox-absence+jwt", kid: "absence-test" })).toString("base64url");
+      const payload = Buffer.from(JSON.stringify({ v: 1, iss: "pilibala-cloud", aud: "pilibala-sandbox-absence/v1",
         sub: "fixture-stack", ...binding, absent: true, iat: seconds, exp: seconds + 60 })).toString("base64url");
       return Response.json({ receipt: `${header}.${payload}.${sign(null, Buffer.from(`${header}.${payload}`), privateKey).toString("base64url")}` });
     });
@@ -1107,7 +1107,7 @@ describe("automatic retained workspace recovery", () => {
       authorType: "user", authorUserId: "board", body: "Confirm the existing publication. Do not publish it again." });
     await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: source.agentId,
       source: "automation", reason: "issue_commented", status: "deferred_issue_execution", requestedByActorType: "user", requestedByActorId: "board",
-      payload: { issueId: f.issueId, commentId, _paperclipWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentIds: [commentId], wakeCommentId: commentId } } });
+      payload: { issueId: f.issueId, commentId, _pilibalaWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentIds: [commentId], wakeCommentId: commentId } } });
     await recoverRetainedWorkspace(f.input);
     expect(await hasVerifiedWorkspaceRepair(db, await run(f.runId))).toBe(true);
     if (gate === "pause") {
@@ -1158,7 +1158,7 @@ describe("automatic retained workspace recovery", () => {
     // This is the verified platform boundary. Signature and identity validation
     // have independent coverage in native-workspace-platform-proof.test.ts.
     const proof = vi.spyOn(workerProof, "requestWorkspaceWorkerStopProof").mockResolvedValue({ status: "verified", proof: {
-      v: 1, iss: "paperclip-cloud", aud: "paperclip-workspace-worker-stop/v1", sub: "test-stack", stopped: true,
+      v: 1, iss: "pilibala-cloud", aud: "pilibala-workspace-worker-stop/v1", sub: "test-stack", stopped: true,
       iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 30,
       runId: f.runId, ownerToken: prior.token, worker,
     } });
@@ -1222,7 +1222,7 @@ describe("automatic retained workspace recovery", () => {
       authorType: "user", authorUserId: "board", body: "Continue from a clean workspace." });
     await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: source.agentId,
       source: "automation", reason: "issue_commented", status: "deferred_issue_execution", requestedByActorType: "user", requestedByActorId: "board",
-      payload: { issueId: f.issueId, commentId, _paperclipWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentIds: [commentId], wakeCommentId: commentId } } });
+      payload: { issueId: f.issueId, commentId, _pilibalaWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentIds: [commentId], wakeCommentId: commentId } } });
     const attempts = failure === "disk_full" ? 1 : 6;
     for (let attempt = 1; attempt <= attempts; attempt++) {
       await recoverRetainedWorkspace(f.input);
@@ -1357,7 +1357,7 @@ describe("automatic retained workspace recovery", () => {
       cancelledByActorType: "user", cancelledByUserId: "operator",
       cancellation: requestedRunCancellation({ cancelledByActorType: "user", cancelledByUserId: "operator" }, "Stop"),
       executionCancellation: { state: "requested", requestedAt: new Date().toISOString() },
-      nativeCancellation: { schema: "paperclip.native-cancellation.v1", runId: f.runId, companyId: f.companyId, issueId: f.issueId,
+      nativeCancellation: { schema: "pilibala.native-cancellation.v1", runId: f.runId, companyId: f.companyId, issueId: f.issueId,
         scope: "run", reasonCode: "cancellation_run_only", dispatchState: "acknowledged", dispatched: true,
         intentAuditId: randomUUID(), acknowledgementAuditId: randomUUID() },
     } }).where(eq(heartbeatRuns.id, f.runId));
@@ -1366,7 +1366,7 @@ describe("automatic retained workspace recovery", () => {
       authorType: "user", authorUserId: "operator", body: "/new" }).returning();
     expect(await getExecutionBlocker(db, f.companyId, f.issueId, { conversationResetCommentId: reset.id })).toBeNull();
     const context = { source: "issue.comment", issueId: f.issueId, wakeReason: "issue_commented", wakeCommentId: reset.id, wakeCommentIds: [reset.id] };
-    const payload = withQueuedCommentIdsInWakePayload({ issueId: f.issueId, commentId: reset.id, mutation: "comment", _paperclipWakeContext: context }, [reset.id]);
+    const payload = withQueuedCommentIdsInWakePayload({ issueId: f.issueId, commentId: reset.id, mutation: "comment", _pilibalaWakeContext: context }, [reset.id]);
     const [wake] = await db.insert(agentWakeupRequests).values({ companyId: f.companyId, agentId: original.agentId,
       source: "on_demand", triggerDetail: "manual", reason: "issue_commented", status: "claimed", claimedAt: new Date(),
       requestedByActorType: "user", requestedByActorId: "operator", payload }).returning();
@@ -1403,7 +1403,7 @@ describe("automatic retained workspace recovery", () => {
         mergedContextSnapshot: mergeCoalescedContextSnapshot((await run(queued.id)).contextSnapshot, incoming,
           { preserveExistingInteractionContinuation: true }),
         source: "on_demand", triggerDetail: "manual",
-        payload: withQueuedCommentIdsInWakePayload({ issueId: f.issueId, mutation: "comment", _paperclipWakeContext: incoming }, [followup.id]),
+        payload: withQueuedCommentIdsInWakePayload({ issueId: f.issueId, mutation: "comment", _pilibalaWakeContext: incoming }, [followup.id]),
         requestedByActorType: "user", requestedByActorId: "operator", idempotencyKey: null,
       });
     });
@@ -1459,7 +1459,7 @@ describe("automatic retained workspace recovery", () => {
       expect(first).toBeNull(); expect(second).toBeNull();
       const [pending] = await db.select().from(agentWakeupRequests).where(and(eq(agentWakeupRequests.companyId, f.companyId),
         eq(agentWakeupRequests.agentId, original.agentId), eq(agentWakeupRequests.status, "deferred_issue_execution")));
-      expect(pending.payload?._paperclipWakeContext).toMatchObject({ wakeCommentIds: ids });
+      expect(pending.payload?._pilibalaWakeContext).toMatchObject({ wakeCommentIds: ids });
       expect(pending.requestedByActorType).toBe(kind === "system-deferred" ? "system" : "user");
       expect(pending.requestedByActorId).toBe(kind === "system-deferred" ? "second-user" : "operator");
       await db.update(heartbeatRuns).set({ status: "cancelled", nativePhase: "terminal_failure", finishedAt: new Date(),
@@ -1668,7 +1668,7 @@ describe("automatic retained workspace recovery", () => {
       }
       expect(saved).toMatchObject({ status: "deferred_issue_execution", runId: null,
         payload: { executionWait: { reason: "execution_recovery", recoveryActionId: hold.id } } });
-      expect(saved.payload?._paperclipWakeContext).toMatchObject({ wakeCommentIds: [redirect.id] });
+      expect(saved.payload?._pilibalaWakeContext).toMatchObject({ wakeCommentIds: [redirect.id] });
 
       // Ordinary deferred-receipt delivery re-enters admission once.
       await Promise.all([control.resumeRemoteStopComments(await run(f.runId)), control.resumeRemoteStopComments(await run(f.runId))]);
@@ -1780,7 +1780,7 @@ describe("automatic retained workspace recovery", () => {
       const [saved] = await db.select().from(agentWakeupRequests).where(eq(agentWakeupRequests.id, wake.id));
       expect(saved).toMatchObject({ status: "deferred_issue_execution", runId: null,
         payload: { executionWait: { reason: "execution_recovery", recoveryActionId: hold.id } } });
-      expect(saved.payload?._paperclipWakeContext).toMatchObject({ wakeReason: "issue_commented", wakeCommentIds: expectedIds });
+      expect(saved.payload?._pilibalaWakeContext).toMatchObject({ wakeReason: "issue_commented", wakeCommentIds: expectedIds });
       if (systemWakeId) {
         const [systemWake] = await db.select().from(agentWakeupRequests).where(eq(agentWakeupRequests.id, systemWakeId));
         expect(systemWake.status).toBe("skipped");
@@ -1955,7 +1955,7 @@ describe("automatic retained workspace recovery", () => {
       ...original.resultJson, cancelledByActorType: "user", cancelledByUserId: "operator",
       cancellation: requestedRunCancellation({ cancelledByActorType: "user", cancelledByUserId: "operator" }, "Stop"),
       executionCancellation: { state: "requested", requestedAt: new Date().toISOString() },
-      nativeCancellation: { schema: "paperclip.native-cancellation.v1", runId: f.runId, companyId: f.companyId, issueId: f.issueId,
+      nativeCancellation: { schema: "pilibala.native-cancellation.v1", runId: f.runId, companyId: f.companyId, issueId: f.issueId,
         scope: "run", reasonCode: "cancellation_run_only", dispatchState: "acknowledged", dispatched: true,
         intentAuditId: randomUUID(), acknowledgementAuditId: randomUUID() },
     } }).where(eq(heartbeatRuns.id, f.runId));
@@ -1971,7 +1971,7 @@ describe("automatic retained workspace recovery", () => {
     const [wake] = await db.insert(agentWakeupRequests).values({ companyId: f.companyId, agentId: original.agentId,
       source: "on_demand", reason: "issue_execution_deferred", status: "deferred_issue_execution", requestedByActorType: "user", requestedByActorId: "operator",
       payload: withQueuedCommentIdsInWakePayload({ issueId: f.issueId, commentId: reset.id,
-        _paperclipWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentId: reset.id, wakeCommentIds: [reset.id] } }, [reset.id]) }).returning();
+        _pilibalaWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentId: reset.id, wakeCommentIds: [reset.id] } }, [reset.id]) }).returning();
     const deps = callbacks(db), control = createHeartbeatRunControl(db, deps);
     const execution = createAdapterExecutionControl();
     deps.activeRunExecutions.add(f.runId); adapterExecutionControls.set(f.runId, execution);

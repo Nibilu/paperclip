@@ -1,7 +1,7 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { goals } from "@paperclipai/db";
-import { updateGoalSchema, type UpdateGoal } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { goals } from "@pilibalaai/db";
+import { updateGoalSchema, type UpdateGoal } from "@pilibalaai/shared";
 import { unprocessable } from "../errors.js";
 
 type GoalReader = Pick<Db, "select">;

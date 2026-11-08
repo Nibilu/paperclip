@@ -4,14 +4,14 @@ import { attachSandboxCreation, environmentService } from "./environments.js";
 import { createOwnedSandbox, queueSandboxCreationCleanup, recordSandboxCreationResource } from "./sandbox-creation-operations.js";
 import { writeEnvironmentCleanup } from "./environment-cleanup-notifications.js";
 import { releaseProviderRecoveryTransfers, stageProviderFreshWorkspace } from "./provider-fresh-workspace.js";
-import { readWorkspaceProviderBinding } from "@paperclipai/shared";
+import { readWorkspaceProviderBinding } from "@pilibalaai/shared";
 import { settlePluginTaskCredentialHandoff } from "./plugin-task-credential-writeback.js";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { environmentLeases, executionWorkspaces, environments, heartbeatRuns, issues, projects, type Db } from "@paperclipai/db";
+import { environmentLeases, executionWorkspaces, environments, heartbeatRuns, issues, projects, type Db } from "@pilibalaai/db";
 import { freshWorkspaceSchema, environmentTaskOperationSchema, parseEnvironmentTaskResult,
   environmentTaskErrorData, readEnvironmentTaskErrorDiagnostic, JsonRpcCallError, PLUGIN_RPC_ERROR_CODES,
   environmentTaskErrorCodeData, PluginEnvironmentTaskError, readEnvironmentTaskErrorCode,
-  type HostToWorkerMethodName, type HostToWorkerMethods, type PluginEnvironmentTaskOperation } from "@paperclipai/plugin-sdk";
+  type HostToWorkerMethodName, type HostToWorkerMethods, type PluginEnvironmentTaskOperation } from "@pilibalaai/plugin-sdk";
 import { pluginRegistryService } from "./plugin-registry.js";
 import { remoteTerminationReceipt } from "./remote-execution-termination.js";
 import type { PluginWorkerManager } from "./plugin-worker-manager.js";
@@ -21,7 +21,7 @@ import { pluginAgentRuntimeIdentity } from "./plugin-agent-runtime-state.js";
 
 export function isSettledReadyRunnerState(state: Record<string, unknown>): boolean {
   const commands = state.processedCommands;
-  return state.schema === "paperclip.runner.durable.state.v1" && state.lifecycle === "ready" &&
+  return state.schema === "pilibala.runner.durable.state.v1" && state.lifecycle === "ready" &&
     Array.isArray(state.outbox) && state.outbox.length === 0 && Number.isSafeInteger(state.nextSourceSeq) &&
     Number(state.nextSourceSeq) > 0 && state.ackedSourceSeq === Number(state.nextSourceSeq) - 1 &&
     state.pendingTerminalDelivery == null && state.pendingProviderCleanup == null && state.warmTransition == null &&
@@ -313,7 +313,7 @@ export async function executeEnvironmentTask(db: Db, workers: PluginWorkerManage
         }, async identity => {
           const params = { driverKey: replacementDriverKey, companyId: input.companyId, environmentId: environment!.id,
             issueId: lease.issueId, config: driverConfig, runId: identity.runId, creationOperationId: identity.id,
-            agentId: run!.agentId, adapterType: "paperclip_runner",
+            agentId: run!.agentId, adapterType: "pilibala_runner",
             ...(typeof metadata.runnerTaskRequestedExpiresAt === "string" ? { requestedExpiresAt: metadata.runnerTaskRequestedExpiresAt } : {}) };
           if (!context) return workers.call(plugin.id, "environmentAcquireLease", params, 30_000);
           const settled = context.trackWorker();

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { instanceSettingsService } from "./instance-settings.js";
 function fixture(rows: Array<{ experimental: unknown }> = []) {
   const mutation = vi.fn(() => { throw new Error("read-only settings inspection mutated state"); });
@@ -15,7 +15,7 @@ describe("read-only experimental settings view", () => {
     expect(f.mutation).not.toHaveBeenCalled();
   });
   it("preserves the existing managed overlay on missing and stored rows", async () => {
-    const runtimeEnv = { PAPERCLIP_MANAGED_CONFIG: JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "test",
+    const runtimeEnv = { PILIBALA_MANAGED_CONFIG: JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "test",
       features: { enablePublicMcp: true, enableOpenAiDot: true }, plugins: { autoInstall: [] } }) };
     for (const rows of [[], [{ experimental: { enablePublicMcp: false } }]]) {
       const f = fixture(rows);

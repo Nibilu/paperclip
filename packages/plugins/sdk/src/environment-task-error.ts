@@ -5,7 +5,7 @@ export interface PluginEnvironmentTaskErrorDiagnostic {
   reason: "unresolved_operation" | "source_state_unverified";
 }
 
-const SCHEMA = "paperclip/environment-task-error/v1";
+const SCHEMA = "pilibala/environment-task-error/v1";
 
 function field(value: unknown, key: string): unknown {
   try { return value && typeof value === "object" ? (value as Record<string, unknown>)[key] : undefined; }
@@ -37,7 +37,7 @@ export function readEnvironmentTaskErrorDiagnostic(error: unknown): PluginEnviro
 export const ENVIRONMENT_TASK_ERROR_CODES = ["runner_revision_mismatch"] as const;
 export type PluginEnvironmentTaskErrorCode = typeof ENVIRONMENT_TASK_ERROR_CODES[number];
 
-const CODE_SCHEMA = "paperclip/environment-task-error-code/v1";
+const CODE_SCHEMA = "pilibala/environment-task-error-code/v1";
 
 function ownField(value: unknown, name: string): unknown {
   if (!value || typeof value !== "object") return undefined;

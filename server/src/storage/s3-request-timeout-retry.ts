@@ -33,6 +33,6 @@ export function retryS3RequestTimeouts(client: S3Client): void {
     },
     // Inside the retry middleware (finalizeRequest, priority high): it sees the
     // trait before it classifies the error.
-    { step: "finalizeRequest", priority: "low", name: "paperclipS3RequestTimeoutRetry" },
+    { step: "finalizeRequest", priority: "low", name: "pilibalaS3RequestTimeoutRetry" },
   );
 }

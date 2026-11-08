@@ -81,7 +81,7 @@ per parent. Optional-detail failures show a retry notice outside document flow;
 All seven exact-run retry/legacy continuation browser scenarios passed after
 fixing the company-loading hook order. Archive/Undo, read/back, nesting, remote
 search and rendering all 164 fixture tasks without duplicates also passed.
-PR: https://github.com/paperclipai/paperclip/pull/17756.
+PR: https://github.com/pilibalaai/pilibala/pull/17756.
 Browser evidence is retained in the chat's `list-cold-open-test-drive` artifact
 directory. Existing task-detail PR #17593 is already merged and verified on
 staging; its paused hourly monitor is not part of this change.

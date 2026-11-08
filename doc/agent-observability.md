@@ -1,14 +1,14 @@
 # Company agent observability
 
 Company Settings → General → Agent observability configures one company-owned
-OTLP destination for Paperclip-managed Codex, Claude Code and native OpenCode executions. Export
+OTLP destination for Pilibala-managed Codex, Claude Code and native OpenCode executions. Export
 is disabled by default. Choose Braintrust (US) or a custom HTTP(S) OTLP base URL;
 use your own collector when you need fan-out. Braintrust EU and self-hosted
 installations can use Custom OTLP with their required routing/authentication
 headers. The receiver must be reachable from every execution environment;
 `localhost` refers to the execution host, including a remote sandbox.
 
-This is separate from Paperclip's first-party Telemetry and its content-free
+This is separate from Pilibala's first-party Telemetry and its content-free
 [infrastructure tracing](observability.md). Configuring it does not change either data path.
 
 ## Capture and supported runtimes
@@ -22,27 +22,27 @@ and response caps still apply. Claude Code applies its own native limits.
 Metrics, raw API bodies and Codex Guardian assessments are disabled.
 
 Native OpenCode 1.18.34 uses a runner-owned HTTP/JSON exporter. Each completed,
-failed or cancelled turn produces a trace with Paperclip company, agent, run and
-turn IDs. Authenticated Paperclip tool dispatch outcomes, native tool outcomes and
+failed or cancelled turn produces a trace with Pilibala company, agent, run and
+turn IDs. Authenticated Pilibala tool dispatch outcomes, native tool outcomes and
 message-level token/cost receipts are child spans;
 repeated usage updates replace the same message receipt. Missing prices remain
 unknown. This projection excludes hidden reasoning, raw provider payloads and
 system instructions. Prompt, response, tool-detail and tool-content switches
 apply before export. Content is bounded to 8 KiB per field and 64 tools plus 64
 usage records per turn; truncation is marked. With both tool-detail and tool-content
-capture enabled, Paperclip tool spans include `braintrust.input` diagnostics
-(`paperclip.opencode.tool-diagnostics.v1`): the upstream `tools/call` method,
+capture enabled, Pilibala tool spans include `braintrust.input` diagnostics
+(`pilibala.opencode.tool-diagnostics.v1`): the upstream `tools/call` method,
 argument JSON type and types for a fixed list of envelope fields. These are
 shape diagnostics, not a copy of the arguments. Arbitrary field names, argument
 values, nested payloads and full model request bodies are not captured.
 Authenticated schema rejections also produce failed tool spans without invoking
 the controller handler. Conflicting request IDs produce separate failed items,
 so a rejection cannot overwrite a previous dispatch outcome.
-Paperclip tool spans use authenticated dispatch IDs and the name `tool <name>`.
+Pilibala tool spans use authenticated dispatch IDs and the name `tool <name>`.
 Provider SSE records for those declared tools use `opencode tool <name>` and
 remain available when failure occurs before dispatch, such as an oversized
 request. These are separate observations, not correlated calls. The
-`paperclip.tool.source` attribute distinguishes dispatch and provider records.
+`pilibala.tool.source` attribute distinguishes dispatch and provider records.
 Native tools retain their provider spans without submitted-argument diagnostics. OpenCode's performance-only OTLP sink stays separate.
 
 The exporter sends once at turn completion with a three-second deadline, at most
@@ -73,7 +73,7 @@ outside this feature.
 
 ## Changes and process lifetime
 
-Paperclip reads settings once when an execution begins preparation. That
+Pilibala reads settings once when an execution begins preparation. That
 snapshot governs instruction reservation, compatibility and launch. Already
 preparing or running work retains its configuration. A changed settings
 revision or resolved credential version retires an idle incompatible warm
@@ -91,7 +91,7 @@ observed; event delivery and task settlement do not wait for the receiver.
 
 Only board users with Manage connections permission can read or change this
 configuration. Agents cannot retrieve it through the settings API. The destination stores no credential
-values. Authentication headers live in one encrypted Paperclip-managed company
+values. Authentication headers live in one encrypted Pilibala-managed company
 secret, bound to the system consumer company-observability. Updates rotate that
 secret; removal uses the secret service to retire it. Braintrust project
 routing is derived from the current project ID, independently of the API key.

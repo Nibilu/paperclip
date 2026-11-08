@@ -5,7 +5,7 @@ import { choices } from "../../../support/decision-models/fixtures";
 import type {
   FastResponseSettings,
   FastResponseTestResult,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 export const empty: FastResponseSettings = {
   companyId: "company-storybook",
   enabled: false,
@@ -36,7 +36,7 @@ export const result: FastResponseTestResult = {
   },
 };
 const meta = {
-  parameters: { paperclip: {
+  parameters: { pilibala: {
       "capabilities": [
         "companies/identity",
         "budgets-costs/cost-reporting",

@@ -1,8 +1,8 @@
 /** Public product identity only: never include company, user, run, or credential data. */
 export const OPENROUTER_ATTRIBUTION_HEADERS = Object.freeze({
-  "HTTP-Referer": "https://paperclip.ing",
-  "X-Title": "Paperclip",
-  "X-OpenRouter-Title": "Paperclip",
+  "HTTP-Referer": "https://pilibala.in",
+  "X-Title": "Pilibala",
+  "X-OpenRouter-Title": "Pilibala",
   "X-OpenRouter-Categories": "cloud-agent,programming-app",
 });
 

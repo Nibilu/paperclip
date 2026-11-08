@@ -2,7 +2,7 @@ import { useLayoutEffect, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { useQueryClient } from "@tanstack/react-query";
-import { buildSkillMentionHref } from "@paperclipai/shared";
+import { buildSkillMentionHref } from "@pilibalaai/shared";
 import { TaskChatComposer } from "@/components/task-chat/TaskChatComposer";
 import { TaskChatComposerDock } from "@/components/task-chat/TaskChatComposerDock";
 import { TaskChatThreadView } from "@/components/task-chat/TaskChatThreadView";
@@ -55,7 +55,7 @@ const meta = {
   component: TaskSkillsStory,
   parameters: {
     layout: "fullscreen",
-    paperclip: {
+    pilibala: {
       capabilities: ["tasks/discussion", "tasks/create"],
       status: "current",
       implementation: "production",

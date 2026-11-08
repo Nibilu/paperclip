@@ -1,7 +1,7 @@
 import { LegacyProjectRepository } from "./LegacyProjectRepository";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Project, ProjectRepository } from "@paperclipai/shared";
+import type { Project, ProjectRepository } from "@pilibalaai/shared";
 import { projectsApi } from "@/api/projects";
 import { describeError } from "@/api/errors";
 import { queryKeys } from "@/lib/queryKeys";

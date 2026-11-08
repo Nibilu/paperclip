@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { AiConnectionLoginIntent, LocalAiLoginAttempt, LocalAiLoginStatus } from "@paperclipai/shared";
+import type { AiConnectionLoginIntent, LocalAiLoginAttempt, LocalAiLoginStatus } from "@pilibalaai/shared";
 import { aiConnectionsApi } from "@/api/ai-connections";
 import { describeError } from "@/api/errors";
 

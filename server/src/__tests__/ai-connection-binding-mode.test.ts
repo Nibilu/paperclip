@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Db } from "@paperclipai/db";
-import type { AiConnectionBinding } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import type { AiConnectionBinding } from "@pilibalaai/shared";
 import { readAiConnectionConfigurationFailure } from "../services/ai-connection-configuration-failure.js";
 import { aiConnectionService } from "../services/ai-connections.js";
 

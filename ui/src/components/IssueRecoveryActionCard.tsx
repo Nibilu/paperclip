@@ -1,6 +1,6 @@
-import { isNativeWorkspaceExportRepairCause } from "@paperclipai/shared";
+import { isNativeWorkspaceExportRepairCause } from "@pilibalaai/shared";
 import { useWorkspaceIsolationControls } from "@/hooks/useWorkspaceIsolationControls";
-import { requiresExecutionReconciliation } from "@paperclipai/shared";
+import { requiresExecutionReconciliation } from "@pilibalaai/shared";
 import { useMemo, useState } from "react";
 import type {
   Agent,
@@ -11,7 +11,7 @@ import type {
   IssueRecoveryActionStatus,
   IssueScheduledRetry,
   ReconciliationFixOption,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   Eye,
   GitBranch,
@@ -153,17 +153,17 @@ const KIND_HEADLINE: Record<IssueRecoveryActionKind, string> = {
   missing_disposition:
     "This task's run finished, but no next step was chosen. Choose what happens next — try the task again, mark it done, or send it for review.",
   deliberate_wait_without_target:
-    "This task's last run stopped to wait, but there is no reviewer, blocker, monitor, or approval to wait for. Paperclip is repairing the next step; the task stays with its owner.",
+    "This task's last run stopped to wait, but there is no reviewer, blocker, monitor, or approval to wait for. Pilibala is repairing the next step; the task stays with its owner.",
   stranded_assigned_issue:
-    "Paperclip retried this task's last run, but there is still no queued run, reviewer, blocker, or other next owner. To get it moving, choose what happens next — try the task again, mark it done, or send it for review.",
+    "Pilibala retried this task's last run, but there is still no queued run, reviewer, blocker, or other next owner. To get it moving, choose what happens next — try the task again, mark it done, or send it for review.",
   workspace_validation:
-    "Paperclip stopped this run because the task's git workspace could not be validated.",
+    "Pilibala stopped this run because the task's git workspace could not be validated.",
   configuration_validation:
-    "Paperclip stopped before dispatching this run because required secret/env bindings are missing.",
+    "Pilibala stopped before dispatching this run because required secret/env bindings are missing.",
   active_run_watchdog:
     "The active run has been silent. Recovery is observing without interrupting it.",
   issue_graph_liveness:
-    "Paperclip could not find a clear next step for this open task. Choose whether to continue work, send it for review, mark it done, or record what is blocking it.",
+    "Pilibala could not find a clear next step for this open task. Choose whether to continue work, send it for review, mark it done, or record what is blocking it.",
 };
 
 /** Shared shell for the retry-timing pill so every timing state reads as the same control. */
@@ -346,7 +346,7 @@ function sanitizeBranchComponent(value: string): string {
 }
 
 function buildRescueBranchPreview(sourceIdentifier: string | null): string {
-  return `paperclip/rescue/${sanitizeBranchComponent(sourceIdentifier ?? "issue")}/`;
+  return `pilibala/rescue/${sanitizeBranchComponent(sourceIdentifier ?? "issue")}/`;
 }
 
 function asStringArray(value: unknown): string[] {
@@ -571,7 +571,7 @@ function BreakGlassOverride({
             Break-glass reconciliation
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
-            This overrides Paperclip&apos;s safety check and points the recorded workspace at the live
+            This overrides Pilibala&apos;s safety check and points the recorded workspace at the live
             branch{" "}
             <span className="font-medium text-foreground/80">without an ancestry proof</span>. Confirm
             the divergence below and record why before continuing.
@@ -766,7 +766,7 @@ function RepairWorkspace({
 }
 
 const EXECUTION_SCOPE_LABEL: Record<ReconciliationFixOption["executionScope"], string> = {
-  server_side: "Executed by Paperclip",
+  server_side: "Executed by Pilibala",
   doctor_run: "Executed by the diagnostic agent",
   return_owner_run: "Executed by the task's owner",
   manual: "Executed manually",
@@ -913,7 +913,7 @@ function readWakePolicySummary(action: IssueRecoveryAction): string | null {
   if (!type) return null;
   if (type === "wake_owner") return "An agent will be asked to choose the next step";
   if (type === "bounded_owner_disposition_repair") {
-    return "Paperclip is retrying the original owner";
+    return "Pilibala is retrying the original owner";
   }
   if (type === "bounded_recovery_owner") return "A recovery owner is repairing the next step";
   if (type === "board_escalation") return "Board decision required";
@@ -1054,10 +1054,10 @@ function formatTimeAbsolute(value: string | Date | null | undefined): string | n
  */
 function lineageHeadline(lineage: RecoveryRetryLineage): string {
   if (lineage.lane === "native_run") {
-    if (lineage.liveRunId) return "Paperclip is recovering the existing run.";
-    if (lineage.exhausted) return "Paperclip could not recover the existing run within its retry budget. Review the recorded failure before retrying.";
+    if (lineage.liveRunId) return "Pilibala is recovering the existing run.";
+    if (lineage.exhausted) return "Pilibala could not recover the existing run within its retry budget. Review the recorded failure before retrying.";
     if (lineage.retryExpired) return "The retry for the existing run came due and did not start. Review the recorded failure and retry when ready.";
-    if (lineage.nextRetryAt) return "Paperclip has scheduled another attempt to resume the existing run.";
+    if (lineage.nextRetryAt) return "Pilibala has scheduled another attempt to resume the existing run.";
     return "The existing run still needs recovery. Review the recorded failure before retrying.";
   }
   // An attempt that came due and never ran leaves nobody working on this task, even though
@@ -1068,7 +1068,7 @@ function lineageHeadline(lineage: RecoveryRetryLineage): string {
   if (lineage.lane === "source_owner") {
     return lineage.exhausted
       ? "This task's last run stopped to wait, but nothing was waiting for it. The original owner has used every automatic repair attempt, so the next step needs a decision. The task stays with its owner."
-      : "This task's last run stopped to wait, but nothing was waiting for it. Paperclip is retrying the original owner to record a real next step. The task stays with its owner, and no action is needed yet.";
+      : "This task's last run stopped to wait, but nothing was waiting for it. Pilibala is retrying the original owner to record a real next step. The task stays with its owner, and no action is needed yet.";
   }
   if (lineage.lane === "recovery_owner") {
     return "The original owner could not record a next step within its retry budget. A recovery owner is now repairing the path only — the task itself still belongs to its original owner.";
@@ -1340,7 +1340,7 @@ export function IssueRecoveryActionCard({
               >
                 {lineage.lane === "native_run" && (action.ownerType !== "board" || Boolean(lineage.liveRunId)) ? (
                   <>
-                    <span className="font-medium">Paperclip</span>
+                    <span className="font-medium">Pilibala</span>
                     <span className="text-muted-foreground">recovers the existing run</span>
                   </>
                 ) : recoveryOwnerIsSourceOwner ? (

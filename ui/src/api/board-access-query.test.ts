@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import type { BoardBootstrap } from "@paperclipai/shared";
+import type { BoardBootstrap } from "@pilibalaai/shared";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { boardAccessQueryOptions } from "./board-access-query";
 import { queryKeys } from "../lib/queryKeys";

@@ -8,7 +8,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { activityLog, agents, companies, companyMemberships, createDb, executionWorkspaceRepositoryAccess, executionWorkspaceRepositoryRoots, executionWorkspaceRepositories, executionWorkspaces, goals, issueAccessGrants, issues, projects, projectAccessMembers, projectWorkspaces, type Db } from "@paperclipai/db";
+import { activityLog, agents, companies, companyMemberships, createDb, executionWorkspaceRepositoryAccess, executionWorkspaceRepositoryRoots, executionWorkspaceRepositories, executionWorkspaces, goals, issueAccessGrants, issues, projects, projectAccessMembers, projectWorkspaces, type Db } from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
 import { taskRepositoryRelativePath } from "../services/execution-workspace-repositories.js";
 import type {
@@ -16,7 +16,7 @@ import type {
   WorkspaceFileAvailabilityResponse,
   WorkspaceFileContent,
   WorkspaceFileListResponse,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { errorHandler } from "../middleware/index.js";
 import { canActorReadExecutionWorkspace } from "../services/authorization.js";
 import {
@@ -36,7 +36,7 @@ import {
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
 
-const externalDatabase = process.env.PAPERCLIP_TEST_DATABASE_URL?.trim();
+const externalDatabase = process.env.PILIBALA_TEST_DATABASE_URL?.trim();
 const embeddedPostgresSupport = externalDatabase ? { supported: true } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 const execFileAsync = promisify(execFile);
@@ -59,7 +59,7 @@ type TestGraph = {
 };
 
 async function makeWorkspace() {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-file-resources-"));
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-file-resources-"));
   const projectRoot = path.join(root, "project");
   const targetProjectRoot = path.join(root, "target-project");
   const executionRoot = path.join(root, "execution");
@@ -212,10 +212,10 @@ describeEmbeddedPostgres("workspace file resources", () => {
   let db: Db;
 
   beforeAll(async () => {
-    vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", "enforce");
+    vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", "enforce");
     if (externalDatabase) db = createDb(externalDatabase);
     else {
-      tempDb = await startEmbeddedPostgresTestDatabase("paperclip-file-resources-");
+      tempDb = await startEmbeddedPostgresTestDatabase("pilibala-file-resources-");
       db = createDb(tempDb.connectionString);
     }
   }, 60_000);
@@ -2019,7 +2019,7 @@ describeEmbeddedPostgres("file resource route guards", () => {
   beforeAll(async () => {
     if (externalDatabase) db = createDb(externalDatabase);
     else {
-      tempDb = await startEmbeddedPostgresTestDatabase("paperclip-file-resource-guards-");
+      tempDb = await startEmbeddedPostgresTestDatabase("pilibala-file-resource-guards-");
       db = createDb(tempDb.connectionString);
     }
   }, 60_000);

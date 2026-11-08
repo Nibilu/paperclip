@@ -58,8 +58,8 @@ for (const mobile of [false, true]) test(`a rich task uses one stable loading fr
           ready: !!document.querySelector('[data-testid="task-chat-thread"] > [aria-busy="false"]'),
           headerVisible: !!header && getComputedStyle(header).visibility === "visible" && bounds!.bottom > 60 && bounds!.top < innerHeight,
           loading: box('[data-testid="task-chat-loading-frame"]'),
-          loadingComposer: box('[data-testid="task-chat-loading-composer"] .paperclip-task-chat-composer'),
-          composer: box('[data-testid="task-chat-composer-stack"] .paperclip-task-chat-composer'),
+          loadingComposer: box('[data-testid="task-chat-loading-composer"] .pilibala-task-chat-composer'),
+          composer: box('[data-testid="task-chat-composer-stack"] .pilibala-task-chat-composer'),
           latestY: [...document.querySelectorAll('[id^="comment-"]')].at(-1)?.getBoundingClientRect().y,
           scrollHeight: document.querySelector('[data-testid="task-chat-scroller"]')?.scrollHeight,
           loadingFont: font('[data-slot="task-loading-title"]'),
@@ -158,7 +158,7 @@ for (const coordinator of [false, true]) test(`mobile chrome stays fixed when pe
     const frames: number[][] = [], frameTimes: number[] = [];
     Object.assign(window, { mobileShellFrames: frames, mobileShellFrameTimes: frameTimes });
     const sample = () => {
-      const shell = document.querySelector(".paperclip-app-shell");
+      const shell = document.querySelector(".pilibala-app-shell");
       if (shell && shell.getBoundingClientRect().width > 0) {
         const rects = [".app-breadcrumb", ".mobile-bottom-nav", "#main-content"].map(selector => document.querySelector(selector)!.getBoundingClientRect());
         frames.push([innerWidth, innerHeight, scrollX, scrollY, ...rects.flatMap((rect, index) => index === 2 ? [rect.x, rect.y, rect.width] : [rect.x, rect.y, rect.width, rect.height])]);
@@ -180,7 +180,7 @@ for (const coordinator of [false, true]) test(`mobile chrome stays fixed when pe
     });
     await page.goto(fixture.route);
     await expect(page.getByTestId("shell-configuration-loading")).toBeVisible();
-    await expect(page.locator(".paperclip-app-shell")).toBeHidden();
+    await expect(page.locator(".pilibala-app-shell")).toBeHidden();
     expect(await page.evaluate(() => (window as unknown as { mobileShellFrames: number[][] }).mobileShellFrames)).toEqual([]);
     release();
     if (coordinator) await expect(page.getByTestId("task-chat-thread").locator(':scope > [aria-busy="false"]')).toBeVisible();
@@ -236,7 +236,7 @@ test("a seeded Classic loading title uses the resolved title typography", async 
     await page.route("**/api/issues/*", async route => { await coreReady; await route.continue(); });
     // Keep the recent-task title seed, but exercise the loading frame without
     // a persisted full task that would correctly reveal the resolved header.
-    await page.addInitScript(() => Object.keys(localStorage).filter(key => key.startsWith("paperclip:query-cache:v1:")).forEach(key => localStorage.removeItem(key)));
+    await page.addInitScript(() => Object.keys(localStorage).filter(key => key.startsWith("pilibala:query-cache:v1:")).forEach(key => localStorage.removeItem(key)));
     await page.reload({ waitUntil: "domcontentloaded" });
     const loadingTitle = page.getByRole("heading", { name: fixture.title, exact: true });
     await expect(loadingTitle).toBeVisible();

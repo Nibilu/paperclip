@@ -1,8 +1,8 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { withDedicatedDbConnection, type Db } from "@paperclipai/db";
+import { withDedicatedDbConnection, type Db } from "@pilibalaai/db";
 import { sql } from "drizzle-orm";
 import path from "node:path";
-import { resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { canonicalRepositoryRoot } from "./execution-workspace-source-roots.js";
 import { readWorkspaceGitSourceRoots } from "./workspace-git-source-roots.js";
 import { withWorkspaceLockKeepalive } from "./native-runtime/native-workspace-lock-keepalive.js";
@@ -76,7 +76,7 @@ export async function withWorkspaceSourceLocks<T>(db: Db,
 }
 
 export async function managedProjectSourceIdentity(companyId: string, cwd: string): Promise<string | null> {
-  const root = await canonicalRepositoryRoot(path.join(resolvePaperclipInstanceRoot(), "projects"));
+  const root = await canonicalRepositoryRoot(path.join(resolvePilibalaInstanceRoot(), "projects"));
   const target = await canonicalRepositoryRoot(cwd);
   const relative = path.relative(root, target);
   if (relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) return null;
@@ -86,7 +86,7 @@ export async function managedProjectSourceIdentity(companyId: string, cwd: strin
 }
 
 export async function isolatedTaskSourceIdentity(companyId: string, cwd: string): Promise<string | null> {
-  const root = await canonicalRepositoryRoot(resolvePaperclipInstanceRoot());
+  const root = await canonicalRepositoryRoot(resolvePilibalaInstanceRoot());
   const relative = path.relative(root, await canonicalRepositoryRoot(cwd)).split(path.sep);
   if (!["isolated-workspaces", "isolated-workspace-attempts", "isolated-repository-sources"].includes(relative[0])) return null;
   if (relative[0] === "isolated-repository-sources" && relative[3] !== "checkout") return null;

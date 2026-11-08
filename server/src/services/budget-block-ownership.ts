@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { budgetPolicies, type Db } from "@paperclipai/db";
+import { budgetPolicies, type Db } from "@pilibalaai/db";
 import { policyBlocks } from "./budgets.js";
 
 /** A reached hard stop (spend at the limit, or blocked unpriced usage) is a

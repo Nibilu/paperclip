@@ -1,16 +1,16 @@
 # Control-plane restart chaos loop: make tasks survive server restarts
 
 Date: 2026-11-06
-Target: a local, isolated Paperclip control plane with agent runs in Daytona sandboxes
-Fix workflow: `fix-failed-paperclip-run` (one session per failure signature)
-Predecessor: `2026-11-04-staging-soak-loop.md` (staging soak campaign, PR worktree `paperclip-staging-test-plan-24ca37`)
+Target: a local, isolated Pilibala control plane with agent runs in Daytona sandboxes
+Fix workflow: `fix-failed-pilibala-run` (one session per failure signature)
+Predecessor: `2026-11-04-staging-soak-loop.md` (staging soak campaign, PR worktree `pilibala-staging-test-plan-24ca37`)
 
 ## 1. Why this plan exists
 
 The staging soak campaign (2026-11-04 to 2026-11-06) ran about 430 graded tasks
 in waves of about 10. It used a fixed task library (sections A to H), mechanical
 oracles (U1 to U9), and a dedupe-by-signature ledger. Each new failure signature
-went to its own `fix-failed-paperclip-run` session. The campaign merged 42 fixes,
+went to its own `fix-failed-pilibala-run` session. The campaign merged 42 fixes,
 and the hard-failure rate on test tasks fell from 43% to about 0%.
 
 The largest remaining source of failures was restarts. Staging restarted up to
@@ -59,13 +59,13 @@ is never graded "environment, ignore".
    ├─ observer: polls issues, runs and run events; grades R1–R6; captures evidence
    └─ ledger: one JSONL line per task execution, plus the fault schedule seed
 
- local control plane (isolated PAPERCLIP_HOME, embedded Postgres, one fixed port)
+ local control plane (isolated PILIBALA_HOME, embedded Postgres, one fixed port)
    └─ dials out to runnerd in each Daytona sandbox (runner ingress, port 43127)
 
  Daytona: one sandbox per run or lease, holding the real runner and provider (Claude, Codex)
 ```
 
-- **Use an isolated instance**, not `~/.paperclip/instances/default`. Chaos kills
+- **Use an isolated instance**, not `~/.pilibala/instances/default`. Chaos kills
   and the leftover Postgres state must never touch Dotta's working data.
 - **Own the server process.** Reuse the existing supervisor in
   `tests/runner-e2e/server.ts` and `controller-outage.ts`
@@ -209,7 +209,7 @@ It does not copy that code.
 wave (N tasks × sampled K/B/A cells)
   → grade R1–R6 and the T-oracles
   → classify failures; signature = component + first causal error + boundary
-  → new P signature  → fixer session running /fix-failed-paperclip-run with the bundle and a replay command
+  → new P signature  → fixer session running /fix-failed-pilibala-run with the bundle and a replay command
   → known signature  → add the bundle to the existing record
   → fix PR merged    → rebase the harness worktree on master, replay that signature 5× plus its neighboring cells
 ```
@@ -219,7 +219,7 @@ wave (N tasks × sampled K/B/A cells)
   applies to the fault we injected. Only an unrelated provider or Daytona outage
   counts as E.
 - **Fixers start from the replay.** Each fixer gets `--replay`, so the first
-  step of `fix-failed-paperclip-run` (establish the incident) is already done.
+  step of `fix-failed-pilibala-run` (establish the incident) is already done.
   The fixer then writes the smallest red test at the right layer. Usually that
   is a server integration test on embedded Postgres, like the six in #19399, or
   a `native-runner-restart-*.integration.test.ts`. The fix makes it green.

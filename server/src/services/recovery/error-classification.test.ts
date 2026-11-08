@@ -186,7 +186,7 @@ describe("classifyRunFailure - rule precedence", () => {
       adapterType: "hermes_local",
       errorCode: "acpx_session_config_failed",
       errorMessage:
-        "ACP session paperclip:c1:04a:fb does not advertise config option 'model'. Supported config options: none.",
+        "ACP session pilibala:c1:04a:fb does not advertise config option 'model'. Supported config options: none.",
     });
     expect(byCode).toMatchObject({
       category: "runtime.adapter_boot_failure",
@@ -199,7 +199,7 @@ describe("classifyRunFailure - rule precedence", () => {
       adapterType: "hermes_local",
       errorCode: "adapter_failed",
       errorMessage:
-        "ACP session paperclip:c1:04a:fb does not advertise config option 'model'. Supported config options: none.",
+        "ACP session pilibala:c1:04a:fb does not advertise config option 'model'. Supported config options: none.",
     });
     expect(byMessage.category).toBe("runtime.adapter_boot_failure");
   });
@@ -234,7 +234,7 @@ describe("classifyRunFailure - rule precedence", () => {
       adapterType: "hermes_local",
       errorCode: "acpx_session_config_failed",
       errorMessage:
-        "ACP session paperclip:c1:04a:fb does not advertise config option 'model'. Supported config options: none.",
+        "ACP session pilibala:c1:04a:fb does not advertise config option 'model'. Supported config options: none.",
     });
     expect(mismatch.retryPolicy).toBe("never");
     expect(mismatch.ladderHint).toBe("L2");
@@ -248,7 +248,7 @@ describe("classifyRunFailure - rule precedence", () => {
       errorCode: "adapter_failed",
       exitCode: 2,
       errorMessage:
-        '[hermes] Cannot start without the required Paperclip-managed skills: Cannot reconcile Hermes skill "paperclipai/paperclip/paperclip" because /home/amber/.hermes/skills/paperclip is occupied by another installation.',
+        '[hermes] Cannot start without the required Pilibala-managed skills: Cannot reconcile Hermes skill "pilibalaai/pilibala/pilibala" because /home/amber/.hermes/skills/pilibala is occupied by another installation.',
     });
     expect(legacy).toMatchObject({
       category: "runtime.adapter_boot_failure",
@@ -262,7 +262,7 @@ describe("classifyRunFailure - rule precedence", () => {
       adapterType: "hermes_local",
       errorCode: "adapter_failed",
       errorMessage:
-        '[hermes] Cannot start without the required Paperclip-managed skills: Cannot reconcile Paperclip-managed skill "paperclipai/paperclip/paperclip": /home/amber/.hermes/skills/paperclip is occupied by another installation (not a symlink). Fix: move or remove the occupant, e.g. `mv /home/amber/.hermes/skills/paperclip /home/amber/.hermes/skills/.archive/`, then restart the agent.',
+        '[hermes] Cannot start without the required Pilibala-managed skills: Cannot reconcile Pilibala-managed skill "pilibalaai/pilibala/pilibala": /home/amber/.hermes/skills/pilibala is occupied by another installation (not a symlink). Fix: move or remove the occupant, e.g. `mv /home/amber/.hermes/skills/pilibala /home/amber/.hermes/skills/.archive/`, then restart the agent.',
     });
     expect(current.category).toBe("runtime.adapter_boot_failure");
     expect(current.subcategory).toBe("skills_home_occupied");

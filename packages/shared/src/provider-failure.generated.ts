@@ -1,5 +1,5 @@
 export interface ProviderFailure {
-  schema: "paperclip.provider-failure.v1";
+  schema: "pilibala.provider-failure.v1";
   provider: string;
   phase: "startup" | "turn";
   category: "rate_limit" | "quota_exhausted" | "authentication" | "permission" | "model_unavailable" | "invalid_request" | "overloaded" | "timeout" | "unknown";
@@ -13,7 +13,7 @@ export interface ProviderFailure {
 
 const fields = {
   "schema": {
-    "const": "paperclip.provider-failure.v1"
+    "const": "pilibala.provider-failure.v1"
   },
   "provider": {
     "type": "string",

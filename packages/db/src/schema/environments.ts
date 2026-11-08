@@ -23,7 +23,7 @@ export const environments = pgTable(
     managedSandboxIdx: uniqueIndex("environments_managed_sandbox_idx")
       .on(table.driver)
       .where(
-        sql`${table.driver} = 'sandbox' AND (${table.metadata} ->> 'managedByPaperclip')::boolean = true`,
+        sql`${table.driver} = 'sandbox' AND (${table.metadata} ->> 'managedByPilibala')::boolean = true`,
       ),
     // One row per managed-config plugin entry: the marker is the entry's
     // "<pluginKey>:<driverKey>" pair (`ensureManagedPluginEnvironment`).

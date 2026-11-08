@@ -6,9 +6,9 @@ import path from "node:path";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { agentWakeupRequests, assets, environmentLeases, executionWorkspaces, heartbeatRuns, issueAttachments, issueComments,
-  issueRecoveryActions, issues, nativeRunFinalizations, workspaceOperations } from "@paperclipai/db";
-import type { AdapterSandboxExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import { readRemoteWorkspaceAuthority, type EnvironmentLease } from "@paperclipai/shared";
+  issueRecoveryActions, issues, nativeRunFinalizations, workspaceOperations } from "@pilibalaai/db";
+import type { AdapterSandboxExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import { readRemoteWorkspaceAuthority, type EnvironmentLease } from "@pilibalaai/shared";
 import { getStorageService } from "../storage/index.js";
 import { admitExplicitNativeContinuation } from "./explicit-native-continuation.js";
 import { getExecutionBlocker } from "./execution-blocker.js";
@@ -38,7 +38,7 @@ describe("retained source fallback", () => {
   // the checkpoint save and the later restore alike.
   beforeEach(() => {
     vi.stubEnv("DATABASE_URL", connectionString);
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "63".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "63".repeat(32));
   });
   afterEach(() => { vi.unstubAllEnvs(); });
 
@@ -79,7 +79,7 @@ describe("retained source fallback", () => {
         systemRecovery: { ...current, revision: current.revision + 5, phase: "verify_execution", state: "exhausted", attempts: 1,
           attemptId: randomUUID(), firstFailureAt: Date.now() - 60_000, deadlineAt: Date.now() + 60_000, nextAttemptAt: null,
           failure: { code: "allocation_ownership_ambiguous", retryClass: "service_required", evidenceFingerprint: "a".repeat(64) } },
-        workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId: f.runId, status: "blocked", stage: "verifying_stop",
+        workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId: f.runId, status: "blocked", stage: "verifying_stop",
           attempt: 1, attemptLimit: 6, retryable: true, requestIds: [], message: oldMessage } } })
         .where(eq(issueRecoveryActions.id, f.actionId));
     }
@@ -105,7 +105,7 @@ describe("retained source fallback", () => {
       const [task] = await db.select().from(issues).where(eq(issues.id, f.issueId));
       const source = await run(f.runId);
       await db.update(issueRecoveryActions).set({ evidence: { ...(await action(f.actionId)).evidence, workspaceFinalizationBlock: {
-        schema: "paperclip.native-workspace-finalization-block.v1", companyId: f.companyId, issueId: f.issueId, runId: f.runId,
+        schema: "pilibala.native-workspace-finalization-block.v1", companyId: f.companyId, issueId: f.issueId, runId: f.runId,
         agentId: source.agentId, resultId: f.resultId, resultSha256: "result", contractId: source.completionContractId,
         contractSha256: "contract", identityContextId: null, responsibleUserId: null,
         statusVersion: Number(task.statusVersion), priorDecisionId: task.lastStatusDecisionId } } })
@@ -349,12 +349,12 @@ describe("retained source fallback", () => {
       kind: "active_run_watchdog", status: "active", ownerType: "board", cause: "native_workspace_sync_out_retry_exhausted",
       fingerprint: randomUUID(), nextAction: "Automatic recovery of saved work stopped after 6 attempts.",
       evidence: { runId: f.runId,
-        systemRecovery: { schema: "paperclip.system-recovery.v1", policyVersion: 1, sourceRunId: f.runId, revision: 54,
+        systemRecovery: { schema: "pilibala.system-recovery.v1", policyVersion: 1, sourceRunId: f.runId, revision: 54,
           generationId: randomUUID(), intentId: null, phase: "preserve_files", state: "exhausted", attemptId: randomUUID(),
           attempts: 6, retriesUsed: 5, firstFailureAt: now - 60_000, nextAttemptAt: null, deadlineAt: now - 1, providerCooldownAt: null,
           failure: { code: "export_interrupted", retryClass: "retry_transient", evidenceFingerprint: "b".repeat(64) },
           preservationOperationIds: [], freshAttemptRunId: null },
-        workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId: f.runId, status: "blocked", stage: "restoring_files",
+        workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId: f.runId, status: "blocked", stage: "restoring_files",
           attempt: 6, attemptLimit: 6, retryable: true, requestIds: [] } } });
 
     await recoverRetainedWorkspace({ ...f.input, actionId: staleId });
@@ -384,12 +384,12 @@ describe("retained source fallback", () => {
       kind: "active_run_watchdog", status: "active", ownerType: "board", cause: "native_workspace_sync_out_retry_exhausted",
       fingerprint: randomUUID(), nextAction: "Stale",
       evidence: { runId: f.runId,
-        systemRecovery: { schema: "paperclip.system-recovery.v1", policyVersion: 1, sourceRunId: f.runId, revision: 3,
+        systemRecovery: { schema: "pilibala.system-recovery.v1", policyVersion: 1, sourceRunId: f.runId, revision: 3,
           generationId: randomUUID(), intentId: null, phase: "preserve_files", state: "exhausted", attemptId: randomUUID(),
           attempts: 6, retriesUsed: 5, firstFailureAt: now - 60_000, nextAttemptAt: null, deadlineAt: now - 1, providerCooldownAt: null,
           failure: { code: "export_interrupted", retryClass: "retry_transient", evidenceFingerprint: "c".repeat(64) },
           preservationOperationIds: [], freshAttemptRunId: null },
-        workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId: f.runId, status: "blocked", stage: "restoring_files",
+        workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId: f.runId, status: "blocked", stage: "restoring_files",
           attempt: 6, attemptLimit: 6, retryable: true, requestIds: [] } } });
     const ids = async () => (await retainedWorkspaceCandidates(db, undefined, false, true)).map(row => row.action.id);
     expect(await ids()).toContain(staleId);

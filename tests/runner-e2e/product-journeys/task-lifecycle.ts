@@ -67,7 +67,7 @@ export async function taskEditLifecycle(context: JourneyContext, session: Target
   const preserve = async () => {
     await mkdir(options.directory, { recursive: true, mode: 0o700 });
     await writeFile(path.join(options.directory, "task-lifecycle-observations.json"),
-      JSON.stringify({ schema: "paperclip.task-lifecycle-observations/v1", stage, expected, label, ...observed }, null, 2), { mode: 0o600 });
+      JSON.stringify({ schema: "pilibala.task-lifecycle-observations/v1", stage, expected, label, ...observed }, null, 2), { mode: 0o600 });
   };
   const grade = () => taskLifecycleEvidence({ expected: expected!, label, ...observed });
   try {

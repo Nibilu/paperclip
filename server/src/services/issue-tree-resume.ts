@@ -1,5 +1,5 @@
 import { and, asc, eq, gt, ne, sql } from "drizzle-orm";
-import { agentWakeupRequests, heartbeatRuns, issueTreeHolds, issues, type Db } from "@paperclipai/db";
+import { agentWakeupRequests, heartbeatRuns, issueTreeHolds, issues, type Db } from "@pilibalaai/db";
 import { isUniqueViolation } from "../db-errors.js";
 import { logActivity } from "./activity-log.js";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "./delivery-work-notifications.js";

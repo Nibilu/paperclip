@@ -15,7 +15,7 @@ membership or unread-state access. Existing product connections remain compatibl
 - Reuse normal setup, vault, policies, refresh and audit paths.
 - Keep the temporary Connections-page hold. No production deployment, Console
   changes, reviewer-stack upgrade or unpinning as part of this implementation.
-- Sign-in tokens are never reused as resource tokens; id.paperclip.ing never
+- Sign-in tokens are never reused as resource tokens; id.pilibala.in never
   stores resource tokens; no connections hub on the ID service.
 
 ## Acceptance

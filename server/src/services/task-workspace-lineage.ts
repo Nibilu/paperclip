@@ -1,6 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { executionWorkspaces, issues } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { executionWorkspaces, issues } from "@pilibalaai/db";
 import { parseIssueExecutionWorkspaceSettings } from "./execution-workspace-policy.js";
 import { loadParentChain } from "./issue-hierarchy.js";
 

@@ -1,4 +1,4 @@
-import { agentWakeupRequests, type Db } from "@paperclipai/db";
+import { agentWakeupRequests, type Db } from "@pilibalaai/db";
 import { and, eq, sql } from "drizzle-orm";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "./delivery-work-notifications.js";
 

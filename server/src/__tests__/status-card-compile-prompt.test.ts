@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { writeStatusCardQuerySchema } from "@paperclipai/shared";
+import { writeStatusCardQuerySchema } from "@pilibalaai/shared";
 import { compileDescription } from "../services/status-cards.js";
 
 type CompileCard = Parameters<typeof compileDescription>[0];

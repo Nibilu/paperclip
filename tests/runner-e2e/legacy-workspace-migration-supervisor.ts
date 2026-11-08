@@ -4,7 +4,7 @@ import { createWriteStream } from "node:fs";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { paperclipConfigSchema } from "../../packages/shared/src/config-schema.js";
+import { pilibalaConfigSchema } from "../../packages/shared/src/config-schema.js";
 import { makeDirectoryTreeRemovable } from "./directory-cleanup.js";
 import { runnerE2EServerControlPaths } from "./harness-env.js";
 import { reserveRunnerE2EServerPort } from "./ports.js";
@@ -20,19 +20,19 @@ export async function superviseLegacyWorkspaceMigration(input: {
   temporaryRoot: string; repositoryRoot: string; configPath: string; port: number;
   environment: NodeJS.ProcessEnv; executionIds: string[]; cancelled: () => boolean;
 }) {
-  const config = paperclipConfigSchema.parse(JSON.parse(await readFile(input.configPath, "utf8")));
+  const config = pilibalaConfigSchema.parse(JSON.parse(await readFile(input.configPath, "utf8")));
   if (input.executionIds.length !== 1 || config.database.mode !== "postgres" || !config.database.connectionString
-    || input.environment.PAPERCLIP_STORAGE_PROVIDER !== "s3") throw new Error("Migration qualification requires one owned Postgres/S3 cell");
+    || input.environment.PILIBALA_STORAGE_PROVIDER !== "s3") throw new Error("Migration qualification requires one owned Postgres/S3 cell");
   const databaseUrl = config.database.connectionString, controls = runnerE2EServerControlPaths(input.temporaryRoot);
   const proxy = await startRollingDeploymentProxy(input.port), servers: Server[] = [];
   const environment: NodeJS.ProcessEnv = { ...input.environment,
-    PAPERCLIP_DATABASE_LISTEN_URL: databaseUrl, PAPERCLIP_SECRETS_MASTER_KEY: randomBytes(32).toString("base64"),
-    HEARTBEAT_SCHEDULER_ENABLED: "true", PAPERCLIP_EPHEMERAL_SERVER: "true",
-    PAPERCLIP_DURABLE_AGENT_FILES: "true", PAPERCLIP_SHARED_UI_ASSETS: "true",
-    RUN_LOG_S3_BUCKET: input.environment.PAPERCLIP_STORAGE_S3_BUCKET,
-    RUN_LOG_S3_ENDPOINT: input.environment.PAPERCLIP_STORAGE_S3_ENDPOINT,
-    RUN_LOG_S3_REGION: input.environment.PAPERCLIP_STORAGE_S3_REGION,
-    RUN_LOG_S3_FORCE_PATH_STYLE: input.environment.PAPERCLIP_STORAGE_S3_FORCE_PATH_STYLE };
+    PILIBALA_DATABASE_LISTEN_URL: databaseUrl, PILIBALA_SECRETS_MASTER_KEY: randomBytes(32).toString("base64"),
+    HEARTBEAT_SCHEDULER_ENABLED: "true", PILIBALA_EPHEMERAL_SERVER: "true",
+    PILIBALA_DURABLE_AGENT_FILES: "true", PILIBALA_SHARED_UI_ASSETS: "true",
+    RUN_LOG_S3_BUCKET: input.environment.PILIBALA_STORAGE_S3_BUCKET,
+    RUN_LOG_S3_ENDPOINT: input.environment.PILIBALA_STORAGE_S3_ENDPOINT,
+    RUN_LOG_S3_REGION: input.environment.PILIBALA_STORAGE_S3_REGION,
+    RUN_LOG_S3_FORCE_PATH_STYLE: input.environment.PILIBALA_STORAGE_S3_FORCE_PATH_STYLE };
   const start = async (name: string, env: NodeJS.ProcessEnv) => {
     const server = await startRollingDeploymentProcess({ root: input.temporaryRoot, name, repositoryRoot: input.repositoryRoot,
       databaseUrl, ingressOrigin: proxy.origin, sharedEnvironment: env, browser: {} });
@@ -54,9 +54,9 @@ export async function superviseLegacyWorkspaceMigration(input: {
     const keyPath = path.resolve(config.secrets.localEncrypted.keyFilePath);
     if (!keyPath.startsWith(`${path.resolve(input.temporaryRoot)}${path.sep}`)) throw new Error("Migration fixture key escaped its root");
     await mkdir(path.dirname(keyPath), { recursive: true, mode: 0o700 });
-    await writeFile(keyPath, environment.PAPERCLIP_SECRETS_MASTER_KEY!, { mode: 0o600, flag: "wx" });
-    const legacyEnvironment: NodeJS.ProcessEnv = { ...environment, PAPERCLIP_EPHEMERAL_SERVER: "false", PAPERCLIP_DURABLE_AGENT_FILES: "false",
-      PAPERCLIP_SHARED_UI_ASSETS: "false", PAPERCLIP_STORAGE_PROVIDER: "local_disk" };
+    await writeFile(keyPath, environment.PILIBALA_SECRETS_MASTER_KEY!, { mode: 0o600, flag: "wx" });
+    const legacyEnvironment: NodeJS.ProcessEnv = { ...environment, PILIBALA_EPHEMERAL_SERVER: "false", PILIBALA_DURABLE_AGENT_FILES: "false",
+      PILIBALA_SHARED_UI_ASSETS: "false", PILIBALA_STORAGE_PROVIDER: "local_disk" };
     for (const name of Object.keys(legacyEnvironment)) if (name.startsWith("RUN_LOG_S3_")) delete legacyEnvironment[name];
     let current = await start("legacy-controller", legacyEnvironment);
     await current.waitForReady(); proxy.routeTo(current.origin); await settings(false);
@@ -80,9 +80,9 @@ export async function superviseLegacyWorkspaceMigration(input: {
         const child = spawn(process.execPath, runnerE2ETypeScriptProcessArgs(input.repositoryRoot,
           path.join(previous.home, "app/server/dist/maintenance/ephemeral-migration.js")), {
           cwd: input.repositoryRoot, detached: process.platform !== "win32", stdio: ["ignore", "pipe", "pipe"],
-          env: { ...environment, HOME: previous.home, PAPERCLIP_HOME: previous.home, PAPERCLIP_CONFIG: previous.configPath,
-            PAPERCLIP_INSTANCE_ID: "default", DATABASE_URL: databaseUrl, PORT: String(port),
-            PAPERCLIP_EPHEMERAL_MIGRATION: "true", PAPERCLIP_EPHEMERAL_MIGRATION_ID: id, PAPERCLIP_EPHEMERAL_MIGRATION_TOKEN: token } });
+          env: { ...environment, HOME: previous.home, PILIBALA_HOME: previous.home, PILIBALA_CONFIG: previous.configPath,
+            PILIBALA_INSTANCE_ID: "default", DATABASE_URL: databaseUrl, PORT: String(port),
+            PILIBALA_EPHEMERAL_MIGRATION: "true", PILIBALA_EPHEMERAL_MIGRATION_ID: id, PILIBALA_EPHEMERAL_MIGRATION_TOKEN: token } });
         child.on("error", error => errors.set(child, error));
         child.stdout!.pipe(log, { end: false }); child.stderr!.pipe(log, { end: false });
         await stopper.watch(child);
@@ -104,7 +104,7 @@ export async function superviseLegacyWorkspaceMigration(input: {
         if (!exported.ok) throw new Error(`Migration export returned ${exported.status}`);
         const data = await exported.json() as Record<string, any>;
         if (data.id !== id || typeof data.decisionSigningSecret !== "string" || data.decisionSigningSecret.length < 32) throw new Error("Migration key export is incomplete");
-        environment.PAPERCLIP_DECISION_SIGNING_SECRET = data.decisionSigningSecret;
+        environment.PILIBALA_DECISION_SIGNING_SECRET = data.decisionSigningSecret;
         await json(path.join(controls.controlDirectory, "legacy-migration-receipt.json"), receipt);
         await maintenance.stop(); maintenance = undefined;
         current = await start("ephemeral-controller", environment); await current.waitForReady(); proxy.routeTo(current.origin);

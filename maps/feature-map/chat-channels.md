@@ -15,7 +15,7 @@ Agent access: [companion](../agent-access-map/chat-channels.md).
 ## Sub-features
 
 - `providers`: `chat-channels/providers` — configure the available Slack, Discord, Microsoft Teams, Telegram, GitHub, AgentMail, and experimental iMessage Photon and Speko paths; availability still depends on gates and provider support.
-- `identity`: `chat-channels/identity` — link the external sender to the intended authorized Paperclip identity.
+- `identity`: `chat-channels/identity` — link the external sender to the intended authorized Pilibala identity.
 - `conversation`: `chat-channels/conversation` — route inbound messages to the selected agent and send replies to the correct thread.
 - `attachments`: `chat-channels/attachments` — transfer supported files with inspectable delivery and failure states.
 - `lifecycle`: `chat-channels/lifecycle` — inspect endpoint activity, repair auth, and disable delivery when required.
@@ -25,7 +25,7 @@ Agent access: [companion](../agent-access-map/chat-channels.md).
 
 ### `external-thread`
 
-Message the configured bot/address from its external provider and follow the corresponding Paperclip conversation/task.
+Message the configured bot/address from its external provider and follow the corresponding Pilibala conversation/task.
 
 ### `endpoint-management`
 
@@ -37,7 +37,7 @@ Open `/apps/chat/:endpointId/settings` and the endpoint’s other available tabs
 
 ### `outbound-agentmail`
 
-Use `paperclipai email inboxes --company-id <company-id>`, then `email send --company-id <company-id> --file <new-email.json>` or `email reply --company-id <company-id> --file <reply.json>`. Inspect `email thread <email-task-id> --company-id <company-id>` and `email delivery <publication-id> --company-id <company-id>`. Agent mutations must provide --run-id or the active PAPERCLIP_RUN_ID.
+Use `pilibalaai email inboxes --company-id <company-id>`, then `email send --company-id <company-id> --file <new-email.json>` or `email reply --company-id <company-id> --file <reply.json>`. Inspect `email thread <email-task-id> --company-id <company-id>` and `email delivery <publication-id> --company-id <company-id>`. Agent mutations must provide --run-id or the active PILIBALA_RUN_ID.
 
 ## Driving it with Playwright and provider clients
 
@@ -188,7 +188,7 @@ the requested credential entry and confirm the endpoint identity before
 expecting task continuation.
 
 For GitHub, submit a disposable PR and verify the summary heading uses the bot's
-display name and the check remains **Paperclip Review**. For two separate bots on one PR, verify
+display name and the check remains **Pilibala Review**. For two separate bots on one PR, verify
 their App-scoped checks and comments remain independent.
 
 For GitHub publication recovery, interrupt a response after GitHub accepts a

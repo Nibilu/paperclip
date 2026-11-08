@@ -1,16 +1,16 @@
 import { isDeepStrictEqual } from "node:util";
 import { and, eq, sql } from "drizzle-orm";
-import { environmentLeases, executionWorkspaces, heartbeatRuns, issues, workspaceOperations, type Db } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
+import { environmentLeases, executionWorkspaces, heartbeatRuns, issues, workspaceOperations, type Db } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority } from "@pilibalaai/shared";
 import { readNativeWorkspaceSyncReference, type NativeWorkspaceSyncReference } from "./native-runtime/native-workspace-sync.js";
 
 export type LegacyWorkspaceRecoverySource = {
   runId: string; issueId: string; reference: NativeWorkspaceSyncReference | null;
   recoveryAllocations?: { leaseId: string; providerLeaseId: string; remoteCwd: string }[] | null;
   unresolvedFinalization?: { phase: string; leaseOwner: string | null; leaseExpiresAt: string | null };
-  onlineProof?: { schema: "paperclip.online-legacy-workspace-preservation.v1"; fingerprint: string };
+  onlineProof?: { schema: "pilibala.online-legacy-workspace-preservation.v1"; fingerprint: string };
 };
-export const LEGACY_WORKSPACE_RECOVERY_MIGRATION = "paperclip.legacy-workspace-recovery-migration.v1";
+export const LEGACY_WORKSPACE_RECOVERY_MIGRATION = "pilibala.legacy-workspace-recovery-migration.v1";
 
 /** Migration preserves an unresolved coordinator, but it cannot replay
  * an old execution against a local copyback destination that is no longer its
@@ -44,7 +44,7 @@ export async function readLegacyWorkspaceRecoveryAllocations(db: Pick<Db, "selec
 }): Promise<LegacyWorkspaceRecoverySource["recoveryAllocations"]> {
   const recovery = run.resultJson?.workspaceRestoreRecovery as { schema?: unknown; leaseIds?: unknown } | undefined;
   const ids = recovery?.leaseIds;
-  if (recovery?.schema !== "paperclip.workspace-restore-recovery.v1" || !Array.isArray(ids) || !ids.length
+  if (recovery?.schema !== "pilibala.workspace-restore-recovery.v1" || !Array.isArray(ids) || !ids.length
     || ids.some(id => typeof id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
     || new Set(ids).size !== ids.length || !run.nativeIssueId) return null;
   const allocations = [];

@@ -37,7 +37,7 @@ import { QueryErrorState, useQueryView } from "../components/QueryView";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { InlineBanner } from "../components/InlineBanner";
-import type { Agent, Issue } from "@paperclipai/shared";
+import type { Agent, Issue } from "@pilibalaai/shared";
 import { PluginSlotOutlet } from "@/plugins/slots";
 import { SmokeLabDashboardCard } from "../components/SmokeLabDashboardCard";
 import { taskStatusIconProps } from "@/lib/task-status-presentation";
@@ -306,7 +306,7 @@ export function Dashboard() {
       return (
         <EmptyState
           icon={LayoutDashboard}
-          message="Welcome to Paperclip. Set up your first organization and agent to get started."
+          message="Welcome to Pilibala. Set up your first organization and agent to get started."
           action="Get Started"
           onAction={openOnboarding}
         />

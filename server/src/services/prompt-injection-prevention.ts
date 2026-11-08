@@ -2,11 +2,11 @@ import { DELIVERY_QUEUES, notifyDeliveryWork } from "./delivery-work-notificatio
 import { randomUUID } from "node:crypto";
 import { and, eq, lt, sql } from "drizzle-orm";
 import { agents, budgetReservations, companies, companyPromptInjectionPrevention,
-  promptInjectionInvocations, companySecrets, heartbeatRuns, runIdentityContexts, issues, projects, costEvents, type Db } from "@paperclipai/db";
+  promptInjectionInvocations, companySecrets, heartbeatRuns, runIdentityContexts, issues, projects, costEvents, type Db } from "@pilibalaai/db";
 import { PROMPT_INJECTION_DEFAULT_MODEL, PROMPT_INJECTION_POLICY_VERSION, decisionProviderForConnection,
   updatePromptInjectionPreventionSchema, centsToUnits, unitsToCents,
   type PromptInjectionPreventionSettings, type UpdatePromptInjectionPrevention, type PromptInjectionModelOutcome,
-  type PromptInjectionFallbackReason, type PromptInjectionTestResult, type DecisionUsage } from "@paperclipai/shared";
+  type PromptInjectionFallbackReason, type PromptInjectionTestResult, type DecisionUsage } from "@pilibalaai/shared";
 import { HttpError, forbidden } from "../errors.js";
 import { aiConnectionService } from "./ai-connections.js";
 import { withAccountingTransaction, withOperationAccountingTransaction } from "./accounting-transaction.js";

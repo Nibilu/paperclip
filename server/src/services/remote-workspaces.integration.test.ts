@@ -1,4 +1,4 @@
-import { parseNativeExecutionInput } from "../vendor/paperclip-runner/index.js";
+import { parseNativeExecutionInput } from "../vendor/pilibala-runner/index.js";
 import { readNativeWorkspaceMigration, migratedNativeExecutionCwd, canRestoreMigratedNativeSession } from "./native-runtime/native-workspace-migration.js";
 import { buildNativeHarnessBackupManifest, verifyNativeHarnessBackup } from "./native-runtime/native-session-executor.js";
 import { createHash, randomUUID } from "node:crypto";
@@ -14,10 +14,10 @@ import { pathToFileURL } from "node:url";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { and, eq, sql } from "drizzle-orm";
 import { activityLog, agents, agentTaskSessions, agentWakeupRequests, applyPendingMigrations, closeRegisteredClients, companies, createDb, environmentLeases, environments,
-  subscribeDatabaseWork, executionWorkspaceRepositories, executionWorkspaces, executionWorkspaceSnapshots, heartbeatRunEvents, heartbeatRuns, issueRecoveryActions, issueThreadInteractions, issues, livenessDb, nativeRunFinalizations, projects, projectWorkspaces, workspaceOperations } from "@paperclipai/db";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
-import { buildProjectMentionHref, type Environment, type EnvironmentLease } from "@paperclipai/shared";
+  subscribeDatabaseWork, executionWorkspaceRepositories, executionWorkspaces, executionWorkspaceSnapshots, heartbeatRunEvents, heartbeatRuns, issueRecoveryActions, issueThreadInteractions, issues, livenessDb, nativeRunFinalizations, projects, projectWorkspaces, workspaceOperations } from "@pilibalaai/db";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
+import { buildProjectMentionHref, type Environment, type EnvironmentLease } from "@pilibalaai/shared";
 import { createStorageService } from "../storage/service.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
 import { createS3StorageProvider } from "../storage/s3-provider.js";
@@ -55,11 +55,11 @@ import { DELIVERY_QUEUES } from "./delivery-work-notifications.js";
 import { createSystemRecovery } from "./system-recovery-state.js";
 
 const exec = promisify(execFile);
-let databaseUrl = process.env.PAPERCLIP_REMOTE_WORKSPACE_TEST_DATABASE_URL;
+let databaseUrl = process.env.PILIBALA_REMOTE_WORKSPACE_TEST_DATABASE_URL;
 if (databaseUrl && !/^remote_workspace_[a-z_]*test$/.test(new URL(databaseUrl).pathname.slice(1))) throw new Error("Disposable workspace database required");
 const suite = databaseUrl || recoveryPostgresSupport.supported ? describe : describe.skip;
-const s3Bucket = process.env.PAPERCLIP_REMOTE_WORKSPACE_TEST_S3_BUCKET;
-if (s3Bucket && !s3Bucket.startsWith("paperclip-workspace-")) throw new Error("Disposable workspace S3 bucket required");
+const s3Bucket = process.env.PILIBALA_REMOTE_WORKSPACE_TEST_S3_BUCKET;
+if (s3Bucket && !s3Bucket.startsWith("pilibala-workspace-")) throw new Error("Disposable workspace S3 bucket required");
 
 suite("remote workspace lifecycle with real Postgres and independent filesystem execution", () => {
   let db: ReturnType<typeof createDb>, root: string, storage: StorageService;
@@ -77,13 +77,13 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     finally { await temporary?.cleanup(); }
   });
   beforeEach(async () => {
-    vi.stubEnv("DATABASE_URL", databaseUrl!); vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "62".repeat(32));
+    vi.stubEnv("DATABASE_URL", databaseUrl!); vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "62".repeat(32));
     root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "pc-remote-workspace-lifecycle-")));
     storage = s3Bucket ? createStorageService(createS3StorageProvider({ bucket: s3Bucket, region: "us-east-1", prefix: "lifecycle-tests" }))
       : { ...createStorageService(createLocalDiskStorageProvider(path.join(root, "objects"))), provider: "s3" };
     ids = Object.fromEntries(["company", "agent", "issue", "run", "environment", "lease"].map(key => [key, randomUUID()])) as typeof ids;
     await db.insert(companies).values({ id: ids.company, name: "Disposable remote workspace proof", issuePrefix: "RWP" });
-    await db.insert(agents).values({ id: ids.agent, companyId: ids.company, name: "Native worker", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: ids.agent, companyId: ids.company, name: "Native worker", adapterType: "pilibala_runner" });
     await db.insert(environments).values({ id: ids.environment, name: `Independent filesystem execution ${ids.environment}`, driver: "sandbox", config: {} });
     await db.insert(issues).values({ id: ids.issue, companyId: ids.company, title: "Use a remote workspace", status: "in_progress", assigneeAgentId: ids.agent });
     await db.insert(heartbeatRuns).values({ id: ids.run, companyId: ids.company, agentId: ids.agent, nativeIssueId: ids.issue,
@@ -98,7 +98,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
       ? (row.metadata.uploads as { objectKey: string }[]).map(item => item.objectKey) : [])].filter((value): value is string => !!value))) {
       await storage.deleteObject(ids.company, key);
     }
-    if (temporary && process.env.PAPERCLIP_TEST_HISTORICAL_LISTENER === "1") await db.transaction(async tx => {
+    if (temporary && process.env.PILIBALA_TEST_HISTORICAL_LISTENER === "1") await db.transaction(async tx => {
       await tx.execute(sql`select set_config('client_min_messages', 'warning', true)`);
       await tx.execute(sql`TRUNCATE companies CASCADE`);
     });
@@ -223,7 +223,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     else await expect(preparation).rejects.toMatchObject({ code: "remote_workspace_prepare_timeout" });
     const oldRoot = execute.mock.calls[0][0].args?.[2];
     if (!oldRoot) throw new Error("Preparation did not record its directory");
-    const oldReceipt = await fs.readFile(path.join(oldRoot, ".paperclip-runtime", "workspace-ready.json"), "utf8");
+    const oldReceipt = await fs.readFile(path.join(oldRoot, ".pilibala-runtime", "workspace-ready.json"), "utf8");
     const [failed] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, ids.run));
     await terminalizeLegacyExecution({ db, run: failed!, status: interrupted ? "interrupted" : "failed", patch: {
       errorCode: interrupted ? "lease_released_before_terminal" : "remote_workspace_prepare_timeout",
@@ -259,7 +259,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     expect(restored.prepared.reference.snapshotId).not.toBeNull();
     expect(snapshotId).toBeTruthy();
     expect(execute).toHaveBeenCalledOnce();
-    expect(await fs.readFile(path.join(oldRoot, ".paperclip-runtime", "workspace-ready.json"), "utf8")).toBe(oldReceipt);
+    expect(await fs.readFile(path.join(oldRoot, ".pilibala-runtime", "workspace-ready.json"), "utf8")).toBe(oldReceipt);
   }, 60_000);
 
   it.each(["unclassified", "provider_started", "retained_native", "runner_identity", "native_mode", "saved", "published", "dirty", "cleanup_failed", "active_lease"] as const)(
@@ -301,8 +301,8 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     });
 
   it.each(["initial", "follow-up"] as const)("edits and cold-restores both an anchor and a referenced project's task copy (%s attachment)", async attachment => {
-    vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC", "true");
-    vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE", "true");
+    vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC", "true");
+    vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE", "true");
     const origins = path.join(root, "origins"); await fs.mkdir(origins);
     const git = (cwd: string, ...args: string[]) => exec("git", ["-C", cwd,
       "-c", "user.name=Task copies", "-c", "user.email=copies@example.invalid", ...args]);
@@ -412,7 +412,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     const reserved = await reserve({ kind: "empty" }), first = await target("sandbox-A");
     const prepared = await prepareRemoteWorkspace({ db, storage, workspace: reserved, runId: ids.run, lease: await lease(), target: first });
     expect(readRemoteWorkspaceAuthority(prepared.workspace.metadata)?.snapshotId).toBeTruthy();
-    expect(await fs.readdir(path.join(prepared.remoteRoot, ".paperclip-runtime", "workspace-snapshots"))).toEqual([]);
+    expect(await fs.readdir(path.join(prepared.remoteRoot, ".pilibala-runtime", "workspace-snapshots"))).toEqual([]);
     await fs.writeFile(path.join(prepared.remoteRoot, "report.md"), "useful saved result\n");
     await fs.mkdir(path.join(prepared.remoteRoot, "empty-folder"));
     await fs.writeFile(path.join(prepared.remoteRoot, "binary.bin"), Buffer.from([0, 1, 255]));
@@ -429,7 +429,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     }
     await fs.rm(path.join(root, "sandbox-A"), { recursive: true, force: true });
     const second = await target(mode === "different root" ? "sandbox-B" : "sandbox-A");
-    const expectedRemoteRoot = path.join(second.remoteCwd, ".paperclip-workspaces", path.basename(prepared.remoteRoot));
+    const expectedRemoteRoot = path.join(second.remoteCwd, ".pilibala-workspaces", path.basename(prepared.remoteRoot));
     const nextRun = randomUUID(), nextLease = randomUUID();
     await db.insert(heartbeatRuns).values({ id: nextRun, companyId: ids.company, agentId: ids.agent, nativeIssueId: ids.issue, runtimeMode: "native", status: "running" });
     await db.insert(environmentLeases).values({ id: nextLease, companyId: ids.company, environmentId: ids.environment,
@@ -465,7 +465,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
       vi.mocked(second.runner!.execute).mockRestore();
     }
     if (mode === "restore lock busy") {
-      const lockDirectory = path.join(path.dirname(expectedRemoteRoot), ".paperclip-runtime", "workspace-restore-locks");
+      const lockDirectory = path.join(path.dirname(expectedRemoteRoot), ".pilibala-runtime", "workspace-restore-locks");
       await fs.mkdir(lockDirectory, { recursive: true, mode: 0o700 });
       const lockPath = path.join(lockDirectory, createHash("sha256").update(expectedRemoteRoot).digest("hex") + ".sqlite");
       const preload = path.join(root, "advance-lock-deadline.cjs");
@@ -557,7 +557,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     await fs.writeFile(path.join(prepared.remoteRoot, "plan.md"), "parent plan\n");
     // The parent's retained native session keeps its runner state beside the
     // workspace files. Snapshots exclude it; it belongs to this sandbox.
-    const runnerStateDirectory = path.join(prepared.remoteRoot, ".paperclip-runtime", "paperclip-runner", "sessions",
+    const runnerStateDirectory = path.join(prepared.remoteRoot, ".pilibala-runtime", "pilibala-runner", "sessions",
       createHash("sha256").update("parent-session").digest("hex"), "runner");
     const runnerState = { lifecycle: "suspended", outbox: [], pendingTerminalDelivery: null, runId: ids.run };
     await fs.mkdir(runnerStateDirectory, { recursive: true });
@@ -580,12 +580,12 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     const childSaved = await saveRemoteWorkspace({ db, storage, workspace: childPrepared.workspace, runId: child.runId,
       lease: childPrepared.lease, target: childSandbox, assertOwned: async () => undefined });
     if (mode === "receipt missing") {
-      // An occupant without a Paperclip preparation or restore receipt is unknown.
-      await fs.rm(path.join(prepared.remoteRoot, ".paperclip-runtime"), { recursive: true, force: true });
+      // An occupant without a Pilibala preparation or restore receipt is unknown.
+      await fs.rm(path.join(prepared.remoteRoot, ".pilibala-runtime"), { recursive: true, force: true });
     }
     if (mode === "own restored root" || mode === "forged receipt") {
       // The retired root was itself restored by an earlier preparation of this workspace.
-      const runtime = path.join(prepared.remoteRoot, ".paperclip-runtime");
+      const runtime = path.join(prepared.remoteRoot, ".pilibala-runtime");
       await fs.rm(path.join(runtime, "workspace-ready.json"));
       await fs.writeFile(path.join(runtime, "workspace-restored.json"), JSON.stringify(mode === "forged receipt"
         ? { identity: "not-an-identity" } : { identity: "a".repeat(64), manifestDigest: "b".repeat(64) }));
@@ -602,7 +602,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
       await db.insert(workspaceOperations).values({ companyId: ids.company, executionWorkspaceId: reserved.id, heartbeatRunId: ids.run,
         issueId: ids.issue, phase: "remote_workspace_snapshot", status: mode === "unsettled save" ? "running" : "succeeded",
         metadata: { epoch: 1, boundary: "checkpoint", generation: 99,
-          saveWork: { schema: "paperclip.remote-workspace-save-work.v1", activeIds: [], unknown: false, quiescedAt: new Date().toISOString() },
+          saveWork: { schema: "pilibala.remote-workspace-save-work.v1", activeIds: [], unknown: false, quiescedAt: new Date().toISOString() },
           exportCleanup: { ...readRemoteWorkspaceAuthority(prepared.workspace.metadata)!.location, state: "cleaned" } } });
     }
     if (mode === "later allocation") {
@@ -617,7 +617,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     if (mode === "never saved here") {
       // A different sandbox that holds an unknown folder at this path.
       parentTarget = await target("sandbox-C");
-      await fs.cp(prepared.remoteRoot, path.join(parentTarget.remoteCwd, ".paperclip-workspaces", path.basename(prepared.remoteRoot)), { recursive: true });
+      await fs.cp(prepared.remoteRoot, path.join(parentTarget.remoteCwd, ".pilibala-workspaces", path.basename(prepared.remoteRoot)), { recursive: true });
     }
     const parent = await writer(mode === "never saved here" ? "allocation-unrelated" : prepared.lease.providerLeaseId!);
     const restoring = prepareRemoteWorkspace({ db, storage, workspace: parent.workspace, runId: parent.runId, lease: parent.lease, target: parentTarget });
@@ -643,23 +643,23 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     // The parent's continuation reads its retained runner state from the restored root.
     expect(await readRemoteRunnerState({ runner: parentSandbox.runner!, stateDirectory: runnerStateDirectory })).toEqual(runnerState);
     // Only the new restore receipt identifies the root; the retired preparation receipt is gone.
-    expect(await fs.lstat(path.join(restored.remoteRoot, ".paperclip-runtime", "workspace-ready.json")).catch(() => null)).toBeNull();
-    expect(JSON.parse(await fs.readFile(path.join(restored.remoteRoot, ".paperclip-runtime", "workspace-restored.json"), "utf8")))
-      .toMatchObject({ schema: "paperclip.workspace-restored.v1", root: restored.remoteRoot,
+    expect(await fs.lstat(path.join(restored.remoteRoot, ".pilibala-runtime", "workspace-ready.json")).catch(() => null)).toBeNull();
+    expect(JSON.parse(await fs.readFile(path.join(restored.remoteRoot, ".pilibala-runtime", "workspace-restored.json"), "utf8")))
+      .toMatchObject({ schema: "pilibala.workspace-restored.v1", root: restored.remoteRoot,
         restorationEpoch: readRemoteWorkspaceAuthority(restored.workspace.metadata)!.epoch,
         identity: expect.stringMatching(/^[a-f0-9]{64}$/) });
     // A lost reply repeats the same preparation without replacing the restored root again.
     await fs.writeFile(path.join(restored.remoteRoot, "parent-continued.md"), "unsaved parent edits\n");
     // An attempt interrupted after publish left its retired root; the repeat keeps its runtime state.
-    const { identity } = JSON.parse(await fs.readFile(path.join(restored.remoteRoot, ".paperclip-runtime", "workspace-restored.json"), "utf8"));
+    const { identity } = JSON.parse(await fs.readFile(path.join(restored.remoteRoot, ".pilibala-runtime", "workspace-restored.json"), "utf8"));
     const interrupted = `${restored.remoteRoot}.retired-${identity}`;
-    await fs.mkdir(path.join(interrupted, ".paperclip-runtime", "other-session"), { recursive: true });
-    await fs.writeFile(path.join(interrupted, ".paperclip-runtime", "other-session", "state.json"), "{}");
+    await fs.mkdir(path.join(interrupted, ".pilibala-runtime", "other-session"), { recursive: true });
+    await fs.writeFile(path.join(interrupted, ".pilibala-runtime", "other-session", "state.json"), "{}");
     await fs.writeFile(path.join(interrupted, "stale.md"), "old\n");
     const repeated = await prepareRemoteWorkspace({ db, storage, workspace: parent.workspace, runId: parent.runId, lease: parent.lease, target: reattach() });
     expect(repeated.remoteRoot).toBe(prepared.remoteRoot);
     expect(await fs.readFile(path.join(restored.remoteRoot, "parent-continued.md"), "utf8")).toBe("unsaved parent edits\n");
-    expect(await fs.readFile(path.join(restored.remoteRoot, ".paperclip-runtime", "other-session", "state.json"), "utf8")).toBe("{}");
+    expect(await fs.readFile(path.join(restored.remoteRoot, ".pilibala-runtime", "other-session", "state.json"), "utf8")).toBe("{}");
     expect(await fs.lstat(interrupted).catch(() => null)).toBeNull();
     expect(await fs.lstat(path.join(restored.remoteRoot, "stale.md")).catch(() => null)).toBeNull();
     expect(await readRemoteRunnerState({ runner: parentSandbox.runner!, stateDirectory: runnerStateDirectory })).toEqual(runnerState);
@@ -673,25 +673,25 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
       mode: "isolated_workspace", strategyType: "project_primary", providerType: "local_fs", name: "Retained session",
       cwd: original, providerRef: original }).returning();
     const sessionId = randomUUID(), runnerInstanceId = randomUUID();
-    const execution = parseNativeExecutionInput({ schema: "paperclip.native-execution-input.v1",
+    const execution = parseNativeExecutionInput({ schema: "pilibala.native-execution-input.v1",
       provider: { kind: "codex", model: null }, binding: { companyId: ids.company, agentId: ids.agent,
         issueId: ids.issue, runId: ids.run, executionWorkspaceId: local.id },
       task: { identifier: "RWP-1", title: "Retained work", description: null, prompt: "Continue.", workMode: "standard" },
       workspace: { cwd: original, repoUrl: null, repoRef: null, branchName: null },
       session: { normalizedSessionId: sessionId, driverKind: "codex_app_server", protocolVersion: 1,
         lifecyclePolicy: { mode: scenario === "warm" ? "warm" : "per_turn", idleTimeoutMs: scenario === "warm" ? 120000 : null } },
-      completionContract: { id: randomUUID(), sha256: "fixture", schemaVersion: "paperclip.completion-contract.v1",
+      completionContract: { id: randomUUID(), sha256: "fixture", schemaVersion: "pilibala.completion-contract.v1",
         contract: { revision: "1", objective: "Continue", criteria: [{ id: "objective", requirement: "Save work." }] } },
       credentialBindings: [], interactionResponses: [],
     });
-    if (execution.schema !== "paperclip.native-execution-input.v1") throw new Error("Unexpected fixture schema");
+    if (execution.schema !== "pilibala.native-execution-input.v1") throw new Error("Unexpected fixture schema");
     await db.update(heartbeatRuns).set({ status: "succeeded", finishedAt: new Date(), nativeSessionId: sessionId,
       runnerInstanceId, runnerProfileJson: { nativeExecutionInput: execution, sessionCheckpoint: { sessionId }, nativeWorkspaceSync: {
-        schema: "paperclip.native-workspace-sync/v3", state: "finalized", descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64),
+        schema: "pilibala.native-workspace-sync/v3", state: "finalized", descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64),
         finalHostSha256: "c".repeat(64), workspaceId: local.id, leaseId: ids.lease, providerLeaseId: `allocation-${ids.lease}`,
         remoteCwd: remote.remoteCwd, resourceDisposition: "destroy",
       } } }).where(eq(heartbeatRuns.id, ids.run));
-    await db.insert(agentTaskSessions).values({ companyId: ids.company, agentId: ids.agent, adapterType: "paperclip_runner",
+    await db.insert(agentTaskSessions).values({ companyId: ids.company, agentId: ids.agent, adapterType: "pilibala_runner",
       taskKey: ids.issue, lastRunId: ids.run });
     await db.update(issues).set({ executionWorkspaceId: local.id }).where(eq(issues.id, ids.issue));
     const backupRoot = path.join(root, "private-state"), current = path.join(backupRoot, "failover-backups", "current");
@@ -718,10 +718,10 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     const reserved = await reserveRemoteWorkspace({ db, storage, companyId: ids.company, issueId: ids.issue, runId: ids.run,
       agentId: ids.agent, environmentId: ids.environment, existingWorkspaceId: local.id, projectId: null, projectWorkspaceId: null, source: { kind: "empty" } });
     const preparation = { db, storage, workspace: reserved, runId: ids.run, lease: await lease(), target: remote };
-    const allocationPath = ".paperclip-runtime/reusable-sandbox-lease.json";
+    const allocationPath = ".pilibala-runtime/reusable-sandbox-lease.json";
     const allocationBytes = JSON.stringify({ version: 1, token: "owned-allocation", companyId: ids.company,
       environmentId: ids.environment, agentId: ids.agent, executionWorkspaceId: local.id, provider: "daytona" });
-    await fs.mkdir(path.join(remote.remoteCwd, ".paperclip-runtime"));
+    await fs.mkdir(path.join(remote.remoteCwd, ".pilibala-runtime"));
     await fs.writeFile(path.join(remote.remoteCwd, allocationPath), allocationBytes);
     preparation.lease.metadata = { ...preparation.lease.metadata, workspaceAllocationFiles: {
       providerLeaseId: preparation.lease.providerLeaseId, remoteCwd: remote.remoteCwd,
@@ -730,7 +730,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
 
     if (scenario === "forged-receipt") {
       await db.update(executionWorkspaces).set({ metadata: { ...reserved.metadata,
-        nativeWorkspaceMigration: { schema: "paperclip.native-workspace-migration.v1", operationId: randomUUID() } } }).where(eq(executionWorkspaces.id, local.id));
+        nativeWorkspaceMigration: { schema: "pilibala.native-workspace-migration.v1", operationId: randomUUID() } } }).where(eq(executionWorkspaces.id, local.id));
       await expect(prepareRemoteWorkspace(preparation)).rejects.toThrow("native_workspace_migration_receipt_invalid"); return;
     }
     if (scenario === "occupied") {
@@ -778,7 +778,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
     try {
       const address = server.address(); if (!address || typeof address === "string") throw new Error("test server not bound");
-      const repoUrl = "https://github.com/paperclip-fixtures/pending";
+      const repoUrl = "https://github.com/pilibala-fixtures/pending";
       const fixtureOrigin = `http://127.0.0.1:${address.port}/pending-origin.git/.git`, relativePath = taskRepositoryRelativePath(repoUrl);
       await db.update(heartbeatRuns).set({ status: "succeeded", finishedAt: new Date() }).where(eq(heartbeatRuns.id, ids.run));
       const [local] = await db.insert(executionWorkspaces).values({ companyId: ids.company, sourceIssueId: ids.issue,
@@ -788,13 +788,13 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
       const [repository] = await db.insert(executionWorkspaceRepositories).values({ companyId: ids.company,
         executionWorkspaceId: local.id, requestedByIssueId: ids.issue, repoUrl, repositoryIdentity: repoUrl,
         relativePath, requestedRef: "HEAD", requestKey: "pending-request", requestKeys: ["pending-request"] }).returning();
-      vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "true");
+      vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "true");
       await migrateRemoteWorkspace({ db, storage, companyId: ids.company, workspaceId: local.id, apply: true, writersStopped: true });
       expect(readRemoteWorkspaceAuthority((await workspace(local.id)).metadata)!.source).toEqual({ kind: "empty" });
       expect(await db.select().from(executionWorkspaceRepositories).where(eq(executionWorkspaceRepositories.id, repository.id)))
         .toEqual([repository]);
       await fs.rm(original, { recursive: true });
-      vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "false");
+      vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "false");
       const nextRun = randomUUID(), nextLease = randomUUID();
       await db.insert(heartbeatRuns).values({ id: nextRun, companyId: ids.company, agentId: ids.agent, nativeIssueId: ids.issue,
         responsibleUserId: "local-board", runtimeMode: "native", status: "running" });
@@ -1083,7 +1083,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
       existingWorkspaceId: reserved.id, source: { kind: "empty" } });
     const nextTarget = await target("restore-cleanup-destination");
     const sandbox = nextTarget as Extract<AdapterExecutionTarget, { transport: "sandbox" }>;
-    const expectedRemoteRoot = path.join(sandbox.remoteCwd, ".paperclip-workspaces", path.basename(prepared.remoteRoot));
+    const expectedRemoteRoot = path.join(sandbox.remoteCwd, ".pilibala-workspaces", path.basename(prepared.remoteRoot));
     const execute = sandbox.runner!.execute.bind(sandbox.runner!);
     let failCleanup = true, cleanupAttempts = 0;
     sandbox.runner!.execute = async input => {
@@ -1246,14 +1246,14 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
       lease: prepared.lease, target: first, assertOwned: async () => undefined })).rejects.toThrow("storage offline");
     expect(readRemoteWorkspaceAuthority((await workspace(reserved.id)).metadata)).toMatchObject({ dirty: true, writerRunId: ids.run,
       snapshotId: readRemoteWorkspaceAuthority(prepared.workspace.metadata)!.snapshotId });
-    expect((await fs.readdir(path.join(prepared.remoteRoot, ".paperclip-runtime", "workspace-snapshots"))).length).toBe(1);
+    expect((await fs.readdir(path.join(prepared.remoteRoot, ".pilibala-runtime", "workspace-snapshots"))).length).toBe(1);
     // Each settled save records where its time went: the failed upload keeps the
     // phases it finished, and the retry of the same boundary records every phase.
     const finalTiming = async () => (await db.select().from(workspaceOperations).where(and(
       eq(workspaceOperations.executionWorkspaceId, reserved.id), eq(workspaceOperations.phase, "remote_workspace_snapshot"),
       sql`${workspaceOperations.metadata}->>'boundary' = 'final'`))).map(save => save.metadata?.saveTiming);
     const duration = expect.any(Number), archive = { byteSize: expect.any(Number), entries: expect.any(Number) };
-    expect(await finalTiming()).toEqual([{ schema: "paperclip.remote-workspace-save-timing.v1", outcome: "failed", totalMs: duration,
+    expect(await finalTiming()).toEqual([{ schema: "pilibala.remote-workspace-save-timing.v1", outcome: "failed", totalMs: duration,
       captureMs: duration, transferMs: duration, verifyMs: duration, ...archive, at: expect.any(String) }]);
     const beforeSuccess = await workspace(reserved.id);
     const saved = await saveRemoteWorkspace({ db, storage, workspace: beforeSuccess, runId: ids.run,
@@ -1264,10 +1264,10 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     await expect(saveRemoteWorkspace({ db, storage, workspace: beforeSuccess, runId: ids.run,
       lease: prepared.lease, target: first, assertOwned: async () => undefined })).resolves.toMatchObject({ snapshotId: saved.snapshotId });
     expect(await finalTiming()).toEqual([succeededTiming]);
-    expect(await finalTiming()).toEqual([{ schema: "paperclip.remote-workspace-save-timing.v1", outcome: "succeeded", totalMs: duration,
+    expect(await finalTiming()).toEqual([{ schema: "pilibala.remote-workspace-save-timing.v1", outcome: "succeeded", totalMs: duration,
       captureMs: duration, transferMs: duration, verifyMs: duration, uploadMs: duration, publishMs: duration, ...archive,
       at: expect.any(String) }]);
-    expect(await fs.readdir(path.join(prepared.remoteRoot, ".paperclip-runtime", "workspace-snapshots"))).toEqual([]);
+    expect(await fs.readdir(path.join(prepared.remoteRoot, ".pilibala-runtime", "workspace-snapshots"))).toEqual([]);
   }, 60_000);
 
   it.each(["initial", "repository:additional"])("saves current files through a different repair boundary after a failed %s upload", async boundary => {
@@ -1306,14 +1306,14 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     const [retired] = await db.select().from(workspaceOperations).where(eq(workspaceOperations.id, pending!.sourceOperationId));
     expect(retired).toMatchObject({ status: "failed", metadata: { generation: pending!.generation,
       exportCleanup: { state: "cleaned" } } });
-    expect(await fs.readdir(path.join(authority.location!.remoteCwd, ".paperclip-runtime", "workspace-snapshots"))).toEqual([]);
+    expect(await fs.readdir(path.join(authority.location!.remoteCwd, ".pilibala-runtime", "workspace-snapshots"))).toEqual([]);
     const upload = vi.spyOn(storage, "putFile"), execute = vi.spyOn((first as Extract<AdapterExecutionTarget, { transport: "sandbox" }>).runner!, "execute");
     try {
       await expect(saveRemoteWorkspace({ db, storage, workspace: before, runId: ids.run,
         lease: await lease(), target: first, boundary, assertOwned: async () => undefined })).rejects.toThrow("remote_workspace_snapshot_retired");
       expect(upload).not.toHaveBeenCalled(); expect(execute).not.toHaveBeenCalled();
     } finally { upload.mockRestore(); execute.mockRestore(); }
-    expect(await fs.readdir(path.join(authority.location!.remoteCwd, ".paperclip-runtime", "workspace-snapshots"))).toEqual([]);
+    expect(await fs.readdir(path.join(authority.location!.remoteCwd, ".pilibala-runtime", "workspace-snapshots"))).toEqual([]);
     const abandonedUploads = pending!.metadata!.uploads as Array<{ objectKey: string }>;
     expect(abandonedUploads).toHaveLength(1);
     expect((await storage.headObject(ids.company, abandonedUploads[0]!.objectKey)).exists).toBe(true);
@@ -1377,7 +1377,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     expect(originalMetadata).toEqual(poisoned!.metadata);
     expect(saveWork).toMatchObject({ activeIds: [], unknown: true, quiescedAt: expect.any(String) });
     // The refused invocation records only its own failed duration; it never captured or uploaded.
-    expect(saveTiming).toEqual({ schema: "paperclip.remote-workspace-save-timing.v1", outcome: "failed",
+    expect(saveTiming).toEqual({ schema: "pilibala.remote-workspace-save-timing.v1", outcome: "failed",
       totalMs: expect.any(Number), at: expect.any(String) });
     expect(Number.isFinite(Date.parse((saveWork as { quiescedAt: string }).quiescedAt))).toBe(true);
     expect(await db.select().from(executionWorkspaceSnapshots).where(eq(executionWorkspaceSnapshots.sourceOperationId, poisoned!.id)))
@@ -1454,7 +1454,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
       await fs.writeFile(path.join(prepared.remoteRoot, "after-duplicate.txt"), "the final save contains newer work\n");
       const final = await saveRemoteWorkspace({ ...input, workspace: await workspace(reserved.id), boundary: "final" });
       expect(final.generation).toBe(3);
-      const staging = path.join(prepared.remoteRoot, ".paperclip-runtime", "workspace-snapshots");
+      const staging = path.join(prepared.remoteRoot, ".pilibala-runtime", "workspace-snapshots");
       expect(await fs.readdir(staging)).toContain(olderOperation!.id);
       const retention = remoteWorkspaceSnapshotRetentionService(db, { storage,
         now: () => new Date(Date.now() + 8 * 86_400_000) });
@@ -1517,7 +1517,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     const retention = remoteWorkspaceSnapshotRetentionService(db, { storage, now: () => new Date(Date.now() + 8 * 86_400_000) });
     await retention.tick();
     expect((await db.select().from(executionWorkspaceSnapshots).where(eq(executionWorkspaceSnapshots.id, old!.id)))[0]?.status).toBe("superseded");
-    expect(await fs.readdir(path.join(prepared.remoteRoot, ".paperclip-runtime", "workspace-snapshots"))).toContain(old!.sourceOperationId);
+    expect(await fs.readdir(path.join(prepared.remoteRoot, ".pilibala-runtime", "workspace-snapshots"))).toContain(old!.sourceOperationId);
     expect(readRemoteWorkspaceAuthority((await workspace(reserved.id)).metadata)?.snapshotId).toBe(final.snapshotId);
   }, 60_000);
 
@@ -1545,7 +1545,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
     expect(failed).toMatchObject({ runtimeMode: "legacy", status: "failed", runnerProfileJson: {
       remoteWorkspace: { state: "prepared", snapshotId: null, workspaceId: reserved.id },
     }, resultJson: { workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery: {
-      schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [ids.lease],
+      schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [ids.lease],
     } } });
     expect(failed?.runnerProfileJson).not.toHaveProperty("nativeExecutionInput");
     expect(await db.select().from(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, ids.run))).toHaveLength(0);
@@ -1736,19 +1736,19 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
 
   it("preserves enrolled workspaces after disabling enrollment and rejects a legacy writer", async () => {
     const reserved = await reserve({ kind: "empty" });
-    expect(shouldUseRemoteWorkspaces({ adapterType: "paperclip_runner", environmentDriver: "sandbox", experimentalEnabled: false, existingWorkspace: reserved })).toBe(true);
+    expect(shouldUseRemoteWorkspaces({ adapterType: "pilibala_runner", environmentDriver: "sandbox", experimentalEnabled: false, existingWorkspace: reserved })).toBe(true);
     expect(() => shouldUseRemoteWorkspaces({ adapterType: "codex_local", environmentDriver: "sandbox", experimentalEnabled: false, existingWorkspace: reserved })).toThrow("native sandbox");
   });
 
   it("keeps enrollment conditional while enrolled authority fails closed when persistence disappears", async () => {
-    const candidate = { adapterType: "paperclip_runner", environmentDriver: "sandbox", experimentalEnabled: true };
-    vi.stubEnv("PAPERCLIP_STORAGE_PROVIDER", "s3");
+    const candidate = { adapterType: "pilibala_runner", environmentDriver: "sandbox", experimentalEnabled: true };
+    vi.stubEnv("PILIBALA_STORAGE_PROVIDER", "s3");
     expect(shouldUseRemoteWorkspaces(candidate)).toBe(true);
     expect(shouldUseRemoteWorkspaces({ ...candidate, experimentalEnabled: false })).toBe(false);
     expect(shouldUseRemoteWorkspaces({ ...candidate, existingWorkspace: { metadata: {} } })).toBe(false);
     const reserved = await reserve({ kind: "empty" });
     const before = (await workspace(reserved.id)).metadata;
-    vi.stubEnv("PAPERCLIP_STORAGE_PROVIDER", "local_disk");
+    vi.stubEnv("PILIBALA_STORAGE_PROVIDER", "local_disk");
     expect(shouldUseRemoteWorkspaces(candidate)).toBe(false);
     expect(shouldUseRemoteWorkspaces({ ...candidate, existingWorkspace: reserved })).toBe(true);
     const localStorage = createStorageService(createLocalDiskStorageProvider(path.join(root, "local-only")));
@@ -1757,13 +1757,13 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
       projectId: null, projectWorkspaceId: null, existingWorkspaceId: reserved.id, source: { kind: "empty" } }))
       .rejects.toMatchObject({ details: { code: "remote_workspace_persistence_unavailable" } });
     expect((await workspace(reserved.id)).metadata).toEqual(before);
-    vi.stubEnv("PAPERCLIP_STORAGE_PROVIDER", "s3");
+    vi.stubEnv("PILIBALA_STORAGE_PROVIDER", "s3");
     vi.stubEnv("DATABASE_URL", "");
     expect(shouldUseRemoteWorkspaces(candidate)).toBe(false);
     expect(shouldUseRemoteWorkspaces({ ...candidate, existingWorkspace: reserved })).toBe(true);
     vi.stubEnv("DATABASE_URL", databaseUrl!);
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "");
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY_FILE", path.join(root, "missing-stable-key"));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "");
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY_FILE", path.join(root, "missing-stable-key"));
     expect(shouldUseRemoteWorkspaces(candidate)).toBe(false);
     expect(shouldUseRemoteWorkspaces({ ...candidate, existingWorkspace: reserved })).toBe(true);
   });
@@ -1845,7 +1845,7 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
   it.each(["saved", "dirty", "unsaved", "foreign_snapshot", "delete_requested", "deletion_race", "controller_claim_race", "stale_epoch", "unconfirmed_stop", "unknown_action", "historical_listener_guard", "historical_listener_provider_event", "historical_listener_checkpoint", "historical_listener_resumed", "historical_listener_other_message", "historical_listener_cancelled", "historical_listener_prior_session", "historical_listener_unconfirmed_stop", "historical_listener_dirty", "historical_listener_stale_block", "historical_listener_unknown_event", "historical_listener_budget", "historical_listener_bad_preservation", "historical_listener_absent", "historical_listener_later_candidate", "historical_listener_late_proof", "historical_listener_lock_timeout", "historical_listener_late_interaction", "historical_listener_interaction_paused", "historical_listener_own_question"] as const)(
     "checks durable remote work at the native safe-replacement decision (%s)", async kind => {
       const historicalListener = kind.startsWith("historical_listener_");
-      const processAcceptance = kind === "historical_listener_guard" && process.env.PAPERCLIP_TEST_HISTORICAL_LISTENER === "1";
+      const processAcceptance = kind === "historical_listener_guard" && process.env.PILIBALA_TEST_HISTORICAL_LISTENER === "1";
       const scenario = kind === "historical_listener_late_proof" ? "dirty" : kind === "historical_listener_unconfirmed_stop" ? "unconfirmed_stop"
         : kind === "historical_listener_dirty" ? "dirty" : historicalListener ? "saved" : kind;
       const shouldSchedule = scenario === "saved" && (!historicalListener || ["historical_listener_guard", "historical_listener_later_candidate", "historical_listener_lock_timeout"].includes(kind));
@@ -1910,10 +1910,10 @@ suite("remote workspace lifecycle with real Postgres and independent filesystem 
         await db.insert(issueRecoveryActions).values({ id: actionId, companyId: ids.company, sourceIssueId: ids.issue,
           kind: "active_run_watchdog", cause: "native_continuation_requires_reconciliation", ownerType: "system", status: "resolved", outcome: "blocked",
           fingerprint: `native-workspace:${ids.run}`, evidence: { runId: ids.run,
-            workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [ids.lease] },
+            workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [ids.lease] },
             automaticRecovery: { replay: "blocked" }, continuationDelivery: "invalidated",
             systemRecovery: { ...createSystemRecovery(ids.run), state: "complete", preservationOperationIds: [preservationId] },
-            workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId: ids.run, status: "recovered", stage: "saving_receipts", attempt: 1, requestIds: [] },
+            workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId: ids.run, status: "recovered", stage: "saving_receipts", attempt: 1, requestIds: [] },
           }, nextAction: "Files were preserved without replay." });
         await db.insert(workspaceOperations).values([{ id: preservationId, companyId: ids.company, heartbeatRunId: ids.run, issueId: ids.issue,
           executionWorkspaceId: reserved.id, phase: "workspace_recovery", status: kind === "historical_listener_bad_preservation" ? "failed" : "succeeded", startedAt: new Date(),

@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { activityLog, companies, createDb, executionWorkspaceSnapshots, executionWorkspaces,
-  issues, projects, workspaceOperations, type Db } from "@paperclipai/db";
+  issues, projects, workspaceOperations, type Db } from "@pilibalaai/db";
 import { resolveManagedProjectWorkspaceDir } from "../home-paths.js";
 import { onlineWorkspaceMigrationReceipt, runOnlineWorkspaceMigration, type OnlineWorkspaceMigrationRequest } from "../maintenance/online-workspace-migration.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
@@ -16,7 +16,7 @@ import { migrateRemoteWorkspace } from "../services/remote-workspace-migration.j
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 
 type OldProtocol = Pick<typeof import("../services/workspace-source-lock.js"), "withWorkspaceSourceLocks">
-  & Pick<typeof import("@paperclipai/shared"), "readRemoteWorkspaceAuthority">
+  & Pick<typeof import("@pilibalaai/shared"), "readRemoteWorkspaceAuthority">
   & Pick<typeof import("../services/remote-workspace-snapshot-storage.js"), "getWorkspaceSnapshot" | "loadWorkspaceSnapshotArchive">
   & Pick<typeof import("../services/remote-workspace-snapshot-archive.js"), "restoreRemoteWorkspaceArchive">;
 const support = await getEmbeddedPostgresTestSupport();
@@ -43,8 +43,8 @@ describe.skipIf(!support.supported)("versioned online migration compatibility wi
   afterAll(async () => { await db?.$client.end({ timeout: 1 }); await database?.cleanup(); });
   beforeEach(async () => {
     home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "online-migration-compatibility-")));
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "61".repeat(32));
+    vi.stubEnv("PILIBALA_HOME", home);
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "61".repeat(32));
     const disk = createLocalDiskStorageProvider(path.join(home, "controlled-s3-backend"));
     storage = createStorageService({ ...disk, id: "s3" });
   });
@@ -68,7 +68,7 @@ describe.skipIf(!support.supported)("versioned online migration compatibility wi
     return { companyId, projectId: project.id, workspaceId: workspace.id, cwd };
   }
   function request(f: Awaited<ReturnType<typeof fixture>>, extra: Partial<OnlineWorkspaceMigrationRequest> = {}): OnlineWorkspaceMigrationRequest {
-    return { schema: "paperclip.online-workspace-migration.v1", toolCommit: "1".repeat(40), toolRoot: path.join(home, "versioned-tool"),
+    return { schema: "pilibala.online-workspace-migration.v1", toolCommit: "1".repeat(40), toolRoot: path.join(home, "versioned-tool"),
       source: { commit: oldCommit, deploymentId: "11111111-1111-4111-8111-111111111111" }, companyId: f.companyId,
       workspaceIds: [f.workspaceId], mode: "single", deadlineMs: 60_000, concurrency: 1, ...extra };
   }
@@ -163,7 +163,7 @@ describe.skipIf(!support.supported)("versioned online migration compatibility wi
     expect(operation.metadata?.nestedWorkspaceScope).toMatchObject({ version: 1, state: state === "pending" ? "pending" : "fixed" });
     expect(snapshot.status).toBe(state);
     const before = await workspace(f.workspaceId);
-    expect(before.metadata?.remoteWorkspaceMigration).toMatchObject({ schema: "paperclip.remote-workspace-migration.v1", operationId: operation.id });
+    expect(before.metadata?.remoteWorkspaceMigration).toMatchObject({ schema: "pilibala.remote-workspace-migration.v1", operationId: operation.id });
     expect(old.readRemoteWorkspaceAuthority(before.metadata)).toBeNull();
     await expect(apply(request(f, { mode: "resume", operationId: operation.id, snapshotId: snapshot.id }))).resolves.toMatchObject({ applied: true, snapshotId: snapshot.id });
     expect((await db.select().from(workspaceOperations)).map(o => o.id)).toEqual([operation.id]);

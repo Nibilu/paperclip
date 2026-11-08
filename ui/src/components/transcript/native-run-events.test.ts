@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import type { HeartbeatRunEvent } from "@paperclipai/shared";
+import type { HeartbeatRunEvent } from "@pilibalaai/shared";
 import { nativeRunEventsToTranscript } from "./native-run-events";
-import { buildTurnTimelineRows, paperclipRunnerFinalResponse, paperclipRunnerTimelineItems, settledRunChildren, transcriptToTaskChatItems } from "../task-chat/transcript-adapter";
+import { buildTurnTimelineRows, pilibalaRunnerFinalResponse, pilibalaRunnerTimelineItems, settledRunChildren, transcriptToTaskChatItems } from "../task-chat/transcript-adapter";
 
 const RUN_ID = "10000000-0000-4000-8000-000000000001";
 
@@ -25,7 +25,7 @@ function event(
     message: null,
     payload: {
       prpEvent: {
-        schema: "paperclip.prp.event.v1",
+        schema: "pilibala.prp.event.v1",
         sourceEventId: `event-${seq}`,
         sourceSeq: seq,
         sourceInstanceId: "runner-1",
@@ -57,7 +57,7 @@ function itemEvent(
 
 function runResult(summary: string): Record<string, unknown> {
   return {
-    schema: "paperclip.run_result.v1",
+    schema: "pilibala.run_result.v1",
     reportedWorkDisposition: "done",
     summary,
     completionClaim: {
@@ -76,7 +76,7 @@ function runResult(summary: string): Record<string, unknown> {
 describe("provider notice presentation", () => {
   it("omits unrelated information from saved chat without removing warnings or responses", () => {
     const legacyNotice = {
-      schema: "paperclip.provider.notice.v1",
+      schema: "pilibala.provider.notice.v1",
       noticeId: "codex-warning",
       severity: "warning",
       category: "warning",
@@ -102,11 +102,11 @@ describe("provider notice presentation", () => {
   it("preserves notice text as a notice rather than a synthetic tool call", () => {
     const entries = nativeRunEventsToTranscript([
       event(1, "provider.notice.recorded", {
-        schema: "paperclip.provider.notice.v1", noticeId: "warning-1",
+        schema: "pilibala.provider.notice.v1", noticeId: "warning-1",
         severity: "warning", category: "configWarning", summary: "Repository is not trusted",
       }),
       event(2, "provider.notice.recorded", {
-        schema: "paperclip.provider.notice.v1", noticeId: "error-1",
+        schema: "pilibala.provider.notice.v1", noticeId: "error-1",
         severity: "error", message: "Provider connection failed",
       }),
     ]);
@@ -121,7 +121,7 @@ describe("provider notice presentation", () => {
 describe("native plan presentation", () => {
   it("keeps plan snapshots as plan activity so the turn plan card can read their steps", () => {
     const plan = (seq: number, statuses: string[]) => event(seq, "plan.updated", {
-      schema: "paperclip.plan.updated.v1",
+      schema: "pilibala.plan.updated.v1",
       planId: "turn-1",
       revision: 1,
       explanation: null,
@@ -149,7 +149,7 @@ describe("native plan presentation", () => {
 
   it("keeps a blocked plan blocked in settled history instead of marking it interrupted", () => {
     const transcript = nativeRunEventsToTranscript([event(1, "plan.updated", {
-      schema: "paperclip.plan.updated.v1",
+      schema: "pilibala.plan.updated.v1",
       planId: "turn-1",
       revision: 1,
       explanation: null,
@@ -176,7 +176,7 @@ describe("native proposed-plan presentation", () => {
       itemEvent(2, "item.delta", "plan-item-1", { kind: "plan", channel: "detail", text: "<proposed_plan>\n# Stop duplicates\n" }),
       itemEvent(3, "item.delta", "plan-item-1", { kind: "plan", channel: "detail", text: "\n1. Add a unique index" }),
       event(4, "plan.proposed", {
-        schema: "paperclip.plan.proposed.v1",
+        schema: "pilibala.plan.proposed.v1",
         proposalId: "plan-item-1",
         status: "completed",
         markdown: "# Stop duplicates\n\n1. Add a unique index\n2. Upsert",
@@ -209,7 +209,7 @@ describe("native proposed-plan presentation", () => {
         text: "The plan is ready for your approval.\n<proposed_plan>\n# Fix\n1. Ship\n</proposed_plan>",
       }),
       event(2, "plan.proposed", {
-        schema: "paperclip.plan.proposed.v1",
+        schema: "pilibala.plan.proposed.v1",
         proposalId: "msg-1",
         status: "completed",
         markdown: "# Fix\n1. Ship",
@@ -238,7 +238,7 @@ describe("native proposed-plan presentation", () => {
         text: "Plan ready.\n<proposed_plan>\n# Fix\n1. Ship…[truncated]",
       }),
       event(2, "plan.proposed", {
-        schema: "paperclip.plan.proposed.v1", proposalId: "msg-1", status: "completed",
+        schema: "pilibala.plan.proposed.v1", proposalId: "msg-1", status: "completed",
         markdown: "# Fix\n1. Ship\n2. Verify", source: "codex_plan_item",
       }),
     ]);
@@ -248,7 +248,7 @@ describe("native proposed-plan presentation", () => {
     const fencedTranscript = nativeRunEventsToTranscript([
       itemEvent(1, "item.completed", "msg-2", { kind: "agentMessage", channel: "final", text: fenced }),
       event(2, "plan.proposed", {
-        schema: "paperclip.plan.proposed.v1", proposalId: "msg-2", status: "completed",
+        schema: "pilibala.plan.proposed.v1", proposalId: "msg-2", status: "completed",
         markdown: "# Other", source: "codex_plan_item",
       }),
     ]);
@@ -258,14 +258,14 @@ describe("native proposed-plan presentation", () => {
   it("shows a completed proposal's example tags unchanged on its card", () => {
     const markdown = "# Plan\n\n1. Format: `<proposed_plan>x</proposed_plan>`";
     const transcript = nativeRunEventsToTranscript([event(1, "plan.proposed", {
-      schema: "paperclip.plan.proposed.v1", proposalId: "p-1", status: "completed", markdown, source: "claude_exit_plan_mode",
+      schema: "pilibala.plan.proposed.v1", proposalId: "p-1", status: "completed", markdown, source: "claude_exit_plan_mode",
     })]);
     expect(transcript[0]).toMatchObject({ family: "plan_proposal", payload: expect.objectContaining({ markdown }) });
   });
 
   it("keeps a Claude ExitPlanMode proposal out of the turn checklist", () => {
     const transcript = nativeRunEventsToTranscript([event(1, "plan.proposed", {
-      schema: "paperclip.plan.proposed.v1",
+      schema: "pilibala.plan.proposed.v1",
       proposalId: "toolu_plan",
       status: "completed",
       markdown: "# Plan\n\n1. Ship it",
@@ -293,7 +293,7 @@ describe("nativeRunEventsToTranscript", () => {
       };
       const accepted = event(2, "run.result.accepted", { result });
       const terminal = event(3, "run.terminal", {
-        schema: "paperclip.prp.terminal.v1",
+        schema: "pilibala.prp.terminal.v1",
         turnTerminalState: "completed",
         runTerminalState: "succeeded",
         reportedWorkDisposition: "yielded",
@@ -437,7 +437,7 @@ describe("nativeRunEventsToTranscript", () => {
   it("projects the cross-language duplicate-delivery fixture exactly once", () => {
     const fixture = JSON.parse(readFileSync(
       new URL(
-        "../../../../packages/paperclip-runner/protocol/fixtures/replay/duplicate-event.json",
+        "../../../../packages/pilibala-runner/protocol/fixtures/replay/duplicate-event.json",
         import.meta.url,
       ),
       "utf8",
@@ -486,7 +486,7 @@ describe("nativeRunEventsToTranscript", () => {
       event(2, "item.delta", { itemId: "message-1", kind: "agentMessage", text: "safely." }),
       event(3, "item.completed", { itemId: "message-1", kind: "agentMessage", text: "Done safely." }),
       event(4, "tool.execution.started", {
-        schema: "paperclip.tool.execution.v1",
+        schema: "pilibala.tool.execution.v1",
         executionId: "exec-1",
         transport: "process",
         operation: "execute",
@@ -498,7 +498,7 @@ describe("nativeRunEventsToTranscript", () => {
         outputDigest: null,
       }),
       event(5, "tool.execution.completed", {
-        schema: "paperclip.tool.execution.v1",
+        schema: "pilibala.tool.execution.v1",
         executionId: "exec-1",
         transport: "process",
         operation: "execute",
@@ -540,7 +540,7 @@ describe("nativeRunEventsToTranscript", () => {
       }),
       expect.objectContaining({
         kind: "result",
-        subtype: "paperclip_runner_usage",
+        subtype: "pilibala_runner_usage",
         inputTokens: 12,
         outputTokens: 3,
         cachedTokens: 2,
@@ -552,7 +552,7 @@ describe("nativeRunEventsToTranscript", () => {
   it("coalesces sparse Codex tool lifecycle events at the named write boundary", () => {
     const transcript = nativeRunEventsToTranscript([
       event(1, "tool.execution.started", {
-        schema: "paperclip.tool.execution.v1",
+        schema: "pilibala.tool.execution.v1",
         executionId: "exec-write-plan",
         transport: "dynamic",
         operation: "unknown",
@@ -590,7 +590,7 @@ describe("nativeRunEventsToTranscript", () => {
         },
       }),
       event(5, "tool.execution.completed", {
-        schema: "paperclip.tool.execution.v1",
+        schema: "pilibala.tool.execution.v1",
         executionId: "exec-write-plan",
         transport: "dynamic",
         operation: "unknown",
@@ -696,7 +696,7 @@ describe("nativeRunEventsToTranscript", () => {
     const parsed = transcriptToTaskChatItems(entries, { runId: fixture.run.id, running: false });
 
     expect(fixture.run.status).toBe("cancelled");
-    expect(paperclipRunnerFinalResponse(parsed, { allowFallback: true })).toBeUndefined();
+    expect(pilibalaRunnerFinalResponse(parsed, { allowFallback: true })).toBeUndefined();
     expect(parsed.filter((item) => item.kind === "message")).toEqual([
       expect.objectContaining({
         channel: "progress",
@@ -827,7 +827,7 @@ describe("nativeRunEventsToTranscript", () => {
     expect(transcript).toEqual([
       expect.objectContaining({
         kind: "result",
-        subtype: "paperclip_runner_usage",
+        subtype: "pilibala_runner_usage",
         inputTokens: 16,
         outputTokens: 5,
         cachedTokens: 3,
@@ -875,7 +875,7 @@ describe("nativeRunEventsToTranscript", () => {
     expect(transcript).toEqual([
       expect.objectContaining({
         kind: "result",
-        subtype: "paperclip_runner_session_usage",
+        subtype: "pilibala_runner_session_usage",
         inputTokens: 20,
         outputTokens: 5,
         costUsd: 0.02,
@@ -898,7 +898,7 @@ describe("nativeRunEventsToTranscript", () => {
     expect(transcript).toEqual([
       expect.objectContaining({
         kind: "result",
-        subtype: "paperclip_runner_session_usage",
+        subtype: "pilibala_runner_session_usage",
         inputTokens: 112,
         outputTokens: 53,
         costUsd: 1.01,
@@ -989,7 +989,7 @@ describe("nativeRunEventsToTranscript", () => {
   it("keeps web research as a provider activity with its sources", () => {
     const transcript = nativeRunEventsToTranscript([
       event(1, "research.started", {
-        schema: "paperclip.research.v1",
+        schema: "pilibala.research.v1",
         researchId: "research-1",
         action: "search",
         query: "current behavior",
@@ -997,7 +997,7 @@ describe("nativeRunEventsToTranscript", () => {
         sources: [],
       }),
       event(2, "research.completed", {
-        schema: "paperclip.research.v1",
+        schema: "pilibala.research.v1",
         researchId: "research-1",
         action: "search",
         query: "current behavior",
@@ -1028,7 +1028,7 @@ describe("nativeRunEventsToTranscript", () => {
   it("does not invent a subject for a search the provider reported without a query", () => {
     expect(nativeRunEventsToTranscript([
       event(1, "research.completed", {
-        schema: "paperclip.research.v1",
+        schema: "pilibala.research.v1",
         researchId: "research-2",
         action: "other",
         query: null,
@@ -1043,7 +1043,7 @@ describe("nativeRunEventsToTranscript", () => {
   it("keeps model reroutes and waits as provider activity with their payload", () => {
     const transcript = nativeRunEventsToTranscript([
       event(1, "model.route.changed", {
-        schema: "paperclip.model.route_changed.v1",
+        schema: "pilibala.model.route_changed.v1",
         routeId: "turn-1",
         provider: "openai",
         requestedModel: "gpt-a",
@@ -1052,7 +1052,7 @@ describe("nativeRunEventsToTranscript", () => {
         reason: "capacity",
       }),
       event(2, "wait.started", {
-        schema: "paperclip.wait.v1",
+        schema: "pilibala.wait.v1",
         waitId: "sleep-1",
         reason: "timer",
         status: "running",
@@ -1109,7 +1109,7 @@ describe("nativeRunEventsToTranscript", () => {
   it("leaves families owned by other surfaces on the generic activity path", () => {
     expect(nativeRunEventsToTranscript([
       event(1, "memory.citation.referenced", {
-        schema: "paperclip.memory.citation.v1",
+        schema: "pilibala.memory.citation.v1",
         citationId: "citation-1",
         messageItemId: "message-1",
         label: "Decision log",
@@ -1127,7 +1127,7 @@ describe("nativeRunEventsToTranscript", () => {
     (status) => {
       expect(nativeRunEventsToTranscript([
         event(1, "artifact.generated", {
-          schema: "paperclip.artifact.generated.v1",
+          schema: "pilibala.artifact.generated.v1",
           artifactId: "artifact-1",
           status,
           reference: "artifacts/preview.png",
@@ -1144,7 +1144,7 @@ describe("nativeRunEventsToTranscript", () => {
 
   it("fails closed for unsupported versions, prefix lookalikes, and mismatched payload schemas", () => {
     const unsupportedVersion = event(1, "model.verification.updated", {
-      schema: "paperclip.model.verification.v1",
+      schema: "pilibala.model.verification.v1",
       verificationId: "verification-1",
       status: "completed",
       summary: "must not render",
@@ -1154,12 +1154,12 @@ describe("nativeRunEventsToTranscript", () => {
     expect(nativeRunEventsToTranscript([
       unsupportedVersion,
       event(2, "model.provider_message.recorded", {
-        schema: "paperclip.model.provider_message.v1",
+        schema: "pilibala.model.provider_message.v1",
         routeId: "route-1",
         message: "provider envelope must not render",
       }),
       event(3, "model.verification.updated", {
-        schema: "paperclip.provider.native.v1",
+        schema: "pilibala.provider.native.v1",
         verificationId: "verification-2",
         status: "completed",
         summary: "wrong payload schema must not render",
@@ -1170,24 +1170,24 @@ describe("nativeRunEventsToTranscript", () => {
   it("fails closed for mismatched tool execution and run result schemas", () => {
     expect(nativeRunEventsToTranscript([
       event(1, "tool.execution.started", {
-        schema: "paperclip.provider.native.v1",
+        schema: "pilibala.provider.native.v1",
         executionId: "exec-1",
         transport: "process",
         operation: "execute",
         status: "running",
       }),
       event(2, "run.result.proposed", {
-        schema: "paperclip.provider.native.v1",
+        schema: "pilibala.provider.native.v1",
         summary: "malformed proposal must not render",
       }),
       event(3, "run.result.accepted", {
         result: {
-          schema: "paperclip.provider.native.v1",
+          schema: "pilibala.provider.native.v1",
           summary: "malformed accepted result must not render",
         },
       }),
       event(4, "run.result.accepted", {
-        schema: "paperclip.run_result.v1",
+        schema: "pilibala.run_result.v1",
         summary: "accepted wrappers must not masquerade as results",
       }),
     ])).toEqual([]);
@@ -1214,14 +1214,14 @@ describe("nativeRunEventsToTranscript", () => {
     expect(nativeRunEventsToTranscript([
       event(1, "runtime_request.created", {
         request: {
-          schema: "paperclip.runtime_request.v1",
+          schema: "pilibala.runtime_request.v1",
           requestId: "question-1",
           requestKind: "elicitation",
           type: "input",
           status: "pending",
           prompt: "Choose a rollout",
           input: {
-            schema: "paperclip.question_set.v1",
+            schema: "pilibala.question_set.v1",
             questions: [{
               id: "rollout",
               prompt: "Which rollout?",
@@ -1237,7 +1237,7 @@ describe("nativeRunEventsToTranscript", () => {
           requestId: "question-1",
           status: "resolved",
           response: {
-            schema: "paperclip.question_response.v1",
+            schema: "pilibala.question_response.v1",
             answers: { rollout: { selectedOptionIds: ["safe"] } },
           },
         },
@@ -1247,13 +1247,13 @@ describe("nativeRunEventsToTranscript", () => {
         kind: "runtime_request",
         requestId: "question-1",
         status: "pending",
-        questionSet: expect.objectContaining({ schema: "paperclip.question_set.v1" }),
+        questionSet: expect.objectContaining({ schema: "pilibala.question_set.v1" }),
       }),
       expect.objectContaining({
         kind: "runtime_request",
         requestId: "question-1",
         status: "resolved",
-        response: expect.objectContaining({ schema: "paperclip.question_response.v1" }),
+        response: expect.objectContaining({ schema: "pilibala.question_response.v1" }),
       }),
     ]);
   });
@@ -1267,12 +1267,12 @@ describe("nativeRunEventsToTranscript", () => {
     (turnTerminalState, runTerminalState, expectedRunState) => {
       expect(nativeRunEventsToTranscript([
         event(1, "run.terminal", {
-          schema: "paperclip.prp.terminal.v1",
+          schema: "pilibala.prp.terminal.v1",
           turnTerminalState,
           runTerminalState,
           reportedWorkDisposition: "needs_review",
           stopReason: {
-            schema: "paperclip.stop_reason.v1",
+            schema: "pilibala.stop_reason.v1",
             code: "provider_failed",
             message: "Provider could not finish the turn.",
           },
@@ -1291,7 +1291,7 @@ describe("nativeRunEventsToTranscript", () => {
   it("fails closed instead of presenting malformed terminal state as success", () => {
     expect(nativeRunEventsToTranscript([
       event(1, "run.terminal", {
-        schema: "paperclip.prp.terminal.v1",
+        schema: "pilibala.prp.terminal.v1",
         turnTerminalState: "mystery",
         runTerminalState: "successful-ish",
         reportedWorkDisposition: "done",
@@ -1312,7 +1312,7 @@ describe("context compaction", () => {
     const transcript = nativeRunEventsToTranscript([
       usage(1, 229_500),
       event(2, "context.compacted", {
-        schema: "paperclip.context.compacted.v1",
+        schema: "pilibala.context.compacted.v1",
         compactionId: "compaction-1",
         reason: "provider",
         preTokens: null,
@@ -1331,7 +1331,7 @@ describe("context compaction", () => {
     expect(flat).toContain('"variant":"context_compacted"');
     expect(flat).toContain("230k → 38k tokens");
     // The live runner turn keeps the divider as its own timeline row.
-    const rows = buildTurnTimelineRows(paperclipRunnerTimelineItems(items), true);
+    const rows = buildTurnTimelineRows(pilibalaRunnerTimelineItems(items), true);
     expect(rows).toEqual(
       expect.arrayContaining([expect.objectContaining({ kind: "marker", variant: "context_compacted" })]),
     );
@@ -1339,7 +1339,7 @@ describe("context compaction", () => {
 
   it("keeps every compaction in a run even when the provider reuses its id", () => {
     const compacted = (seq: number) => event(seq, "context.compacted", {
-      schema: "paperclip.context.compacted.v1",
+      schema: "pilibala.context.compacted.v1",
       compactionId: "thread-1",
       reason: "provider",
       preTokens: null,
@@ -1366,7 +1366,7 @@ describe("context compaction", () => {
   it("keeps the divider when the provider reports no sizes", () => {
     const transcript = nativeRunEventsToTranscript([
       event(1, "context.compacted", {
-        schema: "paperclip.context.compacted.v1",
+        schema: "pilibala.context.compacted.v1",
         compactionId: "compaction-2",
         reason: "provider",
         preTokens: null,
@@ -1384,7 +1384,7 @@ describe("context compaction", () => {
 describe("tool execution facts", () => {
   const tool = (seq: number, eventType: string, fields: Record<string, unknown>) =>
     event(seq, eventType, {
-      schema: "paperclip.tool.execution.v1",
+      schema: "pilibala.tool.execution.v1",
       executionId: "toolu_bash",
       transport: "builtin",
       operation: "execute",
@@ -1409,12 +1409,12 @@ describe("tool execution facts", () => {
         output: "not ok 2", outputBytes: 8,
       }),
       event(4, "tool.execution.completed", {
-        schema: "paperclip.tool.execution.v1", executionId: "toolu_rm", transport: "builtin", operation: "execute",
+        schema: "pilibala.tool.execution.v1", executionId: "toolu_rm", transport: "builtin", operation: "execute",
         name: "Bash", target: null, status: "failed", durationMs: 3, exitCode: null, subject: "rm -rf build",
         blockedReason: "Denied by rule", output: null, outputBytes: 0, outputTruncated: false, outputDigest: null,
       }),
       event(5, "tool.execution.completed", {
-        schema: "paperclip.tool.execution.v1", executionId: "exec-read", transport: "process", operation: "read",
+        schema: "pilibala.tool.execution.v1", executionId: "exec-read", transport: "process", operation: "read",
         name: "/bin/zsh -lc 'cat src/db.ts'", target: "src/db.ts", subject: "cat src/db.ts", status: "completed",
         durationMs: 19, exitCode: 0, output: "", outputBytes: 0, outputTruncated: false, outputDigest: null,
       }),
@@ -1432,7 +1432,7 @@ describe("tool execution facts", () => {
 
 describe("edit diffs", () => {
   const execution = (status: string, fileChanges?: unknown[]) => ({
-    schema: "paperclip.tool.execution.v1",
+    schema: "pilibala.tool.execution.v1",
     executionId: "edit-1",
     transport: "builtin",
     operation: "edit",
@@ -1500,7 +1500,7 @@ describe("edit diffs", () => {
   it("projects the harness change set and ends the turn with it", () => {
     const entries = nativeRunEventsToTranscript([
       event(1, "workspace.change.updated", {
-        schema: "paperclip.workspace.diff.v1",
+        schema: "pilibala.workspace.diff.v1",
         changeSetId: "turn-1:workspace",
         revision: 1,
         source: "harness_reported",

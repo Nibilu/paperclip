@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
-import type { HeartbeatRun } from "@paperclipai/shared";
+import type { HeartbeatRun } from "@pilibalaai/shared";
 import { afterEach, expect, it, vi } from "vitest";
 import { RunsTab } from "./AgentDetail";
 import { RunsTab as ProductionRunsTab } from "./AgentDetail.production";
@@ -58,7 +58,7 @@ it.each([RunsTab, ProductionRunsTab].flatMap(Tab => states.map(state => ({ Tab, 
     execution: { canStop: eligibility, phase: "reconnecting", label: "Reconnecting", recoveryOwner: "agent", retryAt: "2026-01-01T00:00:01Z" },
   } as unknown as HeartbeatRun;
   const existingRequestId = "11111111-1111-4111-8111-111111111111";
-  const storageKey = pendingSendKeyFor(`paperclip:native-run-stop:${run.companyId}:${run.id}`, actor.id);
+  const storageKey = pendingSendKeyFor(`pilibala:native-run-stop:${run.companyId}:${run.id}`, actor.id);
   if (state.priorSession) expect(writePendingSend(storageKey, { idempotencyKey: existingRequestId,
     payload: { runId: run.id, companyId: run.companyId, actorUserId: actor.id }, createdAt: Date.now() - 1000,
   }, "session")).toBe(true);
@@ -81,7 +81,7 @@ it.each([RunsTab, ProductionRunsTab].flatMap(Tab => states.map(state => ({ Tab, 
     }
     if (state.pending || state.uncertain) {
       const pending = { ...run, execution: { ...run.execution, canStop: false }, resultJson: { nativeCancellation: {
-        schema: "paperclip.native-cancellation.v1", runId: state.wrongIntent === "run" ? "another-run" : run.id, companyId: run.companyId, issueId: run.issueId,
+        schema: "pilibala.native-cancellation.v1", runId: state.wrongIntent === "run" ? "another-run" : run.id, companyId: run.companyId, issueId: run.issueId,
         intentId: `native-cancellation:${state.wrongIntent === "request" ? "another-request" : body.cancellationRequestId}`, scope: "run", dispatchState: "pending", dispatched: false, intentAuditId: "recorded-intent",
       } } };
       get.mockResolvedValue(pending);
@@ -96,17 +96,17 @@ it.each([RunsTab, ProductionRunsTab].flatMap(Tab => states.map(state => ({ Tab, 
     return { stopped: true, remoteTerminationConfirmed: false };
   });
   const usesGrokStop = Tab === RunsTab && state.driverKind === "grok_bot_mcp";
-  const expectedLabel = label && usesGrokStop ? "Stop Paperclip work" : label;
+  const expectedLabel = label && usesGrokStop ? "Stop Pilibala work" : label;
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   const element = document.createElement("div"); document.body.append(element);
   let root = createRoot(element);
   const render = () => root.render(<QueryClientProvider client={client}><MemoryRouter><PanelProvider><ToastProvider>
-    <Tab runs={[]} companyId="company-1" agentId="agent-1" agentRouteId="agent-1" selectedRunId={run.id} adapterType="paperclip_runner" adapterConfig={{}} />
+    <Tab runs={[]} companyId="company-1" agentId="agent-1" agentRouteId="agent-1" selectedRunId={run.id} adapterType="pilibala_runner" adapterConfig={{}} />
   </ToastProvider></PanelProvider></MemoryRouter></QueryClientProvider>);
   try {
     await act(async () => render());
     await vi.waitFor(async () => { await act(async () => {}); expect(element.textContent).toContain(status); });
-    const control = () => Array.from(element.querySelectorAll("button")).find(candidate => ["Stop", "Cancel", "Stop Paperclip work"].includes(candidate.textContent ?? ""));
+    const control = () => Array.from(element.querySelectorAll("button")).find(candidate => ["Stop", "Cancel", "Stop Pilibala work"].includes(candidate.textContent ?? ""));
     if (label) {
       expect(control()?.textContent).toBe(expectedLabel);
       await act(async () => control()!.click());

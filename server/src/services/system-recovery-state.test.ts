@@ -54,7 +54,7 @@ describe("durable system recovery budget", () => {
       expect(exhaustedSystemRecoveryAction(state)).not.toMatch(manual);
     const runId = exhausted.sourceRunId;
     const display = workspaceRecoveryDisplay({ runId, systemRecovery: exhausted, workspaceRecovery: {
-      schema: "paperclip.workspace-recovery.v1", runId, status: "blocked", stage: "verifying_stop", attempt: 1,
+      schema: "pilibala.workspace-recovery.v1", runId, status: "blocked", stage: "verifying_stop", attempt: 1,
       attemptLimit: 6, requestIds: [], retryable: true,
       message: "Automatic recovery of saved work stopped after 1 attempts (last failure: allocation_ownership_ambiguous). "
         + "Retry recovery to export and merge from the retained sandbox again; no provider turn is submitted. "

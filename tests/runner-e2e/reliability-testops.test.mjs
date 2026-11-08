@@ -18,25 +18,25 @@ const plans = testOpsPlans(synthetic);
 const cases = plans.reliability;
 const workflowSha = 'a'.repeat(40), targetSha = 'b'.repeat(40);
 const env = {
-  GITHUB_REPOSITORY: 'paperclipai/paperclip', GITHUB_REF: 'refs/heads/master', GITHUB_EVENT_NAME: 'workflow_dispatch',
-  GITHUB_WORKFLOW_REF: 'paperclipai/paperclip/.github/workflows/runner-full-stack-e2e.yml@refs/heads/master',
+  GITHUB_REPOSITORY: 'pilibalaai/pilibala', GITHUB_REF: 'refs/heads/master', GITHUB_EVENT_NAME: 'workflow_dispatch',
+  GITHUB_WORKFLOW_REF: 'pilibalaai/pilibala/.github/workflows/runner-full-stack-e2e.yml@refs/heads/master',
   GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '1', GITHUB_SHA: workflowSha, SOURCE_SHA: targetSha,
-  ALLURE_ENDPOINT: 'https://paperclip.testops.cloud', ALLURE_PROJECT_ID: '1',
+  ALLURE_ENDPOINT: 'https://pilibala.testops.cloud', ALLURE_PROJECT_ID: '1',
 };
-const selection = selected => ({ schema: 'paperclip.product-regression-testops-selection/v1', runId: '123', attempt: '1',
+const selection = selected => ({ schema: 'pilibala.product-regression-testops-selection/v1', runId: '123', attempt: '1',
   workflowSha, targetSha, jobRunId: '456', launchId: 789, cases: selected });
 const result = (row, overrides = {}) => ({
   executionId: row.executionId, suiteId: row.suite, caseId: row.name, profileId: row.profile, environmentId: row.environment,
   source: { sha: targetSha }, attempt: 1, status: 'passed', cleanup: 'passed', model: row.model,
   matcherResults: [{ matcher: { kind: 'json_path', path: 'resume.retry-works-first-use', expected: true }, passed: true }], ...overrides,
 });
-const campaign = (selected, results) => ({ schema: 'paperclip.runner-e2e.campaign/v2', campaignId: 'gha-123-1',
+const campaign = (selected, results) => ({ schema: 'pilibala.runner-e2e.campaign/v2', campaignId: 'gha-123-1',
   source: { sha: targetSha }, expected: selected.map(row => row.executionId), results });
 
 test('the plan is six DeepSeek 1017 cells plus native Codex for steering, Daytona only for sandbox signatures', () => {
   assert.equal(reliabilityDefinitions.length, 7);
   assert.equal(new Set(reliabilityDefinitions.map(row => row.executionId)).size, 7);
-  assert.ok(reliabilityDefinitions.every(row => row.fullName === `paperclip.Product E2E.everyday-workflows.${row.name}`));
+  assert.ok(reliabilityDefinitions.every(row => row.fullName === `pilibala.Product E2E.everyday-workflows.${row.name}`));
   // OpenCode declares steering: false, so only queue-steer uses the steering-capable native Codex cell.
   assert.deepEqual(reliabilityDefinitions.filter(row => row.profile !== reliabilityProfile || row.model !== reliabilityModel)
     .map(row => [row.name, row.profile, row.model, row.environment]), [['queue-steer', 'runner-codex', 'gpt-6.1-sol', 'daytona']]);
@@ -149,7 +149,7 @@ test('a TestOps reliability launch binds, projects and verifies through the stan
     const route = new URL(url).pathname;
     const resources = {
       '/api/uaa/oauth/token': { access_token: 'synthetic-access-token' },
-      '/api/jobrun/456': { id: 456, launchId: 789, job: { id: 50, type: 'github' }, url: 'https://github.com/paperclipai/paperclip/actions/runs/123' },
+      '/api/jobrun/456': { id: 456, launchId: 789, job: { id: 50, type: 'github' }, url: 'https://github.com/pilibalaai/pilibala/actions/runs/123' },
       '/api/job/50': { id: 50, type: 'github', url: workflowUrl }, '/api/launch/789': { id: 789, projectId: 1 },
       '/api/testresult': { content: uploaded.map(row => ({ id: row.id, testCaseId: row.testCaseId })), totalPages: 1, totalElements: uploaded.length },
       ...Object.fromEntries(uploaded.map(row => [`/api/testresult/${row.id}`, row])),
@@ -183,7 +183,7 @@ function fakeTestOps({ existing = [], plan = null, assignments = [], standing = 
     ...existing.map(row => [row.id, { projectId: 1, automated: true, ...row }])]), plan, assignments, calls: [], nextId: 9500 };
   const api = async (route, method = 'GET', body) => {
     state.calls.push({ route, method, body });
-    const url = new URL(`https://paperclip.testops.cloud${route}`);
+    const url = new URL(`https://pilibala.testops.cloud${route}`);
     if (method === 'GET' && url.pathname === '/api/testcase') {
       const rows = [...state.cases.keys()].sort((a, b) => a - b).map(id => ({ id }));
       return { content: rows, number: 0, totalPages: 1, totalElements: rows.length };

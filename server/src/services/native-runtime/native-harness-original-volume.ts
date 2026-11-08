@@ -3,13 +3,13 @@ import { lstat, open, realpath } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { dirname, relative, resolve, sep } from "node:path";
 import { readBuildCommit } from "../../build-commit.js";
-import { resolvePaperclipInstanceRoot } from "../../home-paths.js";
+import { resolvePilibalaInstanceRoot } from "../../home-paths.js";
 import { nativeHarnessStateBase } from "./native-harness-backup-stamp.js";
 import { nativeSha256 } from "./canonical.js";
 
 type FileIdentity = { dev: number; ino: number };
 export type OriginalHarnessVolumeAnchor = {
-  schema: "paperclip.native-harness-original-volume-anchor.v1";
+  schema: "pilibala.native-harness-original-volume-anchor.v1";
   nonce: string;
   projectId: string; serviceId: string; environmentId: string; volumeId: string; volumeInstanceId: string;
   mountPath: string; mountIdentity: FileIdentity; instanceIdentity: FileIdentity;
@@ -32,7 +32,7 @@ const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const digest = /^[a-f0-9]{64}$/;
 
 export function originalHarnessVolumeAnchorPath() {
-  return resolve(resolvePaperclipInstanceRoot(), "recovery", "native-harness-original-volume-anchor.json");
+  return resolve(resolvePilibalaInstanceRoot(), "recovery", "native-harness-original-volume-anchor.json");
 }
 
 async function verify(witness: ReviewedOriginalHarnessVolumeWitness) {
@@ -46,7 +46,7 @@ async function verify(witness: ReviewedOriginalHarnessVolumeWitness) {
     if (!value || process.env[key] !== value) reject();
   }
   if (readBuildCommit() !== witness.currentCommit || !uuid.test(witness.volumeInstanceId)) reject();
-  const mount = resolve(witness.mountPath), instance = resolvePaperclipInstanceRoot(), state = nativeHarnessStateBase();
+  const mount = resolve(witness.mountPath), instance = resolvePilibalaInstanceRoot(), state = nativeHarnessStateBase();
   if (!inside(mount, instance) || !inside(instance, state) || await realpath(mount) !== mount) reject();
   const anchorPath = originalHarnessVolumeAnchorPath();
   for (let path = dirname(anchorPath); path !== mount; path = dirname(path)) {
@@ -69,7 +69,7 @@ async function verify(witness: ReviewedOriginalHarnessVolumeWitness) {
     const after = await handle.stat();
     if (after.ctimeMs !== before.ctimeMs || after.mtimeMs !== before.mtimeMs || after.size !== before.size) reject();
   } finally { await handle.close(); }
-  if (anchor.schema !== "paperclip.native-harness-original-volume-anchor.v1" || !digest.test(anchor.nonce)
+  if (anchor.schema !== "pilibala.native-harness-original-volume-anchor.v1" || !digest.test(anchor.nonce)
     || !/^[a-f0-9]{40}$/.test(anchor.createdFrom?.commit) || !uuid.test(anchor.createdFrom?.deploymentId)
     || !digest.test(anchor.createdFrom?.providerWitnessSha256) || !Number.isFinite(Date.parse(anchor.createdAt))) reject();
   for (const key of ["projectId", "serviceId", "environmentId", "volumeId", "volumeInstanceId", "mountPath"] as const) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NativeSessionCloseUnrecoverableError } from "../../vendor/paperclip-runner/index.js";
+import { NativeSessionCloseUnrecoverableError } from "../../vendor/pilibala-runner/index.js";
 import { nativePostResultFailureCategory, readNativePostResultFailureDiagnostic } from "./native-post-result-failure.js";
 
 describe("native post-result failure diagnostic", () => {

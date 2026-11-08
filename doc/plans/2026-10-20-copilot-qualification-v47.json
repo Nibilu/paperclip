@@ -1,5 +1,5 @@
 {
-  "schema": "paperclip.copilot.production-qualification.v1",
+  "schema": "pilibala.copilot.production-qualification.v1",
   "recordedAt": "2026-10-20",
   "productionReady": false,
   "merged": false,
@@ -21,7 +21,7 @@
     },
     "automaticRetries": 0,
     "qualificationOverrides": false,
-    "image": "ghcr.io/paperclipai/paperclip-daytona-runner@sha256:2e02c77a756b84d7108f71ab9428abdbbec9071facce6e207c95d37ab9fb83ef",
+    "image": "ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:2e02c77a756b84d7108f71ab9428abdbbec9071facce6e207c95d37ab9fb83ef",
     "nativeUsd": null,
     "billingProvider": "github",
     "includedCreditsAreNotMeasuredUsd": true,

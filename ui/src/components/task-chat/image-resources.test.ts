@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { IssueAttachment, IssueWorkProduct } from "@paperclipai/shared";
+import type { IssueAttachment, IssueWorkProduct } from "@pilibalaai/shared";
 import type { TaskChatItem, TaskChatMaterializedResourceItem } from "./task-chat-model";
 import { groupImageResources } from "./image-resources";
 

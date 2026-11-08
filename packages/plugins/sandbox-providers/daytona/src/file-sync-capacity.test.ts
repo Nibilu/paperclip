@@ -7,7 +7,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import type { DaytonaPtyCreateOptions } from "./login-pty.js";
 
 vi.mock("./plugin.js", async () => {
-  const { NOOP_PLUGIN_TRACER } = await import("@paperclipai/plugin-sdk");
+  const { NOOP_PLUGIN_TRACER } = await import("@pilibalaai/plugin-sdk");
   return { getPluginTracer: () => NOOP_PLUGIN_TRACER };
 });
 import { performSyncOut } from "./file-sync.js";
@@ -104,7 +104,7 @@ it.skipIf(Object.values(requiredTools).some(tool => !tool)).each(["success", "pr
     await fs.writeFile(path.join(remote, "excluded.txt"), "excluded by caller");
     await fs.mkdir(path.join(remote, "nested"));
     if (modeRegression) await fs.chmod(path.join(remote, "nested"), 0o775);
-    for (const name of ["._result.txt", ".paperclip-upload-result", "nested/._result.txt", "nested/.paperclip-upload-result"]) {
+    for (const name of ["._result.txt", ".pilibala-upload-result", "nested/._result.txt", "nested/.pilibala-upload-result"]) {
       await fs.writeFile(path.join(remote, name), `user work: ${name}`);
       if (modeRegression) await fs.chmod(path.join(remote, name), 0o664);
     }
@@ -194,7 +194,7 @@ it.skipIf(Object.values(requiredTools).some(tool => !tool)).each(["success", "pr
     if (directArchive || literal) expect(await fs.readFile(path.join(output, "excluded.txt"), "utf8")).toBe("excluded by caller");
     else await expect(fs.stat(path.join(output, "excluded.txt"))).rejects.toMatchObject({ code: "ENOENT" });
     expect(await fs.readFile(path.join(remote, "excluded.txt"), "utf8")).toBe("excluded by caller");
-    for (const name of ["._result.txt", ".paperclip-upload-result", "nested/._result.txt", "nested/.paperclip-upload-result"]) {
+    for (const name of ["._result.txt", ".pilibala-upload-result", "nested/._result.txt", "nested/.pilibala-upload-result"]) {
       expect(await fs.readFile(path.join(output, name), "utf8")).toBe(`user work: ${name}`);
       expect(await fs.readFile(path.join(remote, name), "utf8")).toBe(`user work: ${name}`);
       if (modeRegression) {
@@ -213,7 +213,7 @@ it.skipIf(Object.values(requiredTools).some(tool => !tool)).each(["success", "pr
     expect((await fs.lstat(path.join(remote, "ipc"))).isSocket()).toBe(true);
   }
   if (modeRegression) expect((await fs.stat(path.join(output, "nested"))).mode & 0o777).toBe(0o775);
-  expect((await fs.readdir(remote)).filter(name => name.startsWith(".paperclip-upload"))).toEqual(preserveSourceEntries ? [".paperclip-upload-result"] : []);
+  expect((await fs.readdir(remote)).filter(name => name.startsWith(".pilibala-upload"))).toEqual(preserveSourceEntries ? [".pilibala-upload-result"] : []);
 }, 40_000);
 
 it.skipIf(Object.values(requiredTools).some(tool => !tool)).each([
@@ -291,8 +291,8 @@ it.skipIf(Object.values(requiredTools).some(tool => !tool)).each([
       if (scenario !== "replaced source") expect((await fs.readFile(file.sourcePath)).equals(bytes)).toBe(true);
     }
     expect(await fs.readFile(outside, "utf8")).toBe("not in the admitted workspace");
-    expect((await fs.readdir(remote)).filter(name => name.startsWith(".paperclip-upload"))).toEqual([]);
-    expect((await fs.readdir(root)).filter(name => name.startsWith(".paperclip-upload"))).toEqual([]);
+    expect((await fs.readdir(remote)).filter(name => name.startsWith(".pilibala-upload"))).toEqual([]);
+    expect((await fs.readdir(root)).filter(name => name.startsWith(".pilibala-upload"))).toEqual([]);
     expect(sessions).toBe(scenario === "copy permission" ? 0 : files.length);
     expect(closed).toBe(sessions);
     fault = false;
@@ -311,5 +311,5 @@ it.skipIf(Object.values(requiredTools).some(tool => !tool)).each([
   expect(downloads).toBe(0);
   expect(sessions).toBe((scenario === "saved" || scenario === "copy permission" ? 1 : 2) * files.length);
   expect(closed).toBe(sessions);
-  expect((await fs.readdir(remote)).filter(name => name.startsWith(".paperclip-upload"))).toEqual([]);
+  expect((await fs.readdir(remote)).filter(name => name.startsWith(".pilibala-upload"))).toEqual([]);
 }, 40_000);

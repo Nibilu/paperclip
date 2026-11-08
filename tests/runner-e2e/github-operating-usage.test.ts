@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { readGitHubOperatingUsage } from "./github-operating-usage.js";
 
 const now = Date.parse("2026-10-21T12:00:00Z"), sha = "a".repeat(40);
-const run = { id: 123, repository: { id: 456, full_name: "paperclipai/paperclip" },
+const run = { id: 123, repository: { id: 456, full_name: "pilibalaai/pilibala" },
   path: ".github/workflows/runner-full-stack-e2e.yml", run_attempt: 1, status: "completed", conclusion: "failure", head_sha: sha,
   created_at: "2026-10-21T10:00:00Z", run_started_at: "2026-10-21T10:01:00Z", updated_at: "2026-10-21T10:10:00Z" };
 const job = (id = 1) => ({ id, run_id: 123, run_attempt: 1, status: "completed", conclusion: "success", runner_id: 1,
@@ -14,7 +14,7 @@ function api(overrides: Record<string, any> = {}) {
   const reads: string[] = [];
   return { reads, read: async (endpoint: string) => {
     reads.push(endpoint);
-    if (endpoint === "repos/paperclipai/paperclip") return { id: 456, full_name: "paperclipai/paperclip", private: false, ...overrides.repo };
+    if (endpoint === "repos/pilibalaai/pilibala") return { id: 456, full_name: "pilibalaai/pilibala", private: false, ...overrides.repo };
     if (endpoint.endsWith("/runs/123")) return { ...run, ...overrides.run, ...(reads.filter(row => row.endsWith("/runs/123")).length === 2 ? overrides.finalRun : {}) };
     if (endpoint.includes("/jobs?")) {
       const jobs = overrides.jobs ?? [job()];

@@ -3,7 +3,7 @@ import { TASK_COLLECTION_PAINTED_EVENT } from "./issue-detail-preload-events";
 
 export function preloadIssueDetail(): Plugin {
   return {
-    name: "paperclip-preload-issue-detail",
+    name: "pilibala-preload-issue-detail",
     apply: "build",
     transformIndexHtml(_html, { bundle }) {
       const issueDetail = Object.values(bundle ?? {}).find((chunk) =>

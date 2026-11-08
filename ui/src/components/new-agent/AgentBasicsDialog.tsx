@@ -1,10 +1,10 @@
 import { useCompany } from "@/context/CompanyContext";
-import { PAPERCLIP_RUNNER_ACPX_PROFILES } from "@paperclipai/adapter-utils";
+import { PILIBALA_RUNNER_ACPX_PROFILES } from "@pilibalaai/adapter-utils";
 import { useAgentAppearanceDraft } from "@/hooks/useAgentAppearanceDraft";
 import { AdapterMark } from "../AdapterMark";
 import { AgentCharacter } from "../AgentCharacter";
 import { useEffect, useId, useRef, useState } from "react";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import { agentsApi } from "@/api/agents";
 import { buildNewAgentRuntimeConfig } from "@/lib/new-agent-runtime-config";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -87,11 +87,11 @@ export function AgentBasicsDialog({
   });
   const adaptersView = useQueryView(adaptersQuery);
   const adapters = adaptersView.data;
-  const nativeRunner = adapters?.find(adapter => adapter.type === "paperclip_runner" && adapter.loaded && !adapter.disabled && adapter.supportedRunners?.length !== 0);
-  const copilotAvailable = Boolean(nativeRunner) && PAPERCLIP_RUNNER_ACPX_PROFILES.some(profile => profile.value === "copilot" && profile.qualified);
+  const nativeRunner = adapters?.find(adapter => adapter.type === "pilibala_runner" && adapter.loaded && !adapter.disabled && adapter.supportedRunners?.length !== 0);
+  const copilotAvailable = Boolean(nativeRunner) && PILIBALA_RUNNER_ACPX_PROFILES.some(profile => profile.value === "copilot" && profile.qualified);
   const kimiAvailable = Boolean(nativeRunner) && experimental.data?.enableNativeRunner === true
-    && PAPERCLIP_RUNNER_ACPX_PROFILES.some(profile => profile.value === "kimi" && profile.qualified);
-  const antigravityQualified = PAPERCLIP_RUNNER_ACPX_PROFILES.some(profile => profile.value === "antigravity" && profile.qualified);
+    && PILIBALA_RUNNER_ACPX_PROFILES.some(profile => profile.value === "kimi" && profile.qualified);
+  const antigravityQualified = PILIBALA_RUNNER_ACPX_PROFILES.some(profile => profile.value === "antigravity" && profile.qualified);
   const antigravityCandidate = nativeRunner?.candidateHarnesses?.some(candidate => candidate.agent === "antigravity");
   const antigravityAvailable = Boolean(nativeRunner);
   const choices = [...(adapters ?? []).filter(
@@ -99,21 +99,21 @@ export function AgentBasicsDialog({
       adapter.loaded &&
       !adapter.disabled &&
       adapter.supportedRunners?.length !== 0 &&
-      adapter.type !== "paperclip_runner" &&
+      adapter.type !== "pilibala_runner" &&
       isNewAgentAdapterAllowed(adapter.type, {
         cloud,
         nativeRunnerEnabled: experimental.data?.enableNativeRunner === true,
       }) &&
-      (!cloud || adapter.type !== "cursor_cloud" || adapter.supportedRunners?.includes("paperclip")) &&
+      (!cloud || adapter.type !== "cursor_cloud" || adapter.supportedRunners?.includes("pilibala")) &&
       !["process", "http"].includes(adapter.type) &&
       !getAdapterDisplay(adapter.type).comingSoon,
   ), ...(copilotAvailable ? [{ ...nativeRunner!, type: "copilot_runtime" }] : []),
     ...(antigravityAvailable ? [{ ...nativeRunner!, type: "antigravity_runtime" }] : []),
     ...(kimiAvailable ? [{ ...nativeRunner!, type: "kimi_runtime" }] : [])];
   const experimentalRunnerAvailable = experimental.data?.enableNativeRunner === true
-    && adapters?.some(adapter => adapter.type === "paperclip_runner" && adapter.loaded && !adapter.disabled && adapter.supportedRunners?.length !== 0);
+    && adapters?.some(adapter => adapter.type === "pilibala_runner" && adapter.loaded && !adapter.disabled && adapter.supportedRunners?.length !== 0);
   const validAdapter = choices.some((adapter) => adapter.type === adapterType)
-    || (experimentalRunnerAvailable && adapterType === "paperclip_runner" && (runnerProvider !== "antigravity" || antigravityQualified));
+    || (experimentalRunnerAvailable && adapterType === "pilibala_runner" && (runnerProvider !== "antigravity" || antigravityQualified));
   async function submit() {
     if (busy.current || !name.trim() || (step === "adapter" && !validAdapter)) return;
     busy.current = true;
@@ -134,7 +134,7 @@ export function AgentBasicsDialog({
         agent = await agentsApi.create(companyId, {
           setupId: setupId.current, name: name.trim(), appearance: appearanceDraft.appearance,
           role: existing.length ? "general" : "ceo", ...(leader ? { reportsTo: leader.id } : {}),
-          adapterType: ["copilot_runtime", "antigravity_runtime", "kimi_runtime"].includes(provisionalAdapter) ? "paperclip_runner" : provisionalAdapter,
+          adapterType: ["copilot_runtime", "antigravity_runtime", "kimi_runtime"].includes(provisionalAdapter) ? "pilibala_runner" : provisionalAdapter,
           ...(["copilot_runtime", "antigravity_runtime", "kimi_runtime"].includes(provisionalAdapter) ? { adapterConfig: { provider: "acpx", acpxAgent: provisionalAdapter === "copilot_runtime" ? "copilot" : provisionalAdapter === "kimi_runtime" ? "kimi" : "antigravity" } } : {}),
           metadata: { setupAdapterPending: true },
           runtimeConfig: buildNewAgentRuntimeConfig({ heartbeatEnabled: false }),
@@ -143,9 +143,9 @@ export function AgentBasicsDialog({
       }
       saved.current = agent;
       const hostedCursor = cloud && adapterType === "cursor_cloud";
-      const nextAdapter = hostedCursor || ["openai_dot", "copilot_runtime", "antigravity_runtime", "kimi_runtime"].includes(adapterType) ? "paperclip_runner" : adapterType;
-      const nextProvider = hostedCursor ? "cursor_cloud" : adapterType === "kimi_runtime" ? "kimi" : adapterType === "antigravity_runtime" ? "antigravity" : adapterType === "copilot_runtime" ? "copilot" : adapterType === "openai_dot" ? "openai_dot" : adapterType === "paperclip_runner" ? runnerProvider : "codex";
-      const nextRunner = hostedCursor ? "paperclip" as const : "auto" as const;
+      const nextAdapter = hostedCursor || ["openai_dot", "copilot_runtime", "antigravity_runtime", "kimi_runtime"].includes(adapterType) ? "pilibala_runner" : adapterType;
+      const nextProvider = hostedCursor ? "cursor_cloud" : adapterType === "kimi_runtime" ? "kimi" : adapterType === "antigravity_runtime" ? "antigravity" : adapterType === "copilot_runtime" ? "copilot" : adapterType === "openai_dot" ? "openai_dot" : adapterType === "pilibala_runner" ? runnerProvider : "codex";
+      const nextRunner = hostedCursor ? "pilibala" as const : "auto" as const;
       // Pending providers can show setup while the saved name-only draft stays held.
       const pendingAntigravity = nextProvider === "antigravity" && !antigravityQualified;
       if (step === "adapter" || (!creatingRecord && agent.name !== name.trim())) {
@@ -158,7 +158,7 @@ export function AgentBasicsDialog({
           } : {}),
           ...(step === "adapter" && !pendingAntigravity ? {
             adapterType: nextAdapter, runner: nextRunner,
-            adapterConfig: nextAdapter === "paperclip_runner" ? {
+            adapterConfig: nextAdapter === "pilibala_runner" ? {
               provider: ["claude", "grok", "copilot", "antigravity", "kimi"].includes(nextProvider) ? "acpx" : nextProvider,
               ...(["claude", "grok", "copilot", "antigravity", "kimi"].includes(nextProvider) ? { acpxAgent: nextProvider } : {}),
               ...(nextProvider === "grok" ? { model: "grok-4.7" } : {}),
@@ -321,12 +321,12 @@ export function AgentBasicsDialog({
                   <div className="space-y-2">
                     <label className="text-sm text-muted-foreground">Experimental harness</label>
                     <SelectPopover aria-label="Experimental harness"
-                      value={adapterType === "paperclip_runner" ? runnerProvider : ""}
+                      value={adapterType === "pilibala_runner" ? runnerProvider : ""}
                       placeholder="Choose a native harness…"
-                      onValueChange={provider => { setRunnerProvider(provider); setAdapterType("paperclip_runner"); }}
+                      onValueChange={provider => { setRunnerProvider(provider); setAdapterType("pilibala_runner"); }}
                       options={[
-                        { value: "grok", label: "Grok Build (Paperclip Runner)" },
-                        { value: "opencode", label: "OpenCode (Paperclip Runner)" },
+                        { value: "grok", label: "Grok Build (Pilibala Runner)" },
+                        { value: "opencode", label: "OpenCode (Pilibala Runner)" },
                       ]} />
                   </div>
                 </details>}

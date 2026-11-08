@@ -17,7 +17,7 @@ import { canContinueCancelledRun, userStopBoundaryAt } from "./run-cancellation.
 import { readQueuedInteractionResponse } from "./queued-interaction-response.js";
 import { isCancelledNativeStartup, isFailedNativePreparation, isFailedNativePreparationRetryAncestor } from "./cancelled-native-startup.js";
 import { hasNativeLocalProcessStop, hasHistoricalSuspendedNativeSession, nativeRunRefusedBeforeLaunch, recordedLocalExecutionStopped, recordUnidentifiedLocalRunnerStop } from "./native-local-process-stop.js";
-import { completeTerminatedRemoteNativeSessionCleanup, nativeSessionCleanupBlock } from "../vendor/paperclip-runner/index.js";
+import { completeTerminatedRemoteNativeSessionCleanup, nativeSessionCleanupBlock } from "../vendor/pilibala-runner/index.js";
 import { hasRecoveredCleanupStopReceipt, hasRemoteTerminationReceipt, remoteLeaseCleanupScope } from "./remote-execution-termination.js";
 import { z } from "zod";
 import { and, desc, eq, gt, inArray, isNull, ne, not, or, sql } from "drizzle-orm";
@@ -25,7 +25,7 @@ import {
   agents, agentWakeupRequests, approvals, issueApprovals, issueThreadInteractions,
   environmentLeases, heartbeatRuns, issueComments, issueRecoveryActions,
   issues, nativeRunFinalizations, nativeRunResults, type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { executionBlockerPredicate, getExecutionBlocker, hasPendingRunCleanup, nativeExecutionRecoveryActionPredicate, restoreHoldReleasedForCurrentOwnerPredicate } from "./execution-blocker.js";
 import { buildExecutionContinuation } from "./execution-continuation.js";
 import { adapterExecutionControls } from "./adapter-execution-control.js";
@@ -215,8 +215,8 @@ export async function admitExplicitNativeContinuation(input: {
   ));
   if (!retry && !taskRetry && !response && !comment?.body.trim()) return null;
   const [agent] = await db.select().from(agents).where(and(eq(agents.companyId, companyId), eq(agents.id, agentId)));
-  if (!agent || (!isConversationAdapter(agent.adapterType) && agent.adapterType !== "paperclip_runner")) return null;
-  const agentIsNative = agent.adapterType === "paperclip_runner";
+  if (!agent || (!isConversationAdapter(agent.adapterType) && agent.adapterType !== "pilibala_runner")) return null;
+  const agentIsNative = agent.adapterType === "pilibala_runner";
   const interruptIntent = interruptQueue?.payload?.queuedCommentInterrupt as Record<string, unknown> | undefined;
   const interruptRequestedAt = typeof interruptIntent?.requestedAt === "string" ? new Date(interruptIntent.requestedAt) : null;
   const nativeQueuedSend = queuedInterrupt && agentIsNative;
@@ -362,7 +362,7 @@ export async function admitExplicitNativeContinuation(input: {
     const legacyUserTurn = failedPreparation || run.runtimeMode === "legacy" &&
       action.cause === "legacy_execution_requires_reconciliation" &&
       (isConversationAdapter(agent.adapterType) ||
-        (agent.adapterType === "paperclip_runner" && (freshIntent || await hasVerifiedWorkspaceRepair(db, run))));
+        (agent.adapterType === "pilibala_runner" && (freshIntent || await hasVerifiedWorkspaceRepair(db, run))));
     // Saved input is a request for a new turn, never permission to undo an
     // operator Stop or redeliver a message already consumed by this run.
     if (queuedRequest && !queuedInterrupt && (run.contextSnapshot?.wakeCommentId === commentId ||
@@ -373,12 +373,12 @@ export async function admitExplicitNativeContinuation(input: {
       // a conversation. Those adapters retain their reconciliation contract.
       if (historicalAdapter && !isConversationAdapter(historicalAdapter)) {
         if (!(taskRetry && run.id !== taskRetry.sourceRunId && freshIntent && agentIsNative &&
-              historicalAdapter === "paperclip_runner" && run.status === "failed") ||
+              historicalAdapter === "pilibala_runner" && run.status === "failed") ||
             run.controllerLeaseExpiresAt && run.controllerLeaseExpiresAt > new Date() ||
             await hasPendingRunCleanup(db, companyId, run.id) ||
             !await isFailedNativePreparationRetryAncestor(db, run, coordinator)) return null;
       }
-      if (!historicalAdapter && agent.adapterType === "paperclip_runner") return null;
+      if (!historicalAdapter && agent.adapterType === "pilibala_runner") return null;
     }
     const interruptedByThisClick = queuedInterrupt &&
       interruptIntent?.targetRunId === run.id && run.resultJson?.operatorInterrupted === true &&
@@ -415,23 +415,23 @@ export async function admitExplicitNativeContinuation(input: {
           sql`${issueRecoveryActions.evidence}->>'runId' = ${run.id}`,
           sql`${issueRecoveryActions.evidence} ? 'systemRecovery'`));
         if (live.some(row => row.ownerHold))
-          return blocked("workspace_owner_stop_required", "Paperclip is waiting to confirm that the previous server stopped saving files. Your Retry is saved.");
+          return blocked("workspace_owner_stop_required", "Pilibala is waiting to confirm that the previous server stopped saving files. Your Retry is saved.");
         // A spent recovery budget finishes nothing by itself. Another Retry
         // starts one new recovery generation (task-retry), so name that action
         // instead of an endless finalizing wait (RC-50b, s14).
         if (live.length && live.every(row => row.recoveryState === "exhausted"))
           return blocked("saved_work_recovery_failed", "Saving the agent's files failed after automatic retries. Retry to try again.");
-        return blocked("finalizing_saved_result", "Paperclip is finishing the saved result.");
+        return blocked("finalizing_saved_result", "Pilibala is finishing the saved result.");
       }
     }
     // A repaired export no longer blocks execution. Its machine receipt still
     // binds the saved user turn; finalized file state alone is insufficient.
     if (["native_workspace_sync_out_unrecoverable", "native_workspace_sync_out_retry_exhausted"].includes(action.cause)
       && !freshIntent && !await hasVerifiedWorkspaceRepair(db, run)) return blocked("workspace_repair_required",
-      "Paperclip is recovering saved work before continuing. Your message is saved.");
+      "Pilibala is recovering saved work before continuing. Your message is saved.");
     if ((run.resultJson?.workspaceRestoreFailure === "restore_unsafe_archive" || hasRequiredWorkspaceRecovery(run.resultJson))
       && !freshIntent && !await hasVerifiedWorkspaceRepair(db, run)) {
-      return blocked("workspace_repair_required", "Paperclip is recovering saved work before continuing. Your message is saved.");
+      return blocked("workspace_repair_required", "Pilibala is recovering saved work before continuing. Your message is saved.");
     }
     const cancelledStartup = await isCancelledNativeStartup(db, run, coordinator);
     if (partiallyDeliveredQueue && run.runtimeMode !== "native" && !unusedAdmission && !cancelledStartup && !failedPreparation) return null;
@@ -487,7 +487,7 @@ export async function admitExplicitNativeContinuation(input: {
     const preserved = hasRequiredWorkspaceRecovery(run.resultJson) ? null
       : await preserveNativeFailedWorkspace(db, run);
     if (preserved && hasRequiredWorkspaceRecovery(preserved.resultJson)) return blocked("workspace_repair_required",
-      "Paperclip is recovering saved work before continuing. Your message is saved.");
+      "Pilibala is recovering saved work before continuing. Your message is saved.");
     const leases = await db.select()
       .from(environmentLeases).where(and(
         eq(environmentLeases.companyId, companyId), eq(environmentLeases.heartbeatRunId, run.id),
@@ -503,14 +503,14 @@ export async function admitExplicitNativeContinuation(input: {
       if (leases.some(lease => !lease.releasedAt || lease.cleanupStatus === "failed")) return blocked("local_cleanup", "Waiting for the previous environment to finish cleanup. Your message will start automatically.");
       if (!unusedAdmission && !cancelledStartup && !failedPreparation) {
         if (freshIntent && (run.processPid || run.processGroupId) && !await recordedLocalExecutionStopped(db, run))
-          return blocked("process_identity_missing", "Paperclip is verifying that the previous session stopped.");
+          return blocked("process_identity_missing", "Pilibala is verifying that the previous session stopped.");
         // A missing process identity is not evidence that a provider exited.
         if (!run.processPid && !run.processGroupId &&
             !await hasNativeLocalProcessStop(db, companyId, run.id) &&
             !await hasHistoricalSuspendedNativeSession(db, run) &&
             !await nativeRunRefusedBeforeLaunch(db, run) &&
             !(run.runtimeMode === "native" &&
-              await recordUnidentifiedLocalRunnerStop(db, run, { record: !input.dryRun }))) return blocked("process_identity_missing", "The previous run has no verified stop record. Paperclip cannot start this message yet.");
+              await recordUnidentifiedLocalRunnerStop(db, run, { record: !input.dryRun }))) return blocked("process_identity_missing", "The previous run has no verified stop record. Pilibala cannot start this message yet.");
         if (run.processPid && !processStopped(run.processPid)) return blocked("process_running", "Waiting for the previous process to stop. Your message will start automatically.");
         if (run.processGroupId && !processStopped(-run.processGroupId)) return blocked("process_running", "Waiting for the previous process to stop. Your message will start automatically.");
       }

@@ -315,7 +315,7 @@ actual browser generation and a fresh native turn still require the final Dayton
 case. No blocker, timeout, grading, schema or polling change is included.
 
 The six shared Core source/test changes are a separate prerequisite,
-[#18245](https://github.com/paperclipai/paperclip/pull/18245), based on the frozen
+[#18245](https://github.com/pilibalaai/pilibala/pull/18245), based on the frozen
 Runner foundation. Product retains its Kimi plan, UI, fixtures and provider files.
 Product contains the real prerequisite ancestry, including queued-input repair
 `5c964f5d3cfd65e493b92c53cfe0c80b0d21f54d`. The final compiled Core must
@@ -356,7 +356,7 @@ promotion remains held until twenty distinct cases and physical resource and key
 closure are verified.
 Afterward build the normal four-platform daemon and eighteen-package distribution,
 verify ordinary installed local setup, and deploy the exact qualified revision
-only to `kimi.test.paperclip.app` for normal configuration, assigned-skill, CSV
+only to `kimi.test.pilibala.app` for normal configuration, assigned-skill, CSV
 download and persistence checks. Those installation and hosted journeys remain
 required. Production, fleet defaults, stable publication and GitHub merge remain
 outside this handoff.
@@ -494,7 +494,7 @@ pass independent audit before the remaining nine remote and ten local cells.
 After all twenty cells pass, promote ordinary admission in a separate reviewable
 qualification PR, build the normal four-platform daemon/public-package set, and
 verify the installed local UI. Then deploy the exact qualified revision only to
-the user-approved isolated `kimi.test.paperclip.app` test workspace and drive the
+the user-approved isolated `kimi.test.pilibala.app` test workspace and drive the
 ordinary hosted configuration, assigned-skill, artifact and persistence journey.
 Production, fleet defaults, stable publication and GitHub merge remain outside
 this handoff.
@@ -505,7 +505,7 @@ The following records describe earlier candidate states and their original
 evidence. The current state above supersedes their next-step and blocker text.
 
 The next shipping prerequisite is now frozen at the existing lock-refresh PR
-[#18185](https://github.com/paperclipai/paperclip/pull/18185), head
+[#18185](https://github.com/pilibalaai/pilibala/pull/18185), head
 `9600623783d118a79f8008deb9ab05d80715a15a`. Reconciliation is in progress;
 the earlier master freeze below remains historical. The trusted repository
 policy permits lock changes only through its maintained refresh branch or
@@ -701,7 +701,7 @@ content identity is `4560ebf62a9640e43aff893b1a6dd497746eeb2787732818b62acd911cd
 Create/load instruction acknowledgments and bounded EOF passed without prompts or
 credentials. Local collection verified the full archive, source, profile,
 closure, pack and daemon hashes. Its published immutable reference is
-`public.ecr.aws/q2k8x0v0/paperclip/kimi-qualification-eed3@sha256:bad9994dadf1a55743dabed3cd3f785210131938d4407c8b0ca92a30a922c177`.
+`public.ecr.aws/q2k8x0v0/pilibala/kimi-qualification-eed3@sha256:bad9994dadf1a55743dabed3cd3f785210131938d4407c8b0ca92a30a922c177`.
 A real credential-free Daytona import/native smoke passed in 122.4 seconds on
 Linux x64 with 4 CPU, 4 GiB memory and 10 GiB disk, then its exact sandbox was
 deleted and checked404. It verified native create/load/model/instruction/EOF
@@ -710,7 +710,7 @@ build failures are retained; the rejected IAM expansion
 was never applied and no operator/provider token was sent to CodeBuild.
 
 The user additionally requested hosted verification and confirmed an isolated
-workspace at `https://kimi.test.paperclip.app`. It was created through the normal
+workspace at `https://kimi.test.pilibala.app`. It was created through the normal
 Cloud UI under the existing authorized owner; the shared QA identity lease was
 left untouched. It is active and empty on verified Core
 `f8484a9f8d1f68e9534fee4f29e00e716dc680f4`, distribution `cloud-40777791731-1`,
@@ -767,7 +767,7 @@ it is not applied and does not count as qualification.
   subscribed. Those failures remain failures; no cost counters were available.
 - The first entitled turn completed native execution and called the exact MCP
   echo with the instruction-only nonce. Its smoke observer incorrectly expected
-  `paperclip_echo` at a handler that receives canonical `echo`. Native arguments,
+  `pilibala_echo` at a handler that receives canonical `echo`. Native arguments,
   MCP receiver error, and terminal completion establish a grading/observer failure,
   not a successful tool round trip. The corrected observer then passed a real
   authenticated semantic echo, native terminal completion, and physical cleanup.
@@ -899,8 +899,8 @@ focused HTTP tests hit import/hook timeouts while host load was 63/120 with 92%
 CPU use; their original failures remain retained, without committed deadline
 increases. CI for the corrected source will provide an independent Linux check.
 
-Review branches are published as draft PRs [Runner foundation #18028](https://github.com/paperclipai/paperclip/pull/18028)
-and [product setup #18029](https://github.com/paperclipai/paperclip/pull/18029).
+Review branches are published as draft PRs [Runner foundation #18028](https://github.com/pilibalaai/pilibala/pull/18028)
+and [product setup #18029](https://github.com/pilibalaai/pilibala/pull/18029).
 The first foundation review was 5/5 with no comments on its exact prior head;
 the corrected final head requires a fresh review. Neither PR is ready for merge
 until required product acceptance and checks pass.
@@ -942,7 +942,7 @@ the operation without retaining SDK text. Canonical focused verification passed
 223 tests with one existing Linux-only skip on Mac, plus the full fixture
 TypeScript check. Native runtime bytes and model/callback limits were unchanged.
 Profile 17 public-package installation and the actual hosted walkthrough on
-`kimi.test.paperclip.app` remain separate delivery gates; this section does not
+`kimi.test.pilibala.app` remain separate delivery gates; this section does not
 claim either has passed.
 
 The cleanup fixture now uses one absolute Kimi deadline at the original test

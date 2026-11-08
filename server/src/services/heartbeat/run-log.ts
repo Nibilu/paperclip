@@ -115,7 +115,7 @@ export function compactRunLogChunk(
   const headChars = Math.max(0, Math.floor(maxChars * 0.6));
   const tailChars = Math.max(0, Math.floor(maxChars * 0.25));
   const omittedChars = Math.max(0, normalized.length - headChars - tailChars);
-  const marker = `\n[paperclip truncated run log chunk: omitted ${omittedChars} chars]\n`;
+  const marker = `\n[pilibala truncated run log chunk: omitted ${omittedChars} chars]\n`;
   return `${normalized.slice(0, headChars)}${marker}${normalized.slice(normalized.length - tailChars)}`;
 }
 
@@ -147,7 +147,7 @@ function omitCanonicalImageData(value: unknown): unknown {
  */
 export function redactCanonicalNativeRunLogChunk(chunk: string, options: CanonicalNativeLogRedaction) {
   const envelope = JSON.parse(chunk);
-  if (envelope?.type !== "paperclip.prp.event" || !envelope.event ||
+  if (envelope?.type !== "pilibala.prp.event" || !envelope.event ||
     typeof envelope.event !== "object" || Array.isArray(envelope.event))
     throw new Error("invalid_canonical_native_run_log_envelope");
   const projected = redactCurrentUserValue(

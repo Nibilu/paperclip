@@ -3,7 +3,7 @@ import { appendFileSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const repository = "paperclipai/paperclip";
+const repository = "pilibalaai/pilibala";
 const repositoryId = 1170821064;
 export const getGithub = (endpoint) => JSON.parse(execFileSync("gh", ["api", endpoint], {
   encoding: "utf8", maxBuffer: 4 * 1024 * 1024, timeout: 30_000,

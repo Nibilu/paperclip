@@ -2,13 +2,13 @@ import {appendFile} from "node:fs/promises";
 import {performance} from "node:perf_hooks";
 import {eq,sql} from "drizzle-orm";
 import {afterEach,beforeAll,beforeEach,describe,expect,it} from "vitest";
-import {applyPendingMigrations,createDb,instanceSettings,type Db} from "@paperclipai/db";
+import {applyPendingMigrations,createDb,instanceSettings,type Db} from "@pilibalaai/db";
 import {resolveExternalTestDatabaseUrl} from "../../lib/dedicated-test-database-url.js";
 import {externalBotEnabled} from "../../services/external-bot-authority.js";
 import {instanceSettingsService} from "../../services/instance-settings.js";
 import {museIdentity} from "../../services/muse-identity.js";
 
-const url=resolveExternalTestDatabaseUrl("PAPERCLIP_FEATURE_OWNER_TEST_DATABASE_URL");
+const url=resolveExternalTestDatabaseUrl("PILIBALA_FEATURE_OWNER_TEST_DATABASE_URL");
 type QueryOwner=Pick<Db,"select">;
 type Provider="openai_dot"|"grok_bot"|"muse";
 const cases=[
@@ -35,7 +35,7 @@ describe.skipIf(!url)("existing external feature readers keep the admitted query
   beforeEach(()=>{db=createDb(url!,{maxConnections:2,applicationName:"feature-owner-pool2"});});
   afterEach(async()=>{await db.$client.end({timeout:5});},30_000);
   for(const item of cases)it(`reads ${item.provider} enabled=${item.enabled} with both pool2 slots owned`,async()=>{
-    const artifact=process.env.PAPERCLIP_FEATURE_OWNER_TRACE;
+    const artifact=process.env.PILIBALA_FEATURE_OWNER_TRACE;
     if(!artifact)throw new Error("Explicit owned feature trace path required");
     const row=await instanceSettingsService(db).updateExperimental({
       enablePublicMcp:true,enableNativeRunner:true,

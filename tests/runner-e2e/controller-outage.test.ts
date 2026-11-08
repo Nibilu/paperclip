@@ -27,9 +27,9 @@ describe("controller outage qualification", () => {
     for (const execution of executions) {
       const outage = controllerOutageForExecution(execution, {});
       expect(outage).toEqual({ signal: "SIGKILL", holdMs: 300_000 });
-      expect(controllerOutageForExecution(execution, { PAPERCLIP_RUNNER_E2E_CONTROLLER_OUTAGE_MS: "300000" }))
+      expect(controllerOutageForExecution(execution, { PILIBALA_RUNNER_E2E_CONTROLLER_OUTAGE_MS: "300000" }))
         .toEqual({ signal: "SIGKILL", holdMs: 300_000 });
-      expect(() => controllerOutageForExecution(execution, { PAPERCLIP_RUNNER_E2E_CONTROLLER_OUTAGE_MS: "1000" }))
+      expect(() => controllerOutageForExecution(execution, { PILIBALA_RUNNER_E2E_CONTROLLER_OUTAGE_MS: "1000" }))
         .toThrow("shorter than the dedicated continuity contract");
     }
   });
@@ -39,7 +39,7 @@ describe("controller outage qualification", () => {
       "--id", "everyday-workflows.runner-codex.daytona.recover-controller",
     ]));
     expect(controllerOutageForExecution(execution!, {})).toEqual({ signal: "SIGKILL", holdMs: 125_000 });
-    expect(controllerOutageForExecution(execution!, { PAPERCLIP_RUNNER_E2E_CONTROLLER_OUTAGE_MS: "1000" }))
+    expect(controllerOutageForExecution(execution!, { PILIBALA_RUNNER_E2E_CONTROLLER_OUTAGE_MS: "1000" }))
       .toEqual({ signal: "SIGKILL", holdMs: 1_000 });
   });
 
@@ -49,7 +49,7 @@ describe("controller outage qualification", () => {
     ]));
     expect(execution).toBeDefined();
     const f = fixture();
-    const outage = controllerOutageForExecution(execution!, { PAPERCLIP_RUNNER_E2E_CONTROLLER_OUTAGE_MS: "20" });
+    const outage = controllerOutageForExecution(execution!, { PILIBALA_RUNNER_E2E_CONTROLLER_OUTAGE_MS: "20" });
     const receipt = outage ? await replaceController({ ...f.input, outage }) : undefined;
     expect(validControllerOutageReceipt(receipt, { signal: "SIGKILL", holdMs: 20 })).toBe(true);
     expect(receipt).toMatchObject({ previousPid: 100, replacementPid: 200, cacheDiscarded: true });
@@ -96,17 +96,17 @@ describe("controller outage qualification", () => {
     expect(parseControllerOutage({ signal: "SIGTERM", holdMs: 600_000 })).toEqual({ signal: "SIGTERM", holdMs: 600_000 });
   });
   it.each(["", "-1", "1e3", "NaN", " 1000", "600001"])("rejects invalid environment duration %s", value => {
-    expect(() => configuredControllerOutage({ PAPERCLIP_RUNNER_E2E_CONTROLLER_OUTAGE_MS: value })).toThrow();
+    expect(() => configuredControllerOutage({ PILIBALA_RUNNER_E2E_CONTROLLER_OUTAGE_MS: value })).toThrow();
   });
   it("accepts the five-minute contract without extending the runner grace", () => {
-    expect(configuredControllerOutage({ PAPERCLIP_RUNNER_E2E_CONTROLLER_OUTAGE_MS: "300000" }))
+    expect(configuredControllerOutage({ PILIBALA_RUNNER_E2E_CONTROLLER_OUTAGE_MS: "300000" }))
       .toEqual({ signal: "SIGKILL", holdMs: 300000 });
-    expect(validControllerOutageReceipt({ schema: "paperclip.e2e.controller-outage/v1", requestId: "late",
+    expect(validControllerOutageReceipt({ schema: "pilibala.e2e.controller-outage/v1", requestId: "late",
       signal: "SIGKILL", holdMs: 300000, previousPid: 1, replacementPid: 2, startedAt: new Date().toISOString(),
       stoppedAfterMs: 0, cacheDiscarded: true, replacementStartedAfterMs: 300000, readyAfterMs: 420000 })).toBe(false);
   });
   it("accepts a hold past the reconnect grace only with an explicit later ready bound", () => {
-    const receipt = { schema: "paperclip.e2e.controller-outage/v1", requestId: "long", signal: "SIGKILL", holdMs: 579_090,
+    const receipt = { schema: "pilibala.e2e.controller-outage/v1", requestId: "long", signal: "SIGKILL", holdMs: 579_090,
       previousPid: 1, replacementPid: 2, startedAt: new Date().toISOString(), stoppedAfterMs: 200, cacheDiscarded: true,
       replacementStartedAfterMs: 579_400, readyAfterMs: 593_500 };
     expect(validControllerOutageReceipt(receipt)).toBe(false);
@@ -136,7 +136,7 @@ it.each(["missing", "previous-revision", "previous-tree", "replacement-revision"
   "requires the requested upgrade artifact pair when evidence is %s", problem => {
     const A = { revision: "a".repeat(40), treeSha256: "a".repeat(64), version: "1", evidence: "development-build" as const };
     const B = { ...A, revision: "b".repeat(40), treeSha256: "b".repeat(64) };
-    const receipt = { schema: "paperclip.e2e.controller-outage/v1", requestId: "upgrade", previousPid: 1, replacementPid: 2,
+    const receipt = { schema: "pilibala.e2e.controller-outage/v1", requestId: "upgrade", previousPid: 1, replacementPid: 2,
       startedAt: new Date().toISOString(), signal: "SIGKILL", holdMs: 0, stoppedAfterMs: 0,
       replacementStartedAfterMs: 1, readyAfterMs: 2, cacheDiscarded: true,
       previousArtifact: { ...A }, replacementArtifact: { ...B } };

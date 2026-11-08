@@ -94,7 +94,7 @@ export async function dropDuplicatePlaywrightOutput(cellDirectory: string): Prom
   dropped.sort((a, b) => a.path.localeCompare(b.path));
   const receipt = path.join(root, PRIVATE_REPORT_COPIES_RECEIPT);
   await mkdir(path.dirname(receipt), { recursive: true, mode: 0o700 });
-  await writeFile(receipt, `${JSON.stringify({ schema: "paperclip.private-report-copies/v1",
+  await writeFile(receipt, `${JSON.stringify({ schema: "pilibala.private-report-copies/v1",
     meaning: "playwright-output files removed because html-report/data holds identical bytes", dropped }, null, 2)}\n`, { mode: 0o600, flag: "wx" });
   return dropped;
 }

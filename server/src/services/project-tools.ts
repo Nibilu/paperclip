@@ -1,6 +1,6 @@
-import { projectDiscoverySchema, createProjectSchema, createIssueSchema, setIssueTitleSchema, requiredQualityReviewSchema } from "@paperclipai/shared";
+import { projectDiscoverySchema, createProjectSchema, createIssueSchema, setIssueTitleSchema, requiredQualityReviewSchema } from "@pilibalaai/shared";
 import { z } from "zod";
-import { CAPABILITY_SEMANTIC_TOOL_CATALOG } from "../vendor/paperclip-runner/index.js";
+import { CAPABILITY_SEMANTIC_TOOL_CATALOG } from "../vendor/pilibala-runner/index.js";
 import { badRequest } from "../errors.js";
 
 export const PROJECT_TOOL_NAMES = ["create_project", "list_project_repositories", "list_projects"];
@@ -63,7 +63,7 @@ export async function callProjectTool(input: {
   const response = await fetch(`${input.apiUrl.replace(/\/+$/, "").replace(/\/api$/, "")}/api${path}`, {
     method: input.name === "set_task_title" ? "PUT" : body ? "POST" : "GET",
     headers: { Authorization: `Bearer ${input.token}`, "Content-Type": "application/json",
-      ...(input.receiptOnly ? { "X-Paperclip-Receipt-Only": "true" } : {}),
+      ...(input.receiptOnly ? { "X-Pilibala-Receipt-Only": "true" } : {}),
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
     signal: AbortSignal.timeout(60_000),

@@ -10,14 +10,14 @@ import { settleSupersededNativeWorkspaceFinalizations } from "./native-workspace
 import { logger } from "../../middleware/logger.js";
 import fs from "node:fs/promises";
 import { and, desc, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   executionWorkspaces,
   heartbeatRuns,
   issues,
   nativeRunFinalizations,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { workspaceOperationService } from "../workspace-operations.js";
 import { inspectManagedGitWorktreeBranch } from "../workspace-runtime.js";
 import { environmentService } from "../environments.js";
@@ -195,7 +195,7 @@ export async function attemptNativeWorkspaceFinalization(input: {
           return workspaceSyncFailure("workspace_sync_out_unrecoverable");
         }
         const target = await resolveEnvironmentExecutionTarget({
-          db: input.db, companyId: bound.companyId, adapterType: "paperclip_runner",
+          db: input.db, companyId: bound.companyId, adapterType: "pilibala_runner",
           environment, leaseId: lease.id, leaseMetadata: lease.metadata, lease,
           environmentRuntime: input.environmentRuntime,
         });
@@ -254,7 +254,7 @@ export async function attemptNativeWorkspaceFinalization(input: {
         const target = await resolveEnvironmentExecutionTarget({
           db: input.db,
           companyId: bound.companyId,
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           environment,
           leaseId: lease.id,
           leaseMetadata: lease.metadata,

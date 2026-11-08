@@ -9,7 +9,7 @@ import { Readable } from "node:stream";
 import { appendFileSync, readdirSync } from "node:fs";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
-import { applyPendingMigrations, closeRegisteredClients, createDb, executionWorkspaceSnapshots } from "@paperclipai/db";
+import { applyPendingMigrations, closeRegisteredClients, createDb, executionWorkspaceSnapshots } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
 import { createS3StorageProvider } from "../storage/s3-provider.js";
@@ -30,7 +30,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
   return { ...actual, lstat, default: { ...actual, lstat } };
 });
 
-const externalDatabaseUrl = process.env.PAPERCLIP_TEST_DATABASE_URL;
+const externalDatabaseUrl = process.env.PILIBALA_TEST_DATABASE_URL;
 if (externalDatabaseUrl && !/^remote_workspace_[a-z_]*test$/.test(new URL(externalDatabaseUrl).pathname.slice(1))) {
   throw new Error("Workspace storage tests require a disposable remote_workspace_*test database");
 }
@@ -46,7 +46,7 @@ suite("remote workspace snapshot storage", () => {
   }, 90_000);
   afterAll(async () => { if (externalDatabaseUrl) await closeRegisteredClients(externalDatabaseUrl); else await database?.cleanup(); });
   beforeEach(async () => {
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "41".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "41".repeat(32));
     root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "pc-workspace-store-test-")));
     storage = createStorageService(createLocalDiskStorageProvider(path.join(root, "objects")));
   });

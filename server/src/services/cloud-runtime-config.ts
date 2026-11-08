@@ -2,9 +2,9 @@ import { constants } from "node:fs";
 import { open } from "node:fs/promises";
 import path from "node:path";
 import { eq } from "drizzle-orm";
-import { instanceSettings, type Db } from "@paperclipai/db";
-import { paperclipConfigSchema } from "@paperclipai/shared";
-import { resolvePaperclipConfigPathForInstance } from "@paperclipai/shared/home-paths";
+import { instanceSettings, type Db } from "@pilibalaai/db";
+import { pilibalaConfigSchema } from "@pilibalaai/shared";
+import { resolvePilibalaConfigPathForInstance } from "@pilibalaai/shared/home-paths";
 import { validateManagedCloudStoragePrerequisites } from "../managed-cloud-prerequisites.js";
 import { loadStorageConfig } from "../storage/config.js";
 import { isCloudManagedInstance, type CloudInstanceEnv } from "./cloud-instance.js";
@@ -57,9 +57,9 @@ export function cloudRuntimeConfigService(db: CloudRuntimeConfigDb) {
 }
 
 export function legacyCloudRuntimeConfigPath(env: CloudInstanceEnv = process.env): string {
-  return env.PAPERCLIP_CONFIG
-    ? path.resolve(env.PAPERCLIP_CONFIG)
-    : resolvePaperclipConfigPathForInstance({ homeDir: env.PAPERCLIP_HOME, instanceId: env.PAPERCLIP_INSTANCE_ID });
+  return env.PILIBALA_CONFIG
+    ? path.resolve(env.PILIBALA_CONFIG)
+    : resolvePilibalaConfigPathForInstance({ homeDir: env.PILIBALA_HOME, instanceId: env.PILIBALA_INSTANCE_ID });
 }
 
 export async function readLegacyCloudRuntimeConfig(env: CloudInstanceEnv = process.env): Promise<CloudRuntimeConfig | null> {
@@ -91,7 +91,7 @@ export async function readLegacyCloudRuntimeConfig(env: CloudInstanceEnv = proce
   if (typeof legacyStorage?.s3?.bucket !== "string" || !legacyStorage.s3.bucket.trim()) {
     throw new Error("Legacy Cloud runtime configuration requires an explicit nonblank storage.s3.bucket");
   }
-  const parsed = paperclipConfigSchema.safeParse(raw);
+  const parsed = pilibalaConfigSchema.safeParse(raw);
   if (!parsed.success) throw new Error("Legacy Cloud runtime configuration is invalid");
   if (parsed.data.llm?.provider === "openai" && parsed.data.llm.apiKey?.trim() && !env.OPENAI_API_KEY?.trim()) {
     throw new Error("Move the legacy OpenAI API key to OPENAI_API_KEY before initializing Cloud runtime configuration");

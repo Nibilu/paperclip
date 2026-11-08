@@ -111,7 +111,7 @@ describe("task lifecycle saved-state oracle", () => {
 });
 
 function result(): RunnerE2EResult {
-  return { schema: "paperclip.runner-e2e.result/v2", suiteId: "product-journeys", suiteDefinitionHash: "test",
+  return { schema: "pilibala.runner-e2e.result/v2", suiteId: "product-journeys", suiteDefinitionHash: "test",
     executionId: "product-journeys.qa.browser.daytona.task-edit-lifecycle", profileId: "browser", environmentId: "daytona",
     caseId: "task-edit-lifecycle", provider: null, model: null, runtimeMode: "none", status: "passed", cleanup: "passed",
     attempt: 1, startedAt: "2026-01-01T00:00:00Z", finishedAt: "2026-01-01T00:00:01Z", durationMs: 1000,

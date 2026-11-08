@@ -182,32 +182,32 @@ async function stageDashboardEvidence(
 
 async function main() {
   const root = path.resolve(
-    process.env.PAPERCLIP_RUNNER_E2E_REPORT_ROOT ?? "tests/runner-e2e/results",
+    process.env.PILIBALA_RUNNER_E2E_REPORT_ROOT ?? "tests/runner-e2e/results",
   );
   const output = path.resolve(
-    process.env.PAPERCLIP_RUNNER_E2E_REPORT_OUT ?? path.join(root, "merged"),
+    process.env.PILIBALA_RUNNER_E2E_REPORT_OUT ?? path.join(root, "merged"),
   );
   const expectedInput = JSON.parse(
-    process.env.PAPERCLIP_RUNNER_E2E_EXPECTED_IDS ?? "[]",
+    process.env.PILIBALA_RUNNER_E2E_EXPECTED_IDS ?? "[]",
   ) as string[];
   if (
     !Array.isArray(expectedInput) ||
     expectedInput.some((value) => typeof value !== "string")
   ) {
     throw new Error(
-      "PAPERCLIP_RUNNER_E2E_EXPECTED_IDS must be a JSON string array",
+      "PILIBALA_RUNNER_E2E_EXPECTED_IDS must be a JSON string array",
     );
   }
   const expected = expectedInput.map(canonicalExecutionId);
   if (expected.length === 0 || new Set(expected).size !== expected.length) {
     throw new Error(
-      "PAPERCLIP_RUNNER_E2E_EXPECTED_IDS must contain unique selected executions",
+      "PILIBALA_RUNNER_E2E_EXPECTED_IDS must contain unique selected executions",
     );
   }
   const resultFiles = (await walk(root)).filter(
     (file) => path.basename(file) === "result.json",
   );
-  const requestedCampaignId = process.env.PAPERCLIP_E2E_CAMPAIGN_ID ??
+  const requestedCampaignId = process.env.PILIBALA_E2E_CAMPAIGN_ID ??
     (process.env.GITHUB_RUN_ID ? `gha-${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT ?? "1"}` : undefined);
   const selection = await readFile(path.join(root, "selected-artifacts.json"), "utf8")
     .then(value => JSON.parse(value) as unknown)
@@ -219,8 +219,8 @@ async function main() {
       await readFile(resultFile, "utf8"),
     ) as RunnerE2EResult;
     if (
-      parsed.schema !== "paperclip.runner-e2e.result/v1" &&
-      parsed.schema !== "paperclip.runner-e2e.result/v2"
+      parsed.schema !== "pilibala.runner-e2e.result/v1" &&
+      parsed.schema !== "pilibala.runner-e2e.result/v2"
     )
       continue;
     const result = upgradeRunnerResult(parsed);
@@ -281,7 +281,7 @@ async function main() {
         (candidate) => candidate.id === executionId,
       )!;
       const missing: RunnerE2EResult = {
-        schema: "paperclip.runner-e2e.result/v2",
+        schema: "pilibala.runner-e2e.result/v2",
         executionId,
         suiteId: execution?.suite.id ?? "core-compatibility",
         suiteDefinitionHash: execution?.suiteDefinitionHash,
@@ -313,7 +313,7 @@ async function main() {
   }
 
   await mkdir(output, { recursive: true });
-  const qualificationConfigPath = process.env.PAPERCLIP_DEPENDABLE_QUALIFICATION_MANIFEST;
+  const qualificationConfigPath = process.env.PILIBALA_DEPENDABLE_QUALIFICATION_MANIFEST;
   const dependable = qualificationConfigPath ? gradeRetainedDependableResults(
     JSON.parse(await readFile(qualificationConfigPath, "utf8")) as DependableQualification,
     [...candidates.values()].flat(),
@@ -351,9 +351,9 @@ async function main() {
     results: resolvedResults,
     attempts: retained.attempts,
     excludedArtifacts: excludedArtifacts + retained.excludedArtifacts,
-    ...(process.env.PAPERCLIP_E2E_OPERATIONS_LEDGER ? { operations: await readEvalOperationsReport(process.env.PAPERCLIP_E2E_OPERATIONS_LEDGER) } : {}),
-    ...(process.env.PAPERCLIP_E2E_FEEDBACK_REVIEW ? { feedbackReview: JSON.parse(await readFile(process.env.PAPERCLIP_E2E_FEEDBACK_REVIEW, "utf8")) } : {}),
-    ...(process.env.PAPERCLIP_E2E_BRAINTRUST_EXPERIMENT ? { braintrustExperiment: JSON.parse(await readFile(process.env.PAPERCLIP_E2E_BRAINTRUST_EXPERIMENT, "utf8")) } : {}),
+    ...(process.env.PILIBALA_E2E_OPERATIONS_LEDGER ? { operations: await readEvalOperationsReport(process.env.PILIBALA_E2E_OPERATIONS_LEDGER) } : {}),
+    ...(process.env.PILIBALA_E2E_FEEDBACK_REVIEW ? { feedbackReview: JSON.parse(await readFile(process.env.PILIBALA_E2E_FEEDBACK_REVIEW, "utf8")) } : {}),
+    ...(process.env.PILIBALA_E2E_BRAINTRUST_EXPERIMENT ? { braintrustExperiment: JSON.parse(await readFile(process.env.PILIBALA_E2E_BRAINTRUST_EXPERIMENT, "utf8")) } : {}),
   });
   const billing = campaign.billing;
   const feedback = summarizeCampaignFeedback(campaign.accounting?.attempts ?? campaign.results);
@@ -392,8 +392,8 @@ async function main() {
     campaignId: normalized.campaignId,
     workflowRunUrl: normalized.source.workflowRunUrl,
     historyPublicBaseUrl:
-      process.env.PAPERCLIP_RUNNER_E2E_HISTORY_PUBLIC_BASE_URL,
-    historyPrefix: process.env.PAPERCLIP_RUNNER_E2E_HISTORY_PREFIX,
+      process.env.PILIBALA_RUNNER_E2E_HISTORY_PUBLIC_BASE_URL,
+    historyPrefix: process.env.PILIBALA_RUNNER_E2E_HISTORY_PREFIX,
   });
   const publicCampaignUrl = summaryLinks.find(
     (link) => link.kind === "campaign",

@@ -28,7 +28,7 @@ import {
 import { workspacePaths } from "./workspace-manifest.js";
 
 const execFile = promisify(execFileCallback);
-const STAGING_PATH = ".paperclip-repositories/backend.clone-Ab12Cd";
+const STAGING_PATH = ".pilibala-repositories/backend.clone-Ab12Cd";
 
 async function git(cwd: string, args: string[]): Promise<string> {
   const { stdout } = await execFile("git", ["-C", cwd, ...args], { maxBuffer: 32 * 1024 * 1024 });
@@ -38,8 +38,8 @@ async function git(cwd: string, args: string[]): Promise<string> {
 async function createRepo(cwd: string, contents: string): Promise<void> {
   await mkdir(cwd, { recursive: true });
   await git(cwd, ["init", "-b", "main"]);
-  await git(cwd, ["config", "user.name", "Paperclip Test"]);
-  await git(cwd, ["config", "user.email", "test@paperclip.dev"]);
+  await git(cwd, ["config", "user.name", "Pilibala Test"]);
+  await git(cwd, ["config", "user.email", "test@pilibala.dev"]);
   await writeFile(path.join(cwd, "README.md"), contents);
   await git(cwd, ["add", "."]);
   await git(cwd, ["commit", "-m", contents]);
@@ -105,20 +105,20 @@ describe("interrupted managed clone staging", () => {
     cleanupDirs.push(root);
     const local = path.join(root, "local");
     await createRepo(local, "frontend");
-    await createRepo(path.join(local, ".paperclip-repositories/backend"), "backend");
-    await writeFile(path.join(local, ".git/info/exclude"), ".paperclip-repositories/\n");
+    await createRepo(path.join(local, ".pilibala-repositories/backend"), "backend");
+    await writeFile(path.join(local, ".git/info/exclude"), ".pilibala-repositories/\n");
     await mkdir(path.join(local, STAGING_PATH, ".git"), { recursive: true });
     await writeFile(path.join(local, STAGING_PATH, "partial.txt"), "interrupted clone");
     return local;
   }
 
   it("skips the staging directory when reading nested repositories", async () => {
-    const local = await createWorkspace("paperclip-clone-staging-snapshot-");
+    const local = await createWorkspace("pilibala-clone-staging-snapshot-");
 
     const snapshot = await readGitWorkspaceSnapshot(local);
     if (snapshot) snapshots.push(snapshot);
 
-    expect(snapshot?.repositories?.map((entry) => entry.path)).toEqual([".paperclip-repositories/backend"]);
+    expect(snapshot?.repositories?.map((entry) => entry.path)).toEqual([".pilibala-repositories/backend"]);
     const paths = [
       ...workspacePaths(snapshot!.overlayPaths),
       ...workspacePaths(snapshot!.deletedPaths),
@@ -126,21 +126,21 @@ describe("interrupted managed clone staging", () => {
     ];
     expect(paths.some((entry) => entry.includes(".clone-"))).toBe(false);
     expect(await listProjectRepositoryStagingPaths(local)).toEqual([STAGING_PATH]);
-    expect(await listLocalProjectRepositories(local)).toEqual([".paperclip-repositories/backend"]);
+    expect(await listLocalProjectRepositories(local)).toEqual([".pilibala-repositories/backend"]);
   });
 
   it("still rejects an unexpected entry in the nested repositories directory", async () => {
-    const local = await createWorkspace("paperclip-clone-staging-invalid-");
-    await mkdir(path.join(local, ".paperclip-repositories/backend.backup"));
+    const local = await createWorkspace("pilibala-clone-staging-invalid-");
+    await mkdir(path.join(local, ".pilibala-repositories/backend.backup"));
 
     await expect(readGitWorkspaceSnapshot(local)).rejects.toThrow("Invalid project repository directory");
     await expect(listLocalProjectRepositories(local)).rejects.toThrow("Invalid project repository directory");
   });
 
   it("neither ships nor deletes the staging directory during a sandbox round trip", async () => {
-    const local = await createWorkspace("paperclip-clone-staging-sandbox-");
+    const local = await createWorkspace("pilibala-clone-staging-sandbox-");
     const remote = path.join(path.dirname(local), "remote");
-    const backend = ".paperclip-repositories/backend";
+    const backend = ".pilibala-repositories/backend";
 
     const prepared = await prepareSandboxManagedRuntime({
       spec: { transport: "sandbox", provider: "test", sandboxId: "clone-staging", remoteCwd: remote, timeoutMs: 30_000, apiKey: null },
@@ -160,11 +160,11 @@ describe("interrupted managed clone staging", () => {
   it("neither ships nor deletes the staging directory during an SSH round trip without completed repositories", async () => {
     const support = await getSshEnvLabSupport();
     if (!support.supported) return;
-    const root = await mkdtemp(path.join(os.tmpdir(), "paperclip-clone-staging-ssh-"));
+    const root = await mkdtemp(path.join(os.tmpdir(), "pilibala-clone-staging-ssh-"));
     cleanupDirs.push(root);
     const local = path.join(root, "local");
     await createRepo(local, "frontend");
-    await writeFile(path.join(local, ".git/info/exclude"), ".paperclip-repositories/\n");
+    await writeFile(path.join(local, ".git/info/exclude"), ".pilibala-repositories/\n");
     await mkdir(path.join(local, STAGING_PATH, ".git"), { recursive: true });
     await writeFile(path.join(local, STAGING_PATH, ".git", "HEAD"), "ref: refs/heads/main\n");
     await writeFile(path.join(local, STAGING_PATH, "partial.txt"), "interrupted clone");

@@ -32,7 +32,7 @@ it.each([
     value.runIds = [runId, ...Array.from({ length: 100 }, () => randomUUID())];
   if (kind === "missing_agent") delete value.agentId;
   if (kind === "future_schema")
-    value.schema = "paperclip.native-runner-checkpoint-retirement.v2";
+    value.schema = "pilibala.native-runner-checkpoint-retirement.v2";
   if (kind === "invalid_time") value.retiredAt = "not a timestamp";
   if (kind === "unknown_key") value.extra = true;
   expect(() =>

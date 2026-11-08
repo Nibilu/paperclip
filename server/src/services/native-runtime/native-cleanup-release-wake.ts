@@ -1,6 +1,6 @@
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { notifyDeferredExecutionWork } from "../deferred-execution-notifications.js";
-import { onNativeSessionCleanupSettled } from "../../vendor/paperclip-runner/index.js";
+import { onNativeSessionCleanupSettled } from "../../vendor/pilibala-runner/index.js";
 
 /**
  * A retained native session close holds task input in the runner's process

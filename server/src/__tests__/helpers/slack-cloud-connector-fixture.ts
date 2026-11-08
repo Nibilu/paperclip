@@ -1,10 +1,10 @@
 import { createCipheriv, createHash, createHmac, diffieHellman, generateKeyPairSync, hkdfSync, randomBytes, verify } from "node:crypto";
 import { expect, vi } from "vitest";
-import { createPaperclipCloudConnector, type PaperclipCloudConnectorConfig } from "../../services/paperclip-cloud-connector.js";
+import { createPilibalaCloudConnector, type PilibalaCloudConnectorConfig } from "../../services/pilibala-cloud-connector.js";
 
 export function createSlackCloudConnectorFixture(instanceId: string, companyId: string, subject: string) {
   const signing = generateKeyPairSync("ed25519"), sealing = generateKeyPairSync("x25519");
-  const config: PaperclipCloudConnectorConfig = { baseUrl: "http://127.0.0.1:1", instanceId, environment: "test",
+  const config: PilibalaCloudConnectorConfig = { baseUrl: "http://127.0.0.1:1", instanceId, environment: "test",
     signPrivateKey: signing.privateKey.export({ format: "jwk" }).d!, sealPrivateKey: sealing.privateKey.export({ format: "jwk" }).d! };
   const calls: { operation: string; enrollment?: Record<string, unknown> }[] = [];
   const acknowledged: string[] = [];
@@ -74,11 +74,11 @@ export function createSlackCloudConnectorFixture(instanceId: string, companyId: 
     }
   });
   function install() {
-    vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_BASE_URL", config.baseUrl);
-    vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID", instanceId);
-    vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_ENVIRONMENT", "test");
-    vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", config.signPrivateKey);
-    vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", config.sealPrivateKey);
+    vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_BASE_URL", config.baseUrl);
+    vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID", instanceId);
+    vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_ENVIRONMENT", "test");
+    vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", config.signPrivateKey);
+    vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", config.sealPrivateKey);
   }
   function enqueue(identity: Record<string, unknown>, signingSecret: string, eventId: string) {
     const acceptedAt = new Date().toISOString(), timestamp = String(Math.floor(Date.now() / 1000));
@@ -91,7 +91,7 @@ export function createSlackCloudConnectorFixture(instanceId: string, companyId: 
       payload: { slackEvent: { bindingId: identity.bindingId, sealed: seal(packet, "slack.events.v1") } } });
     return { id, packet, body };
   }
-  return { config, request, requestErrors, calls, acknowledged, events, install, enqueue, connector: createPaperclipCloudConnector({ config, request }),
+  return { config, request, requestErrors, calls, acknowledged, events, install, enqueue, connector: createPilibalaCloudConnector({ config, request }),
     setUnavailable(value: boolean) { unavailable = value; },
     beforeReceipt(work: (() => Promise<void>) | undefined) { beforeEnrollmentReceipt = work; } };
 }

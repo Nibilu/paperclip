@@ -57,7 +57,7 @@ function sourceCell(campaign: RunnerE2EHistoryCampaign) {
   const sha = campaign.source.sha;
   const shortSha = sha?.slice(0, 8) ?? "Unknown";
   const shaLabel = /^[0-9a-f]{40}$/i.test(sha ?? "")
-    ? `<a href="https://github.com/paperclipai/paperclip/commit/${html(sha)}">${html(shortSha)}</a>`
+    ? `<a href="https://github.com/pilibalaai/pilibala/commit/${html(sha)}">${html(shortSha)}</a>`
     : html(shortSha);
   const workflow = campaign.source.workflowRunUrl
     ? `<a class="secondary-link" href="${html(campaign.source.workflowRunUrl)}">Workflow run</a>`
@@ -132,10 +132,10 @@ export function renderRunnerHistoryIndex(
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#141413" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="assets/favicon-32x32.png" type="image/png">
-  <title>E2E tests · Paperclip</title>
+  <title>E2E tests · Pilibala</title>
   <style>
-    @font-face { font-family: "Paperclip Inter"; src: url("assets/InterVariable.woff2") format("woff2"); font-style: normal; font-weight: 100 900; font-display: swap; }
-    :root { color-scheme: light dark; --background:#fff; --foreground:#0a0a0a; --muted:#60666a; --border:#e5e5e5; --raised:#fafafa; --pass:#188a3c; --pass-bg:#dcfce7; --fail:#991b1b; --fail-bg:#fee2e2; --font:"Paperclip Inter",Inter,ui-sans-serif,system-ui,-apple-system,sans-serif; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+    @font-face { font-family: "Pilibala Inter"; src: url("assets/InterVariable.woff2") format("woff2"); font-style: normal; font-weight: 100 900; font-display: swap; }
+    :root { color-scheme: light dark; --background:#fff; --foreground:#0a0a0a; --muted:#60666a; --border:#e5e5e5; --raised:#fafafa; --pass:#188a3c; --pass-bg:#dcfce7; --fail:#991b1b; --fail-bg:#fee2e2; --font:"Pilibala Inter",Inter,ui-sans-serif,system-ui,-apple-system,sans-serif; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
     @media (prefers-color-scheme: dark) { :root { --background:#141413; --foreground:#fafafa; --muted:#a3a3a3; --border:rgb(255 255 255 / 12%); --raised:#1c1c1b; --pass:#34d06f; --pass-bg:#22c55e1f; --fail:#ef4444; --fail-bg:#dc26262e; } }
     * { box-sizing:border-box; }
     body { margin:0; background:var(--background); color:var(--foreground); font:14px/1.45 var(--font); }

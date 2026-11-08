@@ -9,7 +9,7 @@ describe("userProfilePath", () => {
   });
 
   it("slugifies ids the same way the profile endpoint does", () => {
-    expect(userProfilePath({ id: "paperclip-id:TLqGPuleJpjX" })).toBe("/u/paperclip-id-tlqgpulejpjx");
+    expect(userProfilePath({ id: "pilibala-id:TLqGPuleJpjX" })).toBe("/u/pilibala-id-tlqgpulejpjx");
   });
 
   it("falls back to name, then email, when the session carries no id", () => {

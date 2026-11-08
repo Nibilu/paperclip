@@ -81,7 +81,7 @@ export function renderCampaignFeedbackReview(campaign: RunnerE2ECampaign): strin
   const feedback = summarizeCampaignFeedback(campaign.accounting?.attempts ?? campaign.results);
   const rows = feedback.review.map(group => {
     const decision = campaign.feedbackReview?.decisions.find(item => item.fingerprint === group.fingerprint);
-    return `<tr><td>${html(group.kind)}</td><td><code>${html(group.fingerprint)}</code></td><td>${group.occurrences}</td><td>${html(decision?.disposition ?? "unreviewed")}</td><td>${decision?.duplicateOf ? html(decision.duplicateOf) : ""}${decision?.issueNumber ? `<a href="https://github.com/paperclipai/paperclip/issues/${decision.issueNumber}">#${decision.issueNumber}</a>` : ""}</td></tr>`;
+    return `<tr><td>${html(group.kind)}</td><td><code>${html(group.fingerprint)}</code></td><td>${group.occurrences}</td><td>${html(decision?.disposition ?? "unreviewed")}</td><td>${decision?.duplicateOf ? html(decision.duplicateOf) : ""}${decision?.issueNumber ? `<a href="https://github.com/pilibalaai/pilibala/issues/${decision.issueNumber}">#${decision.issueNumber}</a>` : ""}</td></tr>`;
   }).join("");
   return `<section aria-label="Campaign feedback review"><h2>Campaign feedback review</h2><p>${html(summary)}</p><p>Full bodies and review rationale stay in private evidence. Exact duplicate bodies are grouped once; related causes can be linked by a reviewed duplicate disposition.</p>${rows ? `<div class="matcher-wrap" tabindex="0" role="region" aria-label="Feedback review decisions"><table><thead><tr><th>Kind</th><th>Fingerprint</th><th>Occurrences</th><th>Disposition</th><th>Follow-up</th></tr></thead><tbody>${rows}</tbody></table></div>` : ""}</section>`;
 }
@@ -91,5 +91,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (!campaignFile || !outputFile) throw new Error("Usage: feedback-dispositions.ts <normalized-results.json> <private-review.json>");
   const campaign = JSON.parse(await readFile(campaignFile, "utf8")) as RunnerE2ECampaign;
   await writeFile(outputFile, `${JSON.stringify(feedbackReviewTemplate(campaign), null, 2)}\n`, { mode: 0o600, flag: "wx" });
-  console.log("Created an unreviewed template. Inspect private feedback bodies, fill dispositions and review metadata, then import with PAPERCLIP_E2E_FEEDBACK_REVIEW.");
+  console.log("Created an unreviewed template. Inspect private feedback bodies, fill dispositions and review metadata, then import with PILIBALA_E2E_FEEDBACK_REVIEW.");
 }

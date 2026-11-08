@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { EmailAddressCheckResult } from "@paperclipai/shared";
+import type { EmailAddressCheckResult } from "@pilibalaai/shared";
 import { emailApi } from "@/api/email";
 import { describeError } from "@/api/errors";
 

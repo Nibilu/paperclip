@@ -1,7 +1,7 @@
 import express from "express";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { models as openCodeFallbackModels } from "@paperclipai/adapter-opencode-local";
+import { models as openCodeFallbackModels } from "@pilibalaai/adapter-opencode-local";
 import type { ServerAdapterModule } from "../adapters/index.js";
 
 vi.mock("acpx/runtime", () => ({
@@ -67,8 +67,8 @@ const mockInstanceSettingsService = vi.hoisted(() => ({
 const mockLogActivity = vi.hoisted(() => vi.fn());
 
 function registerModuleMocks() {
-  vi.doMock("@paperclipai/adapter-opencode-local/server", async () => {
-    const actual = await vi.importActual<typeof import("@paperclipai/adapter-opencode-local/server")>("@paperclipai/adapter-opencode-local/server");
+  vi.doMock("@pilibalaai/adapter-opencode-local/server", async () => {
+    const actual = await vi.importActual<typeof import("@pilibalaai/adapter-opencode-local/server")>("@pilibalaai/adapter-opencode-local/server");
     return {
       ...actual,
       listOpenCodeModels: mockListOpenCodeModels,
@@ -184,26 +184,26 @@ describe("adapter model refresh route", () => {
     { qualification: "pending", qualified: false, status: 422 },
     { qualification: "released", qualified: true, status: 200 },
   ])("keeps $qualification Kimi model selection separate from other provider catalogs", async ({ qualified, status }) => {
-    const { PAPERCLIP_RUNNER_ACPX_PROFILES } = await import("@paperclipai/adapter-utils");
-    const kimi = PAPERCLIP_RUNNER_ACPX_PROFILES.find(profile => profile.value === "kimi")! as { qualified: boolean };
+    const { PILIBALA_RUNNER_ACPX_PROFILES } = await import("@pilibalaai/adapter-utils");
+    const kimi = PILIBALA_RUNNER_ACPX_PROFILES.find(profile => profile.value === "kimi")! as { qualified: boolean };
     const previousQualified = kimi.qualified;
-    const previousAdmission = process.env.PAPERCLIP_ACPX_CANDIDATE_ADMISSION;
+    const previousAdmission = process.env.PILIBALA_ACPX_CANDIDATE_ADMISSION;
     try {
       kimi.qualified = qualified;
-      delete process.env.PAPERCLIP_ACPX_CANDIDATE_ADMISSION;
+      delete process.env.PILIBALA_ACPX_CANDIDATE_ADMISSION;
       const app = await createApp();
       const res = await requestApp(app, baseUrl =>
-        request(baseUrl).get("/api/companies/company-1/adapters/paperclip_runner/models?provider=acpx&acpxAgent=kimi&refresh=1"),
+        request(baseUrl).get("/api/companies/company-1/adapters/pilibala_runner/models?provider=acpx&acpxAgent=kimi&refresh=1"),
       );
 
       expect(res.status, JSON.stringify(res.body)).toBe(status);
       if (qualified) expect(res.body).toEqual([]);
-      else expect(res.body).toMatchObject({ code: "paperclip_runner_acpx_agent_unavailable" });
+      else expect(res.body).toMatchObject({ code: "pilibala_runner_acpx_agent_unavailable" });
       expect(mockListOpenCodeModels).not.toHaveBeenCalled();
     } finally {
       kimi.qualified = previousQualified;
-      if (previousAdmission === undefined) delete process.env.PAPERCLIP_ACPX_CANDIDATE_ADMISSION;
-      else process.env.PAPERCLIP_ACPX_CANDIDATE_ADMISSION = previousAdmission;
+      if (previousAdmission === undefined) delete process.env.PILIBALA_ACPX_CANDIDATE_ADMISSION;
+      else process.env.PILIBALA_ACPX_CANDIDATE_ADMISSION = previousAdmission;
     }
   });
 

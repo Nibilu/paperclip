@@ -8,16 +8,16 @@ import type { ActorInfo } from "../types.js";
 import { oauthConfig, normalizeOauthScopes } from "./metadata.js";
 import { connectionMethodForConnection } from "../connection-methods.js";
 import { loadGitHubGrantMetadata } from "../github-access-discovery.js";
-import { googleWorkspaceEffectiveScopes, isGoogleWorkspaceScopeGrant } from "@paperclipai/shared";
+import { googleWorkspaceEffectiveScopes, isGoogleWorkspaceScopeGrant } from "@pilibalaai/shared";
 import { emitConnectionUpdated } from "../../connector-telemetry.js";
 import { and, eq, gte, ne } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { connectionGrants, companyMemberships, principalPermissionGrants, issueThreadInteractions, toolApplications, toolConnections, toolOauthStates } from "@paperclipai/db";
-import type { ConnectionGrantKind, ConnectToolAppResult } from "@paperclipai/shared";
-import { getConnectableAppDefinition, recommendedDefaultsForApp } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { connectionGrants, companyMemberships, principalPermissionGrants, issueThreadInteractions, toolApplications, toolConnections, toolOauthStates } from "@pilibalaai/db";
+import type { ConnectionGrantKind, ConnectToolAppResult } from "@pilibalaai/shared";
+import { getConnectableAppDefinition, recommendedDefaultsForApp } from "@pilibalaai/shared";
 import { badRequest, forbidden, HttpError, unprocessable } from "../../../errors.js";
 import { secretService } from "../../secrets.js";
-import { isPaperclipCloudConnectorStrategy, type PaperclipCloudConnector } from "../../paperclip-cloud-connector.js";
+import { isPilibalaCloudConnectorStrategy, type PilibalaCloudConnector } from "../../pilibala-cloud-connector.js";
 
 import type { OAuthStateStore } from "./state.js";
 import type { OAuthCredentialStore } from "./credential-store.js";
@@ -34,7 +34,7 @@ type Dependencies = {
   refreshCatalog: RefreshConnectionCatalog;
   finishOAuthCatalogWithRecommendedDefaults: OAuthCatalogCompletion;
   store: Pick<OAuthCredentialStore, "createOrRotateOAuthSecret" | "syncCredentialBindings">;
-  currentCloudConnector: () => PaperclipCloudConnector | null;
+  currentCloudConnector: () => PilibalaCloudConnector | null;
   syncGitHubGrantBindings: ReturnType<typeof createGitHubGrantContinuity>["syncGitHubGrantBindings"];
 };
 
@@ -42,7 +42,7 @@ export function createCloudOAuthCallback(db: Db, dependencies: Dependencies) {
   const { now, getConnectionRow, state, store, refreshCatalog, finishOAuthCatalogWithRecommendedDefaults, currentCloudConnector } = dependencies;
   const { consumeOAuthState, validateOAuthState, rejectPendingOAuthInteraction } = state;
   const { createOrRotateOAuthSecret, syncCredentialBindings } = store;
-  async function completePaperclipCloudConnectorCallback(input: {
+  async function completePilibalaCloudConnectorCallback(input: {
     state: string;
     claimId?: string | null;
     error?: string | null;
@@ -88,7 +88,7 @@ export function createCloudOAuthCallback(db: Db, dependencies: Dependencies) {
           code:
             input.error === "access_denied"
               ? "oauth_authorization_denied"
-              : "paperclip_cloud_connector_failed",
+              : "pilibala_cloud_connector_failed",
         },
       );
     }
@@ -99,9 +99,9 @@ export function createCloudOAuthCallback(db: Db, dependencies: Dependencies) {
     const cloudConnector = currentCloudConnector();
     if (!cloudConnector) {
       throw unprocessable(
-        `${providerName} connections through Paperclip are not available on this instance yet`,
+        `${providerName} connections through Pilibala are not available on this instance yet`,
         {
-          code: "paperclip_cloud_connector_unavailable",
+          code: "pilibala_cloud_connector_unavailable",
         },
       );
     }
@@ -109,7 +109,7 @@ export function createCloudOAuthCallback(db: Db, dependencies: Dependencies) {
     const subjectAgentId = stateRow.subjectAgentId;
     if (
       !method ||
-      !isPaperclipCloudConnectorStrategy(method.oauthStrategy) ||
+      !isPilibalaCloudConnectorStrategy(method.oauthStrategy) ||
       (!subjectUserId && !subjectAgentId)
     ) {
       throw badRequest(
@@ -312,7 +312,7 @@ export function createCloudOAuthCallback(db: Db, dependencies: Dependencies) {
           name: githubMetadata?.login ?? providerName,
           externalId: credentials.subject,
           oauth: {
-            strategy: "paperclip_cloud_connector",
+            strategy: "pilibala_cloud_connector",
             accessTokenExpiresAt: credentials.accessTokenExpiresAt,
             scopes: credentials.scopes,
             requestedScopes: stateRow.requestedScopes ?? undefined,
@@ -360,7 +360,7 @@ export function createCloudOAuthCallback(db: Db, dependencies: Dependencies) {
         ...connection.config,
         oauth: {
           ...oauthConfig(connection),
-          strategy: "paperclip_cloud_connector",
+          strategy: "pilibala_cloud_connector",
           provider: galleryEntry?.slug,
           connectorProfile,
           connectorSubjectUserId: subjectUserId,
@@ -445,7 +445,7 @@ export function createCloudOAuthCallback(db: Db, dependencies: Dependencies) {
       }
     });
     // The transaction above committed the connection's lifecycle write; a
-    // Paperclip Cloud connector callback is the managed variant of an OAuth
+    // Pilibala Cloud connector callback is the managed variant of an OAuth
     // callback completion.
     emitConnectionUpdated(connection, preCloudCallbackLifecycle, "oauth_callback");
     // Binding registration is saved above before Cloud I/O. The continuity
@@ -505,5 +505,5 @@ export function createCloudOAuthCallback(db: Db, dependencies: Dependencies) {
       auth: null,
     };
   }
-  return completePaperclipCloudConnectorCallback;
+  return completePilibalaCloudConnectorCallback;
 }

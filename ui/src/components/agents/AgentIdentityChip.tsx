@@ -1,4 +1,4 @@
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import { AgentAvatar } from "@/components/AgentAvatar";
 
 export const agentIdentityChipClass = "agent-identity-chip inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs";

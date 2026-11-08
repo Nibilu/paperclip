@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { act, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import type { CreateConfigValues } from "@paperclipai/adapter-utils";
+import type { CreateConfigValues } from "@pilibalaai/adapter-utils";
 
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -11,9 +11,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { CodexLocalConfigFields } from "./config-fields";
 import { buildCodexRunnerConfig } from "./config-fields";
-import { buildPaperclipRunnerConfig } from "@paperclipai/adapter-codex-local/ui";
+import { buildPilibalaRunnerConfig } from "@pilibalaai/adapter-codex-local/ui";
 import { defaultCreateValues } from "@/components/agent-config-defaults";
-import { resolveCodexLocalCliPolicy } from "@paperclipai/adapter-codex-local";
+import { resolveCodexLocalCliPolicy } from "@pilibalaai/adapter-codex-local";
 
 beforeAll(() => { Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true }); });
 
@@ -40,7 +40,7 @@ async function renderRunner(config: Record<string, unknown>, expand?: string, in
       <CodexLocalConfigFields
         mode="edit"
         isCreate={false}
-        adapterType="paperclip_runner"
+        adapterType="pilibala_runner"
         values={null}
         set={null}
         config={config}
@@ -72,24 +72,24 @@ async function selectField(container: HTMLElement, label: string, value: string)
 
 async function editFields(
   mode: "create" | "edit",
-  adapterType: "codex_local" | "paperclip_runner",
+  adapterType: "codex_local" | "pilibala_runner",
   inspect: (container: HTMLElement, saved: () => Record<string, unknown>) => Promise<void>,
 ) {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
   let currentConfig: Record<string, unknown> = {
-    ...(adapterType === "paperclip_runner" ? { provider: "codex", lifecycleMode: "warm", idleTimeoutMs: 45_000 } : { engine: "acp", mode: "persistent", nonInteractivePermissions: "deny" }),
+    ...(adapterType === "pilibala_runner" ? { provider: "codex", lifecycleMode: "warm", idleTimeoutMs: 45_000 } : { engine: "acp", mode: "persistent", nonInteractivePermissions: "deny" }),
     env: { CODEX_HOME: { type: "secret_ref", secretId: "codex-account" } },
   };
   let currentValues: CreateConfigValues = {
     ...defaultCreateValues,
     adapterType,
-    runner: adapterType === "paperclip_runner" ? "paperclip" : "legacy",
+    runner: adapterType === "pilibala_runner" ? "pilibala" : "legacy",
     adapterSchemaValues: { provider: "codex" },
     envBindings: { CODEX_HOME: { type: "secret_ref", secretId: "codex-account" } },
-    paperclipRunnerLifecycleMode: "warm",
-    paperclipRunnerIdleTimeoutMs: 45_000,
+    pilibalaRunnerLifecycleMode: "warm",
+    pilibalaRunnerIdleTimeoutMs: 45_000,
     codexEngine: "acp",
     codexAcpMode: "persistent",
     codexAcpNonInteractivePermissions: "deny",
@@ -108,11 +108,11 @@ async function editFields(
   try {
     await act(async () => root.render(<QueryClientProvider client={new QueryClient()}><TooltipProvider><Fixture /></TooltipProvider></QueryClientProvider>));
     await inspect(container, () => mode === "create"
-      ? adapterType === "paperclip_runner" ? buildPaperclipRunnerConfig(currentValues) : buildCodexRunnerConfig(currentValues)
+      ? adapterType === "pilibala_runner" ? buildPilibalaRunnerConfig(currentValues) : buildCodexRunnerConfig(currentValues)
       : currentConfig);
     if (mode === "create") {
       expect(currentValues.adapterType).toBe(adapterType);
-      expect(currentValues.runner).toBe(adapterType === "paperclip_runner" ? "paperclip" : "legacy");
+      expect(currentValues.runner).toBe(adapterType === "pilibala_runner" ? "pilibala" : "legacy");
     }
   } finally {
     await act(async () => root.unmount());
@@ -120,7 +120,7 @@ async function editFields(
   }
 }
 
-describe("Paperclip Runner Codex configuration", () => {
+describe("Pilibala Runner Codex configuration", () => {
   it.each(["", "--sandbox,read-only"])("shows actual automatic Legacy policy and preserves the explicit toggle (%s)", async (extraArgs) => {
     const container = document.createElement("div");
     document.body.appendChild(container);
@@ -184,7 +184,7 @@ describe("Paperclip Runner Codex configuration", () => {
     container.remove();
   });
   it.each(["create", "edit"] as const)("changes native lifecycle while retaining timeout and account in %s mode", async mode => {
-    await editFields(mode, "paperclip_runner", async (container, saved) => {
+    await editFields(mode, "pilibala_runner", async (container, saved) => {
       expect(container.querySelector('[aria-label="Runner lifecycle"]')?.textContent).toContain("Warm session");
       expect(container.textContent).toContain("Warm idle timeout (ms)");
       const account = saved().env;
@@ -233,14 +233,14 @@ describe("Paperclip Runner Codex configuration", () => {
     const initial = { provider: "codex", model: "gpt-5.6-sol", codexPermissionMode: "never", lifecycleMode: "warm",
       modelReasoningEffort: "high", reasoningEffort: "high", effort: "high", modelParams: [{ id: "reasoning", value: "high" }], homeMode: "preconfigured" };
     let currentConfig: Record<string, unknown> = initial;
-    let currentValues: CreateConfigValues = { ...defaultCreateValues, adapterType: "paperclip_runner", model: initial.model,
+    let currentValues: CreateConfigValues = { ...defaultCreateValues, adapterType: "pilibala_runner", model: initial.model,
       thinkingEffort: "high", adapterSchemaValues: initial };
     function Fixture() {
       const [config, setConfig] = useState(currentConfig);
       const [values, setValues] = useState(currentValues);
       currentConfig = config;
       currentValues = values;
-      return <CodexLocalConfigFields mode={mode} isCreate={mode === "create"} adapterType="paperclip_runner"
+      return <CodexLocalConfigFields mode={mode} isCreate={mode === "create"} adapterType="pilibala_runner"
         values={mode === "create" ? values : null} set={patch => setValues(previous => ({ ...previous, ...patch }))}
         config={config} eff={(_group, _field, original) => original}
         mark={(_group, field, value) => setConfig(previous => ({ ...previous, [field]: value }))}
@@ -259,7 +259,7 @@ describe("Paperclip Runner Codex configuration", () => {
       for (const key of ["modelReasoningEffort", "reasoningEffort", "effort", "modelParams", "homeMode", "codexPermissionMode"]) expect(saved[key], key).toBeUndefined();
       if (mode === "create") {
         expect(currentValues.thinkingEffort).toBe("");
-        expect(buildPaperclipRunnerConfig({ ...currentValues, model: "caller-cloud-model" })).toMatchObject({ provider: "cursor_cloud", model: "caller-cloud-model", lifecycleMode: "per_turn" });
+        expect(buildPilibalaRunnerConfig({ ...currentValues, model: "caller-cloud-model" })).toMatchObject({ provider: "cursor_cloud", model: "caller-cloud-model", lifecycleMode: "per_turn" });
       }
       expect(container.textContent).toContain("Cursor manages command permissions");
     } finally { await act(async () => root.unmount()); container.remove(); }
@@ -287,8 +287,8 @@ describe("Paperclip Runner Codex configuration", () => {
   });
   it.each([
     [undefined, "Full auto (approve all)"],
-    ["approve-paperclip", "Automatic Paperclip actions"],
-    ["approve-reads", "Allow Paperclip reads"],
+    ["approve-pilibala", "Automatic Pilibala actions"],
+    ["approve-reads", "Allow Pilibala reads"],
     ["deny-all", "Deny all"],
   ])("displays Grok's default or saved permission mode %s", async (acpxPermissionMode, label) => {
     const html = await renderRunner({ provider: "acpx", acpxAgent: "grok", acpxPermissionMode });
@@ -344,7 +344,7 @@ describe("Paperclip Runner Codex configuration", () => {
     expect(html).not.toContain("Codex via ACPX");
     expect(html).not.toContain("ACPX Codex");
     expect(html).not.toContain("Pi via ACPX");
-    expect(html).toContain("Allow Paperclip reads");
+    expect(html).toContain("Allow Pilibala reads");
   });
 
   it.each([undefined, "agent", "plan", "ask"])("displays saved Cursor mode %s", async acpxSessionMode => {
@@ -373,7 +373,7 @@ describe("Paperclip Runner Codex configuration", () => {
     const html = await renderRunner({ codexPermissionMode: "unrestricted" });
 
     expect(html).toContain("Unsupported saved mode — select a qualified mode");
-    expect(html).toContain("cannot start or recover a Paperclip Runner run");
+    expect(html).toContain("cannot start or recover a Pilibala Runner run");
     expect(html).toContain("Select Automatic (isolated) to remediate it");
     expect(html).not.toContain("Full auto (never ask)");
   });

@@ -1,5 +1,5 @@
 import { and, asc, eq, ne, sql } from "drizzle-orm";
-import { workspaceOperations, type Db } from "@paperclipai/db";
+import { workspaceOperations, type Db } from "@pilibalaai/db";
 import { persistActivity, publishActivity, type ActivityPublication } from "../activity-log.js";
 import { isNativeWorkspaceFinalizationOperationActive } from "../workspace-operations.js";
 import { notifyTerminalWorkspaceWork } from "../terminal-workspace-work.js";
@@ -47,7 +47,7 @@ export async function settleSupersededNativeWorkspaceFinalizations(db: Db, input
     if (metadata.uncertain === true || metadata.uncertain === "true" || metadata.saveWork != null) continue;
     const now = new Date();
     const provenance = {
-      schema: "paperclip.native-workspace-finalization-supersession.v1",
+      schema: "pilibala.native-workspace-finalization-supersession.v1",
       reason: SUPERSEDED_NATIVE_FINALIZATION_REASON,
       proof: "native_workspace_finalization_ownership",
       previousStatus: candidate.status,

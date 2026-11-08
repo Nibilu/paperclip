@@ -7,7 +7,7 @@ import {
   issueRecoveryActions,
   issues,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { logger } from "../../middleware/logger.js";
 import { persistActivity } from "../activity-log.js";
 import { proveOwnerGone, type OwnerProof, type ProcessProbe } from "../owner-proof.js";

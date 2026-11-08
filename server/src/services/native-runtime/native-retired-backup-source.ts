@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq, gt, inArray, ne } from "drizzle-orm";
-import { environmentLeases, heartbeatRunEvents, heartbeatRuns, type Db } from "@paperclipai/db";
+import { environmentLeases, heartbeatRunEvents, heartbeatRuns, type Db } from "@pilibalaai/db";
 import { retiredReusableLeasePredecessors } from "../environment-lease-handoff.js";
 import { hasRemoteTerminationReceipt } from "../remote-execution-termination.js";
 import { readNativeHarnessBackupStamp } from "./native-harness-backup-stamp.js";
@@ -23,7 +23,7 @@ export function nativeHarnessBackupManifestSha256(manifestBytes: Buffer | string
 /**
  * A created sandbox normally refuses a per-turn backup that has no recorded
  * reusable lease, because the backup's source sandbox may still hold newer
- * provider state. That ambiguity is absent when Paperclip itself destroyed the
+ * provider state. That ambiguity is absent when Pilibala itself destroyed the
  * source sandbox: the provider confirmed the termination, the source lease's
  * stamp names exactly this backup, and no provider work for the session was
  * recorded after the backup completed. This is the same proof a confirmed

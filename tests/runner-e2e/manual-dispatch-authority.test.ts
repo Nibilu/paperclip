@@ -9,15 +9,15 @@ import { authorizeManualDispatch } from "./manual-dispatch-authority.js";
 const ids = ["activity.agent-feedback", "agents.choose-primary"].map(id => `chat-features.runner-opencode.local.${id}`);
 const workflowSha = "a".repeat(40), targetSha = "b".repeat(40);
 const env = (overrides: Record<string, string | undefined> = {}): NodeJS.ProcessEnv => ({
-  PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: "v1", GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "workflow_dispatch",
-  GITHUB_REPOSITORY: "paperclipai/paperclip", GITHUB_REF: "refs/heads/master",
-  GITHUB_WORKFLOW_REF: "paperclipai/paperclip/.github/workflows/runner-full-stack-e2e.yml@refs/heads/master",
+  PILIBALA_MANUAL_DISPATCH_AUTHORITY: "v1", GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "workflow_dispatch",
+  GITHUB_REPOSITORY: "pilibalaai/pilibala", GITHUB_REF: "refs/heads/master",
+  GITHUB_WORKFLOW_REF: "pilibalaai/pilibala/.github/workflows/runner-full-stack-e2e.yml@refs/heads/master",
   GITHUB_SHA: workflowSha, TARGET_SHA: targetSha, GITHUB_RUN_ID: "123", GITHUB_RUN_ATTEMPT: "1",
   GITHUB_ACTOR: "owner", GITHUB_TRIGGERING_ACTOR: "owner", GITHUB_ACTOR_ID: "42",
   MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: "[42,7]", MANUAL_PRIVATE_IDS: JSON.stringify(ids), ...overrides,
 });
 const event = (overrides: Record<string, unknown> = {}, inputs: Record<string, unknown> = {}) => ({
-  ref: "refs/heads/master", sender: { id: 42 }, repository: { full_name: "paperclipai/paperclip", default_branch: "master" },
+  ref: "refs/heads/master", sender: { id: 42 }, repository: { full_name: "pilibalaai/pilibala", default_branch: "master" },
   inputs: { cadence: "manual", target_branch: "candidate", id: ids.join(","), ...inputs }, ...overrides,
 });
 
@@ -38,11 +38,11 @@ describe("authorizeManualDispatch", () => {
     ["an empty allowlist", env({ MANUAL_DISPATCH_ALLOWED_ACTOR_IDS: "[]" }), event()],
     ["a rerun by another person", env({ GITHUB_TRIGGERING_ACTOR: "someone-else" }), event()],
     ["a second attempt", env({ GITHUB_RUN_ATTEMPT: "2" }), event()],
-    ["a non-default workflow ref", env({ GITHUB_WORKFLOW_REF: "paperclipai/paperclip/.github/workflows/runner-full-stack-e2e.yml@refs/heads/feature" }), event()],
-    ["a different workflow", env({ GITHUB_WORKFLOW_REF: "paperclipai/paperclip/.github/workflows/other.yml@refs/heads/master" }), event()],
+    ["a non-default workflow ref", env({ GITHUB_WORKFLOW_REF: "pilibalaai/pilibala/.github/workflows/runner-full-stack-e2e.yml@refs/heads/feature" }), event()],
+    ["a different workflow", env({ GITHUB_WORKFLOW_REF: "pilibalaai/pilibala/.github/workflows/other.yml@refs/heads/master" }), event()],
     ["a sender who is not the actor", env(), event({ sender: { id: 7 } })],
     ["a missing target commit", env({ TARGET_SHA: "" }), event()],
-    ["the authority switch unset", env({ PAPERCLIP_MANUAL_DISPATCH_AUTHORITY: undefined }), event()],
+    ["the authority switch unset", env({ PILIBALA_MANUAL_DISPATCH_AUTHORITY: undefined }), event()],
   ])("rejects %s", (_label, environment, payload) => {
     expect(() => authorizeManualDispatch(environment, payload)).toThrow();
   });

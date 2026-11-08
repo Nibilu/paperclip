@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { AdapterEnvironmentTestResult } from "@paperclipai/adapter-utils";
-import { ADAPTER_AUTH_MISSING_CHECK_CODE } from "@paperclipai/shared";
+import type { AdapterEnvironmentTestResult } from "@pilibalaai/adapter-utils";
+import { ADAPTER_AUTH_MISSING_CHECK_CODE } from "@pilibalaai/shared";
 import { assertHarnessTestPassed } from "../services/agent-harness-verification.js";
 
 describe("saved harness verification", () => {
@@ -56,7 +56,7 @@ describe("saved harness verification", () => {
   });
 
   const cloudAccountResult = (modelListed = true): AdapterEnvironmentTestResult => ({
-    adapterType: "paperclip_runner", status: "warn", testedAt: new Date().toISOString(),
+    adapterType: "pilibala_runner", status: "warn", testedAt: new Date().toISOString(),
     checks: [
       { code: "cursor_cloud_account_ready", level: "info", message: "The bound key can read its catalog. No prompt was sent." },
       { code: modelListed ? "cursor_cloud_model_listed" : "cursor_cloud_model_unlisted", level: modelListed ? "info" : "warn", message: "Exact model availability is decided by Cursor." },

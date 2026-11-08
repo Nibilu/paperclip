@@ -45,7 +45,7 @@ When someone messages an agent, the reply has to start as fast as possible. Rest
 
 ### What we measure
 
-These are measured for every run and recorded in the run log. With an OTLP endpoint set, they are also emitted as spans on the existing `run.startup.step` / `paperclip.sandbox.startup.*` path in `packages/adapter-utils/src/acpx-engine/startup-timing.ts`. They are never sent to Telemetry (AGENTS.md §5.7).
+These are measured for every run and recorded in the run log. With an OTLP endpoint set, they are also emitted as spans on the existing `run.startup.step` / `pilibala.sandbox.startup.*` path in `packages/adapter-utils/src/acpx-engine/startup-timing.ts`. They are never sent to Telemetry (AGENTS.md §5.7).
 
 | Metric | From | To |
 |---|---|---|
@@ -136,7 +136,7 @@ Separate work moves the control plane toward zero-downtime upgrades on an epheme
 - `server/src/services/native-runtime/native-runner-ownership.ts`
 - `server/src/services/native-runtime/native-finalization-reconciler.ts`
 - `server/src/services/native-runtime/native-harness-filesystem-independence.ts`
-- in paperclip-cloud, `src/fleet/ephemeral-overlap.ts`
+- in pilibala-cloud, `src/fleet/ephemeral-overlap.ts`
 
 This plan builds on that work and must not fork it:
 
@@ -149,7 +149,7 @@ This plan builds on that work and must not fork it:
 
    WEB evidence receipts prove filesystem preservation, not successful remote recovery.
 4. **Extend the existing pieces.** Section C extends `native-finalization-reconciler.ts`; it does not add a second loop. Section A starts from `native-runner-ownership.ts` and `controller-process-identity.ts`. Phase 0 includes the upgrade work's record kinds, and its owner reviews the inventory.
-5. **External tool effects are not exactly-once.** The design guarantees exactly-once for Paperclip's own records (results, accounting, wakes). A tool's outside effect may run again after a crash. The agent checks before it repeats one; see #19804.
+5. **External tool effects are not exactly-once.** The design guarantees exactly-once for Pilibala's own records (results, accounting, wakes). A tool's outside effect may run again after a crash. The agent checks before it repeats one; see #19804.
 6. **Object storage must stay off the turn path.** Restoring an archive or checkpoint must not delay `turn.start` when a live workspace or runner exists. A cold restore that cannot be avoided counts against the time-to-first-token budget and is reported as its own step.
 
 ## Design

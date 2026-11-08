@@ -14,10 +14,10 @@
 import type { AcpRuntime, AcpRuntimeHandle } from "acpx/runtime";
 import type {
   AdapterExecutionTarget,
-  AdapterExecutionTargetPaperclipBridgeHandle,
+  AdapterExecutionTargetPilibalaBridgeHandle,
   AdapterExecutionTargetProcessSessionBridgeHandle,
   PreparedAdapterExecutionTargetRuntime,
-} from "@paperclipai/adapter-utils/execution-target";
+} from "@pilibalaai/adapter-utils/execution-target";
 import type { WorkspaceRestoreOutcome } from "../workspace-restore-merge.js";
 
 // ---------------------------------------------------------------------------
@@ -114,13 +114,13 @@ export interface StagingLeaseResource {
 }
 
 /**
- * Maps each resource id to its payload. The `control_bridge` is the Paperclip
+ * Maps each resource id to its payload. The `control_bridge` is the Pilibala
  * control-plane bridge; the `agent_bridge` is the agent process-session bridge.
  */
 export interface RunResourcePayloads {
   readonly acp_runtime: AcpRuntimeResource;
   readonly staged_runtime: StagedRuntimeResource;
-  readonly control_bridge: AdapterExecutionTargetPaperclipBridgeHandle;
+  readonly control_bridge: AdapterExecutionTargetPilibalaBridgeHandle;
   readonly agent_bridge: AdapterExecutionTargetProcessSessionBridgeHandle;
   readonly managed_home: ManagedHomeResource;
   readonly staging_lease: StagingLeaseResource;
@@ -345,7 +345,7 @@ export interface PlacedWorkspace {
 
 /** The transport handles the site started for the run. */
 export interface RunSiteTransport {
-  readonly controlBridge: AdapterExecutionTargetPaperclipBridgeHandle | null;
+  readonly controlBridge: AdapterExecutionTargetPilibalaBridgeHandle | null;
   readonly agentBridge: AdapterExecutionTargetProcessSessionBridgeHandle | null;
 }
 
@@ -425,8 +425,8 @@ export interface McpServerIdentity {
   readonly connectionId: string;
 }
 
-/** The Paperclip Claude settings the fingerprint reads. */
-export interface PaperclipClaudeSettingsIdentity {
+/** The Pilibala Claude settings the fingerprint reads. */
+export interface PilibalaClaudeSettingsIdentity {
   readonly allow: readonly string[];
   readonly additionalDirectories: readonly string[];
   readonly defaultMode: string;
@@ -453,12 +453,12 @@ export interface SessionFingerprintIdentity {
   readonly additionalSourcesIdentity: Record<string, unknown>;
   readonly skillsIdentity: Record<string, unknown>;
   readonly skillPromptInstructions: string;
-  readonly paperclipClaudeSettings: PaperclipClaudeSettingsIdentity | null;
+  readonly pilibalaClaudeSettings: PilibalaClaudeSettingsIdentity | null;
   readonly mcpServers: readonly McpServerIdentity[];
   readonly secretManifestHash: string;
   readonly adapterEnvHash: string;
   /**
-   * Hash of the run-scoped Paperclip auth token. A new token must force a
+   * Hash of the run-scoped Pilibala auth token. A new token must force a
    * fresh ACP process because shell environments in persistent sessions cannot
    * safely replace the token inherited by an already-running process.
    */
@@ -467,7 +467,7 @@ export interface SessionFingerprintIdentity {
 
 /**
  * The company, agent, and task parts of the session key. The key form is
- * `paperclip:companyId:agentId:taskKey:fingerprint`. These parts stay out of
+ * `pilibala:companyId:agentId:taskKey:fingerprint`. These parts stay out of
  * the fingerprint hash.
  */
 export interface SessionKeyIdentity {

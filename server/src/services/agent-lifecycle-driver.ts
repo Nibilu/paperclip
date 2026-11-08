@@ -1,5 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { agents, environments, plugins, pluginCompanySettings, type Db } from "@paperclipai/db";
+import { agents, environments, plugins, pluginCompanySettings, type Db } from "@pilibalaai/db";
 import { instanceSettingsService } from "./instance-settings.js";
 import { pluginHasAgentEnvironments, pluginServesAgentEnvironment } from "./plugin-environment-driver.js";
 import { heartbeatService } from "./heartbeat.js";

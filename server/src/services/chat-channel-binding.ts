@@ -1,15 +1,15 @@
 import { and, desc, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   chatConversations,
   chatEndpoints,
   chatPublications,
-} from "@paperclipai/db";
-import type { ExternalChannelBindingSummary } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import type { ExternalChannelBindingSummary } from "@pilibalaai/shared";
 import { chatProviderConversationUrl } from "./chat-provider-links.js";
 
 /**
- * Derive the task-facing chat binding from durable Paperclip records. The
+ * Derive the task-facing chat binding from durable Pilibala records. The
  * company predicate is intentionally part of the lookup so callers cannot use
  * a globally unique task id as a cross-company discovery oracle.
  */

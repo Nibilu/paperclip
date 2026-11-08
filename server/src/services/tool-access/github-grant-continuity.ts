@@ -6,10 +6,10 @@ import { loadGitHubGrantMetadata } from "./github-access-discovery.js";
 import { measureRunPhase } from "../execution-preparation-timing.js";
 import { measureRunTransaction } from "../execution-transaction-timing.js";
 import { and, eq, sql, or, isNull, ne } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { companies, connectionGrants, toolConnections } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { companies, connectionGrants, toolConnections } from "@pilibalaai/db";
 import { conflict, HttpError, notFound, unprocessable } from "../../errors.js";
-import { isPaperclipCloudConnectorStrategy, PaperclipCloudConnectorError, type PaperclipCloudConnector } from "../paperclip-cloud-connector.js";
+import { isPilibalaCloudConnectorStrategy, PilibalaCloudConnectorError, type PilibalaCloudConnector } from "../pilibala-cloud-connector.js";
 
 import type { createOAuthGrantRefresh } from "./oauth/grant-refresh.js";
 import type { OAuthCredentialStore } from "./oauth/credential-store.js";
@@ -23,7 +23,7 @@ type RecordGitHubAttempt = (grant: typeof connectionGrants.$inferSelect) => void
 
 type GitHubContinuityDependencies = {
   now: () => Date;
-  currentCloudConnector: () => PaperclipCloudConnector | null;
+  currentCloudConnector: () => PilibalaCloudConnector | null;
   refreshOAuthGrantCredentials: ReturnType<typeof createOAuthGrantRefresh>;
   resolveOAuthGrantSecret: OAuthCredentialStore["resolveOAuthGrantSecret"];
 };
@@ -288,7 +288,7 @@ export function createGitHubGrantContinuity(db: Db, { now, currentCloudConnector
       // Backoff belongs to the attempted credential/installation revision.
       if (!current?.providerTenant?.github || githubContinuityRevision(current) !== attemptedRevision) return;
       const attempts = Math.min(16, (current.providerTenant.github.continuityRetry?.attempts ?? 0) + 1);
-      const advised = error instanceof PaperclipCloudConnectorError ? error.retryAt
+      const advised = error instanceof PilibalaCloudConnectorError ? error.retryAt
         : error instanceof HttpError ? asRecord(error.details).retryAt : undefined;
       const at = new Date(Math.max(now().getTime() + Math.max(minimumMs, Math.min(60 * 60_000, 30_000 * 2 ** Math.min(attempts - 1, 7))),
         typeof advised === "number" ? advised : 0)).toISOString();
@@ -421,7 +421,7 @@ function managedGitHubContinuityConnection(connection: typeof toolConnections.$i
     || connection.credentialSource === "vercel_connect") return "unrelated";
   if (typeof oauth.connectorProfile !== "string" || !oauth.connectorProfile) return "invalid";
   if (oauth.connectorProfile !== "github.code") return "unrelated";
-  return isPaperclipCloudConnectorStrategy(oauth.strategy) ? "managed" : "invalid";
+  return isPilibalaCloudConnectorStrategy(oauth.strategy) ? "managed" : "invalid";
 }
 export function projectIdleGitHubGrantContinuity(rows: {
   grant: typeof connectionGrants.$inferSelect;
@@ -438,7 +438,7 @@ export function projectIdleGitHubGrantContinuity(rows: {
       || !["active", "paused", "archived"].includes(companyStatus)
       || !["draft", "active", "disabled", "archived"].includes(connection.status)
       || !["oauth", "api_key", "none"].includes(connection.authKind)
-      || !["paperclip_vault", "vercel_connect"].includes(connection.credentialSource)) return blocked();
+      || !["pilibala_vault", "vercel_connect"].includes(connection.credentialSource)) return blocked();
     if (companyStatus !== "active" || connection.status !== "active" || !connection.enabled) continue;
     const ownership = managedGitHubContinuityConnection(connection);
     if (ownership === "invalid") return blocked();

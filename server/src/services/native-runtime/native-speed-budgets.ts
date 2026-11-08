@@ -75,7 +75,7 @@ export function speedBudgetFor(adapter: SpeedBudgetAdapter, metric: SpeedBudgetM
 }
 
 export type SpeedBudgetBreach = {
-  schema: "paperclip.run-performance-budget.v1";
+  schema: "pilibala.run-performance-budget.v1";
   metric: SpeedBudgetMetric;
   adapter: SpeedBudgetAdapter;
   environment: "local";
@@ -102,7 +102,7 @@ export function evaluateSpeedBudget(input: {
   const budget = speedBudgetFor(input.adapter, input.metric, input.start);
   if (input.measuredMs <= budget.p95Ms) return null;
   return {
-    schema: "paperclip.run-performance-budget.v1", metric: input.metric, adapter: input.adapter, environment: "local",
+    schema: "pilibala.run-performance-budget.v1", metric: input.metric, adapter: input.adapter, environment: "local",
     startKind: input.start ?? "unknown", measuredMs: Math.round(input.measuredMs), budgetP50Ms: budget.p50Ms,
     budgetP95Ms: budget.p95Ms, percentile: "p95", baseline: SPEED_BUDGET_BASELINE,
     ...(input.disposition ? { disposition: input.disposition } : {}),

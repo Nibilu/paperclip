@@ -93,7 +93,7 @@ describe("reliability selection stays explicit", () => {
       expect(credentials(profile)).toEqual([facadeCredentials[profile], "DAYTONA_API_KEY"]);
     expect(Object.keys(everydayReliabilitySignatures).sort()).toEqual([...everydayReliabilityCaseIds].sort());
     for (const task of everydayReliabilityTasks)
-      expect(task.buildPrompt("sample")).not.toMatch(/finish_task|paperclip_finish|PATCH|mark .*done|api\/issues/i);
+      expect(task.buildPrompt("sample")).not.toMatch(/finish_task|pilibala_finish|PATCH|mark .*done|api\/issues/i);
   });
 });
 

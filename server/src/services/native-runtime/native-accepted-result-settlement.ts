@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import { heartbeatRuns, nativeRunResults, type Db } from "@paperclipai/db";
-import { NATIVE_FINALIZATION_SCHEMA, type NativeFinalizationResult } from "@paperclipai/shared";
+import { heartbeatRuns, nativeRunResults, type Db } from "@pilibalaai/db";
+import { NATIVE_FINALIZATION_SCHEMA, type NativeFinalizationResult } from "@pilibalaai/shared";
 import type { AdapterExecutionResult } from "../../adapters/index.js";
 import { readAcceptedRunUsageCheckpoint } from "../usage-receipts.js";
 import type { NativePostResultFailureDiagnostic } from "./native-post-result-failure.js";
@@ -43,7 +43,7 @@ export async function acceptedNativeAdapterResult(db: Db, input: {
   if (!row) return null;
   const result = record(row.resultJson.result);
   const terminal = record(row.resultJson.terminal);
-  if (terminal.schema !== "paperclip.prp.terminal.v1" || !RUN_TERMINAL_STATES.has(String(terminal.runTerminalState))) return null;
+  if (terminal.schema !== "pilibala.prp.terminal.v1" || !RUN_TERMINAL_STATES.has(String(terminal.runTerminalState))) return null;
   const nativeTerminal = terminal as unknown as NativeFinalizationResult["terminal"];
   const succeeded = nativeTerminal.runTerminalState === "succeeded";
   const usage = await readAcceptedRunUsageCheckpoint(db, { companyId: input.companyId, runId: input.runId });

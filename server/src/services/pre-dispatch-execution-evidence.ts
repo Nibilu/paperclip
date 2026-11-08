@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
-import { environmentLeases, heartbeatRunEvents, heartbeatRuns, nativeRunFinalizations } from "@paperclipai/db";
+import { environmentLeases, heartbeatRunEvents, heartbeatRuns, nativeRunFinalizations } from "@pilibalaai/db";
 import { PROCESS_IDENTITY_RECORDED, PROCESS_START_REQUESTED } from "./native-local-process-stop.js";
 import { LEGACY_WORKSPACE_RECOVERY_SCHEMA } from "./workspace-restore-recovery-state.js";
 

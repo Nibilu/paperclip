@@ -2,7 +2,7 @@ import { finishedIdleRun } from "./idle-work-proof.js";
 
 /** Mirrors sweep/account: terminal provider status cannot settle usage. */
 export function completedBrowserRun(run: string): string {
-  const hold = `${run}.result->'paperclipBudgetHold'`;
+  const hold = `${run}.result->'pilibalaBudgetHold'`;
   return `${run}.status IN ('completed', 'failed', 'cancelled')
     AND ${run}.events_drained = 1 AND ${run}.recovery_cursor IS NULL
     AND jsonb_typeof(${hold}) = 'object' AND ${hold}->>'invocationId' = ${run}.invocation_id::text

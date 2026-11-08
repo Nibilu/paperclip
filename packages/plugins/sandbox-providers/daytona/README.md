@@ -1,15 +1,15 @@
-# `@paperclipai/plugin-daytona`
+# `@pilibalaai/plugin-daytona`
 
-Published Daytona sandbox provider plugin for Paperclip.
+Published Daytona sandbox provider plugin for Pilibala.
 
-This package lives in the Paperclip monorepo, but it is intentionally excluded from the root `pnpm` workspace and shaped to publish and install like a standalone npm package. That lets operators install it from the Plugins page by package name without introducing root lockfile churn for Daytona's SDK dependencies.
+This package lives in the Pilibala monorepo, but it is intentionally excluded from the root `pnpm` workspace and shaped to publish and install like a standalone npm package. That lets operators install it from the Plugins page by package name without introducing root lockfile churn for Daytona's SDK dependencies.
 
 ## Install
 
-From a Paperclip instance, install:
+From a Pilibala instance, install:
 
 ```text
-@paperclipai/plugin-daytona
+@pilibalaai/plugin-daytona
 ```
 
 The host plugin installer runs `npm install` into the managed plugin directory, so transitive dependencies such as `@daytonaio/sdk` are pulled in during installation.
@@ -19,7 +19,7 @@ The host plugin installer runs `npm install` into the managed plugin directory, 
 Configure Daytona from `Instance Settings -> Environments`, not from the plugin's plugin page.
 
 - Put the Daytona API key on the sandbox environment itself.
-- When you save an environment, Paperclip stores pasted API keys as company secrets.
+- When you save an environment, Pilibala stores pasted API keys as company secrets.
 - `DAYTONA_API_KEY` remains an optional host-level fallback when an environment omits the key.
 - Optional `apiUrl` and `target` settings map directly to the Daytona SDK/client configuration. If `apiUrl` is omitted, the Daytona SDK uses its default endpoint.
 
@@ -57,7 +57,7 @@ pnpm exec vitest run --config vitest.sdk-ingress.config.ts
 pnpm typecheck
 ```
 
-These commands assume the repo root has already been installed once so the local `@paperclipai/plugin-sdk` workspace package is available to the compiler during development.
+These commands assume the repo root has already been installed once so the local `@pilibalaai/plugin-sdk` workspace package is available to the compiler during development.
 
 The dedicated `vitest.sdk-ingress.config.ts` requires this package's installed, pinned Daytona SDK. It sends
 local HTTP faults through the real SDK and worker RPC without a provider account
@@ -77,14 +77,14 @@ disposable 1 GiB Ubuntu sandbox; it does not fill a disk or modify existing sand
 
 - `src/manifest.ts` declares the sandbox-provider driver metadata
 - `src/plugin.ts` implements the environment lifecycle hooks
-- `paperclipPlugin.manifest` and `paperclipPlugin.worker` point the host at the built plugin entrypoints in `dist/`
+- `pilibalaPlugin.manifest` and `pilibalaPlugin.worker` point the host at the built plugin entrypoints in `dist/`
 
 
 ### Interrupted run-lease creation
 
 The host commits a company-scoped creation operation before acquiring a new run
-lease. The operation UUID becomes `paperclip-create-<uuid>` and the
-`paperclip-create-attempt` label. The existing inspection hook can resolve that
+lease. The operation UUID becomes `pilibala-create-<uuid>` and the
+`pilibala-create-attempt` label. The existing inspection hook can resolve that
 name and validate company, environment and run labels without starting a sandbox.
 Recovery persists the observed provider ID before the existing cleanup worker
 deletes it. A missing creation name is an uncertain outcome, not proof of removal.

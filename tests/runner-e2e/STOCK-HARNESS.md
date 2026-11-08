@@ -1,7 +1,7 @@
-# Stock harness with Paperclip
+# Stock harness with Pilibala
 
 This suite covers the instruction reductions tracked in the
-[working checklist](../../doc/plans/2026-10-02-stock-harness-paperclip-checklist.md).
+[working checklist](../../doc/plans/2026-10-02-stock-harness-pilibala-checklist.md).
 Existing context-integrity and chat evals supplied a custom QA instruction
 bundle. Their passing results therefore did not qualify a hire with the tiny
 production default. The new suite omits that fixture bundle and lets the public
@@ -147,9 +147,9 @@ coverage.
 ## GitHub qualification and matched comparison
 
 The instruction reductions and coverage are under review in
-[PR #14948](https://github.com/paperclipai/paperclip/pull/14948).
+[PR #14948](https://github.com/pilibalaai/pilibala/pull/14948).
 The first diagnostic native Codex skill cell
-[passed on GitHub](https://github.com/paperclipai/paperclip/actions/runs/37034213743)
+[passed on GitHub](https://github.com/pilibalaai/pilibala/actions/runs/37034213743)
 at `a63437069de58d22ee5adbcb6a6202c007dcf037`. All seven independent skill/task
 checks passed; the provider run lasted 34.745 seconds and the cell 56.660 seconds.
 Its tiny public hire bundle and budget receipts passed, and cleanup passed.
@@ -157,7 +157,7 @@ This diagnostic predates enforced prerequisite admission and the expanded source
 digest, so it is retained separately from the final qualification matrix.
 
 The first full candidate attempt at `36e987246b649927e96ce1184cd616c4e490106e`
-[was cancelled during prerequisites](https://github.com/paperclipai/paperclip/actions/runs/37037105491).
+[was cancelled during prerequisites](https://github.com/pilibalaai/pilibala/actions/runs/37037105491).
 Cold protected installs disable lifecycle scripts, leaving the plugin SDK unbuilt;
 SH-2/SH-3 could not import it. Provider admission was not reached. This setup
 failure is retained separately from behavioral results. The prerequisite now runs
@@ -165,16 +165,16 @@ the ordinary server dependency builder first, retains its output and exit status
 and refuses admission when setup fails. A cold legacy pilot must pass before the
 full matrix retry.
 
-The [fixed legacy pilot](https://github.com/paperclipai/paperclip/actions/runs/37039240025)
+The [fixed legacy pilot](https://github.com/pilibalaai/pilibala/actions/runs/37039240025)
 at `4163dbfd0fd4d145bfa52b4d7f80eb59a362ee36` passed SDK setup, hire/shared
 prompt/oracle checks and the Rust additive test. It stopped before providers:
-the real daemon-frame test lacked the cold `paperclip-runnerd` binary. Setup now
+the real daemon-frame test lacked the cold `pilibala-runnerd` binary. Setup now
 builds that daemon from the locked Rust source before TypeScript gates, retains
 `runnerd-build.txt`, and requires both setup exits in the admission receipt.
 The required daemon-frame test selects that built debug binary explicitly,
 without replacing staged product binaries. The receipt records its SHA-256;
 verification rejects a changed binary before provider admission.
-The [next cold pilot](https://github.com/paperclipai/paperclip/actions/runs/37040493183)
+The [next cold pilot](https://github.com/pilibalaai/pilibala/actions/runs/37040493183)
 at `ac6ddefb589c18fa9c30946db40e58499e9fb0e0` then found the required fake Codex
 protocol fixture absent. It also stopped before paid providers. Setup uses the
 package's ordinary locked workspace `--bins` build, covering both the daemon
@@ -182,9 +182,9 @@ and its fixture; verification binds both binaries to the retained receipt.
 
 That final cold pilot passed all 537 prerequisites on GitHub and reached Claude
 Sonnet 4.6. It saved a workspace `task-output.md` and completed the issue, while
-the independent durable-document oracle found no Paperclip issue document.
+the independent durable-document oracle found no Pilibala issue document.
 The pinned skill's phrase "task document" does not explicitly name storage in
-Paperclip; matched historical results must precede any regression attribution.
+Pilibala; matched historical results must precede any regression attribution.
 The task, instruction delivery, budget, and cleanup receipts remain retained.
 
 Its trusted merged report rejected the prerequisite folder alongside the campaign
@@ -230,14 +230,14 @@ source hashes, all campaign and recovery links, timing/usage, cost coverage,
 security failures, clipping limits and publication-layout recovery. Candidate
 `f02d8d0df` has 24 retained results: 15 pass and nine fail. Historical
 `12c5433c6` also has 24 retained results: 15 pass and nine fail. Its single
-AWS-runner recovery timed out; original missing evidence remains recorded. Classic Claude/OpenCode skill runs save no Paperclip task document
+AWS-runner recovery timed out; original missing evidence remains recorded. Classic Claude/OpenCode skill runs save no Pilibala task document
 where historical runs save one; the original oracle remains failed.
 
 The merged native Codex change is held constant. Same aggregate success counts
 would not establish equivalence: case outcomes differ, fixture storage wording
 is ambiguous, ACP credential guards fail, and some public prompt receipts are
 clipped. Native finish/block tool guidance belongs to native runners; legacy
-document-delivery guidance must use the actual Paperclip skill/API path. No
+document-delivery guidance must use the actual Pilibala skill/API path. No
 production or skill instructions have been changed to turn the measured failures
 into passes. PR #14948 remains draft.
 
@@ -253,6 +253,6 @@ run. Use a separate frozen-source branch when independent campaigns must overlap
 
 ## Focused legacy delivery repair
 
-The original 24 cells and original assigned-skill request/procedure remain unchanged. Two added explicit Paperclip-document cells apply only to classic Claude and OpenCode, making 26 catalog cells (50 expected turns if every cell is selected). The repair campaign selects only the original skill case and new document case for those two profiles: four cells per variant, eight expected turns total. No full matrix rerun is planned.
+The original 24 cells and original assigned-skill request/procedure remain unchanged. Two added explicit Pilibala-document cells apply only to classic Claude and OpenCode, making 26 catalog cells (50 expected turns if every cell is selected). The repair campaign selects only the original skill case and new document case for those two profiles: four cells per variant, eight expected turns total. No full matrix rerun is planned.
 
 Both skill sources are recorded in definition/admission digests. The pre-fix baseline restores the old SKILL.md and records the new reference as absent, without copying the new recipe into that baseline. It holds the tiny manual/shared prompts and all fixture/model/auth/effort inputs fixed. The explicit document oracle checks actual public content/revision and an exact same-app document link, with plausible-negative calibrations.

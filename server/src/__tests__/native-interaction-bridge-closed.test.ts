@@ -7,7 +7,7 @@ import {
   heartbeatRuns,
   issueThreadInteractions,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import {
   materializeLegacyQuestionResponseWakeProjection,
@@ -25,7 +25,7 @@ describe("native interaction bridge with closed interactions", () => {
   const runId = randomUUID();
 
   beforeAll(async () => {
-    temporary = await startEmbeddedPostgresTestDatabase("paperclip-native-closed-interaction-");
+    temporary = await startEmbeddedPostgresTestDatabase("pilibala-native-closed-interaction-");
     db = createDb(temporary.connectionString);
     await db.insert(companies).values({ id: companyId, name: "Closed interaction", issuePrefix: "NCI" });
     await db.insert(agents).values({

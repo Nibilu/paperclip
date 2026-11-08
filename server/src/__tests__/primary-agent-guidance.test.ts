@@ -1,8 +1,8 @@
 import { expect, it, vi } from "vitest";
 import { searchRunnerApi } from "../services/native-runtime/runner-api-catalog.js";
 import { executeRunnerApi } from "../services/native-runtime/runner-api-client.js";
-import { startOpenCodeMcpBridge } from "../../../packages/paperclip-runner/src/drivers/opencode/mcp-bridge.js";
-import { searchApiAction } from "../../../packages/paperclip-runner/src/protocol-actions/search-api.js";
+import { startOpenCodeMcpBridge } from "../../../packages/pilibala-runner/src/drivers/opencode/mcp-bridge.js";
+import { searchApiAction } from "../../../packages/pilibala-runner/src/protocol-actions/search-api.js";
 
 it("delivers personal primary profile guidance through actual API discovery and bounded OpenCode MCP output", async () => {
   const descriptor = searchApiAction.live.descriptor;
@@ -18,7 +18,7 @@ it("delivers personal primary profile guidance through actual API discovery and 
     const response = await fetch(bridge.url, { method: "POST", headers: {
       Authorization: `Bearer ${bridge.secret}`, "Content-Type": "application/json", Accept: "application/json, text/event-stream",
     }, body: JSON.stringify({ jsonrpc: "2.0", id: "primary-guidance", method: "tools/call",
-      params: { name: "paperclip_search_api", arguments: { query: "set primary agent", limit: 2 } } }) });
+      params: { name: "pilibala_search_api", arguments: { query: "set primary agent", limit: 2 } } }) });
     expect(response.status).toBe(200);
     const wire = await response.json() as { result: { isError?: boolean; content: Array<{ type: string; text: string }> } };
     expect(wire.result.isError).not.toBe(true);
@@ -45,12 +45,12 @@ it("keeps personal preference calls on the agent identity and preserves the boar
   const result = await executeRunnerApi({ operationId: "PUT /api/companies/{companyId}/primary-agent/me",
     body: { primaryAgentId: "00000000-0000-4000-8000-000000000113" } },
   { companyId, runId, issueId: "00000000-0000-4000-8000-000000000114", workMode: "standard" },
-  { apiUrl: "https://paperclip.test", token: "synthetic-agent-only", fetch: request,
+  { apiUrl: "https://pilibala.test", token: "synthetic-agent-only", fetch: request,
     readFile: async () => { throw new Error("No file read required"); },
     saveResponse: async () => { throw new Error("No capture required"); } });
   expect(result).toMatchObject({ ok: false, status: 403, data: { error: "Board access required" } });
   expect(request).toHaveBeenCalledOnce();
   const headers = new Headers(request.mock.calls[0]![1]?.headers);
   expect(headers.get("Authorization")).toBe("Bearer synthetic-agent-only");
-  expect(headers.get("X-Paperclip-Run-Id")).toBe(runId);
+  expect(headers.get("X-Pilibala-Run-Id")).toBe(runId);
 });

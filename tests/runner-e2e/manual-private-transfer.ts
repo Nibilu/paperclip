@@ -20,8 +20,8 @@ function request(env: NodeJS.ProcessEnv) {
   const ids = JSON.parse(env.MANUAL_PRIVATE_IDS ?? "null") as string[];
   const approval: { workflowSha: string; targetSha: string; runId: string; attempt: string; executionIds: readonly string[]; approvalSha256: string;
     launchSha256?: string; launchBinding?: "dispatcher" } =
-    env.PAPERCLIP_TESTOPS_CHAT_MAIN_ADMISSION !== undefined ? shippedChatEvidenceAuthority(env)
-      : env.PAPERCLIP_MANUAL_DISPATCH_AUTHORITY !== undefined ? manualDispatchEvidenceAuthority(env)
+    env.PILIBALA_TESTOPS_CHAT_MAIN_ADMISSION !== undefined ? shippedChatEvidenceAuthority(env)
+      : env.PILIBALA_MANUAL_DISPATCH_AUTHORITY !== undefined ? manualDispatchEvidenceAuthority(env)
         : authorizeManualPrivateEvidence({ workflowSha: env.GITHUB_SHA ?? "", targetSha: env.TARGET_SHA ?? "",
           runId: env.GITHUB_RUN_ID ?? "", attempt: env.GITHUB_RUN_ATTEMPT ?? "", executionIds: ids }, env.MANUAL_PRIVATE_APPROVALS_JSON ?? "");
   return { ids, approval, bucket: env.RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET ?? "" };

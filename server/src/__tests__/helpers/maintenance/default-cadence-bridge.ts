@@ -11,7 +11,7 @@ export async function startDefaultCadenceBridge(options: {
 }) {
   const child = fork(path.join(options.checkout, 'dist/sleep/fixtures/default-cadence-bridge.js'), [], {
     cwd: options.checkout, execPath: options.node, execArgv: ["--require", fileURLToPath(new URL("../../../../../scripts/fixtures/skill-default-cadence-network-guard.cjs", import.meta.url))],
-    env: { PATH: process.env.PATH, TMPDIR: process.env.TMPDIR, NODE_ENV: 'test', PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG: process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG }, stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+    env: { PATH: process.env.PATH, TMPDIR: process.env.TMPDIR, NODE_ENV: 'test', PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG: process.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG }, stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
   });
   let output = '', id = 0;
   child.stdout?.on('data', bytes => { output += String(bytes); });

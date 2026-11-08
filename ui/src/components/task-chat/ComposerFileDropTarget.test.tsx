@@ -105,7 +105,7 @@ describe("composer screen file drops", () => {
       <MarkdownEditor value="Description" onChange={vi.fn()} onDropFile={onDropFile}
         readOnly={mode === "readOnly"} fileDropTarget={mode === "parent" ? "parent" : "editor"} />
     </>);
-    drag("drop", host.querySelector(".paperclip-mdxeditor-scope")!);
+    drag("drop", host.querySelector(".pilibala-mdxeditor-scope")!);
     expect(onFiles).toHaveBeenCalledExactlyOnceWith([file]);
     expect(onDropFile).not.toHaveBeenCalled();
   });

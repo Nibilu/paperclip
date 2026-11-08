@@ -3,7 +3,7 @@ import {
   summarizeProviderRateLimits,
   type ProviderRateLimitSnapshot,
   type ProviderRateLimitSummary,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Link } from "@/lib/router";
 import { cn } from "@/lib/utils";

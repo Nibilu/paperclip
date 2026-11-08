@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { agents, budgetEvaluationWork, budgetIncidents, budgetPolicies, companies, costEvents, createDb, projects } from "@paperclipai/db";
+import { agents, budgetEvaluationWork, budgetIncidents, budgetPolicies, companies, costEvents, createDb, projects } from "@pilibalaai/db";
 import { budgetService, budgetServiceInTransaction, flushBudgetEvaluationWork } from "../services/budgets.js";
 import { costService, createCostEventInTransaction } from "../services/costs.js";
 import { withAccountingTransaction, withOperationAccountingTransaction } from "../services/accounting-transaction.js";
@@ -17,7 +17,7 @@ postgres("independent accounting and deferred budget decisions", () => {
   let temp: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   let db: ReturnType<typeof createDb>;
   beforeAll(async () => {
-    temp = await startEmbeddedPostgresTestDatabase("paperclip-budget-work-");
+    temp = await startEmbeddedPostgresTestDatabase("pilibala-budget-work-");
     db = createDb(temp.connectionString);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
   afterAll(async () => {

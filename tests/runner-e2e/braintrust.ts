@@ -16,14 +16,14 @@ function evalOtlpEndpoint(config: EvalBraintrustConfig) {
   return config.endpointBaseUrl ?? "https://api.braintrust.dev/otel";
 }
 export function evalBraintrustConfig(env: NodeJS.ProcessEnv): EvalBraintrustConfig | undefined {
-  const projectId = env.PAPERCLIP_E2E_BRAINTRUST_PROJECT_ID;
+  const projectId = env.PILIBALA_E2E_BRAINTRUST_PROJECT_ID;
   if (!projectId) return undefined;
   if (!uuid.test(projectId) || !env.BRAINTRUST_API_KEY?.trim() || /[\r\n]/.test(env.BRAINTRUST_API_KEY)) {
     throw new Error("Eval Braintrust export requires an explicit project UUID and API key");
   }
   const config = { projectId, apiKey: env.BRAINTRUST_API_KEY.trim(),
-    ...(env.PAPERCLIP_E2E_REMOTE_GATEWAY_ORIGIN ? { remoteOrigin: env.PAPERCLIP_E2E_REMOTE_GATEWAY_ORIGIN } : {}),
-    ...(env.PAPERCLIP_E2E_OTLP_RELAY_URL ? { endpointBaseUrl: env.PAPERCLIP_E2E_OTLP_RELAY_URL } : {}) };
+    ...(env.PILIBALA_E2E_REMOTE_GATEWAY_ORIGIN ? { remoteOrigin: env.PILIBALA_E2E_REMOTE_GATEWAY_ORIGIN } : {}),
+    ...(env.PILIBALA_E2E_OTLP_RELAY_URL ? { endpointBaseUrl: env.PILIBALA_E2E_OTLP_RELAY_URL } : {}) };
   evalOtlpEndpoint(config);
   return config;
 }
@@ -127,23 +127,23 @@ export class EvalAttemptTrace {
       ProtobufTraceSerializer: { serializeRequest(spans: unknown[]): Uint8Array | undefined; deserializeResponse(bytes: Uint8Array): unknown };
     };
     const attributes: Attributes = {
-      "paperclip.eval.campaign_id": this.identity.campaignId, "paperclip.eval.attempt_id": this.identity.attemptId,
-      "paperclip.eval.execution_id": this.identity.executionId, "paperclip.eval.provider": this.identity.provider,
-      "paperclip.eval.model": this.identity.model, "paperclip.eval.environment": this.identity.environment,
-      "paperclip.eval.outcome_stage": input.outcomeStage ?? "worker", "paperclip.eval.outcome": input.failed ? "failed" : "passed",
-      ...(input.failureClass ? { "paperclip.eval.failure_class": input.failureClass } : {}),
-      "paperclip.eval.cleanup": input.cleanup, "paperclip.eval.run_ids": input.runIds,
-      "paperclip.eval.feedback.complaints": input.complaints, "paperclip.eval.feedback.suggestions": input.suggestions,
+      "pilibala.eval.campaign_id": this.identity.campaignId, "pilibala.eval.attempt_id": this.identity.attemptId,
+      "pilibala.eval.execution_id": this.identity.executionId, "pilibala.eval.provider": this.identity.provider,
+      "pilibala.eval.model": this.identity.model, "pilibala.eval.environment": this.identity.environment,
+      "pilibala.eval.outcome_stage": input.outcomeStage ?? "worker", "pilibala.eval.outcome": input.failed ? "failed" : "passed",
+      ...(input.failureClass ? { "pilibala.eval.failure_class": input.failureClass } : {}),
+      "pilibala.eval.cleanup": input.cleanup, "pilibala.eval.run_ids": input.runIds,
+      "pilibala.eval.feedback.complaints": input.complaints, "pilibala.eval.feedback.suggestions": input.suggestions,
       ...(this.provenance ? {
-        "paperclip.eval.suite_id": this.provenance.suiteId, "paperclip.eval.suite_definition_hash": this.provenance.suiteDefinitionHash,
-        "paperclip.eval.profile_id": this.provenance.profileId, "paperclip.eval.case_id": this.provenance.caseId,
-        "paperclip.eval.source_revision": this.provenance.sourceRevision ?? "unknown",
-        "paperclip.eval.grader": "tests/runner-e2e/runner.spec.ts",
+        "pilibala.eval.suite_id": this.provenance.suiteId, "pilibala.eval.suite_definition_hash": this.provenance.suiteDefinitionHash,
+        "pilibala.eval.profile_id": this.provenance.profileId, "pilibala.eval.case_id": this.provenance.caseId,
+        "pilibala.eval.source_revision": this.provenance.sourceRevision ?? "unknown",
+        "pilibala.eval.grader": "tests/runner-e2e/runner.spec.ts",
       } : {}),
-      ...(this.receipt.companyId ? { "paperclip.company.id": this.receipt.companyId } : {}),
+      ...(this.receipt.companyId ? { "pilibala.company.id": this.receipt.companyId } : {}),
     };
-    const resource = resourceFromAttributes({ "service.name": "paperclip-evals" });
-    const instrumentationScope = { name: "paperclip.eval-operations", version: "1" };
+    const resource = resourceFromAttributes({ "service.name": "pilibala-evals" });
+    const instrumentationScope = { name: "pilibala.eval-operations", version: "1" };
     const rootContext = { traceId: this.receipt.traceId, spanId: this.receipt.spanId, traceFlags: 1 };
     const span = (name: string, spanId: string, start: number, end: number, failed: boolean, parent = false) => ({
       name, kind: 0, spanContext: () => ({ ...rootContext, spanId }), ...(parent ? { parentSpanContext: rootContext } : {}),
@@ -153,8 +153,8 @@ export class EvalAttemptTrace {
     });
     try {
       const body = serializer.serializeRequest([
-        span("paperclip.eval.attempt", this.receipt.spanId, this.startedAt, endedAt, input.failed),
-        ...this.phases.map(phase => span(`paperclip.eval.${phase.name}`, phase.spanId, phase.start, phase.end!, phase.failed ?? false, true)),
+        span("pilibala.eval.attempt", this.receipt.spanId, this.startedAt, endedAt, input.failed),
+        ...this.phases.map(phase => span(`pilibala.eval.${phase.name}`, phase.spanId, phase.start, phase.end!, phase.failed ?? false, true)),
       ]);
       if (!body) throw new Error("serialization");
       const response = await transport(`${this.endpointBaseUrl}/v1/traces`, {

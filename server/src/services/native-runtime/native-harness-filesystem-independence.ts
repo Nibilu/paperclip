@@ -5,9 +5,9 @@ import { createHash } from "node:crypto";
 import { basename, join, posix } from "node:path";
 import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 import { agentTaskSessions, companySkillRepositorySnapshots, companySkillVersions, environmentLeases,
-  heartbeatRuns, issues, nativeHarnessBackups, nativeRunnerCheckpoints, nativeRunFinalizations, type Db } from "@paperclipai/db";
+  heartbeatRuns, issues, nativeHarnessBackups, nativeRunnerCheckpoints, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import type { StorageService } from "../../storage/types.js";
-import { resolvePaperclipInstanceRoot } from "../../home-paths.js";
+import { resolvePilibalaInstanceRoot } from "../../home-paths.js";
 import { adapterExecutionControls } from "../adapter-execution-control.js";
 import { logActivity, publishActivity, type ActivityPublication } from "../activity-log.js";
 import { hasRemoteTerminationReceipt, resolveRemoteTerminationLease } from "../remote-execution-termination.js";
@@ -17,7 +17,7 @@ import { skillPackageManifest } from "../skill-package-files.js";
 import { assertSkillSnapshotPath, skillFileBytes } from "../skill-snapshot.js";
 import { REPOSITORY_CONTENT_DIR, repositorySkillProjection } from "../skill-repository-package.js";
 import { captureLegacyDurablePrpCheckpoint, inspectDurablePrpCheckpointHeader, parseNativeExecutionInput,
-  type DurableRecoveryIdentity } from "../../vendor/paperclip-runner/index.js";
+  type DurableRecoveryIdentity } from "../../vendor/pilibala-runner/index.js";
 import { nativeSha256 } from "./canonical.js";
 import { readRuntimeSkillPreservation } from "./runtime-skill-preservation-reference.js";
 import { findNativeSessionResumeRun } from "./native-session-resume.js";
@@ -36,8 +36,8 @@ import { readNativeControllerRecovery } from "./native-controller-recovery.js";
 import { verifyDurableNativeHarnessBackup } from "./native-harness-backup-storage.js";
 
 const KEY = "nativeHarnessFilesystemIndependence";
-const SCHEMA = "paperclip.native-harness-filesystem-independence.v1";
-const WEB_SCHEMA = "paperclip.native-harness-web-evidence.v1";
+const SCHEMA = "pilibala.native-harness-filesystem-independence.v1";
+const WEB_SCHEMA = "pilibala.native-harness-web-evidence.v1";
 const terminal = ["succeeded", "failed", "cancelled", "interrupted", "timed_out"];
 const sha = (bytes: string | Buffer) => createHash("sha256").update(bytes).digest("hex");
 const digest = (value: unknown) => nativeSha256(JSON.parse(JSON.stringify(value)));
@@ -73,7 +73,7 @@ function webLeaseBinding(lease: typeof environmentLeases.$inferSelect) {
 
 async function databaseFacts(db: Db, input: Scope, lock: boolean, webOnly = false) {
   const [selection] = await db.select().from(agentTaskSessions).where(and(eq(agentTaskSessions.companyId, input.companyId),
-    eq(agentTaskSessions.id, input.selectedSessionId), eq(agentTaskSessions.adapterType, "paperclip_runner")));
+    eq(agentTaskSessions.id, input.selectedSessionId), eq(agentTaskSessions.adapterType, "pilibala_runner")));
   if (!selection?.lastRunId || !/^[a-f0-9]{64}$/.test(input.scopeDigest)) fail();
   const [anchor] = await db.select().from(heartbeatRuns).where(and(eq(heartbeatRuns.companyId, input.companyId),
     eq(heartbeatRuns.agentId, selection.agentId), eq(heartbeatRuns.id, selection.lastRunId)));
@@ -335,7 +335,7 @@ async function captureAuthorityHistory(db: Db, facts: Awaited<ReturnType<typeof 
     if (runner) {
       if (runner.type !== "file") fail();
       const state = JSON.parse(runner.content);
-      if (state.schema !== "paperclip.runner.durable.state.v1" || state.lifecycle !== "suspended"
+      if (state.schema !== "pilibala.runner.durable.state.v1" || state.lifecycle !== "suspended"
         || Object.entries(identity).some(([key, value]) => state[key] !== value)) fail();
     }
     epochs.push(epoch);
@@ -396,7 +396,7 @@ async function preserveControllerEvidence(db: Db, facts: Awaited<ReturnType<type
     facts.source.runnerProfileJson.sessionCheckpoint)) fail();
   if (web && material.supervisor !== undefined) {
     const saved = JSON.parse(material.supervisor), identity = saved.snapshot?.identity;
-    if (saved.schema !== "paperclip.native-session-supervisor.v1" || identity?.companyId !== facts.anchor.companyId
+    if (saved.schema !== "pilibala.native-session-supervisor.v1" || identity?.companyId !== facts.anchor.companyId
       || identity.agentId !== facts.anchor.agentId || identity.issueId !== facts.anchor.nativeIssueId
       || identity.sessionId !== facts.anchor.nativeSessionId || !facts.runs.some(run => run.id === identity.runId)) fail();
   }
@@ -442,7 +442,7 @@ function runtimeFiles(skill: { bundle: { digest: string; manifestDigest: string;
   text: string): FileManifestEntry[] {
   if (Buffer.byteLength(text) > 4 * 1024 * 1024 || sha(text) !== skill.bundle.manifestDigest) fail();
   const manifest = JSON.parse(text);
-  if (manifest.schema !== "paperclip.runtime-asset-manifest.v1" || manifest.digest !== skill.bundle.digest
+  if (manifest.schema !== "pilibala.runtime-asset-manifest.v1" || manifest.digest !== skill.bundle.digest
     || manifest.fileCount !== skill.bundle.fileCount || manifest.totalBytes !== skill.bundle.totalBytes || !Array.isArray(manifest.files)
     || manifest.files.length !== manifest.fileCount || manifest.files.length > 10_000 || sha(JSON.stringify(manifest.files)) !== manifest.digest) fail();
   let total = 0; const paths = new Set<string>();
@@ -521,7 +521,7 @@ async function captureWebEvidence(facts: Awaited<ReturnType<typeof databaseFacts
     return names.sort();
   };
   const stat = (path: string) => lstat(path).catch((error: NodeJS.ErrnoException) => { if (error.code === "ENOENT") return null; throw error; });
-  const rootStat = await stat(root), instance = await lstat(resolvePaperclipInstanceRoot());
+  const rootStat = await stat(root), instance = await lstat(resolvePilibalaInstanceRoot());
   const read = async (file: string, s: Stats) => {
     const key = `${s.dev}:${s.ino}`;
     if (!s.isFile() || s.nlink !== 1 || inodes.has(key) || s.dev !== instance.dev || s.uid !== instance.uid
@@ -589,7 +589,7 @@ async function captureWebEvidence(facts: Awaited<ReturnType<typeof databaseFacts
   for (const skill of skills) {
     if (seen.has(skill.bundleDigest)) continue; seen.add(skill.bundleDigest);
     if (!/^[a-f0-9]{64}$/.test(skill.bundleDigest)) fail();
-    const path = join(resolvePaperclipInstanceRoot(), "runtime-context-assets/manifests", `${skill.bundleDigest}.json`), s = await lstat(path);
+    const path = join(resolvePilibalaInstanceRoot(), "runtime-context-assets/manifests", `${skill.bundleDigest}.json`), s = await lstat(path);
     const content = await read(path, s);
     runtimeFiles({ bundle: { digest: skill.bundleDigest, manifestDigest: skill.manifestDigest, fileCount: skill.fileCount, totalBytes: skill.totalBytes } }, content.toString("utf8"));
     entries.push({ path: `web-manifests/${skill.bundleDigest}.json`, type: "file", mode: s.mode & 0o777, content });
@@ -693,7 +693,7 @@ async function localFacts(facts: Awaited<ReturnType<typeof databaseFacts>>, asse
         const runtimeManifest = files.map(({ path, size, sha256, mode }) => ({ path, sha256, mode, size })).sort((a, b) => a.path.localeCompare(b.path));
         if (sha(JSON.stringify(runtimeManifest)) !== skill.bundle.digest || files.length !== skill.bundle.fileCount
           || files.reduce((n, file) => n + file.size, 0) !== skill.bundle.totalBytes) fail();
-        runtimeFiles(skill, JSON.stringify({ schema: "paperclip.runtime-asset-manifest.v1", digest: skill.bundle.digest,
+        runtimeFiles(skill, JSON.stringify({ schema: "pilibala.runtime-asset-manifest.v1", digest: skill.bundle.digest,
           fileCount: files.length, totalBytes: skill.bundle.totalBytes, files: runtimeManifest }) + "\n");
       }
       bytes += skill.bundle.totalBytes; if (bytes > 64 * 1024 * 1024) fail();

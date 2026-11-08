@@ -3,11 +3,11 @@ import type { Express } from "express";
 import { eq } from "drizzle-orm";
 import request from "supertest";
 import { expect, it } from "vitest";
-import { activityLog, agents, authUsers, companies, companyMemberships, createDb, documents, documentRevisions, heartbeatRuns, issueComments, issueDocuments, issueThreadInteractions, issues } from "@paperclipai/db";
+import { activityLog, agents, authUsers, companies, companyMemberships, createDb, documents, documentRevisions, heartbeatRuns, issueComments, issueDocuments, issueThreadInteractions, issues } from "@pilibalaai/db";
 
 import { childCreatedByRequest } from "../../services/issue-creation-source.js";
 import { issueService } from "../../services/issues.js";
-import { createAcceptedPlanDecompositionSchema, createChildIssueSchema } from "@paperclipai/shared";
+import { createAcceptedPlanDecompositionSchema, createChildIssueSchema } from "@pilibalaai/shared";
 
 type Seed = { companyId: string; userId: string; agentAId: string; agentBId: string };
 type Fixture = {

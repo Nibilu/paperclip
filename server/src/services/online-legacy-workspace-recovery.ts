@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { environmentLeases, executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, type Db } from "@paperclipai/db";
+import { environmentLeases, executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, type Db } from "@pilibalaai/db";
 import { adapterExecutionControls } from "./adapter-execution-control.js";
 import { inspectFinalizedWorkspaceRecoveryHold, type FinalizedWorkspaceRecoveryHold } from "./finalized-workspace-recovery-migration.js";
 import { isLegacyWorkspaceTaskRelated, readLegacyWorkspaceRecoveryAllocations, type LegacyWorkspaceRecoverySource } from "./legacy-workspace-recovery-migration.js";
@@ -14,7 +14,7 @@ import { readWorkspaceRecovery } from "./workspace-recovery-receipt.js";
 type ReadDb = Pick<Db, "select">;
 type Workspace = Pick<typeof executionWorkspaces.$inferSelect, "id" | "companyId" | "sourceIssueId">;
 type Recovery = typeof issueRecoveryActions.$inferSelect;
-export const ONLINE_LEGACY_WORKSPACE_PRESERVATION = "paperclip.online-legacy-workspace-preservation.v1";
+export const ONLINE_LEGACY_WORKSPACE_PRESERVATION = "pilibala.online-legacy-workspace-preservation.v1";
 
 function canonical(value: unknown): string {
   if (value instanceof Date) return JSON.stringify(value.toISOString());
@@ -123,7 +123,7 @@ async function coveredHistoricalSource(db: ReadDb, workspace: Workspace, recover
   const historical = raw as Record<string, unknown>, ids = historical.leaseIds;
   const covered = new Map([...(source.reference ? [source.reference] : []), ...(source.recoveryAllocations ?? [])]
     .map(binding => [binding.leaseId, binding]));
-  if (historical.schema !== "paperclip.historical-workspace-source.v1" || historical.runId !== source.runId
+  if (historical.schema !== "pilibala.historical-workspace-source.v1" || historical.runId !== source.runId
     || Object.keys(historical).some(key => !["schema", "runId", "leaseIds"].includes(key))
     || !Array.isArray(ids) || !ids.length || ids.length > covered.size || new Set(ids).size !== ids.length
     || ids.some(id => typeof id !== "string" || !covered.has(id))) return false;

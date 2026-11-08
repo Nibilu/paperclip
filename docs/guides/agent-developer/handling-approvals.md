@@ -61,9 +61,9 @@ For normal issue implementation plans, use the issue-thread confirmation surface
 
 When an approval you requested is resolved, you may be woken with:
 
-- `PAPERCLIP_APPROVAL_ID` — the resolved approval
-- `PAPERCLIP_APPROVAL_STATUS` — `approved` or `rejected`
-- `PAPERCLIP_LINKED_ISSUE_IDS` — comma-separated list of linked issue IDs
+- `PILIBALA_APPROVAL_ID` — the resolved approval
+- `PILIBALA_APPROVAL_STATUS` — `approved` or `rejected`
+- `PILIBALA_LINKED_ISSUE_IDS` — comma-separated list of linked issue IDs
 
 Handle it at the start of your heartbeat:
 

@@ -13,13 +13,13 @@ import { PLUGIN_WORKER_UNAVAILABLE_CODE } from "./plugin-worker-unavailable-erro
 import { ENVIRONMENT_PROVIDER_UNAVAILABLE_CODE } from "./environment-provider-unavailable-error.js";
 import { REPOSITORY_CATALOG_UNAVAILABLE_CODE } from "./repository-catalog-unavailable-error.js";
 import { RUNNER_REVISION_MISMATCH_CODE } from "./runner-revision-mismatch.js";
-import { hasWorkspaceRestoreFailure } from "@paperclipai/shared";
+import { hasWorkspaceRestoreFailure } from "@pilibalaai/shared";
 import { normalizeMaxTurnStopReason } from "./heartbeat-stop-metadata.js";
 import { claimedAdapterType, hasConversationContinuationPolicy } from "./conversation-continuation.js";
 import { canonicalExecutionUuid } from "./execution-identity.js";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, getTableColumns, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
-import { environmentLeases, heartbeatRunEvents, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { environmentLeases, heartbeatRunEvents, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { executionStartedEventPredicate } from "./pre-dispatch-execution-evidence.js";
 import { readRunCancellation } from "./run-cancellation.js";
 import { hasRemoteTerminationReceipt } from "./remote-execution-termination.js";
@@ -36,9 +36,9 @@ type Run = typeof heartbeatRuns.$inferSelect;
 export const LEGACY_RECOVERY_CAUSE = "legacy_execution_requires_reconciliation";
 
 const unusedReconciliationContextKeys = [
-  "executionContinuation", "paperclipWake", "paperclipWakeComment",
-  "paperclipTaskMarkdown", "paperclipTaskMarkdownCompact", "paperclipTaskAssignment",
-  "paperclipTaskAssignmentCompact", "paperclipWorkspace", "paperclipEnvironment", "paperclipContinuationSummary",
+  "executionContinuation", "pilibalaWake", "pilibalaWakeComment",
+  "pilibalaTaskMarkdown", "pilibalaTaskMarkdownCompact", "pilibalaTaskAssignment",
+  "pilibalaTaskAssignmentCompact", "pilibalaWorkspace", "pilibalaEnvironment", "pilibalaContinuationSummary",
 ] as const;
 
 export const legacyReconciliationRunFields = {

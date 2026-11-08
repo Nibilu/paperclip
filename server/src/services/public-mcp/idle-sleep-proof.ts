@@ -3,7 +3,7 @@ import { getCloudRuntimeIdentity } from "../cloud-runtime-identity.js";
 import { readIdleMcpDeviceCutover } from "./idle-device-cutover.js";
 import { readIdleMcpClientMirror } from "./idle-client-mirror.js";
 import { createHash } from "node:crypto";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { instanceSettingsService } from "../instance-settings.js";
 import type { PublicMcpConfig } from "./oauth.js";
 import type { PublicMcpEvents } from "./events.js";

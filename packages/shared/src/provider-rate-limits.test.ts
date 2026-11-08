@@ -9,7 +9,7 @@ import {
 
 const NOW = Date.parse("2026-11-05T15:18:00.000Z");
 const base: ProviderRateLimitSnapshot = {
-  schema: "paperclip.provider.rate_limits.v1",
+  schema: "pilibala.provider.rate_limits.v1",
   provider: "openai",
   windows: [
     { id: "codex.primary", label: "5-hour window", shortLabel: "5h", windowMinutes: 300, usedPercent: 78, resetsAt: "2026-11-05T15:40:00.000Z", status: null },
@@ -51,7 +51,7 @@ describe("provider rate limits", () => {
 
   it("reads the snapshot from a rate-limit notice and rejects other shapes", () => {
     const payload = {
-      schema: "paperclip.provider.notice.v1", category: "provider.rate_limits",
+      schema: "pilibala.provider.notice.v1", category: "provider.rate_limits",
       details: [{ name: "rateLimits", value: JSON.stringify(base) }],
     };
     expect(providerRateLimitSnapshotFromNotice("provider.notice.recorded", payload)).toEqual(base);

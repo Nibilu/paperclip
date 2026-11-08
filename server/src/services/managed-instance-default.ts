@@ -22,8 +22,8 @@
  */
 
 import { eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { environments, instanceSettings } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { environments, instanceSettings } from "@pilibalaai/db";
 import { instanceSettingsService } from "./instance-settings.js";
 import { agentsNeedSetupForEnvironmentChange } from "./plugin-environment-driver.js";
 

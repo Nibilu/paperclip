@@ -2,7 +2,7 @@ import { describeError } from "@/api/errors";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Loader2, Send } from "lucide-react";
-import type { SlackTestMessageResult } from "@paperclipai/shared";
+import type { SlackTestMessageResult } from "@pilibalaai/shared";
 import { chatEndpointsApi } from "@/api/chatEndpoints";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -66,7 +66,7 @@ export function SlackTestMessageButton({ endpointId }: { endpointId: string }) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Connect your Slack account</DialogTitle>
-          <DialogDescription>Choose your account. Messages to this agent will use your Paperclip permissions.</DialogDescription>
+          <DialogDescription>Choose your account. Messages to this agent will use your Pilibala permissions.</DialogDescription>
         </DialogHeader>
         <Input aria-label="Find your Slack account" placeholder="Find your name" value={search} onChange={event => setSearch(event.target.value)} />
         <div className="max-h-64 space-y-1 overflow-y-auto" role="radiogroup" aria-label="Your Slack account">

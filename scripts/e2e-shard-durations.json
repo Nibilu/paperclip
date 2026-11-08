@@ -7,21 +7,21 @@
       "run": 42296374365,
       "attempt": 2,
       "sha": "cd8c9cd07c192832fa180a845577d36fb0bc41c8",
-      "url": "https://github.com/paperclipai/paperclip/actions/runs/42296374365"
+      "url": "https://github.com/pilibalaai/pilibala/actions/runs/42296374365"
     },
     {
       "pull": 19191,
       "run": 42297700476,
       "attempt": 1,
       "sha": "36c0400008a12ec74ed65a0e17951f1b47221a02",
-      "url": "https://github.com/paperclipai/paperclip/actions/runs/42297700476"
+      "url": "https://github.com/pilibalaai/pilibala/actions/runs/42297700476"
     },
     {
       "pull": 19176,
       "run": 42296994179,
       "attempt": 1,
       "sha": "d0a937768da9be297485323c5b905eb63371ec15",
-      "url": "https://github.com/paperclipai/paperclip/actions/runs/42296994179"
+      "url": "https://github.com/pilibalaai/pilibala/actions/runs/42296994179"
     }
   ],
   "coverage": {

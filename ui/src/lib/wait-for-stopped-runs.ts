@@ -1,4 +1,4 @@
-import type { HeartbeatRun } from "@paperclipai/shared";
+import type { HeartbeatRun } from "@pilibalaai/shared";
 import { ApiError } from "../api/client";
 import { heartbeatsApi } from "../api/heartbeats";
 
@@ -28,7 +28,7 @@ export function isRunStopConfirmed(run: StopRunEvidence) {
   if (!("runtimeMode" in run) || run.runtimeMode !== "native" || run.status !== "cancelled") return true;
   const cancellation = run.resultJson?.nativeCancellation;
   return Boolean(cancellation && typeof cancellation === "object"
-    && "schema" in cancellation && cancellation.schema === "paperclip.native-cancellation.v1"
+    && "schema" in cancellation && cancellation.schema === "pilibala.native-cancellation.v1"
     && "runId" in cancellation && cancellation.runId === run.id
     && "companyId" in cancellation && cancellation.companyId === run.companyId
     && "dispatchState" in cancellation && cancellation.dispatchState === "acknowledged");

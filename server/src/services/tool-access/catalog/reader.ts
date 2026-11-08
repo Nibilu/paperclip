@@ -4,9 +4,9 @@ import { descriptorHash } from "../../tool-catalog-hash.js";
 import { nativeProviderCatalogFor } from "../../native-provider-catalogs.js";
 import { restConnectorFor } from "../../connectors/rest-registry.js";
 import { desc, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { toolCatalogEntries, toolConnections } from "@paperclipai/db";
-import type { ToolCatalogEntry } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { toolCatalogEntries, toolConnections } from "@pilibalaai/db";
+import type { ToolCatalogEntry } from "@pilibalaai/shared";
 
 import type { RefreshConnectionCatalog } from "./contracts.js";
 export function createToolCatalogReader(db: Db, options: { catalogCacheTtlMs?: number }, now: () => Date, getConnectionRow: (idOrUid: string, companyId?: string) => Promise<typeof toolConnections.$inferSelect>, refreshCatalog: RefreshConnectionCatalog, toCatalogEntryForConnection: (row: typeof toolCatalogEntries.$inferSelect, connection: typeof toolConnections.$inferSelect) => ToolCatalogEntry) {

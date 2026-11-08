@@ -71,12 +71,12 @@
 // `instrumentation.ts`.
 
 import os from "node:os";
-import type { HeartbeatRunStatus } from "@paperclipai/shared";
+import type { HeartbeatRunStatus } from "@pilibalaai/shared";
 import { AdapterStopTimeoutError } from "./services/adapter-stop-timeout.js";
 import { CloudPortfolioError } from "./services/cloud-portfolio-error.js";
 import { SecretSensitiveRequestError } from "./middleware/secret-sensitive-request-error.js";
 import { storageFailureDiagnosticsFor } from "./storage/failure-diagnostics.js";
-import { directoryMergeLockTimeoutDiagnosticsFor } from "@paperclipai/adapter-utils/directory-merge-lock-diagnostics";
+import { directoryMergeLockTimeoutDiagnosticsFor } from "@pilibalaai/adapter-utils/directory-merge-lock-diagnostics";
 import type { RunFailureDiagnostics } from "./services/run-failure-diagnostics.js";
 import { readBuildCommit } from "./build-commit.js";
 import { checkExactPeerVersions } from "./peer-version-check.js";
@@ -90,7 +90,7 @@ const { backend: dsn, legacyFallbackUsed } = resolveSentryDsns();
 if (legacyFallbackUsed) {
   // eslint-disable-next-line no-console
   console.warn(
-    "[paperclip] SENTRY_DSN_FRONTEND or SENTRY_DSN_BACKEND is not set. " +
+    "[pilibala] SENTRY_DSN_FRONTEND or SENTRY_DSN_BACKEND is not set. " +
       "The server uses the legacy SENTRY_DSN value for the affected " +
       "component. Set SENTRY_DSN_FRONTEND and SENTRY_DSN_BACKEND to send " +
       "each component to its own Sentry project.",
@@ -194,7 +194,7 @@ export function captureException(error: unknown, reference?: SentryRunReference)
     }
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error("[paperclip] Sentry captureException failed", err);
+    console.error("[pilibala] Sentry captureException failed", err);
   }
 }
 
@@ -293,7 +293,7 @@ function captureRunFailureEvent(event: RunFailureEvent): string | null {
     const contexts: Record<string, Record<string, unknown>> = {};
     if (event.companyId && event.agentId) {
       const runPath = `/api/heartbeat-runs/${encodeURIComponent(event.runId)}`;
-      contexts.paperclip = {
+      contexts.pilibala = {
         schemaVersion: 1,
         companyId: event.companyId,
         agentId: event.agentId,
@@ -303,12 +303,12 @@ function captureRunFailureEvent(event: RunFailureEvent): string | null {
         ...(event.taskId ? { taskPath: `/api/issues/${encodeURIComponent(event.taskId)}` } : {}),
       };
       try {
-        const base = new URL(process.env.PAPERCLIP_PUBLIC_URL ?? "");
+        const base = new URL(process.env.PILIBALA_PUBLIC_URL ?? "");
         if ((base.protocol === "https:" || base.protocol === "http:") &&
             !base.username && !base.password && !base.search && !base.hash && base.pathname === "/") {
-          contexts.paperclip.runUrl = new URL(runPath, base).href;
-          contexts.paperclip.eventsUrl = new URL(`${runPath}/events`, base).href;
-          contexts.paperclip.logUrl = new URL(`${runPath}/log`, base).href;
+          contexts.pilibala.runUrl = new URL(runPath, base).href;
+          contexts.pilibala.eventsUrl = new URL(`${runPath}/events`, base).href;
+          contexts.pilibala.logUrl = new URL(`${runPath}/log`, base).href;
         }
       } catch {}
     }
@@ -367,7 +367,7 @@ function captureRunFailureEvent(event: RunFailureEvent): string | null {
     });
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error("[paperclip] Sentry captureRunFailure failed", err);
+    console.error("[pilibala] Sentry captureRunFailure failed", err);
     return null;
   }
 }
@@ -441,7 +441,7 @@ export function shutdownSentry(): Promise<void> {
       await sentryHandle.close(5_000);
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error("[paperclip] Sentry shutdown failed", err);
+      console.error("[pilibala] Sentry shutdown failed", err);
     }
   })();
   return shutdownPromise;
@@ -526,7 +526,7 @@ async function bootstrapSentry(dsn: string): Promise<void> {
   if (!versionCheck.ok) {
     // eslint-disable-next-line no-console
     console.warn(
-      "[paperclip] The backend Sentry DSN is set, but the @sentry/node " +
+      "[pilibala] The backend Sentry DSN is set, but the @sentry/node " +
         "package is not installed, or is installed at an unsupported " +
         "version. Install the declared version of @sentry/node to enable " +
         "server error monitoring. Continuing without it.",
@@ -557,7 +557,7 @@ async function bootstrapSentry(dsn: string): Promise<void> {
     // after that point reaches this block.
     // eslint-disable-next-line no-console
     console.warn(
-      "[paperclip] The backend Sentry DSN is set, and @sentry/node passed " +
+      "[pilibala] The backend Sentry DSN is set, and @sentry/node passed " +
         "the version check, but it failed to load or initialize. " +
         "Continuing without error monitoring.",
       err,

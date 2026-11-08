@@ -1,9 +1,9 @@
-# `@paperclipai/plugin-boxd`
+# `@pilibalaai/plugin-boxd`
 
-boxd sandbox provider for Paperclip. [boxd](https://boxd.sh) runs each sandbox
+boxd sandbox provider for Pilibala. [boxd](https://boxd.sh) runs each sandbox
 as an isolated KVM microVM. This package lives alongside E2B, Daytona and the
 other sandbox providers, outside the root pnpm workspace. It uses the
-[`@boxd-sh/sdk`](https://www.npmjs.com/package/@boxd-sh/sdk) package. Paperclip's
+[`@boxd-sh/sdk`](https://www.npmjs.com/package/@boxd-sh/sdk) package. Pilibala's
 CI release pipeline publishes this plugin to npm.
 
 ## Install from npm
@@ -12,7 +12,7 @@ Once a stable release is available, install the package from the Plugins page
 by name, or use the CLI:
 
 ```sh
-paperclipai plugin install @paperclipai/plugin-boxd
+pilibalaai plugin install @pilibalaai/plugin-boxd
 ```
 
 Before the first stable release, the `latest` tag can still point to the
@@ -20,8 +20,8 @@ Before the first stable release, the `latest` tag can still point to the
 no plugin functionality. Check the published tags and choose a real release:
 
 ```sh
-npm view @paperclipai/plugin-boxd dist-tags --json
-paperclipai plugin install @paperclipai/plugin-boxd --version <published-version>
+npm view @pilibalaai/plugin-boxd dist-tags --json
+pilibalaai plugin install @pilibalaai/plugin-boxd --version <published-version>
 ```
 
 Replace `<published-version>` with the version shown for the desired tag, such
@@ -31,7 +31,7 @@ and bootstrap process.
 
 ## Build and install locally
 
-Requires Node 24.11+, pnpm, and an installed Paperclip checkout.
+Requires Node 24.11+, pnpm, and an installed Pilibala checkout.
 
 ```sh
 cd packages/plugins/sandbox-providers/boxd
@@ -41,11 +41,11 @@ pnpm test
 pnpm build
 ```
 
-From the Paperclip checkout, with your instance running:
+From the Pilibala checkout, with your instance running:
 
 ```sh
-node cli/node_modules/tsx/dist/cli.mjs cli/src/index.ts plugin install /absolute/path/to/paperclip/packages/plugins/sandbox-providers/boxd
-node cli/node_modules/tsx/dist/cli.mjs cli/src/index.ts plugin inspect paperclip.boxd-sandbox-provider
+node cli/node_modules/tsx/dist/cli.mjs cli/src/index.ts plugin install /absolute/path/to/pilibala/packages/plugins/sandbox-providers/boxd
+node cli/node_modules/tsx/dist/cli.mjs cli/src/index.ts plugin inspect pilibala.boxd-sandbox-provider
 ```
 
 ## Configure an environment
@@ -54,9 +54,9 @@ Configure boxd under **Instance Settings -> Environments**, not from the
 plugin page. Select the `boxd` provider.
 
 - `apiKey`: a boxd API key. Create one with
-  `boxd auth keys create paperclip --org <org>`. Each key belongs to one org,
-  and machines are created in that org. Paperclip saves a pasted key as a
-  company secret. `BOXD_API_KEY` on the Paperclip host is an optional fallback
+  `boxd auth keys create pilibala --org <org>`. Each key belongs to one org,
+  and machines are created in that org. Pilibala saves a pasted key as a
+  company secret. `BOXD_API_KEY` on the Pilibala host is an optional fallback
   when the environment has no key.
 - `reuseLease`: default `false`. With `false`, the plugin deletes the machine
   when the run ends. With `true`, the plugin suspends the machine when the run
@@ -69,7 +69,7 @@ plugin page. Select the `boxd` provider.
   4/16 GB or 8/32 GB. A blank value uses the org default. A snapshot keeps its
   own size.
 - `org`: optional org name or ID. A blank value uses the API key's org.
-- `namePrefix`: machine name prefix, `paperclip` by default.
+- `namePrefix`: machine name prefix, `pilibala` by default.
 - `timeoutMs`: default command timeout, 3600000 ms by default.
 
 The default boxd image is Ubuntu 24.04 with Node 24, `tar`, `git`, Docker,
@@ -87,9 +87,9 @@ timer, and a probe whose machine could not be deleted reports a failure.
   metadata endpoint, no in-VM `boxd` CLI and no boxd integrations, and other
   machines in the org cannot reach it over the private network. The API key
   stays in the plugin worker and never enters the machine.
-- Machines carry the labels `paperclip-provider=boxd`,
-  `paperclip-environment=<id>` and `paperclip-run=<id>`. Use
-  `boxd machine list --label paperclip-provider=boxd` to find them.
+- Machines carry the labels `pilibala-provider=boxd`,
+  `pilibala-environment=<id>` and `pilibala-run=<id>`. Use
+  `boxd machine list --label pilibala-provider=boxd` to find them.
 - Commands run through `sh` in the workspace, with quoted arguments,
   per-command environment, staged stdin, and separate stdout and stderr. A
   command timeout ends the remote process group and returns `timedOut: true`.

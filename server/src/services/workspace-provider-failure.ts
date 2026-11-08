@@ -3,7 +3,7 @@ import {
   PLUGIN_RPC_ERROR_CODES,
   readWorkspaceOperationFailureReason,
   type PluginWorkspaceOperationFailureReason,
-} from "@paperclipai/plugin-sdk";
+} from "@pilibalaai/plugin-sdk";
 import { HttpError } from "../errors.js";
 import { findPluginWorkerUnavailableError, PluginWorkerUnavailableError } from "./plugin-worker-unavailable-error.js";
 

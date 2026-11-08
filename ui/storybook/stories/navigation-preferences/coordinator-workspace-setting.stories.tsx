@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within, waitFor } from "storybook/test";
 import { ClassicWorkspaceSetting } from "@/components/ClassicWorkspaceSetting";
-import { storybookAuthSession } from "../../fixtures/paperclipData";
+import { storybookAuthSession } from "../../fixtures/pilibalaData";
 import { prepareFixtureApi, type FixtureState } from "../../support/capability-gaps/api";
 
 const meta = {
@@ -10,7 +10,7 @@ const meta = {
   component: ClassicWorkspaceSetting,
   parameters: {
     layout: "padded",
-    paperclip: {
+    pilibala: {
       capabilities: ["navigation-preferences/preferences"],
       status: "current",
       implementation: "production",
@@ -39,14 +39,14 @@ export const OffByDefault: Story = { name: "Classic off by default" };
 export const Enabled: Story = { name: "Classic enabled", parameters: { initiallyEnabled: true } };
 export const AgentChatDisabledForAdmin: Story = {
   name: "Historical: retired Chat prerequisite for administrators",
-  parameters: { chatDisabled: true, instanceAdmin: true, paperclip: {
+  parameters: { chatDisabled: true, instanceAdmin: true, pilibala: {
     status: "historical", capabilities: ["navigation-preferences/preferences"], implementation: "production", boundary: "fixtures",
     notes: "Retained identity from the retired Chat prerequisite. The current Classic preference has no Chat dependency.",
   } },
 };
 export const AgentChatDisabledForMember: Story = {
   name: "Historical: retired Chat prerequisite for members",
-  parameters: { chatDisabled: true, paperclip: {
+  parameters: { chatDisabled: true, pilibala: {
     status: "historical", capabilities: ["navigation-preferences/preferences"], implementation: "production", boundary: "fixtures",
     notes: "Retained identity from the retired Chat prerequisite. The current Classic preference has no Chat dependency.",
   } },

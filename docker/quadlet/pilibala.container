@@ -1,0 +1,23 @@
+[Unit]
+Description=Pilibala AI Agent Orchestrator
+Requires=pilibala-db.service
+After=pilibala-db.service
+
+[Container]
+Image=pilibala-local
+ContainerName=pilibala
+Pod=pilibala.pod
+Volume=%h/.local/share/pilibala:/pilibala:Z
+Environment=HOST=0.0.0.0
+Environment=PILIBALA_HOME=/pilibala
+Environment=PILIBALA_DEPLOYMENT_MODE=authenticated
+Environment=PILIBALA_DEPLOYMENT_EXPOSURE=private
+Environment=PILIBALA_PUBLIC_URL=http://localhost:3100
+EnvironmentFile=%h/.config/containers/systemd/pilibala.env
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

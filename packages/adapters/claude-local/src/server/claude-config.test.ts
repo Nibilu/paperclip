@@ -2,7 +2,7 @@ import * as fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
 
 // A shared handle so the managed-config test can force the runtime preparation
 // step to throw an error that carries untrusted markers.
@@ -10,9 +10,9 @@ const { prepareAdapterExecutionTargetRuntime } = vi.hoisted(() => ({
   prepareAdapterExecutionTargetRuntime: vi.fn(),
 }));
 
-vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/execution-target")>(
-    "@paperclipai/adapter-utils/execution-target",
+vi.mock("@pilibalaai/adapter-utils/execution-target", async () => {
+  const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/execution-target")>(
+    "@pilibalaai/adapter-utils/execution-target",
   );
   return {
     ...actual,
@@ -50,14 +50,14 @@ describe("prepareClaudeConfigSeed", () => {
   function createEnv(root: string, sourceDir: string): NodeJS.ProcessEnv {
     return {
       HOME: root,
-      PAPERCLIP_HOME: path.join(root, "paperclip-home"),
-      PAPERCLIP_INSTANCE_ID: "test-instance",
+      PILIBALA_HOME: path.join(root, "pilibala-home"),
+      PILIBALA_INSTANCE_ID: "test-instance",
       CLAUDE_CONFIG_DIR: sourceDir,
     };
   }
 
   it("reuses the same snapshot path when the seeded files are unchanged", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-config-seed-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-config-seed-"));
     cleanupDirs.push(root);
     const sourceDir = path.join(root, "claude-source");
     await fs.mkdir(sourceDir, { recursive: true });
@@ -81,7 +81,7 @@ describe("prepareClaudeConfigSeed", () => {
   });
 
   it("keeps an existing snapshot intact when the seeded files change", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-config-race-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-config-race-"));
     cleanupDirs.push(root);
     const sourceDir = path.join(root, "claude-source");
     await fs.mkdir(sourceDir, { recursive: true });
@@ -102,7 +102,7 @@ describe("prepareClaudeConfigSeed", () => {
   });
 
   it("seeds bypassPermissions only when it is requested", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-config-bypass-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-config-bypass-"));
     cleanupDirs.push(root);
     const sourceDir = path.join(root, "claude-source");
     await fs.mkdir(sourceDir, { recursive: true });
@@ -127,7 +127,7 @@ describe("prepareClaudeConfigSeed", () => {
   });
 
   it("writes a bypassPermissions settings file when the host has none", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-config-bypass-empty-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-config-bypass-empty-"));
     cleanupDirs.push(root);
     const sourceDir = path.join(root, "claude-source");
     await fs.mkdir(sourceDir, { recursive: true });
@@ -146,7 +146,7 @@ describe("prepareClaudeConfigSeed", () => {
   });
 
   it("strips local-only settings from remote Claude config seeds", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-config-boundary-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-config-boundary-"));
     cleanupDirs.push(root);
     const sourceDir = path.join(root, "claude-source");
     await fs.mkdir(sourceDir, { recursive: true });
@@ -193,7 +193,7 @@ describe("prepareSandboxClaudeProbeRuntime managed-config diagnostics", () => {
     kind: "remote",
     transport: "sandbox",
     providerKey: "daytona",
-    remoteCwd: "/home/daytona/paperclip-workspace",
+    remoteCwd: "/home/daytona/pilibala-workspace",
     runner: {
       execute: async () => ({
         exitCode: 0,
@@ -229,17 +229,17 @@ describe("prepareSandboxClaudeProbeRuntime managed-config diagnostics", () => {
     const opaqueCredMarker = "OPAQUECREDMARKERconfig";
     const proxyMarker = "http://user:pass@proxy.corp.internal:3128";
 
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-config-mgmt-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-config-mgmt-"));
     cleanupDirs.push(root);
     const sourceDir = path.join(root, "claude-source");
     await fs.mkdir(sourceDir, { recursive: true });
 
-    for (const key of ["CLAUDE_CONFIG_DIR", "PAPERCLIP_HOME", "PAPERCLIP_INSTANCE_ID"]) {
+    for (const key of ["CLAUDE_CONFIG_DIR", "PILIBALA_HOME", "PILIBALA_INSTANCE_ID"]) {
       savedEnv[key] = process.env[key];
     }
     process.env.CLAUDE_CONFIG_DIR = sourceDir;
-    process.env.PAPERCLIP_HOME = path.join(root, "paperclip-home");
-    process.env.PAPERCLIP_INSTANCE_ID = "test-instance";
+    process.env.PILIBALA_HOME = path.join(root, "pilibala-home");
+    process.env.PILIBALA_INSTANCE_ID = "test-instance";
 
     prepareAdapterExecutionTargetRuntime.mockRejectedValueOnce(
       new Error(`materialize failed with ${opaqueCredMarker} via ${proxyMarker}`),
@@ -250,7 +250,7 @@ describe("prepareSandboxClaudeProbeRuntime managed-config diagnostics", () => {
       runId: "run-1",
       target: sandboxTarget,
       // The probe passes no CLAUDE_CONFIG_DIR, so the managed branch runs.
-      cwd: "/home/daytona/paperclip-workspace",
+      cwd: "/home/daytona/pilibala-workspace",
       companyId: "company-1",
       env: {},
       installCommand: "install-claude",
@@ -290,7 +290,7 @@ describe("Claude tool shell prefix", () => {
   });
 
   async function installPrefix() {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-tool-prefix-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-claude-tool-prefix-"));
     cleanupDirs.push(root);
     const prefixPath = path.join(root, "runtime", "tool-shell-prefix.sh");
     const command = buildRemoteClaudeConfigMaterializationCommand({
@@ -311,7 +311,7 @@ describe("Claude tool shell prefix", () => {
     const { prefixPath, stdout } = await installPrefix();
     await expect(fs.readFile(prefixPath, "utf8")).resolves.toBe(CLAUDE_TOOL_SHELL_PREFIX_SCRIPT);
     expect((await fs.stat(prefixPath)).mode & 0o777).toBe(0o700);
-    expect(stdout).toContain("[paperclip] Installed the Claude tool shell prefix.");
+    expect(stdout).toContain("[pilibala] Installed the Claude tool shell prefix.");
     await expect(fs.stat(`${prefixPath}.partial`)).rejects.toMatchObject({ code: "ENOENT" });
   });
 
@@ -372,7 +372,7 @@ describe("Claude tool shell prefix", () => {
       kind: "remote",
       transport: "sandbox",
       providerKey: "daytona",
-      remoteCwd: "/home/daytona/paperclip-workspace",
+      remoteCwd: "/home/daytona/pilibala-workspace",
       runner: {
         execute: async () => ({
           exitCode: 0,
@@ -391,7 +391,7 @@ describe("Claude tool shell prefix", () => {
       remoteClaudeConfigDir: "/sandbox/runtime/config",
       remoteClaudeConfigSeedDir: "/sandbox/runtime/config-seed",
       remoteToolShellPrefixPath: "/sandbox/runtime/tool-shell-prefix.sh",
-      options: { cwd: "/home/daytona/paperclip-workspace", env: {} },
+      options: { cwd: "/home/daytona/pilibala-workspace", env: {} },
     })).resolves.toEqual({ toolShellPrefixInstalled: false });
   });
 });

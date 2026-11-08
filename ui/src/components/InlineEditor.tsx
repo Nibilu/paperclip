@@ -151,7 +151,7 @@ function OwnedInlineEditor({
   // Unsaved edits are stored with the value they were based on, so a restored
   // edit never silently overwrites a newer server value, and per signed-in
   // account, so another account in this browser never sees or saves them.
-  const storageKey = draftKey && draftOwner !== undefined ? `paperclip:inline-draft:v2:${draftOwner}:${draftKey}` : null;
+  const storageKey = draftKey && draftOwner !== undefined ? `pilibala:inline-draft:v2:${draftOwner}:${draftKey}` : null;
   const clearStoredDraft = useCallback(() => {
     if (!storageKey) return;
     try {
@@ -431,7 +431,7 @@ function OwnedInlineEditor({
           {foldable ? (
             <FoldCurtain>
               <MarkdownBody
-                className={cn("paperclip-edit-in-place-content", className)}
+                className={cn("pilibala-edit-in-place-content", className)}
                 externalReferences={externalReferences}
               >
                 {previewValue}
@@ -439,7 +439,7 @@ function OwnedInlineEditor({
             </FoldCurtain>
           ) : (
             <MarkdownBody
-              className={cn("paperclip-edit-in-place-content", className)}
+              className={cn("pilibala-edit-in-place-content", className)}
               externalReferences={externalReferences}
             >
               {previewValue}
@@ -481,7 +481,7 @@ function OwnedInlineEditor({
           placeholder={placeholder}
           bordered={false}
           className="bg-transparent"
-          contentClassName={cn("paperclip-edit-in-place-content", className)}
+          contentClassName={cn("pilibala-edit-in-place-content", className)}
           imageUploadHandler={imageUploadHandler}
           onDropFile={onDropFile}
           mentions={mentions}

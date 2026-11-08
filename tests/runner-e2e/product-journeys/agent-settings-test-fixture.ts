@@ -6,11 +6,11 @@ export function settingsEvidenceFixture(reference = "1a2b3c4d5e6f", original = "
   const saved = settingsInstructionContent(original, scope.reference);
   const run = { id: "run", companyId: scope.companyId, agentId: scope.agentId, nativeIssueId: "task", status: "succeeded",
     runtimeMode: "native", nativePhase: "committed", resultJson: { finalizationPhase: "committed" },
-    contextSnapshot: { issueId: "task", paperclipEnvironment: { id: scope.environmentId } },
+    contextSnapshot: { issueId: "task", pilibalaEnvironment: { id: scope.environmentId } },
     runnerProfileJson: { nativeExecutionInput: { provider: { kind: scope.provider, model: scope.model } } } };
   const snapshot = (content: string, runs: any[] = [], activity: any[] = []) => {
     const hash = instructionDigest(content);
-    return { agent: { id: scope.agentId, companyId: scope.companyId, name: scope.agentName, adapterType: "paperclip_runner",
+    return { agent: { id: scope.agentId, companyId: scope.companyId, name: scope.agentName, adapterType: "pilibala_runner",
       adapterConfig: { provider: scope.provider, model: scope.model } },
     bundle: { agentId: scope.agentId, companyId: scope.companyId, entryFile, mode: "managed", editable: true,
       files: [{ path: entryFile, isEntryFile: true, editable: true },

@@ -1,4 +1,4 @@
-import { responsibleUserLabel } from "@paperclipai/shared";
+import { responsibleUserLabel } from "@pilibalaai/shared";
 
 /**
  * Decide whether an agent comment needs a "for {user}" attribution chip, and

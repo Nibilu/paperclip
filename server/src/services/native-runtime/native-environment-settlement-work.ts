@@ -1,5 +1,5 @@
 import { and, asc, eq, exists, gt, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
-import { environmentLeases, heartbeatRuns, nativeRunFinalizations, nativeRunResults, type Db } from "@paperclipai/db";
+import { environmentLeases, heartbeatRuns, nativeRunFinalizations, nativeRunResults, type Db } from "@pilibalaai/db";
 import type { ProviderResourceDisposition } from "../environment-runtime.js";
 import { nextRunLeaseReleaseAt, pendingRunLeaseReleaseCondition } from "../environment-lease-release-state.js";
 import type { createDeliveryWorkCoordinator } from "../delivery-work-coordinator.js";
@@ -56,7 +56,7 @@ export function nativeEnvironmentSettlementWork(db: Db, settle: (input: Settleme
           and(eq(heartbeatRuns.status, "failed"), eq(nativeRunFinalizations.phase, "observed"),
             isNull(nativeRunFinalizations.resultId), isNotNull(nativeRunFinalizations.leaseOwner),
             lte(nativeRunFinalizations.leaseExpiresAt, new Date()),
-            sql`${heartbeatRuns.runnerProfileJson}#>>'{remoteWorkspace,schema}' = 'paperclip.remote-workspace-run.v1'`,
+            sql`${heartbeatRuns.runnerProfileJson}#>>'{remoteWorkspace,schema}' = 'pilibala.remote-workspace-run.v1'`,
             sql`${heartbeatRuns.runnerProfileJson}#>>'{remoteWorkspace,state}' = 'prepared'`)),
         scope ? eq(heartbeatRuns.companyId, scope.companyId) : undefined,
         scope?.issueId ? eq(nativeRunFinalizations.issueId, scope.issueId) : undefined,

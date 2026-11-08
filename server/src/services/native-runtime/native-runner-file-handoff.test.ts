@@ -1,5 +1,5 @@
 import { resolveExternalTestDatabaseUrl } from "../../__tests__/helpers/external-test-database.js";
-import type { PrpStructuredRunResult } from "../../vendor/paperclip-runner/index.js";
+import type { PrpStructuredRunResult } from "../../vendor/pilibala-runner/index.js";
 import { nativeCompletionFeedback } from "./native-completion-feedback.js";
 import { createHash, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
@@ -32,7 +32,7 @@ import {
   issueComments,
   issues,
   issueWorkProducts,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 
 import { startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { createLocalDiskStorageProvider } from "../../storage/local-disk-provider.js";
@@ -45,7 +45,7 @@ import {
   stageNativeRunnerAttachmentBytes,
   stageNativeRunnerWakeAttachments,
 } from "./native-runner-file-handoff.js";
-import { PaperclipRunnerToolAuthority } from "./paperclip-runner-tool-authority.js";
+import { PilibalaRunnerToolAuthority } from "./pilibala-runner-tool-authority.js";
 
 describe("native runner file handoff", () => {
   let temporary: Awaited<
@@ -62,11 +62,11 @@ describe("native runner file handoff", () => {
   const runId = "00000000-0000-4000-8000-000000009104";
 
   beforeAll(async () => {
-    const external = resolveExternalTestDatabaseUrl("PAPERCLIP_NATIVE_HANDOFF_TEST_DATABASE_URL");
+    const external = resolveExternalTestDatabaseUrl("PILIBALA_NATIVE_HANDOFF_TEST_DATABASE_URL");
     if (!external) temporary = await startEmbeddedPostgresTestDatabase("native-runner-file-handoff-");
     db = createDb(external ?? temporary!.connectionString, { maxConnections: 6 });
     temporaryRoot = await mkdtemp(
-      path.join(tmpdir(), "paperclip-native-file-handoff-"),
+      path.join(tmpdir(), "pilibala-native-file-handoff-"),
     );
     workspaceRoot = path.join(temporaryRoot, "workspace");
     storageRoot = path.join(temporaryRoot, "storage");
@@ -82,7 +82,7 @@ describe("native runner file handoff", () => {
       id: agentId,
       companyId,
       name: "Native file agent",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       adapterConfig: { provider: "codex" },
       runtimeConfig: {},
       status: "active",
@@ -126,7 +126,7 @@ describe("native runner file handoff", () => {
       readRemoteWorkspaceFile: (input: { contentRef: string; byteSize: number; sha256: string }) => Promise<Buffer>;
     }> = {},
   ) {
-    return new PaperclipRunnerToolAuthority(db, {
+    return new PilibalaRunnerToolAuthority(db, {
       companyId: overrides.companyId ?? companyId,
       agentId,
       issueId,
@@ -191,7 +191,7 @@ describe("native runner file handoff", () => {
 
   function doneReport(refs: string[]): PrpStructuredRunResult {
     return {
-      schema: "paperclip.run_result.v1",
+      schema: "pilibala.run_result.v1",
       reportedWorkDisposition: "done",
       summary: "Created the requested checklist.",
       completionClaim: { contractRevision: "test", objectiveSatisfied: true, criteria: [], remainingWork: [] },
@@ -239,13 +239,13 @@ describe("native runner file handoff", () => {
       await previous.cleanup();
       const slot = path.join(root, previous.workspaceRelativePath);
       await writeFile(slot, "stale bytes after an interrupted owner");
-      const directories = await readdir(path.join(root, ".paperclip-inbound"));
+      const directories = await readdir(path.join(root, ".pilibala-inbound"));
 
       const wake = await stageEmptyWake(root);
       expect(wake.attachments).toEqual([]);
       await wake.cleanup();
       await expect(readFile(slot)).resolves.toEqual(Buffer.alloc(0));
-      await expect(readdir(path.join(root, ".paperclip-inbound"))).resolves.toEqual(directories);
+      await expect(readdir(path.join(root, ".pilibala-inbound"))).resolves.toEqual(directories);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -258,7 +258,7 @@ describe("native runner file handoff", () => {
       const outside = await mkdtemp(path.join(temporaryRoot, "empty-wake-outside-"));
       try {
         await writeFile(path.join(outside, "keep.txt"), "outside bytes");
-        const inbound = path.join(root, ".paperclip-inbound");
+        const inbound = path.join(root, ".pilibala-inbound");
         if (kind === "root-file") await writeFile(inbound, "not a directory");
         else if (kind === "root-symlink") await symlink(outside, inbound);
         else {
@@ -278,7 +278,7 @@ describe("native runner file handoff", () => {
     const root = await mkdtemp(path.join(temporaryRoot, "empty-wake-unauthorized-"));
     try {
       await expect(stageEmptyWake(root, "00000000-0000-4000-8000-000000009199"))
-        .rejects.toThrow("paperclip_runner_attachment_staging_not_authorized");
+        .rejects.toThrow("pilibala_runner_attachment_staging_not_authorized");
       await expect(readdir(root)).resolves.toEqual([]);
     } finally {
       await rm(root, { recursive: true, force: true });
@@ -494,7 +494,7 @@ describe("native runner file handoff", () => {
     ).resolves.toEqual([
       expect.objectContaining({
         type: "artifact",
-        provider: "paperclip",
+        provider: "pilibala",
         title: "Requested answer",
         createdByRunId: runId,
       }),
@@ -507,7 +507,7 @@ describe("native runner file handoff", () => {
         createdByRunId: runId,
         body: "Prepared Requested answer for this response.",
         metadata: expect.objectContaining({
-          authorizationReason: "paperclip_runner_protocol",
+          authorizationReason: "pilibala_runner_protocol",
           attachmentPreparation: { attachmentId: first.entityRefs[0] },
         }),
       }),
@@ -523,7 +523,7 @@ describe("native runner file handoff", () => {
           attachmentId: first.entityRefs[0],
           workProductId: first.entityRefs[1],
           commentId: first.entityRefs[2],
-          source: "paperclip_runner_protocol",
+          source: "pilibala_runner_protocol",
         }),
       }),
     ]);
@@ -557,10 +557,10 @@ describe("native runner file handoff", () => {
       authority({ executionTargetKind: "remote" }).execute(
         callFor("checked.txt", body, "remote-denied"),
       ),
-    ).rejects.toThrow("paperclip_runner_file_handoff_remote_unsupported");
+    ).rejects.toThrow("pilibala_runner_file_handoff_remote_unsupported");
     await expect(
       authority().execute(callFor("linked.txt", body, "symlink-denied")),
-    ).rejects.toThrow("paperclip_runner_file_handoff_symlink_denied");
+    ).rejects.toThrow("pilibala_runner_file_handoff_symlink_denied");
     await expect(
       authority().execute(
         callFor(
@@ -569,13 +569,13 @@ describe("native runner file handoff", () => {
           "intermediate-symlink-denied",
         ),
       ),
-    ).rejects.toThrow("paperclip_runner_file_handoff_symlink_denied");
+    ).rejects.toThrow("pilibala_runner_file_handoff_symlink_denied");
     await expect(
       authority().execute(callFor("hardlinked.txt", body, "hardlink-denied")),
-    ).rejects.toThrow("paperclip_runner_file_handoff_file_changed");
+    ).rejects.toThrow("pilibala_runner_file_handoff_file_changed");
     await expect(
       authority().execute(callFor("../checked.txt", body, "traversal-denied")),
-    ).rejects.toThrow("paperclip_runner_file_handoff_path_denied");
+    ).rejects.toThrow("pilibala_runner_file_handoff_path_denied");
     await expect(
       authority().execute({
         ...callFor("checked.txt", body, "hash-denied"),
@@ -584,12 +584,12 @@ describe("native runner file handoff", () => {
           sha256: "0".repeat(64),
         },
       }),
-    ).rejects.toThrow("paperclip_runner_file_handoff_hash_mismatch");
+    ).rejects.toThrow("pilibala_runner_file_handoff_hash_mismatch");
     await expect(
       authority({ companyId: "00000000-0000-4000-8000-000000009999" }).execute(
         callFor("checked.txt", body, "foreign-denied"),
       ),
-    ).rejects.toThrow("paperclip_runner_tool_binding_not_authorized");
+    ).rejects.toThrow("pilibala_runner_tool_binding_not_authorized");
   });
 
   it("registers a verified remote output without reading a controller path", async () => {
@@ -635,7 +635,7 @@ describe("native runner file handoff", () => {
     try {
       await expect(authority({ executionTargetKind: "remote", readRemoteTaskFile: reader })
         .execute(callFor("proof.txt", body, "revoked-during-read")))
-        .rejects.toThrow("paperclip_runner_tool_binding_not_authorized");
+        .rejects.toThrow("pilibala_runner_tool_binding_not_authorized");
       expect(await db.select({ id: issueAttachments.id }).from(issueAttachments)).toEqual(before);
     } finally {
       await db.update(agents).set({ status: "active" }).where(eq(agents.id, agentId));
@@ -687,7 +687,7 @@ describe("native runner file handoff", () => {
       .set({
         contextSnapshot: {
           issueId,
-          paperclipWake: {
+          pilibalaWake: {
             comments: [
               {
                 id: comment.id,
@@ -727,7 +727,7 @@ describe("native runner file handoff", () => {
         contentType: "text/plain",
         byteSize: body.length,
         workspaceRelativePath: expect.stringMatching(
-          /^\.paperclip-inbound\/.+\/[0-9a-f-]{36}$/u,
+          /^\.pilibala-inbound\/.+\/[0-9a-f-]{36}$/u,
         ),
         unavailableReason: null,
       },
@@ -767,7 +767,7 @@ describe("native runner file handoff", () => {
     try {
       const liveForeignDirectory = path.join(
         workspaceRoot,
-        ".paperclip-inbound",
+        ".pilibala-inbound",
         `process-${liveOwner.pid}-unknown-00000000-0000-4000-8000-000000009298`,
       );
       const liveForeignFile = path.join(liveForeignDirectory, "active-slot");
@@ -792,7 +792,7 @@ describe("native runner file handoff", () => {
 
       const recycledOwnerDirectory = path.join(
         workspaceRoot,
-        ".paperclip-inbound",
+        ".pilibala-inbound",
         `process-${liveOwner.pid}-0-00000000-0000-4000-8000-000000009297`,
       );
       const recycledOwnerFile = path.join(recycledOwnerDirectory, "stale-slot");
@@ -825,7 +825,7 @@ describe("native runner file handoff", () => {
     );
     expect(prompt).toContain(relativePath!);
     expect(prompt).not.toContain("/api/attachments/");
-    expect(prompt).not.toContain("PAPERCLIP_API_KEY");
+    expect(prompt).not.toContain("PILIBALA_API_KEY");
     await stage.cleanup();
     await expect(
       readFile(path.join(workspaceRoot, relativePath!)),
@@ -833,7 +833,7 @@ describe("native runner file handoff", () => {
 
     const crashDirectory = path.join(
       workspaceRoot,
-      ".paperclip-inbound",
+      ".pilibala-inbound",
       "process-2147483647-0-00000000-0000-4000-8000-000000009299",
     );
     await mkdir(crashDirectory, { recursive: true });
@@ -854,7 +854,7 @@ describe("native runner file handoff", () => {
         },
         storage,
       }),
-    ).rejects.toThrow("paperclip_runner_attachment_staging_residue_denied");
+    ).rejects.toThrow("pilibala_runner_attachment_staging_residue_denied");
     await expect(readFile(outsideResidue, "utf8")).resolves.toBe(
       "outside bytes must remain intact",
     );
@@ -890,7 +890,7 @@ describe("native runner file handoff", () => {
         },
         storage,
       }),
-    ).rejects.toThrow("paperclip_runner_attachment_staging_not_authorized");
+    ).rejects.toThrow("pilibala_runner_attachment_staging_not_authorized");
 
     const remoteStage = await stageNativeRunnerWakeAttachments({
       db,
@@ -943,7 +943,7 @@ describe("native runner file handoff", () => {
       .set({
         contextSnapshot: {
           issueId,
-          paperclipWake: {
+          pilibalaWake: {
             comments: [
               {
                 id: current.comment.id,
@@ -1017,7 +1017,7 @@ describe("native runner file handoff", () => {
     });
     const currentComment = await issueService(db).addComment(
       issueId,
-      "Inspect the current attachment if Paperclip imported it.",
+      "Inspect the current attachment if Pilibala imported it.",
       { userId: "inbound-user" },
     );
     await db
@@ -1025,11 +1025,11 @@ describe("native runner file handoff", () => {
       .set({
         contextSnapshot: {
           issueId,
-          paperclipWake: {
+          pilibalaWake: {
             comments: [
               {
                 id: currentComment.id,
-                body: "Inspect the current attachment if Paperclip imported it.",
+                body: "Inspect the current attachment if Pilibala imported it.",
                 attachments: [],
               },
             ],
@@ -1100,7 +1100,7 @@ describe("native runner file handoff", () => {
       companyId,
       issueId,
       type: "artifact",
-      provider: "paperclip",
+      provider: "pilibala",
       externalId: existingAttachment!.id,
       title: "Reminted by another run",
       status: "active",
@@ -1114,7 +1114,7 @@ describe("native runner file handoff", () => {
       authority().execute(
         callFor("out/answer.txt", originalBody, "reminted-work-product"),
       ),
-    ).rejects.toThrow("paperclip_runner_file_handoff_work_product_missing");
+    ).rejects.toThrow("pilibala_runner_file_handoff_work_product_missing");
 
     const failureBody = Buffer.from("storage mismatch cleanup\n", "utf8");
     await writeFile(path.join(workspaceRoot, "mismatch.txt"), failureBody);
@@ -1133,7 +1133,7 @@ describe("native runner file handoff", () => {
         await realStorage.deleteObject(deleteCompanyId, objectKey);
       },
     };
-    const mismatchingAuthority = new PaperclipRunnerToolAuthority(db, {
+    const mismatchingAuthority = new PilibalaRunnerToolAuthority(db, {
       companyId,
       agentId,
       issueId,
@@ -1146,7 +1146,7 @@ describe("native runner file handoff", () => {
       mismatchingAuthority.execute(
         callFor("mismatch.txt", failureBody, "storage-mismatch"),
       ),
-    ).rejects.toThrow("paperclip_runner_file_handoff_storage_mismatch");
+    ).rejects.toThrow("pilibala_runner_file_handoff_storage_mismatch");
     expect(deletedObjectKey).toEqual(expect.any(String));
     await expect(
       realStorage.headObject(companyId, deletedObjectKey!),
@@ -1173,7 +1173,7 @@ describe("native runner file handoff", () => {
       },
     };
     await db.execute(sql`
-      CREATE OR REPLACE FUNCTION paperclip_test_fail_native_receipt()
+      CREATE OR REPLACE FUNCTION pilibala_test_fail_native_receipt()
       RETURNS trigger LANGUAGE plpgsql AS $$
       BEGIN
         IF NEW.result_json IS DISTINCT FROM OLD.result_json THEN
@@ -1184,12 +1184,12 @@ describe("native runner file handoff", () => {
       $$
     `);
     await db.execute(sql`
-      CREATE TRIGGER paperclip_test_fail_native_receipt
+      CREATE TRIGGER pilibala_test_fail_native_receipt
       BEFORE UPDATE ON heartbeat_runs
-      FOR EACH ROW EXECUTE FUNCTION paperclip_test_fail_native_receipt()
+      FOR EACH ROW EXECUTE FUNCTION pilibala_test_fail_native_receipt()
     `);
     try {
-      const receiptFailureAuthority = new PaperclipRunnerToolAuthority(db, {
+      const receiptFailureAuthority = new PilibalaRunnerToolAuthority(db, {
         companyId,
         agentId,
         issueId,
@@ -1220,10 +1220,10 @@ describe("native runner file handoff", () => {
       });
     } finally {
       await db.execute(
-        sql`DROP TRIGGER IF EXISTS paperclip_test_fail_native_receipt ON heartbeat_runs`,
+        sql`DROP TRIGGER IF EXISTS pilibala_test_fail_native_receipt ON heartbeat_runs`,
       );
       await db.execute(
-        sql`DROP FUNCTION IF EXISTS paperclip_test_fail_native_receipt()`,
+        sql`DROP FUNCTION IF EXISTS pilibala_test_fail_native_receipt()`,
       );
     }
     expect(receiptFailureObjectKey).toEqual(expect.any(String));
@@ -1254,12 +1254,12 @@ describe("native runner file handoff", () => {
       {
         wake: wakeFor("github"),
         provider: "github",
-        mode: "paperclip_task_only",
+        mode: "pilibala_task_only",
       },
       {
         wake: wakeFor("microsoft-teams"),
         provider: "microsoft-teams",
-        mode: "paperclip_task_only",
+        mode: "pilibala_task_only",
       },
       ...["slack", "discord", "telegram"].map((provider) => ({
         wake: wakeFor(provider),
@@ -1299,7 +1299,7 @@ describe("native runner file handoff", () => {
         await writeFile(path.join(workspaceRoot, filename), body);
         await db
           .update(heartbeatRuns)
-          .set({ contextSnapshot: { issueId, paperclipWake: testCase.wake } })
+          .set({ contextSnapshot: { issueId, pilibalaWake: testCase.wake } })
           .where(eq(heartbeatRuns.id, runId));
         const call = callFor(filename, body, `delivery-mode-${index}`);
         // A tool argument or user comment never selects delivery capability.
@@ -1381,7 +1381,7 @@ describe("native runner file handoff", () => {
       await db.update(heartbeatRuns).set({ contextSnapshot: { issueId } }).where(eq(heartbeatRuns.id, nextRunId));
 
       // The replacement can verify and publish the existing bytes itself. No user action is needed.
-      const replacement = new PaperclipRunnerToolAuthority(db, { companyId, agentId, issueId, runId: nextRunId,
+      const replacement = new PilibalaRunnerToolAuthority(db, { companyId, agentId, issueId, runId: nextRunId,
         workspaceRoot, executionTargetKind: "local", storage: createStorageService(createLocalDiskStorageProvider(storageRoot)) });
       const current = await replacement.execute(callFor(`${key}.txt`, body, `${key}-verified`)) as { entityRefs: string[] };
       expect(current.entityRefs[0]).not.toBe(prior.entityRefs[0]);

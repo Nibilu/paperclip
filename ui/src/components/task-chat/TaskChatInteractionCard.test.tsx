@@ -9,7 +9,7 @@ vi.mock("@/hooks/useCoordinatorWorkspaceEnabled", () => ({
   useCoordinatorWorkspaceEnabled: () => ({ enabled: false, loaded: true }),
 }));
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { IssueDocument } from "@paperclipai/shared";
+import type { IssueDocument } from "@pilibalaai/shared";
 import type {
   IssueThreadInteraction,
   RequestConfirmationInteraction,
@@ -522,7 +522,7 @@ describe("TaskChatInteractionCard", () => {
 
     const link = container.querySelector('a[href="/issues/PAP-42#document-preview"]');
     expect(link?.textContent).toBe("two screenshots");
-    const prompt = link?.closest(".paperclip-markdown");
+    const prompt = link?.closest(".pilibala-markdown");
     expect(prompt?.querySelector("strong")?.textContent).toBe("Accept");
     expect(prompt?.querySelector("code")?.textContent).toBe("preview.png");
     expect(prompt?.querySelector("img")).toBeNull();
@@ -531,7 +531,7 @@ describe("TaskChatInteractionCard", () => {
       .toContain("Image: Review image (https://provider.invalid/review.png)");
     expect(prompt?.querySelector("pre code.language-mermaid")?.textContent)
       .toContain("flowchart LR");
-    expect(prompt?.querySelector(".paperclip-mermaid")).toBeNull();
+    expect(prompt?.querySelector(".pilibala-mermaid")).toBeNull();
     expect(prompt?.querySelectorAll("li")).toHaveLength(2);
     expect(prompt?.textContent).not.toContain("[two screenshots]");
     expect(accept).not.toHaveBeenCalled();
@@ -570,26 +570,26 @@ describe("TaskChatInteractionCard", () => {
         );
       });
 
-    render({ type: "custom", key: "github:paperclipai/paperclip-desktop:pull:16" });
-    expect(container.textContent).not.toContain("github:paperclipai");
+    render({ type: "custom", key: "github:pilibalaai/pilibala-desktop:pull:16" });
+    expect(container.textContent).not.toContain("github:pilibalaai");
     const prompt = Array.from(container.querySelectorAll("p")).find((node) =>
       node.textContent?.startsWith("The change is open"),
     );
     expect(prompt?.className).not.toContain("flex-1");
-    expect(prompt?.closest(".paperclip-markdown")?.querySelectorAll("p")).toHaveLength(2);
+    expect(prompt?.closest(".pilibala-markdown")?.querySelectorAll("p")).toHaveLength(2);
     expect(prompt?.parentElement?.className).not.toContain("justify-between");
 
     render({
       type: "custom",
-      key: "github:paperclipai/paperclip-desktop:pull:16",
+      key: "github:pilibalaai/pilibala-desktop:pull:16",
       label: "PR #16",
-      href: "https://github.com/paperclipai/paperclip-desktop/pull/16",
+      href: "https://github.com/pilibalaai/pilibala-desktop/pull/16",
     });
     const link = container.querySelector(
-      'a[href="https://github.com/paperclipai/paperclip-desktop/pull/16"]',
+      'a[href="https://github.com/pilibalaai/pilibala-desktop/pull/16"]',
     );
     expect(link?.textContent).toBe("PR #16");
-    expect(container.textContent).not.toContain("github:paperclipai");
+    expect(container.textContent).not.toContain("github:pilibalaai");
   });
 
   it("stacks the checkbox confirmation prompt full-width and hides unlabeled custom target keys", () => {
@@ -614,26 +614,26 @@ describe("TaskChatInteractionCard", () => {
         );
       });
 
-    render({ type: "custom", key: "github:paperclipai/paperclip-desktop:pull:16" });
-    expect(container.textContent).not.toContain("github:paperclipai");
+    render({ type: "custom", key: "github:pilibalaai/pilibala-desktop:pull:16" });
+    expect(container.textContent).not.toContain("github:pilibalaai");
     const prompt = Array.from(container.querySelectorAll("p")).find((node) =>
       node.textContent?.startsWith("Pick the drafts"),
     );
     expect(prompt?.className).not.toContain("flex-1");
-    expect(prompt?.closest(".paperclip-markdown")?.querySelectorAll("p")).toHaveLength(2);
+    expect(prompt?.closest(".pilibala-markdown")?.querySelectorAll("p")).toHaveLength(2);
     expect(prompt?.parentElement?.className).not.toContain("justify-between");
 
     render({
       type: "custom",
-      key: "github:paperclipai/paperclip-desktop:pull:16",
+      key: "github:pilibalaai/pilibala-desktop:pull:16",
       label: "PR #16",
-      href: "https://github.com/paperclipai/paperclip-desktop/pull/16",
+      href: "https://github.com/pilibalaai/pilibala-desktop/pull/16",
     });
     const link = container.querySelector(
-      'a[href="https://github.com/paperclipai/paperclip-desktop/pull/16"]',
+      'a[href="https://github.com/pilibalaai/pilibala-desktop/pull/16"]',
     );
     expect(link?.textContent).toBe("PR #16");
-    expect(container.textContent).not.toContain("github:paperclipai");
+    expect(container.textContent).not.toContain("github:pilibalaai");
   });
 
   it("keeps the plan revision in the header and hides the prompt while requesting changes", async () => {
@@ -917,7 +917,7 @@ describe("TaskChatInteractionCard", () => {
           required: true,
           options: [
             {
-              id: "__paperclip_text__",
+              id: "__pilibala_text__",
               label: "Enter an integer",
               freeText: true,
             },
@@ -925,7 +925,7 @@ describe("TaskChatInteractionCard", () => {
         },
       ],
       questionSet: {
-        schema: "paperclip.question_set.v1",
+        schema: "pilibala.question_set.v1",
         title: "Configure deployment",
         description: "The provider disconnected while waiting for this answer.",
         submitLabel: "Continue",
@@ -991,7 +991,7 @@ describe("TaskChatInteractionCard", () => {
       options: [{ id: "preset", label: "Preset" }, { id: "other", label: "Custom answer", freeText: true }],
     }];
     interaction.payload.questionSet = mode === "legacy_custom" ? undefined : {
-      schema: "paperclip.question_set.v1",
+      schema: "pilibala.question_set.v1",
       questions: [mode === "canonical_text"
         ? { id: "draft", prompt: "Edit", required: true, answerMode: "text", initialText: "Provider draft" }
         : { id: "draft", prompt: "Edit", required: true, answerMode: "single_select", options: [{ id: "preset", label: "Preset" }], customAnswer: { enabled: true, label: "Custom answer" } }],

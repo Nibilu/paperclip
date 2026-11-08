@@ -12,8 +12,8 @@ function SourcesStory({ view = "sources", empty = false, needsConnection = false
   const navigate = useNavigate();
   useEffect(() => {
     const cleanup = installFixtures(empty, needsConnection, { repositories, scan, disconnected });
-    for (const id of ["new", SOURCE_ID]) sessionStorage.removeItem(`paperclip.skill-source-draft:${COMPANY_ID}:${id}`);
-    if (repositoryUrl) sessionStorage.setItem(`paperclip.skill-source-draft:${COMPANY_ID}:new`, JSON.stringify({ repositoryUrl }));
+    for (const id of ["new", SOURCE_ID]) sessionStorage.removeItem(`pilibala.skill-source-draft:${COMPANY_ID}:${id}`);
+    if (repositoryUrl) sessionStorage.setItem(`pilibala.skill-source-draft:${COMPANY_ID}:new`, JSON.stringify({ repositoryUrl }));
     navigate(`/skills/sources${view === "import" ? "/new" : view === "manage" ? `/${SOURCE_ID}` : ""}`, { replace: true });
     setReady(true);
     return cleanup;
@@ -39,7 +39,7 @@ const meta = {
   parameters: {
     layout: "fullscreen",
     docs: { description: { component: "Production Sources page with local fixture data. Try importing a repository, searching and selecting skills, saving the selection, and refreshing. GitHub OAuth and external destinations require the running app." } },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "skills/versions",
         "skills/discovery"

@@ -13,7 +13,7 @@ Feature ID: `connection-setup`.
 
 Delegated native entries inherit the [native admission and work-mode limits](README.md#native-rest-transport).
 
-Review date: 2026-10-26. Source base: `a1f77821b9cd5c9c846fdf7a0fa5cc620ad2b6bb`; implementation: [#17737](https://github.com/paperclipai/paperclip/pull/17737).
+Review date: 2026-10-26. Source base: `a1f77821b9cd5c9c846fdf7a0fa5cc620ad2b6bb`; implementation: [#17737](https://github.com/pilibalaai/pilibala/pull/17737).
 
 Connection operations reviewed in this working tree. The inventory was reconciled
 against production UI clients, REST registrations and service entry points; it is
@@ -243,9 +243,9 @@ Evidence: `source-only` — [route](../../server/src/routes/tool-access.ts); rev
 Verification: `not-run` — individual operation not executed in this audit; shared authorization and representative family flows are exercised by the authenticated integration suite. Follow the route schema, inspect persistence/audit, and assert owner, scope and revoked-authority denial.
 Gaps: Agent invocation is denied by the stated policy. The authorized human or operator must perform this step; this entry does not claim delegated execution.
 
-### `get-tools-oauth-paperclip-id-callback`
+### `get-tools-oauth-pilibala-id-callback`
 
-API: `present` — `GET /api/tools/oauth/paperclip-id/callback`; browser/provider/MCP protocol.
+API: `present` — `GET /api/tools/oauth/pilibala-id/callback`; browser/provider/MCP protocol.
 Agent access: `restricted` — browser authentication return.
 Policy: Provider state/signature or gateway-token verification, company and resource binding; browser returns require the configuring human. Agent-issued durable gateway tokens retain both issuer and responsible-user authority.
 Evidence: `source-only` — [route](../../server/src/routes/tool-access.ts); reviewed in the working tree based on the source commit above.

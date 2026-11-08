@@ -3,7 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { agents, closeRegisteredClients, companies, createDb, environmentLeases, environments,
-  executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
+  executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { inspectOnlineLegacyWorkspaceRecoveryHold, inspectOnlineLegacyWorkspaceRecoverySource,
   lockOnlineLegacyWorkspaceRecoverySources } from "./online-legacy-workspace-recovery.js";
@@ -24,18 +24,18 @@ describe.skipIf(!support.supported)("online legacy source preservation", () => {
   async function fixture() {
     const companyId = randomUUID(), workspaceId = randomUUID(), runId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Legacy preservation", issuePrefix: `P${companyId.slice(0, 6)}` });
-    const [agent] = await db.insert(agents).values({ companyId, name: "Historical native worker", adapterType: "paperclip_runner" }).returning();
+    const [agent] = await db.insert(agents).values({ companyId, name: "Historical native worker", adapterType: "pilibala_runner" }).returning();
     const [issue] = await db.insert(issues).values({ companyId, title: "Preserve old files", status: "blocked" }).returning();
     const [workspace] = await db.insert(executionWorkspaces).values({ id: workspaceId, companyId,
       sourceIssueId: issue.id, providerType: "local_fs", mode: "isolated_workspace", strategyType: "project_primary", name: "Legacy files" }).returning();
-    const reference = { schema: "paperclip.native-workspace-sync/v3" as const, state: "prepared" as const,
+    const reference = { schema: "pilibala.native-workspace-sync/v3" as const, state: "prepared" as const,
       workspaceId, leaseId: randomUUID(), providerLeaseId: randomUUID(), remoteCwd: "/workspaces/retained",
       descriptorSha256: "12".repeat(32), baselineSha256: "34".repeat(32), resourceDisposition: "destroy" as const };
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId: agent.id, nativeIssueId: issue.id,
       status: "failed", runtimeMode: "native", processPid: 4321, processGroupId: 4321,
       processStartedAt: new Date("2026-01-01T00:00:00Z"), runnerProfileJson: { nativeWorkspaceSync: reference },
       resultJson: { checkpoint: "preserve this result", workspaceRestoreRecovery: {
-        schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [reference.leaseId] } } });
+        schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [reference.leaseId] } } });
     await db.insert(nativeRunFinalizations).values({ companyId, issueId: issue.id, runId, phase: "terminal_failure",
       failureCode: "native_workspace_sync_out_retry_exhausted", recoveryHistory: [{ checkpoint: "preserve owner history" }] });
     const [environment] = await db.insert(environments).values({ name: runId, driver: "daytona" }).returning();
@@ -105,11 +105,11 @@ describe.skipIf(!support.supported)("online legacy source preservation", () => {
     const [other] = await db.insert(issues).values({ companyId: f.companyId, title: "Current unrelated work" }).returning();
     await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: f.agent.id, nativeIssueId: other.id,
       runtimeMode: "native", status: "running", controllerLeaseExpiresAt: new Date(Date.now() + 60_000),
-      runnerProfileJson: { remoteWorkspace: { schema: "paperclip.remote-workspace-run.v1" } } });
+      runnerProfileJson: { remoteWorkspace: { schema: "pilibala.remote-workspace-run.v1" } } });
     const before = await retained(f), source = await inspect(f);
     expect(source).toMatchObject({ runId: f.runId, issueId: f.issue.id, reference: f.reference,
       recoveryAllocations: [{ leaseId: f.lease.id, providerLeaseId: f.lease.providerLeaseId, remoteCwd: f.reference.remoteCwd }],
-      onlineProof: { schema: "paperclip.online-legacy-workspace-preservation.v1" } });
+      onlineProof: { schema: "pilibala.online-legacy-workspace-preservation.v1" } });
     await db.transaction(async tx => {
       expect(await lockOnlineLegacyWorkspaceRecoverySources(tx as unknown as Db, { companyId: f.companyId, sources: [source!] })).toBe(true);
       expect(await inspectOnlineLegacyWorkspaceRecoverySource(tx, f)).toEqual(source);
@@ -159,7 +159,7 @@ describe.skipIf(!support.supported)("online legacy source preservation", () => {
       heartbeatRunId: f.runId, environmentId: f.lease.environmentId, provider: "daytona", providerLeaseId: randomUUID(),
       leasePolicy: "retain_on_failure", status: "retained", metadata: { remoteCwd: "/workspaces/second" } }).returning();
     await db.update(heartbeatRuns).set({ runnerProfileJson: {}, resultJson: { checkpoint: "retain",
-      workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [second.id, f.lease.id] } } }).where(eq(heartbeatRuns.id, f.runId));
+      workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [second.id, f.lease.id] } } }).where(eq(heartbeatRuns.id, f.runId));
     await db.update(nativeRunFinalizations).set({ phase: "observed" }).where(eq(nativeRunFinalizations.runId, f.runId));
     const before = await retained(f), source = await inspect(f);
     expect(source?.reference).toBeNull();

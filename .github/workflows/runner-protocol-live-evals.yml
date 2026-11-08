@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       target_branch:
-        description: "Branch in paperclipai/paperclip to evaluate; trusted orchestration still runs from master"
+        description: "Branch in pilibalaai/pilibala to evaluate; trusted orchestration still runs from master"
         type: string
         required: false
       evals_sha:
-        description: "Exact 40-character paperclipai/paperclip-evals commit to execute"
+        description: "Exact 40-character pilibalaai/pilibala-evals commit to execute"
         type: string
         required: false
       rosters:
@@ -110,7 +110,7 @@ jobs:
             fi
           done
 
-      - name: Resolve requested Paperclip branch to an immutable commit
+      - name: Resolve requested Pilibala branch to an immutable commit
         id: target
         env:
           GH_TOKEN: ${{ github.token }}
@@ -137,7 +137,7 @@ jobs:
         id: evals_token
         env:
           COMMITPERCLIP_KEY: ${{ secrets.COMMITPERCLIP_KEY }}
-          GH_REPO: paperclipai/paperclip-evals
+          GH_REPO: pilibalaai/pilibala-evals
         run: |
           set -euo pipefail
           token="$(node .github/scripts/get-bot-token.mjs)"
@@ -155,7 +155,7 @@ jobs:
             echo "evals_sha (or RUNNER_PROTOCOL_EVALS_SHA for schedules) must be an exact 40-character commit." >&2
             exit 1
           fi
-          resolved="$(gh api -X GET "repos/paperclipai/paperclip-evals/commits/$EVALS_SHA" --jq .sha)"
+          resolved="$(gh api -X GET "repos/pilibalaai/pilibala-evals/commits/$EVALS_SHA" --jq .sha)"
           test "$resolved" = "$EVALS_SHA"
           echo "sha=$resolved" >> "$GITHUB_OUTPUT"
 
@@ -200,7 +200,7 @@ jobs:
           set -euo pipefail
           if [ "$ACCOUNTING_MODE" != controlled ] && [ "$AWS_PAID_RUNNER_ENABLED" = true ]; then
             {
-              echo 'runner=runs-on/fleet=paperclip-public-pr-x64/env=public-ci'
+              echo 'runner=runs-on/fleet=pilibala-public-pr-x64/env=public-ci'
               echo 'max_parallel_default=100'
               echo 'max_parallel_limit=100'
             } >> "$GITHUB_OUTPUT"
@@ -287,7 +287,7 @@ jobs:
       - uses: allure-framework/setup-allurectl@2d89ee0b7ba2f59dbe9849b6df5763cab78e14db # v1
         with:
           allurectl-version: 2.23.1
-          allure-endpoint: https://paperclip.testops.cloud
+          allure-endpoint: https://pilibala.testops.cloud
           allure-project-id: '1'
           allure-token: ${{ secrets.ALLURE_TOKEN }}
       - name: Read the standing plan for a one-case registration attempt
@@ -299,22 +299,22 @@ jobs:
         id: selection
         env:
           ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
-          ALLURE_ENDPOINT: https://paperclip.testops.cloud
+          ALLURE_ENDPOINT: https://pilibala.testops.cloud
           ALLURE_PROJECT_ID: '1'
           RUNNER_TESTOPS_REQUESTED_JOB_RUN_ID: ${{ inputs.ALLURE_JOB_RUN_ID }}
           ALLURE_JOB_RUN_ID: ${{ inputs.ALLURE_JOB_RUN_ID }}
           ALLURE_USERNAME: ${{ inputs.ALLURE_USERNAME }}
           ALLURE_RESULTS: ${{ runner.temp }}/runner-protocol-selection-results
-          PAPERCLIP_PROTOCOL_EVAL_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
-          PAPERCLIP_PROTOCOL_EVALS_SHA: ${{ needs.authorize.outputs.evals_sha }}
-          PAPERCLIP_PROTOCOL_ACCOUNTING_MODE: ${{ needs.authorize.outputs.accounting_mode }}
+          PILIBALA_PROTOCOL_EVAL_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
+          PILIBALA_PROTOCOL_EVALS_SHA: ${{ needs.authorize.outputs.evals_sha }}
+          PILIBALA_PROTOCOL_ACCOUNTING_MODE: ${{ needs.authorize.outputs.accounting_mode }}
         run: |
           mkdir -m 700 "$ALLURE_RESULTS"
           selection_args=(selection "$RUNNER_TEMP/runner-protocol-testops-selection.json")
           if [ -z "$RUNNER_TESTOPS_REQUESTED_JOB_RUN_ID" ]; then
             selection_args+=("$RUNNER_TEMP/runner-protocol-testplan.json")
           fi
-          allurectl watch -- node packages/paperclip-runner/scripts/runner-protocol-testops.mjs "${selection_args[@]}"
+          allurectl watch -- node packages/pilibala-runner/scripts/runner-protocol-testops.mjs "${selection_args[@]}"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: runner-protocol-testops-selection-${{ github.run_id }}-${{ github.run_attempt }}
@@ -346,7 +346,7 @@ jobs:
         id: evals_token
         env:
           COMMITPERCLIP_KEY: ${{ secrets.COMMITPERCLIP_KEY }}
-          GH_REPO: paperclipai/paperclip-evals
+          GH_REPO: pilibalaai/pilibala-evals
         run: |
           set -euo pipefail
           token="$(node .github/scripts/get-bot-token.mjs)"
@@ -355,17 +355,17 @@ jobs:
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: paperclipai/paperclip-evals
+          repository: pilibalaai/pilibala-evals
           ref: ${{ needs.authorize.outputs.evals_sha }}
-          path: .paperclip-evals
+          path: .pilibala-evals
           token: ${{ steps.evals_token.outputs.value }}
           persist-credentials: false
 
       - name: Build the two bounded roster-plus-case matrices
         id: catalog
         env:
-          PAPERCLIP_PROTOCOL_EVAL_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
-          PAPERCLIP_PROTOCOL_EVALS_SHA: ${{ needs.authorize.outputs.evals_sha }}
+          PILIBALA_PROTOCOL_EVAL_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
+          PILIBALA_PROTOCOL_EVALS_SHA: ${{ needs.authorize.outputs.evals_sha }}
           MAX_PARALLEL: ${{ vars.RUNNER_E2E_MAX_PARALLEL || needs.authorize.outputs.max_parallel_default }}
           MAX_PARALLEL_LIMIT: ${{ needs.authorize.outputs.max_parallel_limit }}
           REQUESTED_MAX_PARALLEL: ${{ inputs.max_parallel }}
@@ -386,8 +386,8 @@ jobs:
           elif [ "$MAX_PARALLEL" -gt "$MAX_PARALLEL_LIMIT" ]; then
             MAX_PARALLEL="$MAX_PARALLEL_LIMIT"
           fi
-          node packages/paperclip-runner/scripts/runner-protocol-eval-campaign.mjs catalog \
-            --evals-root .paperclip-evals \
+          node packages/pilibala-runner/scripts/runner-protocol-eval-campaign.mjs catalog \
+            --evals-root .pilibala-evals \
             --rosters "$ROSTERS" \
             --grok-authentication "$GROK_AUTHENTICATION" \
             --campaign-id "gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
@@ -403,7 +403,7 @@ jobs:
       - name: Apply the exact selected protocol cases before fan-out
         id: filter
         if: needs.authorize.outputs.testops_enabled == 'true'
-        run: node packages/paperclip-runner/scripts/runner-protocol-testops.mjs filter-catalog runner-protocol-eval-catalog.json runner-protocol-testops-selection/runner-protocol-testops-selection.json
+        run: node packages/pilibala-runner/scripts/runner-protocol-testops.mjs filter-catalog runner-protocol-eval-catalog.json runner-protocol-testops-selection/runner-protocol-testops-selection.json
 
       - name: Enforce controlled limits against the selected catalog
         if: needs.authorize.outputs.accounting_mode == 'controlled'
@@ -413,7 +413,7 @@ jobs:
             echo 'Controlled selection supports native Codex and ACPX Claude only; select their rosters explicitly.' >&2; exit 1;
           }
           # Every selected profile needs a committed allocation. No evals code has run in this job yet.
-          jq -e --slurpfile defaults packages/paperclip-runner/scripts/controlled-evals/hosted-defaults.json \
+          jq -e --slurpfile defaults packages/pilibala-runner/scripts/controlled-evals/hosted-defaults.json \
             '($defaults[0].allocations | map([.provider, (.acpxAgent // ""), .model])) as $allowed | all(.cells[]; [.provider, (.acpxAgent // ""), .model] as $profile | any($allowed[]; . == $profile))' \
             runner-protocol-eval-catalog.json >/dev/null || {
             echo 'Controlled selection includes a profile without a committed allocation in hosted-defaults.json.' >&2; exit 1;
@@ -424,7 +424,7 @@ jobs:
       - name: Require the chat-report renderer before paid execution
         run: |
           set -euo pipefail
-          python3 .paperclip-evals/evals/paperclip-runner/tools/eval_program.py report --help | grep -q -- --public-viewer
+          python3 .pilibala-evals/evals/pilibala-runner/tools/eval_program.py report --help | grep -q -- --public-viewer
 
       - name: Upload immutable campaign catalog
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -487,40 +487,40 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Materialize the pinned OpenCode executable before packaging
-        run: node packages/paperclip-runner/scripts/materialize-opencode-binary.mjs
+        run: node packages/pilibala-runner/scripts/materialize-opencode-binary.mjs
 
       - name: Materialize the pinned Grok executable when the target includes it
         run: |
-          if [ -f packages/paperclip-runner/scripts/provision-grok.mjs ]; then
-            sudo node packages/paperclip-runner/scripts/provision-grok.mjs /opt/paperclip/providers/grok/1.0.13/grok
+          if [ -f packages/pilibala-runner/scripts/provision-grok.mjs ]; then
+            sudo node packages/pilibala-runner/scripts/provision-grok.mjs /opt/pilibala/providers/grok/1.0.13/grok
           fi
 
       - name: Build runner CLI, daemon, and canonical attempt viewer
         run: |
           set -euo pipefail
-          pnpm --filter @paperclipai/paperclip-runner build:typescript
-          pnpm --filter @paperclipai/paperclip-runner build:runner-binaries
-          pnpm --filter @paperclipai/paperclip-runner build:issue-thread
+          pnpm --filter @pilibalaai/pilibala-runner build:typescript
+          pnpm --filter @pilibalaai/pilibala-runner build:runner-binaries
+          pnpm --filter @pilibalaai/pilibala-runner build:issue-thread
           # Older target refs must fail before paid cells, not publish an empty viewer.
-          grep -q 'paperclip-eval-report' packages/paperclip-runner/dist-issue-thread/assets/*.js
-          grep -q 'evalbook-site' packages/paperclip-runner/dist-issue-thread/assets/*.css
+          grep -q 'pilibala-eval-report' packages/pilibala-runner/dist-issue-thread/assets/*.js
+          grep -q 'evalbook-site' packages/pilibala-runner/dist-issue-thread/assets/*.css
 
       - name: Package a portable provider runtime
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/runner-protocol-build/package" "$RUNNER_TEMP/runner-protocol-build/portable"
-          pnpm --dir packages/paperclip-runner pack \
+          pnpm --dir packages/pilibala-runner pack \
             --pack-destination "$RUNNER_TEMP/runner-protocol-build/package"
           package="$(find "$RUNNER_TEMP/runner-protocol-build/package" -maxdepth 1 -type f -name '*.tgz' -print -quit)"
           test -f "$package"
-          pnpm --filter @paperclipai/paperclip-runner deploy --prod \
+          pnpm --filter @pilibalaai/pilibala-runner deploy --prod \
             "$RUNNER_TEMP/runner-protocol-build/portable"
-          cp "$package" "$RUNNER_TEMP/runner-protocol-build/paperclip-runner.tgz"
-          cp packages/paperclip-runner/runner/target/debug/paperclip-runnerd "$RUNNER_TEMP/runner-protocol-build/paperclip-runnerd"
-          cp -R packages/paperclip-runner/dist-issue-thread "$RUNNER_TEMP/runner-protocol-build/dist-issue-thread"
+          cp "$package" "$RUNNER_TEMP/runner-protocol-build/pilibala-runner.tgz"
+          cp packages/pilibala-runner/runner/target/debug/pilibala-runnerd "$RUNNER_TEMP/runner-protocol-build/pilibala-runnerd"
+          cp -R packages/pilibala-runner/dist-issue-thread "$RUNNER_TEMP/runner-protocol-build/dist-issue-thread"
           test -f "$RUNNER_TEMP/runner-protocol-build/portable/dist/cli/eval-session.js"
           test -d "$RUNNER_TEMP/runner-protocol-build/portable/node_modules/.pnpm"
-          test -x "$RUNNER_TEMP/runner-protocol-build/paperclip-runnerd"
+          test -x "$RUNNER_TEMP/runner-protocol-build/pilibala-runnerd"
           tar --create --gzip --file runner-protocol-build.tar.gz -C "$RUNNER_TEMP/runner-protocol-build" .
           sha256sum runner-protocol-build.tar.gz > runner-protocol-build.tar.gz.sha256
 
@@ -539,7 +539,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: runner-protocol-viewer-${{ github.run_id }}-${{ github.run_attempt }}
-          path: packages/paperclip-runner/dist-issue-thread/
+          path: packages/pilibala-runner/dist-issue-thread/
           retention-days: 30
           if-no-files-found: error
 
@@ -584,7 +584,7 @@ jobs:
           # The controller installs exactly the committed lockfile of the trusted revision.
           git diff --quiet HEAD -- pnpm-lock.yaml
           pnpm install --frozen-lockfile --ignore-scripts --store-dir "$RUNNER_TEMP/runner-controller-pnpm-store"
-          node packages/paperclip-runner/scripts/controlled-evals/build-runtime.mjs \
+          node packages/pilibala-runner/scripts/controlled-evals/build-runtime.mjs \
             "$RUNNER_TEMP/runner-protocol-runtime" "$GITHUB_SHA" > "$RUNNER_TEMP/controller-runtime-receipt.json"
           echo "runtime_receipt_sha256=$(jq -r .receiptSha256 "$RUNNER_TEMP/controller-runtime-receipt.json")" >> "$GITHUB_OUTPUT"
 
@@ -609,8 +609,8 @@ jobs:
       - name: Verify the real uploaded controller inventory before private preparation
         if: needs.authorize.outputs.accounting_mode == 'controlled'
         env:
-          PAPERCLIP_CONTROLLER_TRANSPORT_DIRECTORY: ${{ runner.temp }}/runner-controller-roundtrip
-          PAPERCLIP_CONTROLLER_RECEIPT_SHA256: ${{ steps.build.outputs.runtime_receipt_sha256 }}
+          PILIBALA_CONTROLLER_TRANSPORT_DIRECTORY: ${{ runner.temp }}/runner-controller-roundtrip
+          PILIBALA_CONTROLLER_RECEIPT_SHA256: ${{ steps.build.outputs.runtime_receipt_sha256 }}
         run: node --test .github/tests/runner-controller-artifact-transport.test.mjs
 
   prepare_controller:
@@ -640,7 +640,7 @@ jobs:
         id: evals_token
         env:
           COMMITPERCLIP_KEY: ${{ secrets.COMMITPERCLIP_KEY }}
-          GH_REPO: paperclipai/paperclip-evals
+          GH_REPO: pilibalaai/pilibala-evals
         run: |
           set -euo pipefail
           token="$(node .github/scripts/get-bot-token.mjs)"
@@ -650,9 +650,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         if: needs.authorize.outputs.accounting_mode == 'controlled'
         with:
-          repository: paperclipai/paperclip-evals
+          repository: pilibalaai/pilibala-evals
           ref: ${{ needs.authorize.outputs.evals_sha }}
-          path: .paperclip-evals
+          path: .pilibala-evals
           token: ${{ steps.evals_token.outputs.value }}
           persist-credentials: false
 
@@ -689,7 +689,7 @@ jobs:
           RUNTIME_RECEIPT_SHA256: ${{ needs.build_controller.outputs.runtime_receipt_sha256 }}
         run: |
           set -euo pipefail
-          node packages/paperclip-runner/scripts/controlled-evals/verify-runtime.mjs "$RUNNER_TEMP/runner-protocol-runtime" "$GITHUB_SHA" "$RUNTIME_RECEIPT_SHA256"
+          node packages/pilibala-runner/scripts/controlled-evals/verify-runtime.mjs "$RUNNER_TEMP/runner-protocol-runtime" "$GITHUB_SHA" "$RUNTIME_RECEIPT_SHA256"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           committed="$(sha256sum pnpm-lock.yaml | cut -d ' ' -f 1)"
           test "$(jq -r '.inputs["pnpm-lock.yaml"]' "$RUNNER_TEMP/runner-protocol-runtime/runtime.json")" = "$committed"
@@ -699,26 +699,26 @@ jobs:
         if: needs.authorize.outputs.accounting_mode == 'controlled'
         id: prepare
         env:
-          PAPERCLIP_PROTOCOL_EVAL_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
-          PAPERCLIP_PROTOCOL_EVALS_SHA: ${{ needs.authorize.outputs.evals_sha }}
-          PAPERCLIP_RUNNER_EVAL_CONTROLLER_LOCK_SHA256: ${{ steps.controller_lock.outputs.sha256 }}
-          PAPERCLIP_RUNNER_EVAL_BRAINTRUST_PROJECT_ID: ${{ vars.RUNNER_E2E_BRAINTRUST_PROJECT_ID }}
+          PILIBALA_PROTOCOL_EVAL_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
+          PILIBALA_PROTOCOL_EVALS_SHA: ${{ needs.authorize.outputs.evals_sha }}
+          PILIBALA_RUNNER_EVAL_CONTROLLER_LOCK_SHA256: ${{ steps.controller_lock.outputs.sha256 }}
+          PILIBALA_RUNNER_EVAL_BRAINTRUST_PROJECT_ID: ${{ vars.RUNNER_E2E_BRAINTRUST_PROJECT_ID }}
           # Optional campaign spend cap; the committed default applies when unset.
           RUNNER_PROTOCOL_EVAL_MAX_USD: ${{ vars.RUNNER_PROTOCOL_EVAL_MAX_USD }}
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git -C .paperclip-evals rev-parse HEAD)" = "$PAPERCLIP_PROTOCOL_EVALS_SHA"
-          python3 .paperclip-evals/evals/paperclip-runner/tools/eval_program.py report --help | grep -q -- --controller-manifest
+          test "$(git -C .pilibala-evals rev-parse HEAD)" = "$PILIBALA_PROTOCOL_EVALS_SHA"
+          python3 .pilibala-evals/evals/pilibala-runner/tools/eval_program.py report --help | grep -q -- --controller-manifest
           (cd runner-protocol-build && sha256sum --check runner-protocol-build.tar.gz.sha256)
           mkdir runner-protocol-build/extracted
           tar -xzf runner-protocol-build/runner-protocol-build.tar.gz -C runner-protocol-build/extracted
-          worker="/tmp/paperclip-runner-controlled-${GITHUB_RUN_ID}"
-          python3 .paperclip-evals/evals/paperclip-runner/tools/prepare_controlled_campaign.py \
+          worker="/tmp/pilibala-runner-controlled-${GITHUB_RUN_ID}"
+          python3 .pilibala-evals/evals/pilibala-runner/tools/prepare_controlled_campaign.py \
             --catalog runner-protocol-catalog/runner-protocol-eval-catalog.json \
-            --runnerd runner-protocol-build/extracted/paperclip-runnerd \
-            --worker-runnerd "$worker/runner/paperclip-runnerd" \
-            --github-run-id "$GITHUB_RUN_ID" --definitions-revision "$PAPERCLIP_PROTOCOL_EVALS_SHA" \
+            --runnerd runner-protocol-build/extracted/pilibala-runnerd \
+            --worker-runnerd "$worker/runner/pilibala-runnerd" \
+            --github-run-id "$GITHUB_RUN_ID" --definitions-revision "$PILIBALA_PROTOCOL_EVALS_SHA" \
             --output "$RUNNER_TEMP/prepared-requests.json"
           control="$RUNNER_TEMP/runner-protocol-control"
           node "$RUNNER_TEMP/runner-protocol-runtime/controlled-evals/hosted.mjs" prepare \
@@ -794,7 +794,7 @@ jobs:
         id: evals_token
         env:
           COMMITPERCLIP_KEY: ${{ secrets.COMMITPERCLIP_KEY }}
-          GH_REPO: paperclipai/paperclip-evals
+          GH_REPO: pilibalaai/pilibala-evals
         run: |
           set -euo pipefail
           token="$(node .github/scripts/get-bot-token.mjs)"
@@ -803,9 +803,9 @@ jobs:
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: paperclipai/paperclip-evals
+          repository: pilibalaai/pilibala-evals
           ref: ${{ needs.authorize.outputs.evals_sha }}
-          path: .paperclip-evals
+          path: .pilibala-evals
           token: ${{ steps.evals_token.outputs.value }}
           persist-credentials: false
 
@@ -826,20 +826,20 @@ jobs:
           sha256sum --check runner-protocol-build.tar.gz.sha256
           mkdir extracted
           tar --extract --gzip --file runner-protocol-build.tar.gz --directory extracted
-          test -x extracted/paperclip-runnerd
+          test -x extracted/pilibala-runnerd
 
       - name: Download the trusted portable controller
         if: needs.authorize.outputs.accounting_mode == 'controlled'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           artifact-ids: ${{ needs.prepare_controller.outputs.artifact_id }}
-          path: /tmp/paperclip-runner-controlled-${{ github.run_id }}/runtime
+          path: /tmp/pilibala-runner-controlled-${{ github.run_id }}/runtime
 
       - name: Stage an owned provider Node before credentials
         run: |
           set -euo pipefail
           mkdir -p cell-output
-          node packages/paperclip-runner/scripts/stage-runner-provider-node.mjs \
+          node packages/pilibala-runner/scripts/stage-runner-provider-node.mjs \
             "$RUNNER_TEMP/runner-protocol-provider-node" \
             "$GITHUB_WORKSPACE/runner-protocol-build/extracted/portable/dist/cli/acpx-runtime-sidecar.cjs" \
             cell-output/provider-node-receipt.json
@@ -851,8 +851,8 @@ jobs:
           RUNTIME_RECEIPT_SHA256: ${{ needs.prepare_controller.outputs.runtime_receipt_sha256 }}
         run: |
           set -euo pipefail
-          root="/tmp/paperclip-runner-controlled-${GITHUB_RUN_ID}"
-          node packages/paperclip-runner/scripts/controlled-evals/verify-runtime.mjs "$root/runtime" "$GITHUB_SHA" "$RUNTIME_RECEIPT_SHA256"
+          root="/tmp/pilibala-runner-controlled-${GITHUB_RUN_ID}"
+          node packages/pilibala-runner/scripts/controlled-evals/verify-runtime.mjs "$root/runtime" "$GITHUB_SHA" "$RUNTIME_RECEIPT_SHA256"
           cp -a runner-protocol-build/extracted "$root/runner"
 
       # Keep the host policy aligned with runner-full-stack-e2e.yml. This is
@@ -860,7 +860,7 @@ jobs:
       - name: Provision Codex sandbox on the disposable trusted runner
         if: matrix.provider == 'codex' || matrix.rosterId == 'protocol-live-acpx-codex-control'
         env:
-          CONTROLLED_RUNNER_ROOT: ${{ needs.authorize.outputs.accounting_mode == 'controlled' && format('/tmp/paperclip-runner-controlled-{0}/runner', github.run_id) || '' }}
+          CONTROLLED_RUNNER_ROOT: ${{ needs.authorize.outputs.accounting_mode == 'controlled' && format('/tmp/pilibala-runner-controlled-{0}/runner', github.run_id) || '' }}
         run: |
           node --input-type=module <<'NODE'
           import { execFileSync } from "node:child_process";
@@ -885,8 +885,8 @@ jobs:
           if (!binary.startsWith(root + "/node_modules/.pnpm/") || !binary.endsWith(suffix) || !/^[/A-Za-z0-9_.@+\-]+$/.test(binary)) {
             throw new Error("Codex executable is outside the resolved dependency tree");
           }
-          const name = `paperclip-e2e-codex-${createHash("sha256").update(binary).digest("hex").slice(0,16)}`;
-          const profilePath = path.join(process.env.RUNNER_TEMP, "paperclip-codex-userns.apparmor");
+          const name = `pilibala-e2e-codex-${createHash("sha256").update(binary).digest("hex").slice(0,16)}`;
+          const profilePath = path.join(process.env.RUNNER_TEMP, "pilibala-codex-userns.apparmor");
           writeFileSync(profilePath, `abi <abi/4.0>,\ninclude <tunables/global>\nprofile ${name} "${binary}" flags=(unconfined) {\n  userns,\n}\n`, {mode:0o600, flag:"wx"});
           execFileSync("sudo", ["-n", "apparmor_parser", "-r", profilePath], {timeout:15000, stdio:"pipe"});
           NODE
@@ -912,27 +912,27 @@ jobs:
           AWS_SESSION_TOKEN: ${{ steps.private_history_credentials.outputs.aws-session-token }}
           AWS_REGION: ${{ vars.RUNNER_E2E_PRIVATE_HISTORY_AWS_REGION }}
           RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET: ${{ vars.RUNNER_E2E_PRIVATE_HISTORY_S3_BUCKET }}
-        run: node "/tmp/paperclip-runner-controlled-${GITHUB_RUN_ID}/runtime/private-history.mjs" download protocol-control "$GITHUB_RUN_ID" "/tmp/paperclip-runner-controlled-${GITHUB_RUN_ID}/control" "$CELL_ID"
+        run: node "/tmp/pilibala-runner-controlled-${GITHUB_RUN_ID}/runtime/private-history.mjs" download protocol-control "$GITHUB_RUN_ID" "/tmp/pilibala-runner-controlled-${GITHUB_RUN_ID}/control" "$CELL_ID"
 
       - name: Verify current worker admission before provider credentials
         if: needs.authorize.outputs.accounting_mode == 'controlled'
         env:
           MANIFEST_SHA256: ${{ needs.prepare_controller.outputs.manifest_sha256 }}
-          PAPERCLIP_RUNNER_EVAL_EXECUTION_ID: ${{ matrix.cellId }}
+          PILIBALA_RUNNER_EVAL_EXECUTION_ID: ${{ matrix.cellId }}
         run: |
           set -euo pipefail
-          root="/tmp/paperclip-runner-controlled-${GITHUB_RUN_ID}"
-          node "$root/runtime/controlled-evals/hosted.mjs" verify "$root/control/controller-manifest.json" "$MANIFEST_SHA256" "$PAPERCLIP_RUNNER_EVAL_EXECUTION_ID"
+          root="/tmp/pilibala-runner-controlled-${GITHUB_RUN_ID}"
+          node "$root/runtime/controlled-evals/hosted.mjs" verify "$root/control/controller-manifest.json" "$MANIFEST_SHA256" "$PILIBALA_RUNNER_EVAL_EXECUTION_ID"
           {
-            echo "PAPERCLIP_RUNNER_EVAL_CONTROL_MANIFEST=$root/control/controller-manifest.json"
-            echo "PAPERCLIP_RUNNER_EVAL_ARCHIVE_CLI=$root/runtime/controlled-evals/archive.mjs"
-            echo "PAPERCLIP_RUNNER_EVAL_EXECUTION_ID=$PAPERCLIP_RUNNER_EVAL_EXECUTION_ID"
+            echo "PILIBALA_RUNNER_EVAL_CONTROL_MANIFEST=$root/control/controller-manifest.json"
+            echo "PILIBALA_RUNNER_EVAL_ARCHIVE_CLI=$root/runtime/controlled-evals/archive.mjs"
+            echo "PILIBALA_RUNNER_EVAL_EXECUTION_ID=$PILIBALA_RUNNER_EVAL_EXECUTION_ID"
           } >> "$GITHUB_ENV"
 
       - name: Prepare short-lived AgentCore web identity
         if: matrix.credentialName == 'AWS_AGENTCORE_OIDC'
         env:
-          AGENTCORE_ROLE_ARN: ${{ vars.PAPERCLIP_AWS_AGENTCORE_EXECUTION_ROLE_ARN }}
+          AGENTCORE_ROLE_ARN: ${{ vars.PILIBALA_AWS_AGENTCORE_EXECUTION_ROLE_ARN }}
         run: |
           set -euo pipefail
           test -n "$AGENTCORE_ROLE_ARN"
@@ -965,28 +965,28 @@ jobs:
           ANTHROPIC_API_KEY: ${{ matrix.credentialName == 'ANTHROPIC_API_KEY' && secrets.ANTHROPIC_API_KEY || '' }}
           OPENROUTER_API_KEY: ${{ matrix.credentialName == 'OPENROUTER_API_KEY' && secrets.OPENROUTER_API_KEY || '' }}
           XAI_API_KEY: ${{ matrix.credentialName == 'XAI_API_KEY' && secrets.XAI_API_KEY || '' }}
-          PAPERCLIP_ACPX_GROK_AUTH_JSON_SECRET: ${{ matrix.credentialName == 'PAPERCLIP_ACPX_GROK_AUTH_JSON_SECRET' && secrets.GROK_AUTH_JSON || '' }}
+          PILIBALA_ACPX_GROK_AUTH_JSON_SECRET: ${{ matrix.credentialName == 'PILIBALA_ACPX_GROK_AUTH_JSON_SECRET' && secrets.GROK_AUTH_JSON || '' }}
           COPILOT_GITHUB_TOKEN: ${{ matrix.credentialName == 'COPILOT_GITHUB_TOKEN' && secrets.COPILOT_GITHUB_TOKEN || '' }}
-          PAPERCLIP_CLAUDE_MANAGED_PROFILE_ID: ${{ vars.PAPERCLIP_CLAUDE_MANAGED_PROFILE_ID }}
-          PAPERCLIP_CLAUDE_MANAGED_AGENT_ID: ${{ vars.PAPERCLIP_CLAUDE_MANAGED_AGENT_ID }}
-          PAPERCLIP_CLAUDE_MANAGED_AGENT_VERSION: ${{ vars.PAPERCLIP_CLAUDE_MANAGED_AGENT_VERSION }}
-          PAPERCLIP_CLAUDE_MANAGED_ENVIRONMENT_ID: ${{ vars.PAPERCLIP_CLAUDE_MANAGED_ENVIRONMENT_ID }}
-          AWS_REGION: ${{ vars.PAPERCLIP_AWS_AGENTCORE_REGION }}
-          AWS_DEFAULT_REGION: ${{ vars.PAPERCLIP_AWS_AGENTCORE_REGION }}
-          PAPERCLIP_AWS_AGENTCORE_PROFILE_ID: ${{ vars.PAPERCLIP_AWS_AGENTCORE_PROFILE_ID }}
-          PAPERCLIP_AWS_AGENTCORE_ACCOUNT_ID: ${{ vars.PAPERCLIP_AWS_AGENTCORE_ACCOUNT_ID }}
-          PAPERCLIP_AWS_AGENTCORE_HARNESS_ARN: ${{ vars.PAPERCLIP_AWS_AGENTCORE_HARNESS_ARN }}
-          PAPERCLIP_AWS_AGENTCORE_HARNESS_VERSION: ${{ vars.PAPERCLIP_AWS_AGENTCORE_HARNESS_VERSION }}
-          PAPERCLIP_AWS_AGENTCORE_ENDPOINT_ARN: ${{ vars.PAPERCLIP_AWS_AGENTCORE_ENDPOINT_ARN }}
-          PAPERCLIP_AWS_AGENTCORE_ENDPOINT_QUALIFIER: ${{ vars.PAPERCLIP_AWS_AGENTCORE_ENDPOINT_QUALIFIER }}
-          PAPERCLIP_AWS_AGENTCORE_RUNTIME_ARN: ${{ vars.PAPERCLIP_AWS_AGENTCORE_RUNTIME_ARN }}
-          PAPERCLIP_AWS_AGENTCORE_MEMORY_ARN: ${{ vars.PAPERCLIP_AWS_AGENTCORE_MEMORY_ARN }}
-          PAPERCLIP_AWS_AGENTCORE_MEMORY_ID: ${{ vars.PAPERCLIP_AWS_AGENTCORE_MEMORY_ID }}
-          PAPERCLIP_AWS_AGENTCORE_INVOCATION_ROLE_ARN: ${{ vars.PAPERCLIP_AWS_AGENTCORE_INVOCATION_ROLE_ARN }}
-          PAPERCLIP_AWS_AGENTCORE_CONTEXT_BUCKET: ${{ vars.PAPERCLIP_AWS_AGENTCORE_CONTEXT_BUCKET }}
-          PAPERCLIP_AWS_AGENTCORE_CONTEXT_PREFIX: ${{ vars.PAPERCLIP_AWS_AGENTCORE_CONTEXT_PREFIX }}
-          PAPERCLIP_AWS_AGENTCORE_CONTEXT_KMS_KEY_ARN: ${{ vars.PAPERCLIP_AWS_AGENTCORE_CONTEXT_KMS_KEY_ARN }}
-          PAPERCLIP_AWS_AGENTCORE_QUALIFICATION_REVISION: ${{ vars.PAPERCLIP_AWS_AGENTCORE_QUALIFICATION_REVISION }}
+          PILIBALA_CLAUDE_MANAGED_PROFILE_ID: ${{ vars.PILIBALA_CLAUDE_MANAGED_PROFILE_ID }}
+          PILIBALA_CLAUDE_MANAGED_AGENT_ID: ${{ vars.PILIBALA_CLAUDE_MANAGED_AGENT_ID }}
+          PILIBALA_CLAUDE_MANAGED_AGENT_VERSION: ${{ vars.PILIBALA_CLAUDE_MANAGED_AGENT_VERSION }}
+          PILIBALA_CLAUDE_MANAGED_ENVIRONMENT_ID: ${{ vars.PILIBALA_CLAUDE_MANAGED_ENVIRONMENT_ID }}
+          AWS_REGION: ${{ vars.PILIBALA_AWS_AGENTCORE_REGION }}
+          AWS_DEFAULT_REGION: ${{ vars.PILIBALA_AWS_AGENTCORE_REGION }}
+          PILIBALA_AWS_AGENTCORE_PROFILE_ID: ${{ vars.PILIBALA_AWS_AGENTCORE_PROFILE_ID }}
+          PILIBALA_AWS_AGENTCORE_ACCOUNT_ID: ${{ vars.PILIBALA_AWS_AGENTCORE_ACCOUNT_ID }}
+          PILIBALA_AWS_AGENTCORE_HARNESS_ARN: ${{ vars.PILIBALA_AWS_AGENTCORE_HARNESS_ARN }}
+          PILIBALA_AWS_AGENTCORE_HARNESS_VERSION: ${{ vars.PILIBALA_AWS_AGENTCORE_HARNESS_VERSION }}
+          PILIBALA_AWS_AGENTCORE_ENDPOINT_ARN: ${{ vars.PILIBALA_AWS_AGENTCORE_ENDPOINT_ARN }}
+          PILIBALA_AWS_AGENTCORE_ENDPOINT_QUALIFIER: ${{ vars.PILIBALA_AWS_AGENTCORE_ENDPOINT_QUALIFIER }}
+          PILIBALA_AWS_AGENTCORE_RUNTIME_ARN: ${{ vars.PILIBALA_AWS_AGENTCORE_RUNTIME_ARN }}
+          PILIBALA_AWS_AGENTCORE_MEMORY_ARN: ${{ vars.PILIBALA_AWS_AGENTCORE_MEMORY_ARN }}
+          PILIBALA_AWS_AGENTCORE_MEMORY_ID: ${{ vars.PILIBALA_AWS_AGENTCORE_MEMORY_ID }}
+          PILIBALA_AWS_AGENTCORE_INVOCATION_ROLE_ARN: ${{ vars.PILIBALA_AWS_AGENTCORE_INVOCATION_ROLE_ARN }}
+          PILIBALA_AWS_AGENTCORE_CONTEXT_BUCKET: ${{ vars.PILIBALA_AWS_AGENTCORE_CONTEXT_BUCKET }}
+          PILIBALA_AWS_AGENTCORE_CONTEXT_PREFIX: ${{ vars.PILIBALA_AWS_AGENTCORE_CONTEXT_PREFIX }}
+          PILIBALA_AWS_AGENTCORE_CONTEXT_KMS_KEY_ARN: ${{ vars.PILIBALA_AWS_AGENTCORE_CONTEXT_KMS_KEY_ARN }}
+          PILIBALA_AWS_AGENTCORE_QUALIFICATION_REVISION: ${{ vars.PILIBALA_AWS_AGENTCORE_QUALIFICATION_REVISION }}
         run: |
           set -euo pipefail
           mkdir -p cell-output/runs
@@ -994,24 +994,24 @@ jobs:
             test -n "${!CREDENTIAL_NAME:-}"
           fi
           if [ "$PROVIDER" = "claude_managed" ]; then
-            test -n "$PAPERCLIP_CLAUDE_MANAGED_PROFILE_ID"
-            test -n "$PAPERCLIP_CLAUDE_MANAGED_AGENT_ID"
-            test -n "$PAPERCLIP_CLAUDE_MANAGED_AGENT_VERSION"
-            test -n "$PAPERCLIP_CLAUDE_MANAGED_ENVIRONMENT_ID"
+            test -n "$PILIBALA_CLAUDE_MANAGED_PROFILE_ID"
+            test -n "$PILIBALA_CLAUDE_MANAGED_AGENT_ID"
+            test -n "$PILIBALA_CLAUDE_MANAGED_AGENT_VERSION"
+            test -n "$PILIBALA_CLAUDE_MANAGED_ENVIRONMENT_ID"
           fi
           runner_cli=runner-protocol-build/extracted/portable/dist/cli/eval-session.js
-          runner_package=runner-protocol-build/extracted/paperclip-runner.tgz
-          runnerd=runner-protocol-build/extracted/paperclip-runnerd
+          runner_package=runner-protocol-build/extracted/pilibala-runner.tgz
+          runnerd=runner-protocol-build/extracted/pilibala-runnerd
           if [ "$ACCOUNTING_MODE" = controlled ]; then
             test -n "$BRAINTRUST_API_KEY"
-            root="/tmp/paperclip-runner-controlled-${GITHUB_RUN_ID}"
+            root="/tmp/pilibala-runner-controlled-${GITHUB_RUN_ID}"
             runner_cli="$root/runtime/controlled-evals/run.mjs"
-            runner_package="$root/runner/paperclip-runner.tgz"
-            runnerd="$root/runner/paperclip-runnerd"
+            runner_package="$root/runner/pilibala-runner.tgz"
+            runnerd="$root/runner/pilibala-runnerd"
           fi
           set +e
-          python3 .paperclip-evals/evals/paperclip-runner/tools/run_live_roster.py run \
-            --roster ".paperclip-evals/evals/paperclip-runner/rosters/$ROSTER_FILE" \
+          python3 .pilibala-evals/evals/pilibala-runner/tools/run_live_roster.py run \
+            --roster ".pilibala-evals/evals/pilibala-runner/rosters/$ROSTER_FILE" \
             --case "$CASE_ID" \
             --runner-cli "$runner_cli" \
             --runner-package "$runner_package" \
@@ -1026,7 +1026,7 @@ jobs:
           import { readFileSync, writeFileSync } from "node:fs";
           let authenticationMode;
           let authenticationEvidenceFailure;
-          if (["XAI_API_KEY", "PAPERCLIP_ACPX_GROK_AUTH_JSON_SECRET"].includes(process.env.CREDENTIAL_NAME)) {
+          if (["XAI_API_KEY", "PILIBALA_ACPX_GROK_AUTH_JSON_SECRET"].includes(process.env.CREDENTIAL_NAME)) {
             const expected = process.env.CREDENTIAL_NAME === "XAI_API_KEY" ? "api_key" : "subscription";
             try {
               const observed = JSON.parse(readFileSync("cell-output/roster-summary.json", "utf8")).authenticationMode;
@@ -1038,7 +1038,7 @@ jobs:
             }
           }
           writeFileSync("cell-output/cell.json", `${JSON.stringify({
-            schema: "paperclip.runner-protocol-eval.cell/v1",
+            schema: "pilibala.runner-protocol-eval.cell/v1",
             cellId: process.env.CELL_ID,
             rosterFile: process.env.ROSTER_FILE,
             caseId: process.env.CASE_ID,
@@ -1062,7 +1062,7 @@ jobs:
           CELL_ID: ${{ matrix.cellId }}
         run: |
           test -d cell-output
-          node "/tmp/paperclip-runner-controlled-${GITHUB_RUN_ID}/runtime/private-history.mjs" upload "protocol-cell-$CELL_ID" "$GITHUB_RUN_ID" cell-output
+          node "/tmp/pilibala-runner-controlled-${GITHUB_RUN_ID}/runtime/private-history.mjs" upload "protocol-cell-$CELL_ID" "$GITHUB_RUN_ID" cell-output
 
       - name: Upload legacy cell attempt
         if: always() && needs.authorize.outputs.accounting_mode == 'legacy'
@@ -1114,7 +1114,7 @@ jobs:
         id: evals_token
         env:
           COMMITPERCLIP_KEY: ${{ secrets.COMMITPERCLIP_KEY }}
-          GH_REPO: paperclipai/paperclip-evals
+          GH_REPO: pilibalaai/pilibala-evals
         run: |
           set -euo pipefail
           token="$(node .github/scripts/get-bot-token.mjs)"
@@ -1123,9 +1123,9 @@ jobs:
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: paperclipai/paperclip-evals
+          repository: pilibalaai/pilibala-evals
           ref: ${{ needs.authorize.outputs.evals_sha }}
-          path: .paperclip-evals
+          path: .pilibala-evals
           token: ${{ steps.evals_token.outputs.value }}
           persist-credentials: false
 
@@ -1173,7 +1173,7 @@ jobs:
           RUNTIME_RECEIPT_SHA256: ${{ needs.prepare_controller.outputs.runtime_receipt_sha256 }}
         run: |
           set -euo pipefail
-          node packages/paperclip-runner/scripts/controlled-evals/verify-runtime.mjs "$RUNNER_TEMP/runner-protocol-runtime" "$GITHUB_SHA" "$RUNTIME_RECEIPT_SHA256"
+          node packages/pilibala-runner/scripts/controlled-evals/verify-runtime.mjs "$RUNNER_TEMP/runner-protocol-runtime" "$GITHUB_SHA" "$RUNTIME_RECEIPT_SHA256"
 
       - name: Obtain private archive credentials for transfer steps only
         if: needs.authorize.outputs.accounting_mode == 'controlled'
@@ -1207,8 +1207,8 @@ jobs:
             node "$archive" download "protocol-cell-$cell" "$GITHUB_RUN_ID" "downloaded-runner-protocol-evals/runner-protocol-eval-$GITHUB_RUN_ID-1-$cell" || echo 'A private cell is unavailable; its allocation remains held.'
           done < <(jq -r '.attempts[].executionId' "$control/controller-manifest.json")
           {
-            echo "PAPERCLIP_RUNNER_EVAL_CONTROL_MANIFEST=$control/controller-manifest.json"
-            echo "PAPERCLIP_RUNNER_EVAL_ARCHIVE_CLI=$RUNNER_TEMP/runner-protocol-runtime/controlled-evals/archive.mjs"
+            echo "PILIBALA_RUNNER_EVAL_CONTROL_MANIFEST=$control/controller-manifest.json"
+            echo "PILIBALA_RUNNER_EVAL_ARCHIVE_CLI=$RUNNER_TEMP/runner-protocol-runtime/controlled-evals/archive.mjs"
           } >> "$GITHUB_ENV"
 
       - name: Download every legacy cell
@@ -1244,56 +1244,56 @@ jobs:
 
       - name: Aggregate every expected cell, including missing infrastructure cells
         env:
-          PAPERCLIP_PROTOCOL_EVAL_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
-          PAPERCLIP_PROTOCOL_EVAL_SOURCE_REF: ${{ needs.authorize.outputs.target_ref }}
-          PAPERCLIP_PROTOCOL_EVALS_SHA: ${{ needs.authorize.outputs.evals_sha }}
-          PAPERCLIP_PROTOCOL_EVAL_WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PILIBALA_PROTOCOL_EVAL_SOURCE_SHA: ${{ needs.authorize.outputs.target_sha }}
+          PILIBALA_PROTOCOL_EVAL_SOURCE_REF: ${{ needs.authorize.outputs.target_ref }}
+          PILIBALA_PROTOCOL_EVALS_SHA: ${{ needs.authorize.outputs.evals_sha }}
+          PILIBALA_PROTOCOL_EVAL_WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          node packages/paperclip-runner/scripts/runner-protocol-eval-campaign.mjs aggregate \
+          node packages/pilibala-runner/scripts/runner-protocol-eval-campaign.mjs aggregate \
             --catalog runner-protocol-catalog/runner-protocol-eval-catalog.json \
             --downloads downloaded-runner-protocol-evals \
-            --evals-root .paperclip-evals \
+            --evals-root .pilibala-evals \
             --runs-out runner-protocol-merged/runs \
             --campaign-out runner-protocol-merged/campaign.json
 
       - name: Render the access-controlled canonical Evalbook report
         run: |
           control_args=()
-          if [ -n "${PAPERCLIP_RUNNER_EVAL_CONTROL_MANIFEST:-}" ]; then
-            control_args=(--controller-manifest "$PAPERCLIP_RUNNER_EVAL_CONTROL_MANIFEST" --controller-archive-cli "$PAPERCLIP_RUNNER_EVAL_ARCHIVE_CLI")
+          if [ -n "${PILIBALA_RUNNER_EVAL_CONTROL_MANIFEST:-}" ]; then
+            control_args=(--controller-manifest "$PILIBALA_RUNNER_EVAL_CONTROL_MANIFEST" --controller-archive-cli "$PILIBALA_RUNNER_EVAL_ARCHIVE_CLI")
           fi
           set +e
-          python3 .paperclip-evals/evals/paperclip-runner/tools/eval_program.py report "${control_args[@]}" \
+          python3 .pilibala-evals/evals/pilibala-runner/tools/eval_program.py report "${control_args[@]}" \
             --runs-root runner-protocol-merged/runs \
             --output runner-protocol-merged/report \
             --viewer-root runner-protocol-build/extracted/dist-issue-thread \
-            --inventory .paperclip-evals/evals/paperclip-runner/inventory.json \
-            --coverage-matrix .paperclip-evals/evals/paperclip-runner/coverage-matrix.json > runner-protocol-merged/accounting-report.json
+            --inventory .pilibala-evals/evals/pilibala-runner/inventory.json \
+            --coverage-matrix .pilibala-evals/evals/pilibala-runner/coverage-matrix.json > runner-protocol-merged/accounting-report.json
           status=$?
           set -e
           cp runner-protocol-merged/campaign.json runner-protocol-merged/report/campaign.json
-          if [ -n "${PAPERCLIP_RUNNER_EVAL_CONTROL_MANIFEST:-}" ]; then
-            cp "$PAPERCLIP_RUNNER_EVAL_CONTROL_MANIFEST" runner-protocol-merged/controller-manifest.json
+          if [ -n "${PILIBALA_RUNNER_EVAL_CONTROL_MANIFEST:-}" ]; then
+            cp "$PILIBALA_RUNNER_EVAL_CONTROL_MANIFEST" runner-protocol-merged/controller-manifest.json
           fi
           exit "$status"
 
       - name: Project safe run records for reporting
         if: needs.authorize.outputs.accounting_mode == 'legacy' || needs.authorize.outputs.testops_enabled == 'true'
         run: |
-          node packages/paperclip-runner/scripts/runner-protocol-eval-campaign.mjs sanitize \
+          node packages/pilibala-runner/scripts/runner-protocol-eval-campaign.mjs sanitize \
             --runs-root runner-protocol-merged/runs \
             --output runner-protocol-merged/public-runs
 
       - name: Render the same canonical grid from a public-safe evidence projection
         if: needs.authorize.outputs.accounting_mode == 'legacy'
         run: |
-          python3 .paperclip-evals/evals/paperclip-runner/tools/eval_program.py report \
+          python3 .pilibala-evals/evals/pilibala-runner/tools/eval_program.py report \
             --runs-root runner-protocol-merged/public-runs \
             --output runner-protocol-merged/public-report \
             --viewer-root runner-protocol-build/extracted/dist-issue-thread \
             --public-viewer \
-            --inventory .paperclip-evals/evals/paperclip-runner/inventory.json \
-            --coverage-matrix .paperclip-evals/evals/paperclip-runner/coverage-matrix.json
+            --inventory .pilibala-evals/evals/pilibala-runner/inventory.json \
+            --coverage-matrix .pilibala-evals/evals/pilibala-runner/coverage-matrix.json
           cp runner-protocol-merged/campaign.json runner-protocol-merged/public-report/campaign.json
 
       - name: Create the closed TestOps projection inside the report boundary
@@ -1305,13 +1305,13 @@ jobs:
           mkdir -m 700 runner-protocol-testops-projection
           case "$ACCOUNTING_MODE" in
             controlled)
-              node packages/paperclip-runner/scripts/runner-protocol-testops.mjs export-runs \
+              node packages/pilibala-runner/scripts/runner-protocol-testops.mjs export-runs \
                 runner-protocol-testops-selection/runner-protocol-testops-selection.json \
                 runner-protocol-merged/campaign.json runner-protocol-merged/public-runs \
                 runner-protocol-testops-projection/results
               ;;
             legacy)
-              node packages/paperclip-runner/scripts/runner-protocol-testops.mjs export \
+              node packages/pilibala-runner/scripts/runner-protocol-testops.mjs export \
                 runner-protocol-testops-selection/runner-protocol-testops-selection.json \
                 runner-protocol-merged/public-report runner-protocol-testops-projection/results
               ;;
@@ -1337,15 +1337,15 @@ jobs:
         if: needs.authorize.outputs.accounting_mode == 'legacy'
         run: |
           pnpm install --frozen-lockfile --ignore-scripts --store-dir "$RUNNER_TEMP/runner-report-pnpm-store"
-          pnpm --filter @paperclipai/paperclip-runner exec playwright install --with-deps chromium
-          node packages/paperclip-runner/scripts/verify-runner-evalbook-viewer.mjs --report-root runner-protocol-merged/public-report --screenshots runner-protocol-merged/viewer-proof
-          node packages/paperclip-runner/scripts/verify-runner-evalbook-viewer.mjs --report-root runner-protocol-merged/report
+          pnpm --filter @pilibalaai/pilibala-runner exec playwright install --with-deps chromium
+          node packages/pilibala-runner/scripts/verify-runner-evalbook-viewer.mjs --report-root runner-protocol-merged/public-report --screenshots runner-protocol-merged/viewer-proof
+          node packages/pilibala-runner/scripts/verify-runner-evalbook-viewer.mjs --report-root runner-protocol-merged/report
 
       - name: Enforce the static public allowlist
         if: needs.authorize.outputs.accounting_mode == 'legacy'
         id: public_report
         run: |
-          node --input-type=module -e 'import { validatePublicProtocolEvalReport } from "./packages/paperclip-runner/scripts/publish-runner-protocol-eval-history.mjs"; await validatePublicProtocolEvalReport("runner-protocol-merged/public-report", { viewerRoot: "runner-protocol-build/extracted/dist-issue-thread" });'
+          node --input-type=module -e 'import { validatePublicProtocolEvalReport } from "./packages/pilibala-runner/scripts/publish-runner-protocol-eval-history.mjs"; await validatePublicProtocolEvalReport("runner-protocol-merged/public-report", { viewerRoot: "runner-protocol-build/extracted/dist-issue-thread" });'
           echo "ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Add campaign result to the workflow summary
@@ -1354,7 +1354,7 @@ jobs:
           {
             echo '## Runner direct live protocol evals'
             echo
-            jq -r '"- Cells: \(.totals.passed)/\(.totals.selected) passed\n- Behavior failures: \(.totals.behaviorFailures)\n- Infrastructure failures: \(.totals.infrastructureFailures)\n- Paperclip: `\(.source.paperclip.sha)`\n- Evals: `\(.source.evals.sha)`"' runner-protocol-merged/campaign.json
+            jq -r '"- Cells: \(.totals.passed)/\(.totals.selected) passed\n- Behavior failures: \(.totals.behaviorFailures)\n- Infrastructure failures: \(.totals.infrastructureFailures)\n- Pilibala: `\(.source.pilibala.sha)`\n- Evals: `\(.source.evals.sha)`"' runner-protocol-merged/campaign.json
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Retain controlled Evalbook and accounting in private storage
@@ -1427,14 +1427,14 @@ jobs:
         if: steps.projection.outcome != 'success'
         run: |
           mkdir -m 700 runner-protocol-testops-fallback
-          node packages/paperclip-runner/scripts/runner-protocol-testops.mjs export \
+          node packages/pilibala-runner/scripts/runner-protocol-testops.mjs export \
             runner-protocol-testops-selection/runner-protocol-testops-selection.json \
             runner-protocol-testops-unavailable runner-protocol-testops-fallback/results
           echo "RUNNER_PROTOCOL_TESTOPS_RESULTS=runner-protocol-testops-fallback/results" >> "$GITHUB_ENV"
       - uses: allure-framework/setup-allurectl@2d89ee0b7ba2f59dbe9849b6df5763cab78e14db # v1
         with:
           allurectl-version: 2.23.1
-          allure-endpoint: https://paperclip.testops.cloud
+          allure-endpoint: https://pilibala.testops.cloud
           allure-project-id: '1'
           allure-token: ${{ secrets.ALLURE_TOKEN }}
       - name: Upload into the original TestOps job run
@@ -1446,7 +1446,7 @@ jobs:
       - name: Verify the persisted status and same-run case bindings
         env:
           ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
-        run: node packages/paperclip-runner/scripts/runner-protocol-testops.mjs verify "${RUNNER_PROTOCOL_TESTOPS_RESULTS}-receipt.json"
+        run: node packages/pilibala-runner/scripts/runner-protocol-testops.mjs verify "${RUNNER_PROTOCOL_TESTOPS_RESULTS}-receipt.json"
       - if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -1504,9 +1504,9 @@ jobs:
       - name: Publish versioned report and refresh the root index
         id: publish
         env:
-          PAPERCLIP_RUNNER_PROTOCOL_EVAL_PUBLIC_REPORT_DIR: ${{ github.workspace }}/runner-protocol-public-report
-          PAPERCLIP_RUNNER_PROTOCOL_EVAL_VIEWER_DIR: ${{ github.workspace }}/runner-protocol-trusted-viewer
+          PILIBALA_RUNNER_PROTOCOL_EVAL_PUBLIC_REPORT_DIR: ${{ github.workspace }}/runner-protocol-public-report
+          PILIBALA_RUNNER_PROTOCOL_EVAL_VIEWER_DIR: ${{ github.workspace }}/runner-protocol-trusted-viewer
           RUNNER_PROTOCOL_EVAL_HISTORY_S3_BUCKET: ${{ vars.RUNNER_PROTOCOL_EVAL_HISTORY_S3_BUCKET || vars.RUNNER_E2E_HISTORY_S3_BUCKET }}
           RUNNER_PROTOCOL_EVAL_HISTORY_PREFIX: ${{ vars.RUNNER_PROTOCOL_EVAL_HISTORY_PREFIX || 'runner-protocol-evals' }}
           RUNNER_PROTOCOL_EVAL_HISTORY_PUBLIC_BASE_URL: ${{ vars.RUNNER_PROTOCOL_EVAL_HISTORY_PUBLIC_BASE_URL || vars.RUNNER_E2E_HISTORY_PUBLIC_BASE_URL }}
-        run: node packages/paperclip-runner/scripts/publish-runner-protocol-eval-history.mjs
+        run: node packages/pilibala-runner/scripts/publish-runner-protocol-eval-history.mjs

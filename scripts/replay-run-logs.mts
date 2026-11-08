@@ -1,6 +1,6 @@
 /**
  * Replay real run logs through the REAL UI parsing pipeline to verify both diagnoses.
- * Run: npx tsx scripts/replay-run-logs.mts (from /home/amber/paperclip)
+ * Run: npx tsx scripts/replay-run-logs.mts (from /home/amber/pilibala)
  */
 import fs from "node:fs";
 
@@ -28,8 +28,8 @@ function dist(entries: any[]) {
   return d;
 }
 
-const GW = "/home/amber/.paperclip/instances/default/data/run-logs/22bb83e2-4344-4a27-9f32-b853ce198a3e/19e9c7ad-963e-4ef1-99e1-8376f69440db/267089d0-a230-478f-93f1-25ed4cf945e4.ndjson";
-const ACPX = "/home/amber/.paperclip/instances/default/data/run-logs/22bb83e2-4344-4a27-9f32-b853ce198a3e/9d1ec7a5-71ed-45e7-ba80-1ad75483a9f4/836ae6e8-704b-4ed4-bdf6-058d8e3c8b7d.ndjson";
+const GW = "/home/amber/.pilibala/instances/default/data/run-logs/22bb83e2-4344-4a27-9f32-b853ce198a3e/19e9c7ad-963e-4ef1-99e1-8376f69440db/267089d0-a230-478f-93f1-25ed4cf945e4.ndjson";
+const ACPX = "/home/amber/.pilibala/instances/default/data/run-logs/22bb83e2-4344-4a27-9f32-b853ce198a3e/9d1ec7a5-71ed-45e7-ba80-1ad75483a9f4/836ae6e8-704b-4ed4-bdf6-058d8e3c8b7d.ndjson";
 
 console.log("========== PROBLEM 2: hermes_gateway run 267089d0 (BG task, AMB-71) ==========");
 

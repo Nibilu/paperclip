@@ -7,10 +7,10 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   agents, agentWakeupRequests, companies, createDb, environmentLeases, executionWorkspaces, heartbeatRunEvents,
   heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
-import { executeNativeSession, nativeSessionCleanupBlock, onNativeSessionCleanupSettled, parseNativeExecutionInput } from "../vendor/paperclip-runner/index.js";
-import type { NativeSession } from "../vendor/paperclip-runner/index.js";
+import { executeNativeSession, nativeSessionCleanupBlock, onNativeSessionCleanupSettled, parseNativeExecutionInput } from "../vendor/pilibala-runner/index.js";
+import type { NativeSession } from "../vendor/pilibala-runner/index.js";
 import { appendHeartbeatRunEvent } from "./heartbeat-run-events.js";
 import { heartbeatService } from "./heartbeat.js";
 import { getExecutionBlocker } from "./execution-blocker.js";
@@ -38,13 +38,13 @@ describe("task Retry after inherited native cleanup quarantine", () => {
     const ownerId = randomUUID(), sourceId = randomUUID(), nativeSessionId = randomUUID(), runnerInstanceId = randomUUID();
     const workspaceId = randomUUID();
     const execution = (runId: string) => parseNativeExecutionInput({
-      schema: "paperclip.native-execution-input.v1", provider: { kind: "codex", model: null },
+      schema: "pilibala.native-execution-input.v1", provider: { kind: "codex", model: null },
       binding: { companyId, agentId, issueId, runId, executionWorkspaceId: transient ? runId : workspaceId },
       task: { identifier: "TEST", title: "Continue saved work", description: null, prompt: "Continue saved work", workMode: "standard" },
       workspace: { cwd: base, repoUrl: null, repoRef: null, branchName: null },
       session: { normalizedSessionId: nativeSessionId, driverKind: "codex_app_server", protocolVersion: 1,
         lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null } },
-      completionContract: { id: "contract", sha256: "sha", schemaVersion: "paperclip.completion-contract.v1",
+      completionContract: { id: "contract", sha256: "sha", schemaVersion: "pilibala.completion-contract.v1",
         contract: { revision: "1", objective: "Continue saved work", criteria: [{ id: "done", requirement: "Save the result" }] } },
       interactionResponses: [], credentialBindings: [],
     });
@@ -52,7 +52,7 @@ describe("task Retry after inherited native cleanup quarantine", () => {
     const processIdentity = { processPid: 99_999_999, processGroupId: 99_999_999, processStartedAt };
     await db.insert(companies).values({ id: companyId, name: "Quarantined Retry", defaultResponsibleUserId: "board",
       issuePrefix: `Q${companyId.replaceAll("-", "")}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Native worker", adapterType: "paperclip_runner", status: "idle",
+    await db.insert(agents).values({ id: agentId, companyId, name: "Native worker", adapterType: "pilibala_runner", status: "idle",
       runtimeConfig: { heartbeat: { maxConcurrentRuns: 1 } } });
     await db.insert(issues).values({ id: issueId, companyId, title: "Continue saved work", status: "blocked", assigneeAgentId: agentId });
     if (!transient) {
@@ -85,7 +85,7 @@ describe("task Retry after inherited native cleanup quarantine", () => {
         automaticRecovery: { replay: "blocked", actionOutcome: "unknown" } } });
     const identity = { runId: ownerId, runnerInstanceId, normalizedSessionId: nativeSessionId,
       environmentLeaseId: transient ? ownerId : workspaceId, turnId: `turn-${ownerId}`, itemId: `item-${ownerId}` };
-    const event = { schema: "paperclip.prp.event.v1", schemaVersion: 1, sourceKind: "runner", sourceSeq: 5,
+    const event = { schema: "pilibala.prp.event.v1", schemaVersion: 1, sourceKind: "runner", sourceSeq: 5,
       sourceEventId: "provider-open", sourceInstanceId: runnerInstanceId, runId: ownerId,
       normalizedSessionId: nativeSessionId, turnId: identity.turnId, itemId: identity.itemId,
       priority: 0, emittedAt: processStartedAt.toISOString(), eventType: "session.resumed",
@@ -95,15 +95,15 @@ describe("task Retry after inherited native cleanup quarantine", () => {
     await appendHeartbeatRunEvent(db, { companyId, runId: ownerId, agentId, eventType: event.eventType,
       payload: { prpEvent: normalized }, nativeSource: { sourceInstanceId: runnerInstanceId,
         sourceEventId: normalized.sourceEventId, sourceSeq: 1, protocolSchemaVersion: 1, canonicalPayload: normalized } });
-    const root = join(base, nativeSha256({ schema: "paperclip.native-session-scope.v2", companyId, agentId,
+    const root = join(base, nativeSha256({ schema: "pilibala.native-session-scope.v2", companyId, agentId,
       workspace: transient ? { kind: "transient", cwd: base, repoUrl: null, repoRef: null, branchName: null }
         : { kind: "managed", executionWorkspaceId: workspaceId },
       provider: { driverKind: "codex_app_server", identity: { kind: "codex" } }, normalizedSessionId: nativeSessionId }));
     const files = {
-      "control-plane/control-plane-state.json": { schema: "paperclip.runner.durable.control-plane-state.v1", identity,
+      "control-plane/control-plane-state.json": { schema: "pilibala.runner.durable.control-plane-state.v1", identity,
         committedEvents: [{ envelope: { payload: event } }], commands: [{ status: "pending", payload: { commandType: "tool.result" } }] },
-      "runner/runner-state.json": { schema: "paperclip.runner.durable.state.v1", ...identity, lifecycle: "suspended", outbox: [] },
-      "runner/codex-provider-state.json": { schema: "paperclip.runner.codex-provider-state.v1", lifecycle: "session_open",
+      "runner/runner-state.json": { schema: "pilibala.runner.durable.state.v1", ...identity, lifecycle: "suspended", outbox: [] },
+      "runner/codex-provider-state.json": { schema: "pilibala.runner.codex-provider-state.v1", lifecycle: "session_open",
         threadId: "retained-provider-thread", startupAttempt: null, pendingEvents: [], queuedEvents: [] },
     };
     await mkdir(join(root, "control-plane"), { recursive: true });
@@ -116,8 +116,8 @@ describe("task Retry after inherited native cleanup quarantine", () => {
   it.each(["preserved", "projectless", "changed_binding", "changed_cwd", "pending_operation", "active_lease", "closed_workspace", "remote_workspace", "foreign_receipt"])(
     "admits one fresh successor through canonical Retry without replaying the retained session (%s)", async mode => {
     const base = await mkdtemp(join(tmpdir(), "quarantined-retry-"));
-    const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = base;
+    const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = base;
     try {
       const f = await seed(base, mode === "projectless");
       await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: f.agentId, status: "running" });
@@ -165,7 +165,7 @@ describe("task Retry after inherited native cleanup quarantine", () => {
       for (const [path, value] of Object.entries(f.files)) expect(await readFile(join(f.root, path), "utf8")).toBe(JSON.stringify(value));
       expect(await readFile(join(base, "saved-work.txt"), "utf8")).toContain("Keep the prior result");
     } finally {
-      if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR; else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+      if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR; else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
       await rm(base, { recursive: true, force: true });
     }
   });
@@ -174,8 +174,8 @@ describe("task Retry after inherited native cleanup quarantine", () => {
     "owner_new_launch", "source_new_launch", "foreign_host", "foreign_workspace", "foreign_cwd", "foreign_runner", "missing_provider_receipt",
     "pending_provider_launch", "changed_process_birth", "changed_journal", "normalized_receipt_identity", "provider_identity_conflict"])("keeps quarantine for %s", async mode => {
     const base = await mkdtemp(join(tmpdir(), "quarantined-retry-fence-"));
-    const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = base;
+    const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = base;
     try {
       const f = await seed(base);
       if (mode === "provider_alive" || mode === "pending_provider_launch") {
@@ -239,7 +239,7 @@ describe("task Retry after inherited native cleanup quarantine", () => {
       } else expect(proof).toBeNull();
       expect(await getExecutionBlocker(db, f.companyId, f.issueId)).not.toBeNull();
     } finally {
-      if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR; else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+      if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR; else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
       await rm(base, { recursive: true, force: true });
     }
   });
@@ -250,8 +250,8 @@ describe("task Retry after inherited native cleanup quarantine", () => {
     // a runner, so it has no process record at all. Only the owner can prove
     // the retained session stopped.
     const base = await mkdtemp(join(tmpdir(), "quarantined-never-launched-"));
-    const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = base;
+    const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = base;
     try {
       const f = await seed(base);
       await db.update(heartbeatRuns).set({ processPid: null, processGroupId: null, processStartedAt: null })
@@ -264,15 +264,15 @@ describe("task Retry after inherited native cleanup quarantine", () => {
       if (mode === "stopped") expect(proof).not.toBeNull();
       else expect(proof).toBeNull();
     } finally {
-      if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR; else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+      if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR; else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
       await rm(base, { recursive: true, force: true });
     }
   });
 
   it("holds a Retry while the task's own provider session close is still retained, then starts it", async () => {
     const base = await mkdtemp(join(tmpdir(), "retained-close-retry-"));
-    const previous = process.env.PAPERCLIP_RUNNER_STATE_DIR;
-    process.env.PAPERCLIP_RUNNER_STATE_DIR = base;
+    const previous = process.env.PILIBALA_RUNNER_STATE_DIR;
+    process.env.PILIBALA_RUNNER_STATE_DIR = base;
     let releaseClose = () => {};
     try {
       const f = await seed(base);
@@ -298,13 +298,13 @@ describe("task Retry after inherited native cleanup quarantine", () => {
         close: () => pendingClose,
       };
       await expect(executeNativeSession({
-        input: parseNativeExecutionInput({ schema: "paperclip.native-execution-input.v1", provider: { kind: "codex", model: null },
+        input: parseNativeExecutionInput({ schema: "pilibala.native-execution-input.v1", provider: { kind: "codex", model: null },
           binding: { companyId: f.companyId, agentId: f.agentId, issueId: f.issueId, runId: identity.runId, executionWorkspaceId: f.workspaceId },
           task: { identifier: "TEST", title: "Continue saved work", description: null, prompt: "Continue saved work", workMode: "standard" },
           workspace: { cwd: base, repoUrl: null, repoRef: null, branchName: null },
           session: { normalizedSessionId: identity.sessionId, driverKind: "codex_app_server", protocolVersion: 1,
             lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null } },
-          completionContract: { id: "contract", sha256: "sha", schemaVersion: "paperclip.completion-contract.v1",
+          completionContract: { id: "contract", sha256: "sha", schemaVersion: "pilibala.completion-contract.v1",
             contract: { revision: "1", objective: "Continue saved work", criteria: [{ id: "done", requirement: "Save the result" }] } },
           interactionResponses: [], credentialBindings: [] }),
         backend: { descriptor: async () => ({ kind: "runner", name: "retained-close-backend", version: "1", capabilities }),
@@ -343,7 +343,7 @@ describe("task Retry after inherited native cleanup quarantine", () => {
       expect(await queued()).toHaveLength(1);
     } finally {
       releaseClose();
-      if (previous === undefined) delete process.env.PAPERCLIP_RUNNER_STATE_DIR; else process.env.PAPERCLIP_RUNNER_STATE_DIR = previous;
+      if (previous === undefined) delete process.env.PILIBALA_RUNNER_STATE_DIR; else process.env.PILIBALA_RUNNER_STATE_DIR = previous;
       await rm(base, { recursive: true, force: true });
     }
   });

@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { TaskBrowser } from "@paperclipai/shared";
+import type { TaskBrowser } from "@pilibalaai/shared";
 import { browserUseApi } from "@/api/browser-use";
 import { ApiError } from "@/api/client";
 import { ConnectivityProvider, createConnectivityStore, type ConnectivityStore } from "@/lib/connectivity";
@@ -83,7 +83,7 @@ it("reports failed keep-open and clears the warning after recovery", async () =>
 
 // --- Disconnect handling for the viewer credential read -------------------------
 
-const unavailable = () => new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" });
+const unavailable = () => new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" });
 let store: ConnectivityStore;
 let probe: ReturnType<typeof vi.fn<() => Promise<{ reachable: boolean; retryAfterMs: number | null }>>>;
 beforeEach(() => {

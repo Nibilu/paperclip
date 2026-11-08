@@ -1,9 +1,9 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { heartbeatRuns, type Db } from "@paperclipai/db";
+import { heartbeatRuns, type Db } from "@pilibalaai/db";
 import { hasPendingRunCleanup } from "../execution-blocker.js";
 import { legacyControllerBootId } from "../legacy-controller-lease.js";
 
-const schema = "paperclip.legacy-process-settlement.v1";
+const schema = "pilibala.legacy-process-settlement.v1";
 const statuses = ["failed", "timed_out", "interrupted"];
 export type LegacyProcessSettlementSource = Pick<typeof heartbeatRuns.$inferSelect,
   "id" | "companyId" | "agentId" | "runtimeMode" | "controllerBootId" | "controllerLeaseExpiresAt" |
@@ -35,7 +35,7 @@ function preparationIdentityIsComplete(run: LegacyProcessSettlementSource) {
 }
 
 function preparationReceipt(run: LegacyProcessSettlementSource) {
-  return { schema: "paperclip.legacy-preparation-settlement.v1", runId: run.id, companyId: run.companyId, agentId: run.agentId,
+  return { schema: "pilibala.legacy-preparation-settlement.v1", runId: run.id, companyId: run.companyId, agentId: run.agentId,
     runtimeMode: "legacy", targetKind: "not-dispatched", adapterDispatched: false, controllerBootId: run.controllerBootId,
     processPid: null, processGroupId: null, processStartedAt: null, executionStage: "preparing",
     startedAt: run.startedAt!.toISOString(), finishedAt: run.finishedAt!.toISOString(), status: run.status };

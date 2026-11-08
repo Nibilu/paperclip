@@ -18,7 +18,7 @@ async function resolveTarget(event: string, cadence: string, branch = "master") 
       encoding: "utf8", env: { ...process.env, EVENT_NAME: event, EVAL_CADENCE: cadence,
         IMAGE_ONLY: "false", TESTOPS_REQUESTED: "false",
         TARGET_BRANCH: branch, DEFAULT_BRANCH: "master", GITHUB_SHA: queuedSha,
-        MOCK_BRANCH_SHA: advancedSha, GITHUB_OUTPUT: output, REPOSITORY: "paperclipai/paperclip" },
+        MOCK_BRANCH_SHA: advancedSha, GITHUB_OUTPUT: output, REPOSITORY: "pilibalaai/pilibala" },
     });
     return { status: result.status, stderr: result.stderr,
       output: await readFile(output, "utf8").catch(() => "") };

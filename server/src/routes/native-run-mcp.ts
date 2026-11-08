@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { RUNNER_TOOL_SCOPE_TOKEN_HEADER } from "../vendor/paperclip-runner/index.js";
+import { RUNNER_TOOL_SCOPE_TOKEN_HEADER } from "../vendor/pilibala-runner/index.js";
 import { forwardRemoteMcpRequest } from "../services/native-runtime/remote-mcp-relay.js";
 
 export function nativeRunMcpRoutes() {

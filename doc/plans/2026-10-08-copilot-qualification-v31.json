@@ -1,5 +1,5 @@
 {
-  "schema": "paperclip.copilot.production-readiness-current/v1",
+  "schema": "pilibala.copilot.production-readiness-current/v1",
   "updatedAt": "2026-10-08T14:45:17.483258+00:00",
   "runtimeSourceRevision": "4acb084fc5b6805a483bf419c2cdc6de3f7ec13d",
   "ordinaryInstallationSourceRevision": "d99959f00b62ad2099b5cdaca3f7656dcb88a8e8",
@@ -46,7 +46,7 @@
     "productTypecheck": true
   },
   "dependencyPrerequisite": {
-    "pullRequest": "https://github.com/paperclipai/paperclip/pull/15572",
+    "pullRequest": "https://github.com/pilibalaai/pilibala/pull/15572",
     "mergedRevision": "941a3fa991aeb97eb1ac390c65b7973b5f6de1ad",
     "generatedLockSha256": "sha256:13ea85cd23a3772889a083020918646ff68231eeace607ab50d2093bc33e3201",
     "currentHeadCiPassed": true,

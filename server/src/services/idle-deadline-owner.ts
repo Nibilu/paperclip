@@ -1,4 +1,4 @@
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import type { DeadlineReconciliationSnapshot } from "./deadline-reconciliation.js";
 import type { IdleDeadlineOwnerInspection, IdleDeadlineOwnerReader, IdleDeadlineSnapshot } from "./idle-deadline-types.js";
 

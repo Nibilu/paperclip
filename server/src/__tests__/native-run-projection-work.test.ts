@@ -3,7 +3,7 @@ import { heartbeatService } from "../services/heartbeat.js";
 import { instanceSettingsService } from "../services/instance-settings.js";
 import { createHeartbeatLifecycle, type HeartbeatLifecycleDependencies } from "../services/heartbeat/run-lifecycle.js";
 import { reconcileNativeFinalizations } from "../services/native-runtime/native-finalization-reconciler.js";
-import { statusDecisionEffects } from "@paperclipai/db";
+import { statusDecisionEffects } from "@pilibalaai/db";
 import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { subscribeDatabaseWork, agentWakeupRequests, agents, authUsers, companies, companyMemberships, completionContracts, createDb, environmentLeases, environments, heartbeatRuns, issueComments, issues, nativeRunFinalizations, nativeRunResults, workspaceOperations, type Db } from "@paperclipai/db";
+import { subscribeDatabaseWork, agentWakeupRequests, agents, authUsers, companies, companyMemberships, completionContracts, createDb, environmentLeases, environments, heartbeatRuns, issueComments, issues, nativeRunFinalizations, nativeRunResults, workspaceOperations, type Db } from "@pilibalaai/db";
 import { createDeliveryWorkCoordinator } from "../services/delivery-work-coordinator.js";
 import { DELIVERY_QUEUES } from "../services/delivery-work-notifications.js";
 import { nativeRunProjectionWork } from "../services/native-runtime/native-run-projection-work.js";
@@ -20,14 +20,14 @@ import { NATIVE_RUN_FAILED_UNEXPLAINED } from "../services/native-runtime/native
 import { notifyNativeFinalizationWork } from "../services/native-finalization-notifications.js";
 import { finalizeNativeRun, recordNativeFinalizationFailure } from "../services/native-runtime/native-run-finalizer.js";
 import * as statusCommitter from "../services/native-runtime/status-decision-committer.js";
-import { PaperclipControlPlanePort } from "../services/native-runtime/paperclip-control-plane-port.js";
+import { PilibalaControlPlanePort } from "../services/native-runtime/pilibala-control-plane-port.js";
 import { NativeRunCoordinatorStore } from "../services/native-runtime/native-run-coordinator-store.js";
 import { workspaceOperationService } from "../services/workspace-operations.js";
 import { environmentService } from "../services/environments.js";
 import { withQueuedCommentIdsInWakePayload } from "../services/issue-queued-comment-queue.js";
 import { requestTaskRetry } from "../services/task-retry.js";
 import { idleWorkSnapshot } from "../services/task-admission.js";
-import { CONTROL_PLANE_CONFORMANCE_RESULT, CONTROL_PLANE_CONFORMANCE_TERMINAL } from "../vendor/paperclip-runner/testing.js";
+import { CONTROL_PLANE_CONFORMANCE_RESULT, CONTROL_PLANE_CONFORMANCE_TERMINAL } from "../vendor/pilibala-runner/testing.js";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
 import { emitAgentTaskRun } from "../services/agent-task-run-telemetry.js";
@@ -48,11 +48,11 @@ describe("committed native run projection lifecycle", () => {
   beforeAll(async () => {
     root = await mkdtemp(join(tmpdir(), "native-run-projection-"));
     process.env.WORKSPACE_OPERATION_LOG_BASE_PATH = root;
-    const external = resolveExternalTestDatabaseUrl("PAPERCLIP_NATIVE_RUN_PROJECTION_TEST_DATABASE_URL");
+    const external = resolveExternalTestDatabaseUrl("PILIBALA_NATIVE_RUN_PROJECTION_TEST_DATABASE_URL");
     if (!external) temporary = await startEmbeddedPostgresTestDatabase("native-run-projection-");
     db = createDb(external ?? temporary!.connectionString);
     await db.insert(companies).values({ id: companyId, name: "Result commits", issuePrefix: `RC${randomUUID().slice(0, 6)}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Result worker", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Result worker", adapterType: "pilibala_runner" });
   }, 30_000);
   beforeEach(() => {
     admitted = true; errors.length = 0; vi.mocked(emitAgentTaskRun).mockClear();
@@ -93,7 +93,7 @@ describe("committed native run projection lifecycle", () => {
     const runId = randomUUID(), issueId = randomUUID(), contractId = randomUUID(), sourceInstanceId = randomUUID();
     await db.insert(issues).values({ id: issueId, companyId, title: "Commit accepted work", status: "in_progress", assigneeAgentId: agentId });
     await db.insert(completionContracts).values({ id: contractId, companyId, issueId, revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1", policyVersion: "result-worker-v1", risk: matchesCompletionClaim ? "low" : "standard",
+      schemaVersion: "pilibala.completion-contract.v1", policyVersion: "result-worker-v1", risk: matchesCompletionClaim ? "low" : "standard",
       completionAuthority: matchesCompletionClaim ? "agent_claim_policy" : "server_arbiter", incompleteCriteriaPolicy: "preserve_non_terminal",
       contractJson: { revision: matchesCompletionClaim ? CONTROL_PLANE_CONFORMANCE_RESULT.completionClaim.contractRevision : "result-worker-v1", objective: "Finish", criteria: [{ id: "objective", requirement: "Complete the task" }] },
       canonicalSha256: contractId, createdByActorType: "system", createdByActorId: "test" });
@@ -105,7 +105,7 @@ describe("committed native run projection lifecycle", () => {
       completionContractSha256: contractId, sourceInstanceId, controlPlaneSourceInstanceId: "result-worker-test" };
   }
   async function complete(binding: Awaited<ReturnType<typeof seed>>, producer: "control_plane" | "coordinator", writer: Db = db, terminalStatus: "succeeded" | "failed" | "cancelled" = "succeeded") {
-    const port = producer === "control_plane" ? new PaperclipControlPlanePort(writer, binding)
+    const port = producer === "control_plane" ? new PilibalaControlPlanePort(writer, binding)
       : new NativeRunCoordinatorStore(writer, { ...binding, normalizedSessionId: binding.sessionId,
         runnerSourceInstanceId: binding.sourceInstanceId,
         completionContractRevision: CONTROL_PLANE_CONFORMANCE_RESULT.completionClaim.contractRevision,
@@ -380,7 +380,7 @@ describe("committed native run projection lifecycle", () => {
       }
       if (fault === "foreign-agent") {
         const otherAgent = randomUUID();
-        await db.insert(agents).values({ id: otherAgent, companyId, name: "Other wake owner", adapterType: "paperclip_runner" });
+        await db.insert(agents).values({ id: otherAgent, companyId, name: "Other wake owner", adapterType: "pilibala_runner" });
         await db.update(agentWakeupRequests).set({ agentId: otherAgent }).where(eq(agentWakeupRequests.id, wake.id));
       }
       if (fault === "live-owner") await db.update(heartbeatRuns).set({ status: "running", nativePhase: "terminal_failure",
@@ -553,8 +553,8 @@ describe("committed native run projection lifecycle", () => {
   it.each(["restore", "worktree"])("respects %s suppression through the public heartbeat registration", async mode => {
     const binding = await accepted();
     await finalizeNativeRun({ db, runId: binding.runId, workspaceFinalizeStatus: "succeeded" });
-    const runtimeEnv = mode === "restore" ? { PAPERCLIP_DATABASE_RESTORE_IN_PROGRESS: "true" }
-      : { PAPERCLIP_IN_WORKTREE: "true", PAPERCLIP_INSTANCE_ID: "projection-suppression-test" };
+    const runtimeEnv = mode === "restore" ? { PILIBALA_DATABASE_RESTORE_IN_PROGRESS: "true" }
+      : { PILIBALA_IN_WORKTREE: "true", PILIBALA_INSTANCE_ID: "projection-suppression-test" };
     const settings = instanceSettingsService(db, { runtimeEnv });
     if (mode === "worktree") await settings.updateExperimental({ enableWorktreeRunExecution: false });
     coordinator = createDeliveryWorkCoordinator({ owner: db, canRun: () => admitted, canReconcile: () => admitted,
@@ -682,7 +682,7 @@ describe("committed native run projection lifecycle", () => {
       const [wake] = await db.insert(agentWakeupRequests).values({ companyId, agentId, source: "automation",
         triggerDetail: "system", reason: "issue_commented", status: "deferred_issue_execution",
         requestedByActorType: "user", requestedByActorId: commenter,
-        payload: { issueId: binding.issueId, commentId: latest, _paperclipWakeContext: {
+        payload: { issueId: binding.issueId, commentId: latest, _pilibalaWakeContext: {
           issueId: binding.issueId, taskId: binding.issueId, commentId: latest, wakeCommentId: latest,
           wakeCommentIds: ids, wakeReason: "issue_commented", source: "issue.comment" } },
       }).returning();
@@ -698,8 +698,8 @@ describe("committed native run projection lifecycle", () => {
     // that its turn received it.
     async function steer(binding: Awaited<ReturnType<typeof seed>>, wakeId: string, commentId: string) {
       const wake = await readWake(wakeId);
-      const remaining = (wake.payload as { _paperclipWakeContext: { wakeCommentIds: string[] } })
-        ._paperclipWakeContext.wakeCommentIds.filter(id => id !== commentId);
+      const remaining = (wake.payload as { _pilibalaWakeContext: { wakeCommentIds: string[] } })
+        ._pilibalaWakeContext.wakeCommentIds.filter(id => id !== commentId);
       await db.update(agentWakeupRequests).set({ payload: withQueuedCommentIdsInWakePayload(wake.payload, remaining) })
         .where(eq(agentWakeupRequests.id, wakeId));
       const run = await read(binding.runId);

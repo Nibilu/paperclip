@@ -1,10 +1,10 @@
 import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
-import { environmentLeases, heartbeatRunEvents, heartbeatRuns, type Db } from "@paperclipai/db";
+import { environmentLeases, heartbeatRunEvents, heartbeatRuns, type Db } from "@pilibalaai/db";
 import { parseObject } from "../adapters/utils.js";
 import { resolveProviderApiPlacement } from "./native-runtime/provider-api-placement.js";
 import { hasNativeLocalProcessStop } from "./native-local-process-stop.js";
 import { hasRecoveredCleanupStopReceipt, hasRemoteTerminationReceipt } from "./remote-execution-termination.js";
-import { validatePrpEvent } from "../vendor/paperclip-runner/index.js";
+import { validatePrpEvent } from "../vendor/pilibala-runner/index.js";
 import { nativeSha256 } from "./native-runtime/canonical.js";
 import { isConfirmedCursorCloudTerminalObservation } from "./native-runtime/cursor-cloud-runtime.js";
 
@@ -14,7 +14,7 @@ export function hasAcknowledgedNativeRunStopRequest(run: {
 }): boolean {
   const result = run.resultJson;
   const intent = result?.nativeCancellation as Record<string, unknown> | undefined;
-  return intent?.schema === "paperclip.native-cancellation.v1" && intent.runId === run.id &&
+  return intent?.schema === "pilibala.native-cancellation.v1" && intent.runId === run.id &&
     intent.companyId === run.companyId && intent.issueId === run.nativeIssueId &&
     intent.scope === "run" && intent.reasonCode === "cancellation_run_only" &&
     intent.dispatchState === "acknowledged" && typeof intent.dispatched === "boolean" &&
@@ -80,7 +80,7 @@ export async function acknowledgedNativeApiStopExecutionHasStopped(db: Db, run: 
   if (!terminal || !validated.ok || terminal.sourcePayloadSha256 !== nativeSha256(validated.event)) return false;
   const event = validated.event;
   return isConfirmedCursorCloudTerminalObservation({ eventType: terminal.eventType, payload: event.payload }) && terminal.agentId === run.agentId &&
-    event.schema === "paperclip.prp.event.v1" && [1, 2].includes(Number(event.schemaVersion)) &&
+    event.schema === "pilibala.prp.event.v1" && [1, 2].includes(Number(event.schemaVersion)) &&
     terminal.protocolSchemaVersion === event.schemaVersion && event.eventType === terminal.eventType &&
     event.sourceKind === "runner" && event.runId === run.id && event.normalizedSessionId === run.nativeSessionId &&
     event.sourceInstanceId === run.runnerInstanceId && terminal.sourceInstanceId === event.sourceInstanceId &&

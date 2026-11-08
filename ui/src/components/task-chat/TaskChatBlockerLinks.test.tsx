@@ -11,7 +11,7 @@ import {
   type IssueBlockerAttention,
   type IssueRelationIssueSummary,
   type IssueSummary,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { StatusIcon } from "../StatusIcon";
 import { taskStatusIconProps } from "@/lib/task-status-presentation";
 import { TaskChatPresentationProvider } from "./presentation-mode";

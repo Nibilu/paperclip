@@ -6,7 +6,7 @@ Feature ID: `runs-adapters`.
 
 Scoped local Git author contract (`runs-adapters/runs`): an admitted execution
 with managed launchers can create a local commit without a GitHub grant. A
-private per-operation Git config supplies `Paperclip <noreply@paperclip.ing>`
+private per-operation Git config supplies `Pilibala <noreply@pilibala.in>`
 only as a default. Repository/command configuration and captured managed identity
 retain precedence. The default conveys no API, repository-network or credential
 authority; current run, company, trust and GitHub-grant checks stay in force.
@@ -18,7 +18,7 @@ qualifies live cloud execution or GitHub writes. No REST operation changes.
 
 Delegated native entries inherit the [native admission and work-mode limits](README.md#native-rest-transport).
 
-Review date: 2026-10-26. Source base: `a1f77821b9cd5c9c846fdf7a0fa5cc620ad2b6bb`; implementation: [#17737](https://github.com/paperclipai/paperclip/pull/17737).
+Review date: 2026-10-26. Source base: `a1f77821b9cd5c9c846fdf7a0fa5cc620ad2b6bb`; implementation: [#17737](https://github.com/pilibalaai/pilibala/pull/17737).
 
 Connection operations reviewed in this working tree. The inventory was reconciled
 against production UI clients, REST registrations and service entry points; it is
@@ -122,7 +122,7 @@ agent-install checks; runtime preparation clears alternate credentials and rejec
 custom Pi provider overrides. This adds no cross-company access or runtime installation API.
 An absent forced-Kubernetes environment is an unqualified sandbox target, never
 a local target. Discovery and automatic creation keep the Legacy path without
-provisioning it; explicit Paperclip selection returns qualification guidance.
+provisioning it; explicit Pilibala selection returns qualification guidance.
 The existing execution path owns lazy environment creation. Saved runners remain
 unchanged. This is source/control evidence, not live Kubernetes qualification.
 
@@ -171,7 +171,7 @@ to the provider bridge and normal PRP/Core tool policy. It grants no board or
 cross-company access. Source/control evidence:
 [runtime helper](../../server/src/services/native-runtime/cursor-cloud-runtime.ts),
 [relay regressions](../../server/src/services/native-runtime/remote-mcp-relay.test.ts)
-and [provider client](../../packages/paperclip-runner/src/drivers/cursor-cloud/cloud-client.test.ts).
+and [provider client](../../packages/pilibala-runner/src/drivers/cursor-cloud/cloud-client.test.ts).
 Live provider authorization and task qualification remain `not-run`; see the
 [acceptance ledger](../../doc/plans/2026-10-28-cursor-cloud-native-runner.md).
 
@@ -225,7 +225,7 @@ remain separate from live latency and permitted/denied agent acceptance.
 
 Scoped OpenCode assigned-tool source evidence: local and remote native sessions
 use the server-owned authenticated relay. The provider sees bounded
-`paperclip_search_assigned_tools` and `paperclip_call_assigned_tool` schemas,
+`pilibala_search_assigned_tools` and `pilibala_call_assigned_tool` schemas,
 then uses pinned aliases. Search describes its 1–20 page limit and default of 5
 in the tool and parameter descriptions. It intersects fresh grants and work modes; calls
 retain the run's original gateway policy, validation, approvals, revocation and
@@ -271,7 +271,7 @@ Capability ID: `runs-adapters/runs`.
 Review: `baseline`.
 
 Run reads and task interruption projections can include a sanitized
-`paperclip.provider-failure.v1` cause. Existing company and task/run read policy
+`pilibala.provider-failure.v1` cause. Existing company and task/run read policy
 applies. The cause exposes no credential values or new secret access and grants
 no retry authority. Startup receipts and failed-turn events use the same cause;
 unknown categories retain their explanation. Transport/controller restart and
@@ -305,7 +305,7 @@ API: `present` — representative operation IDs:
 Agent access: `available` — REST / native call_api / CLI run, plus the listed
 read-only paths through the default queue and HTTP/2 sandbox callback bridge.
 The sandbox uses its injected run credential. See
-[run diagnostics](../../skills/paperclip/references/run-diagnostics.md) and the
+[run diagnostics](../../skills/pilibala/references/run-diagnostics.md) and the
 [activity access contract](activity.md#runs).
 
 Policy: Same company, company-scope read authority and run/task visibility still
@@ -348,9 +348,9 @@ owner across the ordinary 30-second MCP deadline. The native MCP client uses
 a fixed one-hour ceiling; ordinary driver calls keep their deadline.
 Company, tool, run and Stop authority do not change. Unanswered effects still
 block run attachment, including after the client ceiling expires while the
-Runner lease remains valid. The [proxy regression](../../packages/paperclip-runner/src/live/runnerd-opencode-streaming-tools.test.ts)
+Runner lease remains valid. The [proxy regression](../../packages/pilibala-runner/src/live/runnerd-opencode-streaming-tools.test.ts)
 checks delayed delivery, one tool call, and a settled next run with a deterministic
-provider. The [bridge suite](../../packages/paperclip-runner/src/drivers/opencode/mcp-bridge.test.ts)
+provider. The [bridge suite](../../packages/pilibala-runner/src/drivers/opencode/mcp-bridge.test.ts)
 covers result replay, cancellation and teardown. These are local protocol checks;
 live provider and deployed access remain separate checks in the
 [session recipe](../feature-map/runs-adapters.md#session).
@@ -480,7 +480,7 @@ invalidation. Verify saved configuration, current versus historical run identity
 restart and follow-up without granting session-reset authority to an agent.
 
 Scoped Evidence: `source-only` — the
-[native transport](../../packages/paperclip-runner/src/live/runnerd-codex-transport.ts)
+[native transport](../../packages/pilibala-runner/src/live/runnerd-codex-transport.ts)
 joins owned startup before certifying cleanup. Rejected duplicates cannot replace
 that owner or mutate recovery state. Unconfirmed preparation or registration
 retains recovery state; late registration may release only its own route and

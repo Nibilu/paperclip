@@ -49,7 +49,7 @@ it.skipIf(process.platform === "win32" || !tools.dd || !tools.base64).each([0, 1
     await fs.writeFile(source, bytes);
     let closed = false;
     openSession.mockImplementation(async (_process, command: string[]) => {
-      const marker = command.join(" ").match(/paperclip-archive-[a-f0-9-]+/)![0];
+      const marker = command.join(" ").match(/pilibala-archive-[a-f0-9-]+/)![0];
       const child = spawn(command[0], command.slice(1), { cwd: root, detached: true,
         env: { ...process.env, PATH: `${bin}:${process.env.PATH}` }, stdio: ["pipe", "pipe", "pipe"] });
       children.add(child);

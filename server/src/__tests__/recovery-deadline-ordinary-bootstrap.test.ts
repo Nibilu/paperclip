@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AdapterExecutionResult } from "../adapters/types.js";
-import { classifyCodexTerminalSessionFailure } from "@paperclipai/adapter-codex-local/server";
+import { classifyCodexTerminalSessionFailure } from "@pilibalaai/adapter-codex-local/server";
 import { legacyExecutionNeedsReconciliation } from "../services/legacy-execution-recovery.js";
 import { readTransientRecoveryContractFromRun } from "../services/heartbeat/retries.js";
 import { controlledOrdinaryBootstrapFailure, controlledOrdinaryBootstrapProtocol, controlledOrdinaryBootstrapResult,

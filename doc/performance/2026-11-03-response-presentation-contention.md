@@ -53,8 +53,8 @@ The final independent-resource control retains parallel progress when task, endp
 ## Reproduction and failure accounting
 
 ```sh
-pnpm exec vitest run --project @paperclipai/server server/src/__tests__/scoped-deadline-work.test.ts
-pnpm exec vitest run --project @paperclipai/server server/src/__tests__/chat-channels.integration.test.ts -t 'shared-endpoint accepted-response|different endpoints for one principal|endpoint scheduling hint|contended accepted response'
+pnpm exec vitest run --project @pilibalaai/server server/src/__tests__/scoped-deadline-work.test.ts
+pnpm exec vitest run --project @pilibalaai/server server/src/__tests__/chat-channels.integration.test.ts -t 'shared-endpoint accepted-response|different endpoints for one principal|endpoint scheduling hint|contended accepted response'
 ```
 
 The committed helper materializes the pinned baseline with `git show`; it does not ship a clone of old production code. Run it with Node 24.22.2 and pnpm 9.15.4 from a clean, isolated checkout of this PR:
@@ -63,11 +63,11 @@ The committed helper materializes the pinned baseline with `git show`; it does n
 git worktree add --detach /tmp/presentation-repro HEAD
 cd /tmp/presentation-repro
 pnpm install --frozen-lockfile
-pnpm --filter @paperclipai/plugin-sdk ensure-build-deps
+pnpm --filter @pilibalaai/plugin-sdk ensure-build-deps
 node server/scripts/benchmark-response-presentation.mjs /tmp/presentation-results
 ```
 
-The helper checks the actual child runtime, writes each pair immediately, and restores temporary fixture/baseline files in `finally`. Its output includes the baseline/treatment revisions, exact benchmark fragment, baseline modules, child preflight, JSONL and Vitest log. Review `server/scripts/benchmark-response-presentation.mjs` for the measurement boundary. Initial study artifacts remain under `/private/tmp/paperclip-perf-batch-20261102/campaign-10h/presentation-benchmark/`; the table above makes all ten measured runs (five pairs) inspectable without that workspace.
+The helper checks the actual child runtime, writes each pair immediately, and restores temporary fixture/baseline files in `finally`. Its output includes the baseline/treatment revisions, exact benchmark fragment, baseline modules, child preflight, JSONL and Vitest log. Review `server/scripts/benchmark-response-presentation.mjs` for the measurement boundary. Initial study artifacts remain under `/private/tmp/pilibala-perf-batch-20261102/campaign-10h/presentation-benchmark/`; the table above makes all ten measured runs (five pairs) inspectable without that workspace.
 
 Initial offline install lacked a cached tarball; frozen network install passed. The first test import lacked built plugin-sdk; its existing build helper resolved that. The intentionally failing same-endpoint regression is retained. A Date-only benchmark clock failed to settle. A corrected run passed but lost console metrics, so it supplies no numbers. The next retained run used inherited Node 26; it is superseded and is not the table above. The final run checked the actual Node 24 child, verified its file sink, and retained each pair immediately. An early broad check inherited global pnpm 11 and failed its version-switch signature fetch; the corrected checks use the pinned Node 24/pnpm 9 PATH. These setup failures are not reported as verification passes.
 

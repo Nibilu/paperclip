@@ -177,7 +177,7 @@ function buildWorkspace(overrides: Record<string, unknown> = {}) {
     projectId: "project-1",
     name: "Primary",
     sourceType: "local_path",
-    cwd: "/srv/projects/paperclip",
+    cwd: "/srv/projects/pilibala",
     repoUrl: null,
     isPrimary: true,
     ...overrides,
@@ -222,12 +222,12 @@ describe("project workspace host-path floor", () => {
     const app = await createApp();
     const res = await request(app)
       .post("/api/projects/project-1/workspaces")
-      .send({ name: "Primary", cwd: "/srv/projects/paperclip" });
+      .send({ name: "Primary", cwd: "/srv/projects/pilibala" });
 
     expect(res.status, JSON.stringify(res.body)).toBe(201);
     expect(mockProjectService.createWorkspace).toHaveBeenCalledWith(
       "project-1",
-      expect.objectContaining({ cwd: "/srv/projects/paperclip" }),
+      expect.objectContaining({ cwd: "/srv/projects/pilibala" }),
     );
   });
 
@@ -236,7 +236,7 @@ describe("project workspace host-path floor", () => {
     const app = await createApp();
     const res = await request(app)
       .post("/api/projects/project-1/workspaces")
-      .send({ name: "Primary", cwd: "/srv/projects/paperclip" });
+      .send({ name: "Primary", cwd: "/srv/projects/pilibala" });
 
     expect(res.status, JSON.stringify(res.body)).toBe(422);
     expect(res.body.error).toBe(MANAGED_SANDBOX_CWD_ERROR);
@@ -248,7 +248,7 @@ describe("project workspace host-path floor", () => {
     const app = await createApp();
     const res = await request(app)
       .patch("/api/projects/project-1/workspaces/workspace-1")
-      .send({ cwd: "/srv/projects/paperclip" });
+      .send({ cwd: "/srv/projects/pilibala" });
 
     expect(res.status, JSON.stringify(res.body)).toBe(422);
     expect(res.body.error).toBe(MANAGED_SANDBOX_CWD_ERROR);
@@ -275,13 +275,13 @@ describe("project workspace host-path floor", () => {
     const app = await createApp();
     const res = await request(app)
       .patch("/api/projects/project-1/workspaces/workspace-1")
-      .send({ cwd: "/srv/projects/paperclip" });
+      .send({ cwd: "/srv/projects/pilibala" });
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(mockProjectService.updateWorkspace).toHaveBeenCalledWith(
       "project-1",
       "workspace-1",
-      expect.objectContaining({ cwd: "/srv/projects/paperclip" }),
+      expect.objectContaining({ cwd: "/srv/projects/pilibala" }),
     );
   });
 
@@ -292,7 +292,7 @@ describe("project workspace host-path floor", () => {
       .post("/api/companies/company-1/projects")
       .send({
         name: "Project",
-        workspace: { name: "Primary", cwd: "/srv/projects/paperclip" },
+        workspace: { name: "Primary", cwd: "/srv/projects/pilibala" },
       });
 
     expect(res.status, JSON.stringify(res.body)).toBe(422);
@@ -309,7 +309,7 @@ describe("project workspace host-path floor", () => {
       .post("/api/companies/company-1/projects")
       .send({
         name: "Project",
-        workspace: { name: "Primary", repoUrl: "https://github.com/paperclipai/paperclip" },
+        workspace: { name: "Primary", repoUrl: "https://github.com/pilibalaai/pilibala" },
       });
 
     expect([200, 201], JSON.stringify(res.body)).toContain(res.status);

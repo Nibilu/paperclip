@@ -1,7 +1,7 @@
 import { describeError } from "@/api/errors";
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { SkillSource } from '@paperclipai/shared';
+import type { SkillSource } from '@pilibalaai/shared';
 import { skillSourcesApi } from '@/api/skillSources';
 import { ApiError } from '@/api/client';
 import { queryKeys } from '@/lib/queryKeys';

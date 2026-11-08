@@ -20,7 +20,7 @@ describe("verifyNativeHarnessBackupStampAsync cancellation", () => {
   let base: string;
   beforeEach(async () => {
     base = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "native-harness-stamp-abort-")));
-    vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", base);
+    vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", base);
   });
   afterEach(async () => {
     hooks.afterOpen = undefined;
@@ -34,7 +34,7 @@ describe("verifyNativeHarnessBackupStampAsync cancellation", () => {
     await fs.mkdir(path.join(current, "home"), { recursive: true });
     await fs.writeFile(path.join(current, "home", "history.json"), "{}\n");
     await fs.writeFile(path.join(current, "manifest.json"), JSON.stringify({
-      schema: "paperclip.native-harness-backup.v1", normalizedSessionId: "session", runnerInstanceId: "runner",
+      schema: "pilibala.native-harness-backup.v1", normalizedSessionId: "session", runnerInstanceId: "runner",
       sourceProviderLeaseId: "lease", completedAt, directories: [{ name: "home", sha256: `sha256:${"0".repeat(64)}`, bytes: 3 }],
     }));
     const stamp = createNativeHarnessBackupStamp({ manifestPath: path.join(current, "manifest.json"), sessionScopeId,

@@ -70,7 +70,7 @@ effect occurred.
 An older session can retain its exact pack manifest while the current server
 image contains a different pack. When neither the staged nor the preinstalled
 pack verifies, the normal uploader resolves the selected historical code from
-`ghcr.io/paperclipai/paperclip`. It uses the manifest's recorded source revision
+`ghcr.io/pilibalaai/pilibala`. It uses the manifest's recorded source revision
 and Linux architecture. The full source-SHA image tag is a lookup hint; a tag
 name alone does not prove the code identity.
 
@@ -155,7 +155,7 @@ this transport has finished.
 Run the focused server suites with the repository's supported pnpm version:
 
 ```sh
-pnpm --filter @paperclipai/server exec vitest run --config vitest.config.ts \
+pnpm --filter @pilibalaai/server exec vitest run --config vitest.config.ts \
   src/services/native-runtime/native-harness-backup-storage.integration.test.ts \
   src/services/native-runtime/native-harness-backup-archive.test.ts \
   src/services/native-runtime/remote-opencode-artifacts.test.ts \
@@ -167,17 +167,17 @@ pnpm --filter @paperclipai/server exec vitest run --config vitest.config.ts \
   src/__tests__/native-harness-backup-expiration-config.test.ts
 ```
 
-The opt-in Linux qualification requires two locally cached Paperclip images with
+The opt-in Linux qualification requires two locally cached Pilibala images with
 full immutable image IDs and different OpenCode proxy hashes. Both images must
 have the same Linux architecture and the standard qualified provider pack. The
 new image must include the packaged Runner binary at
-`/app/server/dist/vendor/paperclip-runner/bin/paperclip-runnerd`.
+`/app/server/dist/vendor/pilibala-runner/bin/pilibala-runnerd`.
 Build the current checkout's Runner TypeScript SDK first. Use the local Docker
 context that has the cached images:
 
 ```sh
-pnpm --filter @paperclipai/paperclip-runner build:typescript
-pnpm --filter @paperclipai/server exec tsx scripts/qualify-opencode-cold-recovery.mts \
+pnpm --filter @pilibalaai/pilibala-runner build:typescript
+pnpm --filter @pilibalaai/server exec tsx scripts/qualify-opencode-cold-recovery.mts \
   --context desktop-linux \
   --old-image "$OLD_IMAGE" \
   --new-image "$NEW_IMAGE" \

@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
-import { agentRuntimeSettingsHarness, type UpdateAgent } from "@paperclipai/shared";
+import { agentRuntimeSettingsHarness, type UpdateAgent } from "@pilibalaai/shared";
 import type { AgentConfigurationRecord } from "../lib/agent-records.js";
 import { conflict, unprocessable } from "../errors.js";
 

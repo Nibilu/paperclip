@@ -7,8 +7,8 @@ import { isSafeNativeChatProgressEventType } from "./safe-native-chat-progress.j
 import { notifyChatNativeProgress } from "./chat-native-progress-notifications.js";
 import { boundRunIssueIdSql } from "./run-task-binding.js";
 import { and, asc, eq, getTableColumns, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { heartbeatRunEvents, heartbeatRuns } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { heartbeatRunEvents, heartbeatRuns } from "@pilibalaai/db";
 import { nativeSha256 } from "./native-runtime/canonical.js";
 
 export const RETRY_EXHAUSTION_MESSAGE_PREFIX = "Bounded retry exhausted";

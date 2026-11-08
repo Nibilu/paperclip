@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
-import { authUsers, budgetReservations, companyMemberships, completionContracts, heartbeatRunEvents, heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults, workspaceOperations } from "@paperclipai/db";
+import { authUsers, budgetReservations, companyMemberships, completionContracts, heartbeatRunEvents, heartbeatRuns, issues, nativeRunFinalizations, nativeRunResults, workspaceOperations } from "@pilibalaai/db";
 import { expect, it, vi } from "vitest";
 import { resolveLocalRuntimeApiUrl } from "../runtime-api.js";
 import { heartbeatService } from "../services/heartbeat.js";
 import { instanceSettingsService } from "../services/instance-settings.js";
 import { classifyNativeRunnerRecoveryEvidence, currentNativeControllerIdentity } from "../services/native-runtime/native-restart-recovery.js";
-import type { NativeSessionBackend } from "@paperclipai/paperclip-runner";
-import { PaperclipControlPlanePort } from "../services/native-runtime/paperclip-control-plane-port.js";
-import { CONTROL_PLANE_CONFORMANCE_OPEN, CONTROL_PLANE_CONFORMANCE_RESULT, CONTROL_PLANE_CONFORMANCE_TERMINAL } from "../vendor/paperclip-runner/testing.js";
+import type { NativeSessionBackend } from "@pilibalaai/pilibala-runner";
+import { PilibalaControlPlanePort } from "../services/native-runtime/pilibala-control-plane-port.js";
+import { CONTROL_PLANE_CONFORMANCE_OPEN, CONTROL_PLANE_CONFORMANCE_RESULT, CONTROL_PLANE_CONFORMANCE_TERMINAL } from "../vendor/pilibala-runner/testing.js";
 import { describeEmbeddedPostgres, nativeRestartFixture } from "./helpers/native-restart.js";
 
 
@@ -255,7 +255,7 @@ describeEmbeddedPostgres("heartbeat native recovery interrupted by graceful shut
     const [prepared] = await f.db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId));
     const identity = { companyId: fixture.current.companyId, issueId: f.issueId, runId: f.runId,
       agentId: fixture.current.agentId, sessionId: prepared.nativeSessionId! };
-    const port = new PaperclipControlPlanePort(f.db, {
+    const port = new PilibalaControlPlanePort(f.db, {
       ...identity,
       completionContractId: prepared.completionContractId!,
       completionContractSha256: prepared.completionContractSha256!,

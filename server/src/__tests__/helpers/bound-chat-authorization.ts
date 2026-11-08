@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { agents, companies, createDb, issues, issueComments, toolApplications,
   toolConnections, chatEndpoints, chatEndpointResources, chatConversations,
   chatExternalPrincipals, chatIdentityLinks, companyMemberships, chatDeliveries,
-  chatMessageLinks, type Db } from "@paperclipai/db";
+  chatMessageLinks, type Db } from "@pilibalaai/db";
 export async function seedBoundChatAuthorization(db: Db) {
   const companyId = randomUUID(), agentId = randomUUID(), issueId = randomUUID(),
     otherIssueId = randomUUID(), runId = randomUUID(), endpointId = randomUUID(),
@@ -10,7 +10,7 @@ export async function seedBoundChatAuthorization(db: Db) {
     commentId = randomUUID(), deliveryId = randomUUID();
   const provider = "slack", userId = "prepared-chat-user";
   const binding = { companyId, agentId, issueId, runId };
-  const context = { source: "chat:slack", paperclipHarnessCheckedOut: true,
+  const context = { source: "chat:slack", pilibalaHarnessCheckedOut: true,
     wakeCommentIds: [commentId] };
   await db
     .insert(companies)
@@ -26,7 +26,7 @@ export async function seedBoundChatAuthorization(db: Db) {
       id: agentId,
       companyId,
       name: "Chat runner",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       adapterConfig: { provider: "codex" },
       status: "active",
     });
@@ -130,7 +130,7 @@ export async function seedBoundChatAuthorization(db: Db) {
       companyId,
       endpointId,
       principalId,
-      paperclipUserId: userId,
+      pilibalaUserId: userId,
       status: "linked",
     });
   await db

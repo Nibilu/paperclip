@@ -4,7 +4,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IssueWorkProduct } from "@paperclipai/shared";
+import type { IssueWorkProduct } from "@pilibalaai/shared";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { MemoryRouter } from "@/lib/router";
 import { TaskChatProtocolCard } from "./TaskChatProtocolCard";
@@ -22,7 +22,7 @@ const deckPdf = {
   executionWorkspaceId: null,
   runtimeServiceId: null,
   type: "artifact",
-  provider: "paperclip",
+  provider: "pilibala",
   externalId: null,
   title: "Interface Craft revision — PDF",
   url: null,
@@ -88,10 +88,10 @@ describe("TaskChatProtocolCard resources with Artifacts V1 on", () => {
   });
 
   it("renders a pull request as a link row that opens in a new tab with its state", () => {
-    const pr = { ...deckPdf, id: "wp-pr", type: "pull_request", provider: "github", title: "Ship rich cards", url: "https://github.com/paperclipai/paperclip/pull/42", status: "merged", metadata: { number: 42 } } as unknown as IssueWorkProduct;
+    const pr = { ...deckPdf, id: "wp-pr", type: "pull_request", provider: "github", title: "Ship rich cards", url: "https://github.com/pilibalaai/pilibala/pull/42", status: "merged", metadata: { number: 42 } } as unknown as IssueWorkProduct;
     render({ id: "resource:deliverable:wp-pr", kind: "protocol", surface: "resource", resourceKind: "deliverable", title: pr.title, subtitle: "pull request · merged", href: pr.url, workProduct: pr });
     const open = container.querySelector<HTMLAnchorElement>('a[data-testid="task-chat-resource-deliverable-open"]');
-    expect(open?.getAttribute("href")).toBe("https://github.com/paperclipai/paperclip/pull/42");
+    expect(open?.getAttribute("href")).toBe("https://github.com/pilibalaai/pilibala/pull/42");
     expect(open?.getAttribute("target")).toBe("_blank");
   });
 

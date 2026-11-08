@@ -22,7 +22,7 @@ const runSnapshot = (run: Row) => ({ id: run.id, companyId: run.companyId, agent
   contextSnapshot: { issueId: run.contextSnapshot?.issueId, taskId: run.contextSnapshot?.taskId,
     source: run.contextSnapshot?.source, wakeReason: run.contextSnapshot?.wakeReason,
     resolvedBlockerIssueId: run.contextSnapshot?.resolvedBlockerIssueId, blockerIssueIds: run.contextSnapshot?.blockerIssueIds,
-    paperclipEnvironment: { id: run.contextSnapshot?.paperclipEnvironment?.id } },
+    pilibalaEnvironment: { id: run.contextSnapshot?.pilibalaEnvironment?.id } },
   runnerProfileJson: { nativeExecutionInput: { provider: { kind: run.runnerProfileJson?.nativeExecutionInput?.provider?.kind,
     model: run.runnerProfileJson?.nativeExecutionInput?.provider?.model } } } });
 const documentSnapshot = (row: Row) => Object.fromEntries(["id", "companyId", "issueId", "key", "body", "latestRevisionId",
@@ -63,7 +63,7 @@ export async function taskDependencyResume(context: JourneyContext, session: Tar
   const preserve = async () => {
     await mkdir(options.directory, { recursive: true, mode: 0o700 });
     await writeFile(path.join(options.directory, "task-dependency-observations.json"),
-      JSON.stringify({ schema: "paperclip.task-dependency-observations/v1", stage, ...observations, latest, scope }, null, 2), { mode: 0o600 });
+      JSON.stringify({ schema: "pilibala.task-dependency-observations/v1", stage, ...observations, latest, scope }, null, 2), { mode: 0o600 });
   };
   const url = (identifier: string) => `${api.origin}/${company.issuePrefix}/issues/${identifier}`;
   try {

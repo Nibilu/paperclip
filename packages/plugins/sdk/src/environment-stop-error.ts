@@ -1,4 +1,4 @@
-const SCHEMA = "paperclip/environment-stop-error/v1";
+const SCHEMA = "pilibala/environment-stop-error/v1";
 const REASONS = ["resource_unrecoverable", "recovery_failed", "recovery_incomplete"] as const;
 const TERMINAL_REASONS: ReadonlySet<string> = new Set(["resource_unrecoverable", "recovery_failed"]);
 

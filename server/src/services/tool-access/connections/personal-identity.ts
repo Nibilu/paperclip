@@ -1,8 +1,8 @@
 import { connectionActorUserId } from "../actor.js";
 import type { ActorInfo } from "../types.js";
 import { and, desc, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { connectionGrants, toolConnections } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { connectionGrants, toolConnections } from "@pilibalaai/db";
 import { forbidden } from "../../../errors.js";
 
 import { actorBinding } from "../actor.js";

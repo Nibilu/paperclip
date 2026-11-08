@@ -50,9 +50,9 @@ describe("runtimeExposureConfigSchema", () => {
 
 describe("readRuntimeExposureIntent", () => {
   it("treats a legacy expose block with no exposure fields as unset", () => {
-    // The pre-feature Paperclip App template shape: an `expose` block that only
+    // The pre-feature Pilibala App template shape: an `expose` block that only
     // describes the backend URL. This must be defaultable, not opted out.
-    expect(readRuntimeExposureIntent({ urlTemplate: "http://paperclip-dev:{{port}}" })).toBe("unset");
+    expect(readRuntimeExposureIntent({ urlTemplate: "http://pilibala-dev:{{port}}" })).toBe("unset");
     expect(readRuntimeExposureIntent(undefined)).toBe("unset");
     expect(readRuntimeExposureIntent(null)).toBe("unset");
     expect(readRuntimeExposureIntent({})).toBe("unset");
@@ -79,7 +79,7 @@ describe("readRuntimeExposureIntent", () => {
 describe("resolveDeclaredRuntimeExposureConfig", () => {
   it("returns null unless the block explicitly opts in", () => {
     expect(resolveDeclaredRuntimeExposureConfig(undefined)).toBeNull();
-    expect(resolveDeclaredRuntimeExposureConfig({ urlTemplate: "http://paperclip-dev:{{port}}" })).toBeNull();
+    expect(resolveDeclaredRuntimeExposureConfig({ urlTemplate: "http://pilibala-dev:{{port}}" })).toBeNull();
     expect(resolveDeclaredRuntimeExposureConfig({ tailscaleHttps: false })).toBeNull();
   });
 
@@ -104,8 +104,8 @@ describe("resolveDeclaredRuntimeExposureConfig", () => {
 
   it("honors an explicit sub-field override", () => {
     expect(
-      resolveDeclaredRuntimeExposureConfig({ type: "tailscale_https", includePaperclipViteHmr: false }),
-    ).toEqual({ ...DEFAULT_TAILSCALE_HTTPS_EXPOSURE, includePaperclipViteHmr: false });
+      resolveDeclaredRuntimeExposureConfig({ type: "tailscale_https", includePilibalaViteHmr: false }),
+    ).toEqual({ ...DEFAULT_TAILSCALE_HTTPS_EXPOSURE, includePilibalaViteHmr: false });
   });
 
   it("still rejects smuggled fields and invalid sub-field values", () => {
@@ -138,8 +138,8 @@ describe("runtimeExposureStatusSchema", () => {
       runtimeExposureStatusSchema.parse({
         provider: "tailscale_https",
         state: "ready",
-        publicUrl: "https://paperclip-dev.tail29c1aa.ts.net:42010",
-        hostname: "paperclip-dev.tail29c1aa.ts.net",
+        publicUrl: "https://pilibala-dev.tail29c1aa.ts.net:42010",
+        hostname: "pilibala-dev.tail29c1aa.ts.net",
         listeners: [
           { purpose: "app", publicPort: 42010, targetPort: 42010 },
           { purpose: "vite_hmr", publicPort: 52010, targetPort: 52010 },

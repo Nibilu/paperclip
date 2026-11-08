@@ -14,13 +14,13 @@ test("reuses only an exact-source, master-signed multi-platform image by digest"
   });
   assert.equal(reused, true);
   assert.deepEqual(calls, [
-    ["gh", ["attestation", "verify", `oci://ghcr.io/paperclipai/paperclip@${digest}`,
-      "--repo", "paperclipai/paperclip", "--bundle-from-oci",
-      "--signer-workflow", "paperclipai/paperclip/.github/workflows/docker.yml",
+    ["gh", ["attestation", "verify", `oci://ghcr.io/pilibalaai/pilibala@${digest}`,
+      "--repo", "pilibalaai/pilibala", "--bundle-from-oci",
+      "--signer-workflow", "pilibalaai/pilibala/.github/workflows/docker.yml",
       "--source-ref", "refs/heads/master", "--source-digest", sha,
       "--signer-digest", sha, "--deny-self-hosted-runners"]],
     ["docker", ["buildx", "imagetools", "create", "-t",
-      "ghcr.io/paperclipai/paperclip:sha-aaaaaaa", `ghcr.io/paperclipai/paperclip@${digest}`]],
+      "ghcr.io/pilibalaai/pilibala:sha-aaaaaaa", `ghcr.io/pilibalaai/pilibala@${digest}`]],
   ]);
 });
 

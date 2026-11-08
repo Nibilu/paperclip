@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { and, desc, eq, gte, inArray, ne, or, sql } from "drizzle-orm";
-import { heartbeatRuns, type Db } from "@paperclipai/db";
-import { readProviderFailure, type ProviderFailure } from "@paperclipai/shared";
+import { heartbeatRuns, type Db } from "@pilibalaai/db";
+import { readProviderFailure, type ProviderFailure } from "@pilibalaai/shared";
 import { logger } from "../../middleware/logger.js";
 import { infrastructureRetryDelayMs, PROVIDER_LIMIT_DEFAULT_COOLDOWN_MS } from "../system-recovery-state.js";
 import { parseProviderQuotaClockReset } from "../provider-quota-reset.js";

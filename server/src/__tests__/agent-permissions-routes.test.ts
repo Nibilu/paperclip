@@ -1,8 +1,8 @@
 import express from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@paperclipai/adapter-opencode-local";
-import { LOW_TRUST_REVIEW_PRESET } from "@paperclipai/shared";
+import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@pilibalaai/adapter-opencode-local";
+import { LOW_TRUST_REVIEW_PRESET } from "@pilibalaai/shared";
 import { hoistModuleGraph } from "./helpers/hoist-module-graph.js";
 
 vi.mock("acpx/runtime", () => ({
@@ -131,21 +131,21 @@ const mockRunSshCommand = vi.hoisted(() => vi.fn());
 function registerModuleMocks() {
   vi.doMock("../lib/agent-runner-platform.js", () => ({
     localAgentRunnerTarget: () => ({ driver: "local", platform: "linux", architecture: "x64", libc: "glibc", glibcVersion: "2.39" }),
-    localPaperclipRunnerSupported: () => true,
+    localPilibalaRunnerSupported: () => true,
   }));
-  vi.doMock("@paperclipai/adapter-utils/ssh", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@paperclipai/adapter-utils/ssh")>()),
+  vi.doMock("@pilibalaai/adapter-utils/ssh", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@pilibalaai/adapter-utils/ssh")>()),
     runSshCommand: mockRunSshCommand,
   }));
-  vi.doMock("@paperclipai/adapter-opencode-local/server", async () => {
-    const actual = await vi.importActual<typeof import("@paperclipai/adapter-opencode-local/server")>("@paperclipai/adapter-opencode-local/server");
+  vi.doMock("@pilibalaai/adapter-opencode-local/server", async () => {
+    const actual = await vi.importActual<typeof import("@pilibalaai/adapter-opencode-local/server")>("@pilibalaai/adapter-opencode-local/server");
     return {
       ...actual,
       ensureOpenCodeModelConfiguredAndAvailable: mockEnsureOpenCodeModelConfiguredAndAvailable,
     };
   });
 
-  vi.doMock("@paperclipai/shared/telemetry", () => ({
+  vi.doMock("@pilibalaai/shared/telemetry", () => ({
     trackAgentCreated: mockTrackAgentCreated,
     trackErrorHandlerCrash: vi.fn(),
   }));
@@ -243,7 +243,7 @@ function createDbStub(options: { requireBoardApprovalForNewAgents?: boolean } = 
           then: vi.fn((resolve) =>
             Promise.resolve(resolve([{
               id: companyId,
-              name: "Paperclip",
+              name: "Pilibala",
               requireBoardApprovalForNewAgents: options.requireBoardApprovalForNewAgents ?? false,
             }])),
           ),
@@ -935,7 +935,7 @@ describe("agent permission routes", () => {
         adapterConfig: {
           workspaceStrategy: {
             type: "git_worktree",
-            provisionCommand: "touch /tmp/paperclip-rce",
+            provisionCommand: "touch /tmp/pilibala-rce",
           },
         },
       }));
@@ -1032,7 +1032,7 @@ describe("agent permission routes", () => {
   });
 
   it.each(["ANTHROPIC_BASE_URL", "HTTP_PROXY", "NODE_OPTIONS"])("blocks agent-supplied %s on native Claude updates", async key => {
-    mockAgentService.getById.mockResolvedValue({ ...baseAgent, adapterType: "paperclip_runner",
+    mockAgentService.getById.mockResolvedValue({ ...baseAgent, adapterType: "pilibala_runner",
       adapterConfig: { provider: "acpx", acpxAgent: "claude" } });
     const app = await createApp({ type: "agent", agentId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", companyId, source: "agent_key", runId: "run-1" });
     const res = await requestApp(app, baseUrl => request(baseUrl).patch(`/api/agents/${agentId}`)
@@ -1042,7 +1042,7 @@ describe("agent permission routes", () => {
   });
 
   it("allows native Claude credential references in partial updates using the saved harness", async () => {
-    mockAgentService.getById.mockResolvedValue({ ...baseAgent, adapterType: "paperclip_runner",
+    mockAgentService.getById.mockResolvedValue({ ...baseAgent, adapterType: "pilibala_runner",
       adapterConfig: { provider: "acpx", acpxAgent: "claude" } });
     const app = await createApp({ type: "agent", agentId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", companyId, source: "agent_key", runId: "run-1" });
     const res = await requestApp(app, baseUrl => request(baseUrl).patch(`/api/agents/${agentId}`)
@@ -1054,7 +1054,7 @@ describe("agent permission routes", () => {
   it("blocks an agent from activating inherited host settings by switching onto a local adapter", async () => {
     mockAgentService.getById.mockResolvedValue({
       ...baseAgent,
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       adapterConfig: { env: { PATH: "/tmp" } },
     });
     const app = await createApp({ type: "agent", agentId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", companyId, source: "agent_key", runId: "run-1" });
@@ -1531,7 +1531,7 @@ describe("agent permission routes", () => {
     expect(mockAgentService.create).toHaveBeenCalledWith(
       companyId,
       expect.objectContaining({
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         adapterConfig: expect.objectContaining({
           provider: "opencode",
           model: "anthropic/claude-sonnet-4-5",
@@ -1837,7 +1837,7 @@ describe("agent permission routes", () => {
 
   for (const adapterCase of sshCapableAdapterCases) {
     it(`allows creating a ${adapterCase.adapterType} agent with an SSH default environment`, async () => {
-      const expectedAdapterType = ["codex_local", "claude_local", "opencode_local", "pi_local"].includes(adapterCase.adapterType) ? "paperclip_runner" : adapterCase.adapterType;
+      const expectedAdapterType = ["codex_local", "claude_local", "opencode_local", "pi_local"].includes(adapterCase.adapterType) ? "pilibala_runner" : adapterCase.adapterType;
       const environmentId = "33333333-3333-4333-8333-333333333333";
       mockEnvironmentService.getById.mockResolvedValue({
         id: environmentId,

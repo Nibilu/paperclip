@@ -4,7 +4,7 @@ import { usePageVisibility } from "../../lib/page-visibility";
 import { liveRunEvent, mergeRunEvents } from "../../lib/live-run-event";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { QueryClientContext } from "@tanstack/react-query";
-import type { HeartbeatRunEvent } from "@paperclipai/shared";
+import type { HeartbeatRunEvent } from "@pilibalaai/shared";
 import type { TranscriptEntry } from "@/adapters";
 import { heartbeatsApi } from "@/api/heartbeats";
 import { nativeRunEventsToTranscript } from "./native-run-events";

@@ -1,4 +1,4 @@
-import type { AttentionItem } from "@paperclipai/shared";
+import type { AttentionItem } from "@pilibalaai/shared";
 import { pendingAskUserQuestionsInteraction } from "./issueThreadInteractionFixtures";
 
 export const coordinatorTaskQuestion = {

@@ -1,14 +1,14 @@
 import { createServer } from "node:http";
-import { closeRegisteredClients, createDb, heartbeatRunEvents } from "@paperclipai/db";
+import { closeRegisteredClients, createDb, heartbeatRunEvents } from "@pilibalaai/db";
 import { registerLocalRuntimeApiServer } from "../../runtime-api.js";
 import { setStartupRecoveryPhase } from "../../startup-recovery-state.js";
 import { heartbeatService } from "../../services/heartbeat.js";
-import { executePaperclipNativeSession } from "../../services/native-runtime/native-session-executor.js";
+import { executePilibalaNativeSession } from "../../services/native-runtime/native-session-executor.js";
 
 process.send?.({ ready: true });
 process.once("message", async (input: {
   connectionString: string;
-  options: Omit<Parameters<typeof executePaperclipNativeSession>[0], "db">;
+  options: Omit<Parameters<typeof executePilibalaNativeSession>[0], "db">;
   providerEvidence?: boolean;
 }) => {
   const api = createServer((_request, response) => response.writeHead(404).end());
@@ -20,7 +20,7 @@ process.once("message", async (input: {
     await new Promise<void>(resolve => api.listen(0, "127.0.0.1", resolve));
     const db = createDb(input.connectionString);
     try {
-      await executePaperclipNativeSession({ ...input.options, db,
+      await executePilibalaNativeSession({ ...input.options, db,
         runnerExecutionTarget: { ...input.options.runnerExecutionTarget!,
           runner: { execute: async () => { commands++; throw new Error("Drained controller launched remote work"); } },
         } as never,

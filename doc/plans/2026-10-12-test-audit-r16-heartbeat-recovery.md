@@ -56,10 +56,10 @@ with different queued wakes, timer claims, continuation ancestry, or crash point
 were retained.
 
 ```sh
-PAPERCLIP_HOME=/private/tmp/r16-hbr/h \
-PAPERCLIP_CONFIG=/private/tmp/r16-hbr/h/config.json \
-PAPERCLIP_INSTANCE_ID=heartbeat-recovery-audit TMPDIR=/private/tmp/r16-hbr/t NODE_ENV=test \
-node node_modules/vitest/vitest.mjs run --project @paperclipai/server \
+PILIBALA_HOME=/private/tmp/r16-hbr/h \
+PILIBALA_CONFIG=/private/tmp/r16-hbr/h/config.json \
+PILIBALA_INSTANCE_ID=heartbeat-recovery-audit TMPDIR=/private/tmp/r16-hbr/t NODE_ENV=test \
+node node_modules/vitest/vitest.mjs run --project @pilibalaai/server \
 server/src/__tests__/heartbeat-process-recovery.test.ts --exclude '**/dist/**'
 ```
 

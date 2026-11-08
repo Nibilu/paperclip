@@ -3,7 +3,7 @@
 import { act as reactAct, type ComponentProps, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot, type Root } from "react-dom/client";
-import type { CatalogSkill, CompanySkillDetail, CompanySkillListItem, CompanySkillVersion, FolderListResult } from "@paperclipai/shared";
+import type { CatalogSkill, CompanySkillDetail, CompanySkillListItem, CompanySkillVersion, FolderListResult } from "@pilibalaai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CompanySkills,
@@ -463,7 +463,7 @@ describe("DiscoveryGrid IA presentation", () => {
       catalogRef: null,
       name: "Installed Skill",
       slug: "installed",
-      author: "Paperclip",
+      author: "Pilibala",
       version: null,
       tagline: null,
       description: null,
@@ -489,7 +489,7 @@ describe("DiscoveryGrid IA presentation", () => {
       slug: "available",
       installed: false,
       sourceBadge: "catalog" as const,
-      sourceLabel: "Paperclip catalog",
+      sourceLabel: "Pilibala catalog",
     };
     const node = await renderDiscoveryGrid({
       tab: "discover",
@@ -500,7 +500,7 @@ describe("DiscoveryGrid IA presentation", () => {
     expect(node.textContent).toContain("Not enabled for any agents");
     expect(node.textContent).toContain("Available to install");
     expect(node.textContent).toContain("Local workspace");
-    expect(node.textContent).toContain("Paperclip catalog");
+    expect(node.textContent).toContain("Pilibala catalog");
   });
 
   it("uses the create callback from the New menu and empty state", async () => {
@@ -605,7 +605,7 @@ describe("DiscoveryGrid IA presentation", () => {
       catalogRef: null,
       name: "Demo Skill",
       slug: "demo-skill",
-      author: "Paperclip",
+      author: "Pilibala",
       version: null,
       tagline: null,
       description: null,
@@ -645,7 +645,7 @@ describe("DiscoveryGrid IA presentation", () => {
       catalogRef: null,
       name: "Bundled Skill",
       slug: "bundled-skill",
-      author: "Paperclip",
+      author: "Pilibala",
       version: null,
       tagline: null,
       description: null,
@@ -717,12 +717,12 @@ describe("skills discovery card reconciliation", () => {
   it("renders one installed card when installed and catalog data share a key", () => {
     const installed = {
       id: "installed-new",
-      key: "PaperclipAI/Review",
+      key: "PilibalaAI/Review",
       name: "Review",
       slug: "review",
       updatedAt: new Date("2026-08-30T00:00:00Z"),
       folderId: null,
-      authorName: "Paperclip",
+      authorName: "Pilibala",
       packageVersion: "2.0.0",
       sourceRef: null,
       tagline: null,
@@ -736,23 +736,23 @@ describe("skills discovery card reconciliation", () => {
       catalogKind: "optional",
       forkedFromSkillId: null,
       sourceBadge: "catalog",
-      sourceLabel: "Paperclip",
+      sourceLabel: "Pilibala",
     } as unknown as CompanySkillListItem;
     const olderDuplicate = {
       ...installed,
       id: "installed-old",
-      key: "paperclipai/review",
+      key: "pilibalaai/review",
       updatedAt: new Date("2026-08-01T00:00:00Z"),
     } as CompanySkillListItem;
     const catalog = {
       id: "catalog-review",
-      key: "paperclipai/review",
+      key: "pilibalaai/review",
       name: "Review",
       slug: "review",
       kind: "optional",
       category: "quality",
       description: "Catalog copy",
-      packageName: "Paperclip",
+      packageName: "Pilibala",
       packageVersion: "2.0.0",
       tags: [],
     } as unknown as CatalogSkill;
@@ -897,7 +897,7 @@ describe("SkillDetailPage settings", () => {
 
   it("renders long source paths in full so they can wrap inside the sidebar", async () => {
     const v1 = makeVersion(1, "# Demo Skill");
-    const longSourcePath = "/srv/paperclip/home/paperclipai/paperclip/.agents/skills/prepare-pr/SKILL.md";
+    const longSourcePath = "/srv/pilibala/home/pilibalaai/pilibala/.agents/skills/prepare-pr/SKILL.md";
     const node = await renderSkillDetail([v1], {
       activeTab: "agents",
       detail: makeDetail(v1, {
@@ -1063,7 +1063,7 @@ describe("install-time agent enablement", () => {
   function makeCatalogSkill(): CatalogSkill {
     return {
       id: "catalog-1",
-      key: "paperclipai/bundled/product/wireframe",
+      key: "pilibalaai/bundled/product/wireframe",
       kind: "bundled",
       category: "product",
       slug: "wireframe",
@@ -1381,7 +1381,7 @@ describe("CompanySkills page read resilience", () => {
     expect(node.textContent).toContain("Demo Skill");
 
     mockCompanySkillsApi.list.mockRejectedValue(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await act(async () => {
       await queryClient.invalidateQueries({ queryKey: ["company-skills"] });
@@ -1391,7 +1391,7 @@ describe("CompanySkills page read resilience", () => {
     expect(mockCompanySkillsApi.list).toHaveBeenCalledTimes(2);
     expect(node.textContent).toContain("Demo Skill");
     expect(node.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(node.textContent).not.toContain("Paperclip is restarting.");
+    expect(node.textContent).not.toContain("Pilibala is restarting.");
   });
 
   it("shows readable copy and a Retry button when the skill list fails to load", async () => {

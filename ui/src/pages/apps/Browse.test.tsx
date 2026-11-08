@@ -6,11 +6,11 @@ import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Browse } from "./Browse";
 import { ApiError } from "@/api/client";
-import { aiConnectionRouterAppDefinition, CONNECTABLE_APP_DEFINITIONS, getAppStoreDefinition } from "@paperclipai/shared";
+import { aiConnectionRouterAppDefinition, CONNECTABLE_APP_DEFINITIONS, getAppStoreDefinition } from "@pilibalaai/shared";
 import { queryKeys } from "@/lib/queryKeys";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { AiManagedConnectionSummary } from "@paperclipai/shared";
-import type { AggregatorAppCatalogEntry } from "@paperclipai/shared/aggregator-app-catalog";
+import type { AiManagedConnectionSummary } from "@pilibalaai/shared";
+import type { AggregatorAppCatalogEntry } from "@pilibalaai/shared/aggregator-app-catalog";
 
 const aggregatorCatalogMock = vi.hoisted(() => [] as AggregatorAppCatalogEntry[]);
 // Counts identity normalizations made by the page (not by the catalog module itself), as a
@@ -31,8 +31,8 @@ function genericResponse(value: { apps?: any[]; sync?: Record<string, unknown> }
       appName: snapshot.appName ?? snapshot.toolkit })) };
 }
 vi.mock("@/api/agents", () => ({ agentsApi: { list: (companyId: string) => listAgentsMock(companyId) } }));
-vi.mock("@paperclipai/shared/aggregator-app-catalog", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paperclipai/shared/aggregator-app-catalog")>();
+vi.mock("@pilibalaai/shared/aggregator-app-catalog", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@pilibalaai/shared/aggregator-app-catalog")>();
   return {
     ...actual,
     AGGREGATOR_APP_CATALOG: aggregatorCatalogMock,
@@ -112,7 +112,7 @@ vi.mock("@/lib/router", () => ({
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip" },
+    selectedCompany: { id: "company-1", name: "Pilibala" },
   }),
 }));
 
@@ -229,7 +229,7 @@ describe("Connectors landing page", () => {
           tagline: "Search and draft email.",
           availability: {
             available: false,
-            reason: "Gmail is not available on this Paperclip instance yet.",
+            reason: "Gmail is not available on this Pilibala instance yet.",
           },
         }),
       ],
@@ -304,7 +304,7 @@ describe("Connectors landing page", () => {
     expect(chatSetupMock).not.toHaveBeenCalled();
   });
 
-  it("keeps assistant setup in the Paperclip catalog when filtering connection sources", async () => {
+  it("keeps assistant setup in the Pilibala catalog when filtering connection sources", async () => {
     await renderBrowse(false);
     const assistantButton = () => container.querySelector('[aria-label="Set up Assistant Connection (MCP)"]');
     expect(assistantButton()).not.toBeNull();
@@ -318,7 +318,7 @@ describe("Connectors landing page", () => {
     expect(container.textContent).not.toContain("No connectors match");
   });
 
-  const assistantGrant = { id: "grant", companyId: "company-1", companyName: "Paperclip", clientName: "Claude", scopes: ["paperclip:read"], createdAt: "2026-10-06T00:00:00Z", revokedAt: null };
+  const assistantGrant = { id: "grant", companyId: "company-1", companyName: "Pilibala", clientName: "Claude", scopes: ["pilibala:read"], createdAt: "2026-10-06T00:00:00Z", revokedAt: null };
 
   it("shows active assistant grants in Installed and removes them after revocation", async () => {
     assistantConnectionsMock.mockResolvedValue([assistantGrant]);
@@ -429,16 +429,16 @@ describe("Connectors landing page", () => {
     return document.querySelector<HTMLElement>('[role="menu"]')!;
   }
 
-  it("defaults to Paperclip with five chips, expands search to All, and retains explicit source scope", async () => {
+  it("defaults to Pilibala with five chips, expands search to All, and retains explicit source scope", async () => {
     aggregatorCatalogMock.push(indexedApp("Remote App", ["composio"]));
     await renderBrowse(false);
-    expect(container.querySelector('[aria-label="App filters"]')?.textContent).toBe("PaperclipComposioArcadeInstalledAll");
+    expect(container.querySelector('[aria-label="App filters"]')?.textContent).toBe("PilibalaComposioArcadeInstalledAll");
     expect(container.querySelector('[data-app-slug="remote-app"]')).toBeNull();
     await search("Remote App");
     expect(container.querySelector('[aria-checked="true"]')?.textContent).toBe("All");
     expect(container.querySelector('[data-app-slug="remote-app"]')).toBeTruthy();
     await search("");
-    expect(container.querySelector('[aria-checked="true"]')?.textContent).toBe("Paperclip");
+    expect(container.querySelector('[aria-checked="true"]')?.textContent).toBe("Pilibala");
     await clickButton("Arcade", container);
     await search("Remote App");
     expect(container.querySelector('[aria-checked="true"]')?.textContent).toBe("Arcade");
@@ -623,7 +623,7 @@ describe("Connectors landing page", () => {
     expect(circleback()?.textContent).toContain("Meeting notes");
     expect(circleback()?.querySelector('[title="Connected"]')).toBeTruthy();
 
-    listComposioAppsMock.mockRejectedValue(new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }));
+    listComposioAppsMock.mockRejectedValue(new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }));
     await act(async () => { await client.invalidateQueries({ queryKey: ["tools", "aggregator-apps"] }); });
     await flushReact();
 
@@ -632,7 +632,7 @@ describe("Connectors landing page", () => {
     expect(container.textContent).not.toContain("Last known account · Refresh to verify");
     expect(container.textContent).not.toContain("Couldn’t load Composio accounts");
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
   });
 
   it("reports a real aggregator account failure while keeping the last known accounts", async () => {
@@ -699,7 +699,7 @@ describe("Connectors landing page", () => {
     expect(container.querySelectorAll('[data-app-slug="hubspot"] button[aria-label*="third-party"]')).toHaveLength(2);
   });
 
-  // BUG-06: on Paperclip Cloud, Slack's built-in tool method needs a customer-created OAuth
+  // BUG-06: on Pilibala Cloud, Slack's built-in tool method needs a customer-created OAuth
   // app and, without the Chat connectors opt-in, there is no managed Slack path. Connect
   // must offer the aggregators' one-click sign-in instead of the "needs its own OAuth app" form.
   it("offers aggregator Slack sign-in on Cloud while the built-in Slack connector needs a customer OAuth app", async () => {
@@ -734,7 +734,7 @@ describe("Connectors landing page", () => {
     experimentalMock.mockResolvedValue({});
     aggregatorCatalogMock.push(indexedApp("Asana", ["composio", "arcade"]));
     const asana = getAppStoreDefinition("asana")!;
-    // The gallery removes a Paperclip Cloud method whose broker profile is not advertised.
+    // The gallery removes a Pilibala Cloud method whose broker profile is not advertised.
     const galleryAsana = { ...asana, methods: asana.methods.filter((method) => !method.oauthStrategy) };
     listGalleryMock.mockResolvedValue({ apps: [galleryAsana] });
     await renderBrowse(true, { cloud: true });
@@ -763,7 +763,7 @@ describe("Connectors landing page", () => {
   // identity work. A nested scan of the catalog per row needs tens of millions of calls
   // and stalls the tab.
   it("builds the full shipped catalog on a managed instance with work proportional to its size, and not again for a search or an unchanged refetch", async () => {
-    const { AGGREGATOR_APP_CATALOG: shippedCatalog } = await vi.importActual<typeof import("@paperclipai/shared/aggregator-app-catalog")>("@paperclipai/shared/aggregator-app-catalog");
+    const { AGGREGATOR_APP_CATALOG: shippedCatalog } = await vi.importActual<typeof import("@pilibalaai/shared/aggregator-app-catalog")>("@pilibalaai/shared/aggregator-app-catalog");
     aggregatorCatalogMock.push(...shippedCatalog);
     experimentalMock.mockResolvedValue({});
     listGalleryMock.mockResolvedValue({ apps: CONNECTABLE_APP_DEFINITIONS });
@@ -1160,45 +1160,45 @@ describe("Connectors landing page", () => {
   });
 
   it("hides cached Notebook catalog entries until explicitly enabled", async () => {
-    listGalleryMock.mockResolvedValue({ apps: ["paperclip-notebook", "notion"].map(getAppStoreDefinition) });
+    listGalleryMock.mockResolvedValue({ apps: ["pilibala-notebook", "notion"].map(getAppStoreDefinition) });
     const client = await renderBrowse();
-    expect(container.querySelector('[data-app-slug="paperclip-notebook"]')).toBeNull();
+    expect(container.querySelector('[data-app-slug="pilibala-notebook"]')).toBeNull();
     expect(container.querySelector('[data-app-slug="notion"]')).not.toBeNull();
-    await act(() => { client.setQueryData(queryKeys.instance.experimentalSettings, { enablePaperclipNotebook: true }); });
+    await act(() => { client.setQueryData(queryKeys.instance.experimentalSettings, { enablePilibalaNotebook: true }); });
     await flushReact();
-    expect(container.querySelector('[data-app-slug="paperclip-notebook"]')).not.toBeNull();
-    await act(() => { client.setQueryData(queryKeys.instance.experimentalSettings, { enablePaperclipNotebook: false }); });
+    expect(container.querySelector('[data-app-slug="pilibala-notebook"]')).not.toBeNull();
+    await act(() => { client.setQueryData(queryKeys.instance.experimentalSettings, { enablePilibalaNotebook: false }); });
     await flushReact();
-    expect(container.querySelector('[data-app-slug="paperclip-notebook"]')).toBeNull();
+    expect(container.querySelector('[data-app-slug="pilibala-notebook"]')).toBeNull();
   });
 
   it("hides Notebook while settings load", async () => {
     experimentalMock.mockImplementation(() => new Promise(() => {}));
-    listGalleryMock.mockResolvedValue({ apps: [getAppStoreDefinition("paperclip-notebook")] });
+    listGalleryMock.mockResolvedValue({ apps: [getAppStoreDefinition("pilibala-notebook")] });
     await renderBrowse();
-    expect(container.querySelector('[data-app-slug="paperclip-notebook"]')).toBeNull();
+    expect(container.querySelector('[data-app-slug="pilibala-notebook"]')).toBeNull();
   });
 
   it("hides Notebook when a settings refresh fails with a cached opt-in", async () => {
-    experimentalMock.mockResolvedValue({ enablePaperclipNotebook: true });
-    listGalleryMock.mockResolvedValue({ apps: [getAppStoreDefinition("paperclip-notebook")] });
+    experimentalMock.mockResolvedValue({ enablePilibalaNotebook: true });
+    listGalleryMock.mockResolvedValue({ apps: [getAppStoreDefinition("pilibala-notebook")] });
     const client = await renderBrowse();
-    expect(container.querySelector('[data-app-slug="paperclip-notebook"]')).not.toBeNull();
+    expect(container.querySelector('[data-app-slug="pilibala-notebook"]')).not.toBeNull();
     experimentalMock.mockRejectedValue(new Error("Settings unavailable"));
     await act(async () => { await client.invalidateQueries({ queryKey: queryKeys.instance.experimentalSettings }); });
     await flushReact();
-    expect(client.getQueryData(queryKeys.instance.experimentalSettings)).toEqual({ enablePaperclipNotebook: true });
-    expect(container.querySelector('[data-app-slug="paperclip-notebook"]')).toBeNull();
+    expect(client.getQueryData(queryKeys.instance.experimentalSettings)).toEqual({ enablePilibalaNotebook: true });
+    expect(container.querySelector('[data-app-slug="pilibala-notebook"]')).toBeNull();
   });
 
   it("keeps Notebook removal available while hiding reconnect and new-account controls", async () => {
-    listGalleryMock.mockResolvedValue({ apps: [getAppStoreDefinition("paperclip-notebook")] });
-    listApplicationsMock.mockResolvedValue({ applications: [application({ id: "notebook-app", name: "Paperclip Notebook",
-      applicationKey: "app-gallery:paperclip-notebook:one", metadata: { sourceTemplateKey: "paperclip-notebook" } })] });
+    listGalleryMock.mockResolvedValue({ apps: [getAppStoreDefinition("pilibala-notebook")] });
+    listApplicationsMock.mockResolvedValue({ applications: [application({ id: "notebook-app", name: "Pilibala Notebook",
+      applicationKey: "app-gallery:pilibala-notebook:one", metadata: { sourceTemplateKey: "pilibala-notebook" } })] });
     listConnectionsMock.mockResolvedValue({ connections: [connection({ id: "saved-notebook", applicationId: "notebook-app",
-      name: "Notebook account", config: { sourceTemplateKey: "paperclip-notebook" }, healthStatus: "error", requiresReauthorization: true })] });
+      name: "Notebook account", config: { sourceTemplateKey: "pilibala-notebook" }, healthStatus: "error", requiresReauthorization: true })] });
     await renderBrowse();
-    const row = container.querySelector('[data-app-slug="paperclip-notebook"]')!;
+    const row = container.querySelector('[data-app-slug="pilibala-notebook"]')!;
     expect(row).not.toBeNull();
     expect([...row.querySelectorAll("button")].some(button => /^(Connect|Add connection|Reconnect|Finish setup)$/.test(button.textContent?.trim() ?? ""))).toBe(false);
     await act(() => { row.querySelector<HTMLButtonElement>('button[aria-label^="Manage "]')!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); });
@@ -1722,7 +1722,7 @@ describe("Connectors landing page", () => {
     await flushReact();
     expect(chatSetupMock).not.toHaveBeenCalled();
     expect(emailControlMock).not.toHaveBeenCalled();
-    expect(document.body.textContent).toContain("Existing Paperclip tasks and conversation history remain available.");
+    expect(document.body.textContent).toContain("Existing Pilibala tasks and conversation history remain available.");
     chatListMock.mockResolvedValue([]);
     await act(() => Array.from(document.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Remove connection")!.click());
     await flushReact();

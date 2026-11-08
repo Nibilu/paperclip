@@ -3,8 +3,8 @@ import { lstat, mkdtemp, readFile, realpath, rename, rm, writeFile } from "node:
 import path from "node:path";
 import { promisify } from "node:util";
 import { and, eq, sql } from "drizzle-orm";
-import { environmentLeases, executionWorkspaces, heartbeatRuns, issueRecoveryActions, type Db } from "@paperclipai/db";
-import type { ExecutionContinuationEnvelope } from "@paperclipai/shared";
+import { environmentLeases, executionWorkspaces, heartbeatRuns, issueRecoveryActions, type Db } from "@pilibalaai/db";
+import type { ExecutionContinuationEnvelope } from "@pilibalaai/shared";
 import { isTaskOwnedLocalWorkspace, readableOwnGitRoot, recoveryGenerationSettled, sourceNeedsWorkspaceRepair,
   workspaceHasOtherWriter } from "./fresh-workspace-continuation.js";
 import { materializeIsolatedTaskDirectory } from "./isolated-task-directory.js";
@@ -132,7 +132,7 @@ export async function materializeFreshWorkspaceSeed(input: {
       if (input.repoUrl) await execFile("git", ["-C", staging, "remote", "add", "origin", input.repoUrl], gitOptions);
     }
     await writeFile(receiptPath, JSON.stringify({
-      schema: "paperclip.fresh-workspace-seed.v1", companyId: input.companyId,
+      schema: "pilibala.fresh-workspace-seed.v1", companyId: input.companyId,
       issueId: input.issueId, runId: input.runId, commit,
     }), { mode: 0o600 });
     await rename(staging, destination);

@@ -61,13 +61,13 @@ measurements; provider context, token usage and billing coverage come from actua
 retained run records. Cleanup, credential scanning and public projection use the
 existing Product E2E pipeline. Do not publish raw sessions or hidden reasoning.
 
-Setup attempt [37399550253](https://github.com/paperclipai/paperclip/actions/runs/37399550253)
+Setup attempt [37399550253](https://github.com/pilibalaai/pilibala/actions/runs/37399550253)
 on source `843238f43cb266f6ca0bc9d255881558ffd2eb71` was cancelled after source
 review identified unsupported bundled edits and automatic core reinstallation.
 The paid-cell step was skipped: zero provider runs and no behavioral grade.
 The corrected fixture uses company copies and selection only.
 
-The next setup campaign, [37401094799](https://github.com/paperclipai/paperclip/actions/runs/37401094799),
+The next setup campaign, [37401094799](https://github.com/pilibalaai/pilibala/actions/runs/37401094799),
 measured source `370e51d110836b942e5f90567d2bbe260bcc0f3a` using trusted workflow
 revision `0e0b63e5a551388ac4601ed982b3e8f1c772f123` (workflow blob
 `0600886144d3e22ea2e4a38329a79177882f3948`). It remains an original FAIL,

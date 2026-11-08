@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { and, asc, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
-import { heartbeatRuns, runUsageReceipts, type Db } from "@paperclipai/db";
-import type { AdapterUsageCheckpoint } from "@paperclipai/adapter-utils";
-import type { NativeExecutionInput, PrpEvent } from "../../vendor/paperclip-runner/index.js";
+import { heartbeatRuns, runUsageReceipts, type Db } from "@pilibalaai/db";
+import type { AdapterUsageCheckpoint } from "@pilibalaai/adapter-utils";
+import type { NativeExecutionInput, PrpEvent } from "../../vendor/pilibala-runner/index.js";
 import { priceAnthropicReceipt } from "../anthropic-pricing.js";
 import { priceCodexReceipt } from "../codex-pricing.js";
 import { liveRunUsageCostCents } from "../budget-live-usage.js";
@@ -103,8 +103,8 @@ async function captureLateUsageForOwner(db: Db, input: NativeUsageDeliveryInput,
   const owner = exact ?? runs[0] ?? { id: input.runId };
   const receipt = priceAnthropicReceipt(priceCodexReceipt({ ...input.billing, model: input.provider.model ?? "unknown", usage, usageBasis: "per_run",
     complete: true, costUsd: nativeUsageCostUsd(measured, input.provider) ?? null }));
-  await persistUsageReceipt(db, { schema: "paperclip/accounting-receipt/v1", id: uuid(`${owner.id}:${input.runnerInstanceId}:${event.sourceEventId}`),
-    companyId: input.companyId, runId: owner.id, adapterType: "paperclip_runner", sourceId: uuid(`late:${owner.id}:${input.runId}:${input.runnerInstanceId}`),
+  await persistUsageReceipt(db, { schema: "pilibala/accounting-receipt/v1", id: uuid(`${owner.id}:${input.runnerInstanceId}:${event.sourceEventId}`),
+    companyId: input.companyId, runId: owner.id, adapterType: "pilibala_runner", sourceId: uuid(`late:${owner.id}:${input.runId}:${input.runnerInstanceId}`),
     sequence: event.sourceSeq, receivedAt: event.emittedAt, receipt,
     producerEvent: { sourceEventId: event.sourceEventId, turnId: event.turnId, eventType: event.eventType, usage: { runDelta: payload.runDelta, reconciliation } },
     lateDelta: { attribution: exact ? "exact" : "inferred", reportedByRunId: input.runId } });
@@ -144,7 +144,7 @@ function createNativeUsageReceiver(db: Db, input: NativeUsageDeliveryInput, sour
     const envelope = row.receipt as UsageReceiptEnvelope;
     if (!envelope.producerEvent) throw new Error("native_usage_receipt_missing_producer");
     if (verifySaved && (envelope.companyId !== input.companyId || envelope.runId !== input.runId
-      || envelope.sourceId !== sourceId || envelope.sequence !== row.sequence || envelope.adapterType !== "paperclip_runner"
+      || envelope.sourceId !== sourceId || envelope.sequence !== row.sequence || envelope.adapterType !== "pilibala_runner"
       || envelope.id !== uuid(`${input.runId}:${input.runnerInstanceId}:${envelope.producerEvent.sourceEventId}`)
       || receiptFingerprint(envelope) !== row.hash || accepted.has(envelope.producerEvent.sourceEventId))) {
       throw new Error("native_usage_source_conflict");
@@ -176,9 +176,9 @@ function createNativeUsageReceiver(db: Db, input: NativeUsageDeliveryInput, sour
     if (accepted.has(event.sourceEventId)) return;
     if (pending && pending.producerEvent?.sourceEventId !== event.sourceEventId) throw new Error("native_usage_report_pending");
     if (!pending) {
-      const envelope: UsageReceiptEnvelope = { schema: "paperclip/accounting-receipt/v1",
+      const envelope: UsageReceiptEnvelope = { schema: "pilibala/accounting-receipt/v1",
         id: uuid(`${input.runId}:${input.runnerInstanceId}:${event.sourceEventId}`), companyId: input.companyId,
-        runId: input.runId, adapterType: "paperclip_runner", sourceId, sequence: event.sourceSeq,
+        runId: input.runId, adapterType: "pilibala_runner", sourceId, sequence: event.sourceSeq,
         receivedAt: event.emittedAt, producerEvent: fact, receipt: { complete: false } };
       const snapshot = observe(envelope);
       const usage = normalizeNativeUsage(snapshot.usage, { inputIncludesCacheReads: input.provider.kind === "codex" });

@@ -27,7 +27,7 @@ export const reliabilityDefinitions = Object.freeze([
   ['queued-across-restart', 'daytona', 'S55/U9'],
 ].map(([name, environment, signature, profile = reliabilityProfile, model = reliabilityModel]) => Object.freeze({
   plan: reliabilityPlanKey, suite: reliabilitySuite, name, environment, signature, profile, model,
-  fullName: `paperclip.Product E2E.${reliabilitySuite}.${name}`,
+  fullName: `pilibala.Product E2E.${reliabilitySuite}.${name}`,
   executionId: `${reliabilitySuite}.${profile}.${environment}.${name}`,
 })));
 

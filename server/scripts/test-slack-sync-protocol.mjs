@@ -14,7 +14,7 @@ const mode = args[0] === '--warm-only' ? 'warm' : 'action-delayed';
 const testNamePattern = args.length === 1
   ? `captures signed Slack forwarding protocol with registered owners \\(${mode}\\)$`
   : 'captures signed Slack forwarding protocol with registered owners';
-const names = ['PAPERCLIP_SLACK_TEST_DATABASE_URL'];
+const names = ['PILIBALA_SLACK_TEST_DATABASE_URL'];
 for (const name of names) {
   if (!process.env[name]) throw new Error(`Set ${name} to an owned dedicated PostgreSQL test database`);
   let url;
@@ -24,13 +24,13 @@ for (const name of names) {
     || ['options', 'database', 'dbname'].some(k => url.searchParams.has(k))) throw new Error(`${name} must name an explicit loopback *_test database`);
 }
 const vitest = path.join(path.dirname(require.resolve('vitest/package.json')), 'vitest.mjs');
-const ownedHome = mkdtempSync(path.join(tmpdir(), 'paperclip-slack-protocol-'));
+const ownedHome = mkdtempSync(path.join(tmpdir(), 'pilibala-slack-protocol-'));
 const env = {
   PATH: process.env.PATH, HOME: process.env.HOME, CODEX_HOME: process.env.CODEX_HOME,
-  LANG: process.env.LANG, TMPDIR: ownedHome, PAPERCLIP_HOME: ownedHome,
+  LANG: process.env.LANG, TMPDIR: ownedHome, PILIBALA_HOME: ownedHome,
   NODE_ENV: 'test', NODE_OPTIONS: '', SLACK_GATE_EXPECT_PRELOAD: '1',
-  PAPERCLIP_SLACK_TEST_DATABASE_URL: process.env.PAPERCLIP_SLACK_TEST_DATABASE_URL,
-  PAPERCLIP_SLACK_PROTOCOL_CAPTURE: '1',
+  PILIBALA_SLACK_TEST_DATABASE_URL: process.env.PILIBALA_SLACK_TEST_DATABASE_URL,
+  PILIBALA_SLACK_PROTOCOL_CAPTURE: '1',
   SLACK_GATE_PROCESS_LOG: process.env.SLACK_GATE_PROCESS_LOG,
 };
 const child = spawn(process.execPath, ['--require', guard, vitest, 'run',

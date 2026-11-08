@@ -17,7 +17,7 @@ import { getExecutionBlocker } from "../../../services/execution-blocker.js";
 import { validateReconstructedWorkspaceDispatch } from "../../../services/native-runtime/native-workspace-reconstruction.js";
 import { getNativeReviewAssignment } from "../../../services/native-runtime/native-review-participant.js";
 import { and, asc, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agentWakeupRequests,
   agents,
@@ -31,8 +31,8 @@ import {
   issues,
   nativeRunFinalizations,
   projects,
-} from "@paperclipai/db";
-import { ISSUE_DISPOSITION_REPAIR_RETRY_REASON, isUuidLike } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { ISSUE_DISPOSITION_REPAIR_RETRY_REASON, isUuidLike } from "@pilibalaai/shared";
 import { withOperationAccountingTransaction } from "../../../services/accounting-transaction.js";
 import { lockBudgetAdmissionControls } from "../../../services/budget-admission-controls.js";
 import type { ActivityPublication } from "../../../services/activity-log.js";
@@ -625,9 +625,9 @@ export function createPostgresRunDispatchAdapter(
     let continuationSummaryBody: string | null = null;
     let continuationParksExecutor = false;
     if (continuationParkApplies) {
-      const queuedWake = parseObject(context.paperclipWake);
+      const queuedWake = parseObject(context.pilibalaWake);
       const queuedContinuationSummary =
-        readNonEmptyString(parseObject(context.paperclipContinuationSummary).body) ??
+        readNonEmptyString(parseObject(context.pilibalaContinuationSummary).body) ??
         readNonEmptyString(parseObject(queuedWake.continuationSummary).body);
       const currentContinuationSummary = queuedContinuationSummary
         ? null
@@ -1105,7 +1105,7 @@ export function createPostgresRunDispatchAdapter(
     await notifyDeferredExecutionWork(tx, { companyId: run.companyId, requestId: wake.id });
     const [deferred] = await tx.update(agentWakeupRequests).set({
       status: "deferred_issue_execution", runId: null, claimedAt: null, finishedAt: null, error: null,
-      payload: withQueuedCommentIdsInWakePayload({ ...payload, _paperclipWakeContext: context,
+      payload: withQueuedCommentIdsInWakePayload({ ...payload, _pilibalaWakeContext: context,
         executionWait: { ...parseObject(run.resultJson?.executionWait), reason: "execution_recovery",
           message: "Waiting for execution recovery. Your message is saved." } }, commentIds), updatedAt: now,
     }).where(and(eq(agentWakeupRequests.id, wake.id), eq(agentWakeupRequests.companyId, run.companyId),

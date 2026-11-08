@@ -54,11 +54,11 @@ function DefaultPanel() {
 }
 
 const meta = {
-  id: "paperclip-source-resolved-fold",
-  title: "Projects and execution/Recovery/Paperclip/Source-resolved Fold",
+  id: "pilibala-source-resolved-fold",
+  title: "Projects and execution/Recovery/Pilibala/Source-resolved Fold",
   component: DefaultPanel,
   parameters: { layout: "fullscreen",
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "recovery/diagnosis",
         "recovery/source-action"

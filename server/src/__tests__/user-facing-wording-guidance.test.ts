@@ -18,8 +18,8 @@ function section(markdown: string, heading: string): string {
 }
 
 describe("agent-written text names tasks by identifier, never by UUID", () => {
-  it("the paperclip skill's comment style forbids raw UUIDs in comments and descriptions", async () => {
-    const style = section(await read("../../../skills/paperclip/SKILL.md"), "## Comment Style (Required)");
+  it("the pilibala skill's comment style forbids raw UUIDs in comments and descriptions", async () => {
+    const style = section(await read("../../../skills/pilibala/SKILL.md"), "## Comment Style (Required)");
     expect(style).toContain("**No raw IDs in prose (required):**");
     expect(style).toMatch(/never paste a raw UUID/i);
     expect(style).toContain("[BRA-2](/BRA/issues/BRA-2#document-plan)");
@@ -32,7 +32,7 @@ describe("agent-written text names tasks by identifier, never by UUID", () => {
   });
 
   it("plan-to-task conversion keeps UUIDs out of task descriptions", async () => {
-    const skill = await read("../../../skills/paperclip-converting-plans-to-tasks/SKILL.md");
+    const skill = await read("../../../skills/pilibala-converting-plans-to-tasks/SKILL.md");
     expect(skill).toMatch(/identifier links[^.]*never raw UUIDs/i);
   });
 });
@@ -52,8 +52,8 @@ describe("chat agents describe outcomes, not internal mechanics", () => {
     expect(persona).toMatch(/raw IDs/);
   });
 
-  it("the paperclip skill applies the rule to every user-facing comment", async () => {
-    const style = section(await read("../../../skills/paperclip/SKILL.md"), "## Comment Style (Required)");
+  it("the pilibala skill applies the rule to every user-facing comment", async () => {
+    const style = section(await read("../../../skills/pilibala/SKILL.md"), "## Comment Style (Required)");
     expect(style).toContain("**Describe outcomes, not mechanics (required):**");
   });
 });

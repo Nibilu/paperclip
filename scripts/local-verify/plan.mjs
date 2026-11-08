@@ -30,7 +30,7 @@ export async function planVerification({ root, env, diff, full = false }) {
     const groups = [...new Set(["general_tests", "verify_serialized_server"].flatMap(job =>
       coarse.jobs[job]?.run ? coarse.jobs[job].matrix.include.map(entry => entry.group ?? "serialized") : []))];
     const inventories = new Map(groups.filter(group => group !== "general-chat").map(group => [group, inventory(root, env, group)]));
-    const projects = [...new Set([...inventories.values()].flatMap(value => value.workspaceProjects ?? ["@paperclipai/server"]))];
+    const projects = [...new Set([...inventories.values()].flatMap(value => value.workspaceProjects ?? ["@pilibalaai/server"]))];
     const { selectProjects } = await import("../ci/select-projects.mjs");
     const graphs = await selectProjects({ root, projects, changed: productInputs(diff.changed), concurrency: 1, env });
     if (graphs.some(graph => !graph.isolated)) throw new Error("Non-isolated projects require broad verification");
@@ -41,7 +41,7 @@ export async function planVerification({ root, env, diff, full = false }) {
     const manifest = { version: 1, head: diff.head, lanes: {} }, jobs = [], selectedFiles = new Set();
     for (const group of groups) {
       if (group === "general-chat") {
-        if (byProject.get("@paperclipai/server")?.selected.includes(chatSuite)) {
+        if (byProject.get("@pilibalaai/server")?.selected.includes(chatSuite)) {
           selectedFiles.add(chatSuite);
           for (let index = 0; index < 6; index++) jobs.push({ id: `chat-${index + 1}`, cacheable: false, args: ["--mode", "general", "--group", group,
             "--shard-index", String(index), "--shard-count", "6", "--serial-chat"] });
@@ -51,7 +51,7 @@ export async function planVerification({ root, env, diff, full = false }) {
       const value = inventories.get(group);
       const owners = value.workspaceProjects
         ? Object.fromEntries(value.workspaceProjects.map(project => [project, byProject.get(project).inventory]))
-        : { "@paperclipai/server": group === "serialized" ? value.selectedSerializedSuites : value.selectedGeneralServerSuites };
+        : { "@pilibalaai/server": group === "serialized" ? value.selectedSerializedSuites : value.selectedGeneralServerSuites };
       const reusable = {}, fresh = {};
       for (const [project, files] of Object.entries(owners)) {
         const graph = byProject.get(project), all = new Set(graph.inventory), affected = new Set(graph.selected);

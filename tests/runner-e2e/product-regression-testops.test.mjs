@@ -9,13 +9,13 @@ import { admitProductTestOps, officialProductContext, verifyProductJob, validate
 
 const workflowSha = 'a'.repeat(40), targetSha = 'b'.repeat(40);
 const env = {
-  GITHUB_REPOSITORY: 'paperclipai/paperclip', GITHUB_REF: 'refs/heads/master', GITHUB_EVENT_NAME: 'workflow_dispatch',
-  GITHUB_WORKFLOW_REF: 'paperclipai/paperclip/.github/workflows/runner-full-stack-e2e.yml@refs/heads/master',
+  GITHUB_REPOSITORY: 'pilibalaai/pilibala', GITHUB_REF: 'refs/heads/master', GITHUB_EVENT_NAME: 'workflow_dispatch',
+  GITHUB_WORKFLOW_REF: 'pilibalaai/pilibala/.github/workflows/runner-full-stack-e2e.yml@refs/heads/master',
   GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '1', GITHUB_SHA: workflowSha, SOURCE_SHA: targetSha,
-  ALLURE_ENDPOINT: 'https://paperclip.testops.cloud', ALLURE_PROJECT_ID: '1',
+  ALLURE_ENDPOINT: 'https://pilibala.testops.cloud', ALLURE_PROJECT_ID: '1',
 };
 const selected = productRegressionCases.find(row => row.id === 66);
-const selection = cases => ({ schema: 'paperclip.product-regression-testops-selection/v1', runId: '123', attempt: '1',
+const selection = cases => ({ schema: 'pilibala.product-regression-testops-selection/v1', runId: '123', attempt: '1',
   workflowSha, targetSha, jobRunId: '456', launchId: 789, cases });
 const result = (overrides = {}) => ({
   executionId: selected.executionId, suiteId: selected.suite, caseId: selected.name,
@@ -24,7 +24,7 @@ const result = (overrides = {}) => ({
   matcherResults: [{ matcher: { kind: 'json_path', path: 'observed.outputVerified', expected: true }, passed: true }],
   ...overrides,
 });
-const campaign = (results = [result()]) => ({ schema: 'paperclip.runner-e2e.campaign/v2', campaignId: 'gha-123-1',
+const campaign = (results = [result()]) => ({ schema: 'pilibala.runner-e2e.campaign/v2', campaignId: 'gha-123-1',
   source: { sha: targetSha }, expected: [selected.executionId], results });
 const allPlan = { version: '1.0', tests: productRegressionCases.map(row => ({ id: String(row.id), selector: row.fullName })) };
 
@@ -51,7 +51,7 @@ test('a TestOps subset selects only its exact original case; unknown, duplicate 
 test('selection authority cannot enter through an untrusted workflow, foreign ref, mixed selector or recurring mode', () => {
   admitProductTestOps(env);
   for (const mutation of [{ GITHUB_REF: 'refs/heads/candidate' }, { GITHUB_EVENT_NAME: 'pull_request_target' },
-    { GITHUB_WORKFLOW_REF: 'paperclipai/paperclip/.github/workflows/other.yml@refs/heads/master' },
+    { GITHUB_WORKFLOW_REF: 'pilibalaai/pilibala/.github/workflows/other.yml@refs/heads/master' },
     { ALLURE_ENDPOINT: 'https://attacker.invalid' }, { SELECT_SUITE: 'core-compatibility' },
     { EVAL_CADENCE: 'daily' }, { SOURCE_SHA: '' }]) assert.throws(() => admitProductTestOps({ ...env, ...mutation }));
   validateSelection(selection([selected]), env);
@@ -150,7 +150,7 @@ test('secret-shaped and unknown metadata cannot cross the reporting boundary', (
 });
 
 test('a TestOps job run must belong to this workflow, source launch and GitHub execution', async () => {
-  const values = { '/api/jobrun/456': { id: 456, launchId: 789, job: { id: 50, type: 'github' }, url: 'https://github.com/paperclipai/paperclip/actions/runs/123' },
+  const values = { '/api/jobrun/456': { id: 456, launchId: 789, job: { id: 50, type: 'github' }, url: 'https://github.com/pilibalaai/pilibala/actions/runs/123' },
     '/api/job/50': { id: 50, type: 'github', url: workflowUrl }, '/api/launch/789': { id: 789, projectId: 1 } };
   assert.deepEqual(await verifyProductJob(route => values[route], { jobRunId: '456', launchId: 789 }, env), { jobId: 50, launchId: 789 });
   for (const url of workflowUrls) {
@@ -191,7 +191,7 @@ test('the separated selection, retained-report projection and server verificatio
     const parsed = new URL(url), route = parsed.pathname;
     const resources = {
       '/api/uaa/oauth/token': { access_token: 'synthetic-access-token' },
-      '/api/jobrun/456': { id: 456, launchId: 789, job: { id: 50, type: 'github' }, url: 'https://github.com/paperclipai/paperclip/actions/runs/123' },
+      '/api/jobrun/456': { id: 456, launchId: 789, job: { id: 50, type: 'github' }, url: 'https://github.com/pilibalaai/pilibala/actions/runs/123' },
       '/api/job/50': { id: 50, type: 'github', url: [...workflowUrls][1] }, '/api/launch/789': { id: 789, projectId: 1 },
       '/api/testresult': { content: [{ id: 501, testCaseId: 66 }], totalPages: 1, totalElements: 1 },
       '/api/testresult/501': { id: 501, testCaseId: 66, fullName: selected.fullName, projectId: 1, launchId: 789, jobRun: { id: 456 }, status: uploadedStatus },

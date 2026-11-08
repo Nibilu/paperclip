@@ -70,7 +70,7 @@ describe("speed budget checks in the native run trace", () => {
     await trace.finish("ok");
 
     expect(breaches()).toEqual([expect.objectContaining({
-      schema: "paperclip.run-performance-budget.v1", metric: "agent_boot", adapter: "codex", startKind: "cold",
+      schema: "pilibala.run-performance-budget.v1", metric: "agent_boot", adapter: "codex", startKind: "cold",
       measuredMs: boot, budgetP95Ms: LOCAL_SPEED_BUDGETS.codex.agent_boot.cold.p95Ms,
     })]);
   });

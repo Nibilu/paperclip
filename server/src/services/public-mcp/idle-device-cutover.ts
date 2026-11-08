@@ -1,5 +1,5 @@
 import { and,asc,eq,exists,gt,isNotNull,ne,notInArray } from "drizzle-orm";
-import { mcpOauthClientMirrorState as state,mcpOauthDeviceRequests as devices,type Db } from "@paperclipai/db";
+import { mcpOauthClientMirrorState as state,mcpOauthDeviceRequests as devices,type Db } from "@pilibalaai/db";
 import { managedMcpDeviceScope } from "./device-cutover.js";
 import type { IdleMcpInspectionBudget } from "./idle-wake-proof.js";
 import type { IdleDeadlineSnapshot } from "../idle-deadline-types.js";

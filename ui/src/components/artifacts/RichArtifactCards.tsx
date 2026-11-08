@@ -310,7 +310,7 @@ function Markdown({ body, preview = false }: { body: string; preview?: boolean }
       <ReactMarkdown
         components={{
           pre: ({ children }) => <pre className={preview
-            ? "paperclip-patch-preview min-w-0 max-w-full overflow-hidden whitespace-pre font-mono text-xs"
+            ? "pilibala-patch-preview min-w-0 max-w-full overflow-hidden whitespace-pre font-mono text-xs"
             : "min-w-0 max-w-full overflow-x-auto whitespace-pre-wrap wrap-anywhere font-mono text-xs"}>{children}</pre>,
           code: ({ className, children }) => <code className={className}>{/\blanguage-(diff|patch)\b/i.test(className ?? "")
             ? <PatchLines text={String(children)} /> : children}</code>,
@@ -387,7 +387,7 @@ export function DocumentCard(props: DocumentCardProps) {
   const patch = props.patch ?? isPatchFile(props.filename);
   const content = (body: string, preview = false) => patch
     ? <pre className={preview
-      ? "paperclip-patch-preview m-0 min-w-0 overflow-hidden whitespace-pre font-mono text-xs leading-5"
+      ? "pilibala-patch-preview m-0 min-w-0 overflow-hidden whitespace-pre font-mono text-xs leading-5"
       : "m-0 min-w-0 whitespace-pre-wrap wrap-anywhere font-mono text-xs leading-5"}><code><PatchLines text={body} /></code></pre>
     : <Markdown body={body} preview={preview} />;
   return (

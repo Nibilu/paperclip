@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { assertOnlineMigrationManifest, assertOnlineMigrationRuntime, assertOnlineMigrationSchema, onlineWorkspaceMigrationReceipt, parseOnlineWorkspaceMigrationRequest, runOnlineWorkspaceMigration } from "./online-workspace-migration.js";
-import type { Db } from "@paperclipai/db";
-import * as database from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import * as database from "@pilibalaai/db";
 import fs from "node:fs/promises";
 import * as buildCommit from "../build-commit.js";
 import type { StorageService } from "../storage/types.js";
@@ -14,7 +14,7 @@ vi.mock("../services/remote-workspace-migration.js", async importOriginal => {
 });
 
 const request = () => ({
-  schema: "paperclip.online-workspace-migration.v1",
+  schema: "pilibala.online-workspace-migration.v1",
   toolCommit: "a".repeat(40),
   toolRoot: "/private/reviewed-core",
   source: { commit: "b".repeat(40), deploymentId: "11111111-1111-4111-8111-111111111111" },
@@ -118,7 +118,7 @@ describe("separate online tool identity", () => {
     const originalNode = process.versions.node;
     Object.defineProperty(process.versions, "node", { value: "24.22.2", configurable: true });
     vi.stubEnv("RAILWAY_DEPLOYMENT_ID", parsed.source.deploymentId);
-    vi.stubEnv("PAPERCLIP_BUILD_COMMIT", parsed.source.commit);
+    vi.stubEnv("PILIBALA_BUILD_COMMIT", parsed.source.commit);
     vi.stubEnv("PORT", "3100");
     const realpath = vi.spyOn(fs, "realpath").mockImplementation(async value => value === parsed.toolRoot
       ? parsed.toolRoot : parsed.toolRoot + "/server/src/maintenance/online-workspace-migration.ts");

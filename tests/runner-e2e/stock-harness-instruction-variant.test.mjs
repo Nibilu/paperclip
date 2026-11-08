@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { classifyStockInstructionManual, readStockInstructionVariant } from "./stock-harness-instruction-variant.mjs";
 
-const reduced = "You are an agent in a Paperclip company.\n";
+const reduced = "You are an agent in a Pilibala company.\n";
 const historicalBytes = readFileSync(new URL("./fixtures/stock-harness/historical-default-agents.md", import.meta.url));
 const historical = historicalBytes.toString("utf8");
 const historicalSha256 = "e4d2375d722602cd744403292d99f6e6c9b7e8014d9cdfa6f9811ace03428e5f";
@@ -39,8 +39,8 @@ describe("closed stock harness instruction variants", () => {
     const source = readFileSync(new URL("../../server/src/onboarding-assets/default/AGENTS.md", import.meta.url), "utf8");
     const expected = classifyStockInstructionManual(source);
     for (const label of ["historical", "reduced", "unknown"]) {
-      vi.stubEnv("PAPERCLIP_STOCK_HARNESS_VARIANT", label);
-      vi.stubEnv("PAPERCLIP_RUNNER_E2E_SOURCE_REF", `refs/heads/${label}`);
+      vi.stubEnv("PILIBALA_STOCK_HARNESS_VARIANT", label);
+      vi.stubEnv("PILIBALA_RUNNER_E2E_SOURCE_REF", `refs/heads/${label}`);
       vi.stubEnv("GITHUB_HEAD_REF", label);
       expect(readStockInstructionVariant()).toEqual(expected);
     }

@@ -109,7 +109,7 @@ async function expectReconnecting(page: Page) {
 
 async function expectCachedTask(page: Page, issue: { id: string; title: string }) {
   await expect.poll(() => page.evaluate(task => Object.entries(localStorage).some(([key, value]) => {
-    if (!key.startsWith("paperclip:query-cache:v1:")) return false;
+    if (!key.startsWith("pilibala:query-cache:v1:")) return false;
     try {
       const record = JSON.parse(value) as { state?: { queries?: Array<{ state?: { data?: { id?: string; title?: string } } }> } };
       return record.state?.queries?.some(query => query.state?.data?.id === task.id && query.state.data.title === task.title) ?? false;
@@ -205,7 +205,7 @@ test("a document edit stays visible and saves after a 20-second outage", async (
       data: { title: "Recovery handoff", format: "markdown", body: original, baseRevisionId: null },
     }));
     await page.setViewportSize({ width: 1440, height: 960 });
-    await page.addInitScript(() => localStorage.setItem("paperclip:panel-visible", "true"));
+    await page.addInitScript(() => localStorage.setItem("pilibala:panel-visible", "true"));
     await page.goto(data.route);
     await expect(page.getByTestId("task-chat-history-content")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: "Show properties", exact: true }).click();
@@ -240,7 +240,7 @@ test("a reload during a 20-second outage restores settings, sidebar and a recent
     await page.getByRole("link", { name: "Settings", exact: true }).click();
     await expect(page.getByRole("heading", { name: "General", exact: true })).toBeVisible();
     await expect(page.locator('input[type="text"]').first()).toHaveValue(data.company.name);
-    await expect.poll(() => page.evaluate(() => Object.keys(localStorage).some(key => key.startsWith("paperclip:query-cache:v1:") && key.endsWith(":root")))).toBe(true);
+    await expect.poll(() => page.evaluate(() => Object.keys(localStorage).some(key => key.startsWith("pilibala:query-cache:v1:") && key.endsWith(":root")))).toBe(true);
     await outage(page);
     await page.reload();
     await expect(page.getByRole("heading", { name: "General", exact: true })).toBeVisible();
@@ -278,7 +278,7 @@ test("a legacy Inbox reload retains its saved task rows during a 20-second outag
     const row = page.locator("[data-inbox-item]").filter({ hasText: data.issue.title });
     await expect(row).toBeVisible({ timeout: 30_000 });
     await expect.poll(() => page.evaluate(id => Object.entries(localStorage).some(([key, value]) => {
-      if (!key.startsWith("paperclip:query-cache:v1:")) return false;
+      if (!key.startsWith("pilibala:query-cache:v1:")) return false;
       try {
         return JSON.parse(value).state?.queries?.some((query: { queryKey: unknown[]; state: { data?: Array<{ id: string }> } }) =>
           query.queryKey.includes("compact") && Array.isArray(query.state.data) && query.state.data.some(task => task.id === id)) ?? false;
@@ -324,7 +324,7 @@ test("signing out clears saved query data before a later outage reload", async (
     await expect(page.getByTestId("task-chat-history-content")).toBeVisible({ timeout: 30_000 });
     await expectCachedTask(page, data.issue);
     await expect.poll(() => page.evaluate(() => Object.keys(localStorage).filter(key =>
-      key.startsWith("paperclip:query-cache:v1:") && !key.endsWith(":active")).length)).toBeGreaterThanOrEqual(8);
+      key.startsWith("pilibala:query-cache:v1:") && !key.endsWith(":active")).length)).toBeGreaterThanOrEqual(8);
     await page.getByRole("button", { name: "Open account menu", exact: true }).click();
     await page.getByRole("link", { name: "Settings", exact: true }).click();
     await expect(page.getByRole("heading", { name: "General", exact: true })).toBeVisible();
@@ -337,10 +337,10 @@ test("signing out clears saved query data before a later outage reload", async (
     page.once("dialog", dialog => dialog.accept());
     await page.getByRole("button", { name: "Sign out", exact: true }).click();
     await expect.poll(() => signedOut).toBe(true);
-    await expect.poll(() => page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith("paperclip:query-cache:v1:")))).toEqual([]);
+    await expect.poll(() => page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith("pilibala:query-cache:v1:")))).toEqual([]);
     await page.goto(data.route);
     await expect(page.getByTestId("issue-detail-header")).toHaveCount(0);
-    expect(await page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith("paperclip:query-cache:v1:")))).toEqual([]);
+    expect(await page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith("pilibala:query-cache:v1:")))).toEqual([]);
   } finally {
     for (const company of additionalCompanies) await request.patch(`/api/companies/${company.id}`, { data: { status: "archived" } });
     await request.patch(`/api/companies/${data.company.id}`, { data: { status: "archived" } });
@@ -364,7 +364,7 @@ test("a restored title draft cannot overwrite an edit made after its cached base
     await expectCachedTask(page, data.issue);
     const session = await json(await request.get("/api/auth/get-session"));
     const owner = session.user.id as string;
-    const key = `paperclip:inline-draft:v2:${owner}:issue:${data.issue.id}:title`;
+    const key = `pilibala:inline-draft:v2:${owner}:issue:${data.issue.id}:title`;
     await page.evaluate(({ key, draft, base }) => localStorage.setItem(key, JSON.stringify({ version: 1, draft, base })), { key, draft, base: data.issue.title });
     const paths = new Set([data.issue.id, data.issue.identifier].map(ref => `/api/issues/${ref}`.toLowerCase()));
     await page.route("**/api/issues/**", async route => {

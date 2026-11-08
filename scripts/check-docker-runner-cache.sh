@@ -2,12 +2,12 @@
 # Build the real Docker target on two fresh builders using an exported cache.
 # Export only metadata, avoiding a multi-gigabyte test image in the daemon.
 # External access: the baseline build anonymously reads the public BuildKit
-# cache at ghcr.io/paperclipai/paperclip:buildcache-{amd64,arm64} (see
+# cache at ghcr.io/pilibalaai/pilibala:buildcache-{amd64,arm64} (see
 # RUNNER_CHECK_SEED_CACHE below). No credentials are used or required, and
 # nothing is pushed.
 set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-probe_dir="$(mktemp -d "${TMPDIR:-/tmp}/paperclip-runner-cache.XXXXXX")"
+probe_dir="$(mktemp -d "${TMPDIR:-/tmp}/pilibala-runner-cache.XXXXXX")"
 baseline_builder="${probe_dir##*/}-baseline"
 rebuild_builder="${probe_dir##*/}-rebuild"
 cleanup() {
@@ -25,7 +25,7 @@ export PROBE_DIR="$probe_dir"
 cp Dockerfile "$probe_dir/cache-probe.Dockerfile"
 cat >> "$probe_dir/cache-probe.Dockerfile" <<'DOCKER'
 FROM runner-build AS cache-proof
-RUN ./runner/target/release/paperclip-runnerd --build-metadata > /metadata.json
+RUN ./runner/target/release/pilibala-runnerd --build-metadata > /metadata.json
 FROM scratch AS cache-proof-export
 COPY --from=cache-proof /metadata.json /metadata.json
 COPY --from=runner-plan /tmp/runner-recipe.json /recipe.json
@@ -49,8 +49,8 @@ docker buildx create --name "$baseline_builder" --driver docker-container
 # another ref, or to the empty string to force the cold path.
 if [[ -z "${RUNNER_CHECK_SEED_CACHE+x}" ]]; then
   case "$(uname -m)" in
-    x86_64) RUNNER_CHECK_SEED_CACHE="ghcr.io/paperclipai/paperclip:buildcache-amd64" ;;
-    aarch64 | arm64) RUNNER_CHECK_SEED_CACHE="ghcr.io/paperclipai/paperclip:buildcache-arm64" ;;
+    x86_64) RUNNER_CHECK_SEED_CACHE="ghcr.io/pilibalaai/pilibala:buildcache-amd64" ;;
+    aarch64 | arm64) RUNNER_CHECK_SEED_CACHE="ghcr.io/pilibalaai/pilibala:buildcache-arm64" ;;
     *) RUNNER_CHECK_SEED_CACHE="" ;;
   esac
 fi
@@ -65,8 +65,8 @@ docker buildx rm "$baseline_builder"
 docker buildx create --name "$rebuild_builder" --driver docker-container
 python3 - <<'CHECK'
 from pathlib import Path
-p=Path('packages/paperclip-runner/runner/crates/runner-core/src/bin/paperclip-runnerd.rs')
-s=p.read_text(); needle='paperclip-runner/runnerd-build-metadata/v1'
+p=Path('packages/pilibala-runner/runner/crates/runner-core/src/bin/pilibala-runnerd.rs')
+s=p.read_text(); needle='pilibala-runner/runnerd-build-metadata/v1'
 assert s.count(needle)==1
 p.write_text(s.replace(needle,needle+'-cache-probe'))
 CHECK
@@ -77,15 +77,15 @@ from pathlib import Path
 root=Path(os.environ['PROBE_DIR'])
 before=json.loads((root/'baseline/metadata.json').read_text())
 after=json.loads((root/'source-change/metadata.json').read_text())
-assert before['schema']=='paperclip-runner/runnerd-build-metadata/v1'
+assert before['schema']=='pilibala-runner/runnerd-build-metadata/v1'
 assert after['schema']==before['schema']+'-cache-probe'
 assert (root/'baseline/recipe.json').read_bytes()==(root/'source-change/recipe.json').read_bytes()
 log=(root/'source-change.log').read_text()
 step=re.search(r'#(\d+) \[runner-deps[^\n]+ RUN cargo chef cook',log)[1]
 assert f'#{step} CACHED' in log
-assert 'Compiling paperclip-runner-core' in log
+assert 'Compiling pilibala-runner-core' in log
 print('PASS: fresh builder imported compiled dependencies; real binary changed.')
-p=Path('packages/paperclip-runner/runner/Cargo.toml')
+p=Path('packages/pilibala-runner/runner/Cargo.toml')
 s=p.read_text(); assert 'serde_json = "1.0"' in s
 p.write_text(s.replace('serde_json = "1.0"','serde_json = ">=1.0.0, <2.0.0"'))
 CHECK

@@ -1,6 +1,6 @@
 import { asc, and, eq, notExists } from "drizzle-orm";
-import { projects, projectWorkspaces, type Db } from "@paperclipai/db";
-import type { TaskWorkspaceIntent } from "@paperclipai/shared";
+import { projects, projectWorkspaces, type Db } from "@pilibalaai/db";
+import type { TaskWorkspaceIntent } from "@pilibalaai/shared";
 import { HttpError } from "../../errors.js";
 import { sourcelessProjectWorkspacePolicy } from "../project-workspace-provider.js";
 import { ProjectAccessDeniedError } from "../project-access-denial.js";
@@ -104,7 +104,7 @@ export async function resolveRemoteWorkspaceSource(db: Db, input: {
           sourceProjectId: projectId });
         for (const repository of project.workspaces) {
           if (extra.some(saved => saved.id === repository.id)) continue;
-          if (repository.sourceType === "remote_managed" || (repository.cwd && repository.cwd !== "/__paperclip_repo_only__")
+          if (repository.sourceType === "remote_managed" || (repository.cwd && repository.cwd !== "/__pilibala_repo_only__")
             || (repository.repoUrl && !remoteRepositorySource(repository.repoUrl))) {
             throw new WorkspaceValidationFailure(
               `Import the local folder for project "${project.name}" before attaching it to a remote task.`,
@@ -115,7 +115,7 @@ export async function resolveRemoteWorkspaceSource(db: Db, input: {
             { reason: "remote_workspace_source_unavailable", projectId, projectWorkspaceId: repository.id });
           const ref = repository.repoRef ?? repository.defaultRef ?? null;
           extra.push({ id: repository.id, projectId, projectWorkspaceId: repository.id,
-            relativePath: `.paperclip-repositories/${managedProjectCheckoutName({
+            relativePath: `.pilibala-repositories/${managedProjectCheckoutName({
               id: repository.id, repoUrl: repository.repoUrl, repoRef: ref,
             })}`, repoUrl: repository.repoUrl, ref });
         }
@@ -176,7 +176,7 @@ export async function resolveRemoteWorkspaceSource(db: Db, input: {
     ...(selected.source ? { projectWorkspaceId: source.id } : {}),
   });
   if (source.sourceType === "remote_managed") return hostSource();
-  if (source.cwd && source.cwd !== "/__paperclip_repo_only__") return hostSource();
+  if (source.cwd && source.cwd !== "/__pilibala_repo_only__") return hostSource();
   if (!source.repoUrl) throw new WorkspaceValidationFailure(
     "The selected workspace has no repository URL.", { reason: "remote_workspace_source_unavailable" });
   if (!remoteRepositorySource(source.repoUrl)) return hostSource();
@@ -188,11 +188,11 @@ export async function resolveRemoteWorkspaceSource(db: Db, input: {
   for (const repository of sameProject) {
     if (!repository.repoUrl || identities.has(projectRepositoryIdentity(repository.repoUrl))) continue;
     if (repository.sourceType === "remote_managed") return hostSource();
-    if (repository.cwd && repository.cwd !== "/__paperclip_repo_only__") return hostSource();
+    if (repository.cwd && repository.cwd !== "/__pilibala_repo_only__") return hostSource();
     if (!remoteRepositorySource(repository.repoUrl)) return hostSource();
     identities.add(projectRepositoryIdentity(repository.repoUrl));
     const ref = repository.repoRef ?? repository.defaultRef ?? null;
-    repositories.push({ id: repository.id, relativePath: `.paperclip-repositories/${managedProjectCheckoutName({
+    repositories.push({ id: repository.id, relativePath: `.pilibala-repositories/${managedProjectCheckoutName({
       id: repository.id, repoUrl: repository.repoUrl, repoRef: ref,
     })}`, repoUrl: repository.repoUrl, ref, projectId: source.projectId,
       projectWorkspaceId: repository.id });

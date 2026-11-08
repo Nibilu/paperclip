@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readWorkspaceGitSourceRoots } from "./workspace-git-source-roots.js";
 import { workspaceSourceIdentities } from "./workspace-source-lock.js";
 import { localWorkspaceSourcePaths } from "./execution-workspace-source-roots.js";
-import { resolveManagedProjectWorkspaceDir, resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { resolveManagedProjectWorkspaceDir, resolvePilibalaInstanceRoot } from "../home-paths.js";
 const execute = promisify(execFile);
 let root: string;
 const git = async (cwd: string, ...args: string[]) => execute("git", ["-c", `core.hooksPath=${os.devNull}`, "-C", cwd, ...args], {
@@ -28,7 +28,7 @@ describe("Git physical source roots", () => {
   it("distinguishes an ignore-only fragment from Git source metadata", async () => {
     const cwd = path.join(root, "plain-task"), marker = path.join(cwd, ".git");
     await fs.mkdir(path.join(marker, "info"), { recursive: true });
-    await fs.writeFile(path.join(marker, "info", "exclude"), "/.paperclip-repositories/\n");
+    await fs.writeFile(path.join(marker, "info", "exclude"), "/.pilibala-repositories/\n");
     expect(await readWorkspaceGitSourceRoots(cwd)).toBeNull();
     for (const name of ["HEAD", "config", "commondir"]) {
       await fs.writeFile(path.join(marker, name), name === "commondir" ? ".\n" : "partial Git state\n");
@@ -47,7 +47,7 @@ describe("Git physical source roots", () => {
     expect(localWorkspaceSourcePaths({ cwd, providerRef })).toEqual(paths);
   });
   it.each([false, true])("maps a configured directory symlink before strict Git inspection (%s)", async isGit => {
-    vi.stubEnv("PAPERCLIP_HOME", root);
+    vi.stubEnv("PILIBALA_HOME", root);
     const companyId = randomUUID(), projectId = randomUUID();
     const cwd = resolveManagedProjectWorkspaceDir({ companyId, projectId });
     await fs.mkdir(cwd, { recursive: true });
@@ -104,11 +104,11 @@ describe("Git physical source roots", () => {
     expect(after!.fingerprint).not.toBe(before!.fingerprint);
   });
   it.each([false, true])("maps a managed linked source and its service subdirectory to both physical owners (%s)", async nested => {
-    vi.stubEnv("PAPERCLIP_HOME", root);
+    vi.stubEnv("PILIBALA_HOME", root);
     const companyId = randomUUID(), projectId = randomUUID(), sourceIssueId = randomUUID();
-    const source = await repository(path.relative(root, path.join(resolvePaperclipInstanceRoot(),
+    const source = await repository(path.relative(root, path.join(resolvePilibalaInstanceRoot(),
       "isolated-repository-sources", companyId, sourceIssueId, "checkout")));
-    const cwd = path.join(resolveManagedProjectWorkspaceDir({ companyId, projectId }), ".paperclip", "worktrees", "task");
+    const cwd = path.join(resolveManagedProjectWorkspaceDir({ companyId, projectId }), ".pilibala", "worktrees", "task");
     await fs.mkdir(path.dirname(cwd), { recursive: true });
     await git(source, "worktree", "add", "-b", "task", cwd);
     const target = nested ? path.join(cwd, "service") : cwd;
@@ -118,9 +118,9 @@ describe("Git physical source roots", () => {
     expect(identities.git!.commonDirectory.path).toBe(path.join(source, ".git"));
   });
   it("rejects a physical Git source owned by another company", async () => {
-    vi.stubEnv("PAPERCLIP_HOME", root);
+    vi.stubEnv("PILIBALA_HOME", root);
     const companyId = randomUUID(), foreignCompanyId = randomUUID();
-    const source = await repository(path.relative(root, path.join(resolvePaperclipInstanceRoot(),
+    const source = await repository(path.relative(root, path.join(resolvePilibalaInstanceRoot(),
       "isolated-repository-sources", foreignCompanyId, randomUUID(), "checkout")));
     const cwd = resolveManagedProjectWorkspaceDir({ companyId, projectId: randomUUID() });
     await fs.mkdir(path.dirname(cwd), { recursive: true });
@@ -128,7 +128,7 @@ describe("Git physical source roots", () => {
     await expect(workspaceSourceIdentities(companyId, cwd)).rejects.toThrow("workspace_source_company_mismatch");
   });
   it("keeps an external borrowed store explicitly unowned", async () => {
-    vi.stubEnv("PAPERCLIP_HOME", root);
+    vi.stubEnv("PILIBALA_HOME", root);
     const companyId = randomUUID(), projectId = randomUUID(), source = await repository("external");
     const cwd = resolveManagedProjectWorkspaceDir({ companyId, projectId });
     await fs.mkdir(path.dirname(cwd), { recursive: true });

@@ -1,4 +1,4 @@
-import type { toolConnections } from "@paperclipai/db";
+import type { toolConnections } from "@pilibalaai/db";
 
 
 export function normalizeKey(input: string) {

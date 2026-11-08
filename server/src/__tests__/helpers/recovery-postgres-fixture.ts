@@ -1,6 +1,6 @@
 import { resolveExternalTestDatabaseUrl } from "./external-test-database.js";
 import { randomUUID } from "node:crypto";
-import { applyPendingMigrations, closeRegisteredClients, createDb } from "@paperclipai/db";
+import { applyPendingMigrations, closeRegisteredClients, createDb } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase, type EmbeddedPostgresTestSupport } from "./embedded-postgres.js";
 
 type RecoveryPostgresOptions = { dedicatedDatabaseUrl?: string };
@@ -12,7 +12,7 @@ export async function getRecoveryPostgresSupport(options: RecoveryPostgresOption
     }
     return { supported: true };
   }
-  return process.env.PAPERCLIP_TEST_DATABASE_URL ? { supported: true } : getEmbeddedPostgresTestSupport();
+  return process.env.PILIBALA_TEST_DATABASE_URL ? { supported: true } : getEmbeddedPostgresTestSupport();
 }
 
 export async function startRecoveryPostgres(prefix: string, options: RecoveryPostgresOptions = {}) {
@@ -23,7 +23,7 @@ export async function startRecoveryPostgres(prefix: string, options: RecoveryPos
     await applyPendingMigrations(connectionString);
     return { connectionString, cleanup: () => closeRegisteredClients(connectionString, { scope: "database" }) };
   }
-  const external = process.env.PAPERCLIP_TEST_DATABASE_URL;
+  const external = process.env.PILIBALA_TEST_DATABASE_URL;
   if (!external) return startEmbeddedPostgresTestDatabase(prefix);
   const databaseName = `recovery_${randomUUID().replaceAll("-", "")}`;
   const admin = createDb(external);

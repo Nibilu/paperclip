@@ -58,10 +58,10 @@ import type {
   ResolvedWorkspaceResource,
   WorkspaceFileContent,
   WorkspaceFileSelector,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
-const FILE_VIEWER_LABELLED_BY_ID = "paperclip-file-viewer-title";
-const FILE_VIEWER_DESCRIBED_BY_ID = "paperclip-file-viewer-description";
+const FILE_VIEWER_LABELLED_BY_ID = "pilibala-file-viewer-title";
+const FILE_VIEWER_DESCRIBED_BY_ID = "pilibala-file-viewer-description";
 const MIN_FILE_TREE_WIDTH = 220;
 const MAX_FILE_TREE_WIDTH = 520;
 
@@ -353,7 +353,7 @@ export function FileContentViewer({ content, highlightedLine, onLoaded, previewM
       role="region"
       aria-label={`${resource.title} source`}
       tabIndex={0}
-      className="paperclip-file-viewer-code min-w-0 flex-1 overflow-auto bg-(--code-bg-resolved) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+      className="pilibala-file-viewer-code min-w-0 flex-1 overflow-auto bg-(--code-bg-resolved) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
     >
       <pre className="m-0 font-mono text-xs leading-5">
         {lines.map((lineText, index) => {
@@ -368,7 +368,7 @@ export function FileContentViewer({ content, highlightedLine, onLoaded, previewM
               data-line-selected={isHighlighted || undefined}
               className={cn(
                 "grid grid-cols-(--gtc-5)",
-                patchLineKinds && "paperclip-patch-line",
+                patchLineKinds && "pilibala-patch-line",
                 // Batch 4 resolved the former half-migrated var(--x, fallback)
                 // pattern here into --code-highlight-bg-resolved (see
                 // ui/src/index.css MISC token block + TOKEN-AUDIT.md Batch 4 log).

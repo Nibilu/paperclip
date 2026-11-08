@@ -1,7 +1,7 @@
 import { describeError } from "@/api/errors";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateGrokInvitation, DotPairing, GrokInvitation } from "@paperclipai/shared";
+import type { CreateGrokInvitation, DotPairing, GrokInvitation } from "@pilibalaai/shared";
 import { grokBotApi } from "@/api/grokBot";
 import { agentsApi } from "@/api/agents";
 import { queryKeys } from "@/lib/queryKeys";

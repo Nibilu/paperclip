@@ -1,6 +1,6 @@
 import { sql, type SQL } from "drizzle-orm";
-import { issues, issueThreadInteractions } from "@paperclipai/db";
-import { PROVIDER_QUOTA_MONITOR_SERVICE_NAME, type IssueDisplayStatus } from "@paperclipai/shared";
+import { issues, issueThreadInteractions } from "@pilibalaai/db";
+import { PROVIDER_QUOTA_MONITOR_SERVICE_NAME, type IssueDisplayStatus } from "@pilibalaai/shared";
 import { activeIssueInteractionCondition } from "./issue-question-context.js";
 
 /** Read-only projection shared by task reads, search, filters and counts.

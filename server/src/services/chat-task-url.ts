@@ -23,11 +23,11 @@ export function safeChatTaskUrl(
 export function publicChatTaskUrl(issueId: string): string | null {
   const configured =
     runtimeCanonicalOrigin() ||
-    process.env.PAPERCLIP_AUTH_PUBLIC_BASE_URL?.trim() ||
+    process.env.PILIBALA_AUTH_PUBLIC_BASE_URL?.trim() ||
     process.env.BETTER_AUTH_URL?.trim() ||
     process.env.BETTER_AUTH_BASE_URL?.trim() ||
-    process.env.PAPERCLIP_PUBLIC_URL?.trim() ||
+    process.env.PILIBALA_PUBLIC_URL?.trim() ||
     readConfigFile()?.auth?.publicBaseUrl?.trim() ||
-    process.env.PAPERCLIP_MANAGED_RUNTIME_PUBLIC_URL?.trim();
+    process.env.PILIBALA_MANAGED_RUNTIME_PUBLIC_URL?.trim();
   return safeChatTaskUrl(configured, issueId);
 }

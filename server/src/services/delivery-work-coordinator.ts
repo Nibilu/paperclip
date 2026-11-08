@@ -1,5 +1,5 @@
-import { subscribeDatabaseWork, databaseWorkPending, reconcileDatabaseWork } from "@paperclipai/db/work-signals";
-import { withDatabaseOperation } from "@paperclipai/db";
+import { subscribeDatabaseWork, databaseWorkPending, reconcileDatabaseWork } from "@pilibalaai/db/work-signals";
+import { withDatabaseOperation } from "@pilibalaai/db";
 import { createWorkScheduler } from "./work-scheduler.js";
 import { type DeliveryQueue } from "./delivery-work-notifications.js";
 import { beginIdleTrackedWork } from "./task-admission.js";

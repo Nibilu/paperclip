@@ -8,12 +8,12 @@ import {
   issueComments,
   issueDocuments,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   COMPANY_SEARCH_EXTRACT_DEFAULT_MATCHES_PER_ISSUE,
   COMPANY_SEARCH_EXTRACT_MAX_MATCHES_PER_ISSUE,
   companySearchExtractQuerySchema,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -33,7 +33,7 @@ if (!embeddedPostgresSupport.supported) {
 describe("extract-search query validation", () => {
   it("accepts supported extraction filters and rejects unsafe or ambiguous input", () => {
     const parsed = companySearchExtractQuerySchema.parse({
-      contains: "github.com/paperclipai/paperclip/pull",
+      contains: "github.com/pilibalaai/pilibala/pull",
       kind: "url",
       scope: "comments",
       status: "in_progress,in_review",
@@ -65,7 +65,7 @@ describeEmbeddedPostgres("companySearchExtractService", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-company-search-extract-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-company-search-extract-");
     db = createDb(tempDb.connectionString);
     svc = companySearchExtractService(db);
   }, 20_000);
@@ -83,7 +83,7 @@ describeEmbeddedPostgres("companySearchExtractService", () => {
     await tempDb?.cleanup();
   });
 
-  async function createCompany(name = "Paperclip") {
+  async function createCompany(name = "Pilibala") {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
@@ -111,9 +111,9 @@ describeEmbeddedPostgres("companySearchExtractService", () => {
 
   it("expands and deduplicates URLs across issue, comment, and document sources", async () => {
     const companyId = await createCompany();
-    const firstUrl = "https://github.com/paperclipai/paperclip/pull/123";
-    const secondUrl = "https://github.com/paperclipai/paperclip/pull/456";
-    const thirdUrl = "https://github.com/paperclipai/paperclip/pull/789";
+    const firstUrl = "https://github.com/pilibalaai/pilibala/pull/123";
+    const secondUrl = "https://github.com/pilibalaai/pilibala/pull/456";
+    const thirdUrl = "https://github.com/pilibalaai/pilibala/pull/789";
     const issueId = await createIssue(companyId, {
       description: `Primary ${firstUrl} and duplicate ${firstUrl}.`,
     });
@@ -137,7 +137,7 @@ describeEmbeddedPostgres("companySearchExtractService", () => {
     });
 
     const result = await svc.extract(companyId, companySearchExtractQuerySchema.parse({
-      contains: "github.com/paperclipai/paperclip/pull",
+      contains: "github.com/pilibalaai/pilibala/pull",
       kind: "url",
     }));
 
@@ -154,10 +154,10 @@ describeEmbeddedPostgres("companySearchExtractService", () => {
 
   it("keeps URL sources selected by scheme-less queries", async () => {
     const companyId = await createCompany();
-    const titleUrl = "https://github.com/paperclipai/paperclip/pull/101";
-    const descriptionUrl = "https://github.com/paperclipai/paperclip/pull/102";
-    const documentTitleUrl = "https://github.com/paperclipai/paperclip/pull/103";
-    const documentBodyUrl = "https://github.com/paperclipai/paperclip/pull/104";
+    const titleUrl = "https://github.com/pilibalaai/pilibala/pull/101";
+    const descriptionUrl = "https://github.com/pilibalaai/pilibala/pull/102";
+    const documentTitleUrl = "https://github.com/pilibalaai/pilibala/pull/103";
+    const documentBodyUrl = "https://github.com/pilibalaai/pilibala/pull/104";
     const issueId = await createIssue(companyId, {
       title: `Review ${titleUrl}`,
       description: `Then merge ${descriptionUrl}`,
@@ -177,7 +177,7 @@ describeEmbeddedPostgres("companySearchExtractService", () => {
     });
 
     const result = await svc.extract(companyId, companySearchExtractQuerySchema.parse({
-      contains: "github.com/paperclipai/paperclip/pull",
+      contains: "github.com/pilibalaai/pilibala/pull",
       kind: "url",
       scope: "all",
     }));
@@ -225,12 +225,12 @@ describeEmbeddedPostgres("companySearchExtractService", () => {
     const companyId = await createCompany();
     const urls = Array.from(
       { length: COMPANY_SEARCH_EXTRACT_DEFAULT_MATCHES_PER_ISSUE + 1 },
-      (_, index) => `https://github.com/paperclipai/paperclip/pull/${index + 1}`,
+      (_, index) => `https://github.com/pilibalaai/pilibala/pull/${index + 1}`,
     );
     await createIssue(companyId, { description: urls.join(" ") });
 
     const result = await svc.extract(companyId, companySearchExtractQuerySchema.parse({
-      contains: "github.com/paperclipai/paperclip/pull",
+      contains: "github.com/pilibalaai/pilibala/pull",
       kind: "url",
     }));
 
@@ -244,12 +244,12 @@ describeEmbeddedPostgres("companySearchExtractService", () => {
     const companyId = await createCompany();
     const urls = Array.from(
       { length: COMPANY_SEARCH_EXTRACT_DEFAULT_MATCHES_PER_ISSUE + 1 },
-      (_, index) => `https://github.com/paperclipai/paperclip/pull/${index + 1}`,
+      (_, index) => `https://github.com/pilibalaai/pilibala/pull/${index + 1}`,
     );
     await createIssue(companyId, { description: urls.join(" ") });
 
     const result = await svc.extract(companyId, companySearchExtractQuerySchema.parse({
-      contains: "github.com/paperclipai/paperclip/pull",
+      contains: "github.com/pilibalaai/pilibala/pull",
       kind: "url",
       matchesPerIssue: COMPANY_SEARCH_EXTRACT_MAX_MATCHES_PER_ISSUE,
     }));

@@ -4,7 +4,7 @@ import { resolveHeartbeatNativeLifecyclePolicy, type NativeLifecyclePolicy } fro
 type Input = Parameters<typeof resolveHeartbeatNativeLifecyclePolicy>[0];
 const warm: NativeLifecyclePolicy = { mode: "warm", idleTimeoutMs: 900_000 };
 const perTurn: NativeLifecyclePolicy = { mode: "per_turn", idleTimeoutMs: null };
-const base: Input = { adapterType: "paperclip_runner", backend: "codex_app_server", agentMode: "warm",
+const base: Input = { adapterType: "pilibala_runner", backend: "codex_app_server", agentMode: "warm",
   agentIdleTimeoutMs: 900_000, managedAiSelected: false, taskOwned: false };
 
 describe("admitted native lifecycle policy", () => {

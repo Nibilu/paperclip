@@ -14,7 +14,7 @@ import {
   PROVIDER_LOCKFILES,
 } from '../lockfile-trust.mjs';
 
-const repo = 'paperclipai/paperclip';
+const repo = 'pilibalaai/pilibala';
 const base = { author: 'someuser', headRepo: repo, baseRepo: repo, headRef: 'fix/bug', dependabotLockCommits: {} };
 
 test('allows a pull request that does not change lock content', () => {
@@ -37,14 +37,14 @@ test('blocks a contributor change to the reporting-lock proof', () => {
 });
 
 test('blocks a contributor branch named like the refresh branch', () => {
-  for (const headRepo of [repo, 'someone/paperclip']) {
+  for (const headRepo of [repo, 'someone/pilibala']) {
     const result = classifyPullRequest({ ...base, headRepo, headRef: 'chore/refresh-lockfile', changedPaths: ['pnpm-lock.yaml'] });
     assert.equal(result.allowed, false, headRepo);
   }
 });
 
 test('blocks the refresh author and branch from a fork', () => {
-  const result = classifyPullRequest({ ...base, author: 'github-actions[bot]', headRepo: 'someone/paperclip',
+  const result = classifyPullRequest({ ...base, author: 'github-actions[bot]', headRepo: 'someone/pilibala',
     headRef: 'chore/refresh-lockfile', changedPaths: ['pnpm-lock.yaml'] });
   assert.equal(result.allowed, false);
 });
@@ -76,7 +76,7 @@ test('blocks a Dependabot pull request that changes the reporting-lock proof', (
 });
 
 test('blocks a Dependabot author from a fork', () => {
-  const result = classifyPullRequest({ ...base, author: 'dependabot[bot]', headRepo: 'someone/paperclip',
+  const result = classifyPullRequest({ ...base, author: 'dependabot[bot]', headRepo: 'someone/pilibala',
     dependabotLockCommits: { 'pnpm-lock.yaml': 'abc123' }, changedPaths: ['pnpm-lock.yaml'] });
   assert.equal(result.allowed, false);
 });
@@ -270,7 +270,7 @@ test('workflows run the trust policy from trusted code and pass the verified has
   const pr = readFileSync('.github/workflows/pr-trusted.yml', 'utf8');
   assert.match(pr, /git show "\$trusted_base:\.github\/scripts\/lockfile-trust\.mjs" > "\$policy"/);
   assert.match(pr, /BASE_SHA="\$trusted_base" node "\$policy" pr/);
-  assert.match(pr, /PAPERCLIP_CI_PR_AUTHOR: \$\{\{ github\.event\.pull_request\.user\.login \}\}/);
+  assert.match(pr, /PILIBALA_CI_PR_AUTHOR: \$\{\{ github\.event\.pull_request\.user\.login \}\}/);
   assert.doesNotMatch(pr, /github\.head_ref != 'chore\/refresh-lockfile'/);
 
   const refresh = readFileSync('.github/workflows/refresh-lockfile.yml', 'utf8');

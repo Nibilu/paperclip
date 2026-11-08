@@ -22,7 +22,7 @@ import {
   issueTreeHoldMembers,
   issueTreeHolds,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { drainHeartbeatRunsToQuiescence } from "./helpers/drain-heartbeat-runs.js";
 import { registerServerAdapter, unregisterServerAdapter } from "../adapters/index.ts";
@@ -39,7 +39,7 @@ vi.mock("../services/heartbeat/run-preparation.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../services/heartbeat/run-preparation.js")>();
   return {
     ...actual,
-    buildPaperclipRuntimeMcpServers: async (input: Parameters<typeof actual.buildPaperclipRuntimeMcpServers>[0]) => {
+    buildPilibalaRuntimeMcpServers: async (input: Parameters<typeof actual.buildPilibalaRuntimeMcpServers>[0]) => {
       if (preparationGate.blockNext) {
         preparationGate.blockNext = false;
         preparationGate.blockedRunId = input.runId;
@@ -48,12 +48,12 @@ vi.mock("../services/heartbeat/run-preparation.js", async (importOriginal) => {
           preparationGate.reached?.();
         });
       }
-      return actual.buildPaperclipRuntimeMcpServers(input);
+      return actual.buildPilibalaRuntimeMcpServers(input);
     },
   };
 });
 
-const externalTestDatabaseUrl = process.env.PAPERCLIP_TEST_DATABASE_URL?.trim();
+const externalTestDatabaseUrl = process.env.PILIBALA_TEST_DATABASE_URL?.trim();
 const embeddedPostgresSupport = externalTestDatabaseUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 const ADAPTER = "tree_pause_resume_test";
@@ -70,7 +70,7 @@ describeEmbeddedPostgres("subtree pause and release of an in-flight child run", 
   beforeAll(async () => {
     if (externalTestDatabaseUrl) db = createDb(externalTestDatabaseUrl);
     else {
-      tempDb = await startEmbeddedPostgresTestDatabase("paperclip-tree-pause-resume-");
+      tempDb = await startEmbeddedPostgresTestDatabase("pilibala-tree-pause-resume-");
       db = createDb(tempDb.connectionString);
     }
     const [{ heartbeatService }, blocker, { issueTreeControlRoutes }, { errorHandler }] = await Promise.all([

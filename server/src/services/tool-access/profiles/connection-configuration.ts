@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
-import { toolProfileBindings, toolProfileEntries, toolProfiles, type Db } from "@paperclipai/db";
-import type { ToolProfileConfiguration } from "@paperclipai/shared";
+import { toolProfileBindings, toolProfileEntries, toolProfiles, type Db } from "@pilibalaai/db";
+import type { ToolProfileConfiguration } from "@pilibalaai/shared";
 import { toProfile, toProfileBinding, toProfileEntry } from "./projection.js";
 
 type ProfileRow = typeof toolProfiles.$inferSelect;

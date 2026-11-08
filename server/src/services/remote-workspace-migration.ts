@@ -7,8 +7,8 @@ import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
 import {
   companies, environmentLeases, executionWorkspaceRepositories, executionWorkspaceRuntimeLeases, executionWorkspaceSnapshots, executionWorkspaces,
   heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, projects, workspaceOperations, workspaceRuntimeServices, type Db,
-} from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority, remoteWorkspaceSourceSchema, type RemoteWorkspaceAuthority, type RemoteWorkspaceSource } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority, remoteWorkspaceSourceSchema, type RemoteWorkspaceAuthority, type RemoteWorkspaceSource } from "@pilibalaai/shared";
 import { offlineMigrationExecutionWhere } from "./offline-migration-execution.js";
 import { inspectFinalizedWorkspaceRecoveryHold, type FinalizedWorkspaceRecoveryHold } from "./finalized-workspace-recovery-migration.js";
 import { workspaceExportCauses } from "./workspace-recovery-source.js";
@@ -30,7 +30,7 @@ import { withWorkspaceSourceLocks, withIndependentWorkspaceSourceLocks, Isolated
 import { inspectOnlineLegacyWorkspaceRecoverySource, inspectOnlineLegacyWorkspaceRecoveryHold, lockOnlineLegacyWorkspaceRecoverySources, type OnlineLegacyWorkspaceRecoveryHold } from "./online-legacy-workspace-recovery.js";
 import { inspectNativeWorkspaceMigration, nativeWorkspaceMigrationMarker } from "./native-runtime/native-workspace-migration.js";
 
-const SCHEMA = "paperclip.remote-workspace-migration.v1";
+const SCHEMA = "pilibala.remote-workspace-migration.v1";
 type Workspace = typeof executionWorkspaces.$inferSelect;
 type ReadDb = Pick<Db, "select">;
 type OnlineRecoveryHold = OnlineLegacyWorkspaceRecoveryHold & { actionId: string };
@@ -564,7 +564,7 @@ type ValidatedPublication = NonNullable<Awaited<ReturnType<typeof validateMigrat
 
 async function publishMigration(tx: MigrationTransaction, reserved: ReservedMigration, captured: CapturedMigration, validated: ValidatedPublication) {
   const { operation, ref, nested } = captured, { workspace, uploaded, continuity } = validated;
-  const authority: RemoteWorkspaceAuthority = { schema: "paperclip.remote-workspace.v1", epoch: 1, snapshotId: ref.id,
+  const authority: RemoteWorkspaceAuthority = { schema: "pilibala.remote-workspace.v1", epoch: 1, snapshotId: ref.id,
     source: reserved.source, location: null, writerRunId: null, dirty: false };
   const metadata: Record<string, unknown> = { ...workspace.metadata, remoteWorkspace: authority }; delete metadata.remoteWorkspaceMigration;
   if (continuity) metadata.nativeWorkspaceMigration = nativeWorkspaceMigrationMarker(operation.id);
@@ -657,7 +657,7 @@ export async function migrateRemoteWorkspace(input: MigrationInput) {
 }
 
 const cohortSchema = z.object({
-  schema: z.literal("paperclip.remote-workspace-cohort.v1"), id: z.string().uuid(), companyId: z.string().uuid(),
+  schema: z.literal("pilibala.remote-workspace-cohort.v1"), id: z.string().uuid(), companyId: z.string().uuid(),
   sourceProof: z.string().regex(/^[a-f0-9]{64}$/),
   members: z.array(z.object({ workspaceId: z.string().uuid(), operationId: z.string().uuid() }).strict()).min(1).max(8),
 }).strict();
@@ -727,7 +727,7 @@ export async function migrateRemoteWorkspaceCohort(input: {
     if (operation.status !== "running" || operation.finishedAt !== null) throw new Error("workspace_cohort_journal_changed");
     pending.push(cohortSchema.parse(operation.metadata.cohortMigration));
   }
-  const cohort: WorkspaceMigrationCohort = pending[0] ?? { schema: "paperclip.remote-workspace-cohort.v1", id: randomUUID(), companyId,
+  const cohort: WorkspaceMigrationCohort = pending[0] ?? { schema: "pilibala.remote-workspace-cohort.v1", id: randomUUID(), companyId,
     sourceProof, members: workspaceIds.map(workspaceId => ({ workspaceId, operationId: randomUUID() })) };
   if (cohort.companyId !== companyId || cohort.sourceProof !== sourceProof
     || canonical(cohort.members.map(member => member.workspaceId)) !== canonical(workspaceIds)

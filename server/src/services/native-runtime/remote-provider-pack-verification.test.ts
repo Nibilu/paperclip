@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { readFileSync } from "node:fs";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
 import { describe, expect, it, vi } from "vitest";
 import { canonicalProviderPackJson, verifyRemoteProviderPack, type ProviderPackIdentity } from "./remote-provider-pack-verification.js";
 
@@ -24,7 +24,7 @@ const manifest = (revision: string): ProviderPackIdentity => {
       grokLauncher: "dist/providers/grok/launcher.cjs",
     }).map(([name, path]) => [name, { path, sha256: sha(`${revision}-${name}`) }])) as ProviderPackIdentity["payload"]["artifacts"],
   };
-  return { schema: "paperclip-runner/remote-provider-pack/v1", payload, digest: sha(canonicalProviderPackJson(payload)) };
+  return { schema: "pilibala-runner/remote-provider-pack/v1", payload, digest: sha(canonicalProviderPackJson(payload)) };
 };
 
 describe("installed provider pack compatibility", () => {
@@ -65,8 +65,8 @@ describe("installed provider pack compatibility", () => {
   const reseal = (pack: ProviderPackIdentity) => ({ ...pack, digest: sha(canonicalProviderPackJson(pack.payload)) });
   const check = (installed: ProviderPackIdentity, options: { immutable?: boolean; requireExactIdentity?: boolean; requireCurrentOpenCodeProxy?: boolean } = {}) => {
     const execute = vi.fn();
-    return verifyRemoteProviderPack({ runner: { execute }, cwd: "/workspace", packRoot: "/opt/paperclip-runner/provider-pack",
-      manifest: manifest("b"), installation: { root: "/opt/paperclip-runner/provider-pack", manifest: installed, immutable: options.immutable ?? true },
+    return verifyRemoteProviderPack({ runner: { execute }, cwd: "/workspace", packRoot: "/opt/pilibala-runner/provider-pack",
+      manifest: manifest("b"), installation: { root: "/opt/pilibala-runner/provider-pack", manifest: installed, immutable: options.immutable ?? true },
       provider: { kind: "opencode" }, requireExactIdentity: options.requireExactIdentity,
       requireCurrentOpenCodeProxy: options.requireCurrentOpenCodeProxy });
   };
@@ -87,8 +87,8 @@ describe("installed provider pack compatibility", () => {
     const current = manifest("b");
     delete current.payload.contractDigest;
     const installed = manifest("a");
-    await expect(verifyRemoteProviderPack({ runner: { execute: vi.fn() }, cwd: "/workspace", packRoot: "/opt/paperclip-runner/provider-pack",
-      manifest: reseal(current), installation: { root: "/opt/paperclip-runner/provider-pack", manifest: installed, immutable: true },
+    await expect(verifyRemoteProviderPack({ runner: { execute: vi.fn() }, cwd: "/workspace", packRoot: "/opt/pilibala-runner/provider-pack",
+      manifest: reseal(current), installation: { root: "/opt/pilibala-runner/provider-pack", manifest: installed, immutable: true },
       provider: { kind: "opencode" } })).rejects.toThrow("interface or installation is incompatible");
   });
   it("keeps writable installations at the content-verification boundary", async () => {
@@ -118,15 +118,15 @@ describe("installed provider pack compatibility", () => {
     const current = manifest("b"), installed = manifest("a");
     current.payload.acpxProfileDigests = { claude: sha("claude"), codex: sha("codex") };
     installed.payload.acpxProfileDigests = { claude: sha("claude"), codex: sha("other-codex") };
-    const input = { runner: { execute: vi.fn() }, cwd: "/workspace", packRoot: "/opt/paperclip-runner/provider-pack",
-      manifest: reseal(current), installation: { root: "/opt/paperclip-runner/provider-pack", manifest: reseal(installed), immutable: true },
+    const input = { runner: { execute: vi.fn() }, cwd: "/workspace", packRoot: "/opt/pilibala-runner/provider-pack",
+      manifest: reseal(current), installation: { root: "/opt/pilibala-runner/provider-pack", manifest: reseal(installed), immutable: true },
       provider: { kind: "acpx" as const, agent: "claude" } };
     await expect(verifyRemoteProviderPack(input)).resolves.toEqual(reseal(installed));
     await expect(verifyRemoteProviderPack({ ...input, provider: { kind: "acpx", agent: "codex" } })).rejects.toThrow("profile is incompatible");
   });
 
   it("rejects the published Grok pack from before native effort admission", async () => {
-    const profiles = JSON.parse(readFileSync(new URL("../../../../packages/paperclip-runner/acpx-profiles.json", import.meta.url), "utf8"));
+    const profiles = JSON.parse(readFileSync(new URL("../../../../packages/pilibala-runner/acpx-profiles.json", import.meta.url), "utf8"));
     const current = manifest("b"), installed = manifest("a");
     // Published builtin Grok profile 1 predates grokEffort and grokDisableWebSearch
     // in session.open. Its launcher bytes equal today's, so its release digest
@@ -137,32 +137,32 @@ describe("installed provider pack compatibility", () => {
     delete installed.payload.contractDigest;
     current.payload.acpxProfileDigests = { grok: profiles.profiles.grok.commandDigest };
     const execute = vi.fn();
-    await expect(verifyRemoteProviderPack({ runner: { execute }, cwd: "/workspace", packRoot: "/opt/paperclip-runner/provider-pack",
-      manifest: reseal(current), installation: { root: "/opt/paperclip-runner/provider-pack", manifest: reseal(installed), immutable: true },
+    await expect(verifyRemoteProviderPack({ runner: { execute }, cwd: "/workspace", packRoot: "/opt/pilibala-runner/provider-pack",
+      manifest: reseal(current), installation: { root: "/opt/pilibala-runner/provider-pack", manifest: reseal(installed), immutable: true },
       provider: { kind: "acpx", agent: "grok" } })).rejects.toThrow("interface or installation is incompatible");
     expect(execute).not.toHaveBeenCalled();
   });
 
   it("rejects an installed pack with another Grok release digest", async () => {
-    const profiles = JSON.parse(readFileSync(new URL("../../../../packages/paperclip-runner/acpx-profiles.json", import.meta.url), "utf8"));
+    const profiles = JSON.parse(readFileSync(new URL("../../../../packages/pilibala-runner/acpx-profiles.json", import.meta.url), "utf8"));
     const current = manifest("b"), installed = manifest("a");
     // The last source-bound Grok profile digest.
     installed.payload.acpxProfileDigests = { grok: "sha256:5205c2197b94cfbd3e62fbeea027f2e80d092f736ca52656dda2f7044ba9a5ca" };
     current.payload.acpxProfileDigests = { grok: profiles.profiles.grok.commandDigest };
     const execute = vi.fn();
-    await expect(verifyRemoteProviderPack({ runner: { execute }, cwd: "/workspace", packRoot: "/opt/paperclip-runner/provider-pack",
-      manifest: reseal(current), installation: { root: "/opt/paperclip-runner/provider-pack", manifest: reseal(installed), immutable: true },
+    await expect(verifyRemoteProviderPack({ runner: { execute }, cwd: "/workspace", packRoot: "/opt/pilibala-runner/provider-pack",
+      manifest: reseal(current), installation: { root: "/opt/pilibala-runner/provider-pack", manifest: reseal(installed), immutable: true },
       provider: { kind: "acpx", agent: "grok" } })).rejects.toThrow("selected ACPX provider profile is incompatible");
     expect(execute).not.toHaveBeenCalled();
   });
 
   it("reuses the current Grok profile across source-only changes and retains exact historical recovery authority", async () => {
-    const profiles = JSON.parse(readFileSync(new URL("../../../../packages/paperclip-runner/acpx-profiles.json", import.meta.url), "utf8"));
+    const profiles = JSON.parse(readFileSync(new URL("../../../../packages/pilibala-runner/acpx-profiles.json", import.meta.url), "utf8"));
     const current = manifest("b"), installed = manifest("a");
     for (const pack of [current, installed]) pack.payload.acpxProfileDigests = { grok: profiles.profiles.grok.commandDigest };
     const execute = vi.fn();
-    const input = { runner: { execute }, cwd: "/workspace", packRoot: "/opt/paperclip-runner/provider-pack",
-      manifest: reseal(current), installation: { root: "/opt/paperclip-runner/provider-pack", manifest: reseal(installed), immutable: true },
+    const input = { runner: { execute }, cwd: "/workspace", packRoot: "/opt/pilibala-runner/provider-pack",
+      manifest: reseal(current), installation: { root: "/opt/pilibala-runner/provider-pack", manifest: reseal(installed), immutable: true },
       provider: { kind: "acpx" as const, agent: "grok" } };
     await expect(verifyRemoteProviderPack(input)).resolves.toEqual(reseal(installed));
     const historical = manifest("a");

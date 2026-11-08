@@ -129,7 +129,7 @@ describe("InlineEditor", () => {
     const onEditingChange = vi.fn();
     let resolve!: () => void;
     const onSave = vi.fn(() => new Promise<void>((done) => { resolve = done; }));
-    localStorage.setItem("paperclip:inline-draft:v2:user-1:restored-callback", JSON.stringify({ version: 1, draft: "Restored title", base: "Original" }));
+    localStorage.setItem("pilibala:inline-draft:v2:user-1:restored-callback", JSON.stringify({ version: 1, draft: "Restored title", base: "Original" }));
     const root = createRoot(container);
     try {
       await act(async () => root.render(signedIn("user-1", <InlineEditor value="Original" draftKey="restored-callback" onSave={onSave} onEditingChange={onEditingChange} />)));
@@ -139,7 +139,7 @@ describe("InlineEditor", () => {
       expect(onEditingChange.mock.calls).toEqual([[true], [false]]);
       await act(async () => resolve());
       expect(onEditingChange.mock.calls).toEqual([[true], [false]]);
-    } finally { localStorage.removeItem("paperclip:inline-draft:v2:user-1:restored-callback"); }
+    } finally { localStorage.removeItem("pilibala:inline-draft:v2:user-1:restored-callback"); }
   });
 
   it("keeps one edit notification bound to the callback that opened it", async () => {
@@ -221,7 +221,7 @@ describe("InlineEditor", () => {
   });
 
   it.each([false, true])("checks a restored draft against a fresh field after session verification (multiline=%s)", async (multiline) => {
-    const key = "paperclip:inline-draft:v2:user-1:cached-field";
+    const key = "pilibala:inline-draft:v2:user-1:cached-field";
     localStorage.setItem(key, JSON.stringify({ version: 1, draft: "My draft B", base: "Cached A" }));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     client.setQueryData(queryKeys.auth.session, { user: { id: "user-1" } });
@@ -259,7 +259,7 @@ describe("InlineEditor", () => {
   });
 
   it("replays a restored draft after a fresh field confirms its base", async () => {
-    localStorage.setItem("paperclip:inline-draft:v2:user-1:confirmed-field", JSON.stringify({ version: 1, draft: "Confirmed draft", base: "Original" }));
+    localStorage.setItem("pilibala:inline-draft:v2:user-1:confirmed-field", JSON.stringify({ version: 1, draft: "Confirmed draft", base: "Original" }));
     const readCurrentValue = vi.fn().mockResolvedValue("Original");
     const onSave = vi.fn().mockResolvedValue(undefined);
     const root = createRoot(container);
@@ -271,7 +271,7 @@ describe("InlineEditor", () => {
   });
 
   it("restores an unsaved edit and saves it when the server value has not moved", async () => {
-    localStorage.setItem("paperclip:inline-draft:v2:user-1:issue-1:description", JSON.stringify({ version: 1, draft: "Typed before reload", base: "Original" }));
+    localStorage.setItem("pilibala:inline-draft:v2:user-1:issue-1:description", JSON.stringify({ version: 1, draft: "Typed before reload", base: "Original" }));
     const onSave = vi.fn().mockResolvedValue(undefined);
     const root = createRoot(container);
     await act(async () => {
@@ -284,7 +284,7 @@ describe("InlineEditor", () => {
   });
 
   it("restores the next task's stored edit without remounting the editor", async () => {
-    localStorage.setItem("paperclip:inline-draft:v2:user-1:issue-b:description", JSON.stringify({ version: 1, draft: "Recovered B", base: "Original B" }));
+    localStorage.setItem("pilibala:inline-draft:v2:user-1:issue-b:description", JSON.stringify({ version: 1, draft: "Recovered B", base: "Original B" }));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     client.setQueryData(queryKeys.auth.session, { user: { id: "user-1" } });
     const saveA = vi.fn().mockResolvedValue(undefined);
@@ -334,12 +334,12 @@ describe("InlineEditor", () => {
       await act(async () => { await vi.advanceTimersByTimeAsync(1_000); });
       expect(saveA).not.toHaveBeenCalled();
       expect(saveB).not.toHaveBeenCalled();
-      expect(localStorage.getItem("paperclip:inline-draft:v2:user-1:task-a:description")).toContain("A draft before navigation");
+      expect(localStorage.getItem("pilibala:inline-draft:v2:user-1:task-a:description")).toContain("A draft before navigation");
     } finally { act(() => root.unmount()); client.clear(); localStorage.clear(); vi.useRealTimers(); }
   });
 
   it("restores an unsaved edit without overwriting a newer server value", async () => {
-    localStorage.setItem("paperclip:inline-draft:v2:user-1:issue-2:description", JSON.stringify({ version: 1, draft: "My old edit", base: "Original" }));
+    localStorage.setItem("pilibala:inline-draft:v2:user-1:issue-2:description", JSON.stringify({ version: 1, draft: "My old edit", base: "Original" }));
     const onSave = vi.fn().mockResolvedValue(undefined);
     const root = createRoot(container);
     await act(async () => {
@@ -352,7 +352,7 @@ describe("InlineEditor", () => {
   });
 
   it("neither shows nor saves another account's unsaved edit", async () => {
-    localStorage.setItem("paperclip:inline-draft:v2:user-1:issue-3:description", JSON.stringify({ version: 1, draft: "Unpublished by user 1", base: "Original" }));
+    localStorage.setItem("pilibala:inline-draft:v2:user-1:issue-3:description", JSON.stringify({ version: 1, draft: "Unpublished by user 1", base: "Original" }));
     const onSave = vi.fn().mockResolvedValue(undefined);
     const root = createRoot(container);
     await act(async () => {
@@ -367,7 +367,7 @@ describe("InlineEditor", () => {
 
   it.each(["user-1", "signed-out"])("keeps typing through the first session lookup (%s)", async (owner) => {
     localStorage.clear();
-    localStorage.setItem(`paperclip:inline-draft:v2:${owner}:initial-session`, JSON.stringify({ version: 1, draft: "Earlier saved draft", base: "Original" }));
+    localStorage.setItem(`pilibala:inline-draft:v2:${owner}:initial-session`, JSON.stringify({ version: 1, draft: "Earlier saved draft", base: "Original" }));
     let finish!: (session: { user: { id: string } } | null) => void;
     mockSession.pending = new Promise(resolve => { finish = resolve; });
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -390,7 +390,7 @@ describe("InlineEditor", () => {
       expect(input.value).toBe("Typing while session loads");
       await vi.waitFor(async () => {
         await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
-        expect(localStorage.getItem(`paperclip:inline-draft:v2:${owner}:initial-session`)).toContain("Typing while session loads");
+        expect(localStorage.getItem(`pilibala:inline-draft:v2:${owner}:initial-session`)).toContain("Typing while session loads");
       });
       expect(onSave).not.toHaveBeenCalled();
     } finally {
@@ -403,7 +403,7 @@ describe("InlineEditor", () => {
 
   it("does not restore typing cancelled before the first session lookup", async () => {
     localStorage.clear();
-    localStorage.setItem("paperclip:inline-draft:v2:user-1:cancel-before-session", JSON.stringify({ version: 1, draft: "Original", base: "Original" }));
+    localStorage.setItem("pilibala:inline-draft:v2:user-1:cancel-before-session", JSON.stringify({ version: 1, draft: "Original", base: "Original" }));
     let finish!: (session: { user: { id: string } }) => void;
     mockSession.pending = new Promise(resolve => { finish = resolve; });
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -424,7 +424,7 @@ describe("InlineEditor", () => {
       expect(container.textContent).not.toContain("Cancelled private text");
       await vi.waitFor(async () => {
         await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
-        expect(localStorage.getItem("paperclip:inline-draft:v2:user-1:cancel-before-session")).toBeNull();
+        expect(localStorage.getItem("pilibala:inline-draft:v2:user-1:cancel-before-session")).toBeNull();
       });
     } finally {
       act(() => root.unmount()); client.clear(); localStorage.clear(); mockSession.pending = null;
@@ -446,7 +446,7 @@ describe("InlineEditor", () => {
       ));
       if (!multiline) act(() => container.querySelector("span")!.click());
       act(() => setNativeTextareaValue(container.querySelector("textarea")!, "Private account A draft"));
-      const storedA = localStorage.getItem("paperclip:inline-draft:v2:user-1:private-switch");
+      const storedA = localStorage.getItem("pilibala:inline-draft:v2:user-1:private-switch");
       expect(storedA).toContain("Private account A draft");
       mockSession.userId = "user-2";
       await act(async () => {
@@ -455,13 +455,13 @@ describe("InlineEditor", () => {
       });
       expect(container.querySelector("textarea")?.value ?? "").not.toContain("Private account A draft");
       expect(container.textContent).not.toContain("Private account A draft");
-      expect(localStorage.getItem("paperclip:inline-draft:v2:user-1:private-switch")).toBe(storedA);
-      expect(localStorage.getItem("paperclip:inline-draft:v2:user-2:private-switch")).toBeNull();
+      expect(localStorage.getItem("pilibala:inline-draft:v2:user-1:private-switch")).toBe(storedA);
+      expect(localStorage.getItem("pilibala:inline-draft:v2:user-2:private-switch")).toBeNull();
       expect(onSave).not.toHaveBeenCalled();
       if (!multiline) act(() => container.querySelector("span")!.click());
       act(() => setNativeTextareaValue(container.querySelector("textarea")!, "Account B edit"));
-      expect(localStorage.getItem("paperclip:inline-draft:v2:user-2:private-switch")).toContain("Account B edit");
-      expect(localStorage.getItem("paperclip:inline-draft:v2:user-2:private-switch")).not.toContain("Private account A draft");
+      expect(localStorage.getItem("pilibala:inline-draft:v2:user-2:private-switch")).toContain("Account B edit");
+      expect(localStorage.getItem("pilibala:inline-draft:v2:user-2:private-switch")).not.toContain("Private account A draft");
     } finally {
       act(() => root.unmount());
       client.clear();

@@ -1,7 +1,7 @@
 import { mkdtemp, readdir, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { createDb } from "@paperclipai/db";
+import { createDb } from "@pilibalaai/db";
 import { describe, expect, it } from "vitest";
 import { assertDistinctEmptyRestore, qualifyBackupRestore, resolveBackupQualificationPair } from "../../scripts/lib/backup-qualification.js";
 

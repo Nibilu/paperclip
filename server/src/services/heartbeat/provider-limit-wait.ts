@@ -1,5 +1,5 @@
-import type { Db } from "@paperclipai/db";
-import { agents, heartbeatRuns } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { agents, heartbeatRuns } from "@pilibalaai/db";
 import { logger } from "../../middleware/logger.js";
 import { AI_CONNECTION_POOL_WAIT_RETRY_REASON } from "../../modules/run-dispatch/index.js";
 import { agentProviderLimitCooldown } from "../native-runtime/native-startup-retry.js";
@@ -56,8 +56,8 @@ export function createProviderLimitWait(db: Db, deps: ProviderLimitWaitDependenc
     if (!cooldown) return false;
     const resetAt = cooldown.resetAt.toISOString();
     const message = `The provider usage limit for this agent is expected to reset at ${resetAt}${
-      cooldown.resetReported ? "" : " (no reset time was reported, so Paperclip waits one hour)"
-    }. Paperclip will start this work then.`;
+      cooldown.resetReported ? "" : " (no reset time was reported, so Pilibala waits one hour)"
+    }. Pilibala will start this work then.`;
     const cancelled = await setRunStatusIfRunning(run.id, "cancelled", {
       error: message, errorCode: "provider_limit_wait", finishedAt: now,
       resultJson: {

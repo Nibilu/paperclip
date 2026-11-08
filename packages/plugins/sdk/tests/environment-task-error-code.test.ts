@@ -31,12 +31,12 @@ async function invoke(method: string, error: unknown) {
 
 describe("environment task error codes", () => {
   it("does not read the source refusal diagnostic envelope as a code", () => {
-    expect(readEnvironmentTaskErrorCode({ data: { schema: "paperclip/environment-task-error/v1", errorCode: "runner_revision_mismatch" } })).toBeNull();
+    expect(readEnvironmentTaskErrorCode({ data: { schema: "pilibala/environment-task-error/v1", errorCode: "runner_revision_mismatch" } })).toBeNull();
   });
   it("carries runner_revision_mismatch across the real environmentTask RPC", async () => {
     const response = await invoke("environmentTask", new PluginEnvironmentTaskError("runner_revision_mismatch"));
     if (!("error" in response) || !response.error) throw new Error("Expected RPC error");
-    expect(response.error.data).toEqual({ schema: "paperclip/environment-task-error-code/v1", errorCode: "runner_revision_mismatch" });
+    expect(response.error.data).toEqual({ schema: "pilibala/environment-task-error-code/v1", errorCode: "runner_revision_mismatch" });
     const callError = new JsonRpcCallError(response.error);
     expect(callError.message).toBe("The installed Runner does not match the expected revision");
     expect(readEnvironmentTaskErrorCode(callError)).toBe("runner_revision_mismatch");
@@ -62,7 +62,7 @@ describe("environment task error codes", () => {
   });
 
   it.each([null, {}, { data: { schema: "other", errorCode: "runner_revision_mismatch" } },
-    { data: { schema: "paperclip/environment-task-error-code/v1", errorCode: "private" } }])(
+    { data: { schema: "pilibala/environment-task-error-code/v1", errorCode: "private" } }])(
     "rejects malformed envelopes %j", (value) => {
       expect(readEnvironmentTaskErrorCode(value)).toBeNull();
     });

@@ -13,7 +13,7 @@ it and reloading, the next message asks for that phrase without supplying it.
 The independently attributed reply must contain the phrase, and both native
 turns must retain the same session identity.
 
-The user then sends the ordinary `/new` command. Paperclip preserves the same
+The user then sends the ordinary `/new` command. Pilibala preserves the same
 backing chat and saved history while advancing `conversationSessionGeneration`
 from zero to one. The final request does not reveal the remembered phrase. Its
 reply must use the fresh-context marker, with a different native session, no

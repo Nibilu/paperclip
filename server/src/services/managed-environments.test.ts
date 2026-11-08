@@ -24,7 +24,7 @@ describe("applyManagedEnvironments", () => {
     });
     await expect(
       applyManagedEnvironments(noDb, config, {
-        env: { PAPERCLIP_EXECUTION_MODE: "kubernetes" },
+        env: { PILIBALA_EXECUTION_MODE: "kubernetes" },
       }),
     ).rejects.toThrow(/mutually exclusive/);
   });

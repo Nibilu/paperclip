@@ -13,17 +13,17 @@ import {
   heartbeatRuns,
   issueComments,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
 
 vi.hoisted(() => {
-  process.env.PAPERCLIP_HOME = "/tmp/paperclip-test-home";
-  process.env.PAPERCLIP_INSTANCE_ID = "vitest";
-  process.env.PAPERCLIP_LOG_DIR = "/tmp/paperclip-test-home/logs";
-  process.env.PAPERCLIP_IN_WORKTREE = "false";
+  process.env.PILIBALA_HOME = "/tmp/pilibala-test-home";
+  process.env.PILIBALA_INSTANCE_ID = "vitest";
+  process.env.PILIBALA_LOG_DIR = "/tmp/pilibala-test-home/logs";
+  process.env.PILIBALA_IN_WORKTREE = "false";
 });
 
 vi.mock("../services/issue-assignment-wakeup.js", () => ({
@@ -58,7 +58,7 @@ describeEmbeddedPostgres("issue comment attribution and patch audit routes", () 
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-comment-attribution-audit-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-comment-attribution-audit-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 

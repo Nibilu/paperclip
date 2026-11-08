@@ -4,10 +4,10 @@
 // TypeScript 7 is a native binary, so Node heap flags do not limit it. Each
 // checker keeps its own copy of the types, which makes the checker count the
 // most useful control a package has over its peak memory.
-// scripts/typecheck-low-memory.mjs sets PAPERCLIP_TYPECHECK_LOW_MEMORY=1 so the
+// scripts/typecheck-low-memory.mjs sets PILIBALA_TYPECHECK_LOW_MEMORY=1 so the
 // largest programs check on a single thread.
 //
-// A build that only needs JavaScript sets PAPERCLIP_TSC_EMIT_ONLY=1. That build
+// A build that only needs JavaScript sets PILIBALA_TSC_EMIT_ONLY=1. That build
 // skips type checks and declarations, which use most of the memory of an emit.
 // The Docker image uses this mode.
 //
@@ -17,8 +17,8 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const LOW_MEMORY_VARIABLE = "PAPERCLIP_TYPECHECK_LOW_MEMORY";
-export const EMIT_ONLY_VARIABLE = "PAPERCLIP_TSC_EMIT_ONLY";
+export const LOW_MEMORY_VARIABLE = "PILIBALA_TYPECHECK_LOW_MEMORY";
+export const EMIT_ONLY_VARIABLE = "PILIBALA_TSC_EMIT_ONLY";
 
 export function lowMemoryTscArgs(env = process.env) {
   return env[LOW_MEMORY_VARIABLE] === "1" ? ["--singleThreaded"] : [];

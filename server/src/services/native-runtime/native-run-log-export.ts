@@ -1,14 +1,14 @@
 import { and, asc, desc, eq, gt, isNotNull, lte, not, or, sql } from "drizzle-orm";
 import { StringDecoder } from "node:string_decoder";
-import { heartbeatRunEvents, type Db } from "@paperclipai/db";
-import { validatePrpEvent, type PrpEvent } from "../../vendor/paperclip-runner/index.js";
+import { heartbeatRunEvents, type Db } from "@pilibalaai/db";
+import { validatePrpEvent, type PrpEvent } from "../../vendor/pilibala-runner/index.js";
 import { nativeSha256 } from "./canonical.js";
 import type { RunLogHandle, RunLogStore } from "../run-log-store.js";
 import { compactRunLogChunk } from "../heartbeat/run-log.js";
 import { MAX_RUN_LOG_RECORD_BYTES } from "../run-log-record-limits.js";
 
 export function formatNativeRunLogEvent(event: PrpEvent) {
-  return `${JSON.stringify({ type: "paperclip.prp.event", event })}\n`;
+  return `${JSON.stringify({ type: "pilibala.prp.event", event })}\n`;
 }
 export function nativeRunLogSourceWhere(companyId: string, runId: string) {
   return and(
@@ -116,7 +116,7 @@ function matchesPublishedEvent(source: unknown, published: unknown) {
  * compare every field semantically. A marker or matching substring alone is not proof.
  */
 function restoreCompactedEvent(chunk: string, source: unknown): unknown {
-  const marker = /\n\[paperclip truncated run log chunk: omitted ([1-9][0-9]*) chars\]\n/g;
+  const marker = /\n\[pilibala truncated run log chunk: omitted ([1-9][0-9]*) chars\]\n/g;
   const found = marker.exec(chunk);
   if (!found || marker.exec(chunk)) return;
   const omitted = Number(found[1]);
@@ -146,7 +146,7 @@ function restoreCompactedEvent(chunk: string, source: unknown): unknown {
     if (compactRunLogChunk(restored) !== chunk) continue;
     try {
       const envelope = JSON.parse(restored);
-      if (envelope.type === "paperclip.prp.event" && matchesPublishedEvent(source, envelope.event))
+      if (envelope.type === "pilibala.prp.event" && matchesPublishedEvent(source, envelope.event))
         return envelope;
     } catch { /* Another candidate cannot make malformed evidence authoritative. */ }
   }
@@ -190,7 +190,7 @@ export function createNativeRunLogCoverageVerifier(
         let candidate;
         try { candidate = JSON.parse(form); }
         catch { continue; } // A malformed historical privacy projection proves nothing.
-        if (candidate?.type === "paperclip.prp.event" && candidate.event &&
+        if (candidate?.type === "pilibala.prp.event" && candidate.event &&
           typeof candidate.event === "object" && !Array.isArray(candidate.event))
           yield candidate.event;
       }
@@ -199,7 +199,7 @@ export function createNativeRunLogCoverageVerifier(
     try {
       envelope = JSON.parse(chunk);
     } catch {
-      if (!chunk.includes('"paperclip.prp.event"')) return;
+      if (!chunk.includes('"pilibala.prp.event"')) return;
       let restored;
       for await (const form of sourceForms()) {
         restored = restoreCompactedEvent(chunk, form);
@@ -208,7 +208,7 @@ export function createNativeRunLogCoverageVerifier(
       if (!restored) throw unproven();
       envelope = restored;
     }
-    if (envelope?.type !== "paperclip.prp.event") return;
+    if (envelope?.type !== "pilibala.prp.event") return;
     let event: PrpEvent;
     try {
       const parsed = validatePrpEvent(envelope.event);

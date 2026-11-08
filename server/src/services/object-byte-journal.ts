@@ -120,7 +120,7 @@ async function qualifyConditionalWrites(
     qualification = current;
     current.work = (async () => {
       const objectKey = `${prefix}/conditional-probe-${randomUUID()}`;
-      const body = Buffer.from("paperclip-conditional-probe-v1");
+      const body = Buffer.from("pilibala-conditional-probe-v1");
       const put = provider.putObjectConditional!.bind(provider);
       try {
         await retryObjectOperation(
@@ -137,7 +137,7 @@ async function qualifyConditionalWrites(
         );
         for (const condition of [
           { ifNoneMatch: "*" as const },
-          { ifMatch: '"paperclip-impossible-etag"' },
+          { ifMatch: '"pilibala-impossible-etag"' },
         ]) {
           let rejected = false;
           try {
@@ -347,7 +347,7 @@ export function createObjectByteJournal(options: ObjectByteJournalOptions) {
     return {
       // Existing scoped object cleanup also removes these unreferenced metadata objects.
       key: `${objectPrefix}source-prefix-proof-v1-${fingerprint}`,
-      bytes: Buffer.from(JSON.stringify({ schema: "paperclip.run-log.source-prefix-proof.v1", fingerprint })),
+      bytes: Buffer.from(JSON.stringify({ schema: "pilibala.run-log.source-prefix-proof.v1", fingerprint })),
     };
   }
   async function hasVerifiedSourcePrefix(snapshot: ObjectJournalHead, signal?: AbortSignal) {

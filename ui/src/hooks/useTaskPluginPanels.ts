@@ -1,7 +1,7 @@
 import { queryViewKind } from "@/components/QueryView";
 import { useEffect, useMemo } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@pilibalaai/shared";
 import { api, ApiError } from "@/api/client";
 import { heartbeatsApi } from "@/api/heartbeats";
 import { useTaskRunLiveUpdates, useTranscriptLiveStream } from "@/context/LiveUpdatesProvider";

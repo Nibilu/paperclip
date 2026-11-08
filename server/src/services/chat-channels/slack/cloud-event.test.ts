@@ -3,7 +3,7 @@ import { createHmac, createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import { verifySlackSignature } from "@chat-adapter/slack/webhook";
 import { createChatSdkEndpointRuntime } from "../../chat-sdk-runtime.js";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import type { EndpointRow } from "../runtime-types.js";
 import { createSlackWebhookCallbacks } from "./webhook-callbacks.js";
 import { receiveSlackCloudEvent, slackCloudAcceptedAt, type CurrentSlackCloudBinding, type SlackCloudEvent } from "./cloud-event.js";
@@ -31,7 +31,7 @@ describe("authenticated Slack Cloud receipt consumer", () => {
     const runtime = createChatSdkEndpointRuntime({ companyId: f.binding.companyId, endpointId: f.binding.endpointId,
       logger: "silent", callbacks: { onMessage }, persistence: { read: async () => null,
         compareAndSet: async () => true, deleteIfVersion: async () => true },
-      providerConfig: { provider: "slack", userName: "paperclip-agent",
+      providerConfig: { provider: "slack", userName: "pilibala-agent",
         credentials: { apiUrl: "http://127.0.0.1:1/api/", botToken: "xoxb-synthetic", botUserId: "UBOT", signingSecret: f.binding.signingSecret } } });
     try {
       await runtime.initialize();

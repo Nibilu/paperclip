@@ -190,7 +190,7 @@ export interface RunnerTaskFixture {
     optionLabel: string;
     expectedMarker: string;
   };
-  /** Restart the isolated Paperclip server after the waiting turn settles. */
+  /** Restart the isolated Pilibala server after the waiting turn settles. */
   restartServerBeforeQuestionAnswer?: boolean;
   toolReviewDecision?: "approve" | "decline" | "always" | "restart";
   buildPlanMarkers?(nonce: string): {
@@ -256,7 +256,7 @@ export type RunnerE2ECostStatus =
 
 export interface RunnerE2ERuntimeUsage {
   provider: RunnerEnvironmentId;
-  /** Sum of the selected Paperclip heartbeat-run spans. */
+  /** Sum of the selected Pilibala heartbeat-run spans. */
   agentRunDurationMs: number | null;
   /** Sum of provider lease windows when the environment exposes leases. */
   leaseDurationMs: number | null;
@@ -302,7 +302,7 @@ export interface RunnerE2EBillingSummary {
 }
 
 export interface RunnerE2EResult {
-  schema: "paperclip.runner-e2e.result/v1" | "paperclip.runner-e2e.result/v2";
+  schema: "pilibala.runner-e2e.result/v1" | "pilibala.runner-e2e.result/v2";
   accountingIdentity?: { campaignId: string; attemptId: string };
   executionId: string;
   suiteId?: string;
@@ -451,7 +451,7 @@ export interface RunnerE2ECampaignAccounting {
 }
 
 export interface RunnerE2ECampaign {
-  schema: "paperclip.runner-e2e.campaign/v2";
+  schema: "pilibala.runner-e2e.campaign/v2";
   campaignId: string;
   generatedAt: string;
   source: {
@@ -522,7 +522,7 @@ export interface RunnerE2EHistoryCampaign {
 }
 
 export interface RunnerE2EHistoryIndex {
-  schema: "paperclip.runner-e2e.history/v1";
+  schema: "pilibala.runner-e2e.history/v1";
   updatedAt: string;
   latestCampaignId: string | null;
   latestGreenCampaignId: string | null;

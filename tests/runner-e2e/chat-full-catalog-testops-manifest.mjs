@@ -29,7 +29,7 @@ export function validateCompanySecretBindingApprovalSource(row, task) {
 }
 
 export function validateFullCatalogManifest(value) {
-  if (value?.schema !== 'paperclip.chat-full-catalog-testops-manifest/v1'
+  if (value?.schema !== 'pilibala.chat-full-catalog-testops-manifest/v1'
     || !/^[a-f0-9]{64}$/.test(value.launcherSha256 ?? '')
     || !/^[a-f0-9]{40}$/.test(value.targetSha ?? '') || !/^[a-f0-9]{40}$/.test(value.metadataSourceSha ?? '')
     || value.profile !== 'runner-opencode' || value.model !== 'openrouter/deepseek/deepseek-v4.1-flash-1017'
@@ -41,8 +41,8 @@ export function validateFullCatalogManifest(value) {
     if (!/^[a-z0-9-]+\.[a-z0-9-]+$/.test(row.key ?? '') || row.canonicalScenario !== row.key || row.scenario !== task
       || row.area !== row.key.split('.')[0] || !text(row.name) || !text(row.title)
       || row.executionId !== `chat-features.runner-opencode.local.${task}`
-      || row.fullName !== `paperclip.Product E2E.chat-features.${row.key}`
-      || JSON.stringify(row.aliases) !== JSON.stringify(legacy.has(row.key) ? [`paperclip.Product E2E.chat-features.${task}`] : [])
+      || row.fullName !== `pilibala.Product E2E.chat-features.${row.key}`
+      || JSON.stringify(row.aliases) !== JSON.stringify(legacy.has(row.key) ? [`pilibala.Product E2E.chat-features.${task}`] : [])
       || !nonnegative(row.minimumRuns) || !nonnegative(row.maximumRuns) || row.minimumRuns > row.maximumRuns
       || !nonnegative(row.turnTimeoutMs) || !nonnegative(row.declaredTurnTimeoutMs)
       || !Number.isSafeInteger(row.attemptTimeoutMs) || row.attemptTimeoutMs <= 30_000

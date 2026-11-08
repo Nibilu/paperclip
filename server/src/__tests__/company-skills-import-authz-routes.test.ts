@@ -15,7 +15,7 @@ import {
   createDb,
   heartbeatRuns,
   principalPermissionGrants,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -37,18 +37,18 @@ if (!embeddedPostgresSupport.supported) {
 describeEmbeddedPostgres("company skill import authorization routes", () => {
   let db!: ReturnType<typeof createDb>;
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
-  let paperclipHome: string | null = null;
+  let pilibalaHome: string | null = null;
   const cleanupDirs = new Set<string>();
-  const previousAgentJwtSecret = process.env.PAPERCLIP_AGENT_JWT_SECRET;
-  const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-  const previousPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
+  const previousAgentJwtSecret = process.env.PILIBALA_AGENT_JWT_SECRET;
+  const previousPilibalaHome = process.env.PILIBALA_HOME;
+  const previousPilibalaInstanceId = process.env.PILIBALA_INSTANCE_ID;
 
   beforeAll(async () => {
-    process.env.PAPERCLIP_AGENT_JWT_SECRET = "company-skills-import-authz-test-secret";
-    paperclipHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-company-skills-import-authz-home-"));
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "default";
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-company-skills-import-authz-");
+    process.env.PILIBALA_AGENT_JWT_SECRET = "company-skills-import-authz-test-secret";
+    pilibalaHome = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-company-skills-import-authz-home-"));
+    process.env.PILIBALA_HOME = pilibalaHome;
+    process.env.PILIBALA_INSTANCE_ID = "default";
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-company-skills-import-authz-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -67,15 +67,15 @@ describeEmbeddedPostgres("company skill import authorization routes", () => {
 
   afterAll(async () => {
     await tempDb?.cleanup();
-    if (paperclipHome) {
-      await fs.rm(paperclipHome, { recursive: true, force: true });
+    if (pilibalaHome) {
+      await fs.rm(pilibalaHome, { recursive: true, force: true });
     }
-    if (previousAgentJwtSecret === undefined) delete process.env.PAPERCLIP_AGENT_JWT_SECRET;
-    else process.env.PAPERCLIP_AGENT_JWT_SECRET = previousAgentJwtSecret;
-    if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-    else process.env.PAPERCLIP_HOME = previousPaperclipHome;
-    if (previousPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-    else process.env.PAPERCLIP_INSTANCE_ID = previousPaperclipInstanceId;
+    if (previousAgentJwtSecret === undefined) delete process.env.PILIBALA_AGENT_JWT_SECRET;
+    else process.env.PILIBALA_AGENT_JWT_SECRET = previousAgentJwtSecret;
+    if (previousPilibalaHome === undefined) delete process.env.PILIBALA_HOME;
+    else process.env.PILIBALA_HOME = previousPilibalaHome;
+    if (previousPilibalaInstanceId === undefined) delete process.env.PILIBALA_INSTANCE_ID;
+    else process.env.PILIBALA_INSTANCE_ID = previousPilibalaInstanceId;
   });
 
   function authenticatedApp() {
@@ -88,13 +88,13 @@ describeEmbeddedPostgres("company skill import authorization routes", () => {
   }
 
   async function writeSkillFixture(companyId: string) {
-    if (!paperclipHome) throw new Error("Expected Paperclip test home");
+    if (!pilibalaHome) throw new Error("Expected Pilibala test home");
     // Local imports must originate from an approved root (managed-skill
     // directory or a configured workspace); a bare tmpdir is rejected with
     // skill_workspace_boundary_denied.
-    const managedRoot = path.join(paperclipHome, "instances", "default", "skills", companyId);
+    const managedRoot = path.join(pilibalaHome, "instances", "default", "skills", companyId);
     await fs.mkdir(managedRoot, { recursive: true });
-    const skillDir = await fs.mkdtemp(path.join(managedRoot, "paperclip-import-authz-skill-"));
+    const skillDir = await fs.mkdtemp(path.join(managedRoot, "pilibala-import-authz-skill-"));
     cleanupDirs.add(skillDir);
     await fs.writeFile(
       path.join(skillDir, "SKILL.md"),
@@ -186,7 +186,7 @@ describeEmbeddedPostgres("company skill import authorization routes", () => {
     const res = await request(authenticatedApp())
       .post(`/api/companies/${companyId}/skills/import`)
       .set("Authorization", `Bearer ${token}`)
-      .set("X-Paperclip-Run-Id", runId)
+      .set("X-Pilibala-Run-Id", runId)
       .send({ source: skillDir });
 
     expect(res.status, JSON.stringify(res.body)).toBe(201);

@@ -3,9 +3,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { Readable } from "node:stream";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { executionWorkspaces, issues, projects, projectWorkspaces } from "@paperclipai/db";
-import { normalizeIssueIdentifier } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { executionWorkspaces, issues, projects, projectWorkspaces } from "@pilibalaai/db";
+import { normalizeIssueIdentifier } from "@pilibalaai/shared";
 import type {
   NormalizedWorkspaceFileAvailabilityQuery,
   ResolvedWorkspaceResource,
@@ -20,7 +20,7 @@ import type {
   WorkspaceFileSelector,
   WorkspaceFileWorkspaceKind,
   WorkspaceFileSource,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import type { RemoteWorkspaceFiles, RemoteWorkspaceFileAccess, RemoteWorkspaceFileEntry } from "./remote-workspace-files.js";
 import { HttpError, notFound, unprocessable } from "../errors.js";
 import {
@@ -50,7 +50,7 @@ export interface WorkspaceFileScanContext {
 
 const DENIED_SEGMENTS = new Set([
   ".git",
-  ".paperclip",
+  ".pilibala",
   "node_modules",
   ".pnpm-store",
   ".yarn",

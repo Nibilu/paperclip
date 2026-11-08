@@ -1,8 +1,8 @@
-import type { Issue, IssueStatus, IssueSummary } from "@paperclipai/shared";
+import type { Issue, IssueStatus, IssueSummary } from "@pilibalaai/shared";
 
-export const RECENT_TASKS_UPDATED_EVENT = "paperclip:recent-tasks-updated";
-const STORAGE_PREFIX = "paperclip.recentTasks.v2:";
-const LEGACY_STORAGE_PREFIX = "paperclip.recentTasks:";
+export const RECENT_TASKS_UPDATED_EVENT = "pilibala:recent-tasks-updated";
+const STORAGE_PREFIX = "pilibala.recentTasks.v2:";
+const LEGACY_STORAGE_PREFIX = "pilibala.recentTasks:";
 
 export interface RecentTaskEntry {
   id: string;

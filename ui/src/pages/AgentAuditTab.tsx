@@ -1,4 +1,4 @@
-import type { AgentDetail as AgentDetailRecord } from "@paperclipai/shared";
+import type { AgentDetail as AgentDetailRecord } from "@pilibalaai/shared";
 import { AuditFeed } from "./audit/AuditFeed";
 import { AuditRuns } from "./audit/AuditRuns";
 import { AgentBudgetsPanel } from "./AgentBudgetsPanel";

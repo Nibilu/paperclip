@@ -5,7 +5,7 @@ import path from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { activityLog, agents, closeRegisteredClients, companies, completionContracts, createDb, executionWorkspaces,
-  heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, workspaceOperations } from "@paperclipai/db";
+  heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, workspaceOperations } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { reconcileOfflineWorkspaceOperations, reconcileOnlineWorkspaceOperations } from "./offline-workspace-operation-reconciliation.js";
 import { adapterExecutionControls, createAdapterExecutionControl } from "./adapter-execution-control.js";
@@ -20,7 +20,7 @@ describe.skipIf(!support.supported)("offline workspace operation receipts", () =
   beforeAll(async () => {
     database = await startEmbeddedPostgresTestDatabase("offline-operation-receipts-");
     db = createDb(database.connectionString);
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "true");
+    vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "true");
   }, 60_000);
   afterAll(async () => {
     if (database) await closeRegisteredClients(database.connectionString);
@@ -30,14 +30,14 @@ describe.skipIf(!support.supported)("offline workspace operation receipts", () =
     const companyId = randomUUID(), issueId = randomUUID(), runId = randomUUID(), workspaceId = randomUUID();
     const contractId = randomUUID(), resultId = randomUUID(), operationId = randomUUID(), receiptId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Historical receipts", issuePrefix: `O${companyId.slice(0, 6)}` });
-    const [agent] = await db.insert(agents).values({ companyId, name: "Worker", adapterType: "paperclip_runner" }).returning();
+    const [agent] = await db.insert(agents).values({ companyId, name: "Worker", adapterType: "pilibala_runner" }).returning();
     await db.insert(issues).values({ id: issueId, companyId, title: "Saved work", status: "done" });
     await db.insert(executionWorkspaces).values({ id: workspaceId, companyId, sourceIssueId: issueId,
       mode: "isolated_workspace", strategyType: "project_primary", providerType: "local_fs", name: "Retained files", cwd: "/retained" });
     await db.insert(completionContracts).values({ id: contractId, companyId, issueId, revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1", policyVersion: "test", risk: "standard", completionAuthority: "server_arbiter",
+      schemaVersion: "pilibala.completion-contract.v1", policyVersion: "test", risk: "standard", completionAuthority: "server_arbiter",
       incompleteCriteriaPolicy: "preserve_non_terminal", contractJson: {}, canonicalSha256: contractId, createdByActorType: "system", createdByActorId: "test" });
-    const profile = { nativeWorkspaceSync: { schema: "paperclip.native-workspace-sync/v3", state: "finalized", workspaceId,
+    const profile = { nativeWorkspaceSync: { schema: "pilibala.native-workspace-sync/v3", state: "finalized", workspaceId,
       leaseId: randomUUID(), providerLeaseId: randomUUID(), remoteCwd: "/work", descriptorSha256: "a".repeat(64),
       baselineSha256: "b".repeat(64), finalHostSha256: "c".repeat(64), resourceDisposition: "keep_running" } };
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId: agent.id, nativeIssueId: issueId, runtimeMode: "native",
@@ -92,7 +92,7 @@ describe.skipIf(!support.supported)("offline workspace operation receipts", () =
       expect(await readFile(path.join(cwd, "saved.txt"), "utf8")).toBe("Retained local work\n");
       expect((await operation(f.receiptId)).status).toBe("succeeded");
       const [workspace] = await db.select().from(executionWorkspaces).where(eq(executionWorkspaces.id, f.workspaceId));
-      expect(workspace.metadata?.remoteWorkspace).toMatchObject({ schema: "paperclip.remote-workspace.v1", snapshotId: expect.any(String) });
+      expect(workspace.metadata?.remoteWorkspace).toMatchObject({ schema: "pilibala.remote-workspace.v1", snapshotId: expect.any(String) });
     } finally { await rm(root, { recursive: true, force: true }); }
   });
 
@@ -136,9 +136,9 @@ describe.skipIf(!support.supported)("offline workspace operation receipts", () =
     const f = await fixture();
     await expect(reconcileOfflineWorkspaceOperations(db, { companyId: f.companyId, writersStopped: false,
       signal: new AbortController().signal })).rejects.toThrow("offline_maintenance_required");
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "false");
+    vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "false");
     try { await expect(reconcile(f.companyId)).rejects.toThrow("offline_maintenance_required"); }
-    finally { vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "true"); }
+    finally { vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "true"); }
     expect((await operation(f.operationId)).status).toBe("running");
   });
 
@@ -170,7 +170,7 @@ describe.skipIf(!support.supported)("offline workspace operation receipts", () =
 
   it("does not change historical operations after remote workspace authority is published", async () => {
     const f = await fixture();
-    await db.update(executionWorkspaces).set({ metadata: { remoteWorkspace: { schema: "paperclip.remote-workspace.v1" } } })
+    await db.update(executionWorkspaces).set({ metadata: { remoteWorkspace: { schema: "pilibala.remote-workspace.v1" } } })
       .where(eq(executionWorkspaces.id, f.workspaceId));
     const before = await operation(f.operationId);
     expect(await reconcile(f.companyId)).toMatchObject({ inspected: 0, reconciled: 0 });
@@ -235,7 +235,7 @@ describe.skipIf(!support.supported)("offline workspace operation receipts", () =
     const [oldRun] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId));
     const [active] = await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: oldRun.agentId,
       status: "running", runtimeMode: "native", controllerLeaseExpiresAt: new Date(Date.now() + 60_000),
-      runnerProfileJson: { remoteWorkspace: { schema: "paperclip.remote-workspace-run.v1" } } }).returning();
+      runnerProfileJson: { remoteWorkspace: { schema: "pilibala.remote-workspace-run.v1" } } }).returning();
     await db.insert(issueRecoveryActions).values({ companyId: f.companyId, sourceIssueId: f.issueId,
       kind: "configuration_validation", cause: "configuration_incomplete", fingerprint: randomUUID(), nextAction: "Keep the warning" });
     const retained = async () => ({
@@ -247,12 +247,12 @@ describe.skipIf(!support.supported)("offline workspace operation receipts", () =
     try {
       await writeFile(path.join(root, "saved.txt"), "Unpublished user files\n");
       await db.update(executionWorkspaces).set({ cwd: root }).where(eq(executionWorkspaces.id, f.workspaceId));
-      vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "false");
+      vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "false");
       const before = await retained(), receipt = await operation(f.receiptId), otherAttempt = await operation(other.operationId);
       expect(await reconcileOnlineWorkspaceOperations(db, { companyId: f.companyId, signal: new AbortController().signal }))
         .toMatchObject({ inspected: 1, reconciled: 1, held: [] });
       expect(await operation(f.operationId)).toMatchObject({ status: "failed", metadata: { original: "keep",
-        onlineReconciliation: { schema: "paperclip.online-workspace-operation-reconciliation.v1",
+        onlineReconciliation: { schema: "pilibala.online-workspace-operation-reconciliation.v1",
           reason: "superseded_workspace_finalization", supersedingOperationId: f.receiptId, resultId: f.resultId } } });
       expect(await operation(f.receiptId)).toEqual(receipt);
       expect(await operation(other.operationId)).toEqual(otherAttempt);
@@ -260,7 +260,7 @@ describe.skipIf(!support.supported)("offline workspace operation receipts", () =
       expect(await readFile(path.join(root, "saved.txt"), "utf8")).toBe("Unpublished user files\n");
       expect(await db.select().from(activityLog).where(eq(activityLog.entityId, f.operationId))).toHaveLength(1);
     } finally {
-      vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "true");
+      vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "true");
       await db.update(heartbeatRuns).set({ status: "succeeded" }).where(eq(heartbeatRuns.id, active.id));
       await rm(root, { recursive: true, force: true });
     }
@@ -289,7 +289,7 @@ describe.skipIf(!support.supported)("offline workspace operation receipts", () =
     let release!: () => void, ready!: () => void;
     const barrier = new Promise<void>(resolve => { release = resolve; }), locked = new Promise<void>(resolve => { ready = resolve; });
     const publisher = db.transaction(async tx => {
-      await tx.update(executionWorkspaces).set({ metadata: { remoteWorkspace: { schema: "paperclip.remote-workspace.v1" } } })
+      await tx.update(executionWorkspaces).set({ metadata: { remoteWorkspace: { schema: "pilibala.remote-workspace.v1" } } })
         .where(eq(executionWorkspaces.id, f.workspaceId));
       ready(); await barrier;
     });

@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { companies, projects, type Db } from "@paperclipai/db";
+import { companies, projects, type Db } from "@pilibalaai/db";
 import { notFound } from "../errors.js";
 
 /** Shared execution-authority fences allow concurrent admissions. Acquire

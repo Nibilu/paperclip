@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
-import { activityLog, agents, companies, companySkills, companySkillVersions, createDb, heartbeatRuns, type Db } from "@paperclipai/db";
+import { activityLog, agents, companies, companySkills, companySkillVersions, createDb, heartbeatRuns, type Db } from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { prepareOnlineEphemeralEnrollment } from "../services/ephemeral-enrollment.js";
 import { cloudTenantPrimaryCompanyId } from "../services/cloud-instance.js";
@@ -21,21 +21,21 @@ afterAll(async () => { await db?.$client.end({ timeout: 1 }); await database?.cl
 afterEach(() => vi.unstubAllEnvs());
 
 async function fixture() {
-  vi.stubEnv("PAPERCLIP_DURABLE_AGENT_FILES", "true");
+  vi.stubEnv("PILIBALA_DURABLE_AGENT_FILES", "true");
   const stackId = `stack-fixture-${randomUUID()}`, companyId = cloudTenantPrimaryCompanyId(stackId), agentId = randomUUID();
   await db.insert(companies).values({ id: companyId, name: "Online enrollment fixture", issuePrefix: `P${randomUUID().slice(0, 7).toUpperCase()}` });
   await db.insert(agents).values({ id: agentId, companyId, name: "Preparing agent" });
   await db.transaction(tx => initializeDurableAgentFiles(tx as unknown as Db, { id: agentId, companyId }));
-  vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "fixture-managed-instance");
-  vi.stubEnv("PAPERCLIP_CLOUD_STACK_ID", stackId);
-  vi.stubEnv("PAPERCLIP_BUILD_COMMIT", "a".repeat(40));
+  vi.stubEnv("PILIBALA_CLOUD_TENANT_SERVER_TOKEN", "fixture-managed-instance");
+  vi.stubEnv("PILIBALA_CLOUD_STACK_ID", stackId);
+  vi.stubEnv("PILIBALA_BUILD_COMMIT", "a".repeat(40));
   vi.stubEnv("RAILWAY_DEPLOYMENT_ID", randomUUID());
-  vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", "false");
-  vi.stubEnv("PAPERCLIP_DURABLE_AGENT_FILES", "true");
-  vi.stubEnv("PAPERCLIP_SHARED_UI_ASSETS", "true");
-  vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "a".repeat(64));
-  vi.stubEnv("PAPERCLIP_DECISION_SIGNING_SECRET", "fixture-preserved-original-key-at-least-32");
-  vi.stubEnv("PAPERCLIP_DATABASE_LISTEN_URL", database.connectionString);
+  vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", "false");
+  vi.stubEnv("PILIBALA_DURABLE_AGENT_FILES", "true");
+  vi.stubEnv("PILIBALA_SHARED_UI_ASSETS", "true");
+  vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "a".repeat(64));
+  vi.stubEnv("PILIBALA_DECISION_SIGNING_SECRET", "fixture-preserved-original-key-at-least-32");
+  vi.stubEnv("PILIBALA_DATABASE_LISTEN_URL", database.connectionString);
   return { companyId, agentId, attemptId: randomUUID(), control: { requestId: randomUUID(), exp: Math.floor(Date.now() / 1000) + 60 } };
 }
 
@@ -51,7 +51,7 @@ it("exports once across simultaneous callers and a cleared process replay map us
   await expect(prepareOnlineEphemeralEnrollment(db, f.attemptId, f.control)).rejects.toMatchObject({ status: 409 });
   const audit = await db.select().from(activityLog).where(eq(activityLog.companyId, f.companyId));
   expect(audit).toHaveLength(1);
-  expect(JSON.stringify(audit)).not.toContain(process.env.PAPERCLIP_DECISION_SIGNING_SECRET);
+  expect(JSON.stringify(audit)).not.toContain(process.env.PILIBALA_DECISION_SIGNING_SECRET);
 });
 
 it("prepares during normal admission before skill pins are saved, while preserving installation durability", async () => {

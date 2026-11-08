@@ -20,7 +20,7 @@ definitions that do not run from `master`.
 
 ## Outputs and reuse
 
-The image uses `ghcr.io/paperclipai/paperclip:sha-<FULL_SHA>-cloud`.
+The image uses `ghcr.io/pilibalaai/pilibala:sha-<FULL_SHA>-cloud`.
 This explicit operator path is retained after retirement of the recurring public
 `-cloud` publisher. Existing images remain reusable; missing images still build
 the `cloud` Dockerfile target. It is separate from private image composition.
@@ -29,9 +29,9 @@ release images retain their existing short-tag convention. Build arguments carry
 Preview builds do not import or overwrite the shared release cache or release
 aliases. Missing images are built for Linux amd64, matching managed deployments.
 
-When requested, both `@paperclipai/shared` and `@paperclipai/db` use
+When requested, both `@pilibalaai/shared` and `@pilibalaai/db` use
 `0.0.0-preview.g<FULL_SHA>`. Workspace dependencies are pinned to exact versions.
-Packages carry `gitHead` and `paperclipPreviewCommit` source identity. npm publishes
+Packages carry `gitHead` and `pilibalaPreviewCommit` source identity. npm publishes
 them under the `preview` dist-tag only. Normal consumers of `latest` or `canary`
 continue to select normal releases.
 
@@ -70,7 +70,7 @@ making the migrator wait for a preview image. Different SHAs remain independent.
 ### Publisher identity
 
 Configure npm trusted publishing for **both packages** with repository
-`paperclipai/paperclip`, workflow `release.yml`, and environment `npm-canary`.
+`pilibalaai/pilibala`, workflow `release.yml`, and environment `npm-canary`.
 The image publisher uses the same environment, whose deployment branch policy
 permits only master. Both publishers also check the workflow ref before running.
 This uses the existing publisher identity rather than requiring another workflow
@@ -151,8 +151,8 @@ sufficient provenance.
 
 The build job has no AWS credential. The publish job downloads only the four
 fixed files, validates them, and uploads them without executing their code.
-The dedicated `paperclip-cloud-migrator-github` OIDC role trusts only
-`repo:paperclipai/paperclip:ref:refs/heads/master`. Its policy permits prefix
+The dedicated `pilibala-cloud-migrator-github` OIDC role trusts only
+`repo:pilibalaai/pilibala:ref:refs/heads/master`. Its policy permits prefix
 listing and conditional `PutObject` calls in this one prefix. It permits no
 object deletion or overwrite. PRs, including allowlisted PRs, cannot assume it.
 

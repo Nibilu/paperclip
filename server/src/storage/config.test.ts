@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { paperclipConfigSchema } from "@paperclipai/shared";
+import { pilibalaConfigSchema } from "@pilibalaai/shared";
 import { loadStorageConfig } from "./config.js";
 import { resolveRunEvidenceStorage } from "../services/run-evidence-storage.js";
 import {
@@ -12,7 +12,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-const file = paperclipConfigSchema.parse({
+const file = pilibalaConfigSchema.parse({
   $meta: { version: 1, updatedAt: "2026-10-30T00:00:00Z", source: "configure" },
   database: { mode: "embedded-postgres" },
   logging: { mode: "file" },
@@ -30,8 +30,8 @@ const file = paperclipConfigSchema.parse({
 });
 describe("shared instance storage configuration", () => {
   it("reuses the saved Cloud storage profile after its legacy config file is gone", () => {
-    vi.stubEnv("PAPERCLIP_MANAGED_CONFIG", "");
-    vi.stubEnv("PAPERCLIP_CONFIG", "/nonexistent/legacy-config.json");
+    vi.stubEnv("PILIBALA_MANAGED_CONFIG", "");
+    vi.stubEnv("PILIBALA_CONFIG", "/nonexistent/legacy-config.json");
     for (const name of [
       "PROVIDER",
       "S3_BUCKET",
@@ -40,7 +40,7 @@ describe("shared instance storage configuration", () => {
       "S3_PREFIX",
       "S3_FORCE_PATH_STYLE",
     ])
-      vi.stubEnv(`PAPERCLIP_STORAGE_${name}`, undefined);
+      vi.stubEnv(`PILIBALA_STORAGE_${name}`, undefined);
     setCloudRuntimeConfigSnapshot({
       version: 1,
       revision: 4,
@@ -69,12 +69,12 @@ describe("shared instance storage configuration", () => {
   it("preserves environment precedence and an explicit false path-style setting", () => {
     expect(
       loadStorageConfig(file, {
-        PAPERCLIP_STORAGE_PROVIDER: "s3",
-        PAPERCLIP_STORAGE_S3_BUCKET: "stack-env",
-        PAPERCLIP_STORAGE_S3_REGION: "us-east-1",
-        PAPERCLIP_STORAGE_S3_ENDPOINT: "https://other.example.test",
-        PAPERCLIP_STORAGE_S3_PREFIX: "",
-        PAPERCLIP_STORAGE_S3_FORCE_PATH_STYLE: "false",
+        PILIBALA_STORAGE_PROVIDER: "s3",
+        PILIBALA_STORAGE_S3_BUCKET: "stack-env",
+        PILIBALA_STORAGE_S3_REGION: "us-east-1",
+        PILIBALA_STORAGE_S3_ENDPOINT: "https://other.example.test",
+        PILIBALA_STORAGE_S3_PREFIX: "",
+        PILIBALA_STORAGE_S3_FORCE_PATH_STYLE: "false",
       }),
     ).toMatchObject({
       storageProvider: "s3",

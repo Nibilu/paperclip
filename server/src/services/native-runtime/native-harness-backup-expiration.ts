@@ -14,7 +14,7 @@ import {
   nativeHarnessBackups,
   nativeProviderArtifactReferences,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { logger } from "../../middleware/logger.js";
 import { nativeHarnessStateBase } from "./native-harness-backup-stamp.js";
 import { nativeSessionScopeDigestIsBusy } from "./native-session-executor.js";
@@ -197,7 +197,7 @@ async function sessionRetentionBlocker(
       id: heartbeatRuns.id,
       status: heartbeatRuns.status,
       finishedAt: heartbeatRuns.finishedAt,
-      incompleteRecovery: sql<boolean>`(${heartbeatRuns.runnerProfileJson}->'nativeControllerRecovery'->>'schema' = 'paperclip.native-controller-recovery.v1'
+      incompleteRecovery: sql<boolean>`(${heartbeatRuns.runnerProfileJson}->'nativeControllerRecovery'->>'schema' = 'pilibala.native-controller-recovery.v1'
         and ${heartbeatRuns.runnerProfileJson}->'nativeControllerRecovery'->'checkpoint' = 'null'::jsonb) is true`,
       issueId: sql<string | null>`coalesce(${heartbeatRuns.nativeIssueId}, ${heartbeatRuns.issueId})`,
     })
@@ -373,7 +373,7 @@ export function nativeHarnessBackupExpirationService(
     // The partial header index enumerates retained checkpoints without reading
     // event payloads or scanning runs that have no checkpoint left to expire.
     const candidates = await db.select({ runId: heartbeatRuns.id, companyId: heartbeatRuns.companyId, sessionId: heartbeatRuns.nativeSessionId,
-      retirement: sql<Record<string, unknown> | null>`case when ${nativeRunnerCheckpoints.material}->>'schema' like 'paperclip.native-runner-checkpoint-retirement.%' then ${nativeRunnerCheckpoints.material} else null end` })
+      retirement: sql<Record<string, unknown> | null>`case when ${nativeRunnerCheckpoints.material}->>'schema' like 'pilibala.native-runner-checkpoint-retirement.%' then ${nativeRunnerCheckpoints.material} else null end` })
       .from(nativeRunnerCheckpoints)
       .innerJoin(nativeRunFinalizations, eq(nativeRunFinalizations.runId, nativeRunnerCheckpoints.runId))
       .innerJoin(heartbeatRuns, eq(heartbeatRuns.id, nativeRunFinalizations.runId))

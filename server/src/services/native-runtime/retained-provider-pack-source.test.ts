@@ -45,7 +45,7 @@ async function fixture(options: { wrongCode?: boolean; unsafeOverlay?: boolean; 
     const artifact = { path: "bin/tool", sha256: `sha256:${hash(tool)}` };
     const payload = { pins: { opencode: "1.18.34" }, target: { platform: "linux", architecture: "x64" }, runnerSourceRevision: source,
       contractDigest: `sha256:${hash(tool)}`, artifacts: { nodeCommand: artifact, opencodeCommand: artifact, opencodeProxy: artifact } };
-    const manifest = { schema: "paperclip-runner/remote-provider-pack/v1", payload, digest: `sha256:${hash(canonicalProviderPackJson(payload))}` };
+    const manifest = { schema: "pilibala-runner/remote-provider-pack/v1", payload, digest: `sha256:${hash(canonicalProviderPackJson(payload))}` };
     await fs.writeFile(path.join(pack, "provider-pack.json"), JSON.stringify(manifest));
     await fs.writeFile(path.join(pack, "bin/tool"), tool, { mode: 0o755 });
     await fs.writeFile(path.join(pack, "bin/large"), Buffer.alloc(1024 * 1024, 42), { mode: 0o755 });
@@ -86,23 +86,23 @@ async function fixture(options: { wrongCode?: boolean; unsafeOverlay?: boolean; 
   const collected = (async () => { for await (const chunk of archive) chunks.push(Buffer.from(chunk)); })();
   for (const name of ["provider-pack.archive.json", ...await fs.readdir(transportPack + ".archives").then(names => names.map(name => `provider-pack.archives/${name}`))]) {
     const bytes = await fs.readFile(path.join(path.dirname(transportPack), name.replace("provider-pack", path.basename(transportPack))));
-    await new Promise<void>((done, reject) => archive.entry({ name: `opt/paperclip-runner/${name}`, type: "file", size: bytes.length }, bytes, error => error ? reject(error) : done()));
+    await new Promise<void>((done, reject) => archive.entry({ name: `opt/pilibala-runner/${name}`, type: "file", size: bytes.length }, bytes, error => error ? reject(error) : done()));
   }
   archive.finalize();
   await collected;
   const layer = gzipSync(Buffer.concat(chunks));
   const config = Buffer.from(JSON.stringify({ architecture: "amd64", os: "linux", config: { Labels: {
     "org.opencontainers.image.revision": selected.manifest.payload.runnerSourceRevision,
-    "org.opencontainers.image.source": "https://github.com/paperclipai/paperclip",
-  } }, history: [{ created_by: "COPY /provider-pack-transport/ /opt/paperclip-runner/ # buildkit" }] }));
+    "org.opencontainers.image.source": "https://github.com/pilibalaai/pilibala",
+  } }, history: [{ created_by: "COPY /provider-pack-transport/ /opt/pilibala-runner/ # buildkit" }] }));
   const manifest = Buffer.from(JSON.stringify({ schemaVersion: 2, mediaType: "application/vnd.oci.image.manifest.v1+json", config: { digest: `sha256:${hash(config)}`, size: config.length }, layers: [{ digest: `sha256:${hash(layer)}`, size: layer.length, mediaType: "application/vnd.oci.image.layer.v1.tar+gzip" }] }));
   const index = Buffer.from(JSON.stringify({ schemaVersion: 2, mediaType: "application/vnd.oci.image.index.v1+json", manifests: [{ digest: `sha256:${hash(manifest)}`, size: manifest.length, platform: { os: "linux", architecture: "amd64" } }] }));
   const routes = new Map<string, Buffer>([
     ["/token", Buffer.from(JSON.stringify({ token: "public-code-fixture-token" }))],
-    [`/v2/paperclipai/paperclip/manifests/sha-${selected.manifest.payload.runnerSourceRevision}`, index],
-    [`/v2/paperclipai/paperclip/manifests/sha256:${hash(manifest)}`, manifest],
-    [`/v2/paperclipai/paperclip/blobs/sha256:${hash(config)}`, config],
-    [`/v2/paperclipai/paperclip/blobs/sha256:${hash(layer)}`, layer],
+    [`/v2/pilibalaai/pilibala/manifests/sha-${selected.manifest.payload.runnerSourceRevision}`, index],
+    [`/v2/pilibalaai/pilibala/manifests/sha256:${hash(manifest)}`, manifest],
+    [`/v2/pilibalaai/pilibala/blobs/sha256:${hash(config)}`, config],
+    [`/v2/pilibalaai/pilibala/blobs/sha256:${hash(layer)}`, layer],
   ]);
   const requests: string[] = [];
   const stalled = new Set<string>();
@@ -144,7 +144,7 @@ async function fixture(options: { wrongCode?: boolean; unsafeOverlay?: boolean; 
     return { operations: [] };
   });
   return { root, selected, current, requests, routes, runner: { execute, syncIn }, targetPath: path.join(root, "target"),
-    temporary, layerRoute: `/v2/paperclipai/paperclip/blobs/sha256:${hash(layer)}`,
+    temporary, layerRoute: `/v2/pilibalaai/pilibala/blobs/sha256:${hash(layer)}`,
     stall: (route: string) => { stalled.add(route); },
     observed: (route: string) => new Promise<void>(done => { if (requests.includes(route)) done(); else observers.set(route, done); }),
   };
@@ -172,7 +172,7 @@ it("keeps a matching current pack on its existing path without registry or cache
   const input = await fixture();
   await upload(input, { root: input.selected.pack, sourceDigest: input.selected.manifest.digest });
   expect(input.requests).toEqual([]);
-  await expect(fs.stat(path.join(input.temporary, `paperclip-provider-pack-sources-${process.getuid?.()}`))).rejects.toMatchObject({ code: "ENOENT" });
+  await expect(fs.stat(path.join(input.temporary, `pilibala-provider-pack-sources-${process.getuid?.()}`))).rejects.toMatchObject({ code: "ENOENT" });
   expect(await fs.readFile(path.join(input.targetPath, "bin/tool"), "utf8")).toBe("retained provider code");
 });
 
@@ -203,7 +203,7 @@ it("rejects a changed controller code identity before looking up a historical so
 
 it("refuses an unknown historical source without clearing or falling back to the current image", async () => {
   const input = await fixture();
-  input.routes.delete(`/v2/paperclipai/paperclip/manifests/sha-${input.selected.manifest.payload.runnerSourceRevision}`);
+  input.routes.delete(`/v2/pilibalaai/pilibala/manifests/sha-${input.selected.manifest.payload.runnerSourceRevision}`);
   await expect(upload(input)).rejects.toThrow("runner_remote_provider_source_unavailable: HTTP 404");
   expect(input.runner.execute).not.toHaveBeenCalled();
   expect(input.runner.syncIn).not.toHaveBeenCalled();
@@ -250,7 +250,7 @@ it("cancels a stalled source body and removes only the unfinished private import
   await rejected;
   expect(input.runner.execute).not.toHaveBeenCalled();
   expect(input.runner.syncIn).not.toHaveBeenCalled();
-  const cache = path.join(input.temporary, `paperclip-provider-pack-sources-${process.getuid?.()}`);
+  const cache = path.join(input.temporary, `pilibala-provider-pack-sources-${process.getuid?.()}`);
   await vi.waitFor(async () => expect(await fs.readdir(cache)).toEqual([]));
 });
 
@@ -273,7 +273,7 @@ it("reuses a verified derived cache without registry reads and reconstructs it a
   const first = input.requests.length;
   await upload(input, { targetPath: input.targetPath + "-cached" });
   expect(input.requests).toHaveLength(first);
-  await fs.rm(path.join(input.temporary, `paperclip-provider-pack-sources-${process.getuid?.()}`), { recursive: true });
+  await fs.rm(path.join(input.temporary, `pilibala-provider-pack-sources-${process.getuid?.()}`), { recursive: true });
   await upload(input, { targetPath: input.targetPath + "-empty" });
   expect(input.requests.length).toBeGreaterThan(first);
   expect(await fs.readFile(path.join(input.targetPath + "-empty", "bin/tool"), "utf8")).toBe("retained provider code");
@@ -334,7 +334,7 @@ it("shares warm-cache verification while a stopped caller leaves another waiter 
 it("rejects a changed cached archive before any remote command or transfer", async () => {
   const input = await fixture();
   await upload(input);
-  const cache = path.join(input.temporary, `paperclip-provider-pack-sources-${process.getuid?.()}`);
+  const cache = path.join(input.temporary, `pilibala-provider-pack-sources-${process.getuid?.()}`);
   const publication = JSON.parse(await fs.readFile(path.join(cache, input.selected.manifest.digest.slice(7) + ".json"), "utf8"));
   await fs.appendFile(path.join(cache, publication.entry, "provider-pack.archives/overlay.tar.zst"), "changed");
   input.runner.execute.mockClear();
@@ -349,7 +349,7 @@ it("refuses an unsafe cache directory instead of following it", async () => {
   const input = await fixture();
   const outside = path.join(input.root, "outside");
   await fs.mkdir(outside);
-  await fs.symlink(outside, path.join(input.temporary, `paperclip-provider-pack-sources-${process.getuid?.()}`));
+  await fs.symlink(outside, path.join(input.temporary, `pilibala-provider-pack-sources-${process.getuid?.()}`));
   await expect(upload(input)).rejects.toThrow("runner_remote_provider_source_invalid");
   expect(await fs.readdir(outside)).toEqual([]);
   expect(input.requests).toEqual([]);

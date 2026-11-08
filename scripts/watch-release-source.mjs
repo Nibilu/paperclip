@@ -3,7 +3,7 @@ import { pathToFileURL } from "node:url";
 import { createActionsReader, readSourceVerification, SourceVerificationFailed, SourceVerificationDeferred } from "./cloud-source-verification.mjs";
 import { requestDeferredProducer, readMigratorPublication, sourceAdmissionJob, migratorAdmissionJob, createReleaseRerunner } from "./cloud-release-admission.mjs";
 
-const repository = "paperclipai/paperclip";
+const repository = "pilibalaai/pilibala";
 
 export function runnerWaits(jobs, now = Date.now()) {
   return jobs.filter(job => ["queued", "in_progress", "completed"].includes(job.status) &&

@@ -17,19 +17,19 @@ import {
   DeleteBucketCommand,
 } from "@aws-sdk/client-s3";
 
-const endpoint = process.env.PAPERCLIP_LOG_TEST_S3_ENDPOINT;
+const endpoint = process.env.PILIBALA_LOG_TEST_S3_ENDPOINT;
 afterEach(() => vi.unstubAllEnvs());
 describe.skipIf(!endpoint)("encrypted object provider traces (S3 integration)", () => {
   it.each(["environment", "existing key file"])(
     "restores both sidecars on a new host, preserves exact downloads, and removes ciphertext (%s)",
     async (source) => {
-      const bucket = `paperclip-trace-test-${randomUUID()}`;
+      const bucket = `pilibala-trace-test-${randomUUID()}`;
       const client = new S3Client({ endpoint, region: "us-east-1", forcePathStyle: true });
       await client.send(new CreateBucketCommand({ Bucket: bucket }));
       const directory = await fs.mkdtemp(path.join(tmpdir(), "object-trace-"));
       const keyFile = path.join(directory, "existing-vault.key");
-      vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", source === "environment" ? "a".repeat(64) : "");
-      vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY_FILE", keyFile);
+      vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", source === "environment" ? "a".repeat(64) : "");
+      vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY_FILE", keyFile);
       if (source === "existing key file")
         await fs.writeFile(keyFile, "a".repeat(64), { mode: 0o600 });
       const filename = `${randomUUID()}.ndjson`,
@@ -137,8 +137,8 @@ describe("encrypted object provider trace reads under load", () => {
 
   it("never sheds a finalization read while client reads are shed", async () => {
     const directory = await fs.mkdtemp(path.join(tmpdir(), "object-trace-load-"));
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "a".repeat(64));
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY_FILE", path.join(directory, "unused.key"));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "a".repeat(64));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY_FILE", path.join(directory, "unused.key"));
     try {
       const provider = memory(),
         store = createProviderTraceObjectStore(provider),

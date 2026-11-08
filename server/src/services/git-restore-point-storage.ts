@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
-import { executionWorkspaceRestorePoints, executionWorkspaces, type Db } from "@paperclipai/db";
+import { executionWorkspaceRestorePoints, executionWorkspaces, type Db } from "@pilibalaai/db";
 import type { StoredSecretVersionMaterial } from "../secrets/types.js";
 import type { StorageService } from "../storage/types.js";
 import {
@@ -20,7 +20,7 @@ import { notifyGitRestorePointWork } from "./git-restore-point-ledger.js";
 import { gitCacheCommand } from "./git-workspace-restoration.js";
 import { TASK_DIRECTORY_RETENTION_KEY } from "./isolated-task-directory-snapshot.js";
 
-export const GIT_RESTORE_POINT_SCHEMA = "paperclip.git-restore-point.v1";
+export const GIT_RESTORE_POINT_SCHEMA = "pilibala.git-restore-point.v1";
 const NAMESPACE = "git-restore-points";
 const MAX_RESTORE_POINT_BYTES = 512 * 1024 * 1024;
 
@@ -293,7 +293,7 @@ export async function applyGitRestorePointToWorktree(input: {
   const { payload } = await loadGitRestorePoint(input);
   const manifest = await importRestorePoint({ repositoryCwd: input.repositoryCwd, payload, signal: input.signal });
   if (input.preserveImportedHistory) {
-    for (const commit of manifest.preserved) await gitCacheCommand(input.repositoryCwd, ["update-ref", `refs/paperclip-preserved/${commit}`, commit], input.signal);
+    for (const commit of manifest.preserved) await gitCacheCommand(input.repositoryCwd, ["update-ref", `refs/pilibala-preserved/${commit}`, commit], input.signal);
   }
   if (!matches) await applyRestorePoint({ cwd: input.worktreePath, manifest, signal: input.signal });
 }

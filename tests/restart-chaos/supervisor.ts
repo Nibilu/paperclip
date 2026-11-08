@@ -1,5 +1,5 @@
 /**
- * Owns one isolated Paperclip control plane and injects K faults.
+ * Owns one isolated Pilibala control plane and injects K faults.
  *
  * Reuses the runner-e2e process code instead of copying it: the config seed
  * (server-config.ts), port reservation (ports.ts), environment isolation
@@ -24,8 +24,8 @@ import { setTimeout as delay } from "node:timers/promises";
 import { prepareControllerDatabase } from "../runner-e2e/controller-database.js";
 import { CONTROLLER_READY_BY_MS, replaceController, type ControllerOutageReceipt } from "../runner-e2e/controller-outage.js";
 import {
-  assertIsolatedServerEnvironment, buildPaperclipServerEnvironment, buildRunnerE2EProcessEnvironment,
-  resolvePaperclipRunnerBinaryForHarness,
+  assertIsolatedServerEnvironment, buildPilibalaServerEnvironment, buildRunnerE2EProcessEnvironment,
+  resolvePilibalaRunnerBinaryForHarness,
 } from "../runner-e2e/harness-env.js";
 import { reserveRunnerE2EServerPort } from "../runner-e2e/ports.js";
 import { createRunnerE2ETemporaryRoot, prepareRunnerE2EServerConfig } from "../runner-e2e/server-config.js";
@@ -58,14 +58,14 @@ const secret = () => randomBytes(48).toString("base64url");
 async function prepareProviderPath(repositoryRoot: string, temporaryRoot: string, inherited: string | undefined) {
   const toolBin = path.join(temporaryRoot, "provider-bin");
   await mkdir(toolBin, { recursive: true });
-  const runnerRequire = createRequire(path.join(repositoryRoot, "packages/paperclip-runner/package.json"));
+  const runnerRequire = createRequire(path.join(repositoryRoot, "packages/pilibala-runner/package.json"));
   const codexAcp = runnerRequire.resolve("@agentclientprotocol/codex-acp/package.json");
   const codexPackage = createRequire(codexAcp).resolve("@openai/codex/package.json");
   const manifest = JSON.parse(await readFile(codexPackage, "utf8")) as { bin?: string | Record<string, string> };
   const codexBin = typeof manifest.bin === "string" ? manifest.bin : manifest.bin?.codex;
   if (!codexBin) throw new Error("Pinned Codex executable not found");
   await symlink(path.resolve(path.dirname(codexPackage), codexBin), path.join(toolBin, "codex"));
-  return [toolBin, path.join(repositoryRoot, "packages/paperclip-runner/node_modules/.bin"), inherited].filter(Boolean).join(path.delimiter);
+  return [toolBin, path.join(repositoryRoot, "packages/pilibala-runner/node_modules/.bin"), inherited].filter(Boolean).join(path.delimiter);
 }
 
 export class ChaosSupervisor {
@@ -120,29 +120,29 @@ export class ChaosSupervisor {
     // Wrapper-owned Postgres: survives K1/K2/K4 like a managed database would.
     this.database = await prepareControllerDatabase(configPath, temporaryRoot);
     this.timeline.add("database_started", {});
-    const runnerBinary = resolvePaperclipRunnerBinaryForHarness(
+    const runnerBinary = resolvePilibalaRunnerBinaryForHarness(
       [{ profile: { generation: "native" } } as unknown as MatrixExecution], this.repositoryRoot);
     const source = {
       ...buildRunnerE2EProcessEnvironment(process.env, []),
       PATH: await prepareProviderPath(this.repositoryRoot, temporaryRoot, process.env.PATH),
-      PAPERCLIP_RUNNER_E2E_EXECUTION_IDS: "[]",
-      PAPERCLIP_RUNNER_BINARY: runnerBinary,
-      PAPERCLIP_VITE_CACHE_DIR: path.join(temporaryRoot, "vite-cache"),
+      PILIBALA_RUNNER_E2E_EXECUTION_IDS: "[]",
+      PILIBALA_RUNNER_BINARY: runnerBinary,
+      PILIBALA_VITE_CACHE_DIR: path.join(temporaryRoot, "vite-cache"),
     };
     const overrides = {
       NODE_ENV: "test", PORT: String(this.port), XDG_CACHE_HOME: path.join(temporaryRoot, "xdg-cache"),
-      PAPERCLIP_HOME: home, PAPERCLIP_CONFIG: configPath, PAPERCLIP_INSTANCE_ID: "default",
-      PAPERCLIP_AGENT_JWT_SECRET: secret(), PAPERCLIP_DECISION_SIGNING_SECRET: secret(),
-      PAPERCLIP_TOOL_ACTION_SIGNING_SECRET: secret(), BETTER_AUTH_SECRET: secret(),
-      PAPERCLIP_BIND: "loopback", PAPERCLIP_BIND_HOST: "127.0.0.1", PAPERCLIP_DEPLOYMENT_MODE: "local_trusted",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private", SERVE_UI: "true", PAPERCLIP_STORAGE_PROVIDER: "local_disk",
-      PAPERCLIP_STORAGE_LOCAL_DIR: path.join(temporaryRoot, "storage"), PAPERCLIP_SECRETS_PROVIDER: "local_encrypted",
-      PAPERCLIP_SECRETS_STRICT_MODE: "true", PAPERCLIP_DB_BACKUP_ENABLED: "false",
-      PAPERCLIP_DB_BACKUP_DIR: path.join(temporaryRoot, "backups"), PAPERCLIP_OPEN_ON_LISTEN: "false",
+      PILIBALA_HOME: home, PILIBALA_CONFIG: configPath, PILIBALA_INSTANCE_ID: "default",
+      PILIBALA_AGENT_JWT_SECRET: secret(), PILIBALA_DECISION_SIGNING_SECRET: secret(),
+      PILIBALA_TOOL_ACTION_SIGNING_SECRET: secret(), BETTER_AUTH_SECRET: secret(),
+      PILIBALA_BIND: "loopback", PILIBALA_BIND_HOST: "127.0.0.1", PILIBALA_DEPLOYMENT_MODE: "local_trusted",
+      PILIBALA_DEPLOYMENT_EXPOSURE: "private", SERVE_UI: "true", PILIBALA_STORAGE_PROVIDER: "local_disk",
+      PILIBALA_STORAGE_LOCAL_DIR: path.join(temporaryRoot, "storage"), PILIBALA_SECRETS_PROVIDER: "local_encrypted",
+      PILIBALA_SECRETS_STRICT_MODE: "true", PILIBALA_DB_BACKUP_ENABLED: "false",
+      PILIBALA_DB_BACKUP_DIR: path.join(temporaryRoot, "backups"), PILIBALA_OPEN_ON_LISTEN: "false",
       ...extraEnvironment,
     };
-    const environment = buildPaperclipServerEnvironment(source, overrides);
-    assertIsolatedServerEnvironment(environment, { temporaryRoot, paperclipHome: home, configPath });
+    const environment = buildPilibalaServerEnvironment(source, overrides);
+    assertIsolatedServerEnvironment(environment, { temporaryRoot, pilibalaHome: home, configPath });
     this.environment = Object.fromEntries(Object.entries(environment).filter((entry): entry is [string, string] => entry[1] !== undefined));
     await prepareSourceServerDependencies(this.repositoryRoot, this.environment, false);
     const child = await this.spawnServer();
@@ -152,7 +152,7 @@ export class ChaosSupervisor {
   }
 
   private async spawnServer(): Promise<ChildProcess> {
-    if (this.shuttingDown) throw new Error("Refusing to start Paperclip during harness shutdown");
+    if (this.shuttingDown) throw new Error("Refusing to start Pilibala during harness shutdown");
     const entry = path.join(this.repositoryRoot, "tests/runner-e2e/server-entry.ts");
     const child = spawn(process.execPath, runnerE2ETypeScriptProcessArgs(this.repositoryRoot, entry, ["onboard", "--yes", "--run"]),
       { cwd: this.repositoryRoot, env: this.environment, stdio: ["ignore", "pipe", "pipe"], detached: runnerE2EServerDetached });
@@ -186,7 +186,7 @@ export class ChaosSupervisor {
     const deadline = Date.now() + HEALTH_TIMEOUT_MS;
     while (Date.now() < deadline) {
       if (this.shuttingDown) throw new Error("Harness shutdown interrupted startup");
-      if (this.exited(child)) throw new Error(`Paperclip server exited during startup (code=${child.exitCode} signal=${child.signalCode})`);
+      if (this.exited(child)) throw new Error(`Pilibala server exited during startup (code=${child.exitCode} signal=${child.signalCode})`);
       if (phases) {
         const phase = await this.readPhase();
         if (phase !== phases[phases.length - 1]?.phase) phases.push({ phase, at: Date.now() });
@@ -198,7 +198,7 @@ export class ChaosSupervisor {
       } catch { /* still booting */ }
       await delay(250);
     }
-    throw new Error(`Paperclip server did not become healthy within ${HEALTH_TIMEOUT_MS}ms`);
+    throw new Error(`Pilibala server did not become healthy within ${HEALTH_TIMEOUT_MS}ms`);
   }
 
   private async waitForHealthToStop(): Promise<void> {
@@ -208,7 +208,7 @@ export class ChaosSupervisor {
       catch { return; }
       await delay(100);
     }
-    throw new Error("Old Paperclip server stayed healthy after stop");
+    throw new Error("Old Pilibala server stayed healthy after stop");
   }
 
   /** Records starting → recovering → ready from /api/ready (liveness gate). */
@@ -226,7 +226,7 @@ export class ChaosSupervisor {
       }
       await delay(250);
     }
-    throw new Error(`Paperclip did not report ready within ${READY_TIMEOUT_MS}ms`);
+    throw new Error(`Pilibala did not report ready within ${READY_TIMEOUT_MS}ms`);
   }
 
   /** Faults are serialized: one control plane, one outage at a time. */
@@ -253,7 +253,7 @@ export class ChaosSupervisor {
     this.timeline.add("fault_started", { faultId: receipt.faultId, fault: kind, signal: receipt.signal, loadAvg1m: receipt.loadAvg1m, holdMs, requestedBy, previousPid: previous?.pid });
     this.log.write(`\n[restart-chaos] ${receipt.faultId} ${kind} ${receipt.signal} hold=${holdMs}ms requestedBy=${requestedBy} at ${new Date().toISOString()}\n`);
     try {
-      if (!previous?.pid || this.exited(previous)) throw new Error("No live Paperclip server to fault");
+      if (!previous?.pid || this.exited(previous)) throw new Error("No live Pilibala server to fault");
       let outage: ControllerOutageReceipt | undefined;
       outage = await replaceController({
         requestId: `chaos-${receipt.faultId}-${requestedBy}`,
@@ -299,7 +299,7 @@ export class ChaosSupervisor {
     const deadline = Date.now() + READY_TIMEOUT_MS;
     while (Date.now() < deadline) {
       if (this.shuttingDown) throw new Error("Harness shutdown interrupted the crash loop");
-      if (this.exited(child)) throw new Error(`Paperclip server exited during the crash loop (code=${child.exitCode} signal=${child.signalCode})`);
+      if (this.exited(child)) throw new Error(`Pilibala server exited during the crash loop (code=${child.exitCode} signal=${child.signalCode})`);
       const phase = await this.readPhase();
       if (phase !== phases[phases.length - 1]?.phase) phases.push({ phase, at: Date.now() });
       if (crashLoopShouldFire(target, phase)) return phase;

@@ -1,4 +1,4 @@
-import { closeRegisteredClients, createDb } from "@paperclipai/db";
+import { closeRegisteredClients, createDb } from "@pilibalaai/db";
 import { loadConfig } from "../config.js";
 import { cloudRuntimeConfigService } from "../services/cloud-runtime-config.js";
 import { setCloudRuntimeConfigSnapshot } from "../services/cloud-runtime-config-snapshot.js";
@@ -8,11 +8,11 @@ import { hasLocalNativeHarnessObligations, prestageNativeHarnessBackups } from "
 import { prestageNativeControllers } from "../services/native-runtime/native-controller-migration.js";
 import { initializeNativeHarnessPrestageKey, nativeHarnessPrestageDatabaseUrl } from "./native-harness-prestage-runtime.js";
 
-if (process.env.PAPERCLIP_NATIVE_HARNESS_PRESTAGE !== "true") throw new Error("Explicit harness pre-copy mode is required");
+if (process.env.PILIBALA_NATIVE_HARNESS_PRESTAGE !== "true") throw new Error("Explicit harness pre-copy mode is required");
 const args = process.argv.slice(2);
 if (args.length > 1 || args.some(arg => arg !== "--controllers-only")) throw new Error("Unknown native pre-copy mode");
 const controllersOnly = args[0] === "--controllers-only";
-const schema = controllersOnly ? "paperclip.native-controller-prestage.v1" : "paperclip.native-harness-prestage.v1";
+const schema = controllersOnly ? "pilibala.native-controller-prestage.v1" : "pilibala.native-harness-prestage.v1";
 const sourceUrl = process.env.DATABASE_URL;
 if (!sourceUrl) throw new Error("Harness pre-copy requires an explicit database");
 const url = nativeHarnessPrestageDatabaseUrl(sourceUrl);

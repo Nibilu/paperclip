@@ -24,12 +24,12 @@ import {
   nativeRunResults,
   statusDecisionEffects,
   workAssessments,
-} from "@paperclipai/db";
-import { renderPaperclipWakePrompt } from "@paperclipai/adapter-utils/server-utils";
+} from "@pilibalaai/db";
+import { renderPilibalaWakePrompt } from "@pilibalaai/adapter-utils/server-utils";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import {
   attestReviewedExternalChatRun,
-  buildPaperclipWakePayload,
+  buildPilibalaWakePayload,
 } from "../services/heartbeat.js";
 import {
   listAuthorizedChatAttachments,
@@ -88,7 +88,7 @@ describe.each(["slack", "discord"] as const)("reviewed %s execution binding", (p
         id: agentId,
         companyId,
         name: "Chat runner",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         adapterConfig: { provider: "codex" },
         status: "active",
       });
@@ -224,7 +224,7 @@ describe.each(["slack", "discord"] as const)("reviewed %s execution binding", (p
         companyId,
         endpointId,
         principalId,
-        paperclipUserId: userId,
+        pilibalaUserId: userId,
         status: "linked",
       });
     await db
@@ -341,13 +341,13 @@ describe.each(["slack", "discord"] as const)("reviewed %s execution binding", (p
       checkoutRunId: null,
       executionRunId: runId,
     });
-    const wake = await buildPaperclipWakePayload({
+    const wake = await buildPilibalaWakePayload({
       db,
       companyId,
       agentId,
       contextSnapshot: {
         ...context,
-        paperclipExternalChatExecutionBound: true,
+        pilibalaExternalChatExecutionBound: true,
       },
     });
     expect(wake).toMatchObject({
@@ -355,7 +355,7 @@ describe.each(["slack", "discord"] as const)("reviewed %s execution binding", (p
       externalChatExecutionBound: true,
       externalChatProvider: provider,
     });
-    const prompt = renderPaperclipWakePrompt(wake);
+    const prompt = renderPilibalaWakePrompt(wake);
     expect(prompt).toContain("not a checkout, approval");
     expect(prompt).toContain("task remains in review");
     expect(prompt).not.toContain("checked out the issue for this run");
@@ -370,8 +370,8 @@ describe.each(["slack", "discord"] as const)("reviewed %s execution binding", (p
       assigneeAgentId: agentId,
       contextSnapshot: {
         ...context,
-        paperclipHarnessCheckedOut: true,
-        paperclipExternalChatExecutionBound: true,
+        pilibalaHarnessCheckedOut: true,
+        pilibalaExternalChatExecutionBound: true,
       },
       reviewAttention: { state: "stalled", paths: [], reason: "Review path consumed" },
       existingWake: false,
@@ -393,8 +393,8 @@ describe.each(["slack", "discord"] as const)("reviewed %s execution binding", (p
   it("reauthorizes a review recovery from its retained message batch without approving the task", async () => {
     const [before] = await db.select().from(issues).where(eq(issues.id, issueId));
     await withReviewRecovery(async (recovery) => {
-      expect(recovery).not.toHaveProperty("paperclipHarnessCheckedOut");
-      expect(recovery).not.toHaveProperty("paperclipExternalChatExecutionBound");
+      expect(recovery).not.toHaveProperty("pilibalaHarnessCheckedOut");
+      expect(recovery).not.toHaveProperty("pilibalaExternalChatExecutionBound");
       await expect(attest(recovery)).resolves.toBe(true);
       expect((await db.select().from(issues).where(eq(issues.id, issueId)))[0]).toEqual(before);
       expect((await db.select().from(issueThreadInteractions)
@@ -446,7 +446,7 @@ describe.each(["slack", "discord"] as const)("reviewed %s execution binding", (p
       .where(eq(issues.id, issueId));
     try {
       await expect(
-        attest({ ...context, paperclipExternalChatExecutionBound: true }),
+        attest({ ...context, pilibalaExternalChatExecutionBound: true }),
       ).resolves.toBe(false);
     } finally {
       await db
@@ -461,7 +461,7 @@ describe.each(["slack", "discord"] as const)("reviewed %s execution binding", (p
       attest({
         ...context,
         source: "chat:telegram",
-        paperclipExternalChatExecutionBound: true,
+        pilibalaExternalChatExecutionBound: true,
       }),
     ).resolves.toBe(false);
     await db
@@ -599,7 +599,7 @@ describe.each(["slack", "discord"] as const)("reviewed %s execution binding", (p
   async function finalizingPredecessor() {
     const predecessorRunId = randomUUID(), contractId = randomUUID(), resultId = randomUUID(), assessmentId = randomUUID();
     await db.insert(completionContracts).values({ id: contractId, companyId, issueId, revision: ++predecessorContractRevision,
-      schemaVersion: "paperclip.completion-contract.v1", policyVersion: "test", risk: "standard",
+      schemaVersion: "pilibala.completion-contract.v1", policyVersion: "test", risk: "standard",
       completionAuthority: "server_arbiter", incompleteCriteriaPolicy: "preserve_non_terminal",
       contractJson: {}, canonicalSha256: contractId, createdByActorType: "system", createdByActorId: "test" });
     await db.insert(heartbeatRuns).values({ id: predecessorRunId, companyId, agentId, status: "running",
@@ -701,7 +701,7 @@ describe.each(["slack", "discord"] as const)("reviewed %s execution binding", (p
           try {
             return await authorize(...args);
           } catch (error) {
-            expect(error).toMatchObject({ message: "paperclip_runner_chat_attachment_binding_denied" });
+            expect(error).toMatchObject({ message: "pilibala_runner_chat_attachment_binding_denied" });
             await db.update(chatDeliveries)
               .set({ state: "processed", processedAt: new Date() })
               .where(eq(chatDeliveries.id, deliveryId));
@@ -766,13 +766,13 @@ describe.each(["slack", "discord"] as const)("reviewed %s execution binding", (p
 
   it("binds closed historical/current readers without pretending checkout occurred", async () => {
     expect(await attest()).toBe(true);
-    const wake = await buildPaperclipWakePayload({
+    const wake = await buildPilibalaWakePayload({
       db,
       companyId,
       agentId,
       contextSnapshot: {
         ...context,
-        paperclipExternalChatExecutionBound: true,
+        pilibalaExternalChatExecutionBound: true,
       },
     });
     await db
@@ -780,8 +780,8 @@ describe.each(["slack", "discord"] as const)("reviewed %s execution binding", (p
       .set({
         contextSnapshot: {
           ...context,
-          paperclipExternalChatExecutionBound: true,
-          paperclipWake: { ...wake, fallbackFetchNeeded: true },
+          pilibalaExternalChatExecutionBound: true,
+          pilibalaWake: { ...wake, fallbackFetchNeeded: true },
         },
       })
       .where(eq(heartbeatRuns.id, runId));

@@ -1,12 +1,12 @@
 # Native-controller recovery during webserver upgrades
 
 Date: 2026-10-30. Status: implementation delivered; final qualification is tracked
-in [PR #18343](https://github.com/paperclipai/paperclip/pull/18343).
+in [PR #18343](https://github.com/pilibalaai/pilibala/pull/18343).
 Source inspected: `0c70cedce9a803bdc201324528abb35e423e7cd0` in the current task worktree.
 
 ## Goal and finish line
 
-Make native controller state independent of the main Paperclip webserver's disk,
+Make native controller state independent of the main Pilibala webserver's disk,
 as one prerequisite for zero-downtime webserver deployments. A person starts a
 task, the webserver is replaced, and the same remote execution continues. After
 completion, another replacement can continue the retained session without the
@@ -40,9 +40,9 @@ has since landed. Build on it instead of introducing another checkpoint store.
 | Existing capability | Owner / evidence inspected |
 | --- | --- |
 | Encrypted, company/task/run-bound PRP checkpoints in Postgres | [`native-runner-checkpoint.ts`](../../server/src/services/native-runtime/native-runner-checkpoint.ts), [`native_runner_checkpoints`](../../packages/db/src/schema/native_runner_checkpoints.ts); landed in `09ad9adce2` / PR #17439 |
-| Opaque checkpoint codec, restore, authenticated replay cursor and persistence-before-effect barriers | [`durable-prp-control-plane.ts`](../../packages/paperclip-runner/src/control-plane/durable-prp-control-plane.ts) |
+| Opaque checkpoint codec, restore, authenticated replay cursor and persistence-before-effect barriers | [`durable-prp-control-plane.ts`](../../packages/pilibala-runner/src/control-plane/durable-prp-control-plane.ts) |
 | Expiring ownership, controller generations, stale-writer fencing and isolated renewal/checkpoint pools | [`native-restart-recovery.ts`](../../server/src/services/native-runtime/native-restart-recovery.ts), [`native-execution-lease.ts`](../../server/src/services/native-runtime/native-execution-lease.ts) |
-| Active remote reattachment from DB state and the admitted Runner artifact | [`native-session-executor.ts`](../../server/src/services/native-runtime/native-session-executor.ts), `executePaperclipNativeSessionWithinScope` |
+| Active remote reattachment from DB state and the admitted Runner artifact | [`native-session-executor.ts`](../../server/src/services/native-runtime/native-session-executor.ts), `executePilibalaNativeSessionWithinScope` |
 | Bounded database discovery of prior task/session checkpoints | [`native-session-resume.ts`](../../server/src/services/native-runtime/native-session-resume.ts) |
 | Empty-controller-directory, receipt-recovery, concurrency, retention and SQL-cost tests | [`native-runner-restart-recovery.integration.test.ts`](../../server/src/services/native-runtime/native-runner-restart-recovery.integration.test.ts), [continuity runbook](../testing-native-remote-continuity.md) |
 | Read-only active-run upgrade eligibility | [`heartbeat/upgrade-readiness.ts`](../../server/src/services/heartbeat/upgrade-readiness.ts); landed in `567c043b17` / PR #18037 |
@@ -63,7 +63,7 @@ changes; do not duplicate its rollout or configuration work.
    binding. Extend that approach to ordinary continuation without skipping the
    existing prior-owner, session, configuration, and suspended-state checks.
 2. **Warm supervisor state has its own local persistence path.**
-   `persistWarmNativeCheckpoint` writes `paperclip.native-session-supervisor.v1`
+   `persistWarmNativeCheckpoint` writes `pilibala.native-session-supervisor.v1`
    with the snapshot, configuration digest, and process-configuration digest;
    `loadWarmNativeCheckpoint` and warm process reuse read that file. The separate
    Postgres PRP restore writes only `control-plane-state.json`. Existing saved
@@ -140,13 +140,13 @@ existing encrypted authority; persist logical resource identities, not secret
 values or host paths. Any newly sensitive recovery material uses the existing
 encryption provider and remains excluded from public run projections.
 
-`PaperclipControlPlanePort.checkpointSession` already persists the snapshot before
+`PilibalaControlPlanePort.checkpointSession` already persists the snapshot before
 the local supervisor callback. Add the envelope to that same transaction and
 update; do not introduce a second snapshot writer. Compute stable compatibility
 inputs once per admission/attachment, preserve unrelated profile fields, and
 recheck durable ownership after lock waits with the established lock ordering.
 Keep legitimate post-result suspension/cleanup checkpoints permitted. The generic
-Runner persistence port must not learn Paperclip database fields. Remote local
+Runner persistence port must not learn Pilibala database fields. Remote local
 files become projections; local-only consumers retain authoritative files.
 
 The recovery owner resolves, validates, materializes and attaches through existing
@@ -370,7 +370,7 @@ attempts when adding later passes. The rollback floor must include the idle-goal
 reader fix; an envelope-only reader is insufficient.
 
 Implementation is underway on `codex/native-controller-disk-independent-recovery`.
-The related Cloud policy work merged as paperclip-cloud PR #1048; it retains
+The related Cloud policy work merged as pilibala-cloud PR #1048; it retains
 compatibility checks and drain fallback and does not implement this component.
 Verified locally: metadata/source-selection/lock-wait checks (21 tests), readiness
 and recovery scheduling (55 tests), durable discovery/import/inventory (7 tests),
@@ -402,7 +402,7 @@ measurements are recorded below. Database cost acceptance, distinct-release appl
 compatible rollback, and native Daytona qualification remain open. The published Daytona qualification image was independently resolved from successful
 workflow 40709784515 to `sha256:b38ed051d00fed409092d354eea9ae1b01fb232bcb7d5a187ed763382dda2d0b`
 (source `8fe5d5defcdfb55a1b9049a801cfa5498629cebc`). The exact Linux Runner was
-extracted from that image. The local attempt failed during the environment probe before agent creation. A read-only lookup independently returned `DaytonaAuthenticationError: Invalid credentials`. The private database and cleanup obligation remain preserved. The protected single-cell workflow [41093316372](https://github.com/paperclipai/paperclip/actions/runs/41093316372), targeting `512cc6d6dc`, was cancelled during image/artifact builds before provider allocation so acceptance can use the rebased candidate. Its protected secret is separate from the invalid local fixture.
+extracted from that image. The local attempt failed during the environment probe before agent creation. A read-only lookup independently returned `DaytonaAuthenticationError: Invalid credentials`. The private database and cleanup obligation remain preserved. The protected single-cell workflow [41093316372](https://github.com/pilibalaai/pilibala/actions/runs/41093316372), targeting `512cc6d6dc`, was cancelled during image/artifact builds before provider allocation so acceptance can use the rebased candidate. Its protected secret is separate from the invalid local fixture.
 No production deployment or complete zero-downtime acceptance is claimed.
 
 Failures retained in the implementation record: sandbox listener denial and host
@@ -421,7 +421,7 @@ uses the existing admission snapshot rebinder, which its warm-only predecessor
 omitted. The first benchmark attempts lacked ES-module setup and the observer's
 pg_stat_statements extension; the isolated Linux pilot needed its native Sharp
 dependency. No database-load acceptance claim has been made from failed attempts.
-There is no Paperclip issue bound to this local chat; this versioned source plan
+There is no Pilibala issue bound to this local chat; this versioned source plan
 is the handoff, rather than an upload to an unrelated company or issue.
 
 The remaining native qualification and compatibility cells require reproducible
@@ -490,7 +490,7 @@ confirmed the original restricted run's `listen EPERM` cause.
 
 ### Rebased review and qualification follow-up
 
-Draft implementation: https://github.com/paperclipai/paperclip/pull/18343.
+Draft implementation: https://github.com/pilibalaai/pilibala/pull/18343.
 At rebased head `3aa90fbf0b5553ffa66a9cdc0fb153f348b56d75`, all 66 focused
 persistence/discovery cases and full `pnpm -r typecheck` passed. The PR's general
 server shard found 190 executor unit failures where synthetic IDs and a partial
@@ -558,7 +558,7 @@ duration bounds. Observer traffic contributes to the measured database cost;
 short unsampled waits and full HTTP latency remain outside that measurement.
 
 Live qualification uses protected campaign
-[41108162900](https://github.com/paperclipai/paperclip/actions/runs/41108162900).
+[41108162900](https://github.com/pilibalaai/pilibala/actions/runs/41108162900).
 Its initial catalog timeout occurred before provider allocation after Azure
 reported a dependency-cache egress limit. A scoped exact-entry cache invalidation
 and targeted retry forced a successful cold install. Only this campaign's
@@ -567,8 +567,8 @@ identity, source admission and provider authorization gates remain in force.
 
 Provider-free package builds pin first reader `59ff89a18fe1312b5f0bb908439bbdb1237b0252`
 and candidate `a0ef3ce7493c8bb76c4766ff007e8a390118d145` in runs
-[41108342354](https://github.com/paperclipai/paperclip/actions/runs/41108342354) and
-[41108352138](https://github.com/paperclipai/paperclip/actions/runs/41108352138).
+[41108342354](https://github.com/pilibalaai/pilibala/actions/runs/41108342354) and
+[41108352138](https://github.com/pilibalaai/pilibala/actions/runs/41108352138).
 The source-process crash probe independently observed B waiting for A's live
 lease and claiming the same execution after natural expiry, with no lease edits.
 Its initial all-turns/single-provider-process assertion also crossed completion
@@ -578,6 +578,6 @@ phase-specific observations distinguish that boundary from same-contract rollbac
 Earlier strict failures remain retained until that distinction is demonstrated.
 
 The final live, reader, installed-artifact, cleanup and CI outcomes are maintained
-in [PR #18343](https://github.com/paperclipai/paperclip/pull/18343), with their exact
+in [PR #18343](https://github.com/pilibalaai/pilibala/pull/18343), with their exact
 revisions and evidence limits. Campaign registration, successful artifact builds
 and this plan entry do not themselves certify that a live journey passed.

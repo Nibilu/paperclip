@@ -1,5 +1,5 @@
 import type { ConnectionManagementContext } from "../connection-management.js";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 export type ActorInfo = {
   managementContext?: ConnectionManagementContext;

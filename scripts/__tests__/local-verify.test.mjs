@@ -37,7 +37,7 @@ function fixture(t) {
   write("package.json", JSON.stringify({ name: "local-verification-fixture", private: true, type: "module", packageManager: "pnpm@9.15.4",
     scripts: { verify: "node scripts/local-verify.mjs", "test:run": "vitest run" } }));
   write("vitest.config.mjs", 'export default {test:{projects:["ui","cli"]}};');
-  for (const [directory, name] of [["ui", "@paperclipai/ui"], ["cli", "paperclipai"]]) {
+  for (const [directory, name] of [["ui", "@pilibalaai/ui"], ["cli", "pilibalaai"]]) {
     write(`${directory}/vitest.config.mjs`, `export default {test:{name:${JSON.stringify(name)},include:["src/**/*.test.ts"]}};`);
   }
   write("ui/src/leaf.ts", "export const value = 1;\n");
@@ -53,8 +53,8 @@ function fixture(t) {
   const env = localEnvironment({ ...process.env, FORCE_COLOR: "0" });
   delete env.NODE_TEST_CONTEXT;
   delete env.DATABASE_URL;
-  delete env.PAPERCLIP_TEST_POSTGRES_ADMIN_URL;
-  for (const name of Object.keys(env)) if (/^PAPERCLIP_.*_TEST_DATABASE_URL$/.test(name)) delete env[name];
+  delete env.PILIBALA_TEST_POSTGRES_ADMIN_URL;
+  for (const name of Object.keys(env)) if (/^PILIBALA_.*_TEST_DATABASE_URL$/.test(name)) delete env[name];
   const run = (args = [], extra = {}) => {
     const result = spawnSync(process.execPath, [path.join(root, "scripts/local-verify.mjs"), "--base", base, ...args], {
       cwd: root, env: { ...env, ...extra }, encoding: "utf8", timeout: 120_000, maxBuffer: 8 * 1024 * 1024,
@@ -113,7 +113,7 @@ test("real selected execution reuses passes and invalidates source, environment,
   assert.equal(failedAgain.status, 1, failedAgain.text);
   assert.doesNotMatch(failedAgain.text, /reusing a passing local result/);
   rmSync(path.join(f.root, "ui/src/new.test.ts"));
-  f.write("ui/vitest.config.mjs", 'export default {test:{name:"@paperclipai/ui",include:["src/**/*.test.ts"],testTimeout:10000}};');
+  f.write("ui/vitest.config.mjs", 'export default {test:{name:"@pilibalaai/ui",include:["src/**/*.test.ts"],testTimeout:10000}};');
   const config = f.run();
   assert.equal(config.status, 2, config.text);
   assert.match(config.text, /Broader verification required/);
@@ -163,7 +163,7 @@ test("dependency installation, ignored dotenv and child environment enter the ca
   f.write("pnpm-lock.yaml", "lockfileVersion: '9.0'\n");
   assert.notEqual(snapshot(f.root, f.env).hash, before);
   assert.notEqual(snapshot(f.root, { ...f.env, NEW_TEST_FLAG: "1" }).hash, before);
-  assert.equal(snapshot(f.root, { ...f.env, PAPERCLIP_TEST_POSTGRES_ADMIN_URL: "postgres://external.invalid/test" }).cacheable, false);
+  assert.equal(snapshot(f.root, { ...f.env, PILIBALA_TEST_POSTGRES_ADMIN_URL: "postgres://external.invalid/test" }).cacheable, false);
 });
 
 test("installed dependency code changes invalidate a real passing result", { timeout: 120_000 }, t => {
@@ -202,7 +202,7 @@ test("local chat selection schedules exactly six single-worker partitions", { ti
   const f = fixture(t);
   f.write("ui/src/leaf.ts", "export const value = 1;\n");
   f.write("vitest.config.mjs", 'export default {test:{projects:["server"]}};');
-  f.write("server/vitest.config.mjs", 'export default {test:{name:"@paperclipai/server",include:["src/**/*.test.ts"]}};');
+  f.write("server/vitest.config.mjs", 'export default {test:{name:"@pilibalaai/server",include:["src/**/*.test.ts"]}};');
   f.write("server/src/leaf.ts", "export const value = 1;\n");
   f.write("server/src/__tests__/chat-channels.integration.test.ts", 'import {test,expect} from "vitest"; import {value} from "../leaf"; test("chat selection",()=>expect(value).toBeGreaterThan(0));');
   f.write(".github/ci-task-matrix.json", JSON.stringify({ general_tests: [
@@ -220,8 +220,8 @@ test("local chat selection schedules exactly six single-worker partitions", { ti
 });
 
 for (const [group, task, primary, directory] of [
-  ["general-workspaces-b", "ci:workspaces-b", "@paperclipai/shared", "packages/shared"],
-  ["general-workspaces-c", "ci:db", "@paperclipai/db", "packages/db"],
+  ["general-workspaces-b", "ci:workspaces-b", "@pilibalaai/shared", "packages/shared"],
+  ["general-workspaces-c", "ci:db", "@pilibalaai/db", "packages/db"],
 ]) test(`${group} discovers and executes reusable and fresh selected partitions`, { timeout: 180_000 }, t => {
   const f = fixture(t);
   const inventory = JSON.parse(execFileSync(process.execPath, [path.join(f.root, "scripts/run-vitest-stable.mjs"),
@@ -305,7 +305,7 @@ test("local server selection retains native suites and serialized ownership unde
   const f = fixture(t);
   f.write("ui/src/leaf.ts", "export const value = 1;\n");
   f.write("vitest.config.mjs", 'export default {test:{projects:["server"]}};');
-  f.write("server/vitest.config.mjs", 'export default {test:{name:"@paperclipai/server",include:["src/**/*.test.ts"]}};');
+  f.write("server/vitest.config.mjs", 'export default {test:{name:"@pilibalaai/server",include:["src/**/*.test.ts"]}};');
   f.write("server/src/leaf.ts", "export const value = 1;\n");
   const native = "server/src/services/native-runtime/plugin-runner-probe.test.ts";
   const serialized = "server/src/__tests__/authz-owner.test.ts";
@@ -323,8 +323,8 @@ test("local server selection retains native suites and serialized ownership unde
   assert.equal(result.status, 0, result.text);
   assert.equal((result.text.match(/Test Files\s+1 passed/g) ?? []).length, 2);
   const record = JSON.parse(readFileSync(path.join(f.root, ".turbo/local-verify/last-run.json"), "utf8"));
-  assert.deepEqual(record.plan.manifest.lanes["general-server-without-chat"].shards[0]["@paperclipai/server"], [native]);
-  assert.deepEqual(record.plan.manifest.lanes.serialized.shards[0]["@paperclipai/server"], [serialized]);
+  assert.deepEqual(record.plan.manifest.lanes["general-server-without-chat"].shards[0]["@pilibalaai/server"], [native]);
+  assert.deepEqual(record.plan.manifest.lanes.serialized.shards[0]["@pilibalaai/server"], [serialized]);
 });
 
 test("source mutation and interruption do not publish reusable passes", { timeout: 120_000 }, async t => {

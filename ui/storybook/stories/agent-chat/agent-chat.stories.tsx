@@ -13,7 +13,7 @@ const meta = {
           "Production Layout, AgentChat, IssueDetail, transcript and side-panel components run against in-memory routes. The landing page is a local ChatEntryLanding composition; first-use/default-agent behavior is not production acceptance. Sends append locally. Some unhandled API paths return empty fixture data, so this suite does not verify API contracts or primary-agent preference behavior.",
       },
     },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "agent-chat/discovery",
         "agent-chat/history",
@@ -110,7 +110,7 @@ export const Coordinator: Story = {
   name: "18 · Coordinator agent selector",
   args: { coordinator: true, scenario: "returning" },
   parameters: {
-    paperclip: {
+    pilibala: {
       capabilities: ["agent-chat/discovery"],
       status: "current",
       implementation: "production",

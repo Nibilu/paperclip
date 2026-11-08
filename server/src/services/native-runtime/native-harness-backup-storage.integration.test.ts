@@ -4,7 +4,7 @@ import { chmod, mkdir, readFile, rename, stat, symlink, readlink, writeFile } fr
 import { join } from "node:path";
 import { and, eq, inArray } from "drizzle-orm";
 import { agentTaskSessions, environmentLeases, heartbeatRuns, issues, nativeHarnessBackups, nativeRunFinalizations, nativeRunResults,
-  nativeProviderArtifacts, nativeProviderArtifactReferences, nativeRunnerCheckpoints } from "@paperclipai/db";
+  nativeProviderArtifacts, nativeProviderArtifactReferences, nativeRunnerCheckpoints } from "@pilibalaai/db";
 import { afterEach, expect, it, vi } from "vitest";
 import { describeEmbeddedPostgres, nativeRestartFixture } from "../../__tests__/helpers/native-restart.js";
 import { createLocalDiskStorageProvider } from "../../storage/local-disk-provider.js";
@@ -17,7 +17,7 @@ import { createNativeHarnessBackupStamp, verifyNativeHarnessBackupStamp, verifyN
 import { hasLocalNativeHarnessObligations, migrateNativeHarnessBackups, prestageNativeHarnessBackups } from "./native-harness-backup-migration.js";
 import { nativeHarnessBackupExpirationService } from "./native-harness-backup-expiration.js";
 import { legacyControllerBootId } from "../legacy-controller-lease.js";
-import { DurablePrpControlPlane, captureLegacyDurablePrpCheckpoint } from "../../vendor/paperclip-runner/index.js";
+import { DurablePrpControlPlane, captureLegacyDurablePrpCheckpoint } from "../../vendor/pilibala-runner/index.js";
 import { loadNativeRunnerCheckpoint, nativeRunnerCheckpointWriter } from "./native-runner-checkpoint.js";
 import { restoreNativeProviderArtifacts } from "./native-provider-artifacts.js";
 import * as backupArchive from "./native-harness-backup-archive.js";
@@ -42,7 +42,7 @@ describeEmbeddedPostgres("durable native provider backups", () => {
     vi.unstubAllEnvs();
   });
   async function fixture(provider = "codex") {
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "51".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "51".repeat(32));
     const f = await environment.seedRun(randomUUID());
     const { companyId, runtimeRoot, successor } = environment.current;
     await f.db.update(nativeRunFinalizations).set({ controllerBootId: successor.bootId, controllerGeneration: 1,
@@ -55,7 +55,7 @@ describeEmbeddedPostgres("durable native provider backups", () => {
     const identity = { normalizedSessionId: randomUUID(), providerSessionId: randomUUID(), provider };
     await writeFile(join(root, provider, "sessions", "history.json"), JSON.stringify(identity), { mode: 0o600 });
     await writeFile(join(root, "runner", "runner-state.json"), JSON.stringify({ runId: f.runId, lifecycle: "suspended" }), { mode: 0o600 });
-    const manifest = JSON.stringify({ schema: "paperclip.native-harness-backup.v1", ...identity, directories: [provider, "runner"] });
+    const manifest = JSON.stringify({ schema: "pilibala.native-harness-backup.v1", ...identity, directories: [provider, "runner"] });
     await writeFile(join(root, "manifest.json"), manifest, { mode: 0o600 });
     await chmod(join(root, provider, "sessions"), 0o500);
     const sessionScopeId = randomUUID(), scopeDigest = createHash("sha256").update(sessionScopeId).digest("hex");
@@ -84,7 +84,7 @@ describeEmbeddedPostgres("durable native provider backups", () => {
   }
   async function offlineFixtures(count: number) {
     const base = join(environment.current.runtimeRoot, randomUUID()); ownedHomes.push(base); await mkdir(base);
-    vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", base);
+    vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", base);
     const fixtures = [];
     for (let i = 0; i < count; i++) fixtures.push(await offlineFixture(base));
     const runs = await fixtures[0].db.select({ id: heartbeatRuns.id, issueId: heartbeatRuns.nativeIssueId }).from(heartbeatRuns)
@@ -127,7 +127,7 @@ describeEmbeddedPostgres("durable native provider backups", () => {
       await new Promise<void>(resolve => setImmediate(resolve)); expect(settled).toBe(false);
     } finally { peerEntered.resolve(); release.resolve(); await completed; }
     await expect(migration).rejects.toThrow("storage unavailable"); expect(active).toBe(0); spy.mockRestore();
-    for (const source of fixtures) expect(await readFile(join(source.root, "manifest.json"), "utf8")).toContain("paperclip.native-harness-backup.v1");
+    for (const source of fixtures) expect(await readFile(join(source.root, "manifest.json"), "utf8")).toContain("pilibala.native-harness-backup.v1");
     expect(await migrateNativeHarnessBackups(f.db, { storage: f.storage, writersStopped: true, signal: AbortSignal.timeout(15_000) })).toBe(2);
     for (const source of fixtures) {
       const rows = await f.db.select().from(nativeHarnessBackups).where(eq(nativeHarnessBackups.scopeDigest, source.scopeDigest));
@@ -184,13 +184,13 @@ describeEmbeddedPostgres("durable native provider backups", () => {
     })));
     const payload = { runnerSourceRevision: "a".repeat(40), target: { platform: "linux", architecture: "x64" },
       pins: { opencode: "1.18.34" }, artifacts: { ...artifacts, opencodeCommand: artifacts.opencodeExecutable } };
-    const manifest = { schema: "paperclip-runner/remote-provider-pack/v1", payload,
+    const manifest = { schema: "pilibala-runner/remote-provider-pack/v1", payload,
       digest: `sha256:${createHash("sha256").update(canonicalProviderPackJson(payload)).digest("hex")}` };
-    const launchRoot = `/home/daytona/.paperclip-runtime/paperclip-runner/provider-artifacts/${manifest.digest.slice(7)}`;
+    const launchRoot = `/home/daytona/.pilibala-runtime/pilibala-runner/provider-artifacts/${manifest.digest.slice(7)}`;
     await f.db.update(heartbeatRuns).set({ nativeSessionId: f.identity.normalizedSessionId, driverKind: "opencode_server",
       runnerProfileJson: { ...f.preparedProfile, nativeProviderPackAdmissionState: {
-        schema: "paperclip.native-provider-pack-admission-state.v1", state: "verified", admissionEpoch: randomUUID() },
-      nativeProviderPackAdmission: { schema: "paperclip.native-provider-pack-admission.v1", stage: "session_admitted",
+        schema: "pilibala.native-provider-pack-admission-state.v1", state: "verified", admissionEpoch: randomUUID() },
+      nativeProviderPackAdmission: { schema: "pilibala.native-provider-pack-admission.v1", stage: "session_admitted",
         authority: "core_verified_selection", companyId: f.companyId, agentId: environment.current.agentId,
         runId: f.runId, sessionId: f.identity.normalizedSessionId, runnerInstanceId: "artifact-fixture-runner",
         runnerEnvironmentLeaseId: "artifact-fixture-lease", providerPackDigest: manifest.digest,
@@ -263,7 +263,7 @@ describeEmbeddedPostgres("durable native provider backups", () => {
       const leaseId = randomUUID(), providerLeaseId = randomUUID(), confirmedAt = new Date();
       await f.db.insert(environmentLeases).values({ id: leaseId, companyId: f.companyId, heartbeatRunId: f.runId,
         issueId: f.issueId, provider: "daytona", providerLeaseId, status: "expired", cleanupStatus: "success", releasedAt: confirmedAt,
-        metadata: { remoteExecutionTermination: { schema: "paperclip.remote-termination.v1", companyId: f.companyId,
+        metadata: { remoteExecutionTermination: { schema: "pilibala.remote-termination.v1", companyId: f.companyId,
           runId: f.runId, leaseId, provider: "daytona", providerLeaseId, state: "destroyed", confirmedAt: confirmedAt.toISOString() } } });
     };
     await stop(first);
@@ -341,10 +341,10 @@ describeEmbeddedPostgres("durable native provider backups", () => {
     const leaseId = randomUUID(), providerLeaseId = randomUUID(), confirmedAt = new Date();
     await f.db.insert(environmentLeases).values({ id: leaseId, companyId: f.companyId, heartbeatRunId: f.runId,
       issueId: f.issueId, provider: "daytona", providerLeaseId, status: "expired", cleanupStatus: "success", releasedAt: confirmedAt,
-      metadata: { remoteExecutionTermination: { schema: "paperclip.remote-termination.v1", companyId: f.companyId,
+      metadata: { remoteExecutionTermination: { schema: "pilibala.remote-termination.v1", companyId: f.companyId,
         runId: f.runId, leaseId, provider: "daytona", providerLeaseId, state: "destroyed", confirmedAt: confirmedAt.toISOString() } } });
     const [selected] = await f.db.insert(agentTaskSessions).values({ companyId: f.companyId, agentId: environment.current.agentId,
-      adapterType: "paperclip_runner", taskKey: f.issueId, lastRunId: f.runId,
+      adapterType: "pilibala_runner", taskKey: f.issueId, lastRunId: f.runId,
       sessionParamsJson: { sessionId: f.identity.normalizedSessionId } }).returning();
     const retention = nativeHarnessBackupExpirationService(f.db, { storage: f.storage });
     const first = await retention.tickCheckpoints();
@@ -395,11 +395,11 @@ describeEmbeddedPostgres("durable native provider backups", () => {
     const leaseId = randomUUID(), providerLeaseId = randomUUID(), confirmedAt = new Date();
     await f.db.insert(environmentLeases).values({ id: leaseId, companyId: f.companyId, heartbeatRunId: f.runId,
       issueId: f.issueId, provider: "daytona", providerLeaseId, status: "expired", cleanupStatus: "success", releasedAt: confirmedAt,
-      metadata: { remoteExecutionTermination: { schema: "paperclip.remote-termination.v1", companyId: f.companyId,
+      metadata: { remoteExecutionTermination: { schema: "pilibala.remote-termination.v1", companyId: f.companyId,
         runId: f.runId, leaseId, provider: "daytona", providerLeaseId, state: "destroyed", confirmedAt: confirmedAt.toISOString() } } });
     const drop = vi.spyOn(f.storage, "deleteObject").mockRejectedValueOnce(new Error("delete reply lost"));
     const [earlier] = await f.db.insert(agentTaskSessions).values({ companyId: f.companyId, agentId: environment.current.agentId,
-      adapterType: "paperclip_runner", taskKey: f.issueId, lastRunId: f.runId }).returning();
+      adapterType: "pilibala_runner", taskKey: f.issueId, lastRunId: f.runId }).returning();
     expect((await retention.tickCheckpoints()).expiredCheckpoints).toBe(0);
     expect(drop).not.toHaveBeenCalled();
     expect((await f.db.select().from(nativeRunnerCheckpoints).where(eq(nativeRunnerCheckpoints.runId, f.runId)))[0].material)
@@ -407,11 +407,11 @@ describeEmbeddedPostgres("durable native provider backups", () => {
     await f.db.delete(agentTaskSessions).where(eq(agentTaskSessions.id, earlier.id));
     expect((await retention.tickCheckpoints()).failed).toBe(1);
     const [retired] = await f.db.select().from(nativeRunnerCheckpoints).where(eq(nativeRunnerCheckpoints.runId, f.runId));
-    expect(retired.material).toMatchObject({ schema: "paperclip.native-runner-checkpoint-retirement.v1", companyId: f.companyId,
+    expect(retired.material).toMatchObject({ schema: "pilibala.native-runner-checkpoint-retirement.v1", companyId: f.companyId,
       runIds: [f.runId], sessionId: f.identity.normalizedSessionId });
     expect(await f.db.select().from(nativeProviderArtifactReferences).where(eq(nativeProviderArtifactReferences.artifactId, artifact.id))).toHaveLength(1);
     await f.db.insert(agentTaskSessions).values({ companyId: f.companyId, agentId: environment.current.agentId,
-      adapterType: "paperclip_runner", taskKey: f.issueId, lastRunId: f.runId });
+      adapterType: "pilibala_runner", taskKey: f.issueId, lastRunId: f.runId });
     await expect(loadNativeRunnerCheckpoint(f.db, { companyId: f.companyId, issueId: f.issueId, runId: f.runId }))
       .rejects.toThrow("native_runner_checkpoint_retired");
     const missingStorage = nativeHarnessBackupExpirationService(f.db);
@@ -439,13 +439,13 @@ describeEmbeddedPostgres("durable native provider backups", () => {
       leaseExpiresAt: new Date(Date.now() + 60_000) });
     await f.db.update(issues).set({ status: "in_progress", executionRunId: consumerRunId }).where(eq(issues.id, f.issueId));
     await f.db.update(environmentLeases).set({ metadata: { remoteExecutionTermination: {
-      schema: "paperclip.remote-termination.v1", companyId: f.companyId, runId: f.runId, leaseId, provider: "daytona",
+      schema: "pilibala.remote-termination.v1", companyId: f.companyId, runId: f.runId, leaseId, provider: "daytona",
       providerLeaseId, state: "destroyed", confirmedAt: confirmedAt.toISOString() },
       runnerTaskSourceConsumer: { leaseId: consumerLeaseId, runId: consumerRunId, accountIdentity: "owned-fixture-account", identity } } })
       .where(eq(environmentLeases.id, leaseId));
     await f.db.insert(environmentLeases).values({ id: consumerLeaseId, companyId: f.companyId, heartbeatRunId: consumerRunId,
       issueId: f.issueId, provider: "daytona", providerLeaseId: randomUUID(), status: "active", metadata: { runnerTaskSourceRecovery: {
-        schema: "paperclip.runner.source-recovery.v1", sourceLeaseId: leaseId, consumerLeaseId, consumerRunId,
+        schema: "pilibala.runner.source-recovery.v1", sourceLeaseId: leaseId, consumerLeaseId, consumerRunId,
         accountIdentity: "owned-fixture-account", controllerBootId: f.owner.bootId, controllerGeneration: 1, identity } } });
     const lateCheckpoint = { ...checkpoint, reset: false, changedRecords: new Map([["cursor", checkpoint.records.get("cursor")!]]), removedRecords: [] };
     await expect(nativeRunnerCheckpointWriter(f.db, { ...f.owner, authorityRunId: consumerRunId, generation: 1,
@@ -660,7 +660,7 @@ describeEmbeddedPostgres("durable native provider backups", () => {
     const rows = await f.db.select().from(nativeHarnessBackups).where(eq(nativeHarnessBackups.scopeDigest, f.scopeDigest));
     expect(rows.filter(row => row.status === "current").map(row => row.id)).toEqual([before.id]);
     expect(rows.filter(row => row.status === "pending")).toHaveLength(1);
-    expect(await readFile(join(f.root, "manifest.json"), "utf8")).toContain("paperclip.native-harness-backup.v1");
+    expect(await readFile(join(f.root, "manifest.json"), "utf8")).toContain("pilibala.native-harness-backup.v1");
   });
   it("publishes with the captured provider owner while an accepted result is still saving its workspace", async () => {
     const f = await fixture();
@@ -853,7 +853,7 @@ describeEmbeddedPostgres("durable native provider backups", () => {
     const base = join(environment.current.runtimeRoot, randomUUID()); ownedHomes.push(base); await mkdir(base);
     await rename(f.home, join(base, f.scopeDigest));
     const root = join(base, f.scopeDigest, "failover-backups", "current");
-    vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", base);
+    vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", base);
     const runnerInstanceId = randomUUID(), providerLeaseId = randomUUID();
     const execution = { provider: { kind: "codex" }, binding: { companyId: f.companyId, issueId: f.issueId,
       runId: f.runId, agentId: environment.current.agentId, executionWorkspaceId: randomUUID() },
@@ -875,7 +875,7 @@ describeEmbeddedPostgres("durable native provider backups", () => {
     await f.db.insert(environmentLeases).values({ companyId: f.companyId, issueId: f.issueId, heartbeatRunId: f.runId,
       providerLeaseId, status: "expired", metadata: { nativeHarnessBackup: stamp } });
     const [selected] = await f.db.insert(agentTaskSessions).values({ companyId: f.companyId, agentId: environment.current.agentId,
-      adapterType: "paperclip_runner", taskKey: f.issueId, lastRunId: f.runId,
+      adapterType: "pilibala_runner", taskKey: f.issueId, lastRunId: f.runId,
       sessionParamsJson: { sessionId: f.identity.normalizedSessionId } }).returning();
     expect(await hasLocalNativeHarnessObligations(f.db)).toBe(true);
     await expect(migrateNativeHarnessBackups(f.db, { storage: f.storage, writersStopped: true, signal: AbortSignal.timeout(10_000) }))
@@ -911,7 +911,7 @@ describeEmbeddedPostgres("durable native provider backups", () => {
     const f = await fixture();
     const base = join(environment.current.runtimeRoot, randomUUID()); ownedHomes.push(base); await mkdir(base);
     await rename(f.home, join(base, f.scopeDigest));
-    vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", base);
+    vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", base);
     const root = join(base, f.scopeDigest, "failover-backups", "current");
     const orphan = JSON.stringify({ runId: randomUUID(), lifecycle: "suspended" });
     await writeFile(join(root, "runner", "runner-state.json"), orphan);
@@ -944,7 +944,7 @@ describeEmbeddedPostgres("durable native provider backups", () => {
     const old = new Date(Date.now() - 10 * 86_400_000);
     await f.db.update(nativeHarnessBackups).set({ createdAt: old, updatedAt: old }).where(eq(nativeHarnessBackups.id, obsolete.id));
     const [selected] = await f.db.insert(agentTaskSessions).values({ companyId: f.companyId, agentId: environment.current.agentId,
-      adapterType: "paperclip_runner", taskKey: f.issueId, lastRunId: f.runId }).returning();
+      adapterType: "pilibala_runner", taskKey: f.issueId, lastRunId: f.runId }).returning();
     const [lease] = await f.db.insert(environmentLeases).values({ companyId: f.companyId, issueId: f.issueId,
       heartbeatRunId: f.runId, status: "pending_cleanup", metadata: { nativeHarnessBackup: {
         sessionScopeSha256: f.scopeDigest, manifestSha256: obsolete.manifestSha256 } } }).returning();

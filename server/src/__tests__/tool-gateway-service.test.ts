@@ -6,7 +6,7 @@ import { writeToolReviewChange } from "../services/tool-review-work-notification
 import { deleteCompany } from "../services/company-deletion.js";
 import { subscribeDeliveryWork } from "../services/delivery-work-notifications.js";
 import { DELIVERY_QUEUES } from "../services/delivery-work-notifications.js";
-import type { RequestConfirmationPayload } from "@paperclipai/shared";
+import type { RequestConfirmationPayload } from "@pilibalaai/shared";
 import { randomUUID } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -42,7 +42,7 @@ import {
   toolInvocations,
   toolPolicies,
   toolRateLimitCounters,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import type { PluginToolDispatcher } from "../services/plugin-tool-dispatcher.js";
 import type { VercelConnectClient } from "../services/vercel-connect.js";
 import { initializeRunIdentity, reserveSteeredIdentity, reconcileSteeredIdentity } from "../services/run-identity.js";
@@ -70,7 +70,7 @@ import { registerToolReviewRecoveryWork } from "../services/tool-review-recovery
 import { registerToolReviewExpiryWork } from "../services/tool-review-expiry-work.js";
 import { idleWorkSnapshot } from "../services/task-admission.js";
 
-const externalDatabaseUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_TOOL_REVIEW_TEST_DATABASE_URL");
+const externalDatabaseUrl = resolveExternalTestDatabaseUrl("PILIBALA_TOOL_REVIEW_TEST_DATABASE_URL");
 const embeddedPostgresSupport = externalDatabaseUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 const testToolActionSigningSecret = "test-tool-action-signing-secret";
@@ -223,7 +223,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
   let stopReviewWorker: (() => Promise<void>) | undefined;
 
   beforeAll(async () => {
-    if (!externalDatabaseUrl) tempDb = await startEmbeddedPostgresTestDatabase("paperclip-tool-gateway-");
+    if (!externalDatabaseUrl) tempDb = await startEmbeddedPostgresTestDatabase("pilibala-tool-gateway-");
     db = createDb(externalDatabaseUrl ?? tempDb!.connectionString, {
       maxConnections: 6, idleTimeoutSeconds: 0, maxLifetimeSeconds: 0,
     });
@@ -1227,14 +1227,14 @@ describeEmbeddedPostgres("tool gateway service", () => {
 
       it("retains approved work when the signing key is temporarily unavailable", async () => {
         const pending = await request(); await approve(pending);
-        vi.stubEnv("PAPERCLIP_TOOL_ACTION_SIGNING_SECRET", "");
-        vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "invalid-master-key");
+        vi.stubEnv("PILIBALA_TOOL_ACTION_SIGNING_SECRET", "");
+        vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "invalid-master-key");
         gateway = createToolGatewayService(db);
         await startRecovery();
         expect(coordinator!.nextWakeAt()).not.toBeNull();
         expect((await db.select().from(toolActionRequests))[0].status).toBe("approved");
         expect((await db.select().from(toolInvocations))[0].status).toBe("awaiting_approval");
-        vi.stubEnv("PAPERCLIP_TOOL_ACTION_SIGNING_SECRET", testToolActionSigningSecret);
+        vi.stubEnv("PILIBALA_TOOL_ACTION_SIGNING_SECRET", testToolActionSigningSecret);
         await settle(); await executed(pending); await quiet();
       });
 
@@ -2104,10 +2104,10 @@ describeEmbeddedPostgres("tool gateway service", () => {
       expect(instructions).toMatch(/authentication method/);
       expect(instructions).not.toMatch(/GitHub App|Refresh access/);
     }
-    expect(payload.paperclipAgentMessage.text).toContain(instructions);
+    expect(payload.pilibalaAgentMessage.text).toContain(instructions);
     // Provider text stays in the untrusted result, not in trusted instructions.
     expect(instructions).not.toContain("Resource not accessible");
-    expect(payload.paperclipAgentMessage.untrustedToolResults[0].error).toContain("Resource not accessible");
+    expect(payload.pilibalaAgentMessage.untrustedToolResults[0].error).toContain("Resource not accessible");
   });
 
   it("commits one human decision and delivers once after the original run yields, including after service restart", async () => {
@@ -2147,7 +2147,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
     expect(wakeup.mock.calls[0][1].payload.toolAction).toMatchObject({ executionStatus: "executed", resultSummary: expect.stringContaining("bodyLength"), instructions: expect.stringContaining("Do not call it again") });
     expect((await db.select().from(toolActionDeliveries))[0].deliveredAt).not.toBeNull();
     expect((await db.select().from(toolActionRequests))[0].decidedByUserId).toBe("reviewer");
-    const message = wakeup.mock.calls[0][1].payload.paperclipAgentMessage;
+    const message = wakeup.mock.calls[0][1].payload.pilibalaAgentMessage;
     expect(message.text).toContain("Do not call it again");
     expect(message.text).not.toContain("bodyLength");
     expect(message.untrustedToolResults).toMatchObject([{ actionRequestId: request.id, resultSummary: expect.stringContaining("bodyLength") }]);
@@ -2230,7 +2230,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
     expect(payload.toolActions.length).toBeLessThanOrEqual(8);
     expect(payload.interactionIds.length).toBe(payload.toolActions.length);
     expect(payload.toolActionOutcomeCount).toBe(12);
-    expect(payload.paperclipAgentMessage.text).toContain(payload.toolActionResultsUrl);
+    expect(payload.pilibalaAgentMessage.text).toContain(payload.toolActionResultsUrl);
     expect((await db.select().from(toolActionDeliveries)).every(row => row.deliveredAt)).toBe(true);
     // The reference retains all outcomes and their full notes, not just snippets.
     expect((await db.select().from(issueThreadInteractions)).every(row => JSON.stringify(row.result).length > 12_000)).toBe(true);
@@ -2653,7 +2653,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
   });
 
   it("does not leave unsigned action requests pending when signing is unavailable", async ({ onTestFinished }) => {
-    vi.stubEnv("PAPERCLIP_TOOL_ACTION_SIGNING_SECRET", "");
+    vi.stubEnv("PILIBALA_TOOL_ACTION_SIGNING_SECRET", "");
     const { company, agent, run } = await createRunFixture(db);
     await db.insert(toolPolicies).values(reviewNotePolicyRow(company));
     const gateway = createTestToolGatewayService(db, { toolActionSigningSecret: " " });
@@ -2662,8 +2662,8 @@ describeEmbeddedPostgres("tool gateway service", () => {
     onTestFinished(() => rm(keyDirectory, { recursive: true, force: true }));
     const keyFile = join(keyDirectory, "master.key");
     await writeFile(keyFile, "corrupt-fixture-master-key", { mode: 0o600 });
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "");
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY_FILE", keyFile);
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "");
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY_FILE", keyFile);
 
     await expect(gateway.executeTool({
       sessionToken: session.token,
@@ -3338,7 +3338,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
       externalCredential: {
         provider: "vercel_connect",
         connectorId: "scl_posthog",
-        connectorUid: "posthog-paperclip",
+        connectorUid: "posthog-pilibala",
         service: "posthog",
         connectorType: "api-key",
         principalMode: "app",
@@ -3359,7 +3359,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
       token: options?.forceRefresh ? "fresh-provider-bearer" : "stale-provider-bearer",
       tokenId: options?.forceRefresh ? "stk_fresh" : "stk_stale",
       expiresAt: Date.now() + 60_000,
-      connector: { id: "scl_posthog", uid: "posthog-paperclip", type: "api-key" },
+      connector: { id: "scl_posthog", uid: "posthog-pilibala", type: "api-key" },
     }));
     const evict = vi.fn<VercelConnectClient["evict"]>();
     const vercelConnectClient: VercelConnectClient = {
@@ -3414,7 +3414,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
   it("keeps managed GitHub personal identity even under a legacy shared policy", async () => {
     const { company, agent, issue, run } = await createRunFixture(db);
     const { connection } = await createRemoteMcpToolFixture(db, company.id);
-    await db.update(toolConnections).set({ authKind: "oauth", credentialSource: "paperclip_vault",
+    await db.update(toolConnections).set({ authKind: "oauth", credentialSource: "pilibala_vault",
       config: { ...connection.config, sourceTemplateKey: "github" },
     }).where(eq(toolConnections.id, connection.id));
     await db.insert(toolConnectionInstalls).values({ companyId: company.id,
@@ -3469,7 +3469,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
       });
       await db.insert(companySecretBindings).values({ companyId: company.id, secretId: secret.id,
         targetType: "tool_connection", targetId: connection.id, configPath: "oauth.access_token" });
-      await db.update(toolConnections).set({ authKind: "oauth", credentialSource: "paperclip_vault",
+      await db.update(toolConnections).set({ authKind: "oauth", credentialSource: "pilibala_vault",
         config: { ...connection.config, sourceTemplateKey: "github" },
       }).where(eq(toolConnections.id, connection.id));
       await db.insert(toolConnectionInstalls).values({ companyId: company.id,
@@ -3530,7 +3530,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
     });
     await db.update(toolConnections).set({
       authKind: "oauth",
-      credentialSource: "paperclip_vault",
+      credentialSource: "pilibala_vault",
       credentialRefs: [{ name: "oauth.access_token", placement: "header", key: "Authorization", prefix: "Bearer ", secretId: accessSecret.id, version: "latest" }],
       config: {
         url: "https://example.invalid/mcp",
@@ -3660,11 +3660,11 @@ describeEmbeddedPostgres("tool gateway service", () => {
     });
     await db.update(toolConnections).set({
       authKind: "oauth",
-      credentialSource: "paperclip_vault",
+      credentialSource: "pilibala_vault",
       config: {
         url: "https://example.invalid/mcp",
         oauth: {
-          strategy: "paperclip_cloud_connector",
+          strategy: "pilibala_cloud_connector",
           connectorProfile: "github.code",
           connectorSubjectUserId: "responsible-user",
         },
@@ -3684,7 +3684,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
       }],
       providerTenant: {
         oauth: {
-          strategy: "paperclip_cloud_connector",
+          strategy: "pilibala_cloud_connector",
           accessTokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
         },
       },

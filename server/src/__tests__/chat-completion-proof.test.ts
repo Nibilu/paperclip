@@ -39,8 +39,8 @@ function completionRecording(id = "multi-repository", ordinaryRunCount = 2) {
     body: "[RUN-2](/issues/RUN-2) is complete. Its requested document is saved on the task." }];
   const events: ChatCompletionEvidence["runEvidence"][number]["events"] = ["tool.execution.started", "tool.execution.completed", "run.result.accepted"].map((eventType, index) => ({
     companyId, runId: notification.id, agentId, eventType, seq: index + 1,
-    payload: { prpEvent: { schema: "paperclip.prp.event.v1", runId: notification.id, eventType,
-      payload: eventType.startsWith("tool.") ? { schema: "paperclip.tool.execution.v1", name: "paperclip_finish",
+    payload: { prpEvent: { schema: "pilibala.prp.event.v1", runId: notification.id, eventType,
+      payload: eventType.startsWith("tool.") ? { schema: "pilibala.tool.execution.v1", name: "pilibala_finish",
         executionId: "finish", status: index === 0 ? "running" : "completed" } : {} } },
   }));
   const runs = [...ordinary, notification];
@@ -87,16 +87,16 @@ describe("delegated chat completion provider accounting", () => {
     const recorded = input.completionEvidence.runEvidence[0]!;
     const native = (eventType: string, payload: Record<string, unknown>) => ({ companyId: "company", agentId: "agent",
       runId: input.notification.id, eventType,
-      payload: { prpEvent: { schema: "paperclip.prp.event.v1", runId: input.notification.id, eventType, payload } } });
+      payload: { prpEvent: { schema: "pilibala.prp.event.v1", runId: input.notification.id, eventType, payload } } });
     // The native item/tool shapes come from the retained completion stream.
     // Use the actual collector, including its complete paged-event read.
     recorded.events = [
       native("item.completed", { kind: "model", model: "gpt-5.6-sol" }),
       native("item.completed", { kind: "reasoning", item: { type: "reasoning" } }),
       native("item.started", { kind: "dynamicToolCall", item: { type: "tool_use", id: "read", name: "get_task" } }),
-      native("tool.execution.started", { schema: "paperclip.tool.execution.v1", name: "get_task", executionId: "read", status: "running" }),
+      native("tool.execution.started", { schema: "pilibala.tool.execution.v1", name: "get_task", executionId: "read", status: "running" }),
       native("item.completed", { kind: "dynamicToolCall", item: { type: "tool_result", id: "read", tool_use_id: "read" } }),
-      native("tool.execution.completed", { schema: "paperclip.tool.execution.v1", name: "get_task", executionId: "read", status: "completed" }),
+      native("tool.execution.completed", { schema: "pilibala.tool.execution.v1", name: "get_task", executionId: "read", status: "completed" }),
       native("item.completed", { kind: "agentMessage", item: { type: "agentMessage" } }),
       ...recorded.events,
       native("item.completed", { kind: "usage", usage: input.notification.usageJson }),
@@ -126,17 +126,17 @@ describe("delegated chat completion provider accounting", () => {
     ["item.completed", { kind: "fileChange", item: { type: "fileChange", changes: [{ path: "extra.txt" }] } }],
     ["item.started", { kind: "commandExecution", item: { type: "commandExecution", command: "unexpected work" } }],
     ["item.completed", { kind: "webSearch", item: { type: "webSearch" } }],
-    ["workspace.change.updated", { schema: "paperclip.workspace.diff.v1", files: [{ path: "extra.txt", operation: "add" }] }],
+    ["workspace.change.updated", { schema: "pilibala.workspace.diff.v1", files: [{ path: "extra.txt", operation: "add" }] }],
     ["research.search.started", { query: "unexpected research" }],
     ["item.completed", { kind: "dynamicToolCall", item: { type: "tool_use", id: "hidden", name: "create_task" } }],
     ["item.completed", { kind: "unknown_provider_work" }],
     ["item.completed", { kind: "agentMessage", item: { type: "fileChange" } }],
     ["unrecognized.provider.work", {}],
-  ] as const) it(`rejects native work without a Paperclip tool event: ${eventType}/${"kind" in payload ? payload.kind : "event"}`, () => {
+  ] as const) it(`rejects native work without a Pilibala tool event: ${eventType}/${"kind" in payload ? payload.kind : "event"}`, () => {
     const input = completionRecording();
     input.completionEvidence.runEvidence[0]!.events.push({ companyId: "company", agentId: "agent",
       runId: input.notification.id, eventType, seq: 4,
-      payload: { prpEvent: { schema: "paperclip.prp.event.v1", runId: input.notification.id, eventType, payload } } });
+      payload: { prpEvent: { schema: "pilibala.prp.event.v1", runId: input.notification.id, eventType, payload } } });
     expect(() => verifyChatCompletion(input.runs, input.completionEvidence)).toThrow(/Chat completion proof:/);
   });
 

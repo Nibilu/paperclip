@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, closeLivenessDb, companies, createDb, heartbeatRuns, livenessDb, subscribeDatabaseWork } from "@paperclipai/db";
+import { agents, closeLivenessDb, companies, createDb, heartbeatRuns, livenessDb, subscribeDatabaseWork } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { resolveExternalTestDatabaseUrl } from "../__tests__/helpers/external-test-database.js";
 import { DELIVERY_QUEUES } from "./delivery-work-notifications.js";
@@ -19,7 +19,7 @@ function fakeRenewalDb(returning: () => Promise<unknown>) {
   return fake as unknown as WatchArgs[0];
 }
 
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_LEGACY_CONTROLLER_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_LEGACY_CONTROLLER_TEST_DATABASE_URL");
 const support = external ? { supported: true } : await getEmbeddedPostgresTestSupport();
 (support.supported ? describe : describe.skip)("durable legacy controller ownership", () => {
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
@@ -187,7 +187,7 @@ const support = external ? { supported: true } : await getEmbeddedPostgresTestSu
     try {
       await watch.assertOwned();
       const [{ name }] = await pool.execute<{ name: string }>(sql`select current_setting('application_name') as name`);
-      expect(name).toBe("paperclip-controller-lease");
+      expect(name).toBe("pilibala-controller-lease");
     } finally { watch.stop(); }
     await closeLivenessDb(owner, 1);
     await expect(livenessDb(owner).execute(sql`select 1`)).rejects.toThrow();
@@ -233,7 +233,7 @@ const support = external ? { supported: true } : await getEmbeddedPostgresTestSu
       let blocked: { pid: number } | undefined;
       for (let attempt = 0; !blocked && attempt < 100; attempt++) {
         [blocked] = await db.execute<{ pid: number }>(sql`select pid from pg_stat_activity
-          where application_name = 'paperclip-controller-lease' and wait_event_type = 'Lock'`);
+          where application_name = 'pilibala-controller-lease' and wait_event_type = 'Lock'`);
         if (!blocked) await new Promise((resolve) => setTimeout(resolve, 20));
       }
       expect(blocked).toBeDefined();

@@ -1,5 +1,5 @@
 {
-  "schema": "paperclip.copilot.qualification-progress/v1",
+  "schema": "pilibala.copilot.qualification-progress/v1",
   "status": "Historical v21 evidence; superseded by the unfrozen v22 master integration; production remains gated",
   "updatedAt": "2026-10-05T19:03:10.191470+00:00",
   "productionAdmission": "gated",
@@ -391,7 +391,7 @@
         "server/src/__tests__/workspace-runtime-exposure-reservation.test.ts",
         "server/src/__tests__/photon/photon.test.ts",
         "server/src/__tests__/photon/channel.integration.test.ts",
-        "server/src/__tests__/paperclip-skill-utils.test.ts"
+        "server/src/__tests__/pilibala-skill-utils.test.ts"
       ],
       "status": "failed",
       "exitCode": 1,
@@ -505,7 +505,7 @@
     "sha256": "sha256:de5c8eb7357f4f450fe6305a814bbe010e9d680880ea5cd3545e0a0ea79bf2c0"
   },
   "qualificationOnlyAmendments": {
-    "packages/paperclip-runner/test/acpx-codex-package-contract.test.mjs": {
+    "packages/pilibala-runner/test/acpx-codex-package-contract.test.mjs": {
       "sha256": "sha256:97c0eef3c1261b5a931fa6c3fd1de6a3b5afd39dd6a88c8ed4dea1f82d5e713a",
       "patchPath": "/tmp/copilot-production-campaign-v21/qualification-package-contract-amendment.patch",
       "patchSha256": "sha256:003a101f0b66a7e2493d8de2a27f67b0bc191c6483e838a9bb00dea1c2c467ec",
@@ -518,7 +518,7 @@
     "runnerPackageSha256": "sha256:4ba7a1436afa7a4efb59dfe0a79237861e8fccc337238873dbd7e4932df24c34"
   },
   "daytonaImage": {
-    "imageTag": "ghcr.io/paperclipai/paperclip-daytona-runner:copilot-qualification-7842dba3e92257219da8",
+    "imageTag": "ghcr.io/pilibalaai/pilibala-daytona-runner:copilot-qualification-7842dba3e92257219da8",
     "expectedIndexDigest": "sha256:d228ee6bd84717410e2fcc79a62cc781f92b787a9d09781786b7ac19aae45899",
     "status": "Built and Linux installed smoke passed. Public upload not executed; exact upload approval is pending after two automatic approval review rejections."
   },

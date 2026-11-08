@@ -1,19 +1,19 @@
 import { HttpError } from "../../../errors.js";
 import { generateKeyPairSync } from "node:crypto";
-import { chatEndpoints, chatSlackRegistrations, type Db } from "@paperclipai/db";
+import { chatEndpoints, chatSlackRegistrations, type Db } from "@pilibalaai/db";
 import { afterEach, expect, it, vi } from "vitest";
-import { PaperclipCloudConnectorError } from "../../paperclip-cloud-connector.js";
+import { PilibalaCloudConnectorError } from "../../pilibala-cloud-connector.js";
 import { createSlackCloudEnrollment, stageSlackCloudEnrollmentIntent } from "./cloud-enrollment.js";
 import type { InternalSetupState } from "../runtime-types.js";
 import type { CredentialMutationLeaseGuard } from "../../chat-credential-mutation-lease.js";
 
 afterEach(() => vi.unstubAllEnvs());
 function configureCloud() {
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_BASE_URL", "https://cloud.example.test");
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID", "instance");
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_ENVIRONMENT", "test");
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", generateKeyPairSync("ed25519").privateKey.export({ format: "jwk" }).d!);
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", generateKeyPairSync("x25519").privateKey.export({ format: "jwk" }).d!);
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_BASE_URL", "https://cloud.example.test");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID", "instance");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_ENVIRONMENT", "test");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", generateKeyPairSync("ed25519").privateKey.export({ format: "jwk" }).d!);
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", generateKeyPairSync("x25519").privateKey.export({ format: "jwk" }).d!);
 }
 function jsonValues(value: unknown): unknown[] {
   if (typeof value === "string") { try { return [JSON.parse(value)]; } catch { return []; } }
@@ -88,11 +88,11 @@ it.each(["paused", "archived"])("retains credential-free %s removal responsibili
 
 it("outage preserves a bounded pending retry; current broker denial preserves visible attention debt", async () => {
   const f = fixture(); await f.stage();
-  f.connector.slackEventsAvailable.mockRejectedValueOnce(new PaperclipCloudConnectorError("offline", "CONNECTOR_UNAVAILABLE"));
+  f.connector.slackEventsAvailable.mockRejectedValueOnce(new PilibalaCloudConnectorError("offline", "CONNECTOR_UNAVAILABLE"));
   await f.run(f.endpoint.id, undefined, f.lease);
   expect(f.endpoint.setup.slackCloudIntent).toMatchObject({ attempts: 1, failureCode: "broker_unavailable" });
   expect(Date.parse(f.endpoint.setup.slackCloudIntent!.nextAttemptAt!)).toBeGreaterThan(Date.now());
-  f.connector.slackEventEnrollment.mockRejectedValueOnce(new PaperclipCloudConnectorError("denied", "CONNECTOR_REQUEST_FAILED", 403));
+  f.connector.slackEventEnrollment.mockRejectedValueOnce(new PilibalaCloudConnectorError("denied", "CONNECTOR_REQUEST_FAILED", 403));
   await f.run(f.endpoint.id, undefined, f.lease);
   expect(f.endpoint.setup.slackCloudIntent).toMatchObject({ failureCode: "authority_required", nextAttemptAt: null });
 });
@@ -107,13 +107,13 @@ it("receipt identity mismatch and failed transaction guard cannot publish a live
 });
 
 it("an absent Cloud configuration creates no new intent or background retry", async () => {
-  const f = fixture(); for (const key of ["BASE_URL", "INSTANCE_ID", "SIGN_PRIVATE_KEY", "SEAL_PRIVATE_KEY", "ENVIRONMENT"]) vi.stubEnv(`PAPERCLIP_CLOUD_CONNECTOR_${key}`, "");
+  const f = fixture(); for (const key of ["BASE_URL", "INSTANCE_ID", "SIGN_PRIVATE_KEY", "SEAL_PRIVATE_KEY", "ENVIRONMENT"]) vi.stubEnv(`PILIBALA_CLOUD_CONNECTOR_${key}`, "");
   await f.stage(); expect(f.update).not.toHaveBeenCalled(); expect(f.endpoint.setup.slackCloudIntent).toBeUndefined();
 });
 
 it.each(["SLACK_ENROLLMENT_GENERATION_CHANGED", "SLACK_ENROLLMENT_DISABLED"])("closed broker reason %s distinguishes permanent authority from rollout retry", async reason => {
   const f = fixture(); await f.stage();
-  f.connector.slackEventEnrollment.mockRejectedValueOnce(new PaperclipCloudConnectorError("rejected", "REAUTHORIZATION_REQUIRED", 409, undefined, reason));
+  f.connector.slackEventEnrollment.mockRejectedValueOnce(new PilibalaCloudConnectorError("rejected", "REAUTHORIZATION_REQUIRED", 409, undefined, reason));
   await f.run(f.endpoint.id, undefined, f.lease);
   expect(f.endpoint.setup.slackCloudEvents).toBeUndefined();
   expect(f.endpoint.setup.slackCloudIntent!.nextAttemptAt === null).toBe(reason === "SLACK_ENROLLMENT_GENERATION_CHANGED");
@@ -123,7 +123,7 @@ it.each(["SLACK_ENROLLMENT_GENERATION_CHANGED", "SLACK_ENROLLMENT_DISABLED"])("c
 it("losing Cloud identity retains configured retirement responsibility as attention without an empty retry", async () => {
   const f = fixture(); await f.stage(); await f.run(f.endpoint.id, undefined, f.lease);
   f.endpoint.status = "archived"; f.connection.enabled = false; f.endpoint.setup.runtimeGeneration = 2;
-  for (const key of ["BASE_URL", "INSTANCE_ID", "SIGN_PRIVATE_KEY", "SEAL_PRIVATE_KEY", "ENVIRONMENT"]) vi.stubEnv(`PAPERCLIP_CLOUD_CONNECTOR_${key}`, "");
+  for (const key of ["BASE_URL", "INSTANCE_ID", "SIGN_PRIVATE_KEY", "SEAL_PRIVATE_KEY", "ENVIRONMENT"]) vi.stubEnv(`PILIBALA_CLOUD_CONNECTOR_${key}`, "");
   await f.stage();
   expect(f.endpoint.setup.slackCloudIntent).toMatchObject({ active: false, instanceId: "instance", runtimeGeneration: 2,
     failureCode: "connector_configuration_unavailable", nextAttemptAt: null });
@@ -151,17 +151,17 @@ it("temporary signing-credential store failure keeps the bounded retry", async (
 it("only positive old retirement and an explicit new generation can stage a replacement instance", async () => {
   const f = fixture(); await f.stage(); await f.run(f.endpoint.id, undefined, f.lease);
   const oldDescriptor = structuredClone(f.endpoint.setup.slackCloudEvents);
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID", "replacement");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID", "replacement");
   f.endpoint.setup.runtimeGeneration = 2;
   await f.stage();
   expect(f.endpoint.setup.slackCloudIntent).toMatchObject({ instanceId: "instance", subject: "original-authorized-user",
     failureCode: "instance_replacement_requires_retirement", nextAttemptAt: null });
   expect(f.endpoint.setup.slackCloudEvents).toEqual(oldDescriptor);
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID", "instance");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID", "instance");
   f.endpoint.status = "paused"; f.connection.enabled = false; f.endpoint.setup.runtimeGeneration = 3;
   await f.stage(); await f.run(f.endpoint.id, undefined, f.lease);
   expect(f.endpoint.setup.slackCloudRetiredGeneration).toBe(3);
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID", "replacement");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID", "replacement");
   f.endpoint.status = "active"; f.connection.enabled = true; f.endpoint.setup.runtimeGeneration = 4;
   await f.stage();
   expect(f.endpoint.setup.slackCloudIntent).toMatchObject({ instanceId: "replacement", runtimeGeneration: 4 });
@@ -183,7 +183,7 @@ it("a new config without an explicit actor cannot adopt even a retired old insta
   const f = fixture(); await f.stage(); await f.run(f.endpoint.id, undefined, f.lease);
   f.endpoint.status = "paused"; f.connection.enabled = false; f.endpoint.setup.runtimeGeneration = 2;
   await f.stage(); await f.run(f.endpoint.id, undefined, f.lease);
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID", "replacement");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID", "replacement");
   f.endpoint.status = "active"; f.connection.enabled = true; f.endpoint.setup.runtimeGeneration = 3;
   await stageSlackCloudEnrollmentIntent(f.db, f.endpoint.id, undefined);
   expect(f.endpoint.setup.slackCloudIntent).toMatchObject({ instanceId: "instance", subject: "original-authorized-user",
@@ -194,7 +194,7 @@ it("removal after an unconfirmed replacement targets its pending instance withou
   const f = fixture(); await f.stage(); await f.run(f.endpoint.id, undefined, f.lease);
   f.endpoint.status = "paused"; f.connection.enabled = false; f.endpoint.setup.runtimeGeneration = 2;
   await f.stage(); await f.run(f.endpoint.id, undefined, f.lease);
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID", "replacement");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID", "replacement");
   f.endpoint.status = "active"; f.connection.enabled = true; f.endpoint.setup.runtimeGeneration = 3;
   await f.stage();
   expect(f.endpoint.setup.slackCloudInstanceId).toBe("instance");

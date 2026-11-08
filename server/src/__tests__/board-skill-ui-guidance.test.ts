@@ -8,8 +8,8 @@ const read = (relPath: string) => readFileSync(path.join(repoRoot, relPath), "ut
 
 // Chat agents answer "how do I find X?" from the board skill; without this section they
 // had no source for the web UI's quick search and told people to ask in chat instead.
-describe("paperclip-board skill web UI guidance", () => {
-  const skill = read("skills/paperclip-board/SKILL.md");
+describe("pilibala-board skill web UI guidance", () => {
+  const skill = read("skills/pilibala-board/SKILL.md");
   const palette = read("ui/src/components/CommandPalette.tsx");
   const section = skill.slice(skill.indexOf("## Finding Things in the Web UI"), skill.indexOf("## Presentation Rules"));
 
@@ -48,6 +48,6 @@ describe("paperclip-board skill web UI guidance", () => {
 
   it("is discoverable from the skill description", () => {
     const frontmatter = skill.slice(0, skill.indexOf("\n---", 4));
-    expect(frontmatter).toContain("finding things in the Paperclip web UI");
+    expect(frontmatter).toContain("finding things in the Pilibala web UI");
   });
 });

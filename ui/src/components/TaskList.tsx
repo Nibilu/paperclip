@@ -1,9 +1,9 @@
 import { Fragment, useId, useState, type ReactNode } from "react";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@pilibalaai/shared";
 import { ChevronDown, ChevronRight, GitBranch } from "lucide-react";
 import { buildIssueTree } from "../lib/issue-tree";
 import { issueFilterLabel } from "../lib/issue-filters";
-import { paperclipHumanAvatarUrl } from "../lib/issue-chat-human-author";
+import { pilibalaHumanAvatarUrl } from "../lib/issue-chat-human-author";
 import { defaultTaskListColumns, defaultTaskListSort, isTaskListColumnSort, taskListOrderToIssueSort, type TaskListColumnId, type TaskListSort, type TaskListOrder } from "../lib/task-list";
 import { sortIssues } from "../lib/issue-sort";
 import { timeAgo } from "../lib/timeAgo";
@@ -101,7 +101,7 @@ export function TaskList({ items, allItems = items, initialColumns = defaultTask
     const parent = issue.parentId ? byId.get(issue.parentId)?.issue : null;
     const branch = issue.currentExecutionWorkspace?.branchName;
     const assigneeName = item.assignee ?? (issue.assigneeAgentId ? "Unknown agent" : issue.assigneeUserId ? "User" : "Unassigned");
-    const assigneeUserAvatarUrl = paperclipHumanAvatarUrl(item.assigneeUserAvatarUrl);
+    const assigneeUserAvatarUrl = pilibalaHumanAvatarUrl(item.assigneeUserAvatarUrl);
     return (
       <Fragment key={issue.id}>
         <IssueRow

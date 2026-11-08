@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import type { agents, Db, projectWorkspaces } from "@paperclipai/db";
+import type { agents, Db, projectWorkspaces } from "@pilibalaai/db";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ensureManagedProjectWorkspace as legacyEnsureManagedProjectWorkspace,
@@ -23,10 +23,10 @@ const runGit = promisify(execFile);
 let testRoot: string;
 
 beforeEach(async () => {
-  testRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-workspace-module-"));
-  vi.stubEnv("PAPERCLIP_HOME", testRoot);
-  vi.stubEnv("PAPERCLIP_INSTANCE_ID", "workspace-test");
-  vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC", "false");
+  testRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-workspace-module-"));
+  vi.stubEnv("PILIBALA_HOME", testRoot);
+  vi.stubEnv("PILIBALA_INSTANCE_ID", "workspace-test");
+  vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC", "false");
 });
 
 afterEach(async () => {
@@ -138,7 +138,7 @@ describe("heartbeat workspace module", () => {
     const stat = vi.spyOn(fs, "stat"); const mkdir = vi.spyOn(fs, "mkdir");
     try {
       const result = await createHeartbeatWorkspaceResolver(database.db).resolveWorkspaceForRun(
-        { ...agent(), adapterType: "paperclip_runner" }, { projectId: "project-one" }, null,
+        { ...agent(), adapterType: "pilibala_runner" }, { projectId: "project-one" }, null,
         { executionEnvironmentDriver: "plugin" });
       expect(result).toMatchObject({ cwd: "/workspaces/selected", projectId: "project-one", workspaceId: "selected", repoUrl,
         source: "project_primary", baseCwdFallback: false, additionalWorkspaces: [] });
@@ -149,7 +149,7 @@ describe("heartbeat workspace module", () => {
     const mkdir = vi.spyOn(fs, "mkdir");
     try {
       const result = await createHeartbeatWorkspaceResolver(databaseWithResults().db).resolveWorkspaceForRun(
-        { ...agent(), adapterType: "paperclip_runner" }, {}, null, { executionEnvironmentDriver: "plugin" });
+        { ...agent(), adapterType: "pilibala_runner" }, {}, null, { executionEnvironmentDriver: "plugin" });
       expect(result).toMatchObject({ cwd: "/workspaces/agent-one", projectId: null, workspaceId: null });
       expect(mkdir).not.toHaveBeenCalled();
     } finally { mkdir.mockRestore(); }
@@ -157,7 +157,7 @@ describe("heartbeat workspace module", () => {
   it("rejects plugin project scope outside the company", async () => {
     const database = databaseWithResults([], []);
     await expect(createHeartbeatWorkspaceResolver(database.db).resolveWorkspaceForRun(
-      { ...agent(), adapterType: "paperclip_runner" }, { projectId: "foreign" }, null,
+      { ...agent(), adapterType: "pilibala_runner" }, { projectId: "foreign" }, null,
       { executionEnvironmentDriver: "plugin" })).rejects.toMatchObject({ code: "workspace_validation_failed" });
   });
 
@@ -246,7 +246,7 @@ describe("heartbeat workspace module", () => {
         baseCwdFallback: true,
       } },
     });
-    await expect(validation).rejects.toThrow(`Paperclip fallback directory "${fallbackCwd}"`);
+    await expect(validation).rejects.toThrow(`Pilibala fallback directory "${fallbackCwd}"`);
   });
 
   it("allows the managed task fallback for project_primary without claiming the missing workspace", async () => {

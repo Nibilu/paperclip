@@ -2,7 +2,7 @@ import { describeError } from "@/api/errors";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Loader2 } from "lucide-react";
-import { aiRoutingModel, isAiConnectionCompatible, type Agent, type AiConnectionBinding, type AiConnectionList } from "@paperclipai/shared";
+import { aiRoutingModel, isAiConnectionCompatible, type Agent, type AiConnectionBinding, type AiConnectionList } from "@pilibalaai/shared";
 import { agentsApi, type AdapterModel } from "@/api/agents";
 import { aiConnectionsApi } from "@/api/ai-connections";
 import { getAdapterLabel } from "@/adapters/adapter-display-registry";
@@ -57,7 +57,7 @@ export function AgentBulkSettingsSheet({ companyId, agents, totalSelected, onClo
           // the existing unrestricted manual-model configuration path.
           models = [];
         } else {
-          const type = nativeCatalog ? "paperclip_runner" : openRouter ? "opencode_local" : harness;
+          const type = nativeCatalog ? "pilibala_runner" : openRouter ? "opencode_local" : harness;
           const options = nativeCatalog
             ? { provider: "acpx", ...nativeCatalog, aiConnection: effective, environmentId: agent.defaultEnvironmentId }
             : openRouter ? { provider: "openrouter" }

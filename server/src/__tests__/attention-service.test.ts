@@ -33,7 +33,7 @@ import {
   joinRequests,
   projects,
   projectWorkspaces,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -47,7 +47,7 @@ import { listAttentionExhaustedRuns } from "../services/attention-exhausted-runs
 import { agentService } from "../services/agents.js";
 import { ROUTABLE_BLOCKED_ROLLOUT_AT } from "../services/routable-blocked.js";
 
-const externalUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_ATTENTION_TEST_DATABASE_URL");
+const externalUrl = resolveExternalTestDatabaseUrl("PILIBALA_ATTENTION_TEST_DATABASE_URL");
 const embeddedPostgresSupport = externalUrl ? { supported: true, reason: undefined } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 
@@ -62,7 +62,7 @@ describeEmbeddedPostgres("attention service", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    if (!externalUrl) tempDb = await startEmbeddedPostgresTestDatabase("paperclip-attention-service-");
+    if (!externalUrl) tempDb = await startEmbeddedPostgresTestDatabase("pilibala-attention-service-");
     db = createDb(externalUrl ?? tempDb!.connectionString, { maxConnections: 6 });
   }, 30_000);
 
@@ -486,7 +486,7 @@ describeEmbeddedPostgres("attention service", () => {
       requestType: "human",
       status: "pending_approval",
       requestIp: "127.0.0.1",
-      requestEmailSnapshot: "new@paperclip.test",
+      requestEmailSnapshot: "new@pilibala.test",
       createdAt: new Date("2026-07-09T12:04:00.000Z"),
       updatedAt: new Date("2026-07-09T12:04:00.000Z"),
     });
@@ -1174,7 +1174,7 @@ describeEmbeddedPostgres("attention service", () => {
       const feed = await attentionService(db).list(companyId, { userId: "board-user" });
       expect(feed.items.filter(item => item.sourceKind === "failed_run").map(item => item.subject.id)).toEqual([failedId]);
     } finally { capture.flush(); }
-    const reads = events.filter(event => event.event === "paperclip.test_db_response_capture.entry.v1"
+    const reads = events.filter(event => event.event === "pilibala.test_db_response_capture.entry.v1"
       && event.table === "heartbeat_runs" && (event.operation === "select" || event.operation === "execute"));
     expect(reads.reduce((sum, event) => sum + Number(event.calls), 0)).toBeGreaterThan(0);
     expect(reads.reduce((sum, event) => sum + Number(event.rows), 0)).toBeLessThan(64);
@@ -1225,7 +1225,7 @@ describeEmbeddedPostgres("attention service", () => {
       expect(feed.items.filter((item) => item.sourceKind === "failed_run").map((item) => item.subject.id).sort())
         .toEqual([...keptIds].sort());
     } finally { capture.flush(); }
-    const reads = events.filter(event => event.event === "paperclip.test_db_response_capture.entry.v1"
+    const reads = events.filter(event => event.event === "pilibala.test_db_response_capture.entry.v1"
       && event.table === "heartbeat_runs" && (event.operation === "select" || event.operation === "execute"));
     expect(reads.reduce((sum, event) => sum + Number(event.calls), 0)).toBeGreaterThan(0);
     expect(reads.reduce((sum, event) => sum + Number(event.calls), 0)).toBeLessThan(4);
@@ -1428,7 +1428,7 @@ describeEmbeddedPostgres("attention service", () => {
       expect(index.totalCount).toBe(feed.totalCount);
 
     } finally { summaryCapture.flush(); }
-    const cardReads = summaryEvents.filter(event => event.event === "paperclip.test_db_response_capture.entry.v1"
+    const cardReads = summaryEvents.filter(event => event.event === "pilibala.test_db_response_capture.entry.v1"
       && ["documents", "assets", "issue_attachments"].includes(String(event.table)));
     expect(cardReads).toEqual([]);
 

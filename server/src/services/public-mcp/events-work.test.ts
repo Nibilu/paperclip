@@ -6,7 +6,7 @@ import express, { type Request } from "express";
 import request from "supertest";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq, sql } from "drizzle-orm";
-import { applyPendingMigrations, createDb, companies, authUsers, companyMemberships, instanceSettings, mcpOauthClients, mcpOauthGrants, mcpOauthRequests, mcpOauthDeviceRequests, issues, agents, dotAgentBindings, dotMailboxItems, dotRunnerAssignments, heartbeatRuns, mcpEventDeliveries, mcpEventSubscriptions, mcpOauthTokens, mcpFileTickets } from "@paperclipai/db";
+import { applyPendingMigrations, createDb, companies, authUsers, companyMemberships, instanceSettings, mcpOauthClients, mcpOauthGrants, mcpOauthRequests, mcpOauthDeviceRequests, issues, agents, dotAgentBindings, dotMailboxItems, dotRunnerAssignments, heartbeatRuns, mcpEventDeliveries, mcpEventSubscriptions, mcpOauthTokens, mcpFileTickets } from "@pilibalaai/db";
 import { resolveExternalTestDatabaseUrl } from "../../__tests__/helpers/external-test-database.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { createPublicMcpEvents } from "./events.js";
@@ -33,10 +33,10 @@ import { idleWorkSnapshot } from "../task-admission.js";
 
 vi.mock("../cloud-runtime-identity.js", async importOriginal => ({
   ...await importOriginal<typeof import("../cloud-runtime-identity.js")>(),
-  getCloudRuntimeIdentity: () => ({ stackId: "fixture-stack", canonicalOrigin: "https://paperclip.example" }),
+  getCloudRuntimeIdentity: () => ({ stackId: "fixture-stack", canonicalOrigin: "https://pilibala.example" }),
 }));
 
-const externalUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_MCP_SLEEP_TEST_DATABASE_URL");
+const externalUrl = resolveExternalTestDatabaseUrl("PILIBALA_MCP_SLEEP_TEST_DATABASE_URL");
 const support = externalUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 
 describe.skipIf(!support.supported)("MCP event committed work", () => {
@@ -51,7 +51,7 @@ describe.skipIf(!support.supported)("MCP event committed work", () => {
   let failRead: boolean;
   let duringDelivery: (() => Promise<void>) | undefined;
   beforeAll(async () => {
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", randomBytes(32).toString("base64"));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", randomBytes(32).toString("base64"));
     if (externalUrl) await applyPendingMigrations(externalUrl);
     else temporary = await startEmbeddedPostgresTestDatabase("mcp-sleep-");
     db = createDb(externalUrl ?? temporary.connectionString, { maxConnections: 4 });
@@ -77,12 +77,12 @@ describe.skipIf(!support.supported)("MCP event committed work", () => {
 
   async function fixture(dot = false, scope = { companyId, taskId }) {
     const { companyId, taskId } = scope;
-    const config = { origin: "https://paperclip.example", resource: `https://paperclip.example/mcp/${dot ? "runner" : "paperclip"}` };
+    const config = { origin: "https://pilibala.example", resource: `https://pilibala.example/mcp/${dot ? "runner" : "pilibala"}` };
     const clientId = randomUUID();
     await db.insert(mcpOauthClients).values({ id: clientId, name: "Sleep fixture", redirectUris: ["https://receiver.example/oauth"] });
     const agentId = dot ? randomUUID() : null;
-    if (agentId) await db.insert(agents).values({ id: agentId, companyId, name: "Dot", status: "active", adapterType: "paperclip_runner", adapterConfig: { provider: "openai_dot" } });
-    const [grant] = await db.insert(mcpOauthGrants).values({ companyId, userId, clientId, resource: config.resource, purpose: dot ? "agent" : "personal", agentId, scopes: [dot ? "paperclip:agent" : "paperclip:read"] }).returning();
+    if (agentId) await db.insert(agents).values({ id: agentId, companyId, name: "Dot", status: "active", adapterType: "pilibala_runner", adapterConfig: { provider: "openai_dot" } });
+    const [grant] = await db.insert(mcpOauthGrants).values({ companyId, userId, clientId, resource: config.resource, purpose: dot ? "agent" : "personal", agentId, scopes: [dot ? "pilibala:agent" : "pilibala:read"] }).returning();
     const bindingId = dot ? randomUUID() : null;
     if (bindingId && agentId) {
       await db.insert(dotAgentBindings).values({ id: bindingId, companyId, agentId, operatorId: userId, grantId: grant.id, status: "connected" });
@@ -98,7 +98,7 @@ describe.skipIf(!support.supported)("MCP event committed work", () => {
     } });
     const oauth = createPublicMcpOAuth(observed, config);
     const principal = await oauth.authorizeGrant(grant.id);
-    const input = { name: dot ? "paperclip.dot.mailbox_updated" : "paperclip.task.status_changed", arguments: { companyId, ...(dot ? { bindingId } : { taskId }) },
+    const input = { name: dot ? "pilibala.dot.mailbox_updated" : "pilibala.task.status_changed", arguments: { companyId, ...(dot ? { bindingId } : { taskId }) },
       delivery: { mode: "webhook", url: "https://receiver.example/events", secret: "whsec_" + randomBytes(32).toString("base64") } };
     const makeService = () => createPublicMcpEvents(observed, oauth, async () => ({ id: taskId, companyId }), { enableDotRunner: dot,
       isBackgroundWorkEnabled: () => !draining && !standby,
@@ -198,7 +198,7 @@ describe.skipIf(!support.supported)("MCP event committed work", () => {
     await activity(); await delivered(1); await quiet();
     const ingress = await readIdleMcpWakeProof(db, { stackId: "fixture-stack", ownerId: "00000000-0000-4000-8000-000000000001",
       capabilityGeneration: "a".repeat(64), challenge: "c".repeat(64), personalResource: f.principal.grant.resource,
-      dotResource: "https://paperclip.example/mcp/runner", personalEnabled: true, dotEnabled: true, now: Date.now() });
+      dotResource: "https://pilibala.example/mcp/runner", personalEnabled: true, dotEnabled: true, now: Date.now() });
     expect(ingress.grantIds).toEqual([f.principal.grant.id]);
     const proof = await readIdleMcpSubscriptionProof(db, { now: Date.now(), ingress,
       personal: service.reconciliationSnapshot(), dot: { revision: "absent", reconciled: false }, inspectDestination: service.inspectIdleDestination });
@@ -221,7 +221,7 @@ describe.skipIf(!support.supported)("MCP event committed work", () => {
 
   it("publishes real OAuth rotation only after commit and indexes only the new token revision", async () => {
     const f = await fixture(); await f.start();
-    await db.update(mcpOauthGrants).set({ scopes: ["paperclip:read", "offline_access"] }).where(eq(mcpOauthGrants.id, f.principal.grant.id));
+    await db.update(mcpOauthGrants).set({ scopes: ["pilibala:read", "offline_access"] }).where(eq(mcpOauthGrants.id, f.principal.grant.id));
     const refresh = "pcmcp_rt_" + randomBytes(32).toString("base64url");
     await db.insert(mcpOauthTokens).values({ grantId: f.principal.grant.id, kind: "refresh",
       tokenHash: createHash("sha256").update(refresh).digest("hex"), expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60_000) });
@@ -262,7 +262,7 @@ describe.skipIf(!support.supported)("MCP event committed work", () => {
 
   it("keeps real minted reusable file tickets awake through upload/download and becomes quiet after expiry", async () => {
     const f = await fixture(); await f.start();
-    await db.update(mcpOauthGrants).set({ scopes: ["paperclip:read", "paperclip:write"] }).where(eq(mcpOauthGrants.id,f.principal.grant.id));
+    await db.update(mcpOauthGrants).set({ scopes: ["pilibala:read", "pilibala:write"] }).where(eq(mcpOauthGrants.id,f.principal.grant.id));
     const principal = await f.oauth.authorizeGrant(f.principal.grant.id);
     const index = startMcpRevocationIndexSync(f.observed,coordinator,{ key: Buffer.alloc(32,9).toString("base64url"), client: {
       publish: async value => {
@@ -272,7 +272,7 @@ describe.skipIf(!support.supported)("MCP event committed work", () => {
       },
     } });
     await index.ready; await startMcpIngressHandoffExpiry(f.observed,coordinator).ready; await settle(); await quiet();
-    const directory = await mkdtemp(path.join(tmpdir(),"paperclip-mcp-ticket-test-"));
+    const directory = await mkdtemp(path.join(tmpdir(),"pilibala-mcp-ticket-test-"));
     const unregister = registerIdleMcpOwners(db,{ config: f.oauth.config, personal: service, dot: null });
     try {
       const storage = createStorageService(createLocalDiskStorageProvider(directory));
@@ -322,7 +322,7 @@ describe.skipIf(!support.supported)("MCP event committed work", () => {
     if (kind === "code") {
       const verifier = "v".repeat(64);
       const start = await f.oauth.authorize({client_id:client.client_id,redirect_uri:"https://receiver.example/oauth",resource:f.oauth.config.resource,
-        response_type:"code",code_challenge:createHash("sha256").update(verifier).digest("base64url"),code_challenge_method:"S256",scope:"paperclip:read offline_access",company_id:companyId});
+        response_type:"code",code_challenge:createHash("sha256").update(verifier).digest("base64url"),code_challenge_method:"S256",scope:"pilibala:read offline_access",company_id:companyId});
       const id = new URL(start).pathname.split("/").at(-1)!;
       expect((await inspectHandoffs()).blocked).toBe(false);
       const approved = await f.oauth.consent(id,actor,{decision:"approve",companyId,allowWrites:false});
@@ -330,7 +330,7 @@ describe.skipIf(!support.supported)("MCP event committed work", () => {
       exchange = () => f.oauth.token({grant_type:"authorization_code",client_id:client.client_id,resource:f.oauth.config.resource,redirect_uri:"https://receiver.example/oauth",
         code:new URL(approved.redirectUrl).searchParams.get("code"),code_verifier:verifier});
     } else {
-      const start = await f.oauth.deviceAuthorize({client_id:client.client_id,resource:f.oauth.config.resource,scope:"paperclip:read offline_access",company_id:companyId});
+      const start = await f.oauth.deviceAuthorize({client_id:client.client_id,resource:f.oauth.config.resource,scope:"pilibala:read offline_access",company_id:companyId});
       expect((await inspectHandoffs()).blocked).toBe(false);
       await f.oauth.consentDevice(start.user_code,actor,{decision:"approve",companyId,allowWrites:false});
       grantId = (await db.select().from(mcpOauthDeviceRequests))[0].grantId!;

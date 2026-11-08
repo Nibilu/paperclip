@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PgDialect } from "drizzle-orm/pg-core";
-import { executionWorkspaces, environmentLeases, type Db } from "@paperclipai/db";
+import { executionWorkspaces, environmentLeases, type Db } from "@pilibalaai/db";
 import { environmentTaskErrorCodeData, environmentTaskOperationSchema, parseEnvironmentTaskResult, JsonRpcCallError, PluginEnvironmentTaskError,
-  readEnvironmentTaskErrorCode, readEnvironmentTaskErrorDiagnostic } from "@paperclipai/plugin-sdk";
+  readEnvironmentTaskErrorCode, readEnvironmentTaskErrorDiagnostic } from "@pilibalaai/plugin-sdk";
 import { executeEnvironmentTask, isSettledReadyRunnerState, settleDispatchedEnvironmentTask } from "../services/environment-task-runtime.js";
 import { NativeExecutionContext } from "../services/native-runtime/native-execution-context.js";
 
@@ -45,7 +45,7 @@ beforeEach(() => {
   state.plugin = { id: "original", pluginKey: "test.provider", status: "ready", manifestJson: { capabilities: ["environment.drivers.register"], environmentDrivers: [{ driverKey: "tasks", supportsTasks: true }] } };
 });
 describe("stopped Runner checkpoint settlement", () => {
-  const idle = () => ({ schema: "paperclip.runner.durable.state.v1", lifecycle: "ready", lastControllerCommandSeq: 7,
+  const idle = () => ({ schema: "pilibala.runner.durable.state.v1", lifecycle: "ready", lastControllerCommandSeq: 7,
     ackedSourceSeq: 11, nextSourceSeq: 12, outbox: [] as unknown[], processedCommands: { done: { status: "completed" } } as Record<string, unknown>,
     pendingTerminalDelivery: null, pendingProviderCleanup: null, warmTransition: null } as Record<string, unknown>);
   it("treats only a ready journal at a fully settled cut as suspended", () => {
@@ -233,7 +233,7 @@ describe("plugin-provided Runner execution", () => {
       normalizedSessionId: "session", turnId: "turn", itemId: "item" };
     Object.assign(value.lease.metadata, { runnerTaskIdentity: { ...submit.runner, leaseId: identity.environmentLeaseId } });
     const operation = { kind: "read_state" as const, identity };
-    const result = { kind: "state", taskId: "attempt-1", state: { schema: "paperclip.runner.durable.state.v1", ...identity, lifecycle: "suspended" } };
+    const result = { kind: "state", taskId: "attempt-1", state: { schema: "pilibala.runner.durable.state.v1", ...identity, lifecycle: "suspended" } };
     const workers = worker(result);
     await expect(executeEnvironmentTask(database(value).db, workers as never, { companyId: "company", leaseId, operation })).resolves.toEqual(result);
     expect(workers.call).toHaveBeenCalledOnce(); workers.call.mockClear();
@@ -256,7 +256,7 @@ describe("plugin-provided Runner execution", () => {
     Object.assign(value.lease.metadata, {runnerTaskDispatched:true,runnerTaskLifecyclePolicy:{mode:"warm",idleTimeoutMs:120000},runnerTaskIdentity:{...submit.runner}});
     const identity = {runnerInstanceId:"runner",environmentLeaseId:leaseId,runId:"run",normalizedSessionId:"session",turnId:"turn",itemId:"item"};
     const operation = {kind:"read_state" as const,identity};
-    const result = {kind:"state",taskId:"attempt-1",state:{schema:"paperclip.runner.durable.state.v1",...identity,lifecycle:"suspended"}};
+    const result = {kind:"state",taskId:"attempt-1",state:{schema:"pilibala.runner.durable.state.v1",...identity,lifecycle:"suspended"}};
     const workers = worker(result);
     await expect(executeEnvironmentTask(database(value).db,workers as never,{companyId:"company",leaseId,operation})).resolves.toEqual(result);
     expect(workers.call).toHaveBeenCalledOnce();
@@ -306,7 +306,7 @@ describe("plugin-provided Runner execution", () => {
   });
   it.each([false, true])("prepares scoped configuration with submit-time auth %s", async atSubmit => {
     const operation = { kind: "prepare" as const, projectIds: [projectId], requirements: {
-      schema: "paperclip.runner.launch-requirements.v1" as const,
+      schema: "pilibala.runner.launch-requirements.v1" as const,
       identity: { runnerInstanceId: "runner", environmentLeaseId: leaseId, runId: "run",
         normalizedSessionId: "session", turnId: "turn", itemId: "item" },
       provider: "codex" as const, model: "selected", instructions: "Core instructions", runtimeContext: null,
@@ -551,7 +551,7 @@ describe("plugin-provided Runner execution", () => {
   it.each([submit, { kind: "status" } as const])("redacts even a valid source envelope outside a source submit (%j)", async operation => {
     const workers = worker();
     workers.call.mockRejectedValue(new JsonRpcCallError({ code: -32000, message: "synthetic-private-text", data: {
-      schema: "paperclip/environment-task-error/v1", diagnostic: { httpStatus: 409, errorCode: "SESSION_STATE_UNAVAILABLE", reason: "unresolved_operation" },
+      schema: "pilibala/environment-task-error/v1", diagnostic: { httpStatus: 409, errorCode: "SESSION_STATE_UNAVAILABLE", reason: "unresolved_operation" },
     } }));
     const error = await executeEnvironmentTask(database().db, workers as never, { companyId: "company", leaseId, operation }).catch(error => error);
     expect(error.message).toBe("Plugin-provided Runner execution operation unavailable; reconcile the same task before retrying");

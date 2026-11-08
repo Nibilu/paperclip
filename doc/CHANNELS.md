@@ -1,15 +1,15 @@
 # Release Channels
 
-Paperclip ships on four channels. Pick the one that matches your appetite for
+Pilibala ships on four channels. Pick the one that matches your appetite for
 freshness versus stability — switching is just a matter of which version you
 install.
 
 | Channel | What it is | Updates | npm | Docker |
 | --- | --- | --- | --- | --- |
-| `stable` | The recommended release | every week or two | `paperclipai@latest` | `ghcr.io/paperclipai/paperclip:latest` |
-| `beta` | Release candidates soaking before stable | when promoted | `paperclipai@beta` | `ghcr.io/paperclipai/paperclip:beta` |
-| `nightly` | Yesterday's merges, smoke-tested as a unit | once a night | `paperclipai@nightly` | `ghcr.io/paperclipai/paperclip:nightly` |
-| `canary` | Every merge to `master`, as it happens | many times a day | `paperclipai@canary` | `ghcr.io/paperclipai/paperclip:canary` |
+| `stable` | The recommended release | every week or two | `pilibalaai@latest` | `ghcr.io/pilibalaai/pilibala:latest` |
+| `beta` | Release candidates soaking before stable | when promoted | `pilibalaai@beta` | `ghcr.io/pilibalaai/pilibala:beta` |
+| `nightly` | Yesterday's merges, smoke-tested as a unit | once a night | `pilibalaai@nightly` | `ghcr.io/pilibalaai/pilibala:nightly` |
+| `canary` | Every merge to `master`, as it happens | many times a day | `pilibalaai@canary` | `ghcr.io/pilibalaai/pilibala:canary` |
 
 ## Choosing a channel
 
@@ -38,19 +38,19 @@ but it's available to anyone who wants the newest bits and accepts the risk.
 npm / npx:
 
 ```bash
-npx paperclipai@latest onboard    # stable
-npx paperclipai@beta onboard
-npx paperclipai@nightly onboard
-npx paperclipai@canary onboard
+npx pilibalaai@latest onboard    # stable
+npx pilibalaai@beta onboard
+npx pilibalaai@nightly onboard
+npx pilibalaai@canary onboard
 ```
 
 Docker:
 
 ```bash
-docker pull ghcr.io/paperclipai/paperclip:latest    # stable
-docker pull ghcr.io/paperclipai/paperclip:beta
-docker pull ghcr.io/paperclipai/paperclip:nightly
-docker pull ghcr.io/paperclipai/paperclip:canary
+docker pull ghcr.io/pilibalaai/pilibala:latest    # stable
+docker pull ghcr.io/pilibalaai/pilibala:beta
+docker pull ghcr.io/pilibalaai/pilibala:nightly
+docker pull ghcr.io/pilibalaai/pilibala:canary
 ```
 
 Every image is also published as `:sha-<short-sha>` for exact pinning, and
@@ -59,7 +59,7 @@ stable images additionally get `:YYYY.MDD.P` version tags.
 ## Seeing where you are
 
 ```bash
-npx paperclipai channels
+npx pilibalaai channels
 ```
 
 prints every channel with the version it currently resolves to, the install

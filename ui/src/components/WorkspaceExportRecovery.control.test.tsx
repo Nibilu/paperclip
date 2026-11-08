@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IssueRecoveryAction } from "@paperclipai/shared";
+import type { IssueRecoveryAction } from "@pilibalaai/shared";
 import { ApiError } from "../api/client";
 import { queryKeys } from "../lib/queryKeys";
 import { writePendingSend } from "../lib/pending-send";
@@ -19,14 +19,14 @@ const action = {
   cause: "native_workspace_sync_out_retry_exhausted", kind: "active_run_watchdog",
   status: "active", ownerType: "system", wakePolicy: null,
   evidence: { runId: "run-1", workspaceRecovery: {
-    schema: "paperclip.workspace-recovery.v1", runId: "run-1", status: "blocked",
+    schema: "pilibala.workspace-recovery.v1", runId: "run-1", status: "blocked",
     stage: "restoring_files", attempt: 6, requestIds: [], retryable: true,
   }, systemRecovery: { state: "exhausted", preservationOperationIds: [] } },
 } as unknown as IssueRecoveryAction;
 
 function inspection(value = action) {
   return { active: value, actions: [value], sourceInspection: {
-    schema: "paperclip.workspace-source-inspection.v1", actionId: value.id, runId: "run-1",
+    schema: "pilibala.workspace-source-inspection.v1", actionId: value.id, runId: "run-1",
     status: "verified", scope: "recorded_source_identity", observedAt: "2026-11-03T12:00:00Z",
   } };
 }
@@ -161,16 +161,16 @@ describe("governed retained-file recovery", () => {
   // sandbox predates ownership receipts. The server still records a retryable
   // blocked recovery, but the read-only source probe cannot verify ownership.
   const legacyHold = { ...action, id: "legacy-hold", ownerType: "board", evidence: { runId: "run-1",
-    workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId: "run-1", stage: "verifying_stop",
+    workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId: "run-1", stage: "verifying_stop",
       status: "blocked", attempt: 1, attemptLimit: 6, requestIds: [], retryable: true,
       message: "Automatic recovery of saved work stopped after 1 attempts (last failure: allocation_ownership_ambiguous)." },
-    systemRecovery: { schema: "paperclip.system-recovery.v1", phase: "verify_execution", state: "exhausted", revision: 5,
+    systemRecovery: { schema: "pilibala.system-recovery.v1", phase: "verify_execution", state: "exhausted", revision: 5,
       sourceRunId: "run-1", attempts: 1, retriesUsed: 0, preservationOperationIds: [], freshAttemptRunId: null,
       failure: { code: "allocation_ownership_ambiguous", retryClass: "service_required" } },
     originalFailureCode: "native_workspace_sync_out_failed", workspaceFinalizeAttempt: 3, previousWorkspaceRecovery: null },
   } as unknown as IssueRecoveryAction;
   const blockedInspection = (value: IssueRecoveryAction, failureCode = "allocation_ownership_ambiguous") => ({
-    active: value, actions: [value], sourceInspection: { schema: "paperclip.workspace-source-inspection.v1",
+    active: value, actions: [value], sourceInspection: { schema: "pilibala.workspace-source-inspection.v1",
       actionId: value.id, runId: "run-1", status: "blocked", failureCode,
       scope: "recorded_source_identity", observedAt: "2026-11-07T14:44:46Z" } });
 
@@ -480,7 +480,7 @@ describe("governed retained-file recovery", () => {
       const controllerAction = { ...action, cause: "native_controller_host_unverified", ownerType: "board",
         evidence: { runId: "run-1", controller: { bootId: "boot", pid: 7 } } } as unknown as IssueRecoveryAction;
       await mount(controllerAction);
-      expect(container.textContent).toContain("before Paperclip stored which host it ran on");
+      expect(container.textContent).toContain("before Pilibala stored which host it ran on");
       await click("Confirm the previous server stopped");
       const textarea = container.querySelector("textarea")!;
       await act(async () => {

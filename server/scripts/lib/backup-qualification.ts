@@ -1,11 +1,11 @@
 import { randomBytes, createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { createDb, runDatabaseBackup, runDatabaseRestore, type RunDatabaseBackupOptions } from "@paperclipai/db";
+import { createDb, runDatabaseBackup, runDatabaseRestore, type RunDatabaseBackupOptions } from "@pilibalaai/db";
 import { resolveExternalTestDatabaseUrl } from "../../src/lib/dedicated-test-database-url.js";
 import { verifyIdleDatabaseBackup } from "../../src/services/idle-database-backup.js";
 
-export const SOURCE_ENV = "PAPERCLIP_BACKUP_CHECKPOINT_SOURCE_TEST_DATABASE_URL";
-export const RESTORE_ENV = "PAPERCLIP_BACKUP_CHECKPOINT_RESTORE_TEST_DATABASE_URL";
+export const SOURCE_ENV = "PILIBALA_BACKUP_CHECKPOINT_SOURCE_TEST_DATABASE_URL";
+export const RESTORE_ENV = "PILIBALA_BACKUP_CHECKPOINT_RESTORE_TEST_DATABASE_URL";
 export const retention = { dailyDays: 14, weeklyWeeks: 4, monthlyMonths: 6 };
 
 export function resolveBackupQualificationPair(source = process.env[SOURCE_ENV], restore = process.env[RESTORE_ENV]) {

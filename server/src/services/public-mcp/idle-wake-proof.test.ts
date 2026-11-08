@@ -4,8 +4,8 @@ import { projectIdleMcpWakeProof, type IdleMcpCredentialRow } from "./idle-wake-
 import { authorizeMcpWakeAdmission } from "./wake-admission.js";
 const token = "pcmcp_rt_" + "x".repeat(43);
 const input = { stackId: "stack", ownerId: "00000000-0000-4000-8000-000000000001", capabilityGeneration: "a".repeat(64), challenge: "c".repeat(64),
-  personalResource: "https://tenant.example/mcp/paperclip", dotResource: "https://tenant.example/mcp/runner", personalEnabled: true, dotEnabled: true, now: 0 };
-const row: IdleMcpCredentialRow = { grantId: "grant", companyId: "company", clientId: "pcmcp_client_test", resource: input.dotResource, purpose: "agent", scopes: ["paperclip:agent", "offline_access"],
+  personalResource: "https://tenant.example/mcp/pilibala", dotResource: "https://tenant.example/mcp/runner", personalEnabled: true, dotEnabled: true, now: 0 };
+const row: IdleMcpCredentialRow = { grantId: "grant", companyId: "company", clientId: "pcmcp_client_test", resource: input.dotResource, purpose: "agent", scopes: ["pilibala:agent", "offline_access"],
   tokenHash: createHash("sha256").update(token).digest("hex"), tokenKind: "refresh", tokenExpiresAt: null, tokenUsedAt: null,
   dotBindingId: "binding", dotProvider: "openai_dot", dotStatus: "connected", dotGeneration: 1, dotPairingHash: null, dotChallengeHash: null,
   agentStatus: "active", membershipRole: "owner" };
@@ -29,7 +29,7 @@ describe("MCP credential owner projection", () => {
   });
   it("does not export an unbounded personal/access token, used refresh, or overlarge projection", () => {
     expect(projectIdleMcpWakeProof([{ ...row, tokenKind: "access" }], input).grantIds).toEqual([]);
-    const personal = { ...row, resource: input.personalResource, purpose: "personal", scopes: ["paperclip:read"], tokenExpiresAt: new Date(1000) };
+    const personal = { ...row, resource: input.personalResource, purpose: "personal", scopes: ["pilibala:read"], tokenExpiresAt: new Date(1000) };
     expect(projectIdleMcpWakeProof([personal], input).grantIds).toEqual(["grant"]);
     expect(projectIdleMcpWakeProof([personal], input).dotBindingIds).toEqual([]);
     expect(() => projectIdleMcpWakeProof(Array.from({ length: 1001 }, () => row), input)).toThrow();

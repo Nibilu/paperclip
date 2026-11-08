@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { agents, agentWakeupRequests, companies, completionContracts, createDb, environmentLeases, environments,
-  executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults } from "@paperclipai/db";
+  executionWorkspaces, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults } from "@pilibalaai/db";
 import { recoveryPostgresSupport, startRecoveryPostgres } from "../../__tests__/helpers/recovery-postgres.js";
 import { createDeliveryWorkCoordinator } from "../delivery-work-coordinator.js";
 import { hasAcknowledgedNativeRunStopReceipt, hasAcknowledgedNativeStopIntent } from "../acknowledged-native-stop.js";
@@ -12,7 +12,7 @@ import { preserveCancelledNativeWorkspaces, preserveNativeFailedWorkspace,
   registerCancelledWorkspacePreservationWork } from "./native-failed-workspace-recovery.js";
 import { prepareSandboxStopAndRetain, settleStopOnlyCleanup } from "../sandbox-stop-and-retain.js";
 import { readRemoteWorkspaceWriterHold } from "../remote-workspace-writer-hold.js";
-import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
+import { readRemoteWorkspaceAuthority } from "@pilibalaai/shared";
 
 (recoveryPostgresSupport.supported ? describe : describe.skip)("lifecycle-cancelled workspace preservation", () => {
   let database: Awaited<ReturnType<typeof startRecoveryPostgres>>;
@@ -28,13 +28,13 @@ import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
     const workspaceId = randomUUID(), leaseId = randomUUID(), environmentId = randomUUID();
     const providerLeaseId = `allocation-${randomUUID()}`, snapshotId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Stopped native files", issuePrefix: companyId.slice(0, 8) });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Stopped worker", adapterType: "paperclip_runner",
+    await db.insert(agents).values({ id: agentId, companyId, name: "Stopped worker", adapterType: "pilibala_runner",
       status: "terminated", lifecycleState: "terminating" });
     await db.insert(issues).values({ id: issueId, companyId, title: "Keep cancelled files", status: "in_progress", assigneeAgentId: agentId });
     await db.insert(environments).values({ id: environmentId, name: `Preservation ${runId}`, driver: "sandbox" });
-    const reference = { schema: "paperclip.remote-workspace-run.v1", workspaceId, leaseId, providerLeaseId,
+    const reference = { schema: "pilibala.remote-workspace-run.v1", workspaceId, leaseId, providerLeaseId,
       remoteCwd: "/work", epoch: 2, state: "prepared", snapshotId };
-    const nativeCancellation = { schema: "paperclip.native-cancellation.v1", companyId, issueId, runId,
+    const nativeCancellation = { schema: "pilibala.native-cancellation.v1", companyId, issueId, runId,
       scope: "run", reasonCode: "cancellation_run_only", dispatchState: "acknowledged", dispatched: true,
       intentAuditId: randomUUID(), acknowledgementAuditId: randomUUID(), acknowledgedAt: new Date().toISOString(),
       effects: ["release_run_resources"] };
@@ -50,7 +50,7 @@ import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
       failureCode: "native_continuation_requires_reconciliation", recoveryState: "blocked" });
     await db.insert(executionWorkspaces).values({ id: workspaceId, companyId, sourceIssueId: issueId,
       name: "Retained remote files", mode: "isolated", strategyType: "scratch", metadata: { remoteWorkspace: {
-        schema: "paperclip.remote-workspace.v1", epoch: 2, snapshotId, source: { kind: "empty" },
+        schema: "pilibala.remote-workspace.v1", epoch: 2, snapshotId, source: { kind: "empty" },
         location: { environmentId, leaseId, providerLeaseId, remoteCwd: "/work" }, writerRunId: runId, dirty: true,
       } } });
     await db.insert(environmentLeases).values({ id: leaseId, companyId, environmentId, heartbeatRunId: runId,
@@ -100,7 +100,7 @@ import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
       await registerCancelledWorkspacePreservationWork(db, worker, () => true, async () => true).ready;
       const [retained] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId));
       expect(retained.resultJson).toMatchObject({ workspaceRestoreFailure: "restore_failed",
-        workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [f.leaseId] },
+        workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [f.leaseId] },
         nativeCancellation: f.nativeCancellation });
       expect(retained).toMatchObject({ status: "cancelled", nativePhase: "observed" });
       expect(retained).toMatchObject({ costAccountingPending: true, costAccountedAt: null,
@@ -141,7 +141,7 @@ import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
     const nativeCancellation = { ...f.nativeCancellation, dispatched: false };
     const resultJson = { ...f.run.resultJson, nativeCancellation, cancelledByActorType: "user", cancelledByUserId: "operator" };
     const runnerProfileJson = kind === "native-sync" ? { nativeWorkspaceSync: {
-      schema: "paperclip.native-workspace-sync/v3", state: "prepared", workspaceId: f.workspaceId,
+      schema: "pilibala.native-workspace-sync/v3", state: "prepared", workspaceId: f.workspaceId,
       leaseId: f.leaseId, providerLeaseId: f.reference.providerLeaseId, remoteCwd: f.reference.remoteCwd,
       baselineSha256: "a".repeat(64), descriptorSha256: "b".repeat(64), finalHostSha256: null,
       resourceDisposition: "destroy",
@@ -155,7 +155,7 @@ import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
       else await registerCancelledWorkspacePreservationWork(db, worker, () => true, async () => true).ready;
       const [retained] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId));
       expect(retained.resultJson).toMatchObject({ ...resultJson,
-        workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [f.leaseId] } });
+        workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [f.leaseId] } });
       expect(retained).toMatchObject({ status: "cancelled", finishedAt: f.run.finishedAt,
         runnerProfileJson, costAccountingPending: true, usageJson: f.run.usageJson });
       expect(hasAcknowledgedNativeRunStopReceipt(retained)).toBe(false);
@@ -200,7 +200,7 @@ import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
       else await registerCancelledWorkspacePreservationWork(db, worker, () => true, async () => true).ready;
       const [retained] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId));
       expect(retained.resultJson).toMatchObject({ ...resultJson, workspaceRestoreFailure: "restore_failed",
-        workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [f.leaseId] } });
+        workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [f.leaseId] } });
       expect(retained).toMatchObject({ status: "cancelled", errorCode: "issue_reassigned", finishedAt: f.run.finishedAt });
       // The stop receipt and reusable policy stay exactly as the release left them.
       expect((await db.select().from(environmentLeases).where(eq(environmentLeases.id, f.leaseId)))[0]).toEqual(stopped);
@@ -293,10 +293,10 @@ import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
     const [lease] = await db.select().from(environmentLeases).where(eq(environmentLeases.id, f.leaseId));
     const confirmedAt = new Date(lease.acquiredAt.getTime() + 1_000);
     const releasedAt = new Date(confirmedAt.getTime() + 1);
-    const termination = { schema: "paperclip.remote-termination.v1", companyId: f.companyId, runId: f.runId,
+    const termination = { schema: "pilibala.remote-termination.v1", companyId: f.companyId, runId: f.runId,
       leaseId: f.leaseId, provider: "daytona", providerLeaseId: f.reference.providerLeaseId, state: "stopped",
       confirmedAt: confirmedAt.toISOString() };
-    const receipt = { schema: "paperclip.sandbox-stop-and-retain-receipt.v1", companyId: f.companyId, runId: f.runId,
+    const receipt = { schema: "pilibala.sandbox-stop-and-retain-receipt.v1", companyId: f.companyId, runId: f.runId,
       leaseId: f.leaseId, provider: "daytona", providerLeaseId: f.reference.providerLeaseId, requestId: randomUUID(),
       method: "environmentStopLease", pluginId: lease.metadata?.pluginId, confirmedAt: confirmedAt.toISOString() };
     await db.update(environmentLeases).set({ status: "released", leasePolicy: "reuse_by_environment",
@@ -321,7 +321,7 @@ import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
       else await registerCancelledWorkspacePreservationWork(db, worker, () => true, async () => true).ready;
       const [retained] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId));
       expect(retained.resultJson).toMatchObject({ nativeCancellation: f.nativeCancellation, workspaceRestoreFailure: "restore_failed",
-        workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [f.leaseId] } });
+        workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [f.leaseId] } });
       expect(retained).toMatchObject({ status: "cancelled", errorCode: "issue_reassigned", finishedAt: f.run.finishedAt });
       // The stopped allocation keeps its receipts. Preservation dispatches no
       // second stop and grants no execute right on the reusable sandbox.
@@ -374,7 +374,7 @@ import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
       else await registerCancelledWorkspacePreservationWork(db, worker, () => true, async () => true).ready;
       const [retained] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId));
       expect(retained.resultJson).toMatchObject({ nativeCancellation, workspaceRestoreFailure: "restore_failed",
-        workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [f.leaseId] } });
+        workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [f.leaseId] } });
       expect(retained).toMatchObject({ status: "cancelled", finishedAt: f.run.finishedAt });
       const actions = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.companyId, f.companyId));
       expect(actions).toHaveLength(1);
@@ -436,7 +436,7 @@ import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
     }
     if (invalid === "native-sync") {
       await db.update(heartbeatRuns).set({ runnerProfileJson: { nativeResourceDisposition: "keep_running", nativeWorkspaceSync: {
-        schema: "paperclip.native-workspace-sync/v3", state: "prepared", workspaceId: f.workspaceId,
+        schema: "pilibala.native-workspace-sync/v3", state: "prepared", workspaceId: f.workspaceId,
         leaseId: f.leaseId, providerLeaseId: f.reference.providerLeaseId, remoteCwd: f.reference.remoteCwd,
         baselineSha256: "a".repeat(64), descriptorSha256: "b".repeat(64), finalHostSha256: null,
         resourceDisposition: "keep_running" } } }).where(eq(heartbeatRuns.id, f.runId));

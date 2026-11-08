@@ -8,7 +8,7 @@ import { createGunzip } from "node:zlib";
 import tar from "tar-stream";
 import type { ProviderPackIdentity } from "./remote-provider-pack-verification.js";
 
-const repository = "paperclipai/paperclip";
+const repository = "pilibalaai/pilibala";
 const registry = "https://ghcr.io";
 export const MAX_RETAINED_PACK_BYTES = 4 * 1024 ** 3;
 const maxMetadataBytes = 1024 * 1024;
@@ -18,7 +18,7 @@ function fail(): never { throw Error("runner_remote_provider_source_invalid"); }
 type Blob = { digest: string; size: number; mediaType?: string };
 type Manifest = { schemaVersion: number; config: Blob; layers: Blob[] };
 export type RetainedPackProvenance = {
-  schema: "paperclip.retained-provider-pack-source.v1";
+  schema: "pilibala.retained-provider-pack-source.v1";
   sourceRevision: string;
   providerPackDigest: string;
   imageIndexDigest: string;
@@ -74,14 +74,14 @@ async function unpackTransport(layer: string, target: string, signal: AbortSigna
       if (names.has(name) || names.size >= 10_010) fail();
       names.add(name);
       if (header.type === "directory") {
-        if (!["opt", "opt/paperclip-runner", "opt/paperclip-runner/provider-pack.archives"].includes(name)) fail();
+        if (!["opt", "opt/pilibala-runner", "opt/pilibala-runner/provider-pack.archives"].includes(name)) fail();
         body.resume();
         return;
       }
-      if (header.type !== "file" || !/^opt\/paperclip-runner\/provider-pack(?:\.archive\.json|\.archives\/(?:overlay|[0-9]{1,4})\.tar\.zst)$/u.test(name)
+      if (header.type !== "file" || !/^opt\/pilibala-runner\/provider-pack(?:\.archive\.json|\.archives\/(?:overlay|[0-9]{1,4})\.tar\.zst)$/u.test(name)
         || !Number.isSafeInteger(header.size) || header.size! < 1 || (bytes += header.size!) > MAX_RETAINED_PACK_BYTES
         || name.endsWith(".json") && header.size! > maxMetadataBytes) fail();
-      const relative = name.slice("opt/paperclip-runner/".length);
+      const relative = name.slice("opt/pilibala-runner/".length);
       if (relative.includes("/")) await mkdir(join(target, "provider-pack.archives"), { recursive: true, mode: 0o700 });
       await pipeline(body, createWriteStream(join(target, relative), { flags: "wx", mode: 0o600 }), { signal });
     })().then(() => next(), error => archive.destroy(error));
@@ -134,11 +134,11 @@ export async function receiveRetainedProviderPack(input: {
   const configBytes = await metadata(await request(`/v2/${repository}/blobs/${configBlob.digest}`, token, true), signal, configBlob);
   const config = JSON.parse(configBytes.toString()) as { architecture: string; os: string; config?: { Labels?: Record<string, string> }; history: Array<{ empty_layer?: boolean; created_by?: string }> };
   if (config.architecture !== architecture || config.os !== "linux" || config.config?.Labels?.["org.opencontainers.image.revision"] !== revision
-    || config.config.Labels["org.opencontainers.image.source"] !== "https://github.com/paperclipai/paperclip"
+    || config.config.Labels["org.opencontainers.image.source"] !== "https://github.com/pilibalaai/pilibala"
     || !Array.isArray(config.history) || config.history.length > 1024) fail();
   const history = config.history.filter(row => !row.empty_layer);
   if (history.length !== image.layers.length) fail();
-  const indices = history.flatMap((row, index) => /^COPY \/provider-pack-transport\/? \/opt\/paperclip-runner\/? # buildkit$/u.test(row.created_by ?? "") ? [index] : []);
+  const indices = history.flatMap((row, index) => /^COPY \/provider-pack-transport\/? \/opt\/pilibala-runner\/? # buildkit$/u.test(row.created_by ?? "") ? [index] : []);
   if (indices.length !== 1) fail();
   const transport = blob(image.layers[indices[0]!]!, MAX_RETAINED_PACK_BYTES);
   if (!["application/vnd.oci.image.layer.v1.tar+gzip", "application/vnd.docker.image.rootfs.diff.tar.gzip"].includes(transport.mediaType ?? "")) fail();
@@ -155,7 +155,7 @@ export async function receiveRetainedProviderPack(input: {
   await pipeline(Readable.fromWeb(response.body as Parameters<typeof Readable.fromWeb>[0]), meter, createWriteStream(layer, { flags: "wx", mode: 0o600 }), { signal });
   if (bytes !== transport.size || `sha256:${hash.digest("hex")}` !== transport.digest) fail();
   await unpackTransport(layer, directory, signal);
-  return { schema: "paperclip.retained-provider-pack-source.v1", sourceRevision: revision, providerPackDigest: selected.digest,
+  return { schema: "pilibala.retained-provider-pack-source.v1", sourceRevision: revision, providerPackDigest: selected.digest,
     imageIndexDigest: digest(indexBytes), imageManifestDigest: child.digest, imageConfigDigest: configBlob.digest,
     transportLayerDigest: transport.digest, transportLayerBytes: transport.size };
 }

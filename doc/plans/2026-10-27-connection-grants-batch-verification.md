@@ -123,5 +123,5 @@ database fixtures failed to initialize. A separately isolated failing native
 runner case reproduced the same PostgreSQL startup failure. This is not a full
 local test pass; the critical connection suites use the disposable Docker
 provider described above, and the complete CI suite remains a separate gate.
-Final test/CI outcomes are recorded in [PR #17945](https://github.com/paperclipai/paperclip/pull/17945); this document does not
+Final test/CI outcomes are recorded in [PR #17945](https://github.com/pilibalaai/pilibala/pull/17945); this document does not
 substitute for a final-head check or deployed acceptance.

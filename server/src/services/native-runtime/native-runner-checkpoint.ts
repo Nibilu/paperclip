@@ -1,8 +1,8 @@
 import { readNativeCheckpointRetirement } from "./native-runner-checkpoint-retirement.js";
 import { notifyLiveRunRecovery } from "../live-run-recovery-notifications.js";
 import { and, eq, exists, gt, isNull, lte, inArray, notExists, or, sql } from "drizzle-orm";
-import { checkpointDb, heartbeatRuns, issues, nativeRunFinalizations, nativeRunnerCheckpoints, type Db } from "@paperclipai/db";
-import { inspectDurablePrpCheckpointHeader, inspectUnclaimedBootstrapCheckpoint, decodeDurablePrpCheckpoint, type DurablePrpCheckpoint, type DurablePrpControlPlane, type DurableRecoveryIdentity } from "../../vendor/paperclip-runner/index.js";
+import { checkpointDb, heartbeatRuns, issues, nativeRunFinalizations, nativeRunnerCheckpoints, type Db } from "@pilibalaai/db";
+import { inspectDurablePrpCheckpointHeader, inspectUnclaimedBootstrapCheckpoint, decodeDurablePrpCheckpoint, type DurablePrpCheckpoint, type DurablePrpControlPlane, type DurableRecoveryIdentity } from "../../vendor/pilibala-runner/index.js";
 import { createLocalEncryptedCipher } from "../../secrets/local-encrypted-provider.js";
 import { legacyControllerBootId } from "../legacy-controller-lease.js";
 import { assertNativeSourceCheckpointConsumer, lockSourceRecoveryCoordinators } from "./native-source-recovery-ownership.js";
@@ -301,7 +301,7 @@ export async function nativeRunnerCheckpointRemoteBootstrapProof(
     };
     const header = read("header");
     const cursor = read("cursor");
-    if (header?.schema !== "paperclip.runner.controller-checkpoint.v2" || !cursor) return null;
+    if (header?.schema !== "pilibala.runner.controller-checkpoint.v2" || !cursor) return null;
     const state: Record<string, unknown> = {
       ...(header.state as Record<string, unknown>),
       ackedSourceSeq: cursor.ackedSourceSeq,

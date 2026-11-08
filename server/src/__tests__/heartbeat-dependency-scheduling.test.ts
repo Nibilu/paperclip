@@ -32,7 +32,7 @@ import {
   issueTreeHolds,
   issues,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -65,7 +65,7 @@ vi.mock("../adapters/index.ts", async () => {
   };
 });
 
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_DEPENDENCY_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_DEPENDENCY_TEST_DATABASE_URL");
 const embeddedPostgresSupport = external ? { supported: true, reason: undefined } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 
@@ -106,7 +106,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    if (!external) tempDb = await startEmbeddedPostgresTestDatabase("paperclip-heartbeat-dependency-scheduling-");
+    if (!external) tempDb = await startEmbeddedPostgresTestDatabase("pilibala-heartbeat-dependency-scheduling-");
     db = createDb(external ?? tempDb!.connectionString);
     await db.insert(authUsers).values({ id: "responsible-user", name: "Fixture owner", email: "owner@example.test", createdAt: new Date(), updatedAt: new Date() });
     heartbeat = heartbeatService(db);
@@ -237,7 +237,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
         source: "automation", triggerDetail: "system", reason: "issue_children_completed",
         requestedByActorType: "system", requestedByActorId: "native-status-committer",
         idempotencyKey: `issue_children_completed:${issueId}:${childId}:${decisionId}`,
-        payload: { issueId, taskId: issueId, _paperclipWakeContext: {
+        payload: { issueId, taskId: issueId, _pilibalaWakeContext: {
           issueId, taskId: issueId, source: "native_status_decision",
           nativeChildCompletionDecisionId: decisionId, completedChildIssueId: childId,
           childIssueIds: [childId], childIssueSummaries: [{ id: childId, summary: "Revised ZIP: 11 tests." }],
@@ -301,7 +301,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
       expect(await waitForCondition(async () => mockAdapterExecute.mock.calls.length === 1, 30_000)).toBe(true);
       const contractId = randomUUID(), resultId = randomUUID(), assessmentId = randomUUID(), decisionId = randomUUID();
       await db.insert(completionContracts).values({ id: contractId, companyId, issueId, revision: 1,
-        schemaVersion: "paperclip.completion-contract.v1", policyVersion: "test", risk: "standard",
+        schemaVersion: "pilibala.completion-contract.v1", policyVersion: "test", risk: "standard",
         completionAuthority: "server_arbiter", incompleteCriteriaPolicy: "preserve_non_terminal",
         contractJson: {}, canonicalSha256: contractId, createdByActorType: "system", createdByActorId: "test" });
       await db.update(heartbeatRuns).set({ nativeIssueId: issueId, completionContractId: contractId }).where(eq(heartbeatRuns.id, predecessor!.id));
@@ -316,7 +316,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
       const [intent] = await db.insert(agentWakeupRequests).values({ companyId, agentId, source: "automation", triggerDetail: "system",
         reason: "issue_status_changed", requestedByActorType: "system", requestedByActorId: "native-status-committer",
         idempotencyKey: `native-status:${decisionId}:continuation`, payload: { issueId, taskId: issueId, nativeDecisionId: decisionId, continuationKind: "same_agent",
-          _paperclipWakeContext: { issueId, taskId: issueId, source: "native_status_decision", continuationKind: "same_agent" } } }).returning();
+          _pilibalaWakeContext: { issueId, taskId: issueId, source: "native_status_decision", continuationKind: "same_agent" } } }).returning();
       await db.insert(statusDecisionEffects).values({ companyId, issueId, decisionId, ordinal: 0,
         effectKind: "enqueue_continuation", targetType: "agent_wakeup_request", targetId: intent!.id,
         idempotencyKey: `native-status:${decisionId}:continuation`, payload: { continuationKind: "same_agent" }, deliveryState: "delivered", deliveredAt: new Date() });
@@ -349,7 +349,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `N${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -377,7 +377,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
     const nativeWakePayload = {
       issueId,
       taskId: issueId,
-      _paperclipWakeContext: {
+      _pilibalaWakeContext: {
         issueId,
         taskId: issueId,
         source: "native_status_decision",
@@ -451,7 +451,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
     await db.insert(issues).values({ id: childId, companyId, title: "Saved result", parentId: issueId, status: "done", assigneeAgentId: agentId });
     await db.insert(agentWakeupRequests).values({ companyId, agentId, source: "automation", triggerDetail: "system", reason: "issue_children_completed",
       requestedByActorType: "system", requestedByActorId: "native-status-committer", idempotencyKey: `onboarding-completed:${issueId}`,
-      payload: { issueId, _paperclipWakeContext: { issueId, completedChildIssueId: childId, onboardingCompletion: true } } });
+      payload: { issueId, _pilibalaWakeContext: { issueId, completedChildIssueId: childId, onboardingCompletion: true } } });
     const result = await heartbeat.dispatchPendingNativeStatusWakeups({ companyId });
     expect(result.dispatched).toBe(kind === "onboarding" ? 1 : 0);
     await heartbeat.drainActiveRunExecutions();
@@ -476,7 +476,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `R${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -529,7 +529,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
       source: "automation",
       triggerDetail: "system",
       reason: "issue_children_completed",
-      payload: { issueId, taskId: issueId, _paperclipWakeContext: { issueId, taskId: issueId } },
+      payload: { issueId, taskId: issueId, _pilibalaWakeContext: { issueId, taskId: issueId } },
       requestedByActorType: "system",
       requestedByActorId: "native-status-committer",
       idempotencyKey: `native-race:${issueId}`,
@@ -572,7 +572,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -824,7 +824,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `D${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -957,7 +957,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -1095,7 +1095,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -1305,7 +1305,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -1438,7 +1438,7 @@ describeEmbeddedPostgres("heartbeat dependency-aware queued run selection", () =
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",

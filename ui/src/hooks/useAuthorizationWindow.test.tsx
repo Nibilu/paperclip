@@ -71,7 +71,7 @@ describe("connector authorization windows", () => {
     prepare.mockResolvedValue({ kind: "reauthentication", url: "/cloud/connections/reauth" });
     const { result } = renderHook(useAuthorizationWindow);
     act(() => result.current.reserve());
-    await act(() => result.current.open({ authorizationUrl: "", handoff: { kind: "paperclip_cloud", session: "saved-handoff-session" } }));
+    await act(() => result.current.open({ authorizationUrl: "", handoff: { kind: "pilibala_cloud", session: "saved-handoff-session" } }));
     expect(save).toHaveBeenCalledWith("saved-handoff-session", popup.sessionStorage);
     expect(result.current.fallback).toBeNull();
   });

@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { createHash } from "node:crypto";
-import { assets, companies, completionContracts, documents, documentRevisions, heartbeatRuns, issueDocuments, issueAttachments, issues, issueThreadInteractions, issueWorkProducts, mcpAttachmentUploads, dotRunnerAssignments, type Db } from "@paperclipai/db";
+import { assets, companies, completionContracts, documents, documentRevisions, heartbeatRuns, issueDocuments, issueAttachments, issues, issueThreadInteractions, issueWorkProducts, mcpAttachmentUploads, dotRunnerAssignments, type Db } from "@pilibalaai/db";
 import { projectHumanInteractionResponse } from "../execution-continuation.js";
 
 export class NativeDeliverableEvidenceError extends Error {}

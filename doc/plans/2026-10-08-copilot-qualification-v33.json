@@ -1,5 +1,5 @@
 {
-  "schema": "paperclip.copilot.production-qualification/v33",
+  "schema": "pilibala.copilot.production-qualification/v33",
   "updatedAt": "2026-10-09T15:05:45.536425+00:00",
   "qualifiedApplicationSource": "024e1422f9c7b43ff1b083e7d8a25e1969dc4acf",
   "reviewedApplicationSource": "50d54d78e552869cae154d88ade68063191a547e",
@@ -289,7 +289,7 @@
     ]
   },
   "image": {
-    "tag": "ghcr.io/paperclipai/paperclip-daytona-runner:copilot-qualification-22fd2a8ae3414eee317e",
+    "tag": "ghcr.io/pilibalaai/pilibala-daytona-runner:copilot-qualification-22fd2a8ae3414eee317e",
     "indexDigest": "sha256:65fc4f30c15b3d744534ce3d7240dfbf3d3ff081da6d51180bd89f2802bd6e56",
     "knownCredentialMatches": 0,
     "filesScanned": 225852,
@@ -349,7 +349,7 @@
       "finalResponseCount": 1,
       "qualificationOverrides": [],
       "nativeUsd": null,
-      "image": "ghcr.io/paperclipai/paperclip-daytona-runner@sha256:9606c290372884ee74438408e8115088320979c8614a3dbd9d77be2b548a896e",
+      "image": "ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:9606c290372884ee74438408e8115088320979c8614a3dbd9d77be2b548a896e",
       "cleanup": {
         "allOwnedSandboxesAbsent": true,
         "ownedTaskSandboxAbsent": true,

@@ -1,6 +1,6 @@
 import { describeError } from "@/api/errors";
 import { useMemo, useState } from "react";
-import { agentHarnessType } from "@paperclipai/shared";
+import { agentHarnessType } from "@pilibalaai/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {

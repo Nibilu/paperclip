@@ -17,7 +17,7 @@ this entry does not load a Cloud distribution overlay.
 
 The request names both the **tool commit** and the **serving source commit and
 Railway deployment**. They can differ. The tool reads its own release marker or
-`server/dist/build-info.json`, ignoring an inherited `PAPERCLIP_BUILD_COMMIT` for
+`server/dist/build-info.json`, ignoring an inherited `PILIBALA_BUILD_COMMIT` for
 that check. It checks the current deployment and loopback health separately.
 Run as the existing application user with the original data-home, database and
 key bindings. Credentials remain in that process and are never printed.
@@ -36,7 +36,7 @@ Write one regular, mode 0600 JSON request, at most 64 KiB:
 
 ```json
 {
-  "schema": "paperclip.online-workspace-migration.v1",
+  "schema": "pilibala.online-workspace-migration.v1",
   "toolCommit": "<reviewed full Core commit>",
   "toolRoot": "/private/operator/core-release",
   "source": {
@@ -54,7 +54,7 @@ Write one regular, mode 0600 JSON request, at most 64 KiB:
 From the tool root, use its own Node 24 and loader:
 
 ```sh
-PAPERCLIP_ONLINE_WORKSPACE_MIGRATION=true \
+PILIBALA_ONLINE_WORKSPACE_MIGRATION=true \
   ./node/bin/node --max-old-space-size=2048 --import ./cli/node_modules/tsx/dist/loader.mjs \
   ./server/src/maintenance/online-workspace-migration.ts /private/operator/request.json
 ```

@@ -15,15 +15,15 @@ describe("instance experimental settings validators", () => {
     expect(patchInstanceExperimentalSettingsSchema.safeParse({ enableLegacyComposerSubmit: "true" }).success).toBe(false);
   });
   it("keeps Notebook disabled by default and accepts only explicit boolean rollout values", () => {
-    expect(instanceExperimentalSettingsSchema.parse({ enableApps: true, enableMemoryConnectors: true }).enablePaperclipNotebook).toBe(false);
+    expect(instanceExperimentalSettingsSchema.parse({ enableApps: true, enableMemoryConnectors: true }).enablePilibalaNotebook).toBe(false);
     expect(patchInstanceExperimentalSettingsSchema.parse({})).toEqual({});
     for (const enabled of [true, false]) {
-      expect(patchInstanceExperimentalSettingsSchema.parse({ enablePaperclipNotebook: enabled })).toEqual({ enablePaperclipNotebook: enabled });
-      expect(instanceExperimentalSettingsWithManagedSchema.parse({ enablePaperclipNotebook: enabled,
-        managedKeys: { enablePaperclipNotebook: { managed: true, managedBy: "paperclip-cloud" } },
-      }).enablePaperclipNotebook).toBe(enabled);
+      expect(patchInstanceExperimentalSettingsSchema.parse({ enablePilibalaNotebook: enabled })).toEqual({ enablePilibalaNotebook: enabled });
+      expect(instanceExperimentalSettingsWithManagedSchema.parse({ enablePilibalaNotebook: enabled,
+        managedKeys: { enablePilibalaNotebook: { managed: true, managedBy: "pilibala-cloud" } },
+      }).enablePilibalaNotebook).toBe(enabled);
     }
-    expect(patchInstanceExperimentalSettingsSchema.safeParse({ enablePaperclipNotebook: "true" }).success).toBe(false);
+    expect(patchInstanceExperimentalSettingsSchema.safeParse({ enablePilibalaNotebook: "true" }).success).toBe(false);
   });
   it("defaults GitHub review bots off independently of chat and accepts explicit changes", () => {
     expect(instanceExperimentalSettingsSchema.parse({ enableChatConnectors: true }).enableGitHubReviewBots).toBe(false);
@@ -51,11 +51,11 @@ describe("instance experimental settings validators", () => {
     expect(settings.enableServerInfoDebugView).toBe(false);
   });
 
-  it("defaults Paperclip developer mode off and accepts explicit patches", () => {
-    expect(instanceExperimentalSettingsSchema.parse({}).enablePaperclipDeveloperMode).toBe(false);
+  it("defaults Pilibala developer mode off and accepts explicit patches", () => {
+    expect(instanceExperimentalSettingsSchema.parse({}).enablePilibalaDeveloperMode).toBe(false);
     expect(
-      patchInstanceExperimentalSettingsSchema.parse({ enablePaperclipDeveloperMode: true }),
-    ).toEqual({ enablePaperclipDeveloperMode: true });
+      patchInstanceExperimentalSettingsSchema.parse({ enablePilibalaDeveloperMode: true }),
+    ).toEqual({ enablePilibalaDeveloperMode: true });
   });
 
   it("strips retired watchdog and liveness auto-recovery settings", () => {

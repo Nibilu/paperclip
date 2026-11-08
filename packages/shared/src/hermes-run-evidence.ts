@@ -3,7 +3,7 @@ import { z } from "zod";
 /**
  * Hermes Gateway adapter-specific run evidence (SPEC-implementation 11.2 +
  * AMB-10 analysis). These are adapter-specific evidence states projected onto
- * Paperclip task/run/remote-run records. They are NOT Paperclip task statuses
+ * Pilibala task/run/remote-run records. They are NOT Pilibala task statuses
  * and MUST NOT be confused with the generic run status or the recovery state
  * machine: the control plane keeps its own generic states and only consumes
  * this evidence for display, blockers, and admission explanations.
@@ -52,7 +52,7 @@ export const hermesRunEvidenceSchema = z
     state: hermesRunEvidenceStateSchema,
     /** Adapter error code, e.g. hermes_gateway_connect_failed. */
     adapterErrorCode: z.string().optional(),
-    /** Paperclip run id (never the same namespace as the remote run id). */
+    /** Pilibala run id (never the same namespace as the remote run id). */
     runId: z.string().optional(),
     /** Hermes remote run id when known; absence is not proof of non-dispatch. */
     remoteRunId: z.string().optional(),

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "packageName": "@paperclipai/skills-catalog",
+  "packageName": "@pilibalaai/skills-catalog",
   "packageVersion": "0.3.1",
   "generatedAt": "2026-10-06T01:21:47.421Z",
   "skills": [
     {
-      "id": "paperclipai:bundled:docs:doc-maintenance",
-      "key": "paperclipai/bundled/docs/doc-maintenance",
+      "id": "pilibalaai:bundled:docs:doc-maintenance",
+      "key": "pilibalaai/bundled/docs/doc-maintenance",
       "kind": "bundled",
       "category": "docs",
       "slug": "doc-maintenance",
@@ -39,14 +39,14 @@
       "contentHash": "sha256:2e02299210fd17c1fe1867b4ee8c144a11b6fe1fe481f83b8268cfbaaf10f9aa"
     },
     {
-      "id": "paperclipai:bundled:paperclip-operations:issue-triage",
-      "key": "paperclipai/bundled/paperclip-operations/issue-triage",
+      "id": "pilibalaai:bundled:pilibala-operations:issue-triage",
+      "key": "pilibalaai/bundled/pilibala-operations/issue-triage",
       "kind": "bundled",
-      "category": "paperclip-operations",
+      "category": "pilibala-operations",
       "slug": "issue-triage",
       "name": "issue-triage",
-      "description": "Triage Paperclip inbox issues that are stale, blocked, in-review, or assigned-but-not-progressing, and decide a single next action per issue (resume, reassign, unblock, escalate, or close).",
-      "path": "catalog/bundled/paperclip-operations/issue-triage",
+      "description": "Triage Pilibala inbox issues that are stale, blocked, in-review, or assigned-but-not-progressing, and decide a single next action per issue (resume, reassign, unblock, escalate, or close).",
+      "path": "catalog/bundled/pilibala-operations/issue-triage",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
@@ -58,7 +58,7 @@
       ],
       "requires": [],
       "tags": [
-        "paperclip",
+        "pilibala",
         "triage",
         "inbox",
         "workflow"
@@ -74,14 +74,14 @@
       "contentHash": "sha256:88dc13560371fb364963782cb4f6eeb4090fcde92ee3774479428ed6b90e11c1"
     },
     {
-      "id": "paperclipai:bundled:paperclip-operations:reflection-coach",
-      "key": "paperclipai/bundled/paperclip-operations/reflection-coach",
+      "id": "pilibalaai:bundled:pilibala-operations:reflection-coach",
+      "key": "pilibalaai/bundled/pilibala-operations/reflection-coach",
       "kind": "bundled",
-      "category": "paperclip-operations",
+      "category": "pilibala-operations",
       "slug": "reflection-coach",
       "name": "reflection-coach",
       "description": "Reflect on another agent's recent execution record and propose the smallest durable instruction, skill, or tool-description change. Use for evidence-backed coaching proposals, never hot-swaps.",
-      "path": "catalog/bundled/paperclip-operations/reflection-coach",
+      "path": "catalog/bundled/pilibala-operations/reflection-coach",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
@@ -92,7 +92,7 @@
       ],
       "requires": [],
       "tags": [
-        "paperclip",
+        "pilibala",
         "reflection",
         "coaching",
         "agents",
@@ -109,14 +109,14 @@
       "contentHash": "sha256:f2592d81f616628a3eba92636616424f2eed82ec22bb504240a58f6be115e407"
     },
     {
-      "id": "paperclipai:bundled:paperclip-operations:status-card-query",
-      "key": "paperclipai/bundled/paperclip-operations/status-card-query",
+      "id": "pilibalaai:bundled:pilibala-operations:status-card-query",
+      "key": "pilibalaai/bundled/pilibala-operations/status-card-query",
       "kind": "bundled",
-      "category": "paperclip-operations",
+      "category": "pilibala-operations",
       "slug": "status-card-query",
       "name": "status-card-query",
-      "description": "Create and maintain agent-authored Paperclip status cards, or compile a prose interest prompt into bounded CompanySearchQuery objects and write the first summary from the assigned Summarizer run.",
-      "path": "catalog/bundled/paperclip-operations/status-card-query",
+      "description": "Create and maintain agent-authored Pilibala status cards, or compile a prose interest prompt into bounded CompanySearchQuery objects and write the first summary from the assigned Summarizer run.",
+      "path": "catalog/bundled/pilibala-operations/status-card-query",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
@@ -127,7 +127,7 @@
       ],
       "requires": [],
       "tags": [
-        "paperclip",
+        "pilibala",
         "status",
         "search",
         "reporting",
@@ -144,14 +144,14 @@
       "contentHash": "sha256:2b6e53bf8491f027afdbd6961ad84f677cfd385a0a6a73616ea84111ca8886ed"
     },
     {
-      "id": "paperclipai:bundled:paperclip-operations:summarize-status",
-      "key": "paperclipai/bundled/paperclip-operations/summarize-status",
+      "id": "pilibalaai:bundled:pilibala-operations:summarize-status",
+      "key": "pilibalaai/bundled/pilibala-operations/summarize-status",
       "kind": "bundled",
-      "category": "paperclip-operations",
+      "category": "pilibala-operations",
       "slug": "summarize-status",
       "name": "summarize-status",
-      "description": "Write a short, colloquial summary for a Paperclip summary slot: open with the 1–3 specific, concrete actions the reader needs to take right now to unblock the work, then a brief plain-language status, streaming progress as it works.",
-      "path": "catalog/bundled/paperclip-operations/summarize-status",
+      "description": "Write a short, colloquial summary for a Pilibala summary slot: open with the 1–3 specific, concrete actions the reader needs to take right now to unblock the work, then a brief plain-language status, streaming progress as it works.",
+      "path": "catalog/bundled/pilibala-operations/summarize-status",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
@@ -162,7 +162,7 @@
       ],
       "requires": [],
       "tags": [
-        "paperclip",
+        "pilibala",
         "summary",
         "status",
         "reporting",
@@ -179,14 +179,14 @@
       "contentHash": "sha256:3e49ee2b8d83d1371fb0f59197bb96c46b64f722540405f46d4a5a756fbe1b89"
     },
     {
-      "id": "paperclipai:bundled:paperclip-operations:task-planning",
-      "key": "paperclipai/bundled/paperclip-operations/task-planning",
+      "id": "pilibalaai:bundled:pilibala-operations:task-planning",
+      "key": "pilibalaai/bundled/pilibala-operations/task-planning",
       "kind": "bundled",
-      "category": "paperclip-operations",
+      "category": "pilibala-operations",
       "slug": "task-planning",
       "name": "task-planning",
-      "description": "Write or revise a useful Paperclip plan with a clear outcome and verification. Use when a plan is requested or uncertainty needs resolving before execution.",
-      "path": "catalog/bundled/paperclip-operations/task-planning",
+      "description": "Write or revise a useful Pilibala plan with a clear outcome and verification. Use when a plan is requested or uncertainty needs resolving before execution.",
+      "path": "catalog/bundled/pilibala-operations/task-planning",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
@@ -198,7 +198,7 @@
       ],
       "requires": [],
       "tags": [
-        "paperclip",
+        "pilibala",
         "planning",
         "issues",
         "delegation"
@@ -214,14 +214,14 @@
       "contentHash": "sha256:a1724bde58be85c445590aeaa2f5f2f1de2bee24fe62f07fa3b579c6e4b28e6d"
     },
     {
-      "id": "paperclipai:bundled:product:paperclip-capsules",
-      "key": "paperclipai/bundled/product/paperclip-capsules",
+      "id": "pilibalaai:bundled:product:pilibala-capsules",
+      "key": "pilibalaai/bundled/product/pilibala-capsules",
       "kind": "bundled",
       "category": "product",
-      "slug": "paperclip-capsules",
-      "name": "paperclip-capsules",
-      "description": "Generate, implement, or review Paperclip capsule visuals. Use for capsule art, agent capsules, heartbeat status capsules, identicons, capsule banks, or brand-usage validation.",
-      "path": "catalog/bundled/product/paperclip-capsules",
+      "slug": "pilibala-capsules",
+      "name": "pilibala-capsules",
+      "description": "Generate, implement, or review Pilibala capsule visuals. Use for capsule art, agent capsules, heartbeat status capsules, identicons, capsule banks, or brand-usage validation.",
+      "path": "catalog/bundled/product/pilibala-capsules",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
       "compatibility": "compatible",
@@ -234,7 +234,7 @@
       ],
       "requires": [],
       "tags": [
-        "paperclip",
+        "pilibala",
         "brand",
         "capsules",
         "agents",
@@ -276,8 +276,8 @@
       "contentHash": "sha256:a2b26cf6895affeeb70c85567a061094450a59bd3c4fdcf28ee65858599ac12c"
     },
     {
-      "id": "paperclipai:bundled:product:wireframe",
-      "key": "paperclipai/bundled/product/wireframe",
+      "id": "pilibalaai:bundled:product:wireframe",
+      "key": "pilibalaai/bundled/product/wireframe",
       "kind": "bundled",
       "category": "product",
       "slug": "wireframe",
@@ -348,8 +348,8 @@
       "contentHash": "sha256:7106d84fc9db2053090f692706e41cfc586e7dd85a44f568e3319c4eefbdde46"
     },
     {
-      "id": "paperclipai:bundled:quality:qa-acceptance",
-      "key": "paperclipai/bundled/quality/qa-acceptance",
+      "id": "pilibalaai:bundled:quality:qa-acceptance",
+      "key": "pilibalaai/bundled/quality/qa-acceptance",
       "kind": "bundled",
       "category": "quality",
       "slug": "qa-acceptance",
@@ -383,8 +383,8 @@
       "contentHash": "sha256:32372dacaf62e93454b9855968c4eec96456ba78b509f450b3dfaa48e31ef356"
     },
     {
-      "id": "paperclipai:bundled:software-development:github-pr-workflow",
-      "key": "paperclipai/bundled/software-development/github-pr-workflow",
+      "id": "pilibalaai:bundled:software-development:github-pr-workflow",
+      "key": "pilibalaai/bundled/software-development/github-pr-workflow",
       "kind": "bundled",
       "category": "software-development",
       "slug": "github-pr-workflow",
@@ -416,8 +416,8 @@
       "contentHash": "sha256:90f278c89aa0711be150c1cd2456ca25620d02f36995b113ca9837d756a37f6c"
     },
     {
-      "id": "paperclipai:optional:browser:agent-browser",
-      "key": "paperclipai/optional/browser/agent-browser",
+      "id": "pilibalaai:optional:browser:agent-browser",
+      "key": "pilibalaai/optional/browser/agent-browser",
       "kind": "optional",
       "category": "browser",
       "slug": "agent-browser",
@@ -451,8 +451,8 @@
       "contentHash": "sha256:eabb2c9f7b5e1a27ebb1e05a711d61433a266478154cd671a685e99e67aadea2"
     },
     {
-      "id": "paperclipai:optional:content:release-announcement",
-      "key": "paperclipai/optional/content/release-announcement",
+      "id": "pilibalaai:optional:content:release-announcement",
+      "key": "pilibalaai/optional/content/release-announcement",
       "kind": "optional",
       "category": "content",
       "slug": "release-announcement",
@@ -486,8 +486,8 @@
       "contentHash": "sha256:efe8ea89b552df95222609867c9c75f1b40e16f457d34e7e4a124f54daa33efa"
     },
     {
-      "id": "paperclipai:optional:content:simplified-english",
-      "key": "paperclipai/optional/content/simplified-english",
+      "id": "pilibalaai:optional:content:simplified-english",
+      "key": "pilibalaai/optional/content/simplified-english",
       "kind": "optional",
       "category": "content",
       "slug": "simplified-english",
@@ -522,13 +522,13 @@
       "contentHash": "sha256:642321f40d51e0125df05c6fbace49aeb07ec30392058756909c259c9c5eac6a"
     },
     {
-      "id": "paperclipai:optional:finance:ramp",
-      "key": "paperclipai/optional/finance/ramp",
+      "id": "pilibalaai:optional:finance:ramp",
+      "key": "pilibalaai/optional/finance/ramp",
       "kind": "optional",
       "category": "finance",
       "slug": "ramp",
       "name": "ramp",
-      "description": "Fetch and follow Ramp's published agent playbooks inside Paperclip, with mandatory approval gates for spend, incorporation, cards, account setup, and other financial actions.",
+      "description": "Fetch and follow Ramp's published agent playbooks inside Pilibala, with mandatory approval gates for spend, incorporation, cards, account setup, and other financial actions.",
       "path": "catalog/optional/finance/ramp",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",
@@ -559,8 +559,8 @@
       "contentHash": "sha256:276d85e98a4732f278204e26438aa95fde158dd2d15c1e427c4c7c7d492e769d"
     },
     {
-      "id": "paperclipai:optional:product:design-critique",
-      "key": "paperclipai/optional/product/design-critique",
+      "id": "pilibalaai:optional:product:design-critique",
+      "key": "pilibalaai/optional/product/design-critique",
       "kind": "optional",
       "category": "product",
       "slug": "design-critique",
@@ -594,8 +594,8 @@
       "contentHash": "sha256:429f94df398a0697042b5bbe4755b1ff1a230aa5f41d99118ad37493ac65d21c"
     },
     {
-      "id": "paperclipai:optional:research:last30days",
-      "key": "paperclipai/optional/research/last30days",
+      "id": "pilibalaai:optional:research:last30days",
+      "key": "pilibalaai/optional/research/last30days",
       "kind": "optional",
       "category": "research",
       "slug": "last30days",
@@ -1115,13 +1115,13 @@
       }
     },
     {
-      "id": "paperclipai:optional:software-development:prepare-mcp-integration",
-      "key": "paperclipai/optional/software-development/prepare-mcp-integration",
+      "id": "pilibalaai:optional:software-development:prepare-mcp-integration",
+      "key": "pilibalaai/optional/software-development/prepare-mcp-integration",
       "kind": "optional",
       "category": "software-development",
       "slug": "prepare-mcp-integration",
       "name": "prepare-mcp-integration",
-      "description": "Prepare MCP/vendor integrations through cited research, a content PR, exact-revision human approval, and one governed Paperclip connector PR per approved connection. Use for new integration research and delivery; not for ad hoc connector coding that bypasses the playbooks.",
+      "description": "Prepare MCP/vendor integrations through cited research, a content PR, exact-revision human approval, and one governed Pilibala connector PR per approved connection. Use for new integration research and delivery; not for ad hoc connector coding that bypasses the playbooks.",
       "path": "catalog/optional/software-development/prepare-mcp-integration",
       "entrypoint": "SKILL.md",
       "trustLevel": "markdown_only",

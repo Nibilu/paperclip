@@ -1,5 +1,5 @@
 import { and, eq, getTableColumns, inArray } from "drizzle-orm";
-import { agents, caseHandoffs, issues, workflows, type Db } from "@paperclipai/db";
+import { agents, caseHandoffs, issues, workflows, type Db } from "@pilibalaai/db";
 import { authorizationService, issueReadSqlCondition, type AuthorizationActor } from "./authorization.js";
 import { listIssueStatusBlockerAttention } from "./issue-status-presentation.js";
 

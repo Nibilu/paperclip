@@ -32,7 +32,7 @@ export function restoreOnboardingState(
 
 // Exported so tests write/read the exact key the component uses, instead of
 // duplicating the literal and silently drifting from it if it's ever renamed.
-export const ONBOARDING_STORAGE_KEY = "paperclip-onboarding-state";
+export const ONBOARDING_STORAGE_KEY = "pilibala-onboarding-state";
 /**
  * The onboarding draft in `localStorage`, via a browser that is allowed to say
  * no.

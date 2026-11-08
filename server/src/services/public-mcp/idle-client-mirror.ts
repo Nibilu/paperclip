@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { mcpOauthClientMirrorState as state,type Db } from "@paperclipai/db";
+import { mcpOauthClientMirrorState as state,type Db } from "@pilibalaai/db";
 import type { IdleMcpInspectionBudget } from "./idle-wake-proof.js";
 import { mcpClientMirrorGeneration,mcpClientMirrorReceiptSchema,type McpClientMirrorReceipt } from "./client-mirror-contract.js";
 import type { IdleDeadlineSnapshot } from "../idle-deadline-types.js";

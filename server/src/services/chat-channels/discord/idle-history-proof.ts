@@ -2,7 +2,7 @@
  * independent obligation and must settle before its command receipt is quiet. */
 export function completedDiscordAction(a: string): string {
   return `${a}.kind = 'discord_native_command' AND ${a}.status = 'processed'
-    AND ${a}.payload->>'version' = '1' AND ${a}.payload->'invocation'->>'schema' = 'paperclip.discord.native-command.v1'
+    AND ${a}.payload->>'version' = '1' AND ${a}.payload->'invocation'->>'schema' = 'pilibala.discord.native-command.v1'
     AND ${a}.payload->'invocation'->>'command' IN ('status', 'new', 'close')
     AND ${a}.payload->'invocation'->>'digest' ~ '^[a-f0-9]{64}$'
     AND ${a}.provider_action_id = 'discord-native-command:' || (${a}.payload->'invocation'->>'interactionId')

@@ -20,7 +20,7 @@ import { formatUserLabel } from "@/lib/assignees";
 import { buildCompanyUserProfileMap } from "@/lib/company-members";
 import { queryKeys } from "@/lib/queryKeys";
 import { taskListViewStorageKey } from "@/lib/task-list-views";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@pilibalaai/shared";
 
 const pageSize = 200;
 

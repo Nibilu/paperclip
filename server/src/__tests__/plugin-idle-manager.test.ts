@@ -10,7 +10,7 @@ import { createPluginWorkerHandle, createPluginWorkerManager } from "../services
 import { startTaskDrain, stopTaskDrain } from "../services/task-admission.js";
 
 const manifest = { id: "test.idle", apiVersion: 1 as const, version: "1.0.0", displayName: "Idle fixture",
-  description: "Idle fixture", author: "Paperclip", categories: ["automation" as const], capabilities: [], entrypoints: { worker: "worker.cjs" } };
+  description: "Idle fixture", author: "Pilibala", categories: ["automation" as const], capabilities: [], entrypoints: { worker: "worker.cjs" } };
 function worker(write = false, hostHandler: () => Promise<void> = async () => undefined) {
   return createPluginWorkerHandle("test.idle", {
     entrypointPath: fileURLToPath(new URL("./fixtures/plugin-worker-idle.cjs", import.meta.url)),
@@ -53,7 +53,7 @@ describe("plugin manager idle receipts", () => {
   });
 
   it("drains a supported worker and persists its next useful operation under the same manifest", async () => {
-    const directory = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-plugin-idle-"));
+    const directory = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-plugin-idle-"));
     const stateFile = path.join(directory, "writes.json");
     const writes: unknown[] = [];
     const manager = createPluginWorkerManager();

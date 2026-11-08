@@ -37,8 +37,8 @@ test('legacy aliases preserve existing TestOps identities while execution uses a
     const actual = row(`tasks.${task}`);
     assert.equal(actual.scenario, task);
     assert.equal(actual.executionId, `chat-features.runner-opencode.local.${task}`);
-    assert.equal(actual.fullName, `paperclip.Product E2E.chat-features.tasks.${task}`);
-    assert.deepEqual(actual.aliases, [`paperclip.Product E2E.chat-features.${task}`]);
+    assert.equal(actual.fullName, `pilibala.Product E2E.chat-features.tasks.${task}`);
+    assert.deepEqual(actual.aliases, [`pilibala.Product E2E.chat-features.${task}`]);
   }
 });
 

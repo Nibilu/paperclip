@@ -74,7 +74,7 @@ describe("native session diagnostic ownership", () => {
 
   it.each([
     "Bearer synthetic-secret /private/customer/path alice@example.invalid",
-    "[paperclip-runner] runnerd diagnostic: runner transport close requested: Bearer synthetic-secret /private/customer/path",
+    "[pilibala-runner] runnerd diagnostic: runner transport close requested: Bearer synthetic-secret /private/customer/path",
     "\n{\"diagnosticKind\":\"trusted\",\"token\":\"synthetic-secret\"}",
   ])("retains only a closed category for idle untrusted text %j", async text => {
     const f = fixture(), sink = vi.fn(async () => undefined);

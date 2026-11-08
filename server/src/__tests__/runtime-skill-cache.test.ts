@@ -5,7 +5,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CompanySkill } from "@paperclipai/shared";
+import type { CompanySkill } from "@pilibalaai/shared";
 import { once } from "node:events";
 import { releaseExitedRuntimeSkillCacheLock, removeRuntimeSkillCache, resolveRuntimeSkillCache, runtimeSkillCacheLockHolderExited, runtimeSkillCacheSpec } from "../services/runtime-skill-cache.js";
 import { currentControllerProcessStamp } from "../services/controller-process-identity.js";

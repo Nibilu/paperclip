@@ -1,7 +1,7 @@
 import { describeError } from "../api/errors";
 import { useSelectedHeartbeatRun } from "../hooks/useSelectedHeartbeatRun";
 import { AgentCharacter } from "../components/AgentCharacter";
-import { characterStateForAgent } from "@paperclipai/shared";
+import { characterStateForAgent } from "@pilibalaai/shared";
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link, Navigate, useBeforeUnload, type NavigateFunction } from "@/lib/router";
 import { useQuery, useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
@@ -106,7 +106,7 @@ import {
   type LiveEvent,
   isResponsibleUserDenialCode,
   responsibleUserLabel,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { ResponsibleUserDenialNotice } from "../components/ResponsibleUserDenialNotice";
 import { RunWorkspaceRecoverySurface } from "../components/RunWorkspaceRecoverySurface";
 import { buildPermissionsForTrustPreset, getTrustPreset } from "../lib/trust-policy-ui";
@@ -900,7 +900,7 @@ export function AgentDetail() {
             </Button>
           }
         >
-          Ships with Paperclip and powers <strong>{builtInFeatureLabel}</strong>. Configure it like
+          Ships with Pilibala and powers <strong>{builtInFeatureLabel}</strong>. Configure it like
           any agent — model, instructions, budget. It can be paused but not deleted; pausing it
           pauses {builtInFeatureLabel}.
         </InlineBanner>
@@ -1633,7 +1633,7 @@ export function ConfigurationTab({
   const [awaitingRefreshAfterSave, setAwaitingRefreshAfterSave] = useState(false);
   const lastAgentRef = useRef(agent);
 
-  const catalogProvider = agent.adapterType === "paperclip_runner" ? String(agent.adapterConfig.provider ?? "codex") : undefined;
+  const catalogProvider = agent.adapterType === "pilibala_runner" ? String(agent.adapterConfig.provider ?? "codex") : undefined;
   const { data: adapterModels } = useQuery({
     queryKey:
       companyId
@@ -2206,7 +2206,7 @@ export function PromptsTab({
                       <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent side="right" sideOffset={4}>
-                      Managed: Paperclip stores and serves the instructions bundle. External: you provide a path on disk where the instructions live.
+                      Managed: Pilibala stores and serves the instructions bundle. External: you provide a path on disk where the instructions live.
                     </TooltipContent>
                   </Tooltip>
                 </span>
@@ -2261,7 +2261,7 @@ export function PromptsTab({
                       <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent side="right" sideOffset={4}>
-                      The absolute directory on disk where the instructions bundle lives. In managed mode this is set by Paperclip automatically.
+                      The absolute directory on disk where the instructions bundle lives. In managed mode this is set by Pilibala automatically.
                     </TooltipContent>
                   </Tooltip>
                 </span>
@@ -3358,7 +3358,7 @@ function KeysTab({ agentId, companyId }: { agentId: string; companyId?: string }
           Create API Key
         </h3>
         <p className="text-xs text-muted-foreground">
-          API keys allow this agent to authenticate calls to the Paperclip server.
+          API keys allow this agent to authenticate calls to the Pilibala server.
         </p>
         <div className="flex items-center gap-2">
           <Input

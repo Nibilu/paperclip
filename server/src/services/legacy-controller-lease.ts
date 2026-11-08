@@ -1,6 +1,6 @@
 import { notifyActiveExecutionRecovery, notifyLiveRunRecovery } from "./live-run-recovery-notifications.js";
 import { and, eq, gt, lte, sql } from "drizzle-orm";
-import { heartbeatRuns, livenessDb, type Db } from "@paperclipai/db";
+import { heartbeatRuns, livenessDb, type Db } from "@pilibalaai/db";
 import type { LegacyControllerLeaseLossCause, LegacyControllerLeaseLossTiming } from "./run-cancellation.js";
 import { randomUUID } from "node:crypto";
 import { currentControllerBootId } from "./controller-process-identity.js";

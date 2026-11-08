@@ -10,7 +10,7 @@ const configuration = () => ({ version: 1, id: "qa-fixture", mode: "existing-clo
   adapterModule: "/private/qa-provider.mjs", journeys: [caseId], baseline: { features: {}, connections: [] },
   limits: { durationMs: 600_000, modelBudgetCents: 500, maxRuns: 1 } });
 function retained(): RunnerE2EResult {
-  return { schema: "paperclip.runner-e2e.result/v2", suiteId: "product-journeys", suiteDefinitionHash: "fixture", caseId,
+  return { schema: "pilibala.runner-e2e.result/v2", suiteId: "product-journeys", suiteDefinitionHash: "fixture", caseId,
     executionId: `product-journeys.qa-fixture.configured-agent.daytona.${caseId}`, profileId: "configured-agent", environmentId: "daytona",
     provider: "opencode", model: "fixture-model", runtimeMode: "native", status: "passed", cleanup: "passed", attempt: 1,
     startedAt: "2020-01-01T00:00:00Z", finishedAt: "2020-01-01T00:01:00Z", durationMs: 60_000, runIds: ["run"],

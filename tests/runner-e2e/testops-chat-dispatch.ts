@@ -6,9 +6,9 @@ export function validateChatTestOpsDispatch(env: NodeJS.ProcessEnv, event: unkno
   const e = event as { ref?: unknown; sender?: { id?: unknown }; repository?: { full_name?: unknown; private?: unknown; default_branch?: unknown }; inputs?: Record<string, unknown> };
   const branch = e.repository?.default_branch, allowed = JSON.parse(env.TESTOPS_ALLOWED_ACTOR_IDS ?? "null");
   const operation = e.inputs?.operation ?? "evaluate";
-  if (env.GITHUB_ACTIONS !== "true" || env.GITHUB_EVENT_NAME !== "workflow_dispatch" || env.GITHUB_REPOSITORY !== "paperclipai/paperclip"
-    || e.repository?.full_name !== "paperclipai/paperclip" || e.repository.private !== false || typeof branch !== "string" || !/^[A-Za-z0-9._/-]+$/.test(branch)
-    || env.GITHUB_REF !== `refs/heads/${branch}` || e.ref !== env.GITHUB_REF || env.GITHUB_WORKFLOW_REF !== `paperclipai/paperclip/.github/workflows/chat-feature-testops.yml@refs/heads/${branch}`
+  if (env.GITHUB_ACTIONS !== "true" || env.GITHUB_EVENT_NAME !== "workflow_dispatch" || env.GITHUB_REPOSITORY !== "pilibalaai/pilibala"
+    || e.repository?.full_name !== "pilibalaai/pilibala" || e.repository.private !== false || typeof branch !== "string" || !/^[A-Za-z0-9._/-]+$/.test(branch)
+    || env.GITHUB_REF !== `refs/heads/${branch}` || e.ref !== env.GITHUB_REF || env.GITHUB_WORKFLOW_REF !== `pilibalaai/pilibala/.github/workflows/chat-feature-testops.yml@refs/heads/${branch}`
     || !/^[a-f0-9]{40}$/.test(env.GITHUB_SHA ?? "") || env.GITHUB_RUN_ATTEMPT !== "1" || !/^[1-9][0-9]{0,19}$/.test(env.GITHUB_RUN_ID ?? "")
     || !/^[1-9][0-9]{0,19}$/.test(env.GITHUB_ACTOR_ID ?? "") || e.sender?.id !== Number(env.GITHUB_ACTOR_ID)
     || !Array.isArray(allowed) || !allowed.length || allowed.some(v => !Number.isSafeInteger(v) || v <= 0) || !allowed.includes(Number(env.GITHUB_ACTOR_ID)) || !allowed.includes(triggeringActorId)

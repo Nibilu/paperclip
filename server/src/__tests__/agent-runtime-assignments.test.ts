@@ -4,7 +4,7 @@ import { mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq, sql } from "drizzle-orm";
-import { agents, heartbeatRuns, issues, companies, companyMemberships, applyPendingMigrations, closeFileStorageDb, createDb, instanceSettings, pluginConfig, plugins, projects, toolApplications, toolConnections, toolConnectionInstalls, toolProfiles, toolMcpGateways, toolProfileBindings, resourceLifecycleEvents, type Db } from "@paperclipai/db";
+import { agents, heartbeatRuns, issues, companies, companyMemberships, applyPendingMigrations, closeFileStorageDb, createDb, instanceSettings, pluginConfig, plugins, projects, toolApplications, toolConnections, toolConnectionInstalls, toolProfiles, toolMcpGateways, toolProfileBindings, resourceLifecycleEvents, type Db } from "@pilibalaai/db";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { pluginAgentRuntimeState } from "../services/plugin-agent-runtime-state.js";
@@ -18,8 +18,8 @@ import { aiConnectionService } from "../services/ai-connections.js";
 
 vi.mock("../services/subscription-refresh.js", () => ({ refreshSubscriptionConnection: vi.fn().mockResolvedValue(undefined) }));
 
-const externalUrl = process.env.PAPERCLIP_AGENT_RUNTIME_ASSIGNMENTS_TEST_DATABASE_URL;
-const expectedDatabase = process.env.PAPERCLIP_AGENT_RUNTIME_ASSIGNMENTS_EXPECTED_DATABASE;
+const externalUrl = process.env.PILIBALA_AGENT_RUNTIME_ASSIGNMENTS_TEST_DATABASE_URL;
+const expectedDatabase = process.env.PILIBALA_AGENT_RUNTIME_ASSIGNMENTS_EXPECTED_DATABASE;
 if (externalUrl || expectedDatabase) {
   if (!externalUrl || !expectedDatabase || !/^sleep2_[a-z0-9_]+_test$/.test(expectedDatabase)) {
     throw new Error("Explicit external fixture URL and expected database are required");
@@ -43,7 +43,7 @@ describeDatabase("connection assignment synchronization", () => {
   let connectionId: string;
   beforeAll(async () => {
     if (externalUrl) await applyPendingMigrations(externalUrl);
-    else database = await startEmbeddedPostgresTestDatabase("paperclip-runtime-assignments-");
+    else database = await startEmbeddedPostgresTestDatabase("pilibala-runtime-assignments-");
     db = createDb(externalUrl ?? database.connectionString, { maxConnections: 4 });
   }, 90_000);
   afterAll(async () => {
@@ -58,7 +58,7 @@ describeDatabase("connection assignment synchronization", () => {
     companyId = randomUUID(); agentId = randomUUID(); peerId = randomUUID(); pluginId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Connector runtime fixture", issuePrefix: `C${companyId.slice(0, 6)}` });
     await db.insert(plugins).values({ id: pluginId, pluginKey: pluginId, packageName: "runtime-fixture", version: "1.0.0", status: "ready", manifestJson: { resourceLifecycle: ["agent_runtime"], capabilities: ["events.subscribe", "agents.lifecycle.manage"] } as never });
-    await db.insert(agents).values([agentId, peerId].map(id => ({ id, companyId, name: id, adapterType: "paperclip_runner", lifecycleRequiredPluginIds: [pluginId] })));
+    await db.insert(agents).values([agentId, peerId].map(id => ({ id, companyId, name: id, adapterType: "pilibala_runner", lifecycleRequiredPluginIds: [pluginId] })));
     const [application] = await db.insert(toolApplications).values({ companyId, name: "Fixture MCP", type: "mcp_http" }).returning(); applicationId = application.id;
     const [connection] = await db.insert(toolConnections).values({ companyId, applicationId, name: "Fixture connection", uid: randomUUID(), transport: "mcp_remote", authKind: "none", enabled: true, status: "active" }).returning(); connectionId = connection.id;
   });
@@ -179,7 +179,7 @@ describeDatabase("connection assignment synchronization", () => {
     const inbox = pluginLifecycleInbox(db, pluginId);
     for (const event of await events()) await inbox.acknowledge(companyId, String(event.id));
     for (const enabled of [true, false]) {
-      vi.stubEnv("PAPERCLIP_MANAGED_CONFIG", JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "2026.720.0", features: { enablePublicMcp: enabled, enableChatConnectors: enabled }, plugins: { autoInstall: [] } }));
+      vi.stubEnv("PILIBALA_MANAGED_CONFIG", JSON.stringify({ v: 1, mode: "cloud", catalogVersion: "2026.720.0", features: { enablePublicMcp: enabled, enableChatConnectors: enabled }, plugins: { autoInstall: [] } }));
       const before = (await events()).length;
       const snapshots: Array<{ publicMcp: boolean; chatConnectors: boolean }> = [];
       const call = vi.fn(async (_plugin, _method, event) => {
@@ -298,9 +298,9 @@ describeDatabase("connection assignment synchronization", () => {
   }, 15000);
 
   it.each(["connection settings", "profile binding"] as const)("orders AI adoption with concurrent %s using foreign-key-compatible locks", async change => {
-    const home = await realpath(await mkdtemp(join(tmpdir(), "paperclip-adoption-fixture-")));
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    vi.stubEnv("PAPERCLIP_INSTANCE_ID", "adoption-fixture");
+    const home = await realpath(await mkdtemp(join(tmpdir(), "pilibala-adoption-fixture-")));
+    vi.stubEnv("PILIBALA_HOME", home);
+    vi.stubEnv("PILIBALA_INSTANCE_ID", "adoption-fixture");
     const [lower, higher] = [agentId, peerId].sort();
     const userId = `adoption-${randomUUID()}`;
     const issueId = randomUUID();
@@ -309,7 +309,7 @@ describeDatabase("connection assignment synchronization", () => {
     try {
       await db.update(toolConnections).set({ config: { url: "https://mcp.example.test/mcp" } }).where(eq(toolConnections.id, connectionId));
       await db.insert(companyMemberships).values({ companyId, principalType: "user", principalId: userId, status: "active", membershipRole: "member" });
-      await db.update(agents).set({ adapterType: "paperclip_runner", adapterConfig: { provider: "codex" } }).where(eq(agents.id, higher));
+      await db.update(agents).set({ adapterType: "pilibala_runner", adapterConfig: { provider: "codex" } }).where(eq(agents.id, higher));
       await db.insert(issues).values({ id: issueId, companyId, title: "Legacy AI adoption", status: "in_progress", assigneeAgentId: higher, responsibleUserId: userId });
       await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId: higher, nativeIssueId: issueId, status: "failed", errorCode: "acpx_auth_required", responsibleUserId: userId, contextSnapshot: {} });
       const intents = connectionIntentService(db);

@@ -19,8 +19,8 @@ export function chatContinuityFixture() {
     nativeIssueId: "chat", status: "succeeded", runtimeMode: "native", nativePhase: "committed",
     nativeSessionId: index === 3 ? "new-session" : "original-session", sessionIdBefore: null,
     contextSnapshot: { issueId: "chat", source: "issue.comment", wakeCommentId: board[index]!.id,
-      conversationSessionGeneration: index >= 2 ? 1 : 0, paperclipTaskMarkdown: index === 3 ? scenario.fresh : scenario.remember,
-      paperclipEnvironment: { id: scope.environmentId } },
+      conversationSessionGeneration: index >= 2 ? 1 : 0, pilibalaTaskMarkdown: index === 3 ? scenario.fresh : scenario.remember,
+      pilibalaEnvironment: { id: scope.environmentId } },
     runnerProfileJson: { nativeExecutionInput: { provider: { kind: scope.provider, model: scope.model } } },
     resultJson: { finalizationPhase: "committed", presentationDecision: { commentId: `reply-${index}` } } });
   const runs = [run(0), run(1), run(2), run(3)];
@@ -58,7 +58,7 @@ export function compactChatContinuityFixture() {
     point.reply.nativeFinal = true;
     point.events = [{ seq: 1, runId: point.reply.runId, companyId: fixture.scope.companyId, agentId: fixture.scope.agentId,
       eventType: "item.completed", protocolSchemaVersion: 1, sourceEventId: "event", sourceInstanceId: "instance", sourceSeq: 1,
-      payload: { prpEvent: { schema: "paperclip.prp.event.v1", schemaVersion: 1, runId: point.reply.runId, sourceKind: "runner",
+      payload: { prpEvent: { schema: "pilibala.prp.event.v1", schemaVersion: 1, runId: point.reply.runId, sourceKind: "runner",
         eventType: "item.completed", sourceEventId: "event", sourceInstanceId: "instance", sourceSeq: 1,
         payload: { kind: "agentMessage", channel: "final", text: point.reply.body } } } }];
   }

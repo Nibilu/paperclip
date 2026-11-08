@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
 import * as archiveOwner from "./remote-workspace-snapshot-archive.js";
 import { readWorkspaceInventory } from "./remote-workspace-readonly-inventory.js";
 import { captureRemoteWorkspaceArchive, REMOTE_WORKSPACE_SANDBOX_DISK_FULL, type RemoteWorkspaceTarget } from "./remote-workspace-transport.js";

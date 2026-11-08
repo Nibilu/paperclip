@@ -4,7 +4,7 @@ import { moduleDurationMs } from "./test-timing-reporter.mjs";
 
 // One file over this budget caps how evenly a lane can shard: the scheduler
 // cannot split a file. Warn so authors split it; never fail the run.
-export const oversizedThresholdEnv = "PAPERCLIP_CI_OVERSIZED_TEST_FILE_SECONDS";
+export const oversizedThresholdEnv = "PILIBALA_CI_OVERSIZED_TEST_FILE_SECONDS";
 export const defaultOversizedThresholdSeconds = 180;
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 

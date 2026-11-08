@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { RUNNER_TOOL_SCOPE_TOKEN_HEADER } from "../../packages/paperclip-runner/src/drivers/runner-tool-bridge.js";
+import { RUNNER_TOOL_SCOPE_TOKEN_HEADER } from "../../packages/pilibala-runner/src/drivers/runner-tool-bridge.js";
 
 export async function startCursorCloudCallbackProxy(input: { port: number; appPort: number }) {
   if (!Number.isInteger(input.port) || input.port < 1024 || input.port > 65535 || input.port === input.appPort) throw new Error("Cursor Cloud requires a distinct callback-only loopback port");

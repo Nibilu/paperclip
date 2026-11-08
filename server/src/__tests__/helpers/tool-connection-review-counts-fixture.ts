@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { toolActionRequests, toolCatalogEntries, toolConnections, toolInvocations, type Db } from "@paperclipai/db";
+import { toolActionRequests, toolCatalogEntries, toolConnections, toolInvocations, type Db } from "@pilibalaai/db";
 import { createProfileProjectionFixture } from "./tool-profile-projection-fixture.js";
 
 export async function createConnectionReviewCountsFixture(db: Db, large = false) {

@@ -7,9 +7,9 @@ import type {Request} from "express";
 import {afterAll,afterEach,beforeAll,beforeEach,describe,expect,it,vi} from "vitest";
 import {eq,sql} from "drizzle-orm";
 import {PgDatabase} from "drizzle-orm/pg-core";
-import {subscribeDatabaseWork} from "@paperclipai/db/work-signals";
+import {subscribeDatabaseWork} from "@pilibalaai/db/work-signals";
 import {DELIVERY_QUEUES} from "../delivery-work-notifications.js";
-import {applyPendingMigrations,createDb,companies,authUsers,companyMemberships,mcpOauthClients as clients,mcpOauthClientMirrorState as state,mcpOauthClientChanges as changes,mcpOauthDeviceRequests as devices,mcpOauthGrants as grants} from "@paperclipai/db";
+import {applyPendingMigrations,createDb,companies,authUsers,companyMemberships,mcpOauthClients as clients,mcpOauthClientMirrorState as state,mcpOauthClientChanges as changes,mcpOauthDeviceRequests as devices,mcpOauthGrants as grants} from "@pilibalaai/db";
 import {resolveExternalTestDatabaseUrl} from "../../__tests__/helpers/external-test-database.js";
 import {createDeliveryWorkCoordinator} from "../delivery-work-coordinator.js";
 import {instanceSettingsService} from "../instance-settings.js";
@@ -26,7 +26,7 @@ import {readIdleMcpWakeProof} from "./idle-wake-proof.js";
 
 const managed=vi.hoisted(()=>({identity:null as null|{stackId:string;canonicalOrigin:string}}));
 vi.mock("../cloud-runtime-identity.js",async importOriginal=>({...await importOriginal<typeof import("../cloud-runtime-identity.js")>(),getCloudRuntimeIdentity:()=>managed.identity}));
-const configured=resolveExternalTestDatabaseUrl("PAPERCLIP_MCP_SLEEP_TEST_DATABASE_URL"),origin="https://mirror.example.test",instanceId="mirror-instance",stackId="mirror-stack";
+const configured=resolveExternalTestDatabaseUrl("PILIBALA_MCP_SLEEP_TEST_DATABASE_URL"),origin="https://mirror.example.test",instanceId="mirror-instance",stackId="mirror-stack";
 const budget={beforeRead:async()=>{},check:()=>{}};
 describe.skipIf(!configured)("MCP mirror actual transaction lifecycle",()=>{
   let db:ReturnType<typeof createDb>,coordinator:ReturnType<typeof createDeliveryWorkCoordinator>|undefined;
@@ -38,8 +38,8 @@ describe.skipIf(!configured)("MCP mirror actual transaction lifecycle",()=>{
   beforeEach(async()=>{
     await db.execute(sql`TRUNCATE TABLE companies,mcp_oauth_clients,mcp_oauth_client_mirror_state,mcp_oauth_client_changes CASCADE`);
     companyId=randomUUID();userId=randomUUID();remoteAvailable=false;failures=0;ack=undefined;sent.length=0;errors.length=0;onAppend=undefined;
-    home=await mkdtemp(path.join(tmpdir(),"mcp-mirror-lifecycle-"));vi.stubEnv("PAPERCLIP_HOME",home);
-    managed.identity={stackId,canonicalOrigin:origin};vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY",randomBytes(32).toString("base64"));
+    home=await mkdtemp(path.join(tmpdir(),"mcp-mirror-lifecycle-"));vi.stubEnv("PILIBALA_HOME",home);
+    managed.identity={stackId,canonicalOrigin:origin};vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY",randomBytes(32).toString("base64"));
     await db.insert(companies).values({id:companyId,name:"Mirror lifecycle",issuePrefix:"MIRROR"});
     await db.insert(authUsers).values({id:userId,name:"Mirror operator",email:`${userId}@example.test`,createdAt:new Date(),updatedAt:new Date()});
     await db.insert(companyMemberships).values({companyId,principalId:userId,principalType:"user",membershipRole:"owner",status:"active"});
@@ -64,13 +64,13 @@ describe.skipIf(!configured)("MCP mirror actual transaction lifecycle",()=>{
   async function acknowledged(){await vi.waitFor(async()=>{const row=await current();expect(row).toBeDefined();expect(row?.receipt).toBeTruthy();expect(row?.receipt?.revision).toBe(row?.revision);},{timeout:10_000});return(await current())!;}
   const inspect=()=>readIdleMcpClientMirror(db,{budget,enabled:true,origin,instanceId,managedStackId:stackId});
   async function device(){
-    const oauth=createPublicMcpOAuth(db,{origin,resource:origin+"/mcp/paperclip"});
+    const oauth=createPublicMcpOAuth(db,{origin,resource:origin+"/mcp/pilibala"});
     const client=await oauth.register({client_name:"Legacy device",redirect_uris:["https://client.example.test/callback"],grant_types:["authorization_code","refresh_token",DEVICE_GRANT],response_types:["code"],token_endpoint_auth_method:"none"});
-    const authorization=await oauth.deviceAuthorize({client_id:client.client_id,resource:oauth.config.resource,scope:"paperclip:read offline_access"});
+    const authorization=await oauth.deviceAuthorize({client_id:client.client_id,resource:oauth.config.resource,scope:"pilibala:read offline_access"});
     return{oauth,client,authorization};
   }
   it("indexes a normally approved abandoned authorization code after an empty index startup",async()=>{
-    const oauth=createPublicMcpOAuth(db,{origin,resource:origin+"/mcp/paperclip"});
+    const oauth=createPublicMcpOAuth(db,{origin,resource:origin+"/mcp/pilibala"});
     const client=await oauth.register({client_name:"Abandoned approved client",redirect_uris:["https://client.example.test/callback"],grant_types:["authorization_code"]});
     await start();
     const published:string[]=[];
@@ -78,7 +78,7 @@ describe.skipIf(!configured)("MCP mirror actual transaction lifecycle",()=>{
       if(value.operation==="complete"){published.push(value.authorityId);return{complete:true,receipt:{version:1,authorityId:value.authorityId,keyId:value.keyId,revision:value.revision,generation:createHash("sha256").update(value.authorityId).digest("hex")}};}
       return{complete:false,baseRevision:-1};
     }}});await index.ready;expect(published).toEqual([]);
-    const verifier="v".repeat(43),location=await oauth.authorize({response_type:"code",client_id:client.client_id,redirect_uri:"https://client.example.test/callback",resource:oauth.config.resource,scope:"paperclip:read",code_challenge:createHash("sha256").update(verifier).digest("base64url"),code_challenge_method:"S256"});
+    const verifier="v".repeat(43),location=await oauth.authorize({response_type:"code",client_id:client.client_id,redirect_uri:"https://client.example.test/callback",resource:oauth.config.resource,scope:"pilibala:read",code_challenge:createHash("sha256").update(verifier).digest("base64url"),code_challenge_method:"S256"});
     const actor:Request["actor"]={type:"board",source:"session",userId,companyIds:[companyId]};
     const grantInsert=vi.spyOn(PgDatabase.prototype,"insert"),intents:Array<{hints:string[];grantInserts:number}>=[];
     const unsubscribe=subscribeDatabaseWork(db,DELIVERY_QUEUES.mcpRevocationIndex,(event,hints)=>{if(event==="intent"&&hints?.size)intents.push({hints:[...hints],grantInserts:grantInsert.mock.calls.filter(([table])=>table===grants).length});});
@@ -113,7 +113,7 @@ describe.skipIf(!configured)("MCP mirror actual transaction lifecycle",()=>{
     expect((await db.select().from(devices))[0].expiresAt).toEqual(originalDevice.expiresAt);expect(await db.select().from(changes)).toEqual([]);expect(errors.length).toBeGreaterThanOrEqual(1);
   });
   it("a normal client mutation supersedes an in-flight page without acknowledging or logging the old revision",async()=>{
-    const oauth=createPublicMcpOAuth(db,{origin,resource:origin+"/mcp/paperclip"});
+    const oauth=createPublicMcpOAuth(db,{origin,resource:origin+"/mcp/pilibala"});
     const register=(name:string)=>oauth.register({client_name:name,redirect_uris:["https://client.example.test/callback"],grant_types:["authorization_code","refresh_token"],response_types:["code"],token_endpoint_auth_method:"none"});
     await register("First client");remoteAvailable=true;let superseded:number|undefined;
     onAppend=async()=>{superseded=(await current())!.revision;await register("Concurrent client");};
@@ -147,7 +147,7 @@ describe.skipIf(!configured)("MCP mirror actual transaction lifecycle",()=>{
     const before=await acknowledged(),receipt=before.receipt!;
     await coordinator!.stop();coordinator=undefined;
     const proofOwnerId=randomUUID(),proofNow=Date.now();
-    const inspectTokens=()=>readIdleMcpWakeProof(db,{stackId,ownerId:proofOwnerId,capabilityGeneration:"a".repeat(64),challenge:"c".repeat(64),personalResource:origin+"/mcp/paperclip",dotResource:origin+"/mcp/runner",personalEnabled:true,dotEnabled:false,clientMirror:receipt,now:proofNow,budget});
+    const inspectTokens=()=>readIdleMcpWakeProof(db,{stackId,ownerId:proofOwnerId,capabilityGeneration:"a".repeat(64),challenge:"c".repeat(64),personalResource:origin+"/mcp/pilibala",dotResource:origin+"/mcp/runner",personalEnabled:true,dotEnabled:false,clientMirror:receipt,now:proofNow,budget});
     const existing=await inspectTokens();expect(existing.grantIds).toContain(approved.grantId);expect(existing.admission.revocationAuthorities).toHaveLength(1);expect(existing.admission.lanes.length).toBeGreaterThan(0);
     expect((await readIdleMcpDeviceStatus(db,{enabled:true,receipt,budget})).blocked).toBe(false);
     const retained={company:await db.select().from(companies).where(eq(companies.id,companyId)),clients:await db.select().from(clients),devices:await db.select().from(devices),grants:await db.select().from(grants),changes:await db.select().from(changes),state:await current(),status:await readIdleMcpDeviceStatus(db,{enabled:true,receipt,budget})};
@@ -164,7 +164,7 @@ describe.skipIf(!configured)("MCP mirror actual transaction lifecycle",()=>{
     expect(await db.select().from(devices)).toEqual([]);expect(await db.select().from(grants)).toEqual([]);expect((await current())!.revision).toBeGreaterThan(before.revision);
     expect((await readIdleMcpDeviceStatus(db,{enabled:true,receipt,budget})).blocked).toBe(true);
     await start();const after=await acknowledged();expect(after.receipt?.deviceStatus?.count).toBe(0);expect(after.receipt?.deviceStatus?.generation).not.toBe(receipt.deviceStatus?.generation);
-    const proof=await readIdleMcpWakeProof(db,{stackId,ownerId:randomUUID(),capabilityGeneration:"a".repeat(64),challenge:"c".repeat(64),personalResource:origin+"/mcp/paperclip",dotResource:origin+"/mcp/runner",personalEnabled:true,dotEnabled:false,clientMirror:after.receipt!,now:Date.now(),budget});
+    const proof=await readIdleMcpWakeProof(db,{stackId,ownerId:randomUUID(),capabilityGeneration:"a".repeat(64),challenge:"c".repeat(64),personalResource:origin+"/mcp/pilibala",dotResource:origin+"/mcp/runner",personalEnabled:true,dotEnabled:false,clientMirror:after.receipt!,now:Date.now(),budget});
     expect(proof.grantIds).toEqual([]);expect(proof.admission.revocationAuthorities).toEqual([]);expect(await db.select().from(changes)).toEqual([]);
   },30_000);
   it("rotated local key invalidates old status and only the current bounded source publication restores it",async()=>{
@@ -174,7 +174,7 @@ describe.skipIf(!configured)("MCP mirror actual transaction lifecycle",()=>{
       await device();remoteAvailable=true;await start();const before=await acknowledged();beforeRevision=before.revision;
       // Replace the key context only after the previous publication owner has joined.
       await coordinator!.stop();coordinator=undefined;
-      vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY",randomBytes(32).toString("base64"));expect((await readIdleMcpDeviceStatus(db,{enabled:true,receipt:before.receipt!,budget})).blocked).toBe(true);
+      vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY",randomBytes(32).toString("base64"));expect((await readIdleMcpDeviceStatus(db,{enabled:true,receipt:before.receipt!,budget})).blocked).toBe(true);
       await start();const after=await acknowledged();afterRevision=after.revision;expect(after.revision).toBe(before.revision+1);expect(after.receipt?.deviceStatus?.keyId).not.toBe(before.receipt?.deviceStatus?.keyId);expect((await readIdleMcpDeviceStatus(db,{enabled:true,receipt:after.receipt!,budget})).blocked).toBe(false);
     }finally{
       const category=(error:unknown)=>{
@@ -188,7 +188,7 @@ describe.skipIf(!configured)("MCP mirror actual transaction lifecycle",()=>{
         if(error.message==="MCP client mirror current authority changed")return "authority-changed";
         return error.name==="ZodError"?"schema-invalid":"other-error";
       };
-      const diagnosticPath=process.env.PAPERCLIP_MCP_KEY_DIAGNOSTIC_PATH;
+      const diagnosticPath=process.env.PILIBALA_MCP_KEY_DIAGNOSTIC_PATH;
       if(diagnosticPath){
         try{
           const cache=process.env.XDG_CACHE_HOME;

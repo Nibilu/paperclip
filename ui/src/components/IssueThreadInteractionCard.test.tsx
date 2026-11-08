@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 import { ApiError } from "../api/client";
 import { IssueThreadInteractionCard } from "./IssueThreadInteractionCard";
 import { ThemeProvider } from "../context/ThemeContext";
@@ -167,7 +167,7 @@ describe("IssueThreadInteractionCard", () => {
       ...pendingAskUserQuestionsInteraction.payload,
       questions: [{ id: "draft", prompt: "Edit draft", required: true, selectionMode: "single" as const, options: [{ id: "draft_text", label: "Write an answer", freeText: true }], allowOther: false }],
       questionSet: {
-        schema: "paperclip.question_set.v1" as const,
+        schema: "pilibala.question_set.v1" as const,
         questions: [{ id: "draft", prompt: "Edit draft", required: true, answerMode: "text" as const, initialText: "  Provider draft\n漢字\\n  " }],
       },
     },
@@ -680,7 +680,7 @@ describe("IssueThreadInteractionCard", () => {
 
     const link = host.querySelector('a[href="/issues/PAP-42#document-preview"]');
     expect(link?.textContent).toBe("two screenshots");
-    const prompt = link?.closest(".paperclip-markdown");
+    const prompt = link?.closest(".pilibala-markdown");
     expect(prompt?.querySelector("strong")?.textContent).toBe("Accept");
     expect(prompt?.querySelector("code")?.textContent).toBe("preview.png");
     expect(prompt?.querySelector("img")).toBeNull();
@@ -689,7 +689,7 @@ describe("IssueThreadInteractionCard", () => {
       .toContain("Image: Review image (https://provider.invalid/review.png)");
     expect(prompt?.querySelector("pre code.language-mermaid")?.textContent)
       .toContain("flowchart LR");
-    expect(prompt?.querySelector(".paperclip-mermaid")).toBeNull();
+    expect(prompt?.querySelector(".pilibala-mermaid")).toBeNull();
     expect(prompt?.querySelectorAll("li")).toHaveLength(2);
     expect(prompt?.textContent).not.toContain("[two screenshots]");
   });
@@ -843,7 +843,7 @@ describe("IssueThreadInteractionCard", () => {
 
     expect(
       host.querySelector('[data-testid="interaction-action-error"]')?.textContent,
-    ).toBe("Paperclip is temporarily unavailable. Please try again in a moment.");
+    ).toBe("Pilibala is temporarily unavailable. Please try again in a moment.");
   });
 
   it("surfaces a denied suggested-task acceptance instead of failing silently", async () => {
@@ -958,12 +958,12 @@ describe("IssueThreadInteractionCard", () => {
   });
 
   describe("custom request confirmation targets", () => {
-    const prKey = (pull: number) => `github:paperclipai/paperclip-desktop:pull:${pull}`;
+    const prKey = (pull: number) => `github:pilibalaai/pilibala-desktop:pull:${pull}`;
     const unlabeled = (pull: number) => ({ type: "custom" as const, key: prKey(pull) });
     const labeled = (pull: number) => ({
       ...unlabeled(pull),
       label: `PR #${pull}`,
-      href: `https://github.com/paperclipai/paperclip-desktop/pull/${pull}`,
+      href: `https://github.com/pilibalaai/pilibala-desktop/pull/${pull}`,
     });
     const staleTargetChange = (
       staleTarget: ReturnType<typeof unlabeled>,
@@ -981,7 +981,7 @@ describe("IssueThreadInteractionCard", () => {
           payload: { ...pendingRequestConfirmationInteraction.payload, target: unlabeled(16) },
         },
       });
-      expect(host.textContent).not.toContain("github:paperclipai");
+      expect(host.textContent).not.toContain("github:pilibalaai");
     });
 
     it("links a labeled target on a pending card", () => {
@@ -992,16 +992,16 @@ describe("IssueThreadInteractionCard", () => {
         },
       });
       const link = host.querySelector(
-        'a[href="https://github.com/paperclipai/paperclip-desktop/pull/16"]',
+        'a[href="https://github.com/pilibalaai/pilibala-desktop/pull/16"]',
       );
       expect(link?.textContent).toContain("PR #16");
-      expect(host.textContent).not.toContain("github:paperclipai");
+      expect(host.textContent).not.toContain("github:pilibalaai");
     });
 
     it("shows no chips or chevron for an unlabeled stale-target change", () => {
       const host = renderCard({ interaction: staleTargetChange(unlabeled(15), unlabeled(16)) });
       expect(host.textContent).toContain("Expired by target change");
-      expect(host.textContent).not.toContain("github:paperclipai");
+      expect(host.textContent).not.toContain("github:pilibalaai");
       expect(host.querySelector(".lucide-chevron-right")).toBeNull();
     });
 
@@ -1009,14 +1009,14 @@ describe("IssueThreadInteractionCard", () => {
       const host = renderCard({ interaction: staleTargetChange(labeled(15), labeled(16)) });
       expect(host.textContent).toContain("PR #15");
       expect(host.textContent).toContain("PR #16");
-      expect(host.textContent).not.toContain("github:paperclipai");
+      expect(host.textContent).not.toContain("github:pilibalaai");
       expect(host.querySelector(".lucide-chevron-right")).not.toBeNull();
     });
 
     it("drops the chevron when only one side of the stale-target change is labeled", () => {
       const host = renderCard({ interaction: staleTargetChange(unlabeled(15), labeled(16)) });
       expect(host.textContent).toContain("PR #16");
-      expect(host.textContent).not.toContain("github:paperclipai");
+      expect(host.textContent).not.toContain("github:pilibalaai");
       expect(host.querySelector(".lucide-chevron-right")).toBeNull();
     });
   });
@@ -1104,7 +1104,7 @@ describe("IssueThreadInteractionCard", () => {
     expect((resumeFailed.firstElementChild as HTMLElement).className).toContain("border-amber-500/70");
     expect(resumeFailed.textContent).toContain("Approved — agent resume failed");
     expect(resumeFailed.textContent).toContain("Agent resume failed");
-    expect(resumeFailed.textContent).toContain("Paperclip needs attention before the agent can resume this approved work.");
+    expect(resumeFailed.textContent).toContain("Pilibala needs attention before the agent can resume this approved work.");
     expect(resumeFailed.textContent).toContain("adapter_failed");
 
     act(() => root?.unmount());
@@ -1685,7 +1685,7 @@ describe("IssueThreadInteractionCard connection-authorization card", () => {
       anchor.textContent?.includes("Connect Gmail"),
     );
     expect(connect?.getAttribute("href")).toBe(
-      "https://accounts.google.com/o/oauth2/v2/auth?client_id=paperclip",
+      "https://accounts.google.com/o/oauth2/v2/auth?client_id=pilibala",
     );
     expect(connect?.getAttribute("target")).toBe("_blank");
 

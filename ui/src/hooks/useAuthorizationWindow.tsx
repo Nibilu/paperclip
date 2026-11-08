@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import type { ToolOAuthStartResult } from "@paperclipai/shared";
+import type { ToolOAuthStartResult } from "@pilibalaai/shared";
 import { prepareOAuthNavigation, savePendingCloudHandoff } from "@/lib/oauthHandoff";
 import { Button } from "@/components/ui/button";
 

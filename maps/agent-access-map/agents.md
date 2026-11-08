@@ -20,7 +20,7 @@ below. The original baseline commit above still governs unrelated entries; this
 update does not claim operation-complete review or live agent verification.
 
 Native Cursor Cloud uses a server-derived `provider_api` placement after its
-complete native profile is validated. Create/update with `runner: paperclip`
+complete native profile is validated. Create/update with `runner: pilibala`
 stores `defaultEnvironmentId: null`; the caller cannot supply placement, commands,
 working directories or arbitrary environment values. Only the bound
 `CURSOR_API_KEY` is passed to the qualified API proxy. Test does not acquire a
@@ -52,7 +52,7 @@ API: `present` — representative operation IDs:
 Agent access: `partial` — Native hire_agent; REST / CLI agent; runtime inheritance for
 native hires.
 
-Creation requests can use `runner: auto | paperclip | legacy`; the server resolves
+Creation requests can use `runner: auto | pilibala | legacy`; the server resolves
 and persists execution configuration. Claude Auto selects the native ACPX profile
 on qualified macOS and GNU/Linux x64/ARM64 targets; unknown environment
 qualification remains Legacy. Darwin SSH defaults to Legacy while preserving
@@ -135,7 +135,7 @@ the reviewed commit above.
 
 Scoped Evidence: `source-only` — [creation policy](../../server/src/services/agent-hiring.ts),
 [runner resolution](../../server/src/services/agent-runner-selection.ts),
-[native hire binding](../../server/src/services/native-runtime/paperclip-runner-tool-authority.ts),
+[native hire binding](../../server/src/services/native-runtime/pilibala-runner-tool-authority.ts),
 [frozen approval activation](../../server/src/modules/agent-lifecycle/adapters/approvals.ts)
 and [same-harness import preservation](../../server/src/services/company-portability.ts)
 at the scoped commit. No permitted-agent journey was executed for this map update.
@@ -202,7 +202,7 @@ API: `present` — representative operation IDs:
   cannot use this route to grant themselves access; a read-only board viewer
   receives `canManage: false`. Saving never creates a run or wakeup.
 - `PUT /api/agents/{id}/instructions-bundle/file`.
-- `PATCH /api/agents/{id}` with an explicit `runner: "paperclip"` upgrade.
+- `PATCH /api/agents/{id}` with an explicit `runner: "pilibala"` upgrade.
 - `POST /api/agents/{id}/qualify-runner` to qualify the saved effective sandbox before upgrading or testing an existing native runner.
 - `PATCH /api/agents/{id}` with `runtimeSettings: { harness, model?, aiConnection?, expected: { model, aiConnection } }` for a narrow roster edit. Each request handles one agent; the UI batches at most four writes and collects per-agent outcomes.
 
@@ -405,7 +405,7 @@ Review: `baseline`.
 
 API: `present` — `POST /api/companies/{companyId}/grok-invitations`, operator-owned Grok invitations and agent-scoped `/grok-binding` setup, routine, verify, stop, recover and disconnect endpoints. Direct HTTPS `/mcp/runner` uses fixed named-agent OAuth. Grok tools expose durable assignment operations and task-bound upload/download grants.
 
-Agent access: `available` — `paperclip_grok_*` through the dedicated agent grant. First-party Paperclip operations execute through the shared Rust Runner. The Bot retains its own apps; Paperclip workspace and third-party app tools are unavailable.
+Agent access: `available` — `pilibala_grok_*` through the dedicated agent grant. First-party Pilibala operations execute through the shared Rust Runner. The Bot retains its own apps; Pilibala workspace and third-party app tools are unavailable.
 
 Policy: company/agent/client/resource/authorizer binding; current manage-agent permission for consent and subsequent calls; normal task ownership, controller lease, governance, pause, revocation and recorded budget checks. Execution and file transfers require current task-bound sessions. Secret credentials remain in encrypted secret storage and are redacted from HTTP logs.
 
@@ -439,14 +439,14 @@ Capability ID: `agents/managed-agent-setup`.
 
 Review: `baseline`.
 
-API: `present` — GET and POST /api/companies/{companyId}/managed-agent-profiles. Provisioning separately calls Anthropic /v1/environments, /v1/agents, and /v1/agents/{id}/versions with operator provider credentials; --probe does not resolve a Paperclip client context or call the profile API.
+API: `present` — GET and POST /api/companies/{companyId}/managed-agent-profiles. Provisioning separately calls Anthropic /v1/environments, /v1/agents, and /v1/agents/{id}/versions with operator provider credentials; --probe does not resolve a Pilibala client context or call the profile API.
 
 Agent access: `operator-only` — provider qualification/provisioning uses the explicit operator CLI. Persisted profile reads/writes require board/company identity; viewer writes are denied. This does not authorize a company agent to provision external provider resources.
 
-Policy: A profile uses an active same-company, company-scoped secret reference. Qualification requires the source-supported pinned model/version, no tools/MCP/skills/multiagent capability, and a locked no-network/no-packages environment with retention acknowledgement. Qualified configuration revisions are immutable; changed qualified configuration requires a new profile key. Provider API credentials and Paperclip profile authority are separate checks.
+Policy: A profile uses an active same-company, company-scoped secret reference. Qualification requires the source-supported pinned model/version, no tools/MCP/skills/multiagent capability, and a locked no-network/no-packages environment with retention acknowledgement. Qualified configuration revisions are immutable; changed qualified configuration requires a new profile key. Provider API credentials and Pilibala profile authority are separate checks.
 
 Evidence: `source-only` — reviewed at `9ef434fe79c57d976b8b03b14c5242db270b8320`. [Managed-agent CLI](../../cli/src/commands/managed-agent.ts), [profile routes](../../server/src/routes/managed-agent-profiles.ts), [profile service](../../server/src/services/managed-agent-profiles.ts), and [runtime validation](./runs-adapters.md).
 
-Verification: `not-run` — Compare provider and Paperclip state before/after probe, then inspect a permitted create/adopt and repeated resource reuse. Reject missing acknowledgement, unsafe resources, invalid model/version/secret/company, and viewer/agent mutations. Separately run a bounded useful task with the saved qualified profile before claiming runtime readiness.
+Verification: `not-run` — Compare provider and Pilibala state before/after probe, then inspect a permitted create/adopt and repeated resource reuse. Reject missing acknowledgement, unsafe resources, invalid model/version/secret/company, and viewer/agent mutations. Separately run a bounded useful task with the saved qualified profile before claiming runtime readiness.
 
 Gaps: This is a provider-specific setup path, not qualification of every managed service or deployed environment. Mocked setup and source validation do not prove live retention, remote execution, or provider availability.

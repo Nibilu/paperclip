@@ -5,7 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { HeartbeatRun, Issue, IssueRecoveryAction } from "@paperclipai/shared";
+import type { HeartbeatRun, Issue, IssueRecoveryAction } from "@pilibalaai/shared";
 import { RunWorkspaceRecoverySurface } from "./RunWorkspaceRecoverySurface";
 import { ToastProvider } from "../context/ToastContext";
 
@@ -285,7 +285,7 @@ describe("RunWorkspaceRecoverySurface", () => {
     const run = buildRun({ errorCode: "native_workspace_sync_out_retry_exhausted" });
     const action = { ...buildRecoveryAction(), kind: "active_run_watchdog", ownerType: "system",
       cause: "native_workspace_sync_out_retry_exhausted", evidence: { runId: run.id, workspaceRecovery: {
-        schema: "paperclip.workspace-recovery.v1", runId: run.id, status: "blocked",
+        schema: "pilibala.workspace-recovery.v1", runId: run.id, status: "blocked",
         stage: "restoring_files", retryable: true, requestIds: [],
       }, systemRecovery: { state: "exhausted", preservationOperationIds: [] } } } as IssueRecoveryAction;
     boardAccessMock.mockResolvedValue({ source: "session", companyIds: ["company-1"], userId: "run-operator",

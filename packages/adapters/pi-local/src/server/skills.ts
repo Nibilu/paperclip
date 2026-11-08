@@ -5,14 +5,14 @@ import { fileURLToPath } from "node:url";
 import type {
   AdapterSkillContext,
   AdapterSkillSnapshot,
-} from "@paperclipai/adapter-utils";
+} from "@pilibalaai/adapter-utils";
 import {
   buildPersistentSkillSnapshot,
-  ensurePaperclipSkillSymlink,
-  readPaperclipRuntimeSkillEntries,
+  ensurePilibalaSkillSymlink,
+  readPilibalaRuntimeSkillEntries,
   readInstalledSkillTargets,
-  resolveLegacyPaperclipDesiredSkillNames,
-} from "@paperclipai/adapter-utils/server-utils";
+  resolveLegacyPilibalaDesiredSkillNames,
+} from "@pilibalaai/adapter-utils/server-utils";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,8 +31,8 @@ function resolvePiSkillsHome(config: Record<string, unknown>) {
 }
 
 async function buildPiSkillSnapshot(config: Record<string, unknown>): Promise<AdapterSkillSnapshot> {
-  const availableEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
-  const desiredSkills = resolveLegacyPaperclipDesiredSkillNames(config, availableEntries);
+  const availableEntries = await readPilibalaRuntimeSkillEntries(config, __moduleDir);
+  const desiredSkills = resolveLegacyPilibalaDesiredSkillNames(config, availableEntries);
   const skillsHome = resolvePiSkillsHome(config);
   const installed = await readInstalledSkillTargets(skillsHome);
   return buildPersistentSkillSnapshot({
@@ -44,7 +44,7 @@ async function buildPiSkillSnapshot(config: Record<string, unknown>): Promise<Ad
     locationLabel: "~/.pi/agent/skills",
     missingDetail: "Configured but not currently linked into the Pi skills home.",
     externalConflictDetail: "Skill name is occupied by an external installation.",
-    externalDetail: "Installed outside Paperclip management.",
+    externalDetail: "Installed outside Pilibala management.",
   });
 }
 
@@ -56,9 +56,9 @@ export async function syncPiSkills(
   ctx: AdapterSkillContext,
   desiredSkills: string[],
 ): Promise<AdapterSkillSnapshot> {
-  const availableEntries = await readPaperclipRuntimeSkillEntries(ctx.config, __moduleDir);
+  const availableEntries = await readPilibalaRuntimeSkillEntries(ctx.config, __moduleDir);
   const desiredSet = new Set([
-    ...resolveLegacyPaperclipDesiredSkillNames({}, availableEntries),
+    ...resolveLegacyPilibalaDesiredSkillNames({}, availableEntries),
     ...desiredSkills,
   ]);
   const skillsHome = resolvePiSkillsHome(ctx.config);
@@ -69,7 +69,7 @@ export async function syncPiSkills(
   for (const available of availableEntries) {
     if (!desiredSet.has(available.key)) continue;
     const target = path.join(skillsHome, available.runtimeName);
-    await ensurePaperclipSkillSymlink(available.source, target);
+    await ensurePilibalaSkillSymlink(available.source, target);
   }
 
   for (const [name, installedEntry] of installed.entries()) {
@@ -87,5 +87,5 @@ export function resolvePiDesiredSkillNames(
   config: Record<string, unknown>,
   availableEntries: Array<{ key: string }>,
 ) {
-  return resolveLegacyPaperclipDesiredSkillNames(config, availableEntries);
+  return resolveLegacyPilibalaDesiredSkillNames(config, availableEntries);
 }

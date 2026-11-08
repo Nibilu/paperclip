@@ -309,8 +309,8 @@ export const issueAssigneeAdapterOverridesSchema = z
   .object({
     adapterConfig: z.record(z.string(), z.unknown())
       .refine(config => !Object.prototype.hasOwnProperty.call(config, "homeMode"), "homeMode must be set by an operator on the agent, not on a task")
-      .refine(config => !config.env || typeof config.env !== "object" || !Object.keys(config.env).some(key => key.toUpperCase() === "PAPERCLIP_RUNNER_PREPARED_HARNESS_HOME"), "Prepared harness homes must be provisioned by the execution environment, not on a task")
-      .refine(config => !config.env || typeof config.env !== "object" || !Object.keys(config.env).some(key => ["BASH_ENV", "ZDOTDIR", "GH_CONFIG_DIR", "PAPERCLIP_GITHUB_LAUNCHER_DIR"].includes(key.toUpperCase())), "Managed shell helpers must be provisioned by the execution environment, not on a task")
+      .refine(config => !config.env || typeof config.env !== "object" || !Object.keys(config.env).some(key => key.toUpperCase() === "PILIBALA_RUNNER_PREPARED_HARNESS_HOME"), "Prepared harness homes must be provisioned by the execution environment, not on a task")
+      .refine(config => !config.env || typeof config.env !== "object" || !Object.keys(config.env).some(key => ["BASH_ENV", "ZDOTDIR", "GH_CONFIG_DIR", "PILIBALA_GITHUB_LAUNCHER_DIR"].includes(key.toUpperCase())), "Managed shell helpers must be provisioned by the execution environment, not on a task")
       .optional(),
     useProjectWorkspace: z.boolean().optional(),
   })
@@ -1400,14 +1400,14 @@ export const askUserQuestionsQuestionSchema = z.object({
   options: z.array(askUserQuestionsQuestionOptionSchema).min(1).max(129),
 });
 
-const paperclipQuestionOptionSchema = z.object({
+const pilibalaQuestionOptionSchema = z.object({
   id: maxStringLength(z.string().min(1), 160),
   label: maxStringLength(z.string().min(1), 1000),
   description: maxStringLength(z.string(), 4000).optional(),
   recommended: z.boolean().optional(),
 });
 
-const paperclipQuestionSchema = z
+const pilibalaQuestionSchema = z
   .object({
     id: maxStringLength(z.string().min(1), 160),
     header: maxStringLength(z.string(), 1000).optional(),
@@ -1416,7 +1416,7 @@ const paperclipQuestionSchema = z
     required: z.boolean(),
     answerMode: z.enum(["single_select", "multi_select", "text"]),
     initialText: z.string().refine(value => value.length <= 200000 && Array.from(value).length <= 100000, "initial text exceeds 100000 Unicode code points").optional(),
-    options: z.array(paperclipQuestionOptionSchema).max(128).optional(),
+    options: z.array(pilibalaQuestionOptionSchema).max(128).optional(),
     customAnswer: z
       .object({
         enabled: z.literal(true),
@@ -1510,13 +1510,13 @@ const paperclipQuestionSchema = z
     }
   });
 
-export const paperclipQuestionSetPayloadSchema = z
+export const pilibalaQuestionSetPayloadSchema = z
   .object({
-    schema: z.literal("paperclip.question_set.v1"),
+    schema: z.literal("pilibala.question_set.v1"),
     title: maxStringLength(z.string(), 1000).optional(),
     description: maxStringLength(z.string(), 100_000).optional(),
     submitLabel: maxStringLength(z.string(), 200).optional(),
-    questions: z.array(paperclipQuestionSchema).min(1).max(64),
+    questions: z.array(pilibalaQuestionSchema).min(1).max(64),
   })
   .superRefine((value, ctx) => {
     const questionIds = value.questions.map((question) => question.id);
@@ -1536,7 +1536,7 @@ const askUserQuestionsPayloadFields = {
   supersedeOnUserComment: z.boolean().optional(),
   questions: z.array(askUserQuestionsQuestionSchema).min(1).max(64),
   /** Exact canonical presentation retained for a recovered harness request. */
-  questionSet: paperclipQuestionSetPayloadSchema.optional(),
+  questionSet: pilibalaQuestionSetPayloadSchema.optional(),
   /** Stable correlation for draft handoff from a live runtime request. */
   runtimeRequestId: z.string().trim().min(1).max(255).nullable().optional(),
 };
@@ -2123,7 +2123,7 @@ const createAskUserQuestionsPayloadSchema = z.union([
     ...askUserQuestionsPayloadFields,
     // Do not discard an explicitly supplied conflicting compatibility form.
     questions: z.never().optional(),
-    questionSet: paperclipQuestionSetPayloadSchema,
+    questionSet: pilibalaQuestionSetPayloadSchema,
   }).transform(({ questions: _questions, ...value }): z.input<typeof createLegacyAskUserQuestionsPayloadSchema> => ({
     ...questionSetToAskUserQuestionsPayload(value.questionSet),
     ...value,

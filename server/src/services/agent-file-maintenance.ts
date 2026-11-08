@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { and, asc, eq, gt, inArray } from "drizzle-orm";
-import { agentFileRoots, agents, fileStorageDb, heartbeatRuns, type Db } from "@paperclipai/db";
+import { agentFileRoots, agents, fileStorageDb, heartbeatRuns, type Db } from "@pilibalaai/db";
 import { offlineMigrationExecutionWhere } from "./offline-migration-execution.js";
 import type { StorageProvider, StorageService } from "../storage/types.js";
 import { adoptAgentFiles, inspectAgentDirectory } from "./agent-file-store.js";
@@ -19,7 +19,7 @@ export async function migrateAgentFiles(db: Db, input: {
   apply: boolean; writersStopped: boolean; companyId?: string; after?: string; limit?: number;
 }) {
   if (input.apply && !durableAgentFilesEnabled()) {
-    throw new Error("Agent file migration requires PAPERCLIP_DURABLE_AGENT_FILES=true");
+    throw new Error("Agent file migration requires PILIBALA_DURABLE_AGENT_FILES=true");
   }
   const limit = input.limit ?? 25;
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) throw new Error("Migration limit must be between 1 and 100");
@@ -39,7 +39,7 @@ export async function migrateAgentFiles(db: Db, input: {
       if (head) return "durable";
       const [run] = await tx.select({ id: heartbeatRuns.id }).from(heartbeatRuns).where(and(
         eq(heartbeatRuns.companyId, agent.companyId), eq(heartbeatRuns.agentId, agent.id),
-        input.writersStopped && process.env.PAPERCLIP_EPHEMERAL_MIGRATION === "true"
+        input.writersStopped && process.env.PILIBALA_EPHEMERAL_MIGRATION === "true"
           ? offlineMigrationExecutionWhere() : inArray(heartbeatRuns.status, ["running", "queued"]),
       )).limit(1);
       if (run) return "active_execution";

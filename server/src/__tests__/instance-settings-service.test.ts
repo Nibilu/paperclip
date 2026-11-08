@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { INSTANCE_FEATURE_CATALOG, instanceExperimentalSettingsSchema, type InstanceExperimentalSettings } from "@paperclipai/shared";
+import { INSTANCE_FEATURE_CATALOG, instanceExperimentalSettingsSchema, type InstanceExperimentalSettings } from "@pilibalaai/shared";
 import {
   applyExperimentalSettingsPatch,
   applyCloudCatalogDefaults,
@@ -62,19 +62,19 @@ describe("instance settings service", () => {
     expect(result.experimental.remoteWorkspaceStorageEnabled).toBe(expected);
     expect(normalized.remoteWorkspaceStorageEnabled).toBe("remoteWorkspaceStorageEnabled" in stored ? stored.remoteWorkspaceStorageEnabled : true);
     expect(result.managedKeys.remoteWorkspaceStorageEnabled).toEqual(managed === undefined
-      ? undefined : { managed: true, managedBy: "paperclip-cloud" });
+      ? undefined : { managed: true, managedBy: "pilibala-cloud" });
   });
   it("keeps Notebook off for legacy or invalid settings and round-trips explicit operator choices", () => {
     for (const stored of [undefined, null, {}, { enableApps: true },
-      { enablePaperclipNotebook: "true" }, { enablePaperclipNotebook: 1 },
-      { enablePaperclipNotebook: true, enableCases: "invalid" }]) {
-      expect(normalizeExperimentalSettings(stored).enablePaperclipNotebook).toBe(false);
+      { enablePilibalaNotebook: "true" }, { enablePilibalaNotebook: 1 },
+      { enablePilibalaNotebook: true, enableCases: "invalid" }]) {
+      expect(normalizeExperimentalSettings(stored).enablePilibalaNotebook).toBe(false);
     }
-    const enabled = applyExperimentalSettingsPatch({}, { enablePaperclipNotebook: true });
+    const enabled = applyExperimentalSettingsPatch({}, { enablePilibalaNotebook: true });
     const restored = normalizeExperimentalSettings(JSON.parse(JSON.stringify(enabled)));
-    expect(restored).toMatchObject({ enablePaperclipNotebook: true, enableMemoryConnectors: false });
-    const disabled = applyExperimentalSettingsPatch(restored, { enablePaperclipNotebook: false });
-    expect(normalizeExperimentalSettings(JSON.parse(JSON.stringify(disabled))).enablePaperclipNotebook).toBe(false);
+    expect(restored).toMatchObject({ enablePilibalaNotebook: true, enableMemoryConnectors: false });
+    const disabled = applyExperimentalSettingsPatch(restored, { enablePilibalaNotebook: false });
+    expect(normalizeExperimentalSettings(JSON.parse(JSON.stringify(disabled))).enablePilibalaNotebook).toBe(false);
   });
   it("keeps OpenAI Dot opt-in and persists its setting independently of its prerequisites", () => {
     expect(normalizeExperimentalSettings({}).enableOpenAiDot).toBe(false);
@@ -110,7 +110,7 @@ describe("instance settings service", () => {
       enableBuiltInAgents: true,
       enableGoalsSidebarLink: true,
       enableServerInfoDebugView: true,
-      enablePaperclipDeveloperMode: true,
+      enablePilibalaDeveloperMode: true,
       autoRestartDevServerWhenIdle: true,
       enableWorkspaceBranchReconcileForward: true,
       enableWorkspaceDirtyQuarantineRepair: false,
@@ -138,7 +138,7 @@ describe("instance settings service", () => {
       enableChatConnectors: false,
       enableGitHubReviewBots: false,
       enableMemoryConnectors: false,
-      enablePaperclipNotebook: false,
+      enablePilibalaNotebook: false,
       enableGoogleWorkspaceConnector: false,
       enableConferenceRoomChat: false,
       enableClassicTaskInterface: false,
@@ -156,7 +156,7 @@ describe("instance settings service", () => {
       enableFastResponses: false,
       enableGoalsSidebarLink: true,
       enableServerInfoDebugView: true,
-      enablePaperclipDeveloperMode: true,
+      enablePilibalaDeveloperMode: true,
       enableSimplifiedEnglishInteractions: false,
       enableFirstTaskPlanProposal: false,
       autoRestartDevServerWhenIdle: true,
@@ -246,12 +246,12 @@ describe("instance settings service", () => {
     ).toBe(false);
   });
 
-  it("defaults enablePaperclipDeveloperMode to false for empty and legacy settings", () => {
-    expect(normalizeExperimentalSettings(undefined).enablePaperclipDeveloperMode).toBe(false);
-    expect(normalizeExperimentalSettings({}).enablePaperclipDeveloperMode).toBe(false);
+  it("defaults enablePilibalaDeveloperMode to false for empty and legacy settings", () => {
+    expect(normalizeExperimentalSettings(undefined).enablePilibalaDeveloperMode).toBe(false);
+    expect(normalizeExperimentalSettings({}).enablePilibalaDeveloperMode).toBe(false);
     expect(
       normalizeExperimentalSettings({ enableServerInfoDebugView: true })
-        .enablePaperclipDeveloperMode,
+        .enablePilibalaDeveloperMode,
     ).toBe(false);
   });
 
@@ -326,8 +326,8 @@ describe("instance settings service", () => {
       {
         now: () => activatedAt,
         runtimeEnv: {
-          PAPERCLIP_IN_WORKTREE: "true",
-          PAPERCLIP_INSTANCE_ID: "worktree-instance",
+          PILIBALA_IN_WORKTREE: "true",
+          PILIBALA_INSTANCE_ID: "worktree-instance",
         },
       },
     );
@@ -347,8 +347,8 @@ describe("instance settings service", () => {
       { enableWorktreeRunExecution: false },
       {
         runtimeEnv: {
-          PAPERCLIP_IN_WORKTREE: "true",
-          PAPERCLIP_INSTANCE_ID: "worktree-instance",
+          PILIBALA_IN_WORKTREE: "true",
+          PILIBALA_INSTANCE_ID: "worktree-instance",
         },
       },
     );
@@ -365,8 +365,8 @@ describe("instance settings service", () => {
       {
         now: () => new Date("2026-07-10T12:00:00.000Z"),
         runtimeEnv: {
-          PAPERCLIP_IN_WORKTREE: "true",
-          PAPERCLIP_INSTANCE_ID: "worktree-instance",
+          PILIBALA_IN_WORKTREE: "true",
+          PILIBALA_INSTANCE_ID: "worktree-instance",
         },
       },
     );
@@ -375,8 +375,8 @@ describe("instance settings service", () => {
       { enableWorktreeRunExecution: false },
       {
         runtimeEnv: {
-          PAPERCLIP_IN_WORKTREE: "true",
-          PAPERCLIP_INSTANCE_ID: "worktree-instance",
+          PILIBALA_IN_WORKTREE: "true",
+          PILIBALA_INSTANCE_ID: "worktree-instance",
         },
       },
     );
@@ -387,8 +387,8 @@ describe("instance settings service", () => {
       {
         now: () => new Date("2026-07-10T12:05:00.000Z"),
         runtimeEnv: {
-          PAPERCLIP_IN_WORKTREE: "true",
-          PAPERCLIP_INSTANCE_ID: "worktree-instance",
+          PILIBALA_IN_WORKTREE: "true",
+          PILIBALA_INSTANCE_ID: "worktree-instance",
         },
       },
     );
@@ -409,8 +409,8 @@ describe("instance settings service", () => {
       },
       {
         runtimeEnv: {
-          PAPERCLIP_IN_WORKTREE: "true",
-          PAPERCLIP_INSTANCE_ID: "worktree-instance",
+          PILIBALA_IN_WORKTREE: "true",
+          PILIBALA_INSTANCE_ID: "worktree-instance",
         },
       },
     );
@@ -430,8 +430,8 @@ describe("instance settings service", () => {
       resolveWorktreeRunExecutionActivationState({
         getExperimental: async () => experimental,
         runtimeEnv: {
-          PAPERCLIP_IN_WORKTREE: "true",
-          PAPERCLIP_INSTANCE_ID: "worktree-instance",
+          PILIBALA_IN_WORKTREE: "true",
+          PILIBALA_INSTANCE_ID: "worktree-instance",
         },
       }),
     ).resolves.toEqual({
@@ -452,8 +452,8 @@ describe("instance settings service", () => {
       resolveWorktreeRunExecutionActivationState({
         getExperimental: async () => experimental,
         runtimeEnv: {
-          PAPERCLIP_IN_WORKTREE: "true",
-          PAPERCLIP_INSTANCE_ID: "worktree-instance",
+          PILIBALA_IN_WORKTREE: "true",
+          PILIBALA_INSTANCE_ID: "worktree-instance",
         },
       }),
     ).resolves.toMatchObject({
@@ -474,8 +474,8 @@ describe("instance settings service", () => {
       resolveWorktreeRunExecutionActivationState({
         getExperimental: async () => experimental,
         runtimeEnv: {
-          PAPERCLIP_IN_WORKTREE: "true",
-          PAPERCLIP_INSTANCE_ID: "target-instance",
+          PILIBALA_IN_WORKTREE: "true",
+          PILIBALA_INSTANCE_ID: "target-instance",
         },
       }),
     ).resolves.toMatchObject({
@@ -493,8 +493,8 @@ describe("instance settings service", () => {
           throw new Error("settings unavailable");
         },
         runtimeEnv: {
-          PAPERCLIP_IN_WORKTREE: "true",
-          PAPERCLIP_INSTANCE_ID: "worktree-instance",
+          PILIBALA_IN_WORKTREE: "true",
+          PILIBALA_INSTANCE_ID: "worktree-instance",
         },
       }),
     ).resolves.toMatchObject({
@@ -508,8 +508,8 @@ describe("instance settings service", () => {
       resolveWorktreeRunExecutionActivationState({
         getExperimental,
         runtimeEnv: {
-          PAPERCLIP_IN_WORKTREE: "false",
-          PAPERCLIP_INSTANCE_ID: "worktree-instance",
+          PILIBALA_IN_WORKTREE: "false",
+          PILIBALA_INSTANCE_ID: "worktree-instance",
         },
       }),
     ).resolves.toMatchObject({

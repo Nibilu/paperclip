@@ -6,7 +6,7 @@ import pino, { type Logger } from "pino";
 import request from "supertest";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { activityLog, agents, companies, createDb, heartbeatRuns, issueComments, issues } from "@paperclipai/db";
+import { activityLog, agents, companies, createDb, heartbeatRuns, issueComments, issues } from "@pilibalaai/db";
 import { errorHandler } from "../middleware/index.js";
 import { issueRoutes } from "../routes/issues.js";
 import { createHttpLogger } from "../middleware/logger.js";
@@ -20,7 +20,7 @@ describePostgres("issue PATCH response under PostgreSQL lock contention", () => 
   let temporary: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
 
   beforeAll(async () => {
-    temporary = await startEmbeddedPostgresTestDatabase("paperclip-issue-write-lock-");
+    temporary = await startEmbeddedPostgresTestDatabase("pilibala-issue-write-lock-");
     db = createDb(temporary.connectionString);
   }, 90_000);
 

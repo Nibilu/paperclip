@@ -1,4 +1,4 @@
-import type { Db, mcpFileTickets } from "@paperclipai/db";
+import type { Db, mcpFileTickets } from "@pilibalaai/db";
 import { describe, expect, it, vi } from "vitest";
 import { readIdleMcpTransferSchedule } from "./idle-transfer-schedule.js";
 type Ticket = Pick<typeof mcpFileTickets.$inferSelect,"companyId"|"grantId"|"uploadId"|"attachmentId"|"workSessionId"|"expiresAt">;

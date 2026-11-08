@@ -1,6 +1,6 @@
-import { companies, statusCards, statusCardUpdates, type Db } from "@paperclipai/db";
+import { companies, statusCards, statusCardUpdates, type Db } from "@pilibalaai/db";
 import { eq, sql } from "drizzle-orm";
-import { statusCardRefreshPolicySchema } from "@paperclipai/shared";
+import { statusCardRefreshPolicySchema } from "@pilibalaai/shared";
 import type { DeadlineReconciliationSnapshot } from "./deadline-reconciliation.js";
 import { idleDeadlineRowLimit, isFutureIdleDeadline, type IdleDeadlineSnapshot } from "./idle-deadline-types.js";
 

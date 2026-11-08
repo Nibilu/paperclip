@@ -8,7 +8,7 @@ import {
   type AiConnectionBinding,
   type AiProvider,
   type AiManagedConnectionSummary,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { aiConnectionsApi } from "@/api/ai-connections";
 import { describeError } from "@/api/errors";
 import { useQueryView } from "@/components/QueryView";

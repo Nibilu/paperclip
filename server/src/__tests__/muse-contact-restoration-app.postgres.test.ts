@@ -10,8 +10,8 @@ import { z } from "zod";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { activityLog, agents, authUsers, checkpointDb, closeRegisteredClients,
   companies, createDb, fileStorageDb, heartbeatRuns, livenessDb, mcpOauthGrants,
-  museAgentBindings, museMailboxItems, museReceiverContactBuckets, subscribeDatabaseWork } from "@paperclipai/db";
-import { MUSE_OAUTH_SCOPES, MUSE_RESOURCE_PATH } from "@paperclipai/shared";
+  museAgentBindings, museMailboxItems, museReceiverContactBuckets, subscribeDatabaseWork } from "@pilibalaai/db";
+import { MUSE_OAUTH_SCOPES, MUSE_RESOURCE_PATH } from "@pilibalaai/shared";
 import { resolveExternalTestDatabaseUrl } from "../lib/dedicated-test-database-url.js";
 import { accessService } from "../services/access.js";
 import { instanceSettingsService } from "../services/instance-settings.js";
@@ -29,8 +29,8 @@ import { HttpError } from "../errors.js";
 import { DELIVERY_QUEUES } from "../services/delivery-work-notifications.js";
 import { removeTestHome } from "./remove-test-home.js";
 
-const databaseUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_MUSE_CONTACT_NORMAL_TEST_DATABASE_URL");
-const origin = "https://muse-restoration.paperclip.test";
+const databaseUrl = resolveExternalTestDatabaseUrl("PILIBALA_MUSE_CONTACT_NORMAL_TEST_DATABASE_URL");
+const origin = "https://muse-restoration.pilibala.test";
 const host = new URL(origin).host;
 const resource = origin + MUSE_RESOURCE_PATH;
 const redirect = "https://muse-restoration-client.example.test/oauth/callback";
@@ -84,7 +84,7 @@ describe.skipIf(!databaseUrl).each(["permission", "lifecycle"] as const)("normal
       { message: "Sign in as a company operator to configure Muse.", code: "company_operator_required" },
       { message: "Missing permission: agents:create.", code: "agents_create_permission_missing" },
       { message: "Permission agents:create does not cover the requested scope.", code: "agents_create_scope_denied" },
-      { message: "Enable Muse and Paperclip Runner in experimental settings.", code: "muse_runner_disabled" },
+      { message: "Enable Muse and Pilibala Runner in experimental settings.", code: "muse_runner_disabled" },
     ].find(value => parsed.success && value.message === parsed.data.error);
     return fixed ? { status, ...fixed }
       : { status, code: "unclassified_invitation_response", message: "Invitation response details withheld" };
@@ -134,7 +134,7 @@ describe.skipIf(!databaseUrl).each(["permission", "lifecycle"] as const)("normal
     await app.locals.bundledPluginsStartup;
   }
   async function closeNormalApp() {
-    if (app) { await app.locals.paperclipShutdown(); app = undefined; }
+    if (app) { await app.locals.pilibalaShutdown(); app = undefined; }
     restoreVerify?.(); restoreVerify = undefined;
     unsubscribe?.(); unsubscribe = undefined;
     if (db) { await db.$client.end({ timeout: 1 }); db = undefined; }
@@ -145,17 +145,17 @@ describe.skipIf(!databaseUrl).each(["permission", "lifecycle"] as const)("normal
   }
 
   beforeAll(async () => {
-    const output = process.env.PAPERCLIP_MUSE_CONTACT_ACCEPTANCE_PATH;
+    const output = process.env.PILIBALA_MUSE_CONTACT_ACCEPTANCE_PATH;
     if (!output || !path.isAbsolute(output)) throw new Error("Explicit absolute owned Muse acceptance artifact required");
     artifactPath = output;
-    expect(process.env.PAPERCLIP_CLOUD_STACK_ID).toBeUndefined();
+    expect(process.env.PILIBALA_CLOUD_STACK_ID).toBeUndefined();
     home = await mkdtemp(path.join(tmpdir(), "muse-contact-normal-"));
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    vi.stubEnv("PAPERCLIP_CONFIG", path.join(home, "runtime-config.json"));
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", randomBytes(32).toString("base64"));
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", origin);
-    vi.stubEnv("PAPERCLIP_AUTH_PUBLIC_BASE_URL", origin);
-    vi.stubEnv("PAPERCLIP_API_URL", origin);
+    vi.stubEnv("PILIBALA_HOME", home);
+    vi.stubEnv("PILIBALA_CONFIG", path.join(home, "runtime-config.json"));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", randomBytes(32).toString("base64"));
+    vi.stubEnv("PILIBALA_PUBLIC_URL", origin);
+    vi.stubEnv("PILIBALA_AUTH_PUBLIC_BASE_URL", origin);
+    vi.stubEnv("PILIBALA_API_URL", origin);
     if (!databaseUrl) throw new Error("Explicit Muse test database required");
     await openNormalApp();
     const owner = currentDb();
@@ -256,7 +256,7 @@ describe.skipIf(!databaseUrl).each(["permission", "lifecycle"] as const)("normal
       }
     });
     restoreVerify = () => observed.mockRestore();
-    const signal = await request(currentApp()).get("/api/muse/v1/signal").set("Host", host).set("X-Paperclip-Muse-Binding", paired.bindingId);
+    const signal = await request(currentApp()).get("/api/muse/v1/signal").set("Host", host).set("X-Pilibala-Muse-Binding", paired.bindingId);
     expect(signal.status).toBe(200); expect(signal.body.version).toBe(1); expect(signal.body.signal).toBeNull();
     const member = await accessService(owner).getMembership(companyId, "user", userId);
     if (!member) throw new Error("Missing normally authorized Muse operator membership");
@@ -369,7 +369,7 @@ describe.skipIf(!databaseUrl).each(["permission", "lifecycle"] as const)("normal
     expect(revoke.status).toBe(200);
     expect((await request(currentApp()).post("/api/muse/v1/queries").set("Host", host).set("Authorization", "Bearer " + accessToken)
       .send({ version: 1, query: "mailbox", after: 0 })).status).toBe(401);
-    expect((await request(currentApp()).get("/api/muse/v1/signal").set("Host", host).set("X-Paperclip-Muse-Binding", paired.bindingId)).status).toBe(410);
+    expect((await request(currentApp()).get("/api/muse/v1/signal").set("Host", host).set("X-Pilibala-Muse-Binding", paired.bindingId)).status).toBe(410);
     await instanceSettingsService(owner).updateExperimental({ enableMuse: false });
     stage = "revoked-and-disabled-quiet";
     const revokedDisabledQuiet = await quiet();

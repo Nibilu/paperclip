@@ -143,7 +143,7 @@ const mockDb = vi.hoisted(() => ({
   transaction: mockDbTransaction,
 }));
 
-vi.mock("@paperclipai/shared/telemetry", () => ({
+vi.mock("@pilibalaai/shared/telemetry", () => ({
   trackAgentTaskCompleted: vi.fn(),
   trackErrorHandlerCrash: vi.fn(),
 }));
@@ -603,7 +603,7 @@ describe("issue thread interaction routes", () => {
     { route: "chat-handoffs", method: "listCreatedTasks" as const },
   ])("owned conversation $route", ({ route, method }) => {
     const owner = {
-      type: "board", userId: "paperclip-id:chat-owner", source: "cloud_tenant",
+      type: "board", userId: "pilibala-id:chat-owner", source: "cloud_tenant",
       companyIds: ["company-1"], isInstanceAdmin: false,
     };
     const path = `/api/issues/${ISSUE_ID}/${route}`;
@@ -644,7 +644,7 @@ describe("issue thread interaction routes", () => {
       });
     });
 
-    it.each(["chat-owner", "paperclip-id:another-user"])("does not treat another identity as the owner: %s", async (userId) => {
+    it.each(["chat-owner", "pilibala-id:another-user"])("does not treat another identity as the owner: %s", async (userId) => {
       const response = await request(await createApp({ ...owner, userId })).get(path);
       expect(response.status).toBe(404);
       expect(list).not.toHaveBeenCalled();
@@ -819,7 +819,7 @@ describe("issue thread interaction routes", () => {
   });
 
   it("normalizes a canonical-only mixed question form at the HTTP boundary", async () => {
-    const questionSet = { schema: "paperclip.question_set.v1", questions: [
+    const questionSet = { schema: "pilibala.question_set.v1", questions: [
       { id: "repo", prompt: "Repository URL?", required: true, answerMode: "text" },
       { id: "scope", prompt: "Review scope?", required: true, answerMode: "single_select", options: [{ id: "all", label: "All changes" }, { id: "selected", label: "Selected changes" }] },
     ] };
@@ -829,7 +829,7 @@ describe("issue thread interaction routes", () => {
     expect(res.status).toBe(201);
     expect(mockInteractionService.create).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       payload: expect.objectContaining({ questionSet, questions: [
-        expect.objectContaining({ id: "repo", options: [{ id: "paperclip_text_answer", label: "Type an answer", freeText: true }] }),
+        expect.objectContaining({ id: "repo", options: [{ id: "pilibala_text_answer", label: "Type an answer", freeText: true }] }),
         expect.objectContaining({ id: "scope", options: questionSet.questions[1].options }),
       ] }),
     }), expect.anything());
@@ -1050,19 +1050,19 @@ describe("issue thread interaction routes", () => {
     );
   });
 
-  it.each(["paperclip-id:chat-owner", "chat-owner", "paperclip-id:another-user"])("keeps chat response delivery limited to the exact owner: %s", async (userId) => {
-    const issue = createIssue({ conversationAgentId: ASSIGNEE_AGENT_ID, conversationUserId: "paperclip-id:chat-owner" });
+  it.each(["pilibala-id:chat-owner", "chat-owner", "pilibala-id:another-user"])("keeps chat response delivery limited to the exact owner: %s", async (userId) => {
+    const issue = createIssue({ conversationAgentId: ASSIGNEE_AGENT_ID, conversationUserId: "pilibala-id:chat-owner" });
     mockIssueService.getById.mockResolvedValue(issue);
     mockInteractionService.getForIssue.mockResolvedValue({
       id: "interaction-2", kind: "ask_user_questions", status: "pending",
       requestedResolverPolicy: "human_only", effectiveResolverPolicy: "human_only",
-      addresseeUserId: "paperclip-id:chat-owner", continuationPolicy: "wake_assignee",
+      addresseeUserId: "pilibala-id:chat-owner", continuationPolicy: "wake_assignee",
       payload: { version: 1, questions: [] },
     });
     const app = await createApp({ type: "board", userId, source: "cloud_tenant", companyIds: ["company-1"] });
     const response = await request(app).post(`/api/issues/${ISSUE_ID}/interactions/interaction-2/respond`)
       .send({ answers: [{ questionId: "scope", optionIds: ["phase-1"] }] });
-    if (userId === "paperclip-id:chat-owner") {
+    if (userId === "pilibala-id:chat-owner") {
       expect(response.status).toBe(200);
       expect(mockInteractionService.answerQuestions).toHaveBeenCalledWith(expect.anything(), "interaction-2", expect.anything(), expect.objectContaining({ userId }));
       expect(mockQuestionResponseDeliveries.deliver).toHaveBeenCalledWith("interaction-2");
@@ -2339,14 +2339,14 @@ describe("issue thread interaction routes", () => {
       ASSIGNEE_AGENT_ID,
       expect.objectContaining({
         payload: expect.objectContaining({
-          paperclipAgentMessage: {
+          pilibalaAgentMessage: {
             text: "Read T1, append T2, and verify both lines.",
             source: "interaction_rejection",
             sessionId: "interaction-warm-turn",
           },
         }),
         contextSnapshot: expect.objectContaining({
-          paperclipAgentMessage: expect.objectContaining({
+          pilibalaAgentMessage: expect.objectContaining({
             text: "Read T1, append T2, and verify both lines.",
           }),
         }),

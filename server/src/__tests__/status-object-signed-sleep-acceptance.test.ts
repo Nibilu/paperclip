@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { describe, expect, it } from 'vitest';
-import { applyPendingMigrations, createDb } from '@paperclipai/db';
+import { applyPendingMigrations, createDb } from '@pilibalaai/db';
 import { resolveExternalTestDatabaseUrl } from './helpers/external-test-database.js';
 import { startMaintenanceServer, withMaintenanceProvider, type MaintenanceRuntimeSecrets } from './helpers/maintenance/server-harness.js';
 import { createMaintenanceS3Boundary } from './helpers/maintenance/s3-boundary.js';
@@ -15,22 +15,22 @@ import { provisionManagedSleepCompany, managedTenantActor } from './helpers/main
 import { startDefaultCadenceBridge } from './helpers/maintenance/default-cadence-bridge.js';
 import { prepareStatusInterval, prepareGitHubObject, statusObjectGitHubBoundary } from './helpers/maintenance/status-object-producers.js';
 
-const enabled = process.env.PAPERCLIP_STATUS_OBJECT_SLEEP_ACCEPTANCE === '1';
-const owner = process.env.PAPERCLIP_STATUS_OBJECT_SLEEP_OWNER;
-const stage = process.env.PAPERCLIP_STATUS_OBJECT_SLEEP_STAGE;
-const diagnostic = process.env.PAPERCLIP_STATUS_OBJECT_SLEEP_DIAGNOSTIC === '1';
-const appUrl = resolveExternalTestDatabaseUrl('PAPERCLIP_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL');
-const cloudUrl = resolveExternalTestDatabaseUrl('PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL');
-const cloudCheckout = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT;
-const cloudSha = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_SHA;
-const cloudNode = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_CLOUD_NODE;
-const evidence = process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_EVIDENCE;
+const enabled = process.env.PILIBALA_STATUS_OBJECT_SLEEP_ACCEPTANCE === '1';
+const owner = process.env.PILIBALA_STATUS_OBJECT_SLEEP_OWNER;
+const stage = process.env.PILIBALA_STATUS_OBJECT_SLEEP_STAGE;
+const diagnostic = process.env.PILIBALA_STATUS_OBJECT_SLEEP_DIAGNOSTIC === '1';
+const appUrl = resolveExternalTestDatabaseUrl('PILIBALA_SKILL_DEFAULT_CADENCE_TEST_DATABASE_URL');
+const cloudUrl = resolveExternalTestDatabaseUrl('PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_TEST_DATABASE_URL');
+const cloudCheckout = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_CHECKOUT;
+const cloudSha = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_SHA;
+const cloudNode = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_CLOUD_NODE;
+const evidence = process.env.PILIBALA_SKILL_DEFAULT_CADENCE_EVIDENCE;
 if (enabled) {
   installDefaultCadenceNetwork();
   assert(owner === 'status' || owner === 'object'); assert(stage === 'bootstrap' || stage === 'cycle' || (stage === 'identity' && owner === 'status'));
   if (diagnostic) assert((owner === 'object' && stage === 'bootstrap') || (owner === 'status' && stage === 'identity'));
   assert(appUrl && cloudUrl && cloudCheckout && cloudNode && evidence && /^[a-f0-9]{40}$/.test(cloudSha ?? ''));
-  assert.equal(process.env.PAPERCLIP_MAINTENANCE_KEEP_ARTIFACTS, '1');
+  assert.equal(process.env.PILIBALA_MAINTENANCE_KEEP_ARTIFACTS, '1');
 }
 type Observation = { id: string; next_at: Date; last_at: Date; value: string; version: string; claim: string | null; pending: number; policy: unknown; last_run_id: string | null; generation_issue_id: string | null; run_started_at: Date | null; run_status: string | null; generation_status: string | null };
 type ObservedRow = Omit<Observation, 'last_at' | 'next_at' | 'run_started_at' | 'value'> & {
@@ -78,13 +78,13 @@ describe.skipIf(!enabled)('status and external-object actual signed cold-owner h
     const proxyEvidence = () => server ? { queries: [...server.proxy.queries], frames: server.proxy.frames, transport: server.proxy.transport,
       pending: server.proxy.pending, starting: server.proxy.starting, errors: server.proxy.errors.map(error => error.stack ?? String(error)) } : undefined;
     try {
-      secretsDirectory = await mkdtemp(path.join(tmpdir(), 'paperclip-owner-runtime-secrets-'));
+      secretsDirectory = await mkdtemp(path.join(tmpdir(), 'pilibala-owner-runtime-secrets-'));
       await chmod(secretsDirectory, 0o700);
       const secretsPath = path.join(secretsDirectory, 'runtime-secrets.json');
       const runtimeSecrets: MaintenanceRuntimeSecrets = {
-        PAPERCLIP_AGENT_JWT_SECRET: randomUUID(), PAPERCLIP_DECISION_SIGNING_SECRET: randomUUID(),
-        PAPERCLIP_TOOL_ACTION_SIGNING_SECRET: randomUUID(), BETTER_AUTH_SECRET: randomUUID(),
-        PAPERCLIP_SECRETS_MASTER_KEY: randomBytes(32).toString('hex'),
+        PILIBALA_AGENT_JWT_SECRET: randomUUID(), PILIBALA_DECISION_SIGNING_SECRET: randomUUID(),
+        PILIBALA_TOOL_ACTION_SIGNING_SECRET: randomUUID(), BETTER_AUTH_SECRET: randomUUID(),
+        PILIBALA_SECRETS_MASTER_KEY: randomBytes(32).toString('hex'),
       };
       const retainRuntimeSecrets = async (value: MaintenanceRuntimeSecrets, label: string, exclusive = false) => {
         const bytes = JSON.stringify(value);
@@ -261,8 +261,8 @@ describe.skipIf(!enabled)('status and external-object actual signed cold-owner h
                 phase('identity-postgeneration-settle-returned');
                 await record('diagnostic-postgeneration-settled', { settled, phases: [...phases], proxy: proxyEvidence() });
               }
-              const alteredSecrets = { ...runtimeSecrets, PAPERCLIP_SECRETS_MASTER_KEY: randomBytes(32).toString('hex') };
-              expect(alteredSecrets.PAPERCLIP_SECRETS_MASTER_KEY).not.toBe(runtimeSecrets.PAPERCLIP_SECRETS_MASTER_KEY);
+              const alteredSecrets = { ...runtimeSecrets, PILIBALA_SECRETS_MASTER_KEY: randomBytes(32).toString('hex') };
+              expect(alteredSecrets.PILIBALA_SECRETS_MASTER_KEY).not.toBe(runtimeSecrets.PILIBALA_SECRETS_MASTER_KEY);
               await retainRuntimeSecrets(alteredSecrets, 'runtime-secret-negative-profile');
               await restart('identity-wrong-master');
               await status.revision(3);
@@ -438,7 +438,7 @@ describe.skipIf(!enabled)('status and external-object actual signed cold-owner h
       } catch (error) { failures.push({ stage: 'runtime-secret-cleanup', error }); }
       try {
         const agents = await agentReceipts();
-        const events = (await readFile(process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG!, 'utf8')).trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
+        const events = (await readFile(process.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG!, 'utf8')).trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
         expect(events.filter(event => event.event === 'blocked')).toEqual([]);
         for (const pid of [process.pid, process.ppid, ...childPids, ...agents.map(agent => agent.pid)]) {
           expect(events).toContainEqual(expect.objectContaining({ event: 'preloaded', pid, sourceHash: defaultCadenceNetwork().sourceHash }));

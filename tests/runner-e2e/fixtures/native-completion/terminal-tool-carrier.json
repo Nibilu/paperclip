@@ -1,13 +1,13 @@
 {
-  "schema": "paperclip.native-completion-terminal-carrier.fixture.v1",
+  "schema": "pilibala.native-completion-terminal-carrier.fixture.v1",
   "cases": [
     {
-      "name": "paperclip_finish",
+      "name": "pilibala_finish",
       "providerInput": {
         "item": {
           "id": "terminal-call",
           "type": "tool_call",
-          "name": "paperclip_finish",
+          "name": "pilibala_finish",
           "status": "inProgress",
           "arguments": {
             "secret": "not-for-the-log"
@@ -22,17 +22,17 @@
         "channel": "detail",
         "text": null,
         "item": {
-          "name": "paperclip_finish"
+          "name": "pilibala_finish"
         }
       }
     },
     {
-      "name": "paperclip_block",
+      "name": "pilibala_block",
       "providerInput": {
         "item": {
           "id": "terminal-call",
           "type": "tool_call",
-          "name": "paperclip_block",
+          "name": "pilibala_block",
           "status": "inProgress",
           "arguments": {
             "secret": "not-for-the-log"
@@ -47,7 +47,7 @@
         "channel": "detail",
         "text": null,
         "item": {
-          "name": "paperclip_block"
+          "name": "pilibala_block"
         }
       }
     }

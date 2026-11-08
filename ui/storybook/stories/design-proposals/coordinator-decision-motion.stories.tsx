@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { DecisionHistoryItem } from "@paperclipai/shared";
+import type { DecisionHistoryItem } from "@pilibalaai/shared";
 import { CoordinatorNeedsYou } from "@/components/coordinator/CoordinatorNeedsYou";
 import { coordinatorTaskQuestion, coordinatorTaskQuestionAttention } from "@/fixtures/coordinatorTaskQuestion";
 import { genericPendingRequestConfirmationInteraction } from "@/fixtures/issueThreadInteractionFixtures";
@@ -46,7 +46,7 @@ const meta = {
   id: "coordinator-decision-motion",
   title: "Design proposals/Components/Coordinator decision motion",
   component: DecisionMotion,
-  parameters: { layout: "fullscreen", paperclip: {
+  parameters: { layout: "fullscreen", pilibala: {
     capabilities: ["inbox-search/decisions"], home: "design-proposals", status: "proposed", implementation: "production", boundary: "fixtures",
     exception: "Coordinator experimental motion is staged with Design proposals for review, using the implemented decision components.",
     notes: "Real Coordinator Inbox and canonical resolver components with isolated API responses. Approve or answer to compare simultaneous card resize and contained Gather Light, then the move to Recent Decisions. Failed saves retain the form. Reload resets fixtures; no real decision or agent execution occurs.",

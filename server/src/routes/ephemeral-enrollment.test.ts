@@ -2,7 +2,7 @@ import { generateKeyPairSync, randomUUID, sign } from "node:crypto";
 import express from "express";
 import request from "supertest";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { ephemeralEnrollmentRoutes } from "./ephemeral-enrollment.js";
 import { cloudControlMiddleware } from "../middleware/cloud-control.js";
 import { isSecretSensitiveHttpRequest } from "../middleware/http-log-policy.js";
@@ -39,8 +39,8 @@ function app(tenant = false) {
 }
 beforeEach(() => {
   vi.resetAllMocks(); resetCloudControlReplayFenceForTests();
-  vi.stubEnv("PAPERCLIP_CLOUD_STACK_ID", "stack-fixture");
-  vi.stubEnv("PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS", JSON.stringify({ keys: [jwk] }));
+  vi.stubEnv("PILIBALA_CLOUD_STACK_ID", "stack-fixture");
+  vi.stubEnv("PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS", JSON.stringify({ keys: [jwk] }));
   prepare.mockResolvedValue({ attemptId, enrollmentReady: false, decisionSigningSecret: "fixture-original-key" });
 });
 afterEach(() => vi.unstubAllEnvs());

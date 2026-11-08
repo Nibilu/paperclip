@@ -27,7 +27,7 @@ const environmentFallback: State = {
 };
 const states: Record<string, Record<string, State>> = {
   "feature-cli-authorization": {
-    pending: { text: "Approve Paperclip CLI access" },
+    pending: { text: "Approve Pilibala CLI access" },
     loading: { text: "Loading CLI auth challenge..." },
     expired: { text: "CLI auth challenge expired" },
     unavailable: { text: "CLI auth challenge unavailable" },
@@ -42,7 +42,7 @@ const states: Record<string, Record<string, State>> = {
     },
   },
   "feature-sign-in": {
-    "signed-out": { text: "Sign in to Paperclip" },
+    "signed-out": { text: "Sign in to Pilibala" },
     loading: { text: "Loading…" },
     "session-failed": {
       text: "Unable to check sign-in. Refresh and try again.",
@@ -94,11 +94,11 @@ const states: Record<string, Record<string, State>> = {
   "feature-company-selection": {
     organizations: { text: "Archived Research" },
     loading: { text: "Loading organizations..." },
-    empty: { text: "New Organization", absent: "Paperclip Storybook" },
+    empty: { text: "New Organization", absent: "Pilibala Storybook" },
     failed,
     "permission-denied": {
       text: "New Organization",
-      absent: "Paperclip Storybook",
+      absent: "Pilibala Storybook",
     },
   },
   "feature-document-revisions": {
@@ -148,19 +148,19 @@ const states: Record<string, Record<string, State>> = {
   // Order reads are allowed to fall back to navigation; section collapse is local.
   "feature-sidebar-preferences": {
     "saved-order": {
-      text: "Paperclip Storybook",
+      text: "Pilibala Storybook",
       selector: 'a[href="/PAP/dashboard"]',
     },
     "loading-order": {
-      text: "Paperclip Storybook",
+      text: "Pilibala Storybook",
       selector: 'a[href="/PAP/dashboard"]',
     },
     "order-read-failed": {
-      text: "Paperclip Storybook",
+      text: "Pilibala Storybook",
       selector: 'a[href="/PAP/dashboard"]',
     },
     "order-permission-denied": {
-      text: "Paperclip Storybook",
+      text: "Pilibala Storybook",
       selector: 'a[href="/PAP/dashboard"]',
     },
   },

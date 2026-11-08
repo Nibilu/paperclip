@@ -40,7 +40,7 @@ const CLOUD_HEALTH = {
   ...SELF_HOSTED_HEALTH,
   cloud: {
     managed: true as const,
-    managedBy: "paperclip-cloud" as const,
+    managedBy: "pilibala-cloud" as const,
     stackSlug: "acme",
     cloudBaseUrl: "https://cloud.example.test",
   },
@@ -311,7 +311,7 @@ describe("InstanceGeneralSettings read resilience", () => {
     await vi.waitFor(() => expect(container.textContent).toContain("Backup retention"));
 
     mockInstanceSettingsApi.getGeneral.mockRejectedValue(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await queryClient.invalidateQueries({ queryKey: queryKeys.instance.generalSettings });
     await vi.waitFor(() =>
@@ -322,7 +322,7 @@ describe("InstanceGeneralSettings read resilience", () => {
     expect(mockInstanceSettingsApi.getGeneral).toHaveBeenCalledTimes(2);
     expect(container.textContent).toContain("Backup retention");
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
     expect(container.textContent).not.toContain("tenant_app_unavailable");
   });
 

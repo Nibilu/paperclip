@@ -23,11 +23,11 @@ import {
   Search,
   X,
 } from "lucide-react";
-import type { IssueDocument } from "@paperclipai/shared";
+import type { IssueDocument } from "@pilibalaai/shared";
 import type {
-  PaperclipQuestionResponse,
-  PaperclipQuestionSet,
-} from "@paperclipai/adapter-utils";
+  PilibalaQuestionResponse,
+  PilibalaQuestionSet,
+} from "@pilibalaai/adapter-utils";
 import { InteractionPreparationNotice } from "@/components/InteractionPreparationNotice";
 import { IssueThreadInteractionCard } from "@/components/IssueThreadInteractionCard";
 import { ToolActionAuditHashCopy } from "@/components/ToolActionAuditHashCopy";
@@ -678,10 +678,10 @@ function ReceiptDisclosure({
 
 function questionSetForInteraction(
   interaction: AskUserQuestionsInteraction,
-): PaperclipQuestionSet {
+): PilibalaQuestionSet {
   if (interaction.payload.questionSet) return interaction.payload.questionSet;
   return {
-    schema: "paperclip.question_set.v1",
+    schema: "pilibala.question_set.v1",
     ...(interaction.title ? { title: interaction.title } : {}),
     ...(interaction.payload.submitLabel
       ? { submitLabel: interaction.payload.submitLabel }
@@ -724,11 +724,11 @@ function questionSetForInteraction(
 
 function questionResponseForInteraction(
   interaction: AskUserQuestionsInteraction,
-  questionSet: PaperclipQuestionSet,
-): PaperclipQuestionResponse | null {
+  questionSet: PilibalaQuestionSet,
+): PilibalaQuestionResponse | null {
   if (!interaction.result?.answers) return null;
   return {
-    schema: "paperclip.question_response.v1",
+    schema: "pilibala.question_response.v1",
     answers: Object.fromEntries(
       interaction.result.answers.map((answer) => {
         const question = questionSet.questions.find(

@@ -30,7 +30,7 @@ function readTrustedPrWorkflow() {
   const caller = readFileSync(prCallerWorkflow, "utf8");
   assert.match(
     caller,
-    /^\s+uses: paperclipai\/paperclip\/\.github\/workflows\/pr-trusted\.yml@master\s*$/m,
+    /^\s+uses: pilibalaai\/pilibala\/\.github\/workflows\/pr-trusted\.yml@master\s*$/m,
     "pr.yml must call the trusted workflow from CODEOWNERS-protected master",
   );
   // Validate proposed workflow changes locally; CI executes the merged master version.
@@ -64,7 +64,7 @@ function runStackScope(stack, prBaseRef) {
     .split("\n")
     .map((line) => line.replace(/^ {10}/, ""))
     .join("\n");
-  const scratch = mkdtempSync(path.join(tmpdir(), "paperclip-stack-scope-"));
+  const scratch = mkdtempSync(path.join(tmpdir(), "pilibala-stack-scope-"));
   const output = path.join(scratch, "github-output");
 
   try {
@@ -220,7 +220,7 @@ test("runner authorization uses reserved capacity and executes metadata checks o
   const workflow = readFileSync(routingWorkflow, "utf8");
   const jobs = readWorkflowJobs(workflow.split(/^jobs:\n/m)[1]);
   assert.deepEqual([...jobs.keys()], ["gate"]);
-  assert.match(jobs.get("gate"), /runs-on\/fleet=paperclip-ci-routing-x64\/env=public-ci/);
+  assert.match(jobs.get("gate"), /runs-on\/fleet=pilibala-ci-routing-x64\/env=public-ci/);
   assert.doesNotMatch(jobs.get("gate"), /uses:|actions\/checkout|secrets\./);
   assert.match(workflow, /^ {6}runner:\n {8}value: \$\{\{ jobs\.gate\.outputs\.runner \}\}$/m);
   assert.match(workflow, /^ {6}full_ci:\n {8}value: \$\{\{ jobs\.gate\.outputs\.full_ci \}\}$/m);
@@ -230,7 +230,7 @@ test("runner authorization uses reserved capacity and executes metadata checks o
 test("the trusted PR workflow limits full CI to merge-relevant stack layers", () => {
   const workflow = readFileSync(trustedPrWorkflow, "utf8");
   const jobs = readWorkflowJobs(workflow);
-  assert.match(jobs.get("gate"), /uses: paperclipai\/paperclip\/\.github\/workflows\/ci-routing\.yml@master/);
+  assert.match(jobs.get("gate"), /uses: pilibalaai\/pilibala\/\.github\/workflows\/ci-routing\.yml@master/);
   const gate = readWorkflowJobs(readFileSync(routingWorkflow, "utf8")).get("gate");
 
   assert.match(gate, /^ {6}full_ci: \$\{\{ steps\.scope\.outputs\.full_ci \}\}$/m);
@@ -241,7 +241,7 @@ test("the trusted PR workflow limits full CI to merge-relevant stack layers", ()
   for (const jobId of [
     "typecheck_release_registry",
     "general_tests",
-    "verify_paperclip_runner",
+    "verify_pilibala_runner",
     "build",
     "verify_serialized_server",
     "canary_dry_run",
@@ -264,7 +264,7 @@ test("the trusted PR workflow limits full CI to merge-relevant stack layers", ()
   const verify = jobs.get("verify");
   assert.match(
     verify,
-    /^ {4}needs: \[gate, test_selection, policy, typecheck_release_registry, general_tests, verify_paperclip_runner, build, docker_context_integrity, sandbox_provider_tests, verify_serialized_server, canary_dry_run, verify_runner_e2e_support\]$/m,
+    /^ {4}needs: \[gate, test_selection, policy, typecheck_release_registry, general_tests, verify_pilibala_runner, build, docker_context_integrity, sandbox_provider_tests, verify_serialized_server, canary_dry_run, verify_runner_e2e_support\]$/m,
   );
   assert.equal(runAggregate(verify, true).status, 0);
   assert.equal(runAggregate(verify, false).status, 0);
@@ -272,7 +272,7 @@ test("the trusted PR workflow limits full CI to merge-relevant stack layers", ()
     assert.equal(runAggregate(verify, true, { test_selection: result }).status, 0,
       "an optional selector cannot block the successful original matrix");
   }
-  for (const job of ["gate", "policy", "typecheck_release_registry", "general_tests", "verify_paperclip_runner",
+  for (const job of ["gate", "policy", "typecheck_release_registry", "general_tests", "verify_pilibala_runner",
     "build", "docker_context_integrity", "sandbox_provider_tests", "verify_serialized_server", "canary_dry_run", "verify_runner_e2e_support"]) {
     for (const result of ["failure", "cancelled", "skipped"]) {
       assert.notEqual(runAggregate(verify, true, { [job]: result }).status, 0, `${job}: ${result}`);

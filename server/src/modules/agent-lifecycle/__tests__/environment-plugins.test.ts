@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { agents, companies, environments, instanceSettings, plugins, createDb, type Db } from "@paperclipai/db";
+import { agents, companies, environments, instanceSettings, plugins, createDb, type Db } from "@pilibalaai/db";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../../__tests__/helpers/embedded-postgres.js";
 import { configureAgentLifecycle, createAgentLifecycle, createAgentLifecycleEffects } from "../../../services/agent-lifecycle.js";
@@ -20,7 +20,7 @@ const support = await getEmbeddedPostgresTestSupport();
   const workers: ReturnType<typeof configureAgentLifecycle>[] = [];
   const call = vi.fn(async (_id, _method, input) => ({ operationId: input.operationId, version: input.version, status: "complete" }));
 
-  beforeAll(async () => { database = await startEmbeddedPostgresTestDatabase("paperclip-environment-plugins-"); db = createDb(database.connectionString); }, 90_000);
+  beforeAll(async () => { database = await startEmbeddedPostgresTestDatabase("pilibala-environment-plugins-"); db = createDb(database.connectionString); }, 90_000);
   afterAll(async () => { for (const work of workers) await work.stop(); await database?.cleanup(); });
   beforeEach(async () => {
     for (const work of workers.splice(0)) await work.stop();

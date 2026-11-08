@@ -55,11 +55,11 @@ export async function actualContext(env, exec = execute) {
   const stat = await lstat(env.GITHUB_EVENT_PATH);
   if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 65_536) reject('event');
   const event = JSON.parse(await readFile(env.GITHUB_EVENT_PATH, 'utf8'));
-  const { stdout } = await exec('gh', ['api', `repos/paperclipai/paperclip/actions/runs/${env.GITHUB_RUN_ID}`],
+  const { stdout } = await exec('gh', ['api', `repos/pilibalaai/pilibala/actions/runs/${env.GITHUB_RUN_ID}`],
     { env, shell: false, timeout: 30_000, maxBuffer: 512_000, encoding: 'utf8' });
   const run = JSON.parse(stdout), context = admitDispatch(env, event, run.triggering_actor?.id);
   if (run.id !== Number(context.runId) || run.run_attempt !== 1 || run.head_sha !== context.workflowSha || run.head_branch !== 'master'
-    || run.event !== 'workflow_dispatch' || run.path !== catalogDefinition(context).workflow || run.repository?.full_name !== 'paperclipai/paperclip' || run.repository.private !== false
+    || run.event !== 'workflow_dispatch' || run.path !== catalogDefinition(context).workflow || run.repository?.full_name !== 'pilibalaai/pilibala' || run.repository.private !== false
     || run.actor?.id !== context.actorId || run.run_number !== Number(env.GITHUB_RUN_NUMBER)
     || !Number.isSafeInteger(run.workflow_id) || run.workflow_id <= 0) reject('actual_run');
   return { ...context, workflowId: run.workflow_id };

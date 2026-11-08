@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ComponentProps } from "react";
 import { Inbox } from "@/pages/Inbox";
-import { instanceExperimentalSettingsSchema } from "@paperclipai/shared";
-import { storybookIssues } from "../../fixtures/paperclipData";
+import { instanceExperimentalSettingsSchema } from "@pilibalaai/shared";
+import { storybookIssues } from "../../fixtures/pilibalaData";
 import {
   prepareFixtureApi,
   type FixtureState,
@@ -17,7 +17,7 @@ const meta = {
   component: InboxHost,
   args: { tab: "mine" },
   parameters: { layout: "padded",
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "inbox-search/views"
       ],

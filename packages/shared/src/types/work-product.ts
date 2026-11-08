@@ -8,7 +8,7 @@ export type IssueWorkProductType =
   | "document";
 
 export type IssueWorkProductProvider =
-  | "paperclip"
+  | "pilibala"
   | "github"
   | "vercel"
   | "s3"

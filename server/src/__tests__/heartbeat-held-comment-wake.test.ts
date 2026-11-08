@@ -5,7 +5,7 @@ import path from "node:path";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { agents, agentWakeupRequests, authUsers, budgetPolicies, companies, companyMemberships, costEvents, createDb, heartbeatRuns,
-  issueComments, issues } from "@paperclipai/db";
+  issueComments, issues } from "@pilibalaai/db";
 import { accountRunCost } from "../services/run-cost-accounting.js";
 import { DELIVERY_QUEUES, subscribeDeliveryWork } from "../services/delivery-work-notifications.js";
 import { requestTaskRetry } from "../services/task-retry.js";
@@ -29,14 +29,14 @@ describePostgres("a promoted comment refused by a temporary admission hold", () 
   let heartbeat: ReturnType<typeof heartbeatService>;
   const adapterType = "codex_local";
   const dispatched: Array<{ runId: string; context: Record<string, unknown> }> = [];
-  const oldHome = process.env.PAPERCLIP_HOME;
+  const oldHome = process.env.PILIBALA_HOME;
   let home: string;
 
   beforeAll(async () => {
     temporary = await startRecoveryPostgres("heartbeat-held-comment-");
     db = createDb(temporary.connectionString);
-    home = await mkdtemp(path.join(tmpdir(), "paperclip-held-comment-"));
-    process.env.PAPERCLIP_HOME = home;
+    home = await mkdtemp(path.join(tmpdir(), "pilibala-held-comment-"));
+    process.env.PILIBALA_HOME = home;
     heartbeat = heartbeatService(db);
     registerServerAdapter({
       type: adapterType, supportsLocalAgentJwt: false,
@@ -55,7 +55,7 @@ describePostgres("a promoted comment refused by a temporary admission hold", () 
     unregisterServerAdapter(adapterType);
     await db?.$client.end({ timeout: 0 });
     await temporary?.cleanup();
-    if (oldHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = oldHome;
+    if (oldHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = oldHome;
     if (home) await rm(home, { recursive: true, force: true });
   });
 
@@ -88,7 +88,7 @@ describePostgres("a promoted comment refused by a temporary admission hold", () 
     const [wake] = await db.insert(agentWakeupRequests).values({ companyId, agentId, source: "automation",
       triggerDetail: "system", reason: "issue_commented", status: "deferred_issue_execution",
       requestedByActorType: "user", requestedByActorId: userId,
-      payload: { issueId, commentId: comment.id, mutation: "comment", _paperclipWakeContext: {
+      payload: { issueId, commentId: comment.id, mutation: "comment", _pilibalaWakeContext: {
         issueId, taskId: issueId, commentId: comment.id, wakeCommentId: comment.id, wakeCommentIds: [comment.id],
         wakeReason: "issue_commented", source: "issue.comment" } },
     }).returning();

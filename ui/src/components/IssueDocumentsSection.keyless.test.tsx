@@ -4,7 +4,7 @@ import { act } from "react";
 import type { ComponentProps, ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { Issue, IssueDocument } from "@paperclipai/shared";
+import type { Issue, IssueDocument } from "@pilibalaai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IssueDocumentsSection } from "./IssueDocumentsSection";
 import { queryKeys } from "../lib/queryKeys";

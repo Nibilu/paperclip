@@ -16,7 +16,7 @@ Implement `onEnvironmentTask` with the SDK types:
 import type {
   PluginEnvironmentTaskParams,
   PluginEnvironmentTaskResult,
-} from "@paperclipai/plugin-sdk";
+} from "@pilibalaai/plugin-sdk";
 
 type TaskHook = (
   params: PluginEnvironmentTaskParams,
@@ -181,7 +181,7 @@ error data.
 | `runner_revision_mismatch` | The installed Runner does not match the revision that the plugin launches. Throw it from `describe` or `submit` before you prepare or start a task. | A run that has not started provider work is retried for up to 10 minutes. Agent verification checks again every minute. The task is not blocked during this wait. |
 
 ```ts
-import { PluginEnvironmentTaskError } from "@paperclipai/plugin-sdk";
+import { PluginEnvironmentTaskError } from "@pilibalaai/plugin-sdk";
 
 if (installed.revision !== expectedRevision) {
   throw new PluginEnvironmentTaskError("runner_revision_mismatch");
@@ -201,7 +201,7 @@ choices. Resource paths identify source locations. The plugin must resolve them
 for its execution environment.
 
 The result contains a configuration ID, requirements digest, and provider
-descriptor. The schema is `paperclip.runner.launch-requirements.v1`.
+descriptor. The schema is `pilibala.runner.launch-requirements.v1`.
 The digest is SHA-256 over the requirements JSON. Sort object keys in lexical
 order at every level. Keep array order. Omit absent optional fields.
 The execution owner must preserve Core policy and resource assignments.
@@ -402,7 +402,7 @@ Core does not require a particular Git or filesystem layout.
 Each file descriptor contains a trusted host path, SHA-256, and byte size. These
 paths are host-authored transfer sources, never user-supplied paths or URLs.
 Providers verify the bytes and safely materialize each snapshot separately at
-`.paperclip-recovered/<operationId>` beneath the new working directory. Preserve
+`.pilibala-recovered/<operationId>` beneath the new working directory. Preserve
 file links safely and include provenance. Never overlay recovered files onto the
 clean working tree or overwrite an earlier attachment. Core includes those
 relative attachment paths in the new attempt's continuation context.

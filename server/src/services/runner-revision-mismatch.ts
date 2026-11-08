@@ -1,5 +1,5 @@
-import type { AdapterEnvironmentTestResult } from "@paperclipai/adapter-utils";
-import { readEnvironmentTaskErrorCode } from "@paperclipai/plugin-sdk";
+import type { AdapterEnvironmentTestResult } from "@pilibalaai/adapter-utils";
+import { readEnvironmentTaskErrorCode } from "@pilibalaai/plugin-sdk";
 
 export const RUNNER_REVISION_MISMATCH_CODE = "runner_revision_mismatch";
 
@@ -15,5 +15,5 @@ export function isRunnerRevisionMismatch(error: unknown): boolean {
 
 export function runnerRevisionMismatchTestResult(adapterType: string, testedAt = new Date().toISOString()): AdapterEnvironmentTestResult {
   return { adapterType, status: "fail", testedAt, checks: [{ code: RUNNER_REVISION_MISMATCH_CODE, level: "error", retryable: true,
-    message: "The remote Runner does not match this Paperclip version yet. Paperclip will check again after the Runner update." }] };
+    message: "The remote Runner does not match this Pilibala version yet. Pilibala will check again after the Runner update." }] };
 }

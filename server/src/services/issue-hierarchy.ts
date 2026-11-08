@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
-import { issues, type Db } from "@paperclipai/db";
-import { MAX_AGENT_TASK_HIERARCHY_DEPTH, type IssueParentAdjustment } from "@paperclipai/shared";
+import { issues, type Db } from "@pilibalaai/db";
+import { MAX_AGENT_TASK_HIERARCHY_DEPTH, type IssueParentAdjustment } from "@pilibalaai/shared";
 
 /**
  * `flatten` (the default) applies the agent hierarchy limit: a new parent edge

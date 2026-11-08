@@ -10,11 +10,11 @@ const stateFactory = vi.hoisted(() => vi.fn(() => ({
   firstSeenVersion: "0.0.0",
 })));
 
-vi.mock("@paperclipai/shared/telemetry", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@paperclipai/shared/telemetry")>(),
+vi.mock("@pilibalaai/shared/telemetry", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@pilibalaai/shared/telemetry")>(),
   loadOrCreateState: stateFactory,
 }));
-vi.mock("../home-paths.js", () => ({ resolvePaperclipInstanceRoot: () => "/unused-test-instance" }));
+vi.mock("../home-paths.js", () => ({ resolvePilibalaInstanceRoot: () => "/unused-test-instance" }));
 vi.mock("../version.js", () => ({ serverVersion: "0.0.0-test" }));
 
 describe("server telemetry startup", () => {
@@ -22,10 +22,10 @@ describe("server telemetry startup", () => {
   beforeEach(() => {
     vi.resetModules();
     stateFactory.mockClear();
-    for (const key of ["CI", "CONTINUOUS_INTEGRATION", "BUILD_NUMBER", "GITHUB_ACTIONS", "GITLAB_CI", "PAPERCLIP_TELEMETRY_DISABLED", "DO_NOT_TRACK"]) {
+    for (const key of ["CI", "CONTINUOUS_INTEGRATION", "BUILD_NUMBER", "GITHUB_ACTIONS", "GITLAB_CI", "PILIBALA_TELEMETRY_DISABLED", "DO_NOT_TRACK"]) {
       vi.stubEnv(key, "");
     }
-    vi.stubEnv("PAPERCLIP_TELEMETRY_ENDPOINT", "http://localhost:9999/ingest");
+    vi.stubEnv("PILIBALA_TELEMETRY_ENDPOINT", "http://localhost:9999/ingest");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
   });
 
@@ -59,7 +59,7 @@ describe("server telemetry startup", () => {
       throw Object.assign(new Error("private telemetry path cannot be written"), { code: "EACCES" });
     });
     const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const { TelemetryClient } = await import("@paperclipai/shared/telemetry");
+    const { TelemetryClient } = await import("@pilibalaai/shared/telemetry");
     const periodicFlush = vi.spyOn(TelemetryClient.prototype, "startPeriodicFlush");
     const { initTelemetry, getTelemetryClient } = await import("../telemetry.js");
 
@@ -75,12 +75,12 @@ describe("server telemetry startup", () => {
   });
 
   it("continues startup when the real state store cannot create its directory", async () => {
-    const fixtureDir = mkdtempSync(path.join(tmpdir(), "paperclip-telemetry-startup-"));
+    const fixtureDir = mkdtempSync(path.join(tmpdir(), "pilibala-telemetry-startup-"));
     fixtureDirs.push(fixtureDir);
     const blockedStateDir = path.join(fixtureDir, "telemetry");
     writeFileSync(blockedStateDir, "this file prevents directory creation");
-    const { loadOrCreateState } = await vi.importActual<typeof import("@paperclipai/shared/telemetry")>(
-      "@paperclipai/shared/telemetry",
+    const { loadOrCreateState } = await vi.importActual<typeof import("@pilibalaai/shared/telemetry")>(
+      "@pilibalaai/shared/telemetry",
     );
     stateFactory.mockImplementationOnce(() => loadOrCreateState(blockedStateDir, "0.0.0-test"));
     vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -99,7 +99,7 @@ describe("server telemetry startup", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it.each(["PAPERCLIP_TELEMETRY_DISABLED", "DO_NOT_TRACK", "CI", "GITHUB_ACTIONS"])(
+  it.each(["PILIBALA_TELEMETRY_DISABLED", "DO_NOT_TRACK", "CI", "GITHUB_ACTIONS"])(
     "respects %s before creating the client or state",
     async (key) => {
       vi.stubEnv(key, "1");

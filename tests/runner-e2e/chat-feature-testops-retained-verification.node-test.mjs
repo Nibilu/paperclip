@@ -8,17 +8,17 @@ import os from 'node:os';
 import { admitExecutor, admitOrigin, admitArtifact, admitSelection, attachmentProjection, snapshotAndReplay, extractArchive, origin, routes } from './testops-chat-retained-verification.mjs';
 
 const workflow = '.github/workflows/chat-feature-testops-retained-verification.yml';
-const env = { GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REPOSITORY: 'paperclipai/paperclip',
-  GITHUB_REF: 'refs/heads/master', GITHUB_WORKFLOW_REF: `paperclipai/paperclip/${workflow}@refs/heads/master`,
+const env = { GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REPOSITORY: 'pilibalaai/pilibala',
+  GITHUB_REF: 'refs/heads/master', GITHUB_WORKFLOW_REF: `pilibalaai/pilibala/${workflow}@refs/heads/master`,
   GITHUB_RUN_ATTEMPT: '1', GITHUB_RUN_ID: '900', GITHUB_SHA: 'a'.repeat(40), GITHUB_ACTOR_ID: '34892728', TESTOPS_ALLOWED_ACTOR_IDS: '[34892728]' };
-const repo = { full_name: 'paperclipai/paperclip', private: false, default_branch: 'master' };
+const repo = { full_name: 'pilibalaai/pilibala', private: false, default_branch: 'master' };
 const event = { repository: repo, ref: 'refs/heads/master', sender: { id: 34892728 }, inputs: {} };
 const ownRun = { id: 900, run_attempt: 1, head_sha: env.GITHUB_SHA, head_branch: 'master', event: 'workflow_dispatch', path: workflow,
   workflow_id: 901, repository: repo, actor: { id: 34892728 }, triggering_actor: { id: 34892728 } };
 const registered = { id: 901, path: workflow };
-const selection = { schema: 'paperclip.chat-feature-testops-selection/v1', runId: origin.runId, attempt: origin.attempt,
+const selection = { schema: 'pilibala.chat-feature-testops-selection/v1', runId: origin.runId, attempt: origin.attempt,
   workflowSha: origin.workflowSha, targetSha: origin.targetSha, allureJobRunId: String(origin.jobRunId),
-  projectId: 1, planId: 36, jobId: 34, caseId: 388, launchId: 1069, fullName: 'paperclip.Product E2E.chat-features.create-backlog',
+  projectId: 1, planId: 36, jobId: 34, caseId: 388, launchId: 1069, fullName: 'pilibala.Product E2E.chat-features.create-backlog',
   executionId: 'chat-features.runner-opencode-deepseek-1017.local.create-backlog', canonicalScenario: 'tasks.create-backlog' };
 const attachmentMetadata = [
   { name: 'Synthetic task and source conversation', contentType: 'image/png', contentLength: 104828 },
@@ -28,7 +28,7 @@ const attachmentMetadata = [
 const receipt = { status: 'passed', cleanup: 'passed', caseId: 388, campaignId: `gha-${origin.runId}-1`, count: 1, attachmentMetadata };
 function responses() {
   const jobrun = { id: 1031, job: { id: 34, type: 'github' }, launchId: 1069,
-    url: `https://github.com/paperclipai/paperclip/actions/runs/${origin.runId}`, stage: 'finished' };
+    url: `https://github.com/pilibalaai/pilibala/actions/runs/${origin.runId}`, stage: 'finished' };
   const { job, ...embedded } = jobrun;
   return [jobrun, { id: 1069, projectId: 1 }, { content: [{ id: 2675, testCaseId: 388 }], totalElements: 1, totalPages: 1 },
     { id: 2675, projectId: 1, launchId: 1069, testCaseId: 388, fullName: selection.fullName, jobRun: embedded, links: [], status: 'passed' },
@@ -109,7 +109,7 @@ test('actual three-way attachment row refusal retains the precise current protec
 test('authoritative wrong job, wrong result jobrun and contradictory source remain failures during historical replay', async () => {
   for (const [mutate, expected] of [[values => { values[0].job.id = 35; }, 'chat_testops_jobrun_mismatch'],
     [values => { values[3].jobRun.id = 1032; }, 'chat_testops_upload_mismatch'],
-    [values => { values[3].links = [{ url: 'https://github.com/paperclipai/paperclip/commit/' + 'b'.repeat(40) }]; }, 'chat_testops_upload_mismatch']]) {
+    [values => { values[3].links = [{ url: 'https://github.com/pilibalaai/pilibala/commit/' + 'b'.repeat(40) }]; }, 'chat_testops_upload_mismatch']]) {
     const values = responses(); mutate(values);
     const result = await snapshotAndReplay(async route => values[routes.indexOf(route)], selection, receipt);
     assert.equal(result.verification, undefined);

@@ -20,7 +20,7 @@ export function dependencyEvidenceFixture(): DependencyEvidence {
     status: "succeeded", runtimeMode: "native", nativePhase: "committed", invocationSource: "automation", triggerDetail: "system",
     startedAt: "2020-01-01T00:00:21.000Z",
     contextSnapshot: { issueId: scope.dependentId, taskId: scope.dependentId, wakeReason: "issue_blockers_resolved", source: "issue.blockers_resolved",
-      resolvedBlockerIssueId: scope.blockerId, blockerIssueIds: [scope.blockerId], paperclipEnvironment: { id: scope.environmentId } },
+      resolvedBlockerIssueId: scope.blockerId, blockerIssueIds: [scope.blockerId], pilibalaEnvironment: { id: scope.environmentId } },
     runnerProfileJson: { nativeExecutionInput: { provider: { kind: scope.provider, model: scope.model } } } };
   const document = { id: "document", companyId: scope.companyId, issueId: scope.dependentId, key: scope.documentKey,
     body: JSON.stringify({ reference: scope.reference, blockerIdentifier: scope.blockerIdentifier }), latestRevisionId: "revision",

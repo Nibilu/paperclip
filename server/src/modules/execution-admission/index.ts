@@ -1,4 +1,4 @@
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { createPostgresTaskExecutionPolicyStore } from "./adapters/postgres.js";
 import { createTaskExecutionPolicyCommands } from "./application/policy.js";
 

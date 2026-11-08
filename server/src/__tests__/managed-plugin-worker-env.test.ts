@@ -8,7 +8,7 @@ import { MANAGED_CONFIG_ENV_KEY } from "../services/managed-config.js";
 import { managedPluginEnabledCompanies, managedPluginWorkerEnvGrant } from "../services/managed-plugin-worker-env.js";
 
 describe("managed plugin grants", () => {
-  const pluginKey = "paperclip.daytona-sandbox-provider";
+  const pluginKey = "pilibala.daytona-sandbox-provider";
   const companyId = "f0679247-e2be-5a76-adb6-6bd360e5a833";
   let root: string;
   const env = (plugins: Record<string, unknown>) => ({
@@ -18,7 +18,7 @@ describe("managed plugin grants", () => {
   async function distributionPlugin(key: string, id: string) {
     const directory = path.join(root, "distribution", key);
     await mkdir(path.join(directory, "dist"), { recursive: true });
-    await writeFile(path.join(directory, "package.json"), JSON.stringify({ version: "1.0.0", paperclipPlugin: { manifest: "./dist/manifest.js", worker: "./dist/worker.js" } }));
+    await writeFile(path.join(directory, "package.json"), JSON.stringify({ version: "1.0.0", pilibalaPlugin: { manifest: "./dist/manifest.js", worker: "./dist/worker.js" } }));
     await writeFile(path.join(directory, "dist/manifest.js"), "export default {};");
     await writeFile(path.join(directory, "dist/worker.js"), "export {};");
     await writeFile(path.join(root, "distribution/catalog.json"), JSON.stringify({ schemaVersion: 1, plugins: [{

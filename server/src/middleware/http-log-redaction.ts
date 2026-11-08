@@ -1,6 +1,6 @@
 export const HTTP_LOG_REDACT_PATHS = [
   "req.headers.authorization",
-  'req.headers["x-paperclip-source-run-token"]',
+  'req.headers["x-pilibala-source-run-token"]',
   "res.headers.location",
   'req.headers["proxy-authorization"]',
   "req.headers.cookie",
@@ -13,14 +13,14 @@ export const HTTP_LOG_REDACT_PATHS = [
   'req.headers["x-xsrf-token"]',
   'req.headers["x-api-key"]',
   // Cloud proxy credentials and signed assertions authorize tenant access.
-  'req.headers["x-paperclip-cloud-tenant-token"]',
-  'req.headers["x-paperclip-cloud-session-id"]',
-  'req.headers["x-paperclip-cloud-runtime-identity"]',
-  'req.headers["x-paperclip-cloud-control"]',
-  'req.headers["x-paperclip-cloud-inspection"]',
+  'req.headers["x-pilibala-cloud-tenant-token"]',
+  'req.headers["x-pilibala-cloud-session-id"]',
+  'req.headers["x-pilibala-cloud-runtime-identity"]',
+  'req.headers["x-pilibala-cloud-control"]',
+  'req.headers["x-pilibala-cloud-inspection"]',
   // Runtime GitHub capabilities authorize credential acquisition for a live run.
-  'req.headers["x-paperclip-github-capability"]',
-  'req.headers["x-paperclip-runner-scope-token"]',
+  'req.headers["x-pilibala-github-capability"]',
+  'req.headers["x-pilibala-runner-scope-token"]',
   // Telegram's optional webhook verification header is a reusable bearer
   // secret sent on every provider callback.
   'req.headers["x-telegram-bot-api-secret-token"]',

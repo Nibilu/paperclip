@@ -6,8 +6,8 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { eq, inArray, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { activityLog, agents, companies, createDb, environmentLeases, environments, heartbeatRuns, nativeRunFinalizations, executionWorkspaceSnapshots, executionWorkspaces, issues, projects, workspaceOperations, type Db } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
+import { activityLog, agents, companies, createDb, environmentLeases, environments, heartbeatRuns, nativeRunFinalizations, executionWorkspaceSnapshots, executionWorkspaces, issues, projects, workspaceOperations, type Db } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority } from "@pilibalaai/shared";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { resolveManagedProjectWorkspaceDir } from "../home-paths.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
@@ -35,7 +35,7 @@ describe.skipIf(!support.supported)("bounded workspace cohort migration", () => 
   afterAll(async () => { await db?.$client.end({ timeout: 1 }); await database?.cleanup(); });
   beforeEach(async () => {
     home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "pc-workspace-cohort-")));
-    vi.stubEnv("PAPERCLIP_HOME", home); vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "61".repeat(32));
+    vi.stubEnv("PILIBALA_HOME", home); vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "61".repeat(32));
     storage = createStorageService(createLocalDiskStorageProvider(path.join(home, "objects")));
   });
   afterEach(async () => {
@@ -58,7 +58,7 @@ describe.skipIf(!support.supported)("bounded workspace cohort migration", () => 
     const repoUrl = "https://example.invalid/cohort.git"; await git(root, "remote", "add", "origin", repoUrl);
     const members = [];
     for (const name of ["base", "one", "two"]) {
-      const cwd = name === "base" ? root : path.join(root, ".paperclip", "worktrees", name);
+      const cwd = name === "base" ? root : path.join(root, ".pilibala", "worktrees", name);
       if (name !== "base") await git(root, "worktree", "add", "-qb", name, cwd);
       const [issue] = await db.insert(issues).values({ companyId, projectId, title: name }).returning();
       const [workspace] = await db.insert(executionWorkspaces).values({ companyId, projectId, sourceIssueId: issue.id, name,
@@ -80,10 +80,10 @@ describe.skipIf(!support.supported)("bounded workspace cohort migration", () => 
   }
   async function recoverable(f: Awaited<ReturnType<typeof fixture>>) {
     const workspace = f.leaves[0], runId = randomUUID(), leaseId = randomUUID(), providerLeaseId = randomUUID();
-    const [agent] = await db.insert(agents).values({ companyId: f.companyId, name: "Held recovery", adapterType: "paperclip_runner" }).returning();
+    const [agent] = await db.insert(agents).values({ companyId: f.companyId, name: "Held recovery", adapterType: "pilibala_runner" }).returning();
     const [environment] = await db.insert(environments).values({ name: runId, driver: "daytona" }).returning();
     await db.insert(heartbeatRuns).values({ id: runId, companyId: f.companyId, agentId: agent.id, nativeIssueId: workspace.sourceIssueId,
-      runtimeMode: "native", status: "failed", runnerProfileJson: { nativeWorkspaceSync: { schema: "paperclip.native-workspace-sync/v3",
+      runtimeMode: "native", status: "failed", runnerProfileJson: { nativeWorkspaceSync: { schema: "pilibala.native-workspace-sync/v3",
         state: "prepared", workspaceId: workspace.id, leaseId, providerLeaseId, remoteCwd: "/workspaces/held",
         descriptorSha256: "12".repeat(32), baselineSha256: "34".repeat(32), resourceDisposition: "keep_running" } } });
     await db.insert(environmentLeases).values({ id: leaseId, companyId: f.companyId, issueId: workspace.sourceIssueId,
@@ -140,7 +140,7 @@ describe.skipIf(!support.supported)("bounded workspace cohort migration", () => 
     }
   }, 60_000);
   it("shares the merged child verifier across parallel aliases under the complete cohort fence", async () => {
-    const f = await fixture(), parent = f.leaves[0], cwd = path.join(parent.cwd!, ".paperclip", "worktrees", "nested");
+    const f = await fixture(), parent = f.leaves[0], cwd = path.join(parent.cwd!, ".pilibala", "worktrees", "nested");
     await git(f.root, "worktree", "add", "-qb", "nested", cwd);
     const [childIssue, aliasIssue] = await db.insert(issues).values([
       { companyId: f.companyId, projectId: f.projectId, title: "Nested child" },

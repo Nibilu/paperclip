@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { agentWakeupRequests, agents, companies, createDb, heartbeatRuns } from "@paperclipai/db";
+import { agentWakeupRequests, agents, companies, createDb, heartbeatRuns } from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -22,7 +22,7 @@ describeEmbeddedPostgres("native run wake anchor against PostgreSQL", () => {
   const requestedAt = new Date("2026-11-07T10:00:00.000Z");
 
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-wake-anchor-");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-wake-anchor-");
     // One connection: a read left running after the timeout would starve the next query.
     db = createDb(database.connectionString, { maxConnections: 1 });
     locker = createDb(database.connectionString, { maxConnections: 2 });

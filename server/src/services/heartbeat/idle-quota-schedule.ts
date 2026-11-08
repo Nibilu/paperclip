@@ -1,6 +1,6 @@
 import { finishedIdleRun, finishedIdleWake } from "../idle-work-proof.js";
-import { agents, agentWakeupRequests, companies, heartbeatRuns, issues, type Db } from "@paperclipai/db";
-import { PROVIDER_QUOTA_MONITOR_SERVICE_NAME, issueExecutionMonitorPolicySchema, issueExecutionPolicySchema } from "@paperclipai/shared";
+import { agents, agentWakeupRequests, companies, heartbeatRuns, issues, type Db } from "@pilibalaai/db";
+import { PROVIDER_QUOTA_MONITOR_SERVICE_NAME, issueExecutionMonitorPolicySchema, issueExecutionPolicySchema } from "@pilibalaai/shared";
 import { eq, sql } from "drizzle-orm";
 import type { DeadlineReconciliationSnapshot } from "../deadline-reconciliation.js";
 import { idleDeadlineRowLimit, isFutureIdleDeadline, type IdleDeadlineSnapshot, type IdleIssueWait } from "../idle-deadline-types.js";
@@ -96,8 +96,8 @@ export async function readIdleQuotaSchedule(tx: Pick<Db, "select">, now: number,
         SELECT 1 FROM ${bindings} WHERE terminal_scope.company_id = ${agentWakeupRequests.companyId}
           AND (terminal_scope.issue_id::text = ${agentWakeupRequests.payload}->>'issueId'
             OR terminal_scope.issue_id::text = ${agentWakeupRequests.payload}->>'taskId'
-            OR terminal_scope.issue_id::text = ${agentWakeupRequests.payload}->'_paperclipWakeContext'->>'issueId'
-            OR terminal_scope.issue_id::text = ${agentWakeupRequests.payload}->'_paperclipWakeContext'->>'taskId'
+            OR terminal_scope.issue_id::text = ${agentWakeupRequests.payload}->'_pilibalaWakeContext'->>'issueId'
+            OR terminal_scope.issue_id::text = ${agentWakeupRequests.payload}->'_pilibalaWakeContext'->>'taskId'
             OR ${agentWakeupRequests.runId} IN (SELECT r.id FROM heartbeat_runs r
               WHERE r.company_id = ${agentWakeupRequests.companyId}
                 AND (r.issue_id = terminal_scope.issue_id OR r.native_issue_id = terminal_scope.issue_id

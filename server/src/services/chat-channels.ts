@@ -142,7 +142,7 @@ import { registerIdleLocalWorkProbe } from "./idle-local-work.js";
 import type { ChatEndpointRuntime } from "./voice/voice-runtime.js";
 
 import { fastResponseService, fastResponseSourceCurrent } from "./fast-responses.js";
-import { fastResponseRequests } from "@paperclipai/db";
+import { fastResponseRequests } from "@pilibalaai/db";
 import { chatCredentialMutationLease } from "./chat-credential-mutation-lease.js";
 import type { AgentAvatarRequest } from "./agent-avatars.js";
 
@@ -152,7 +152,7 @@ import { buildChatCommunicationGuidance } from "./chat-communication-guidance.js
 import { assertChatTaskCreationAccess, resolveChatExecutionDefaults } from "./chat-execution-defaults.js";
 
 import { githubAutomaticAdmission } from "./chat-github-events.js";
-import type { GitHubReviewEventContext, GitHubIssueEventContext, GitHubReviewPolicy } from "@paperclipai/shared";
+import type { GitHubReviewEventContext, GitHubIssueEventContext, GitHubReviewPolicy } from "@pilibalaai/shared";
 
 import { resumeExternalConversation } from "./slack-conversation-state.js";
 
@@ -184,14 +184,14 @@ import {
   readChatControlChronology,
 } from "./chat-control-chronology.js";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
-import { agentWakeupRequests, agents, chatActions, chatConversations, chatDeliveries, chatEndpointResources, chatEndpoints, chatExternalPrincipals, chatIdentityLinks, chatMessageLinks, chatPublications, chatTeamsFileTransfers, companyMemberships, heartbeatRuns, issueComments, issueThreadInteractions, issues, toolConnections } from "@paperclipai/db";
-import type { ChatEventKind, ChatEndpointSetupState, ChatProvider, ExternalChannelBindingSummary, SafeChatPublicationPayload, ToolCredentialSecretRef } from "@paperclipai/shared";
+import { agentWakeupRequests, agents, chatActions, chatConversations, chatDeliveries, chatEndpointResources, chatEndpoints, chatExternalPrincipals, chatIdentityLinks, chatMessageLinks, chatPublications, chatTeamsFileTransfers, companyMemberships, heartbeatRuns, issueComments, issueThreadInteractions, issues, toolConnections } from "@pilibalaai/db";
+import type { ChatEventKind, ChatEndpointSetupState, ChatProvider, ExternalChannelBindingSummary, SafeChatPublicationPayload, ToolCredentialSecretRef } from "@pilibalaai/shared";
 import {
   isUuidLike,
   LOW_TRUST_REVIEW_PRESET,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import {
   type TeamsFileTransferOptions,
@@ -290,7 +290,7 @@ const RECONNECT_CREDENTIAL_KEYS: Partial<Record<ChatProvider, readonly string[]>
 // A Discord root mention is durably staged before the adapter creates its
 // provider thread. Give the bounded provider retry loop ample time to finish;
 // if the process disappears, the delivery worker verifies that thread over
-// Discord's read-only API before it permits any Paperclip task mutation.
+// Discord's read-only API before it permits any Pilibala task mutation.
 const DISCORD_ROOT_THREAD_CONFIRMATION_DELAY_MS = 5 * 60_000;
 const DELIVERY_LEASE_TTL_MS = 90_000;
 const DELIVERY_DRAIN_LIMIT = 100;
@@ -1085,7 +1085,7 @@ export function chatChannelService(db: Db, options: ChatChannelServiceOptions) {
               // auditable social signal, never an approval or task instruction.
               // Telegram exposes bot commands through Chat SDK's slash-command
               // callback even though it does not support arbitrary registered slash
-              // commands. Paperclip still needs that callback for /new, /close, and
+              // commands. Pilibala still needs that callback for /new, /close, and
               // /status session controls.
               // Discord must always install the guarded private-response path:
               // an unavailable registration still needs a terminal denial for a
@@ -1343,7 +1343,7 @@ export function chatChannelService(db: Db, options: ChatChannelServiceOptions) {
           return false;
         const marker = committed as Record<string, unknown>;
         if (
-          marker.schema !== "paperclip.native_committed_chat_response.v1" ||
+          marker.schema !== "pilibala.native_committed_chat_response.v1" ||
           typeof marker.resultId !== "string" ||
           !isUuidLike(marker.resultId) ||
           typeof marker.canonicalSha256 !== "string" ||
@@ -1826,7 +1826,7 @@ export function chatChannelService(db: Db, options: ChatChannelServiceOptions) {
         (destinationAllowed || setupDestinationCanBeEnabledByEarlierMention)
       ) {
         // GitHub, Slack, and Teams can deliver a thread reply before the older
-        // root callback that creates its Paperclip task. Keep this exact
+        // root callback that creates its Pilibala task. Keep this exact
         // delivery for a bounded minute, without admitting or waking it, so
         // the durable thread drain can sort again if a delayed root arrives.
         // A standalone unaddressed message is filtered after the bounded
@@ -1854,13 +1854,13 @@ export function chatChannelService(db: Db, options: ChatChannelServiceOptions) {
         const filteredReason = !endpointAllowed
           ? "Connection is not active"
           : !destinationAllowed
-            ? "Destination is not enabled in Paperclip"
+            ? "Destination is not enabled in Pilibala"
             : principalResolution.linkedDenied
-              ? "Linked Paperclip account is not currently permitted"
+              ? "Linked Pilibala account is not currently permitted"
               : !principalAllowed
                 ? endpoint.allowUnlinkedPeople
                   ? "Endpoint sponsor can no longer authorize external guests"
-                  : "External identity must be linked to a Paperclip account"
+                  : "External identity must be linked to a Pilibala account"
                 : "Message did not address the agent or an active task thread";
         await db.transaction(async (tx) => {
           await notifyChatDeliveryWork(tx);
@@ -2047,7 +2047,7 @@ export function chatChannelService(db: Db, options: ChatChannelServiceOptions) {
             : controlCommand === "new"
               ? isTelegramForumTopic
                 ? telegramForumControlResponse("new", taskLabel, Boolean(existingIssue), Boolean(existingConversation))
-                : "Send your request to start a new Paperclip task."
+                : "Send your request to start a new Pilibala task."
               : existingConversation
                 ? isTelegramForumTopic
                   ? telegramForumControlResponse("close", taskLabel, Boolean(existingIssue), true)
@@ -2229,7 +2229,7 @@ export function chatChannelService(db: Db, options: ChatChannelServiceOptions) {
         }
         if (!conversation)
           throw conflict(
-            "Could not bind external conversation to a Paperclip task",
+            "Could not bind external conversation to a Pilibala task",
           );
 
         const issue =
@@ -2318,7 +2318,7 @@ export function chatChannelService(db: Db, options: ChatChannelServiceOptions) {
                       type: "key_value",
                       label: "Authority",
                       value: taskUserId
-                        ? "Linked Paperclip user"
+                        ? "Linked Pilibala user"
                         : "Sponsored external guest (restricted)",
                     },
                   ],
@@ -2474,11 +2474,11 @@ export function chatChannelService(db: Db, options: ChatChannelServiceOptions) {
                 : endpointStillAllowed
                   ? destinationStillAllowed
                     ? currentPrincipalAuthorization.linkedDenied
-                      ? "Linked Paperclip account is not currently permitted"
+                      ? "Linked Pilibala account is not currently permitted"
                       : currentEndpoint.allowUnlinkedPeople
                         ? "Endpoint sponsor can no longer authorize external guests"
-                        : "External identity must be linked to a Paperclip account"
-                    : "Destination is not enabled in Paperclip"
+                        : "External identity must be linked to a Pilibala account"
+                    : "Destination is not enabled in Pilibala"
                   : "Connection is not active",
               updatedAt: filteredAt,
             })
@@ -2622,7 +2622,7 @@ export function chatChannelService(db: Db, options: ChatChannelServiceOptions) {
             })
           : Promise.resolve()),
         // Slack implements this through assistant.threads.setStatus, which
-        // requires assistant:write. The least-privilege Paperclip manifest
+        // requires assistant:write. The least-privilege Pilibala manifest
         // deliberately does not request that scope; the coalesced lifecycle
         // reply below is the visible working state instead.
         endpoint.provider === "slack"
@@ -2977,7 +2977,7 @@ export function chatChannelService(db: Db, options: ChatChannelServiceOptions) {
       return new Response("superseded", { status: 200 });
     // A pause is a durable ingress fence. Providers generally retry non-2xx
     // webhooks, so acknowledge late callbacks without recreating a runtime or
-    // admitting any Paperclip mutation.
+    // admitting any Pilibala mutation.
     if (endpoint.status === "paused") {
       if (replayingDurableGitHubIngress) return ignoreSupersededIngress();
       return new Response("ignored", { status: 200 });

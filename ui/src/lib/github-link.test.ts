@@ -4,8 +4,8 @@ import { parseGitHubLink } from "./github-link";
 describe("GitHub inline link presentation", () => {
   it.each([
     ["https://github.com/github/docs", "repository", "github/docs"],
-    ["https://github.com/paperclipai/paperclip", "repository", "paperclipai/paperclip"],
-    ["https://github.com/paperclipai/paperclip/", "repository", "paperclipai/paperclip"],
+    ["https://github.com/pilibalaai/pilibala", "repository", "pilibalaai/pilibala"],
+    ["https://github.com/pilibalaai/pilibala/", "repository", "pilibalaai/pilibala"],
     ["https://github.com/acme/web/pull/241", "pull_request", "acme/web#241"],
     ["HTTPS://WWW.GITHUB.COM/Acme/Web/pull/241/files?diff=split#diff-a", "pull_request", "Acme/Web#241"],
     ["https://github.com/acme/web/issues/42#issuecomment-123", "issue", "acme/web#42"],
@@ -15,7 +15,7 @@ describe("GitHub inline link presentation", () => {
   });
 
   it.each([
-    "https://github.com", "https://github.com/paperclipai",
+    "https://github.com", "https://github.com/pilibalaai",
     "https://github.com/acme/web/tree/main", "https://github.com/acme/web/pull/nope",
     "https://github.com/acme/web/issues/0", "https://github.com/settings/profile",
     "https://github.com/features/actions", "https://github.com/orgs/acme",

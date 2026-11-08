@@ -1,5 +1,5 @@
 import { and, asc, eq, gt, isNotNull, isNull } from "drizzle-orm";
-import { agents, museAgentBindings as bindings, type Db } from "@paperclipai/db";
+import { agents, museAgentBindings as bindings, type Db } from "@pilibalaai/db";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "../../services/delivery-work-notifications.js";
 
 export type MuseVerificationScope = {

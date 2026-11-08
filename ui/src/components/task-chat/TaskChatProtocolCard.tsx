@@ -747,7 +747,7 @@ function RuntimeRequestCard({
 }) {
   const historyIssueId = useContext(TaskChatRequestHistoryContext);
   const draftKey = requestedDraftKey ?? (historyIssueId
-    ? `paperclip:task-input:${historyIssueId}:runtime:${item.runId}:${item.requestId}`
+    ? `pilibala:task-input:${historyIssueId}:runtime:${item.runId}:${item.requestId}`
     : undefined);
   const title =
     item.questionSet?.title ??

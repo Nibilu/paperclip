@@ -2,21 +2,21 @@ import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { and, eq, sql } from "drizzle-orm";
 import { agents, companies, completionContracts, databaseWorkPending, environmentLeases, reconcileDatabaseWork, heartbeatRunEvents, heartbeatRuns, issues, issueRelations,
-  issueTreeHolds, issueTreeHoldMembers, issueRecoveryActions, nativeRunFinalizations, nativeRunResults, nativeRunnerCheckpoints } from "@paperclipai/db";
+  issueTreeHolds, issueTreeHoldMembers, issueRecoveryActions, nativeRunFinalizations, nativeRunResults, nativeRunnerCheckpoints } from "@pilibalaai/db";
 import { expect, it, vi } from "vitest";
-import type { NativeExecutionInputV1 } from "@paperclipai/paperclip-runner";
+import type { NativeExecutionInputV1 } from "@pilibalaai/pilibala-runner";
 
 const provider = vi.hoisted(() => ({ execute: vi.fn() }));
-vi.mock("../../vendor/paperclip-runner/index.js", async importOriginal => ({
-  ...await importOriginal<typeof import("../../vendor/paperclip-runner/index.js")>(),
+vi.mock("../../vendor/pilibala-runner/index.js", async importOriginal => ({
+  ...await importOriginal<typeof import("../../vendor/pilibala-runner/index.js")>(),
   executeNativeSession: provider.execute,
 }));
-import { DurablePrpControlPlane } from "../../vendor/paperclip-runner/index.js";
+import { DurablePrpControlPlane } from "../../vendor/pilibala-runner/index.js";
 import { describeEmbeddedPostgres, nativeRestartFixture, remotePreparedWorkspace } from "../../__tests__/helpers/native-restart.js";
 import { nativeRunnerCheckpointWriter } from "./native-runner-checkpoint.js";
 import { DELIVERY_QUEUES, subscribeDeliveryWork } from "../delivery-work-notifications.js";
 import { claimNativeSessionResumptions } from "./native-finalization-reconciler.js";
-import { cancelNativeSession, executePaperclipNativeSession } from "./native-session-executor.js";
+import { cancelNativeSession, executePilibalaNativeSession } from "./native-session-executor.js";
 import { buildNativeCompletionContract } from "./completion-contracts.js";
 import { claimNativeRestartRecoveries, currentNativeControllerIdentity, NATIVE_RESTART_RECOVERY_FAILED } from "./native-restart-recovery.js";
 import { readSystemRecovery, SYSTEM_RECOVERY_MAX_RETRIES } from "../system-recovery-state.js";
@@ -58,7 +58,7 @@ describeEmbeddedPostgres("remote native retry execution admission", () => {
     await authority.flushCheckpoint();
     await authority.stop();
     const classic = remotePreparedWorkspace();
-    const remote = { schema: "paperclip.remote-workspace-run.v1", workspaceId: classic.workspaceId,
+    const remote = { schema: "pilibala.remote-workspace-run.v1", workspaceId: classic.workspaceId,
       leaseId: classic.leaseId, providerLeaseId: classic.providerLeaseId, remoteCwd: classic.remoteCwd,
       epoch: 1, state: "prepared", snapshotId: null };
     const checkpoint = { backendKind: "acpx", driverKind: "acpx_runtime", sessionId: "provider-session",
@@ -421,14 +421,14 @@ describeEmbeddedPostgres("remote native retry execution admission", () => {
     const [issue] = await f.db.select().from(issues).where(eq(issues.id, f.issueId));
     const [contract] = await f.db.select().from(completionContracts).where(eq(completionContracts.issueId, f.issueId));
     const execution: NativeExecutionInputV1 = {
-      schema: "paperclip.native-execution-input.v1",
+      schema: "pilibala.native-execution-input.v1",
       binding: { companyId: f.companyId, runId: f.runId, issueId: f.issueId, agentId: f.agentId, executionWorkspaceId: f.runId },
       provider: { kind: "codex", model: "gpt-5.6-luna" },
       task: { identifier: issue.identifier!, title: issue.title, description: null, prompt: "Continue retained work.", workMode: "standard" },
       workspace: { cwd: environment.current.runtimeRoot, repoUrl: null, repoRef: null, branchName: null },
       session: { normalizedSessionId: f.native.normalizedSessionId, driverKind: "codex_app_server", protocolVersion: 1,
         lifecyclePolicy: { mode: "per_turn", idleTimeoutMs: null } },
-      completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "paperclip.completion-contract.v1",
+      completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "pilibala.completion-contract.v1",
         contract: buildNativeCompletionContract(issue, { revision: contract.revision }) },
       interactionResponses: [], credentialBindings: [],
     };
@@ -441,7 +441,7 @@ describeEmbeddedPostgres("remote native retry execution admission", () => {
       const [claim] = await claimNativeRestartRecoveries({ db: f.db, controller, restartKind: "hard", runIds: [f.runId] });
       expect(claim).toMatchObject({ kind: "reattach_remote_runner", providerAttempt: attempt });
       if (claim.kind !== "reattach_remote_runner") throw new Error("Expected exact remote recovery claim");
-      await expect(executePaperclipNativeSession({ db: f.db, execution, runnerInstanceId: f.native.runnerInstanceId,
+      await expect(executePilibalaNativeSession({ db: f.db, execution, runnerInstanceId: f.native.runnerInstanceId,
         leaseOwner: claim.leaseOwner, restartRecovery: claim,
         backend: { descriptor: async () => { throw new Error("Unexpected descriptor call"); },
           openSession: async () => { throw new Error("Unexpected session launch"); } },

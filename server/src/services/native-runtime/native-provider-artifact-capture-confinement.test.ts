@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, posix } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, expect, it, vi } from "vitest";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
 import type { NativeProviderArtifactSource } from "./native-provider-artifacts.js";
 import { captureRemoteNativeProviderArtifacts } from "./native-provider-artifact-capture.js";
 
@@ -38,7 +38,7 @@ async function confinedSandbox() {
   const home = join(sandbox, "home", "daytona");
   const remoteCwd = join(home, "workspace");
   await mkdir(remoteCwd, { recursive: true });
-  const launchRoot = join(home, ".paperclip-runtime", "paperclip-runner", "provider-artifacts", "dfe9e4b1d660");
+  const launchRoot = join(home, ".pilibala-runtime", "pilibala-runner", "provider-artifacts", "dfe9e4b1d660");
   const artifacts: Record<string, { path: string; sha256: string }> = {};
   const paths = {} as Record<(typeof names)[number], string>;
   for (const name of names) {
@@ -97,10 +97,10 @@ it("exports qualified launch files that live outside the workspace through a con
   expect(result).toBe("published");
   expect(published).toEqual(Object.fromEntries(names.map((name) => [name, `qualified ${name} bytes`])));
   for (const file of sandbox.syncOut.mock.calls.flatMap(([operations]) => operations.flatMap((op) => op.files))) {
-    expect(file.sourcePath.startsWith(`${sandbox.remoteCwd}/.paperclip-runtime/`)).toBe(true);
+    expect(file.sourcePath.startsWith(`${sandbox.remoteCwd}/.pilibala-runtime/`)).toBe(true);
   }
   // The export copy is scratch: it is removed and the qualified launch root is untouched.
-  const exportParent = posix.join(sandbox.remoteCwd, ".paperclip-runtime", "paperclip-runner", "provider-artifact-export");
+  const exportParent = posix.join(sandbox.remoteCwd, ".pilibala-runtime", "pilibala-runner", "provider-artifact-export");
   expect(await readdir(exportParent)).toEqual([]);
   for (const name of names) await access(sandbox.paths[name]);
 });
@@ -120,7 +120,7 @@ it("removes the confined staging copy when the export fails", async () => {
     publish,
   )).rejects.toThrow("transfer failed");
   expect(publish).not.toHaveBeenCalled();
-  const exportParent = posix.join(sandbox.remoteCwd, ".paperclip-runtime", "paperclip-runner", "provider-artifact-export");
+  const exportParent = posix.join(sandbox.remoteCwd, ".pilibala-runtime", "pilibala-runner", "provider-artifact-export");
   expect(await readdir(exportParent)).toEqual([]);
 });
 
@@ -143,6 +143,6 @@ it("refuses a launch file replaced by a symlink instead of exporting its target"
   )).rejects.toThrow("native_provider_artifacts_remote_unavailable");
   expect(sandbox.syncOut).not.toHaveBeenCalled();
   expect(publish).not.toHaveBeenCalled();
-  const exportParent = posix.join(sandbox.remoteCwd, ".paperclip-runtime", "paperclip-runner", "provider-artifact-export");
+  const exportParent = posix.join(sandbox.remoteCwd, ".pilibala-runtime", "pilibala-runner", "provider-artifact-export");
   expect(await readdir(exportParent)).toEqual([]);
 });

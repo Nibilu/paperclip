@@ -25,9 +25,9 @@ function git(cwd: string, ...args: string[]) {
 
 beforeEach(async () => {
   root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "pc-archived-nested-")));
-  vi.stubEnv("PAPERCLIP_HOME", path.join(root, "home"));
-  vi.stubEnv("PAPERCLIP_INSTANCE_ID", "default");
-  vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "31".repeat(32));
+  vi.stubEnv("PILIBALA_HOME", path.join(root, "home"));
+  vi.stubEnv("PILIBALA_INSTANCE_ID", "default");
+  vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "31".repeat(32));
 });
 
 afterEach(async () => {
@@ -55,12 +55,12 @@ it.each(["warm", "pruned", "missing-prerequisite", "ordinary-pruned"])("privatel
     git(remote, "add", "remote-advance.txt"); git(remote, "commit", "-qm", "advance remote");
     upstream = git(remote, "rev-parse", "HEAD");
   }
-  git(base!, "checkout", "-qb", "paperclip/another-task/private");
+  git(base!, "checkout", "-qb", "pilibala/another-task/private");
   await fs.writeFile(path.join(base!, "other-task-only.txt"), "another task's private work\n");
   git(base!, "add", "other-task-only.txt"); git(base!, "commit", "-qm", "other task");
   const foreignCommit = git(base!, "rev-parse", "HEAD");
   git(base!, "checkout", "-q", "main");
-  const oldNested = path.join(old, ".paperclip-repositories", name);
+  const oldNested = path.join(old, ".pilibala-repositories", name);
   await fs.mkdir(path.dirname(oldNested), { recursive: true });
   await addNestedRepositoryWorktree({ base: base!, cwd: oldNested, repoUrl: source.repoUrl, repoRef: source.repoRef });
   await fs.writeFile(path.join(oldNested, "note.txt"), "unpushed\n"); git(oldNested, "commit", "-qam", "saved");
@@ -110,8 +110,8 @@ it.each(["warm", "pruned", "missing-prerequisite", "ordinary-pruned"])("privatel
     prepareLocalSource: async () => async () => {}, resolveGitAuth: async () => null, authorizeSource });
   if (!pruned) await expect(restore(false)).rejects.toThrow("could not be restored");
   else {
-    await fs.mkdir(path.join(moved, ".paperclip-repositories"), { recursive: true });
-    await expect(restoreNestedRepositoryWorktree({ base: base!, cwd: path.join(moved, ".paperclip-repositories", name),
+    await fs.mkdir(path.join(moved, ".pilibala-repositories"), { recursive: true });
+    await expect(restoreNestedRepositoryWorktree({ base: base!, cwd: path.join(moved, ".pilibala-repositories", name),
       commit: descriptor.commit, branchName: descriptor.branchName, repoRef: source.repoRef, afterAdd: async () => {} }))
       .rejects.toThrow("unowned_nested_worktree_branch");
   }
@@ -136,11 +136,11 @@ it.each(["warm", "pruned", "missing-prerequisite", "ordinary-pruned"])("privatel
   }
   const other = path.join(root, "other-import"); await fs.mkdir(other);
   await Promise.all([restore(true), restore(true, undefined, other)]);
-  expect(await currentRestorePointSnapshot(path.join(other, ".paperclip-repositories", name)))
+  expect(await currentRestorePointSnapshot(path.join(other, ".pilibala-repositories", name)))
     .toEqual(expectedSnapshot);
-  const nested = path.join(moved, ".paperclip-repositories", name);
+  const nested = path.join(moved, ".pilibala-repositories", name);
   expect((await fs.lstat(path.join(nested, ".git"))).isDirectory()).toBe(true);
-  expect(git(nested, "for-each-ref", "--format=%(refname)", "refs/remotes/origin/paperclip/another-task")).toBe("");
+  expect(git(nested, "for-each-ref", "--format=%(refname)", "refs/remotes/origin/pilibala/another-task")).toBe("");
   expect(() => git(nested, "cat-file", "-e", `${foreignCommit}^{commit}`)).toThrow();
   expect(await currentRestorePointSnapshot(nested)).toEqual(expectedSnapshot);
   expect(git(nested, "symbolic-ref", "--short", "HEAD")).toBe(descriptor.branchName);
@@ -153,7 +153,7 @@ it.each(["warm", "pruned", "missing-prerequisite", "ordinary-pruned"])("privatel
   await fs.rm(moved, { recursive: true }); await fs.rm(other, { recursive: true }); await fs.rm(remote, { recursive: true });
   const cold = path.join(root, "cold");
   await restoreRemoteWorkspaceArchive({ archivePath, targetDir: cold, expectedManifestDigest: archive.manifestDigest });
-  const coldNested = path.join(cold, ".paperclip-repositories", name);
+  const coldNested = path.join(cold, ".pilibala-repositories", name);
   expect(git(coldNested, "rev-parse", "HEAD")).toBe(head);
   expect(git(coldNested, "show", ":note.txt")).toBe("staged");
   expect(await fs.readFile(path.join(coldNested, "note.txt"), "utf8")).toBe("unstaged\n");
@@ -173,7 +173,7 @@ it.each(["new", "existing"])("keeps archive-only refs out of ordinary standalone
   git(remote, "add", "."); git(remote, "commit", "-qm", "initial");
   const upstream = git(remote, "rev-parse", "HEAD");
   const source = { id: randomUUID(), repoUrl: pathToFileURL(remote).href, repoRef: "main", cwd: null };
-  const name = managedProjectCheckoutName(source), original = path.join(old, ".paperclip-repositories", name);
+  const name = managedProjectCheckoutName(source), original = path.join(old, ".pilibala-repositories", name);
   await fs.mkdir(path.dirname(original), { recursive: true }); git(root, "clone", "-q", source.repoUrl, original);
   await fs.writeFile(path.join(original, "note.txt"), "saved local commit\n");
   git(original, "commit", "-qam", "saved local commit");
@@ -195,14 +195,14 @@ it.each(["new", "existing"])("keeps archive-only refs out of ordinary standalone
     key: sealed.key, generation, head: manifest.head, index: manifest.index, worktree: manifest.worktree,
     ignored: manifest.ignored, modes: manifest.modes, headOnRemote: false,
   } }]);
-  const target = path.join(moved, ".paperclip-repositories", name);
+  const target = path.join(moved, ".pilibala-repositories", name);
   if (state === "existing") {
     await fs.mkdir(path.dirname(target), { recursive: true }); git(root, "clone", "-q", "--no-hardlinks", original, target);
     git(target, "remote", "set-url", "origin", source.repoUrl);
   }
   await restoreGitWorkspaceContents({ cwd: moved, ...identity, contents, storage,
     prepareLocalSource: async () => async () => {}, resolveGitAuth: async () => null, authorizeSource: async () => {} });
-  expect(git(target, "for-each-ref", "--format=%(refname)", "refs/paperclip-preserved")).toBe("");
+  expect(git(target, "for-each-ref", "--format=%(refname)", "refs/pilibala-preserved")).toBe("");
   expect(await fs.readFile(path.join(target, "note.txt"), "utf8")).toBe("saved local commit\n");
   git(target, "reflog", "expire", "--expire=now", "--all");
   git(target, "-c", "repack.updateServerInfo=false", "repack", "-Ad");

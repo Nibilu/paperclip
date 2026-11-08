@@ -2,12 +2,12 @@
 
 Run-log events write to the `heartbeat_run_events` table
 (`packages/db/src/schema/heartbeat_run_events.ts:6-20`). They are not
-Paperclip Telemetry events, and they are not OpenTelemetry exports. A run-log
+Pilibala Telemetry events, and they are not OpenTelemetry exports. A run-log
 event needs no operator endpoint.
 
 ## Startup reuse evidence
 
-`run.startup.reuse` uses schema `paperclip.startup-reuse.v1`. Each receipt names
+`run.startup.reuse` uses schema `pilibala.startup-reuse.v1`. Each receipt names
 one layer: `environment` (the lease), `workspace`, `runner`, `provider_process`,
 or `provider_session`. Its state is `reused`, `fresh`, `unknown`, or
 `not_applicable`. Reasons use a closed set: `verified_reuse`, `created`,
@@ -89,7 +89,7 @@ earlier output timing. The event contains no text or provider identifiers.
 
 ## Speed budget breaches
 
-`run.performance.budget_exceeded` (schema `paperclip.run-performance-budget.v1`,
+`run.performance.budget_exceeded` (schema `pilibala.run-performance-budget.v1`,
 level `warn`) records one native run that exceeded its p95 speed budget. The
 budgets come from the Phase 0 local baseline and are listed in
 `doc/plans/2026-11-07-durable-ownership-and-reconciliation.md` ("Speed budgets").
@@ -126,7 +126,7 @@ They also become native Observability spans only with an operator OTLP endpoint.
 - `runner.runtime.stage`: controller-side launch preparation before the Runner
   process exists (runtime context, provider home, launch profiles; on resume, the
   durable-state checks and authority rotation as well).
-- `runner.process.launch`: from spawning `paperclip-runnerd` until its first
+- `runner.process.launch`: from spawning `pilibala-runnerd` until its first
   authenticated connection to the PRP control plane. An exact adoption of a live
   Runner records no launch, so this span keeps meaning a fresh Runner process
   (see startup reuse above).
@@ -145,7 +145,7 @@ spans. They are not Telemetry.
 ## Native PRP Run-Log Events
 
 Provider startup command failures and failed provider turns can carry a
-`providerFailure` cause with schema `paperclip.provider-failure.v1`. The cause
+`providerFailure` cause with schema `pilibala.provider-failure.v1`. The cause
 retains a normalized category, a bounded and redacted provider explanation, the
 startup/turn phase, and available status, code, request ID, or retry time. Provider
 adapters extract these fields; arbitrary exception objects, request bodies,
@@ -187,7 +187,7 @@ directory, redacts secrets in each patch, and bounds a patch to 32 KiB and one
 call to 32 files. Counts cover the whole patch even when the patch is shortened.
 Codex `fileChange` items produce these rows. Claude Edit and Write calls produce
 them from the ACP `diff` content. Codex `turn/diff/updated` also records the
-whole-turn diff as `workspace.change.updated` (`paperclip.workspace.diff.v1`).
+whole-turn diff as `workspace.change.updated` (`pilibala.workspace.diff.v1`).
 The task chat shows each patch under its edit row. It ends the turn with the
 change set, or with one built from the edit rows when the harness reports no
 whole-turn diff.
@@ -266,7 +266,7 @@ restoring its plaintext into the checkpoint.
 PostgreSQL JSONB cannot represent NUL (U+0000), which can occur in command
 output such as Vite virtual-module paths. The run-event payload column uses a
 lossless storage codec for these events: the JSONB projection renders NUL as
-the literal `\u0000`, and the reserved `$paperclipRunEventJsonV1` field contains
+the literal `\u0000`, and the reserved `$pilibalaRunEventJsonV1` field contains
 the original serialized JSON as a doubly escaped string. Ordinary payloads
 retain their existing representation. Drizzle reads restore the exact stored
 payload before replay, hash validation, redaction, or API presentation. SQL
@@ -282,12 +282,12 @@ tickets, reconnect leases, authentication proofs, encryption keys, and raw
 credential material are never written to the run log.
 
 These records remain run-log events. They do not create an OpenTelemetry or
-Paperclip Telemetry export, and legacy adapters do not use this writer.
+Pilibala Telemetry export, and legacy adapters do not use this writer.
 
 ## Semantic Settlement Diagnostics and Retry Logs
 
 When native tool arguments fail their authorized JSON Schema, the runner records
-`harness.diagnostic` with code `semantic_tool_denied` and `paperclipExecuted: false`.
+`harness.diagnostic` with code `semantic_tool_denied` and `pilibalaExecuted: false`.
 Its optional `inputSchemaGuidance` retains the same safe repair guidance sent to
 the provider: at most three authorized schema locations within 512 bytes.
 It includes no rejected arguments, submitted values, or unknown input keys.
@@ -352,7 +352,7 @@ Earlier attempts therefore remain available for incident diagnosis. Existing
 records without `attemptId` remain readable.
 
 These records use the instance run log and its configured storage. They add no
-Paperclip Telemetry or OpenTelemetry export.
+Pilibala Telemetry or OpenTelemetry export.
 
 ## Omitted Unsafe Workspace Export
 
@@ -365,7 +365,7 @@ create a task warning, recovery action, Telemetry event, or OpenTelemetry export
 
 ## Native Restart Recovery Run-Log Event
 
-Paperclip writes a `native.recovery.transition` event for native restart
+Pilibala writes a `native.recovery.transition` event for native restart
 classifications and for graceful restart suspension. A blocked remote retry
 records a changed hold reason once; repeated visits with the same hold reason,
 an existing future deadline, or a live lease do not append another transition.
@@ -373,7 +373,7 @@ Exhausting the automatic admission policy records its terminal disposition even
 when the underlying hold reason remains the same.
 This immutable run-log
 record lets operators reconstruct recovery decisions without exporting data to
-Paperclip Telemetry or OpenTelemetry.
+Pilibala Telemetry or OpenTelemetry.
 
 The payload contains the restart kind, recovery request id when one exists,
 runner disposition, and the controller generation and provider attempt for a
@@ -499,7 +499,7 @@ It remains in the local run log and adds no Telemetry or OpenTelemetry export.
 
 ## Sandbox Startup Run-Log Event
 
-Paperclip writes one `run.startup.step` event to the run log for each bring-up
+Pilibala writes one `run.startup.step` event to the run log for each bring-up
 step. This event is a run-log record, not a first-party telemetry event. The
 generated telemetry contract does not cover it, so this section is its canonical
 contract.
@@ -525,7 +525,7 @@ endpoint. A run with no endpoint keeps only the three run-log fields above.
 
 ## Run Phase Timing Run-Log Event
 
-Paperclip writes one `run.phase.timing` event to the run log for each
+Pilibala writes one `run.phase.timing` event to the run log for each
 run-lifecycle phase. This event is a run-log record, not a first-party telemetry
 event. The generated telemetry contract does not cover it, so this section is its
 canonical contract. The producer is `emitRunPhaseTiming` in
@@ -567,7 +567,7 @@ run-log-only. It needs no OTLP endpoint.
 The heartbeat controller writes these records with `eventType: "lifecycle"`,
 `stream: "system"`, and `level: "info"`. The event name below is its `message`
 and its payload's `phase`. They remain in the instance run log and add no
-Paperclip Telemetry or OpenTelemetry export.
+Pilibala Telemetry or OpenTelemetry export.
 
 | Event | Payload fields besides `phase` | Meaning |
 | --- | --- | --- |
@@ -646,7 +646,7 @@ Recovery still uses the typed failure category and the adapter's existing
 classifier. Provider warnings do not become failures, and timeouts or lost
 control channels keep their authoritative failure messages. These diagnostics
 stay in the instance's run records and configured run-log storage. They add no
-Paperclip Telemetry or OpenTelemetry export.
+Pilibala Telemetry or OpenTelemetry export.
 
 ## Related instrumentation
 
@@ -710,7 +710,7 @@ Provider rate-limit windows use `provider.notice.recorded` with category
 (`_claude/rateLimit`) when it uses a subscription sign-in. The runner merges
 sparse Codex updates and records a notice only when the windows change. The
 notice has one `rateLimits` detail: a JSON snapshot with schema
-`paperclip.provider.rate_limits.v1` (windows with used percent and reset time,
+`pilibala.provider.rate_limits.v1` (windows with used percent and reset time,
 credits, and the reached window). Chat does not show the notice. The server
 keeps the latest snapshot in the agent's runtime state under
 `providerRateLimits`, and the task properties pane shows it as the assignee's
@@ -848,7 +848,7 @@ Successful checkpoints can include `checkpointStats`: `scannedEntries`,
 `hashedBytes`, `copiedFiles`, and `copiedBytes`. These counts describe that
 capture, not cumulative traffic or an atomic snapshot of background writers.
 They contain no file contents. The receipt remains in the instance run log;
-it adds no Paperclip Telemetry or OpenTelemetry export.
+it adds no Pilibala Telemetry or OpenTelemetry export.
 
 If instruction-copy release throws, `instruction_cleanup` records a warning
 with payload `{ "state": "deferred" }`. The existing working-copy recovery sweep

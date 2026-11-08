@@ -5,7 +5,7 @@ import path from "node:path";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { agents, agentWakeupRequests, authUsers, budgetPolicies, companies, companyMemberships, createDb, heartbeatRuns,
-  issues } from "@paperclipai/db";
+  issues } from "@pilibalaai/db";
 import { registerServerAdapter, unregisterServerAdapter } from "../adapters/index.js";
 import { heartbeatService } from "../services/heartbeat.js";
 import { queueIssueAssignmentWakeup } from "../services/issue-assignment-wakeup.js";
@@ -26,14 +26,14 @@ describePostgres("refused assignment wake during a temporary admission hold", ()
   let heartbeat: ReturnType<typeof heartbeatService>;
   const adapterType = "codex_local";
   const dispatched: string[] = [];
-  const oldHome = process.env.PAPERCLIP_HOME;
+  const oldHome = process.env.PILIBALA_HOME;
   let home: string;
 
   beforeAll(async () => {
     temporary = await startRecoveryPostgres("heartbeat-refused-assignment-");
     db = createDb(temporary.connectionString);
-    home = await mkdtemp(path.join(tmpdir(), "paperclip-refused-assignment-"));
-    process.env.PAPERCLIP_HOME = home;
+    home = await mkdtemp(path.join(tmpdir(), "pilibala-refused-assignment-"));
+    process.env.PILIBALA_HOME = home;
     heartbeat = heartbeatService(db);
     registerServerAdapter({
       type: adapterType, supportsLocalAgentJwt: false,
@@ -51,7 +51,7 @@ describePostgres("refused assignment wake during a temporary admission hold", ()
     unregisterServerAdapter(adapterType);
     await db?.$client.end({ timeout: 0 });
     await temporary?.cleanup();
-    if (oldHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = oldHome;
+    if (oldHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = oldHome;
     if (home) await rm(home, { recursive: true, force: true });
   });
 

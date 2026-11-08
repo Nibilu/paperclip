@@ -1,9 +1,9 @@
 import { setTimeout as delay } from "node:timers/promises";
 import { sql } from "drizzle-orm";
-import { createDb } from "@paperclipai/db";
+import { createDb } from "@pilibalaai/db";
 
 // Every workspace-recovery test file that uses
-// PAPERCLIP_WORKSPACE_RECOVERY_TEST_DATABASE_URL truncates that database.
+// PILIBALA_WORKSPACE_RECOVERY_TEST_DATABASE_URL truncates that database.
 // A file holds this session advisory lock from setup to teardown, so the files
 // queue on the database, even across separate test processes. Ending the
 // returned client releases the lock.
@@ -15,7 +15,7 @@ export async function lockWorkspaceRecoveryTestDatabase(url: string) {
   const lock = createDb(url, { maxConnections: 1, idleTimeoutSeconds: 0, maxLifetimeSeconds: 0 });
   for (;;) {
     const [row] = await lock.execute<{ locked: boolean }>(
-      sql`SELECT pg_try_advisory_lock(hashtext('paperclip:workspace-recovery-tests')) AS locked`);
+      sql`SELECT pg_try_advisory_lock(hashtext('pilibala:workspace-recovery-tests')) AS locked`);
     if (row?.locked) return lock;
     await delay(500);
   }

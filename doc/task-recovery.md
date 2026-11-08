@@ -298,9 +298,9 @@ Run the focused PostgreSQL/filesystem suites from `server/`:
 ```
 
 `server/scripts/workspace-recovery-provider.test.mjs` is an opt-in controlled
-Daytona probe. It requires `PAPERCLIP_RECOVERY_LIVE=1`, `DAYTONA_API_KEY`,
-`PAPERCLIP_DAYTONA_SDK_PATH` and an immutable `PAPERCLIP_RECOVERY_IMAGE`.
-An immutable provider snapshot UUID in `PAPERCLIP_RECOVERY_SNAPSHOT_ID` can
+Daytona probe. It requires `PILIBALA_RECOVERY_LIVE=1`, `DAYTONA_API_KEY`,
+`PILIBALA_DAYTONA_SDK_PATH` and an immutable `PILIBALA_RECOVERY_IMAGE`.
+An immutable provider snapshot UUID in `PILIBALA_RECOVERY_SNAPSHOT_ID` can
 replace the image digest. The probe checks its ID and active state first.
 It interrupts export,
 joins the first controller, starts a second controller and verifies files,

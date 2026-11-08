@@ -1,4 +1,4 @@
-import type { ConnectionIntentPayload } from "@paperclipai/shared";
+import type { ConnectionIntentPayload } from "@pilibalaai/shared";
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
 import { enqueueIssueInteractionChatPublications } from "../services/chat-interaction-publications.js";
 import { randomUUID } from "node:crypto";
@@ -7,7 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { activityLog, agentWakeupRequests, agents, approvals, authUsers, companies, companyMemberships, connectionGrants, connectionGrantDelegations,
   chatConversations, chatEndpoints, chatPublications, connectionIntentDeliveries, createDb, environmentLeases, heartbeatRunEvents, heartbeatRuns, issueApprovals, issueRecoveryActions, issueThreadInteractions, issues, projects, toolApplications,
   toolCatalogEntries, toolConnectionInstalls, toolConnections, toolProfileBindings, toolProfiles, toolPolicies,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { createPostgresRunDispatchAdapter } from "../modules/run-dispatch/adapters/postgres.js";
 import { connectionIntentDeliveryService } from "../services/connection-intent-delivery.js";
 import { connectionContinuationPendingResponse, findSatisfiedToolConnection, satisfiedConnectionIntentService } from "../services/satisfied-connection-intents.js";
@@ -22,7 +22,7 @@ import { idleWorkSnapshot } from "../services/task-admission.js";
 import { readIdleSleepSafety, type IdleSleepDrainStatus } from "../services/idle-sleep-safety.js";
 import { reserveRunBudget } from "../services/budget-reservations.js";
 
-const externalUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_SATISFIED_CONNECTION_TEST_DATABASE_URL");
+const externalUrl = resolveExternalTestDatabaseUrl("PILIBALA_SATISFIED_CONNECTION_TEST_DATABASE_URL");
 const support = externalUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 const describePostgres = support.supported ? describe : describe.skip;
 
@@ -30,7 +30,7 @@ describePostgres("already available connection requests", () => {
   let db!: ReturnType<typeof createDb>;
   let temp!: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   beforeAll(async () => {
-    if (!externalUrl) temp = await startEmbeddedPostgresTestDatabase("paperclip-satisfied-connections-");
+    if (!externalUrl) temp = await startEmbeddedPostgresTestDatabase("pilibala-satisfied-connections-");
     db = createDb(externalUrl ?? temp.connectionString);
     await db.insert(authUsers).values({ id: "connection-owner", name: "Owner", email: "owner@example.test", createdAt: new Date(), updatedAt: new Date() }).onConflictDoNothing();
   }, 20_000);
@@ -108,7 +108,7 @@ describePostgres("already available connection requests", () => {
     const publications = await db.select().from(chatPublications).where(eq(chatPublications.endpointId, endpointId));
     expect(publications).toHaveLength(2);
     const terminal = publications.find(row => row.id !== original.id);
-    expect(terminal?.payload.card?.body).toBe("Expired in Paperclip");
+    expect(terminal?.payload.card?.body).toBe("Expired in Pilibala");
     expect(terminal?.payload.card?.actions).toBeUndefined();
   });
 
@@ -498,7 +498,7 @@ describePostgres("already available connection requests", () => {
   it("does not bypass a retained workspace hold after connecting", async () => {
     const f = await seed();
     const leaseId = randomUUID();
-    const workspaceRestoreRecovery = { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [leaseId] };
+    const workspaceRestoreRecovery = { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [leaseId] };
     const [source] = await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: f.agentId, issueId: f.issueId, status: "interrupted", finishedAt: new Date(), runtimeMode: "legacy",
       contextSnapshot: { issueId: f.issueId }, resultJson: { conversationContinuation: "continue_conversation_v1", workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery } }).returning();
     const identity = { id: leaseId, companyId: f.companyId, heartbeatRunId: source!.id, provider: "daytona", providerLeaseId: `fixture-${leaseId}` };

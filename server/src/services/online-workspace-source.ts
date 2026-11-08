@@ -2,8 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { and, eq, gt, inArray, ne, sql } from "drizzle-orm";
-import { executionWorkspaces, heartbeatRuns, issueRecoveryActions, type Db } from "@paperclipai/db";
-import { resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { executionWorkspaces, heartbeatRuns, issueRecoveryActions, type Db } from "@pilibalaai/db";
+import { resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { inspectImportedWorkspaceSourcePaths, inspectOnlineOrdinarySource, physicalPath, requiresOnlineOrdinarySource, type WorkspaceSourceScope } from "./remote-workspace-migration-tree.js";
 import { workspaceSourceIdentities } from "./workspace-source-lock.js";
 import { readNestedWorkspaceGitSourceRoots, readWorkspaceGitLinkedRoots, readWorkspaceGitSourceRoots, type WorkspaceGitSourceRoots } from "./workspace-git-source-roots.js";
@@ -173,7 +173,7 @@ export async function inspectOnlineWorkspaceSource(db: ReadDb, workspace: Worksp
     link.root.path === root || link.root.path.startsWith(root + path.sep))))) return null;
   const issueIds = [...new Set([...physicalIssueIds, ...included.map(node => node.row.sourceIssueId!)])].sort();
   if (issueIds.length + projectIds.size > 128) return null;
-  const instance = await physicalPath(resolvePaperclipInstanceRoot());
+  const instance = await physicalPath(resolvePilibalaInstanceRoot());
   const gitSourceRoots = [...[...projectIds].map(id => path.join(instance, "projects", workspace.companyId, id)),
     ...issueIds.flatMap(id => ["isolated-workspaces", "isolated-workspace-attempts", "isolated-repository-sources"].map(kind =>
       path.join(instance, kind, workspace.companyId, id, ...(kind === "isolated-repository-sources" ? ["checkout"] : []))))].sort();

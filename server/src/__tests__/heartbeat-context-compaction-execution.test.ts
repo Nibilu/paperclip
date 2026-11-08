@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { agents, agentTaskSessions, authUsers, companyMemberships, createDb, heartbeatRuns,
-  issueComments, issueThreadInteractions, issues, nativeRunResults } from "@paperclipai/db";
-import type { NativeRunIdentity, NativeSession, NativeSessionBackend, PrpEvent } from "@paperclipai/paperclip-runner";
+  issueComments, issueThreadInteractions, issues, nativeRunResults } from "@pilibalaai/db";
+import type { NativeRunIdentity, NativeSession, NativeSessionBackend, PrpEvent } from "@pilibalaai/pilibala-runner";
 import { describe, expect, it, vi } from "vitest";
 import { createRunDispatch } from "../modules/run-dispatch/index.js";
 import { heartbeatService, type HeartbeatServiceOptions } from "../services/heartbeat.js";
@@ -14,7 +14,7 @@ import { getRecoveryPostgresSupport } from "./helpers/recovery-postgres-fixture.
 
 // Only this owner opts into its dedicated database. Importing the fixture core
 // avoids the default support facade's embedded-platform probe in that mode.
-const dedicatedDatabaseUrl = process.env.PAPERCLIP_CONTEXT_COMPACTION_EXECUTION_TEST_DATABASE_URL;
+const dedicatedDatabaseUrl = process.env.PILIBALA_CONTEXT_COMPACTION_EXECUTION_TEST_DATABASE_URL;
 const databaseOptions = dedicatedDatabaseUrl === undefined ? {} : { dedicatedDatabaseUrl };
 const support = await getRecoveryPostgresSupport(databaseOptions);
 
@@ -61,14 +61,14 @@ describe.skipIf(!support.supported)("heartbeat context compaction execution", ()
       async *events() {
         const turn = await nextTurn.promise;
         const event = (sourceSeq: number, eventType: PrpEvent["eventType"], payload: Record<string, unknown>): PrpEvent => ({
-          schema: "paperclip.prp.event.v1", sourceKind: "runner", sourceInstanceId,
+          schema: "pilibala.prp.event.v1", sourceKind: "runner", sourceInstanceId,
           sourceEventId: `${sourceInstanceId}:${identity.runId}:${sourceSeq}`, sourceSeq,
           runId: identity.runId, normalizedSessionId: identity.sessionId, turnId: turn.turnId,
           schemaVersion: 1, priority: 0, emittedAt: new Date().toISOString(), eventType, payload,
         });
         yield event(1, "turn.started", {});
         yield turn.compact
-          ? event(2, "context.compacted", { schema: "paperclip.context.compacted.v1", compactionId: randomUUID(),
+          ? event(2, "context.compacted", { schema: "pilibala.context.compacted.v1", compactionId: randomUUID(),
               reason: "provider", preTokens: null, postTokens: null, sameSession: true })
           : event(2, "item.completed", { kind: "agentMessage", channel: "final", text: "Ready for your next message." });
         activeTurnId = null;

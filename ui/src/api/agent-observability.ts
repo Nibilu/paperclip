@@ -1,4 +1,4 @@
-import type { AgentObservabilitySettingsResponse, AgentObservabilityTestReceipt, UpdateAgentObservabilityRequest } from "@paperclipai/shared";
+import type { AgentObservabilitySettingsResponse, AgentObservabilityTestReceipt, UpdateAgentObservabilityRequest } from "@pilibalaai/shared";
 import { api } from "./client";
 
 const path = (companyId: string) => `/companies/${companyId}/observability`;

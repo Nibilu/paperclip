@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { heartbeatRuns, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { heartbeatRuns, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { notifyExecutionRunWork } from "../execution-control-notifications.js";
 import type { NativeRestartRecoveryClaim } from "./native-restart-recovery.js";
 

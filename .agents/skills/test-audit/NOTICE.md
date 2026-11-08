@@ -1,9 +1,9 @@
 # Attribution
 
-Paperclip's test-audit skill is inspired by the organization and audit principles
+Pilibala's test-audit skill is inspired by the organization and audit principles
 of OpenClaw's [test-audit skill](https://github.com/openclaw/openclaw/tree/main/.agents/skills/test-audit),
 consulted on 2026-10-13. It uses the short entry point, separate campaign guide,
-and focused references pattern, with independently written Paperclip procedures
+and focused references pattern, with independently written Pilibala procedures
 and lessons from our test-gardening work. It has no execution or documentation
 dependency on an OpenClaw checkout or another installed skill.
 

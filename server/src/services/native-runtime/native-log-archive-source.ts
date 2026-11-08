@@ -1,5 +1,5 @@
 import { and, eq, ne, sql } from "drizzle-orm";
-import { environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { environmentLeases, heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { nativeSha256 } from "./canonical.js";
 import { tryLockNativeWorkspaceFinalization } from "./native-workspace-finalization-ownership.js";
 

@@ -1,29 +1,29 @@
-import { environmentTaskResultSchema } from "@paperclipai/plugin-sdk";
+import { environmentTaskResultSchema } from "@pilibalaai/plugin-sdk";
 import type { PluginTaskCredentialWritebackBinding } from "./plugin-task-credential-writeback.js";
-import { OPENROUTER_ATTRIBUTION_HEADERS, openRouterClaudeHeaders } from "@paperclipai/shared/openrouter-attribution";
+import { OPENROUTER_ATTRIBUTION_HEADERS, openRouterClaudeHeaders } from "@pilibalaai/shared/openrouter-attribution";
 import { createHash } from "node:crypto";
 import { HttpError, unprocessable } from "../errors.js";
 import { mkdtemp, mkdir, writeFile, readFile, realpath, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { and, eq } from "drizzle-orm";
-import { type Db, companySecrets, connectionGrants } from "@paperclipai/db";
+import { type Db, companySecrets, connectionGrants } from "@pilibalaai/db";
 import {
   AI_CONNECTION_CAPABILITIES,
   aiConnectionMetadataSchema, aiRoutingHarness,
   type AiConnectionBinding,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { managedProviderRouting } from "./ai-provider-routing.js";
 import { aiConnectionService } from "./ai-connections.js";
 import { subscriptionService } from "./subscriptions.js";
 import { refreshSubscriptionConnection } from "./subscription-refresh.js";
 import { secretService } from "./secrets.js";
-import { decideCodexAuthMerge, withAccountHomeSecretMutationLock } from "@paperclipai/adapter-codex-local/server";
-import { WORKSPACE_RESTORE_LOCK_TIMEOUT_CODE } from "@paperclipai/adapter-utils/workspace-restore-merge";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import { runAdapterExecutionTargetProcess } from "@paperclipai/adapter-utils/execution-target";
-import { decideGrokAuthMerge } from "@paperclipai/adapter-grok-local/server";
-import { NativeEnvironmentProbeCleanupError, sanitizeAntigravityCredential } from "../vendor/paperclip-runner/index.js";
+import { decideCodexAuthMerge, withAccountHomeSecretMutationLock } from "@pilibalaai/adapter-codex-local/server";
+import { WORKSPACE_RESTORE_LOCK_TIMEOUT_CODE } from "@pilibalaai/adapter-utils/workspace-restore-merge";
+import type { AdapterExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import { runAdapterExecutionTargetProcess } from "@pilibalaai/adapter-utils/execution-target";
+import { decideGrokAuthMerge } from "@pilibalaai/adapter-grok-local/server";
+import { NativeEnvironmentProbeCleanupError, sanitizeAntigravityCredential } from "../vendor/pilibala-runner/index.js";
 import { readLocalAiCredentialFile } from "./local-ai-credential-file.js";
 import { prepareAntigravityCredentialWriteback } from "./native-runtime/antigravity-runner-credentials.js";
 import { quotaCredentialHash, quotaCredentialRecovery, RetiredCredentialRecoveryError } from "./quota-credential-recovery.js";
@@ -50,9 +50,9 @@ function projectAuthConflict(files: string[]) {
 // Blank values intentionally override inherited credentials in CLI child environments.
 export const AI_AUTH_ENV_KEYS = [
   "COPILOT_GITHUB_TOKEN",
-  "PAPERCLIP_AI_PROVIDER_KEY", "PAPERCLIP_AI_PROVIDER_URL", "PAPERCLIP_CODEX_PROVIDERS",
+  "PILIBALA_AI_PROVIDER_KEY", "PILIBALA_AI_PROVIDER_URL", "PILIBALA_CODEX_PROVIDERS",
   "GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GEMINI_BASE_URL", "GOOGLE_GENAI_USE_VERTEXAI",
-  "GEMINI_HOME", "GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_CLOUD_ACCESS_TOKEN", "PAPERCLIP_ACPX_ANTIGRAVITY_AUTH_JSON_SECRET",
+  "GEMINI_HOME", "GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_CLOUD_ACCESS_TOKEN", "PILIBALA_ACPX_ANTIGRAVITY_AUTH_JSON_SECRET",
   "HERMES_HOME", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "AWS_BEARER_TOKEN_BEDROCK", "AWS_PROFILE", "AWS_DEFAULT_PROFILE", "AWS_SHARED_CREDENTIALS_FILE", "AWS_CONFIG_FILE", "AWS_WEB_IDENTITY_TOKEN_FILE", "AWS_ROLE_ARN", "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI", "AWS_CONTAINER_CREDENTIALS_FULL_URI",
   "ANTHROPIC_BEDROCK_BASE_URL", "ANTHROPIC_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL", "ANTHROPIC_DEFAULT_HAIKU_MODEL", "CLAUDE_CODE_SUBAGENT_MODEL",
 
@@ -71,8 +71,8 @@ export const AI_AUTH_ENV_KEYS = [
   "OPENCODE_CONFIG_CONTENT",
   "OPENCODE_CONFIG",
   "OPENCODE_CONFIG_DIR",
-  "PAPERCLIP_OPENCODE_PROVIDERS",
-  "PAPERCLIP_PI_PROVIDERS",
+  "PILIBALA_OPENCODE_PROVIDERS",
+  "PILIBALA_PI_PROVIDERS",
   "ANTHROPIC_BASE_URL",
   "OPENAI_BASE_URL",
   "XAI_BASE_URL",
@@ -93,7 +93,7 @@ export function stripAiAuthBindings(env: unknown): Record<string, unknown> {
         "CLAUDE_CODE_USE_BEDROCK",
         "CLAUDE_CODE_USE_VERTEX",
         "CLAUDE_CODE_USE_FOUNDRY",
-        "PAPERCLIP_OPENCODE_PROVIDERS",
+        "PILIBALA_OPENCODE_PROVIDERS",
       ].includes(key)
     )
       delete result[key];
@@ -179,7 +179,7 @@ done`,
     // The check fails closed, but an unfinished check is not a found conflict.
     if (result.exitCode !== 0)
       throw new Error(
-        `Paperclip could not check the environment's project authentication settings (${result.timedOut ? "timed out" : `exit ${result.exitCode ?? result.signal ?? "unknown"}`}). The run did not start; it can be retried.`,
+        `Pilibala could not check the environment's project authentication settings (${result.timedOut ? "timed out" : `exit ${result.exitCode ?? result.signal ?? "unknown"}`}). The run did not start; it can be retried.`,
       );
     return;
   }
@@ -265,8 +265,8 @@ export async function prepareManagedAiRuntime(
     "CLAUDE_CODE_USE_BEDROCK",
     "CLAUDE_CODE_USE_VERTEX",
     "CLAUDE_CODE_USE_FOUNDRY",
-    "PAPERCLIP_OPENCODE_PROVIDERS",
-    "PAPERCLIP_AI_PROVIDER_URL", "PAPERCLIP_CODEX_PROVIDERS", "PAPERCLIP_PI_PROVIDERS", "OPENCODE_CONFIG_CONTENT", "OPENCODE_CONFIG", "OPENCODE_CONFIG_DIR", "GOOGLE_GEMINI_BASE_URL", "ANTHROPIC_BEDROCK_BASE_URL",
+    "PILIBALA_OPENCODE_PROVIDERS",
+    "PILIBALA_AI_PROVIDER_URL", "PILIBALA_CODEX_PROVIDERS", "PILIBALA_PI_PROVIDERS", "OPENCODE_CONFIG_CONTENT", "OPENCODE_CONFIG", "OPENCODE_CONFIG_DIR", "GOOGLE_GEMINI_BASE_URL", "ANTHROPIC_BEDROCK_BASE_URL",
   ]) {
     if (configuredEnv[key])
       throw unprocessable(
@@ -338,7 +338,7 @@ export async function prepareManagedAiRuntime(
     home = await mkdtemp(
       path.join(
         os.tmpdir(),
-        `paperclip-ai-${input.companyId}-${selection.grant.id}-`,
+        `pilibala-ai-${input.companyId}-${selection.grant.id}-`,
       ),
     );
     if (harness === "antigravity_runtime") home = await realpath(home);

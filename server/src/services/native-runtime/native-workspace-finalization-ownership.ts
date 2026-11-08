@@ -11,7 +11,7 @@ import { NATIVE_WORKSPACE_OWNER_UNVERIFIED, NATIVE_WORKSPACE_OWNER_WAIT_NEXT_ACT
 import { randomUUID } from "node:crypto";
 import os from "node:os";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { heartbeatRuns, issues, issueRecoveryActions, nativeRunFinalizations, workspaceOperations, withDedicatedDbConnection, type Db } from "@paperclipai/db";
+import { heartbeatRuns, issues, issueRecoveryActions, nativeRunFinalizations, workspaceOperations, withDedicatedDbConnection, type Db } from "@pilibalaai/db";
 import { currentNativeWorkspaceRecoveryResult } from "./native-workspace-recovery-binding.js";
 import { withWorkspaceLockKeepalive } from "./native-workspace-lock-keepalive.js";
 import {

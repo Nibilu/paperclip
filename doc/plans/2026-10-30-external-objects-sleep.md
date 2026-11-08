@@ -47,7 +47,7 @@ saved retry deadline. Unexpected failures retain scoped coordinator backoff;
 restart reconstructs the saved object and any unexpired claim.
 
 The supported-resolver and retained-reference approach follows the related draft
-[PR #17298](https://github.com/paperclipai/paperclip/pull/17298) by
+[PR #17298](https://github.com/pilibalaai/pilibala/pull/17298) by
 [@kaluli123123](https://github.com/kaluli123123). This change adapts that eligibility
 pattern to scoped scheduling, adds dynamic plugin/company permission predicates,
 and fences automatic result persistence. It does not modify that draft PR.

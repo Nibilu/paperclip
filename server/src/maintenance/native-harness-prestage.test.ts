@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 
 const mocks = vi.hoisted(() => ({ close: vi.fn(async () => {}), prestage: vi.fn(), controllers: vi.fn(), key: vi.fn(async () => {}), obligations: vi.fn(async () => false) }));
-vi.mock("@paperclipai/db", () => ({ createDb: () => ({}), closeRegisteredClients: mocks.close }));
+vi.mock("@pilibalaai/db", () => ({ createDb: () => ({}), closeRegisteredClients: mocks.close }));
 vi.mock("../config.js", () => ({ loadConfig: () => ({ secretsMasterKeyFilePath: "/fixture/key" }) }));
 vi.mock("../services/cloud-runtime-config.js", () => ({ cloudRuntimeConfigService: () => ({}) }));
 vi.mock("../services/cloud-runtime-config-snapshot.js", () => ({ setCloudRuntimeConfigSnapshot: () => {} }));
@@ -24,7 +24,7 @@ beforeEach(() => { process.argv = [process.execPath, "native-harness-prestage"];
 afterEach(() => { process.argv = initialArgv; mocks.controllers.mockReset(); process.exitCode = initialExitCode; vi.useRealTimers(); vi.unstubAllEnvs(); vi.restoreAllMocks(); vi.resetModules(); mocks.close.mockClear(); mocks.obligations.mockReset().mockResolvedValue(false); });
 
 it.each([true, false])("checks unfulfilled database obligations for an empty source scan (pending: %s)", async pending => {
-  vi.stubEnv("PAPERCLIP_NATIVE_HARNESS_PRESTAGE", "true");
+  vi.stubEnv("PILIBALA_NATIVE_HARNESS_PRESTAGE", "true");
   vi.stubEnv("DATABASE_URL", "postgres://fixture:fixture@localhost/fixture");
   const counts = { inspected: 0, published: 0, current: 0, deferred: {} };
   mocks.prestage.mockResolvedValue(counts);
@@ -37,17 +37,17 @@ it.each([true, false])("checks unfulfilled database obligations for an empty sou
     expect(process.exitCode).toBe(1);
     expect(success).not.toHaveBeenCalled();
     expect(failure).toHaveBeenCalledOnce();
-    expect(JSON.parse(failure.mock.calls[0][0])).toEqual({ schema: "paperclip.native-harness-prestage.v1",
+    expect(JSON.parse(failure.mock.calls[0][0])).toEqual({ schema: "pilibala.native-harness-prestage.v1",
       state: "blocked", failure: "native_harness_prestage_source_missing", enrollmentReady: false });
   } else {
     expect(process.exitCode ?? 0).toBe(0);
     expect(failure).not.toHaveBeenCalled();
-    expect(success).toHaveBeenCalledWith(JSON.stringify({ schema: "paperclip.native-harness-prestage.v1", counts, enrollmentReady: false }));
+    expect(success).toHaveBeenCalledWith(JSON.stringify({ schema: "pilibala.native-harness-prestage.v1", counts, enrollmentReady: false }));
   }
 });
 
 it("keeps a nonempty deferred scan advisory without requiring all obligations to be copied", async () => {
-  vi.stubEnv("PAPERCLIP_NATIVE_HARNESS_PRESTAGE", "true");
+  vi.stubEnv("PILIBALA_NATIVE_HARNESS_PRESTAGE", "true");
   vi.stubEnv("DATABASE_URL", "postgres://fixture:fixture@localhost/fixture");
   const counts = { inspected: 1, published: 0, current: 0, deferred: { source_active: 1 } };
   mocks.prestage.mockResolvedValue(counts); mocks.obligations.mockResolvedValue(true);
@@ -55,7 +55,7 @@ it("keeps a nonempty deferred scan advisory without requiring all obligations to
   await import("./native-harness-prestage.js");
   expect(mocks.obligations).not.toHaveBeenCalled();
   expect(process.exitCode ?? 0).toBe(0);
-  expect(success).toHaveBeenCalledWith(JSON.stringify({ schema: "paperclip.native-harness-prestage.v1", counts, enrollmentReady: false }));
+  expect(success).toHaveBeenCalledWith(JSON.stringify({ schema: "pilibala.native-harness-prestage.v1", counts, enrollmentReady: false }));
 });
 
 it("reports a failed deadline with real timers when the dependency holds no event-loop handle", async () => {
@@ -79,18 +79,18 @@ it("reports a failed deadline with real timers when the dependency holds no even
   });
   const child = spawnSync(process.execPath, ["--input-type=module"], {
     input: bundled.outputFiles[0].text, encoding: "utf8", timeout: 5000,
-    env: { ...process.env, PAPERCLIP_NATIVE_HARNESS_PRESTAGE: "true", DATABASE_URL: "postgres://fixture:fixture@localhost/fixture" },
+    env: { ...process.env, PILIBALA_NATIVE_HARNESS_PRESTAGE: "true", DATABASE_URL: "postgres://fixture:fixture@localhost/fixture" },
   });
   expect(child.error).toBeUndefined();
   expect(child.status).toBe(1);
   expect(child.stdout).toBe("");
-  expect(JSON.parse(child.stderr.trim())).toEqual({ schema: "paperclip.native-harness-prestage.v1",
+  expect(JSON.parse(child.stderr.trim())).toEqual({ schema: "pilibala.native-harness-prestage.v1",
     state: "blocked", failure: "native_harness_prestage_deadline", enrollmentReady: false });
 });
 
 it.each(["SIGTERM", "deadline"])("bounds shutdown if a dependency does not settle after %s", async mode => {
   vi.useFakeTimers();
-  vi.stubEnv("PAPERCLIP_NATIVE_HARNESS_PRESTAGE", "true");
+  vi.stubEnv("PILIBALA_NATIVE_HARNESS_PRESTAGE", "true");
   vi.stubEnv("DATABASE_URL", "postgres://fixture:fixture@localhost/fixture");
   const once = vi.spyOn(process, "once"), exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
   vi.spyOn(console, "error").mockImplementation(() => {});
@@ -117,7 +117,7 @@ it.each(["SIGTERM", "deadline"])("bounds shutdown if a dependency does not settl
 });
 
 it("copies only settled controllers when the explicit mode is selected", async () => {
-  vi.stubEnv("PAPERCLIP_NATIVE_HARNESS_PRESTAGE", "true");
+  vi.stubEnv("PILIBALA_NATIVE_HARNESS_PRESTAGE", "true");
   vi.stubEnv("DATABASE_URL", "postgres://fixture:fixture@localhost/fixture");
   process.argv.push("--controllers-only");
   const counts = { inspected: 2, published: 1, current: 0, deferred: { source_active: 1 } };
@@ -129,6 +129,6 @@ it("copies only settled controllers when the explicit mode is selected", async (
   expect(mocks.controllers.mock.calls[0][1].signal.aborted).toBe(false);
   expect(mocks.prestage).not.toHaveBeenCalled();
   expect(mocks.obligations).not.toHaveBeenCalled();
-  expect(success).toHaveBeenCalledWith(JSON.stringify({ schema: "paperclip.native-controller-prestage.v1", counts, enrollmentReady: false }));
+  expect(success).toHaveBeenCalledWith(JSON.stringify({ schema: "pilibala.native-controller-prestage.v1", counts, enrollmentReady: false }));
   expect(mocks.close).toHaveBeenCalled();
 });

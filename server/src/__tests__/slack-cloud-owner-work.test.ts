@@ -4,12 +4,12 @@ import os from "node:os";
 import path from "node:path";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { SLACK_CHAT_BOT_SCOPES } from "@paperclipai/shared";
+import { SLACK_CHAT_BOT_SCOPES } from "@pilibalaai/shared";
 import { activityLog, agentRuntimeState, agentTaskSessions, agentWakeupRequests, agents, applyPendingMigrations, authUsers,
   chatDeliveries, chatEndpoints, chatExternalPrincipals, companySecretBindings, chatIdentityLinks, chatSlackRegistrations, companies, companyMemberships,
   companySecrets, companySkills, costEvents, financeEvents, heartbeatRunEvents, heartbeatRuns, issueComments, issues, toolApplications, toolConnections,
-  closeCheckpointDb, closeFileStorageDb, closeLivenessDb, createDb } from "@paperclipai/db";
-import { databaseWorkPending, reconcileDatabaseWork, subscribeDatabaseWork } from "@paperclipai/db/work-signals";
+  closeCheckpointDb, closeFileStorageDb, closeLivenessDb, createDb } from "@pilibalaai/db";
+import { databaseWorkPending, reconcileDatabaseWork, subscribeDatabaseWork } from "@pilibalaai/db/work-signals";
 import { DELIVERY_QUEUES } from "../services/delivery-work-notifications.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
@@ -27,7 +27,7 @@ import { guardSlackFixtureNetwork, stubSlackFixtureTransport } from "./helpers/s
 import type { InternalSetupState } from "../services/chat-channels/runtime-types.js";
 import type { ChatSdkMessageCallbackEvent } from "../services/chat-sdk-runtime.js";
 
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_SLACK_OWNER_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_SLACK_OWNER_TEST_DATABASE_URL");
 if (process.env.SLACK_GATE_EXPECT_PRELOAD === "1" && !external) throw new Error("Guarded local Slack owner tests require their exact external test database");
 const support = external ? { supported: true } : await getEmbeddedPostgresTestSupport();
 (support.supported ? describe : describe.skip)("Slack Cloud default owner and SQL fences", () => {
@@ -59,7 +59,7 @@ const support = external ? { supported: true } : await getEmbeddedPostgresTestSu
     callbacks.length = 0; transports.length = 0; releases.length = 0; heldLeases.length = 0; deferred.length = 0;
     network = guardSlackFixtureNetwork({ requirePreload: process.env.SLACK_GATE_EXPECT_PRELOAD === "1" });
     directory = await mkdtemp(path.join(os.tmpdir(), "slack-owner-default-"));
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY_FILE", path.join(directory, "master.key"));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY_FILE", path.join(directory, "master.key"));
     companyId = randomUUID(); actorId = `slack-owner-${randomUUID()}`; agentId = randomUUID(); applicationId = randomUUID();
     cloud = createSlackCloudConnectorFixture(`instance-${randomUUID()}`, companyId, actorId); cloud.install();
     vi.spyOn(globalThis, "fetch").mockImplementation(cloud.request);
@@ -173,7 +173,7 @@ const support = external ? { supported: true } : await getEmbeddedPostgresTestSu
     await service.configure(endpointId, { action: "verify" }, actorId);
     const [principal] = await db.insert(chatExternalPrincipals).values({ companyId, provider: "slack", providerAccountId: accountId,
       externalId: "UOPERATOR", kind: "user", displayName: "Operator" }).returning();
-    await db.insert(chatIdentityLinks).values({ companyId, endpointId, principalId: principal!.id, paperclipUserId: actorId, status: "linked", confirmedAt: new Date() });
+    await db.insert(chatIdentityLinks).values({ companyId, endpointId, principalId: principal!.id, pilibalaUserId: actorId, status: "linked", confirmedAt: new Date() });
     expect((await service.test(endpointId, { optionalSlackTestForUser: actorId })).status).toBe("active");
   }
   async function holdCredentials(endpointId: string) {

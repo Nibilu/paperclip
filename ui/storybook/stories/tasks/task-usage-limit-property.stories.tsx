@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { Agent, ProviderRateLimitSnapshot } from "@paperclipai/shared";
+import type { Agent, ProviderRateLimitSnapshot } from "@pilibalaai/shared";
 import { AgentIdentity } from "@/components/AgentIdentity";
 import { AgentRateLimitPropertyValue } from "@/components/AgentRateLimitGauge";
 import { IssueStatusBadge } from "@/components/StatusBadge";
@@ -14,7 +14,7 @@ const window = (id: string, label: string, shortLabel: string, windowMinutes: nu
 });
 
 const codex: ProviderRateLimitSnapshot = {
-  schema: "paperclip.provider.rate_limits.v1",
+  schema: "pilibala.provider.rate_limits.v1",
   provider: "openai",
   windows: [
     window("codex.primary", "5-hour window", "5h", 300, 78, "2026-11-05T15:40:00"),
@@ -26,7 +26,7 @@ const codex: ProviderRateLimitSnapshot = {
 };
 
 const claude: ProviderRateLimitSnapshot = {
-  schema: "paperclip.provider.rate_limits.v1",
+  schema: "pilibala.provider.rate_limits.v1",
   provider: "anthropic",
   windows: [
     window("claude.five_hour", "5-hour window", "5h", 300, 86, "2026-11-05T17:05:00"),
@@ -101,7 +101,7 @@ const meta = {
           "The task properties pane shows the assignee's latest provider usage limit as one line: the fullest current window and its reset, amber above 80%, 'Limited until' while the provider refuses work. Clicking it lists every window. Agents on API-key auth report no limits and show no row.",
       },
     },
-    paperclip: {
+    pilibala: {
       capabilities: ["tasks/properties"],
       status: "current",
       implementation: "production",

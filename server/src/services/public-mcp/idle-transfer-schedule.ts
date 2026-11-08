@@ -1,5 +1,5 @@
 import { asc, gt } from "drizzle-orm";
-import { mcpFileTickets, type Db } from "@paperclipai/db";
+import { mcpFileTickets, type Db } from "@pilibalaai/db";
 import type { IdleDeadlineSnapshot } from "../idle-deadline-types.js";
 import type { IdleMcpInspectionBudget } from "./idle-wake-proof.js";
 

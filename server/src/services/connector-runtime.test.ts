@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { resolveConnectorAssignments } from "./connector-runtime.js";
 
 const resolvers = vi.hoisted(() => ({

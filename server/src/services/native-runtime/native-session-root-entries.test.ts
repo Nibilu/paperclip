@@ -18,9 +18,9 @@ const WRITERS: Array<{ file: string; roots: string[]; dynamic?: string[] }> = [
   { file: "./cursor-cloud-runtime.ts", roots: ["input.root"] },
   { file: "./remote-provider-pack-authority.ts", roots: ["input.stateDirectory"] },
   { file: "./native-controller-migration.ts", roots: ["paths.root"] },
-  { file: "../../../../packages/paperclip-runner/src/live/runnerd-codex-transport.ts", roots: ["this.#root", "root"],
+  { file: "../../../../packages/pilibala-runner/src/live/runnerd-codex-transport.ts", roots: ["this.#root", "root"],
     dynamic: ["file"] },
-  { file: "../../../../packages/paperclip-runner/src/live/runner-launch-preparation-store.ts", roots: ["directory"] },
+  { file: "../../../../packages/pilibala-runner/src/live/runner-launch-preparation-store.ts", roots: ["directory"] },
 ];
 
 /**

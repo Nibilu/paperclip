@@ -477,7 +477,7 @@ Nothing in this stack is merged or authorized for merge.
 
 ## Published PR and CI repair checkpoint
 
-Draft [#17717](https://github.com/paperclipai/paperclip/pull/17717) was published
+Draft [#17717](https://github.com/pilibalaai/pilibala/pull/17717) was published
 at `8c62a6b0c0c381326ab94fd5c75c78e0dd426e1a`, based on #17709. Workspace
 typecheck and build passed there. Greptile reviewed that exact head at 5/5 with
 no actionable findings. CI run `40323191795` found three failures:
@@ -508,7 +508,7 @@ Local repair evidence preserves unsuccessful attempts: the first module repair
 still targeted the old import; the initial identity update retained an old digest
 literal; an overbroad replacement changed an unrelated historical expectation and
 was restored before acceptance. The first isolated Runner settlement attempt had
-no built `paperclip-runnerd` and failed all 19 cases at setup; the new checkout
+no built `pilibala-runnerd` and failed all 19 cases at setup; the new checkout
 must build that binary before those tests count as executed.
 
 The full default local suite at the published head remains separate. It reported
@@ -609,7 +609,7 @@ expiries remain real obligations; this change does not discard them to claim qui
 
 The current profile 80 runtime selection passes 130 cases across four files in
 125.90 seconds. One existing opt-in closed Pi snapshot case is skipped because
-`PAPERCLIP_TEST_PI_DISTRIBUTION_ROOT` is not set. This skip is not counted as
+`PILIBALA_TEST_PI_DISTRIBUTION_ROOT` is not set. This skip is not counted as
 acceptance of a live Pi installation. The Copilot installation/history and
 transport-settlement files have no skipped cases.
 

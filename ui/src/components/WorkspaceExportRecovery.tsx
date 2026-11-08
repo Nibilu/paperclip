@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { IssueRecoveryAction, WorkspaceSourceInspection } from "@paperclipai/shared";
-import { isNativeWorkspaceExportRepairCause } from "@paperclipai/shared";
+import type { IssueRecoveryAction, WorkspaceSourceInspection } from "@pilibalaai/shared";
+import { isNativeWorkspaceExportRepairCause } from "@pilibalaai/shared";
 import { isTransientError } from "../api/errors";
 import { useQueryView } from "./QueryView";
 import { accessApi } from "../api/access";
@@ -60,7 +60,7 @@ export function WorkspaceExportRecovery({ action, className, issueId, companyId,
         action={action} issueId={issueId} companyId={companyId} className={className}
         confirmStop={stopEvidence => issuesApi.confirmControllerStopped(issueId, {
           actionId: action.id, runId: action.evidence.runId as string, stopEvidence })}
-        copy={{ waiting: "This run’s previous server was recorded before Paperclip stored which host it ran on, so Paperclip can’t verify that it stopped. The run’s saved state is kept.",
+        copy={{ waiting: "This run’s previous server was recorded before Pilibala stored which host it ran on, so Pilibala can’t verify that it stopped. The run’s saved state is kept.",
           question: "How did you confirm that the previous server stopped?",
           placeholder: "For example: the old server container was replaced and is no longer running.",
           resuming: "Resuming the run…" }} /></>;
@@ -144,10 +144,10 @@ function PreviousServerStopConfirmation({ action, ownerToken, issueId, companyId
   const ready = evidence.trim().length >= 20;
   return <div className={cn("flex flex-col gap-2 text-sm", className)} data-testid="previous-server-stop">
     <p role="status">{confirm.isSuccess ? copy?.resuming ?? "Restoring saved work…"
-      : copy?.waiting ?? "The previous server stopped while it was saving this task’s files, and Paperclip can’t verify that it stopped. The agent’s result is saved."}</p>
+      : copy?.waiting ?? "The previous server stopped while it was saving this task’s files, and Pilibala can’t verify that it stopped. The agent’s result is saved."}</p>
     {confirm.isSuccess ? null : !canConfirm
       ? <p className="text-xs text-muted-foreground">{accessView.kind === "loading" || accessView.kind === "reconnecting"
-        ? "Checking access…" : "Paperclip is waiting to confirm that the previous server stopped."}</p>
+        ? "Checking access…" : "Pilibala is waiting to confirm that the previous server stopped."}</p>
       : !open ? <Button variant="outline" size="sm" className="self-start" onClick={() => setOpen(true)}>
         Confirm the previous server stopped</Button>
       : <form className="flex flex-col gap-2" onSubmit={event => { event.preventDefault(); if (ready && !confirm.isPending) confirm.mutate(); }}>
@@ -172,11 +172,11 @@ type RecoveryInput = { actionId: string; runId: string };
 function unverifiedSourceText(inspected: WorkspaceSourceInspection | undefined): string {
   if (!inspected || inspected.status === "verified") return "";
   if (inspected.status === "not_inspected")
-    return "Paperclip can’t check the saved files’ source here because the run recorded too many sources.";
+    return "Pilibala can’t check the saved files’ source here because the run recorded too many sources.";
   const code = inspected.sourceVerification?.reason ?? inspected.failureCode;
   return code === "allocation_ownership_ambiguous"
-    ? "Paperclip can’t confirm that this run alone used the sandbox that holds the saved files."
-    : `Paperclip can’t verify the saved files’ recorded source (${code}).`;
+    ? "Pilibala can’t confirm that this run alone used the sandbox that holds the saved files."
+    : `Pilibala can’t verify the saved files’ recorded source (${code}).`;
 }
 
 function RetainedFilesRecovery({ action, issueId, companyId, className, onRecoveryControlChange }: {
@@ -217,7 +217,7 @@ function RetainedFilesRecovery({ action, issueId, companyId, className, onRecove
     const inspected = data?.sourceInspection;
     const state = asObject(current?.evidence.workspaceRecovery);
     return current && isRetainedExport(current, issueId, companyId) && current.evidence.runId === runId
-      && state.runId === runId && state.schema === "paperclip.workspace-recovery.v1"
+      && state.runId === runId && state.schema === "pilibala.workspace-recovery.v1"
       && inspected?.actionId === action.id && inspected.runId === runId ? current : null;
   }
   const sourceVerified = (data: typeof source.data) => Boolean(boundAction(data)) && data?.sourceInspection?.status === "verified";
@@ -333,7 +333,7 @@ function RetainedFilesRecovery({ action, issueId, companyId, className, onRecove
       {current && recovery.status === "blocked" && (serverAcknowledged || recovery.retryable !== true)
         ? <p role="alert">File recovery has not finished. The saved files remain protected and are not applied.</p> : null}
       {unverified ? <p role="status" className="text-muted-foreground">
-        {unverifiedSourceText(source.data?.sourceInspection)} Paperclip does not apply files it can’t verify.
+        {unverifiedSourceText(source.data?.sourceInspection)} Pilibala does not apply files it can’t verify.
       </p> : null}
       {sourceReady && !current ? <p role="alert">This file recovery was replaced. Check its status to show the task’s current recovery.</p> : null}
     </> : accessView.kind === "error" ? <p role="alert" className="text-sm text-destructive">Task access could not be checked. Refresh before requesting file recovery.</p>

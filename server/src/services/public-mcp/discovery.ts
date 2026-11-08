@@ -22,10 +22,10 @@ export function parseMcpDiscovery(value: unknown): McpDiscovery {
 export function mcpDiscoveryDocuments(raw: McpDiscovery): Array<{ path: string; document: Record<string,unknown> }> {
   const input = parseMcpDiscovery(raw), documents: Array<{ path: string; document: Record<string,unknown> }> = [];
   for (const profile of input.profiles) {
-    const dot = profile === "dot-mcp", endpoint = dot ? "/mcp/runner" : "/mcp/paperclip", oauthPath = dot ? "/mcp/runner/oauth" : "/mcp/oauth";
+    const dot = profile === "dot-mcp", endpoint = dot ? "/mcp/runner" : "/mcp/pilibala", oauthPath = dot ? "/mcp/runner/oauth" : "/mcp/oauth";
     const issuer = dot ? input.origin + oauthPath : input.origin, prefix = input.origin + oauthPath;
-    const scopes = dot ? ["paperclip:agent","offline_access"] : ["paperclip:read","paperclip:write","paperclip:configure","offline_access"];
-    const resource = { resource: input.origin + endpoint, authorization_servers: [issuer], scopes_supported: dot ? scopes : scopes.slice(0,3), bearer_methods_supported: ["header"], resource_name: dot ? "Paperclip agent" : "Paperclip" };
+    const scopes = dot ? ["pilibala:agent","offline_access"] : ["pilibala:read","pilibala:write","pilibala:configure","offline_access"];
+    const resource = { resource: input.origin + endpoint, authorization_servers: [issuer], scopes_supported: dot ? scopes : scopes.slice(0,3), bearer_methods_supported: ["header"], resource_name: dot ? "Pilibala agent" : "Pilibala" };
     if (!dot) documents.push({ path: "/.well-known/oauth-protected-resource", document: resource });
     documents.push({ path: "/.well-known/oauth-protected-resource" + endpoint, document: resource });
     documents.push({ path: "/.well-known/oauth-authorization-server" + (dot ? oauthPath : ""), document: {

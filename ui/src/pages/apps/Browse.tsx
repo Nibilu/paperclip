@@ -1,4 +1,4 @@
-import { AGGREGATOR_NAMES, aggregatorManagementUrl, isAppAggregator, type AggregatorAppSnapshot, type AggregatorAppsResponse } from "@paperclipai/shared/aggregator-apps";
+import { AGGREGATOR_NAMES, aggregatorManagementUrl, isAppAggregator, type AggregatorAppSnapshot, type AggregatorAppsResponse } from "@pilibalaai/shared/aggregator-apps";
 import type { CatalogSource } from "./CatalogSourceFilters";
 import { ConnectorsToolbar } from "./ConnectorsToolbar";
 import { ExecutorManagementSetup } from "./ExecutorManagementSetup";
@@ -10,7 +10,7 @@ import {
   getConnectableAppDefinition,
   isRetiredComposioConnection,
   RETIRED_COMPOSIO_MESSAGE,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { AssistantConnectionCard, useAssistantConnections } from "./AssistantConnection";
 import { ManagedAiConnectionRow } from "@/components/ai-connections/ManagedAiConnectionDetails";
 import { useAiConnectionDefaults } from "@/components/ai-connections/useAiConnectionDefaults";
@@ -32,7 +32,7 @@ import {
   ServerCog,
   Trash2,
 } from "lucide-react";
-import type { ComposioAppSnapshot, ToolApplication, ToolConnection } from "@paperclipai/shared";
+import type { ComposioAppSnapshot, ToolApplication, ToolConnection } from "@pilibalaai/shared";
 import {
   getAppDefinitionForUrl,
   getAppDefinitionForApplicationKey,
@@ -44,7 +44,7 @@ import {
   CONNECTABLE_APP_DEFINITIONS,
   normalizeConnectionQuery,
   nativeConnectorRequiresCustomerOAuthApp,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { useNavigate } from "@/lib/router";
 import { useChatConnectorsEnabled, chatProviderVisible } from "@/hooks/useChatConnectorsEnabled";
 import { useMemoryConnectorsEnabled } from "@/hooks/useMemoryConnectorsEnabled";
@@ -91,7 +91,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { AGGREGATOR_APP_CATALOG, aggregatorAppIdentity, findComposioCatalogApp, type AggregatorAppCatalogEntry } from "@paperclipai/shared/aggregator-app-catalog";
+import { AGGREGATOR_APP_CATALOG, aggregatorAppIdentity, findComposioCatalogApp, type AggregatorAppCatalogEntry } from "@pilibalaai/shared/aggregator-app-catalog";
 import { AggregatorConnectDialog, aggregatorAppConnectHref } from "./AggregatorConnectDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildCompanyUserProfileMap } from "@/lib/company-members";
@@ -400,7 +400,7 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
   const { status: connectivityStatus } = useConnectivity();
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [source, setSource] = useState<CatalogSource>("paperclip");
+  const [source, setSource] = useState<CatalogSource>("pilibala");
   const [expandedSearch, setExpandedSearch] = useState(false);
   const [executorToConfigure, setExecutorToConfigure] = useState<ToolConnection | null>(null);
   const [arcadeToConfigure, setArcadeToConfigure] = useState<ToolConnection | null>(null);
@@ -416,7 +416,7 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
     return () => setBreadcrumbs([]);
   }, [setBreadcrumbs]);
 
-  useEffect(() => { setQuery(""); setPage(1); setSource("paperclip"); setExpandedSearch(false); setArcadeToConfigure(null); setAggregatorToConnect(null); setAggregatorToManage(null); setInitialAggregatorProvider(undefined); setConnectionToRemove(null); }, [selectedCompanyId]);
+  useEffect(() => { setQuery(""); setPage(1); setSource("pilibala"); setExpandedSearch(false); setArcadeToConfigure(null); setAggregatorToConnect(null); setAggregatorToManage(null); setInitialAggregatorProvider(undefined); setConnectionToRemove(null); }, [selectedCompanyId]);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("source") === "installed") setSource("installed");
@@ -554,7 +554,7 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
         title: "Connection removed",
         body:
           target.pool ? "The connections in the pool are kept." : target.kind === "chat"
-            ? `${target.providerName} is disconnected. Existing Paperclip tasks remain available.`
+            ? `${target.providerName} is disconnected. Existing Pilibala tasks remain available.`
             : target.remainingConnectionCount > 0
             ? `${target.providerName} still has ${target.remainingConnectionCount} active ${target.remainingConnectionCount === 1 ? "connection" : "connections"} available to agents.`
             : `${target.providerName} is no longer available to agents through this connection. Its saved credentials were deleted.`,
@@ -913,7 +913,7 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
     const scoped = rows.filter((row) => {
       if (source === "all") return true;
       if (source === "installed") return isInstalled(row);
-      if (source === "paperclip") return !row.aggregatorApp || isInstalled(row);
+      if (source === "pilibala") return !row.aggregatorApp || isInstalled(row);
       return isAppAggregator(source) && (
         row.slug === source && isInstalled(row)
         || row.upstreamApps?.some(snapshot => snapshot.provider === source && snapshot.accounts.length > 0)
@@ -953,8 +953,8 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
     executor: aggregatorGateways.filter(connection => appConnectionSourceSlug(connection) === "executor"),
   }), [aggregatorGateways]);
   function changeQuery(value: string) {
-    if (source === "paperclip" && !query.trim() && value.trim()) { setSource("all"); setExpandedSearch(true); }
-    if (expandedSearch && !value.trim()) { setSource("paperclip"); setExpandedSearch(false); }
+    if (source === "pilibala" && !query.trim() && value.trim()) { setSource("all"); setExpandedSearch(true); }
+    if (expandedSearch && !value.trim()) { setSource("pilibala"); setExpandedSearch(false); }
     setQuery(value); setPage(1);
   }
   function closeAggregatorSetup() {
@@ -972,11 +972,11 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
     }
     setAggregatorToConnect(app);
   }
-  const showAssistantConnection = (source === "paperclip" || source === "all" ||
+  const showAssistantConnection = (source === "pilibala" || source === "all" ||
     (source === "installed" && (!assistantConnections.loaded || assistantConnections.rows.some(row => !row.revokedAt)))) &&
-    (!trimmed || "assistant connection (mcp) paperclip codex claude opencode".includes(trimmed));
+    (!trimmed || "assistant connection (mcp) pilibala codex claude opencode".includes(trimmed));
   const showCustomConnector =
-    (source === "paperclip" || source === "all") && (!trimmed || "connect your own tool custom mcp server".includes(trimmed));
+    (source === "pilibala" || source === "all") && (!trimmed || "connect your own tool custom mcp server".includes(trimmed));
 
   if (!selectedCompanyId) {
     return (
@@ -1104,9 +1104,9 @@ export function Browse({ renderAccountDetails = (connection) => connection.conne
             </AlertDialogTitle>
             <AlertDialogDescription>
               {connectionToRemove?.pool ? "The connections in this pool are kept." : connectionToRemove && Object.values(AGGREGATOR_NAMES).includes(connectionToRemove.providerName as "Composio")
-                ? `This removes the saved ${connectionToRemove.providerName} connection from Paperclip and agents lose access through it. Your apps and accounts remain connected in ${connectionToRemove.providerName}.`
+                ? `This removes the saved ${connectionToRemove.providerName} connection from Pilibala and agents lose access through it. Your apps and accounts remain connected in ${connectionToRemove.providerName}.`
                 : connectionToRemove?.kind === "chat"
-                ? `This connection will stop receiving new work from ${connectionToRemove.providerName}. Existing Paperclip tasks and conversation history remain available. This does not delete the app, bot, or account in ${connectionToRemove.providerName}.`
+                ? `This connection will stop receiving new work from ${connectionToRemove.providerName}. Existing Pilibala tasks and conversation history remain available. This does not delete the app, bot, or account in ${connectionToRemove.providerName}.`
                 : connectionToRemove &&
                     connectionToRemove.remainingConnectionCount > 0
                   ? `This connection's saved credentials are deleted and agents lose access through it immediately. They can still use ${connectionToRemove.providerName} through ${connectionToRemove.remainingConnectionCount} other active ${connectionToRemove.remainingConnectionCount === 1 ? "connection" : "connections"}.`

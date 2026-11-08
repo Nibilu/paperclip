@@ -1,5 +1,5 @@
 import { posix } from "node:path";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
 import type { NativeProviderArtifactReceipt } from "./native-provider-artifacts.js";
 import type { ProviderPackIdentity } from "./remote-provider-pack-verification.js";
 
@@ -18,7 +18,7 @@ const bad=()=>{throw Error('native_provider_artifacts_remote_unsafe')};
 const checkDir=(d)=>{const s=fs.lstatSync(d);if(!s.isDirectory()||s.isSymbolicLink()||s.uid!==x.uid||(s.mode&0o022))bad()};
 let current='/';for(const part of x.home.split('/').filter(Boolean)){current=p.join(current,part);const s=fs.lstatSync(current);if(s.isSymbolicLink()||!s.isDirectory())bad()}
 checkDir(x.home);
-for(const part of ['.paperclip-runtime','paperclip-runner','provider-artifacts']){current=p.join(current,part);try{fs.mkdirSync(current,{mode:0o700})}catch(e){if(e.code!=='EEXIST')throw e}checkDir(current)}
+for(const part of ['.pilibala-runtime','pilibala-runner','provider-artifacts']){current=p.join(current,part);try{fs.mkdirSync(current,{mode:0o700})}catch(e){if(e.code!=='EEXIST')throw e}checkDir(current)}
 if(p.join(current,x.digest)!==x.root)bad();
 if(x.mode==='cleanup'){try{checkDir(x.pending);fs.rmSync(x.pending,{recursive:true})}catch(e){if(e.code!=='ENOENT')throw e}process.exit(0)}
 const hash=(f,expected)=>{const fd=fs.openSync(f,fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW|fs.constants.O_NONBLOCK);try{const a=fs.fstatSync(fd);if(!a.isFile()||a.size>512*1024*1024)bad();const h=c.createHash('sha256'),b=Buffer.alloc(1024*1024);let n,total=0;while((n=fs.readSync(fd,b,0,b.length,null))){total+=n;h.update(b.subarray(0,n))}const z=fs.fstatSync(fd);if(total!==a.size||a.ino!==z.ino||a.size!==z.size||a.mtimeMs!==z.mtimeMs||a.ctimeMs!==z.ctimeMs||'sha256:'+h.digest('hex')!==expected)bad()}finally{fs.closeSync(fd)}};
@@ -93,7 +93,7 @@ export async function prepareRemoteOpenCodeArtifacts(input: {
     throw new Error("native_provider_artifacts_account_invalid");
   const root = posix.join(
     account.home,
-    ".paperclip-runtime/paperclip-runner/provider-artifacts",
+    ".pilibala-runtime/pilibala-runner/provider-artifacts",
     input.manifest.digest.slice(7),
   );
   if (

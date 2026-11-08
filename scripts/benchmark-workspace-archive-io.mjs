@@ -84,7 +84,7 @@ if (process.argv[2] === "--worker") {
     }
     if (new Set(samples.map(sample => sample.sha256)).size !== 1
       || new Set(samples.map(sample => sample.encryptedSha256)).size !== 1) throw new Error("Baseline/treatment digests differ");
-    console.log(JSON.stringify({ schema: "paperclip.workspace-archive-io-benchmark.v1", node: process.version,
+    console.log(JSON.stringify({ schema: "pilibala.workspace-archive-io-benchmark.v1", node: process.version,
       platform: `${process.platform}/${process.arch}`, contentionMsPerTurn: contentionMs,
       samples, identicalDigests: true, limits: "Synthetic main-thread contention; excludes sandbox, database, and object storage. RSS/GC samples are diagnostic. Stream thresholds bound queues, not total process memory." }, null, 2));
   } finally { await rm(root, { recursive: true, force: true }); }

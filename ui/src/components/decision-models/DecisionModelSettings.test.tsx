@@ -65,7 +65,7 @@ it("keeps loaded decision settings on screen when a refetch fails transiently", 
   const key = ["decision-model", configured.companyId];
   client.setQueryData(key, { canManage: true, settings: configured, choices });
   const settings = vi.spyOn(decisionModelsApi, "settings").mockRejectedValue(
-    new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+    new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
   );
   try {
     await act(async () => root.render(<QueryClientProvider client={client}><MemoryRouter>
@@ -79,7 +79,7 @@ it("keeps loaded decision settings on screen when a refetch fails transiently", 
     expect(settings).toHaveBeenCalled();
     expect(container.textContent).toContain("Enable decisions");
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
     expect(container.textContent).not.toContain("tenant_app_unavailable");
   } finally { act(() => root.unmount()); client.clear(); settings.mockRestore(); container.remove(); }
 });

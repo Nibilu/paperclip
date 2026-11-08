@@ -7,13 +7,13 @@ import { readCursorCloudRemoteIdentity, cursorCloudIdentityProof, CursorCloudOwn
 import { assertCursorCloudCallbackIngress, startCursorCloudCallbackProxy } from "./cursor-cloud-callback-proxy.js";
 import type { RunnerApi } from "./api.js";
 import { assertPublicCampaign } from "./history-publish.js";
-import { CursorCloudClientError } from "../../packages/paperclip-runner/src/drivers/cursor-cloud/cloud-client.js";
+import { CursorCloudClientError } from "../../packages/pilibala-runner/src/drivers/cursor-cloud/cloud-client.js";
 
 const cells = runnerMatrix.filter(cell => cell.suite.id === "cursor-cloud");
 const agentId = "bc-11111111-1111-4111-8111-111111111111", runId = "run-22222222-2222-4222-8222-222222222222";
 function notice(ownerRunId = "local-run") {
-  return { runId: ownerRunId, protocolSchemaVersion: 1, payload: { prpEvent: { schema: "paperclip.prp.event.v1", schemaVersion: 1, runId: ownerRunId,
-    sourceKind: "runner", eventType: "provider.notice.recorded", payload: { summary: JSON.stringify({ schema: "paperclip.cursor-cloud.remote-identity.v1", provider: "cursor_cloud", agentId, runId, ownerRunId, normalizedSessionId: "owned-session" }) } } } };
+  return { runId: ownerRunId, protocolSchemaVersion: 1, payload: { prpEvent: { schema: "pilibala.prp.event.v1", schemaVersion: 1, runId: ownerRunId,
+    sourceKind: "runner", eventType: "provider.notice.recorded", payload: { summary: JSON.stringify({ schema: "pilibala.cursor-cloud.remote-identity.v1", provider: "cursor_cloud", agentId, runId, ownerRunId, normalizedSessionId: "owned-session" }) } } } };
 }
 afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
 
@@ -32,13 +32,13 @@ describe("Cursor Cloud Product E2E registration", () => {
     const plan = cells.find(cell => cell.task.id === "plan-revise-accept")!.task;
     expect(plan.workMode).toBe("planning");
     expect(plan.flow).toBe("plan_revision_acceptance");
-    expect(plan.buildPlanMarkers?.("nonce")).toEqual({ draft: "PAPERCLIP_E2E_PLAN_DRAFT_nonce", revised: "PAPERCLIP_E2E_PLAN_REVISED_nonce" });
+    expect(plan.buildPlanMarkers?.("nonce")).toEqual({ draft: "PILIBALA_E2E_PLAN_DRAFT_nonce", revised: "PILIBALA_E2E_PLAN_REVISED_nonce" });
     expect(plan.buildRevisionRequest?.("nonce")).toContain("targetRevisionId");
     expect(plan.buildPrompt("nonce")).toContain("do not request Cursor native Plan mode");
     expect(plan.buildPrompt("nonce")).not.toContain("remain in the requested planning collaboration mode");
   });
   it("binds the exact explicit model and encrypted Cloud credential without native permission fiction", () => {
-    vi.stubEnv("PAPERCLIP_CURSOR_CLOUD_ACCEPTANCE_REPO", "https://github.com/owned/disposable");
+    vi.stubEnv("PILIBALA_CURSOR_CLOUD_ACCEPTANCE_REPO", "https://github.com/owned/disposable");
     const profile = { ...cursorCloudProfile, model: "explicit-account-model" };
     const payload = profile.buildAgent({ executionId: "owned", environmentId: "local-env", environmentFixtureId: "local", workspacePath: "/tmp/owned",
       secretRefs: { CURSOR_API_KEY: { type: "secret_ref", secretId: "secret", version: "latest" } } });
@@ -51,12 +51,12 @@ describe("Cursor Cloud Product E2E registration", () => {
   });
   it("setup-blocks missing prerequisites before credential loading and accepts an explicitly configured local profile", () => {
     expect(() => assertRunnerE2EPrerequisites(cells, {})).toThrow("setup-blocked");
-    const environment = { PAPERCLIP_CURSOR_CLOUD_ACCEPTANCE_MODEL: "explicit-model", PAPERCLIP_CURSOR_CLOUD_ACCEPTANCE_REPO: "https://github.com/owned/disposable", PAPERCLIP_PUBLIC_URL: "https://callback.example.test", PAPERCLIP_CURSOR_CLOUD_CALLBACK_PORT: "43121", PAPERCLIP_CURSOR_CLOUD_ALLOW_UNPRICED_QUALIFICATION: "1" };
+    const environment = { PILIBALA_CURSOR_CLOUD_ACCEPTANCE_MODEL: "explicit-model", PILIBALA_CURSOR_CLOUD_ACCEPTANCE_REPO: "https://github.com/owned/disposable", PILIBALA_PUBLIC_URL: "https://callback.example.test", PILIBALA_CURSOR_CLOUD_CALLBACK_PORT: "43121", PILIBALA_CURSOR_CLOUD_ALLOW_UNPRICED_QUALIFICATION: "1" };
     const configured = cells.map(cell => ({ ...cell, profile: { ...cell.profile, model: "explicit-model" } }));
     expect(() => assertRunnerE2EPrerequisites(configured, environment)).not.toThrow();
-    expect(() => assertRunnerE2EPrerequisites(configured, { ...environment, PAPERCLIP_CURSOR_CLOUD_ALLOW_UNPRICED_QUALIFICATION: undefined })).toThrow("ALLOW_UNPRICED_QUALIFICATION");
-    expect(() => assertRunnerE2EPrerequisites(configured, { ...environment, PAPERCLIP_PUBLIC_URL: "http://localhost" })).toThrow("setup-blocked");
-    expect(() => assertRunnerE2EPrerequisites(configured, { ...environment, PAPERCLIP_CURSOR_CLOUD_ACCEPTANCE_REPO: "https://user:secret@example.test/repo" })).toThrow("setup-blocked");
+    expect(() => assertRunnerE2EPrerequisites(configured, { ...environment, PILIBALA_CURSOR_CLOUD_ALLOW_UNPRICED_QUALIFICATION: undefined })).toThrow("ALLOW_UNPRICED_QUALIFICATION");
+    expect(() => assertRunnerE2EPrerequisites(configured, { ...environment, PILIBALA_PUBLIC_URL: "http://localhost" })).toThrow("setup-blocked");
+    expect(() => assertRunnerE2EPrerequisites(configured, { ...environment, PILIBALA_CURSOR_CLOUD_ACCEPTANCE_REPO: "https://user:secret@example.test/repo" })).toThrow("setup-blocked");
     expect(() => assertRunnerE2EPrerequisites(cells, environment)).toThrow("exact configured model");
   });
 });

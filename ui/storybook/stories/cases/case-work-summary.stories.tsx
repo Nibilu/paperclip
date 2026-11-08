@@ -12,7 +12,7 @@ const meta = {
   decorators: [(Story) => <div className="max-w-sm"><Story /></div>],
   parameters: {
     layout: "padded",
-    paperclip: {
+    pilibala: {
       capabilities: ["cases/handoffs", "cases/task-links"],
       status: "current",
       implementation: "production",

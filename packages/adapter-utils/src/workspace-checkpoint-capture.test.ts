@@ -20,7 +20,7 @@ afterEach(async () => {
 async function fixture(failure: "none" | "read" | "mutation" | "full_db" | "walk") {
   const temp = await fs.mkdtemp(path.join(os.tmpdir(), "checkpoint-capture-"));
   roots.push(temp);
-  vi.stubEnv("PAPERCLIP_HOME", path.join(temp, "home"));
+  vi.stubEnv("PILIBALA_HOME", path.join(temp, "home"));
   const root = path.join(temp, "root");
   await fs.mkdir(root);
   for (let index = 0; index < 32; index++) {
@@ -173,11 +173,11 @@ it("drains active readers before closing either database after a walk failure", 
 });
 
 // Daytona's ordinary directory export (no preserveSourceEntries): GNU tar
-// `--exclude '._*' --exclude '.paperclip-upload*'` at any depth, extracted on
+// `--exclude '._*' --exclude '.pilibala-upload*'` at any depth, extracted on
 // the host without `-p`, so the host umask (022) applies.
 async function ordinaryProviderExport(source: string, target: string) {
   await fs.cp(source, target, { recursive: true, verbatimSymlinks: true,
-    filter: entry => !/^(\._|\.paperclip-upload)/.test(path.basename(entry)) });
+    filter: entry => !/^(\._|\.pilibala-upload)/.test(path.basename(entry)) });
   const strip = async (directory: string): Promise<void> => {
     for (const child of await fs.readdir(directory, { withFileTypes: true })) {
       const full = path.join(directory, child.name);
@@ -189,36 +189,36 @@ async function ordinaryProviderExport(source: string, target: string) {
 }
 
 // RC-50b (waves s12/s14): a control-plane kill during a provider transfer left
-// `.paperclip-upload-<uuid>.tar` at the sandbox workspace root (found in the s14
+// `.pilibala-upload-<uuid>.tar` at the sandbox workspace root (found in the s14
 // sandbox, mtime equal to the SIGKILL). Providers never export that scratch, so
 // recording it made every later checkpoint validation fail.
 it("never records provider transfer scratch left at the workspace root by a killed transfer", async () => {
   const f = await fixture("none");
-  await fs.writeFile(path.join(f.root, ".paperclip-upload-d99fe36b-5acc-437b-96ad-85d5ff9e79c4.tar"), Buffer.alloc(4096, 7));
+  await fs.writeFile(path.join(f.root, ".pilibala-upload-d99fe36b-5acc-437b-96ad-85d5ff9e79c4.tar"), Buffer.alloc(4096, 7));
   await fs.writeFile(path.join(f.root, "file-00"), "changed by the agent");
   await f.run();
   const snapshot = readCheckpointSnapshot(path.join(f.output, "manifest.sqlite"), f.baseline);
   snapshots.push(snapshot);
   const received = path.join(path.dirname(f.output), "received");
   await ordinaryProviderExport(path.join(f.output, "payload"), received);
-  // Before the fix: "payload mismatch at ".paperclip-upload-….tar": … received absent".
+  // Before the fix: "payload mismatch at ".pilibala-upload-….tar": … received absent".
   expect(await validateCheckpointPayload({ baseline: f.baseline, snapshot, payload: received }))
     .toMatchObject({ changedFiles: 1 });
-  expect([...snapshot.entries].map(([name]) => name).filter(name => name.startsWith(".paperclip-upload"))).toEqual([]);
+  expect([...snapshot.entries].map(([name]) => name).filter(name => name.startsWith(".pilibala-upload"))).toEqual([]);
   await expect(fs.readdir(received)).resolves.toEqual(["file-00"]);
 });
 
 it("needs an exact export for reserved-looking user names and group-writable modes", async () => {
   const f = await fixture("none");
   await fs.mkdir(path.join(f.root, "notes"));
-  await fs.writeFile(path.join(f.root, "notes", ".paperclip-upload-plan.md"), "user notes");
+  await fs.writeFile(path.join(f.root, "notes", ".pilibala-upload-plan.md"), "user notes");
   await fs.writeFile(path.join(f.root, "._summary"), "user summary");
   await fs.writeFile(path.join(f.root, "build.sh"), "#!/bin/sh\n");
   await fs.chmod(path.join(f.root, "build.sh"), 0o775);
   await f.run();
   const snapshot = readCheckpointSnapshot(path.join(f.output, "manifest.sqlite"), f.baseline);
   snapshots.push(snapshot);
-  expect(snapshot.entries.get("notes/.paperclip-upload-plan.md")).toMatchObject({ kind: "file" });
+  expect(snapshot.entries.get("notes/.pilibala-upload-plan.md")).toMatchObject({ kind: "file" });
   const ordinary = path.join(path.dirname(f.output), "ordinary");
   await ordinaryProviderExport(path.join(f.output, "payload"), ordinary);
   await expect(validateCheckpointPayload({ baseline: f.baseline, snapshot, payload: ordinary }))

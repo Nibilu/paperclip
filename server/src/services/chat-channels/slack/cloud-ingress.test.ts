@@ -1,5 +1,5 @@
 import { HttpError } from "../../../errors.js";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { expect, it, vi } from "vitest";
 import { createSlackCloudEventIngress, dispatchSlackCloudEvent, registerSlackCloudEventIngress } from "./cloud-ingress.js";
 import type { SlackCloudEvent } from "./cloud-event.js";

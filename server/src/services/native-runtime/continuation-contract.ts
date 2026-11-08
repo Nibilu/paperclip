@@ -6,8 +6,8 @@ import {
   nativeRunFinalizations,
   nativeRunResults,
   type Db,
-} from "@paperclipai/db";
-import type { NativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+} from "@pilibalaai/db";
+import type { NativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 
 /** Revise an uncompleted contract at a fenced dispatch boundary; retain its old revision for audit. */
 export async function rebindContinuationContract(

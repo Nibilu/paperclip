@@ -16,13 +16,13 @@ Do not mark an item done from a timer removal or a green check alone.
 
 | ID | Original checklist duty | Required slices / disposition | PR / evidence |
 | --- | --- | --- | --- |
-| 01 | Custom-image setup expiry | Session writes, existing expiry, startup/retry/drain | [#17443](https://github.com/paperclipai/paperclip/pull/17443), merged after CI and passing reviews |
+| 01 | Custom-image setup expiry | Session writes, existing expiry, startup/retry/drain | [#17443](https://github.com/pilibalaai/pilibala/pull/17443), merged after CI and passing reviews |
 | 02 | Remaining chat maintenance | Provider runtime discovery; voice reconciliation; milestones; wake notices; interaction continuations; terminal confirmations; GitHub recovery; Teams maintenance, separately by owner | Pending |
 | 03 | Run and task recovery | Orphan runs and active leases; shutdown workspace settlement; scheduled retries; queued runs; stranded assignments; resolved dependencies; task watchdogs; silent-run monitoring; stale locks | Pending |
-| 04 | Decision retention and notifications | Retention deadlines and notification delivery are separate reasons | Approval retention [#17497](https://github.com/paperclipai/paperclip/pull/17497) and archive delivery [#17475](https://github.com/paperclipai/paperclip/pull/17475) merged; other source retention pending |
-| 05 | Decision expiry and interrupted effects | Expiry, effect recovery, continuation recovery | Continuations [#17478](https://github.com/paperclipai/paperclip/pull/17478) merged; expiry [#17479](https://github.com/paperclipai/paperclip/pull/17479) merged; effects [#17482](https://github.com/paperclipai/paperclip/pull/17482) merged; targets [#17486](https://github.com/paperclipai/paperclip/pull/17486) merged |
-| 06 | Tool connection health | Configuration/use activation and defined proactive health deadlines | [#17554](https://github.com/paperclipai/paperclip/pull/17554) merged after all checks and both 5/5 reviews |
-| 07 | Secret proposals, tool reviews, gateway tokens | Separate expiry/scrub/recovery owners | Slices 02–07 merged: [secret proposals](https://github.com/paperclipai/paperclip/pull/17446), [credentials](https://github.com/paperclipai/paperclip/pull/17450), [review expiry](https://github.com/paperclipai/paperclip/pull/17453), [approved recovery](https://github.com/paperclipai/paperclip/pull/17454), [interrupted claims](https://github.com/paperclipai/paperclip/pull/17458), [projection](https://github.com/paperclipai/paperclip/pull/17468) |
+| 04 | Decision retention and notifications | Retention deadlines and notification delivery are separate reasons | Approval retention [#17497](https://github.com/pilibalaai/pilibala/pull/17497) and archive delivery [#17475](https://github.com/pilibalaai/pilibala/pull/17475) merged; other source retention pending |
+| 05 | Decision expiry and interrupted effects | Expiry, effect recovery, continuation recovery | Continuations [#17478](https://github.com/pilibalaai/pilibala/pull/17478) merged; expiry [#17479](https://github.com/pilibalaai/pilibala/pull/17479) merged; effects [#17482](https://github.com/pilibalaai/pilibala/pull/17482) merged; targets [#17486](https://github.com/pilibalaai/pilibala/pull/17486) merged |
+| 06 | Tool connection health | Configuration/use activation and defined proactive health deadlines | [#17554](https://github.com/pilibalaai/pilibala/pull/17554) merged after all checks and both 5/5 reviews |
+| 07 | Secret proposals, tool reviews, gateway tokens | Separate expiry/scrub/recovery owners | Slices 02–07 merged: [secret proposals](https://github.com/pilibalaai/pilibala/pull/17446), [credentials](https://github.com/pilibalaai/pilibala/pull/17450), [review expiry](https://github.com/pilibalaai/pilibala/pull/17453), [approved recovery](https://github.com/pilibalaai/pilibala/pull/17454), [interrupted claims](https://github.com/pilibalaai/pilibala/pull/17458), [projection](https://github.com/pilibalaai/pilibala/pull/17468) |
 | 08 | GitHub connection events and continuity | Event discovery/replay and credential continuity separately | Pending |
 | 09 | Merged-PR confirmations | Candidate writes, webhook activation where supported, outstanding-candidate fallback | Pending |
 | 10 | External-object refresh | Configuration changes, refresh deadlines, source events | Pending |
@@ -32,8 +32,8 @@ Do not mark an item done from a timer removal or a green check alone.
 | 14 | Skill-version retention and native-harness backup expiration | Separate retention owners and existing retention guarantees | Pending |
 | 15 | Automatic database backups | Shared scheduling, actual backup deadlines, existing checkpoint contract | Slice 60 implemented; remote acceptance pending; see `2026-10-26-database-backup-sleep-schedule.md` |
 | 16 | Aggregate maintenance tick | Retire enabled and disabled branches after all constituent owners migrate | Pending |
-| 17 | Grok routine dispatch | Committed reservations and feature changes; prepared-only recovery | [#17490](https://github.com/paperclipai/paperclip/pull/17490) merged after exact-head 5/5 reviews and passing CI |
-| 18 | Abandoned import transfer spools | Creation/completion events, existing retention deadline, startup recovery | [#17835](https://github.com/paperclipai/paperclip/pull/17835), implemented; remote acceptance pending |
+| 17 | Grok routine dispatch | Committed reservations and feature changes; prepared-only recovery | [#17490](https://github.com/pilibalaai/pilibala/pull/17490) merged after exact-head 5/5 reviews and passing CI |
+| 18 | Abandoned import transfer spools | Creation/completion events, existing retention deadline, startup recovery | [#17835](https://github.com/pilibalaai/pilibala/pull/17835), implemented; remote acceptance pending |
 
 ## Stack and verification contract
 
@@ -220,7 +220,7 @@ this is under investigation rather than assumed flaky. No retry of that run has
 been requested. Neither parent is reported green without fresh evidence.
 
 
-Slice 05 is [#17454](https://github.com/paperclipai/paperclip/pull/17454).
+Slice 05 is [#17454](https://github.com/pilibalaai/pilibala/pull/17454).
 Review identified a real one-shot outcome-write error path. A new regression
 failed before the repair; result persistence now runs outside provider-error
 handling. The repaired head passes 123 service/startup tests, 92 acceptance
@@ -288,7 +288,7 @@ Workspace typecheck/build and migration safety/numbering pass. The first four
 PRs are mergeable and have all checks passed at their recorded heads. #17454
 is mergeable with fresh checks and review in progress at `7a1cf03e62`.
 
-Slice 06 is [#17458](https://github.com/paperclipai/paperclip/pull/17458), head
+Slice 06 is [#17458](https://github.com/pilibalaai/pilibala/pull/17458), head
 `85003a7ac4`, based on #17454. Greptile review was requested and the PR is
 attached to this chat. Slice 05 has fresh Greptile 5/5 at `7a1cf03e62`; CI is
 running with no failure in the latest snapshot. The next branch is
@@ -320,7 +320,7 @@ Initial slice 07 local verification: 815 selected tests passed, with workspace
 typecheck and build passing. One initial interaction cleanup-hook timeout is recorded in
 the behavior document; the complete isolated suite then passed. Both parent
 PRs #17454 and #17458 now have every check passed and are mergeable, including
-the additional Paperclip Review checks. Full CI/review for slice 07 is next.
+the additional Pilibala Review checks. Full CI/review for slice 07 is next.
 
 
 Slice 07 current integration: master `f6bc653f7f` contains the first six landed
@@ -368,7 +368,7 @@ Retention eligibility/scanning, decision expiry, effect recovery, and decision
 continuation delivery remain independent unfinished reasons in the full ledger.
 
 
-Slice 08 is [#17475](https://github.com/paperclipai/paperclip/pull/17475), head
+Slice 08 is [#17475](https://github.com/pilibalaai/pilibala/pull/17475), head
 `692e3ee02c`, based on #17468. The PR is attached and Greptile review was
 requested. Fresh CI is active with no failures in the latest snapshot.
 The first seven PRs are mergeable and have all checks passing at their recorded
@@ -450,12 +450,12 @@ query probe pass. Initial fixture type/error-shape failures are recorded in the
 behavior document. PR creation and full CI/review are next.
 
 Parent #17475 at `692e3ee02c` now has passing checks and Greptile 5/5; the extra
-Paperclip Review check was skipped. Fresh master is `fe85fd7ac4`, still at
+Pilibala Review check was skipped. Fresh master is `fe85fd7ac4`, still at
 migration 0377. The stack remains open and unmerged. The full inventory above
 remains the completion scope.
 
 
-Slice 09 is [#17478](https://github.com/paperclipai/paperclip/pull/17478), initially
+Slice 09 is [#17478](https://github.com/pilibalaai/pilibala/pull/17478), initially
 `66bbef521e`. Review found a concurrent archive result race and unbounded backlog
 shutdown. Both failed real-boundary regressions before repair. The local repair
 shares effect execution through completion per DB owner/decision, bounds each
@@ -536,7 +536,7 @@ deadline cases, server types and build pass. Fresh CI/reviews remain required.
 
 
 
-Slice 10 is [#17479](https://github.com/paperclipai/paperclip/pull/17479), head
+Slice 10 is [#17479](https://github.com/pilibalaai/pilibala/pull/17479), head
 `63b58cc26f`, based on the repaired continuation branch. It is attached to this
 chat and review was requested. Workspace typecheck/build passed on the combined
 branch after parent propagation. Full CI and review are active, not complete.
@@ -636,7 +636,7 @@ recorded in the owning effect-recovery audit; it is not a passing receipt. Fresh
 CI/reviews are required on the reconciled head.
 
 
-Slice 11 is [#17482](https://github.com/paperclipai/paperclip/pull/17482), head
+Slice 11 is [#17482](https://github.com/pilibalaai/pilibala/pull/17482), head
 `a5b5994c1d`, based on #17479. It is attached and Greptile review was requested.
 Its CI is active with no failure in the latest snapshot. Slice 10's one
 serialized-job retry passed; all checks now pass at `63b58cc26f`, with Greptile
@@ -814,7 +814,7 @@ entries are unchanged. Fresh final-head CI and reviews required against master.
 
 ## Next owner audit: decision retention
 
-Slice 13 is [#17490](https://github.com/paperclipai/paperclip/pull/17490), head
+Slice 13 is [#17490](https://github.com/pilibalaai/pilibala/pull/17490), head
 `706beb01f2`, based on the repaired target PR #17486 (`1bbfc69590`). It is
 attached and review was requested. The target PR now has fresh Greptile 5/5
 with its mixed-hint finding resolved; its fresh CI is still running. Grok's CI
@@ -967,7 +967,7 @@ remain required. The earlier failures remain recorded above.
 
 ## Slice 14 publication and precision review repair
 
-Approval retention is [#17497](https://github.com/paperclipai/paperclip/pull/17497),
+Approval retention is [#17497](https://github.com/pilibalaai/pilibala/pull/17497),
 initial head `2f334c678b`, based on #17490. It is attached. Initial CI run
 40135489716 completed without a failed CI job. Greptile gave 4/5 with one P2:
 JavaScript Date truncation can repeat a full failed page whose source timestamp
@@ -1087,7 +1087,7 @@ CI/reviews are required against master; all remaining checklist duties persist.
 
 ## Join request retention implementation
 
-Terminal workspace pagination is [#17505](https://github.com/paperclipai/paperclip/pull/17505),
+Terminal workspace pagination is [#17505](https://github.com/pilibalaai/pilibala/pull/17505),
 head `28a197cdfd`, stacked on #17497. It has fresh 5/5 review without unresolved
 findings. The full CI matrix is running. Workspace typecheck/build and all 87
 selected service/worker tests passed locally.
@@ -1157,14 +1157,14 @@ approval retention #17497; do not accept that migration as functionally complete
 without preserving queue population. Other source seeding remains to be migrated.
 
 #17505 now has all latest-head checks accepted at `28a197cdfdab7977eecf591df39612009d725e17`
-(Paperclip Review skipped), with Greptile 5/5. #17508 at
+(Pilibala Review skipped), with Greptile 5/5. #17508 at
 `9c5c4fbf65628589b466ce5650e8969388213716` has Greptile 5/5 and no unresolved
 threads. Its unchanged login-cleanup consume test failed in CI; all 16 local
 login-cleanup tests pass. One justified retry of failed run 40139410144 was
 requested. Do not mark that PR green until the retry completes successfully.
 
 
-Slice 16 is [#17510](https://github.com/paperclipai/paperclip/pull/17510).
+Slice 16 is [#17510](https://github.com/pilibalaai/pilibala/pull/17510).
 Greptile identified a queue/item lock-order inversion. A real PostgreSQL test
 reproduced a deadlock; the common queue-before-item order repairs manual add/remove
 and seeding. The worker and queue route suites pass 27 cases after the fix, with
@@ -1234,7 +1234,7 @@ after cleanup while the pool is open, with persistent errors still reported.
 The final 48 shutdown/plugin cases and earlier 75-case consumer selection pass
 (76 unique cases), with server types/build passing. Fresh remote gates remain.
 Approval #17510 has passing latest-head CI and Greptile 5/5 at 0c7109c103, but
-Paperclip review identified persistent-failure backoff and duplicated PR matching
+Pilibala review identified persistent-failure backoff and duplicated PR matching
 that still require repair. Tool health remains the next new migration after
 these owning-PR repairs.
 
@@ -1308,7 +1308,7 @@ consumers and publication gates remain open. This is not a completed PR yet.
 
 Fresh remote inspection: approval queue #17510 at `0d3100665d` has no failed or
 pending checks. Plugin #17518 at `ba0b6752cd` has no failed checks and one pending
-Paperclip Review check. The full original inventory and #17490 E2E cancellation
+Pilibala Review check. The full original inventory and #17490 E2E cancellation
 failure remain required; no PR was merged.
 
 Health consumer follow-up: 72 access/email/GitHub/smoke-lab cases pass using a
@@ -1320,7 +1320,7 @@ build passes. The inventory SQL uses the existing company/enabled index with
 
 ## Health publication and next chat boundary
 
-Tool health is [#17554](https://github.com/paperclipai/paperclip/pull/17554), head
+Tool health is [#17554](https://github.com/pilibalaai/pilibala/pull/17554), head
 `2ca12f806399cfcef1a474453301534f4b96c1ef`, stacked on #17518. Local workspace
 checks/build and 770 selected tests pass. CI run 40165710347 is confirmed live;
 Greptile and security review are running. This is not final acceptance.
@@ -1345,7 +1345,7 @@ before removing the backstop.
 
 Tool-health #17554 at `da4089960619d3da2112a4eed3cc7a3d97dbebf8` has passing
 Actions checks and fresh Greptile 5/5 after the failed-probe warning repair.
-Paperclip Review remains queued, so final acceptance is still open. Its PR body
+Pilibala Review remains queued, so final acceptance is still open. Its PR body
 now records 771 selected local tests and the outstanding gate. No PR was merged.
 
 
@@ -1359,7 +1359,7 @@ Local selected coverage is 639 unique passing tests, with workspace types/build
 passing before the final fair-batch addition. Final server typechecking and build
 also pass. Remote publication/gates remain open.
 
-The latest health Paperclip Review completed neutral, with a 4/5 assessment and
+The latest health Pilibala Review completed neutral, with a 4/5 assessment and
 follow-ups for cross-company backlog fairness and direct service-producer tests.
 These remain owning-PR work despite green Actions and Greptile 5/5. The same
 fairness defect was reproduced and repaired in the Discord worker. Shared helper
@@ -1368,14 +1368,14 @@ commit `e77979d4fc` is ready to carry into #17554. No PR is newly accepted or me
 
 ## Discord publication and health fairness repair
 
-Discord registration is [#17557](https://github.com/paperclipai/paperclip/pull/17557),
+Discord registration is [#17557](https://github.com/pilibalaai/pilibala/pull/17557),
 head `3755d7caced67589de474e0ca3e1b8b5b4e659c4`, based on #17554 and attached.
 It has 639 selected passing tests, workspace typecheck/build, and final server
 verification. CI run **40168371442** and review run **40168371311** are confirmed
 live on that head. Fresh CI and review remain required; no merge is authorized.
 The source and detailed producer audit are on the Discord child branch.
 
-The health parent Paperclip Review completed neutral with 4/5 at `da40899606`.
+The health parent Pilibala Review completed neutral with 4/5 at `da40899606`.
 It requests fair company batching and direct real-service producer coverage.
 The existing probes are already scoped by connection ID, so the review's concern
 about full inventory scans around each probe needs clarification rather than
@@ -1401,12 +1401,12 @@ isolated PostgreSQL databases, alongside the prior 22 fairness/health cases and
 fresh server typecheck/build. Initial fixture expectations and the retained-user
 DB setup failure are preserved in the health document. Publish these changes with
 the fair company selector, request fresh review, and propagate to Discord #17557.
-The Discord initial head has Greptile 5/5; its CI and Paperclip review were still
+The Discord initial head has Greptile 5/5; its CI and Pilibala review were still
 running when inspected. The remaining original inventory and #17490 failure
 remain open; no stack PR is merged or declared fully accepted.
 
 
-Discord's first Paperclip review (4/5) identified a dispatch-capacity issue shared
+Discord's first Pilibala review (4/5) identified a dispatch-capacity issue shared
 by health: 25 checks per 30 seconds delays a large already-due backlog. Health's
 actual-probe timestamp regression failed with a 30.7-second gap, then passed when
 only a remaining due batch receives a one-second continuation. All 22 health and
@@ -1429,7 +1429,7 @@ PR before publishing the Discord follow-up. Current local changes are not final
 acceptance. The original full inventory and remaining CI gates are still open.
 
 
-Company deletion prerequisite is [#17561](https://github.com/paperclipai/paperclip/pull/17561),
+Company deletion prerequisite is [#17561](https://github.com/pilibalaai/pilibala/pull/17561),
 head `4d721402d2`, based on #17554. Both new regressions failed first; all six
 cleanup-removal tests and server types/build pass after the fix. The chat owner
 removes company endpoints before agent purge in the same transaction. Other
@@ -1462,7 +1462,7 @@ review thread is resolved at parent head `e7c29e4840`; fresh review/CI still app
 Discord inherits that parent at `33954efd2e` and registers its company intent
 before the earlier cleanup. Seven producer integrations and all six cleanup cases
 pass on the merged branch. The 1,413 deselected broad chat cases are not passes.
-Health `f8ad26f0ff` now has fresh Greptile 5/5 and no failed checks; Paperclip Review
+Health `f8ad26f0ff` now has fresh Greptile 5/5 and no failed checks; Pilibala Review
 was still queued at the last inspection. The full goal remains active.
 
 
@@ -1503,12 +1503,12 @@ completion of the slice or the full stack. Master is refreshed at 0d73505098;
 final stack/master reconciliation remains required.
 
 Parent Discord #17557 at d3187f76a4 and company cleanup #17561 at e8febb30eb now
-have no failed or pending checks (Paperclip Review skipped). No merge was made.
+have no failed or pending checks (Pilibala Review skipped). No merge was made.
 The older #17490 E2E cancellation failure remains unresolved. The entire original
 inventory stays in scope, with voice the next separate reason after receivers.
 
 
-Receiver discovery is published and attached as [#17572](https://github.com/paperclipai/paperclip/pull/17572)
+Receiver discovery is published and attached as [#17572](https://github.com/pilibalaai/pilibala/pull/17572)
 at 643f4766227e15006b684d2cc7bea7ddd5cc2147, based on #17557. Its live CI run is
 40173962833; security and reviews are pending. All 218 selected local cases,
 workspace types and build pass. The next audit splits voice into five separate
@@ -1543,7 +1543,7 @@ is claimed. All remaining reasons, older #17490 failure, and final master
 reconciliation stay in scope.
 
 
-Live voice recovery is [#17576](https://github.com/paperclipai/paperclip/pull/17576),
+Live voice recovery is [#17576](https://github.com/pilibalaai/pilibala/pull/17576),
 head 8f5e861dbd, based on #17572. All 837 selected tests, workspace typecheck and
 build pass; remote checks and review remain required. The full local test command
 was stopped after repeated embedded PostgreSQL setup failures, not counted as a
@@ -1561,7 +1561,7 @@ fixture failures and local full-suite infrastructure limitations. Publication an
 latest-head review/check acceptance remain outstanding. Inbound admission cleanup,
 inbound history retention, and call reports remain separate next slices.
 
-Voice reply delivery is [#17578](https://github.com/paperclipai/paperclip/pull/17578),
+Voice reply delivery is [#17578](https://github.com/pilibalaai/pilibala/pull/17578),
 head 439d0a86eb75c129c30742a8cc24bf18e2a6ebf3, stacked on #17576. Local selected
 checks pass; remote acceptance is pending. Slice 23 starts the inbound admission
 cleanup audit in `2026-10-25-voice-inbound-cleanup-sleep-audit.md`. It explicitly
@@ -1590,11 +1590,11 @@ handoff, retention/deletion protection and safe same-account rotation are verifi
 All 205 selected tests, workspace types and build pass; publication and remote
 acceptance remain pending. History retention and call reports remain separate next
 slices. Parent #17578 at 90caaf3fa9 has no pending/failed checks and exact-head
-Greptile 5/5; the second Paperclip reviewer stopped before completion. The original
+Greptile 5/5; the second Pilibala reviewer stopped before completion. The original
 remaining inventory, #17490 E2E failure and final reconciliation remain in scope.
 
 
-Inbound cleanup is [#17580](https://github.com/paperclipai/paperclip/pull/17580),
+Inbound cleanup is [#17580](https://github.com/pilibalaai/pilibala/pull/17580),
 head 4b4bf2d8af6e08d3859ada4b720e7fbd3ea27e24, stacked on #17578. It is
 mergeable; CI 40181994295 and review 40181994134 are live with no initial failure.
 The final migration applies/replays and its backfill is tested twice. Slice 24
@@ -1622,7 +1622,7 @@ Next separate owner: voice call-report reconciliation. Preserve the existing
 provider diagnostics while removing scans with no eligible calls. Inspect
 completion semantics before treating a report marked available as fully settled.
 
-Slice 24 is published as [#17583](https://github.com/paperclipai/paperclip/pull/17583)
+Slice 24 is published as [#17583](https://github.com/pilibalaai/pilibala/pull/17583)
 at `9c38ddfe53`, based on #17580 `4f0364d269`. It is attached to this chat.
 CI/review are running; no merge. The next branch is
 `codex/sleep-25-voice-call-reports`, with its owner audit recorded separately.
@@ -1646,7 +1646,7 @@ parent #17580 has two new cleanup review findings. Neither is marked complete.
 The remaining chat duties, original ledger, #17490 E2E failure, and final
 master/stack reconciliation remain required. No stack merge is authorized.
 
-Slice 25 published as [#17586](https://github.com/paperclipai/paperclip/pull/17586).
+Slice 25 published as [#17586](https://github.com/pilibalaai/pilibala/pull/17586).
 Parent Discord test settlement and denial-latency repairs are propagated. At the
 report tip, 41 Discord tests and 138 full voice/app tests pass; unchanged report,
 cleanup and retention workers had 37 passing cases. CI/reviews remain required.
@@ -1823,12 +1823,12 @@ attempts; these are the next distinct reason. No new table or Cloud alarm policy
 is included. The [audit](2026-10-25-teams-consent-expiry-sleep-audit.md) records
 222 unique selected passing cases, workspace types/build, and initial fixture
 failures. Publication and fresh remote checks/review remain required.
-Parent #17586 Actions/security/Greptile pass at 250fca6cff; Paperclip Review is
+Parent #17586 Actions/security/Greptile pass at 250fca6cff; Pilibala Review is
 still running. The original full inventory, older E2E failure, deletion-policy
 finding and master reconciliation remain outstanding. No stack PR is merged.
 
 
-Slice 26 is published as [#17590](https://github.com/paperclipai/paperclip/pull/17590)
+Slice 26 is published as [#17590](https://github.com/pilibalaai/pilibala/pull/17590)
 at 5ddb4543ed, based on #17586. It is attached; remote gates remain required.
 Slice 27 begins the separate Teams abandoned transport-attempt audit. The full
 original inventory, older findings and final master reconciliation remain open.
@@ -1847,7 +1847,7 @@ support and report-query indexing. Fix at that parent and propagate before
 acceptance. All original remaining work and previous unresolved findings remain.
 
 
-Teams attempts are published as [#17592](https://github.com/paperclipai/paperclip/pull/17592).
+Teams attempts are published as [#17592](https://github.com/pilibalaai/pilibala/pull/17592).
 Voice report review repair 94c60683b8 adds the bounded report-window index and
 precise keyset pagination, with the single-active-writer contract explicit. The
 20,001-old-row cost regression failed before repair, then all 14 report tests,
@@ -1906,7 +1906,7 @@ reproduced. All 56 milestone/queue cases, 13 existing dependency cases and serve
 production types pass; four native cases were rerun after fixing external-test
 fixture cleanup. The audit preserves setup failures and provider-acceptance
 limits. No periodic projector has been removed yet. Fresh remote inspection
-still finds #17590 Paperclip Review queued, #17592 neutral, and #17490 E2E shard
+still finds #17590 Pilibala Review queued, #17592 neutral, and #17490 E2E shard
 3 plus aggregate failing. Those gates and all remaining original scope stay open.
 
 
@@ -1930,7 +1930,7 @@ remote gates/findings and final master reconciliation remain open.
 
 ## Slice 28 draft and publication/interaction coverage
 
-[Draft #17606](https://github.com/paperclipai/paperclip/pull/17606) is stacked on
+[Draft #17606](https://github.com/pilibalaai/pilibala/pull/17606) is stacked on
 #17592. It adds the lifecycle projector worker and covered producer signals;
 production registration and polling removal remain intentionally unfinished until
 the remaining producer audit is complete. Native progress stays a separate slice.
@@ -2028,7 +2028,7 @@ Verified selection at the combined tip:
 
 Fresh current-head rollup is saved at
 /tmp/sleep-stack-checks-after-drain-20261025.json. #17490 still fails E2E shard 3
-and aggregate at 31bcd19888. #17518 Paperclip Review remains pending. #17578 and
+and aggregate at 31bcd19888. #17518 Pilibala Review remains pending. #17578 and
 newer propagated heads have pending checks, with no failures in that snapshot.
 The inbound cleanup/company-deletion review and security finding is NOT repaired
 by this drain change; current pending checks do not discharge that finding.
@@ -2177,7 +2177,7 @@ Latest-head remote gates and parent failures remain open.
 
 ## Slice 29: native chat progress implementation
 
-PR [#17639](https://github.com/paperclipai/paperclip/pull/17639), branch
+PR [#17639](https://github.com/pilibalaai/pilibala/pull/17639), branch
 `codex/sleep-29-native-chat-progress`, parent #17606 at `ed76256b97`.
 Native event producers and existing eligibility notifications now wake a scoped
 worker. Progress leaves the chat timer; retained history becomes quiet. The
@@ -2212,7 +2212,7 @@ not shrink the remaining original checklist.
 
 ## Slice 30 gate and slice 31 projection checkpoint (2026-10-25)
 
-[#17647](https://github.com/paperclipai/paperclip/pull/17647) at
+[#17647](https://github.com/pilibalaai/pilibala/pull/17647) at
 `fee07f3fa8cbc489cb9bbf657a6065c6e00748c3` has all 53 checks passing,
 a fresh Greptile 5/5 review, and its fairness finding resolved. The pre-repair
 full chat/startup acceptance passed 1,486 cases; the bounded-candidate repair
@@ -2246,7 +2246,7 @@ remaining original recurring-server duty stay in scope. No merge occurred.
 
 ## Slice 31 native producer repairs
 
-Draft [#17649](https://github.com/paperclipai/paperclip/pull/17649) now covers
+Draft [#17649](https://github.com/pilibalaai/pilibala/pull/17649) now covers
 source lease cleanup and reusable-lease retirement, each with a reproduced
 missing notice and real writer transaction tests. All 36 selected native/notice
 cases pass. The owning audit distinguishes notice authority from the stronger
@@ -2258,10 +2258,10 @@ required. No stack PR has been merged.
 
 ## Slice 31 accepted checkpoint and slice 32 owner audit
 
-[#17649](https://github.com/paperclipai/paperclip/pull/17649) at
+[#17649](https://github.com/pilibalaai/pilibala/pull/17649) at
 `2384384eeec4f32d073242ebf597b81df2df1ccb` has all 53 checks passing,
 fresh Greptile 5/5, and no inline review findings. Full chat/startup acceptance
-passes all 1,505 cases on fresh `paperclip_sleep31_native_full_20261025_test`
+passes all 1,505 cases on fresh `pilibala_sleep31_native_full_20261025_test`
 (`/tmp/sleep31-native-full-chat.log`, 446.10 seconds, exit 0). The lease service
 passes 51 tests; focused native/notice acceptance passes 36; final server
 typecheck and build pass. This supersedes the earlier slice-31 pending statuses.
@@ -2291,7 +2291,7 @@ Full local acceptance, remote review/checks and publication are pending here.
 This supersedes the audit-only slice-32 status above. All older stack gates and
 every remaining original obligation remain required; no PR is merged.
 
-Slice 32 is now draft [#17651](https://github.com/paperclipai/paperclip/pull/17651).
+Slice 32 is now draft [#17651](https://github.com/pilibalaai/pilibala/pull/17651).
 Initial workspace types/build pass; full chat/startup acceptance passes 1,511 of
 1,512, with a prior retry-notice test fake-clock CONNECT_TIMEOUT retained and
 corrected. Initial CI passes 51 gates but fails a plugin test at a cron boundary
@@ -2323,7 +2323,7 @@ including outer rollback/commit, historical prefixes, and concurrent response
 commit. Existing Telegram acceptance also passes. Broad acceptance and fresh
 PR gates remain pending; no merge or full-stack completion is claimed.
 
-Slice 33 is [#17653](https://github.com/paperclipai/paperclip/pull/17653), draft
+Slice 33 is [#17653](https://github.com/pilibalaai/pilibala/pull/17653), draft
 and unmerged. Initial broad acceptance passed 1,523 tests with 14 skipped;
 workspace types/build passed. Review found that publication preparation could
 start another send after drain/standby/shutdown. Three regressions reproduced
@@ -2376,7 +2376,7 @@ is in progress. No remote gate or full-stack readiness claim is made yet.
 
 ## Slice 34 accepted head and slice 35 checkpoint
 
-[#17656](https://github.com/paperclipai/paperclip/pull/17656) at
+[#17656](https://github.com/pilibalaai/pilibala/pull/17656) at
 `43900c1f94500af4c4de1987f9608ac4e12feae6` passes all 53 remote checks,
 fresh Greptile 5/5, and has zero review threads. Final chat/publication/startup
 acceptance passes all 1,557 tests with no skips in 514.70 seconds. Workspace
@@ -2405,7 +2405,7 @@ See the terminal-response audit for all retained failures and scoped evidence.
 
 ## Slice 35 accepted; slice 36 wired
 
-Slice 35 is [#17661](https://github.com/paperclipai/paperclip/pull/17661), head
+Slice 35 is [#17661](https://github.com/pilibalaai/pilibala/pull/17661), head
 `3d7c79c262f92563555b278d101de8240e6f011b`. Complete local chat/publication/startup
 acceptance passed all 1,571 tests in 517.41 seconds. All 53 remote checks passed,
 and fresh Greptile is 5/5 with no findings. The PR remains draft and unmerged.
@@ -2427,7 +2427,7 @@ and candidate-index evidence passed. Full local acceptance and remote PR gates
 remain required. See `2026-10-25-github-review-check-sleep-audit.md` for the failed
 attempts, repairs, exact boundary, and external reconciliation limitation.
 
-Slice 36 is draft [#17662](https://github.com/paperclipai/paperclip/pull/17662).
+Slice 36 is draft [#17662](https://github.com/pilibalaai/pilibala/pull/17662).
 Its initial full local run had 13 failures and 1,569 passes, and CI failed an
 inherited login-cleanup fixture. The quiet observation and fake-clock settlement
 repairs are documented in its owner audit. The corrected selections passed 23
@@ -2462,7 +2462,7 @@ PR gates are still pending. No PR in this stack was merged.
 
 ## Slice 37 accepted; slice 38 direct webhook recovery
 
-[#17664](https://github.com/paperclipai/paperclip/pull/17664), head
+[#17664](https://github.com/pilibalaai/pilibala/pull/17664), head
 `0a25cae9ef10a8714801d72ac798823de335e050`, has all 53 remote checks
 passing and fresh Greptile 5/5 without actionable findings. Complete local
 chat/publication/startup acceptance passed 1,592 tests in 556.33 seconds.
@@ -2510,7 +2510,7 @@ No full-run success or stack completion is inferred from that focused repair.
 
 ## Slice 38 accepted; slice 39 retry cancellation
 
-[#17666](https://github.com/paperclipai/paperclip/pull/17666) at
+[#17666](https://github.com/pilibalaai/pilibala/pull/17666) at
 `d8e1bd97f530fc7a5119549a35b871b7b3d9f737` has all 53 remote checks
 passing, fresh Greptile 5/5, and its review finding resolved. The PR remains
 draft and unmerged. Its earlier local failure and focused repair remain recorded.
@@ -2540,7 +2540,7 @@ from the local selection. The double now exposes the method, and new assertions
 verify scheduler enablement and periodic-reaper exclusion. All 48 startup tests
 pass in 5.34 seconds. This is a test-only repair; fresh head CI/review is required.
 
-Slice 39 is draft [#17667](https://github.com/paperclipai/paperclip/pull/17667),
+Slice 39 is draft [#17667](https://github.com/pilibalaai/pilibala/pull/17667),
 initial head `bd490ee50b303187f0ae6f8fe2aa95477d66a40f`, targeting slice 38.
 Its initial review was 5/5. The startup repair is now pushed at `ecef7776a4`;
 fresh CI and review are required. No merge or full-stack acceptance is claimed.
@@ -2555,7 +2555,7 @@ on separate external PostgreSQL databases before any production behavior changes
 
 ## Slice 39 accepted; slice 40 captured instruction commits
 
-[#17667](https://github.com/paperclipai/paperclip/pull/17667), head
+[#17667](https://github.com/pilibalaai/pilibala/pull/17667), head
 `ecef7776a4b38e0c7e0b86d7009fcd01ed7658e5`, has all 53 checks passing,
 fresh Greptile 5/5, and no unresolved threads. The startup fixture failure and
 repair remain recorded. This PR is still draft and unmerged.
@@ -2624,19 +2624,19 @@ Slice 43 final local acceptance: 120 owner/startup cases plus 209 affected consu
 
 ## Slice 43 accepted; slice 44 obsolete policy reviews
 
-Cancelled workspace preservation is draft [#17677](https://github.com/paperclipai/paperclip/pull/17677) at `33567f91551d60053722c013f0d9b402c1db29e6`. All 53 checks passed, Greptile reviewed that head at 5/5, and there are no unresolved review threads. It remains unmerged.
+Cancelled workspace preservation is draft [#17677](https://github.com/pilibalaai/pilibala/pull/17677) at `33567f91551d60053722c013f0d9b402c1db29e6`. All 53 checks passed, Greptile reviewed that head at 5/5, and there are no unresolved review threads. It remains unmerged.
 
 The native finalization audit found separate historical unsafe-export recovery, obsolete policy-review cleanup, automatic completion-review cleanup, effect delivery, committed response repair, evidence reassessment and workspace/result finalization. Slice 44 owns obsolete policy-review cleanup only. See [its audit](2026-10-25-obsolete-policy-review-sleep-audit.md). The owner/startup selection passes 116 tests after repairing a reproduced notification serialization bug. Consumer and final workspace verification remain pending. Older stack gates and final master reconciliation remain outstanding.
 
 ## Slice 44 accepted; slice 45 automatic completion reviews
 
-Obsolete policy-review cleanup is draft [#17679](https://github.com/paperclipai/paperclip/pull/17679) at `e671c66bba6e9a42aa570826e6f3420dba199399`. All 53 checks pass, Greptile reviewed that head at 5/5, and no unresolved threads remain. It is mergeable and unmerged.
+Obsolete policy-review cleanup is draft [#17679](https://github.com/pilibalaai/pilibala/pull/17679) at `e671c66bba6e9a42aa570826e6f3420dba199399`. All 53 checks pass, Greptile reviewed that head at 5/5, and no unresolved threads remain. It is mergeable and unmerged.
 
 Slice 45 owns automatic completion-review retirement only. It preserves direct finalizer ordering and the durable withdrawal trigger for reassessment. The worker's raw lookup propagates failures so failed discovery cannot look empty. See [the audit](2026-10-25-automatic-completion-review-sleep-audit.md). All 370 local owner/startup/consumer tests pass, as do workspace types/build. Exact-head remote gates remain required. Older stack CI/review gaps, master reconciliation and the remaining original duties are still outstanding.
 
 ## Slice 45 accepted; slice 46 unsafe-export audit
 
-[#17680](https://github.com/paperclipai/paperclip/pull/17680) at
+[#17680](https://github.com/pilibalaai/pilibala/pull/17680) at
 `be668fb975f119efeb4830405d4bb1ab65791f87` has 53 successful remote gates,
 Greptile 5/5 at that head, and no unresolved review threads. It remains draft
 and unmerged. The unsafe-export baseline passed all 51 tests on a fresh external
@@ -2669,7 +2669,7 @@ in this stack has been merged, and the original remaining scope is unchanged.
 
 ## Slice 46 published; slice 47 pending-effects audit
 
-Unsafe-export recovery is draft [#17687](https://github.com/paperclipai/paperclip/pull/17687)
+Unsafe-export recovery is draft [#17687](https://github.com/pilibalaai/pilibala/pull/17687)
 at `b9fe9e2e40ab48104cf18822b5302a740d1957a7`, stacked on #17680. Workspace types
 and build passed. Greptile reviewed that exact head at 5/5 with no actionable
 findings; full remote CI remains active. This is not acceptance or merge proof.
@@ -2722,7 +2722,7 @@ acceptance are the next gates; local success does not satisfy the full stack.
 
 ## Slice 47 published; slice 48 response-owner audit
 
-Slice 47 is draft [#17690](https://github.com/paperclipai/paperclip/pull/17690),
+Slice 47 is draft [#17690](https://github.com/pilibalaai/pilibala/pull/17690),
 head `56c3601ea605b333141e86e0a810ed790fb6ce48`, based on #17687. Its final local
 checks passed; remote CI and Greptile are running. No merge or remote acceptance
 is claimed yet.
@@ -2752,7 +2752,7 @@ fresh review; the gate must not be bypassed.
 
 ## Slice 47 accepted
 
-[#17690](https://github.com/paperclipai/paperclip/pull/17690) at exact head
+[#17690](https://github.com/pilibalaai/pilibala/pull/17690) at exact head
 `56c3601ea605b333141e86e0a810ed790fb6ce48` has all 53 checks passing, Greptile 5/5
 with no actionable findings or review threads, and a mergeable parent. Its PR body
 records those gates. It remains draft and unmerged. Evidence is retained in
@@ -3046,7 +3046,7 @@ audit, full acceptance, publication, remote gates and all other original duties
 remain incomplete. Nothing merged; the goal remains active.
 
 
-Slice 50 is draft [#17709](https://github.com/paperclipai/paperclip/pull/17709),
+Slice 50 is draft [#17709](https://github.com/pilibalaai/pilibala/pull/17709),
 based on #17702. Initial head 91a6c14170 passed all 52 CI checks; Greptile 4/5
 found direct claim-release writers missing reassessment notifications. Six real
 regressions reproduced the gap. Task-scoped signals now cover their existing
@@ -3149,7 +3149,7 @@ Full workspace acceptance, PR publication/review, older gates and every remainin
 duty stay open. No merge has occurred.
 
 
-Slice 51 publication: [#17717](https://github.com/paperclipai/paperclip/pull/17717)
+Slice 51 publication: [#17717](https://github.com/pilibalaai/pilibala/pull/17717)
 is draft on #17709. Published head `8c62a6b0c0` passed workspace types/build and
 received Greptile 5/5, but three CI gates failed: two tests retained the old
 heartbeat-owned maintenance drain, and the Copilot transport identity was stale.
@@ -3164,14 +3164,14 @@ workspace copy-back/validation; accepted-result commit/projection; and resource
 settlement after finalization. Current committed-history upkeep repeatedly calls
 finalization and best-effort cleanup, including swallowed resource-release
 failures. A completed result cannot be used as proof that those residual duties
-are finished. Audit first-result publication in `paperclip-control-plane-port.ts`,
+are finished. Audit first-result publication in `pilibala-control-plane-port.ts`,
 workspace operation writes, durable workspace-owner release, retry updates and
 cleanup completion before disabling their existing recovery paths. No migration
 of these next duties is claimed by slice 51.
 
 ## 2026-10-26: verified slice 51 and workspace-finalization migration
 
-[#17717](https://github.com/paperclipai/paperclip/pull/17717) is verified at
+[#17717](https://github.com/pilibalaai/pilibala/pull/17717) is verified at
 `d0036fce3e039e91ab2bf2602e3e6a87a4476491`: all 56 remote check/status entries
 passed or intentionally skipped, Greptile 5/5 on that head, and no unresolved
 review threads. It remains draft/open and unmerged. The older local full-suite
@@ -3190,7 +3190,7 @@ master is `a1f77821b9cd5c9c846fdf7a0fa5cc620ad2b6bb`; stack-base propagation is
 still outstanding. Older gates (#17490, #17572, #17576, #17580) and the rest of the
 requested recurring-server inventory remain active. No merge is authorized.
 
-Slice 52 publication: [#17734](https://github.com/paperclipai/paperclip/pull/17734)
+Slice 52 publication: [#17734](https://github.com/pilibalaai/pilibala/pull/17734)
 is draft on #17717. Workspace types/build passed. The initial broad command had
 582 passes and 88 board-action failures from incorrectly shared external test
 fixtures; it is not a pass. Separate databases then pass all 203 cases in four
@@ -3238,7 +3238,7 @@ all prior gate, suppression-audit and remaining-duty obligations remain open.
 
 ## Slice 52 accepted; slice 53 implementation checkpoint
 
-Slice 52 [#17734](https://github.com/paperclipai/paperclip/pull/17734) is verified
+Slice 52 [#17734](https://github.com/pilibalaai/pilibala/pull/17734) is verified
 at `d5c540b1c0df9aba35262ba121c651806bbca161`: all current checks/statuses pass or
 intentionally skip, Greptile 5/5, both review threads resolved. The preceding
 startup timeout received one justified retry which passed. The interrupted local
@@ -3257,7 +3257,7 @@ audits and remaining inventory duties stay open. Nothing was merged.
 
 ## Slice 53 accepted; slice 54 projection repair
 
-Slice 53 [#17748](https://github.com/paperclipai/paperclip/pull/17748) is verified at
+Slice 53 [#17748](https://github.com/pilibalaai/pilibala/pull/17748) is verified at
 `1fc2e8c5b61173203abbd50b1b03346abc629218`: all 53 remote checks/status entries
 passed, Greptile 5/5 and zero unresolved threads. Local evidence includes 250
 passing tests, workspace typechecking and build. The embedded-cluster executor
@@ -3277,7 +3277,7 @@ prior failed gates, suppression audits and all remaining duties stay in scope.
 
 ## Slice 54 accepted; slice 55 recovery-notice resolution
 
-Slice 54 [#17752](https://github.com/paperclipai/paperclip/pull/17752) is verified at
+Slice 54 [#17752](https://github.com/pilibalaai/pilibala/pull/17752) is verified at
 `f98e6b5b57558c78ba111170ab3d8d19ff667827`: all 53 checks/status entries passed,
 Greptile 5/5, zero unresolved threads, 400 passing local cases, workspace types
 and build. The PR remains draft/open and unmerged. Intermediate failures and the
@@ -3314,7 +3314,7 @@ gate or suppression debts.
 
 ## Slice 56 gates; slice 57 Muse terminal settlement
 
-Slice 56 [#17772](https://github.com/paperclipai/paperclip/pull/17772), at
+Slice 56 [#17772](https://github.com/pilibalaai/pilibala/pull/17772), at
 `4d1bc93840ae4bd238814d73249325246f69d76e`, has a successful authoritative Actions
 run and Greptile 5/5 with zero unresolved threads. Its external Entire Gates
 check still requires trail approval and draft assessment. The superseded run's
@@ -3337,7 +3337,7 @@ migrate, rather than a false claim of whole-instance quiet.
 
 ## Slice 57 acceptance and slice 58 environment settlement
 
-Slice 57 [#17793](https://github.com/paperclipai/paperclip/pull/17793) is published
+Slice 57 [#17793](https://github.com/pilibalaai/pilibala/pull/17793) is published
 at `be8f3284c2c8a05903f2eca000ad86d046780fec`. Latest-head checks show 53 success
 and one neutral result, and the PR is mergeable. Greptile is 5/5 with no unresolved
 threads. One failed-job rerun recovered initial runner shutdowns and missing or
@@ -3369,7 +3369,7 @@ findings. Nothing has been merged into master.
 
 Three review/compatibility repairs were made at their owning stack boundaries:
 
-- Slice 01 / [#17443](https://github.com/paperclipai/paperclip/pull/17443):
+- Slice 01 / [#17443](https://github.com/pilibalaai/pilibala/pull/17443):
   a successfully read future custom-image expiry now runs at its saved deadline.
   A five-second deadline and an earlier committed replacement previously waited
   for the 30-second retry floor. Failure and unfinished-overdue work retain
@@ -3377,7 +3377,7 @@ Three review/compatibility repairs were made at their owning stack boundaries:
   The new unit and real-producer regressions failed first; root verification
   passed 47 custom-image cases and 39 startup cases. Slice 02 passed 122
   custom-image, secret-proposal and startup cases.
-- Slice 17 / [#17518](https://github.com/paperclipai/paperclip/pull/17518):
+- Slice 17 / [#17518](https://github.com/pilibalaai/pilibala/pull/17518):
   plugin inventory notification batching is now an explicit, optional shared
   deadline contract. Only the plugin scheduler opts into its existing bounded
   batching latency; consumers without the option reconcile notifications
@@ -3386,7 +3386,7 @@ Three review/compatibility repairs were made at their owning stack boundaries:
   job-status writes without making every successful expiry pass a cooldown.
   Newly changed plugin configuration retains bounded batching latency. Idle
   queues still disarm. The focused owner run passed 76 cases.
-- Slice 51 / [#17717](https://github.com/paperclipai/paperclip/pull/17717):
+- Slice 51 / [#17717](https://github.com/pilibalaai/pilibala/pull/17717):
   HTTP readiness and later worker registration no longer wait for retained
   physical-session cleanup. The existing scheduler-work and delivery owners
   retain the original cleanup promise through idle drain and shutdown. A held

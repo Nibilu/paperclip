@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { assertValidAdapterLoginCapability } from "@paperclipai/adapter-utils";
+import { assertValidAdapterLoginCapability } from "@pilibalaai/adapter-utils";
 import { listServerAdapters, requireServerAdapter } from "./registry.js";
-import * as executionTarget from "@paperclipai/adapter-utils/execution-target";
+import * as executionTarget from "@pilibalaai/adapter-utils/execution-target";
 import { BUILTIN_ADAPTER_TYPES } from "./builtin-adapter-types.js";
-import { QUALIFIED_ACPX_PROFILES, KIMI_DISTRIBUTION_CLOSURE_SHA256 } from "../vendor/paperclip-runner/index.js";
+import { QUALIFIED_ACPX_PROFILES, KIMI_DISTRIBUTION_CLOSURE_SHA256 } from "../vendor/pilibala-runner/index.js";
 import { assertHarnessTestPassed } from "../services/agent-harness-verification.js";
 
 const { probeInstallation, probeGrokInstallation, probePiInstallation, probeKimiInstallation, probeKimiModels, probeKimiRemote, verifyApiKey } = vi.hoisted(() => ({
@@ -17,7 +17,7 @@ const { probeInstallation, probeGrokInstallation, probePiInstallation, probeKimi
 }));
 vi.mock("../services/ai-api-key-test.js", () => ({ validateAiApiKey: verifyApiKey }));
 vi.mock("../services/kimi-connection-probe.js", () => ({ probeKimiExecutionTarget: probeKimiRemote }));
-vi.mock("../vendor/paperclip-runner/live/index.js", () => ({
+vi.mock("../vendor/pilibala-runner/live/index.js", () => ({
   probeAcpxClaudeInstallation: probeInstallation,
   probeAcpxGrokInstallation: probeGrokInstallation,
   probeAcpxPiInstallation: probePiInstallation,
@@ -84,7 +84,7 @@ describe("built-in runtime connection tool delivery", () => {
     ["kimi_local", "environment"],
     ["openclaw_gateway", "invocation_context"],
     ["opencode_local", "environment"],
-    ["paperclip_runner", "environment"],
+    ["pilibala_runner", "environment"],
     ["pi_local", "environment"],
     ["process", "environment"],
     ["http", "invocation_context"],
@@ -106,14 +106,14 @@ describe("built-in runtime connection tool delivery", () => {
 
 describe("native Cursor Cloud environment checks", () => {
   afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
-  const context = { companyId: "company-test", adapterType: "paperclip_runner",
+  const context = { companyId: "company-test", adapterType: "pilibala_runner",
     config: { provider: "cursor_cloud", model: "caller-model", repoUrl: "https://github.com/acme/repo", env: { CURSOR_API_KEY: "bound-cloud-key" } } };
 
   it("checks account access without a prompt and makes unavailable model attestation explicit", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://callback.example.test");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://callback.example.test");
     const fetch = vi.fn(async (url: unknown) => String(url).startsWith("https://callback.example.test/") ? new Response(null, { status: 401 }) : new Response(JSON.stringify({ items: [{ id: "caller-model", displayName: "Caller model" }] }), { headers: { "Content-Type": "application/json" } }));
     vi.stubGlobal("fetch", fetch);
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!(context);
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!(context);
     expect(result.status).toBe("warn");
     expect(result.checks.map(check => check.code)).toEqual(["cursor_cloud_account_ready", "cursor_cloud_model_listed", "cursor_cloud_model_identity_unverified"]);
     expect(fetch).toHaveBeenCalledWith("https://api.cursor.com/v1/models", expect.objectContaining({ method: "GET", headers: expect.objectContaining({ Authorization: "Bearer bound-cloud-key" }) }));
@@ -122,18 +122,18 @@ describe("native Cursor Cloud environment checks", () => {
   });
 
   it.each([undefined, "http://localhost:3100", "https://callback.example.test/path"])("rejects missing or invalid public callback origin %s before provider reads", async origin => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", origin);
+    vi.stubEnv("PILIBALA_PUBLIC_URL", origin);
     const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!(context);
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!(context);
     expect(result.status).toBe("fail");
     expect(result.checks[0]?.code).toBe("cursor_cloud_public_relay_unavailable");
     expect(fetch).not.toHaveBeenCalled();
   });
 
   it("reports an unreachable callback before checking provider credentials", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://callback.example.test");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://callback.example.test");
     const fetch = vi.fn(async () => { throw new Error("network unavailable"); }); vi.stubGlobal("fetch", fetch);
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!(context);
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!(context);
     expect(result.checks[0]?.code).toBe("cursor_cloud_public_relay_unavailable");
     expect(fetch).toHaveBeenCalledTimes(1);
   });
@@ -141,9 +141,9 @@ describe("native Cursor Cloud environment checks", () => {
   it("rejects remote controllers and missing credentials before provider reads", async () => {
     const fetch = vi.fn();
     vi.stubGlobal("fetch", fetch);
-    const remote = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context, executionTarget: { kind: "remote", transport: "ssh", remoteCwd: "/workspace", ssh: {} } as never });
+    const remote = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context, executionTarget: { kind: "remote", transport: "ssh", remoteCwd: "/workspace", ssh: {} } as never });
     expect(remote.checks[0]?.code).toBe("cursor_cloud_local_controller_required");
-    const missing = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context, config: { ...context.config, env: {} } });
+    const missing = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context, config: { ...context.config, env: {} } });
     expect(missing.checks[0]?.code).toBe("cursor_cloud_api_key_missing");
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -163,7 +163,7 @@ describe("native ACPX environment checks", () => {
 
   const context = {
     companyId: "company-test",
-    adapterType: "paperclip_runner",
+    adapterType: "pilibala_runner",
     config: { provider: "acpx", acpxAgent: "claude", model: "claude-sonnet-5" },
   };
 
@@ -171,12 +171,12 @@ describe("native ACPX environment checks", () => {
     const model = "explicit-kimi-model";
     authorizeKimi(model);
     const config = { provider: "acpx", acpxAgent: "kimi", model };
-    const missing = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context, config });
+    const missing = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context, config });
     expect(missing.status).toBe("fail");
     expect(missing.checks[0].code).toBe("KIMI_AUTH_REQUIRED");
     expect(probeKimiInstallation).not.toHaveBeenCalled();
 
-    const ready = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context, config: { ...config, env: { KIMI_API_KEY: "fixture-key" } } });
+    const ready = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context, config: { ...config, env: { KIMI_API_KEY: "fixture-key" } } });
     expect(ready.status).toBe("pass");
     expect(probeKimiRemote).toHaveBeenCalledExactlyOnceWith("fixture-key", undefined, model, { companyId: context.companyId });
     expect(probeKimiInstallation).not.toHaveBeenCalled();
@@ -190,7 +190,7 @@ describe("native ACPX environment checks", () => {
     const model = "explicit-kimi-model";
     authorizeKimi(model);
     probeKimiRemote.mockRejectedValue(Object.assign(new Error("The Kimi Code credential was rejected by the model catalog."), { code: "KIMI_AUTH_REQUIRED" }));
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context,
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context,
       config: { provider: "acpx", acpxAgent: "kimi", model, env: { KIMI_API_KEY: "fixture-key" } },
     });
     expect(result.status).toBe("fail");
@@ -202,7 +202,7 @@ describe("native ACPX environment checks", () => {
     authorizeKimi(model);
     const runner = { execute: vi.fn() };
     const target = { kind: "remote" as const, transport: "sandbox" as const, remoteCwd: "/workspace", providerKey: "test", runner };
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context,
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context,
       config: { provider: "acpx", acpxAgent: "kimi", model, env: { KIMI_API_KEY: "fixture-key" } },
       executionTarget: target,
     });
@@ -215,7 +215,7 @@ describe("native ACPX environment checks", () => {
   });
 
   it("verifies a native Claude key without the global CLI or a model prompt", async () => {
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context,
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context,
       config: { ...context.config, env: { ANTHROPIC_API_KEY: "test-key" } },
     });
     expect(result.status).toBe("pass");
@@ -226,7 +226,7 @@ describe("native ACPX environment checks", () => {
   it.each(["verified", "rejected", "unavailable", "missing", "managed"])("keeps remote Grok adoption tied to account verification: %s", async state => {
     if (state === "rejected") verifyApiKey.mockRejectedValue({ details: { code: "ai_connection_api_key_rejected" } });
     if (state === "unavailable") verifyApiKey.mockRejectedValue(new Error("Provider unavailable"));
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context,
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context,
       config: { provider: "acpx", acpxAgent: "grok", model: "grok-4.7",
         env: state === "missing" ? {} : { XAI_API_KEY: "fixture-xai-key" },
         ...(state === "managed" ? { managedAiConnection: { method: "api_key" } } : {}) },
@@ -243,7 +243,7 @@ describe("native ACPX environment checks", () => {
 
   it.each(["ai_connection_api_key_rejected", "ai_connection_verification_failed"])("fails setup on %s", async code => {
     verifyApiKey.mockRejectedValue({ details: { code } });
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context,
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context,
       config: { ...context.config, env: { ANTHROPIC_API_KEY: "test-key" } },
     });
     expect(result.status).toBe("fail");
@@ -251,7 +251,7 @@ describe("native ACPX environment checks", () => {
   });
 
   it.each(["ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY"])("preserves the supplementary probe for custom routing via %s", async name => {
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context,
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context,
       config: { ...context.config, env: { ANTHROPIC_API_KEY: "test-key", [name]: "configured" } },
     });
     expect(verifyApiKey).not.toHaveBeenCalled();
@@ -260,7 +260,7 @@ describe("native ACPX environment checks", () => {
 
   it("reports unsupported local platforms before a successful CLI login can mask them", async () => {
     probeInstallation.mockRejectedValue(new Error("ACPX Claude requires a supported runtime platform"));
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!(context);
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!(context);
     expect(result.status).toBe("fail");
     expect(result.checks).toEqual([expect.objectContaining({
       code: "acpx_runtime_unavailable",
@@ -275,7 +275,7 @@ describe("native ACPX environment checks", () => {
     ["grok", "grok-4.7", "aarch64", "fail"],
     ["pi", "openrouter/deepseek/deepseek-v4-flash-0731", "aarch64", "fail"],
   ])("checks the selected remote %s architecture %s without widening other providers", async (agent, model, architecture, status) => {
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context,
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context,
       config: { provider: "acpx", acpxAgent: agent, model },
       executionTarget: { kind: "remote", transport: "sandbox", remoteCwd: "/workspace", providerKey: "test",
         runner: { execute: vi.fn().mockResolvedValue({ exitCode: 0, timedOut: false, stdout: `Linux\n${architecture}\n` }) } },
@@ -286,21 +286,21 @@ describe("native ACPX environment checks", () => {
   });
 
   it("identifies an incomplete installation and gives the operator a repair", async () => {
-    probeInstallation.mockRejectedValue(Object.assign(new Error("The Claude ACP runtime package is missing. Reinstall or rebuild Paperclip."), { code: "ACPX_RUNTIME_PACKAGE_MISSING" }));
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!(context);
+    probeInstallation.mockRejectedValue(Object.assign(new Error("The Claude ACP runtime package is missing. Reinstall or rebuild Pilibala."), { code: "ACPX_RUNTIME_PACKAGE_MISSING" }));
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!(context);
     expect(result.status).toBe("fail");
     expect(result.checks[0]).toMatchObject({ code: "acpx_runtime_package_missing", message: expect.stringContaining("Reinstall or rebuild") });
   });
 
   it("requires a successful installed runtime probe", async () => {
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!(context);
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!(context);
     expect(result.status).toBe("pass");
     expect(probeInstallation).toHaveBeenCalledWith(context.config.model);
   });
 
   it.each([true, false])("checks Grok's own installation readiness (%s)", async (ready) => {
     if (!ready) probeGrokInstallation.mockRejectedValueOnce(new Error("Grok executable digest mismatch"));
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({
       ...context,
       config: { provider: "acpx", acpxAgent: "grok", model: "grok-4.7" },
     });
@@ -312,7 +312,7 @@ describe("native ACPX environment checks", () => {
   it.each([true, false])("checks qualified Pi's own installation readiness (%s)", async (ready) => {
     if (!ready) probePiInstallation.mockRejectedValueOnce(new Error("Pi installation integrity mismatch"));
     const model = "openrouter/deepseek/deepseek-v4-flash-0731";
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({
       ...context,
       config: { provider: "acpx", acpxAgent: "pi", model },
     });
@@ -324,7 +324,7 @@ describe("native ACPX environment checks", () => {
 
   it("does not use the host platform to reject a remote environment", async () => {
     vi.spyOn(process, "platform", "get").mockReturnValue("darwin");
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({
       ...context,
       executionTarget: {
         kind: "remote", transport: "sandbox", remoteCwd: "/workspace", providerKey: "test",
@@ -358,7 +358,7 @@ describe("native ACPX environment checks", () => {
     const probe = vi.spyOn(executionTarget, "runAdapterExecutionTargetShellCommand").mockResolvedValue({
       exitCode: 0, timedOut: false, stdout, stderr: "", signal: null, pid: null, startedAt: new Date(0).toISOString(),
     });
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context, executionTarget: sshTarget });
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context, executionTarget: sshTarget });
     expect(result.status).toBe(status);
     expect(probe).toHaveBeenCalledWith(expect.any(String), sshTarget, "uname -s && uname -m", {
       cwd: "/workspace", env: {}, timeoutSec: 15,
@@ -372,14 +372,14 @@ describe("native ACPX environment checks", () => {
       exitCode: failure === "exit" ? 1 : 0, timedOut: failure === "timeout",
       stdout: "Linux\nx86_64\n", stderr: "", signal: null, pid: null, startedAt: new Date(0).toISOString(),
     });
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({ ...context, executionTarget: sshTarget });
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({ ...context, executionTarget: sshTarget });
     expect(result.status).toBe("fail");
     expect(result.checks[0].code).toBe("acpx_runtime_unavailable");
   });
 });
 
 function authorizeKimi(model: string) {
-  vi.stubEnv("PAPERCLIP_ACPX_CANDIDATE_ADMISSION", JSON.stringify({ schema: "paperclip.acpx-candidate-admission.v1",
+  vi.stubEnv("PILIBALA_ACPX_CANDIDATE_ADMISSION", JSON.stringify({ schema: "pilibala.acpx-candidate-admission.v1",
     companyId: "company-test", agent: "kimi", model, profileDigest: QUALIFIED_ACPX_PROFILES.kimi.commandDigest,
     platform: "linux", architecture: "x64", nativeClosureDigest: `sha256:${KIMI_DISTRIBUTION_CLOSURE_SHA256["linux-x64"]}`,
     expiresAt: Date.now() + 60_000 }));
@@ -391,10 +391,10 @@ describe("plugin Runner-task environment checks", () => {
     { provider: "acpx", acpxAgent: "claude", model: "claude-opus-5-5" },
   ])("requires a managed AI connection before any task operation: %j", async config => {
     const runnerTask = vi.fn();
-    const result = await requireServerAdapter("paperclip_runner").testEnvironment!({ companyId: "company-test", adapterType: "paperclip_runner", config,
+    const result = await requireServerAdapter("pilibala_runner").testEnvironment!({ companyId: "company-test", adapterType: "pilibala_runner", config,
       executionTarget: { kind: "remote", transport: "sandbox", remoteCwd: ".", leaseId: "probe-lease",
         runnerTaskProbe: { runId: "probe-run", sessionId: "probe-session" }, runnerTask } as never });
-    expect(result).toMatchObject({ adapterType: "paperclip_runner", status: "fail",
+    expect(result).toMatchObject({ adapterType: "pilibala_runner", status: "fail",
       checks: [{ code: "ai_connection_required", level: "error", message: expect.stringContaining("requires a managed AI connection") }] });
     expect(runnerTask).not.toHaveBeenCalled();
     expect(() => assertHarnessTestPassed(result)).toThrow(expect.objectContaining({ code: "ai_connection_required" }));

@@ -2,8 +2,8 @@ import { getTableName } from "drizzle-orm";
 import { taskWatchdogService } from "../task-watchdogs.js";
 import { readIdleIssueSchedule } from "../idle-issue-schedule.js";
 import { describe, expect, it } from "vitest";
-import type { Db } from "@paperclipai/db";
-import { PROVIDER_QUOTA_MONITOR_SERVICE_NAME } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { PROVIDER_QUOTA_MONITOR_SERVICE_NAME } from "@pilibalaai/shared";
 import { readIdleRetrySchedule } from "./idle-retry-schedule.js";
 import { readIdleQuotaSchedule } from "./idle-quota-schedule.js";
 import { bindIdleDeadlineOwner } from "../idle-deadline-owner.js";
@@ -81,7 +81,7 @@ describe("owned recovery deadline inspection", () => {
     const row = retry();
     const identity = { ...row.source, processPid: 42, processGroupId: 42,
       processStartedAt: new Date(now - 2000), controllerBootId: "boot" };
-    const receipt = { schema: "paperclip.legacy-process-settlement.v1", runId: identity.id,
+    const receipt = { schema: "pilibala.legacy-process-settlement.v1", runId: identity.id,
       companyId: identity.companyId, agentId: identity.agentId, runtimeMode: "legacy", targetKind: "local",
       controllerBootId: identity.controllerBootId, processPid: identity.processPid, processGroupId: identity.processGroupId,
       processStartedAt: identity.processStartedAt.toISOString(), finishedAt: identity.finishedAt.toISOString(), status: identity.status };

@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import {
   activityLog, agents, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRunEvents, heartbeatRuns,
   issueRecoveryActions, issues, nativeRunFinalizations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { confirmNativeControllerStopped, NATIVE_CONTROLLER_HOST_UNVERIFIED, requestNativeControllerStopConfirmation }
   from "./native-controller-host-recovery.js";
@@ -16,7 +16,7 @@ describe("native controller rows saved before their host was recorded", () => {
   let db: ReturnType<typeof createDb>;
 
   beforeAll(async () => {
-    temporary = await startEmbeddedPostgresTestDatabase("paperclip-native-controller-host-");
+    temporary = await startEmbeddedPostgresTestDatabase("pilibala-native-controller-host-");
     db = createDb(temporary.connectionString);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
   afterAll(async () => temporary?.cleanup());
@@ -37,7 +37,7 @@ describe("native controller rows saved before their host was recorded", () => {
   }
 
   it("records each use of the single-host fallback in the run log", async () => {
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", "");
+    vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", "");
     const { companyId, agentId, runId, coordinator } = await seed();
     const decision = await evaluateNativeControllerTakeover({ owner: coordinator, now: new Date() });
     expect(decision).toMatchObject({ allowed: true, legacyHostFallback: true });
@@ -50,7 +50,7 @@ describe("native controller rows saved before their host was recorded", () => {
   });
 
   it("asks the board on an ephemeral server and resumes only after it confirms the exact controller stopped", async () => {
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_SERVER", "true");
+    vi.stubEnv("PILIBALA_EPHEMERAL_SERVER", "true");
     const { companyId, issueId, runId, coordinator } = await seed();
     expect(await evaluateNativeControllerTakeover({ owner: coordinator, now: new Date() }))
       .toEqual({ allowed: false, reason: "controller_host_unrecorded" });

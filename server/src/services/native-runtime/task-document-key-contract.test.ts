@@ -1,9 +1,9 @@
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { describe, expect, it, vi } from "vitest";
-import type { Db } from "@paperclipai/db";
-import { issueDocumentKeySchema } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { issueDocumentKeySchema } from "@pilibalaai/shared";
 import { documentService } from "../documents.js";
-import { PaperclipRunnerToolAuthority } from "./paperclip-runner-tool-authority.js";
+import { PilibalaRunnerToolAuthority } from "./pilibala-runner-tool-authority.js";
 import { RUNNER_BRIDGE_SCHEMAS, runnerBridgeDefinitions } from "./runner-bridge-tools.js";
 
 const binding = {
@@ -39,7 +39,7 @@ const keys = [
 ];
 const operations = ["read_document", "write_document", "list_document_revisions"] as const;
 const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true, strict: false });
-const definitions = new PaperclipRunnerToolAuthority({} as Db, binding).definitions();
+const definitions = new PilibalaRunnerToolAuthority({} as Db, binding).definitions();
 const bridgeDefinitions = runnerBridgeDefinitions({ workspace: false, skills: false, api: true, mode: "standard" });
 const bridgeKeys = [...keys, " ".repeat(36) + "a".repeat(64), " ".repeat(37) + "a".repeat(64)];
 function input(operation: string, key: string) {

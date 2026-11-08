@@ -4,19 +4,19 @@ import { PassThrough } from "node:stream";
 import { setTimeout as delay } from "node:timers/promises";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
-import { agents, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, environmentLeases, environments, heartbeatRuns, plugins, projects } from "@paperclipai/db";
+import { agents, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, environmentLeases, environments, heartbeatRuns, plugins, projects } from "@pilibalaai/db";
 import { definePlugin } from "../../../packages/plugins/sdk/src/define-plugin.js";
 import { startWorkerRpcHost } from "../../../packages/plugins/sdk/src/worker-rpc-host.js";
 import { createRequest, parseMessage, serializeMessage, isJsonRpcResponse, isJsonRpcSuccessResponse, JsonRpcCallError } from "../../../packages/plugins/sdk/src/protocol.js";
-import { environmentTaskOperationSchema, environmentTaskResultSchema, readEnvironmentTaskErrorDiagnostic, type PluginEnvironmentTaskOperation } from "@paperclipai/plugin-sdk";
-import type { PaperclipPluginManifestV1 } from "@paperclipai/shared";
+import { environmentTaskOperationSchema, environmentTaskResultSchema, readEnvironmentTaskErrorDiagnostic, type PluginEnvironmentTaskOperation } from "@pilibalaai/plugin-sdk";
+import type { PilibalaPluginManifestV1 } from "@pilibalaai/shared";
 import { agentEnvironmentTestService } from "../services/agent-environment-test.js";
 import { heartbeatService } from "../services/heartbeat.js";
 import { remoteExecutionHasStopped, remoteTerminationReceipt } from "../services/remote-execution-termination.js";
 import { resolvePluginTaskResume } from "../services/environment-task-runtime.js";
 import { environmentRuntimeService } from "../services/environment-runtime.js";
 import { environmentRunOrchestrator } from "../services/environment-run-orchestrator.js";
-import { createRunnerProviderLaunch, runnerLaunchRequirementsDigest, type RunnerProviderLaunchRequirements } from "@paperclipai/paperclip-runner";
+import { createRunnerProviderLaunch, runnerLaunchRequirementsDigest, type RunnerProviderLaunchRequirements } from "@pilibalaai/pilibala-runner";
 import { createPluginRunnerTaskOwner } from "../services/native-runtime/plugin-runner-task.js";
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
 import { recoveryPostgresSupport as support, startRecoveryPostgres } from "./helpers/recovery-postgres.js";
@@ -26,7 +26,7 @@ vi.mock("../realtime/runner-prp-outbound.js", () => ({ connectRunnerPrpIngress: 
 const databaseSuite = support.supported ? describe : describe.skip;
 
 /** Real SDK serialization and dispatch with synthetic provider resources. */
-function workerHarness(plugin: ReturnType<typeof definePlugin>, manifest: PaperclipPluginManifestV1) {
+function workerHarness(plugin: ReturnType<typeof definePlugin>, manifest: PilibalaPluginManifestV1) {
   const stdin = new PassThrough(), stdout = new PassThrough();
   const host = startWorkerRpcHost({ plugin, stdin, stdout });
   const pending = new Map<number, { resolve: (value: any) => void; reject: (error: Error) => void }>();
@@ -67,12 +67,12 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
     const reason = mode === "source_state_unverified" ? mode : "unresolved_operation";
     const companyId = randomUUID(), agentId = randomUUID(), pluginId = randomUUID(), environmentId = randomUUID();
     const sourceRunId = randomUUID(), runId = randomUUID(), sourceLeaseId = randomUUID(), leaseId = randomUUID();
-    const manifest: PaperclipPluginManifestV1 = { id: pluginId, apiVersion: 1, version: "1.0.0", displayName: "Task diagnostics",
-      description: "Synthetic task provider", author: "Paperclip", categories: ["automation"],
+    const manifest: PilibalaPluginManifestV1 = { id: pluginId, apiVersion: 1, version: "1.0.0", displayName: "Task diagnostics",
+      description: "Synthetic task provider", author: "Pilibala", categories: ["automation"],
       capabilities: ["environment.drivers.register"], entrypoints: { worker: "fixture" },
       environmentDrivers: [{ driverKey: "tasks", displayName: "Tasks", supportsTasks: true, configSchema: { type: "object" } }] };
     await db.insert(companies).values({ id: companyId, name: "Diagnostic fixture", issuePrefix: `D${companyId.slice(0, 7).replace(/-/g, "").toUpperCase()}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Fixture", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Fixture", adapterType: "pilibala_runner" });
     await db.insert(environments).values({ id: environmentId, name: `Diagnostic ${environmentId}`, driver: "plugin", config: {} });
     await db.insert(plugins).values({ id: pluginId, pluginKey: pluginId, packageName: "fixture", version: "1.0.0", status: "ready", manifestJson: manifest });
     await db.insert(heartbeatRuns).values([
@@ -97,7 +97,7 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
     const workers = { getWorker: () => ({ supportedMethods: ["environmentTask"] }),
       call: (_id: string, method: string, params: unknown) => {
         if (mode === "malformed_rpc" || mode === "extra_rpc_fields") throw new JsonRpcCallError({ code: -32000,
-          message: "synthetic-private-provider-text", data: { schema: "paperclip/environment-task-error/v1", diagnostic: {
+          message: "synthetic-private-provider-text", data: { schema: "pilibala/environment-task-error/v1", diagnostic: {
             httpStatus: 409, errorCode: "SESSION_STATE_UNAVAILABLE", reason: mode === "malformed_rpc" ? "provider text" : reason,
             operationId: "forged-operation", callId: "forged-call", taskId: "foreign-task",
           } } });
@@ -131,7 +131,7 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
       config: { pluginKey: pluginId, driverKey: "tasks", driverConfig: {} } });
     const call = vi.fn();
     const setup = agentEnvironmentTestService(db, { call } as never);
-    const input = { companyId, environmentId, adapterType: "paperclip_runner" };
+    const input = { companyId, environmentId, adapterType: "pilibala_runner" };
     expect((await setup.resolveAdapterTestExecutionContext(input)).fallbackChecks).toMatchObject([{ code: "environment_agent_required", level: "warn" }]);
     await db.insert(agents).values({ id: agentId, companyId, name: "Draft", lifecycleState: "preparing", lifecycleHolds: ["setup"], status: "paused" });
     expect((await setup.resolveAdapterTestExecutionContext({ ...input, agentId })).fallbackChecks).toMatchObject([{ code: "environment_agent_preparing", level: "warn" }]);
@@ -148,15 +148,15 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
   it("uses an acquired lease through SDK RPC, native dispatch, connection, stop proof and release", async () => {
     const companyId = randomUUID(), agentId = randomUUID(), runId = randomUUID();
     const environmentId = randomUUID(), pluginId = randomUUID(), projectId = randomUUID();
-    const manifest: PaperclipPluginManifestV1 = {
+    const manifest: PilibalaPluginManifestV1 = {
       id: "test.runner-tasks", apiVersion: 1, version: "1.0.0", displayName: "Runner tasks",
-      description: "Synthetic task provider", author: "Paperclip", categories: ["automation"],
+      description: "Synthetic task provider", author: "Pilibala", categories: ["automation"],
       capabilities: ["environment.drivers.register"], entrypoints: { worker: "dist/worker.js" },
       environmentDrivers: [{ driverKey: "tasks", displayName: "Tasks", supportsTasks: true, configSchema: { type: "object" } }],
     };
     await db.insert(companies).values({ id: companyId, name: "Fixture", status: "active" });
     await db.insert(agents).values({ id: agentId, companyId, name: "Fixture", role: "engineer", status: "active",
-      adapterType: "paperclip_runner", adapterConfig: {}, runtimeConfig: {}, permissions: {} });
+      adapterType: "pilibala_runner", adapterConfig: {}, runtimeConfig: {}, permissions: {} });
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, invocationSource: "manual", status: "running" });
     await db.insert(projects).values({ id: projectId, companyId, name: "Fixture", status: "active" });
     const [environment] = await db.insert(environments).values({ id: environmentId, name: "Fixture", driver: "plugin", status: "active",
@@ -186,7 +186,7 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
           case "check_project_auth": return { kind: "project_auth", taskId: params.taskId,
             configurationId: params.operation.configurationId, provider: params.operation.provider, allowed: projectAuthAllowed };
           case "read_state": return { kind: "state", taskId: params.taskId, state: {
-            schema: "paperclip.runner.durable.state.v1", ...params.operation.identity, lifecycle: "suspended",
+            schema: "pilibala.runner.durable.state.v1", ...params.operation.identity, lifecycle: "suspended",
           } };
           case "submit": stopRequested = false; executionStopped = false; return { kind: "accepted", taskId: params.taskId };
           case "status": return { kind: "status", taskId: params.taskId, phase: stopRequested ? "cancelled" : "running", executionStopped, sessionStateAvailable: executionStopped };
@@ -206,8 +206,8 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
       call: (_id: string, method: string, params: unknown) => harness.call(method, params) } as unknown as PluginWorkerManager;
     const runtime = environmentRuntimeService(db, { pluginWorkerManager: workers });
     const setup = agentEnvironmentTestService(db, workers);
-    await setup.assertAdapterTestEnvironmentForCompany(companyId, environmentId, "paperclip_runner");
-    const probe = await setup.resolveAdapterTestExecutionContext({ companyId, agentId, adapterType: "paperclip_runner", environmentId });
+    await setup.assertAdapterTestEnvironmentForCompany(companyId, environmentId, "pilibala_runner");
+    const probe = await setup.resolveAdapterTestExecutionContext({ companyId, agentId, adapterType: "pilibala_runner", environmentId });
     expect(probe.fallbackChecks).toEqual([]);
     expect(probe.executionTarget).toMatchObject({ runnerTaskProbe: { runId: expect.any(String), sessionId: expect.any(String) } });
     if (probe.executionTarget?.kind !== "remote" || probe.executionTarget.transport !== "sandbox" || !probe.executionTarget.runnerTaskProbe) throw new Error("Probe task target unavailable");
@@ -216,15 +216,15 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
     const [probeLease] = await db.select().from(environmentLeases).where(eq(environmentLeases.id, probe.executionTarget.leaseId!));
     expect(probeLease.heartbeatRunId).toBeNull();
       const selected = { identity: "core-selected-revision", sessionIdentity: "core-selected-account", home: "/core-owned-home" };
-      const verify = vi.spyOn(pluginProbe, "probePluginRunnerEnvironment").mockResolvedValue({ adapterType: "paperclip_runner", status: "pass", testedAt: new Date().toISOString(), checks: [] });
+      const verify = vi.spyOn(pluginProbe, "probePluginRunnerEnvironment").mockResolvedValue({ adapterType: "pilibala_runner", status: "pass", testedAt: new Date().toISOString(), checks: [] });
       try {
-        await setup.testManagedEnvironment("paperclip_runner", { companyId, adapterType: "paperclip_runner", config: {}, executionTarget: probe.executionTarget },
+        await setup.testManagedEnvironment("pilibala_runner", { companyId, adapterType: "pilibala_runner", config: {}, executionTarget: probe.executionTarget },
           { provider: "openai" } as any, selected as any);
         expect(verify).toHaveBeenCalledWith(expect.anything(), { identity: selected.identity, accountIdentity: selected.sessionIdentity, home: "/core-owned-home/provider" });
         verify.mockClear();
         // A preconfigured Runner home does not use the selected connection, so the probe refuses it.
         const operationsBefore = calls.length;
-        await expect(setup.testManagedEnvironment("paperclip_runner", { companyId, adapterType: "paperclip_runner", config: { homeMode: "preconfigured" }, executionTarget: probe.executionTarget },
+        await expect(setup.testManagedEnvironment("pilibala_runner", { companyId, adapterType: "pilibala_runner", config: { homeMode: "preconfigured" }, executionTarget: probe.executionTarget },
           { provider: "openai" } as any, selected as any)).resolves.toMatchObject({ status: "fail",
           checks: [{ code: "ai_connection_required", message: expect.stringContaining("isolated Runner home") }] });
         expect(verify).not.toHaveBeenCalled();
@@ -246,9 +246,9 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
     const orchestrator = environmentRunOrchestrator(db, { environmentRuntime: runtime });
     const acquired = await orchestrator.acquireForRun({ companyId, selectedEnvironmentId: environmentId, localEnvironmentId: randomUUID(),
       agentId, issueId: null, heartbeatRunId: runId, persistedExecutionWorkspace: null,
-      executionWorkspaceSettings: null, adapterType: "paperclip_runner" });
+      executionWorkspaceSettings: null, adapterType: "pilibala_runner" });
     const realization = await orchestrator.realizeForRun({ companyId, environment: acquired.environment, lease: acquired.lease,
-      adapterType: "paperclip_runner", issueId: null, heartbeatRunId: runId,
+      adapterType: "pilibala_runner", issueId: null, heartbeatRunId: runId,
       executionWorkspace: { baseCwd: "/local/project", cwd: "/local/project", source: "project_primary", projectId,
         workspaceId: null, repoUrl: null, repoRef: null, strategy: "project_primary", branchName: null, worktreePath: null,
         warnings: [], created: false, branchCreatedByRuntime: false },
@@ -266,7 +266,7 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
       onSessionRetained: checkpoint, onDispatched, pollMs: 1 });
     const identity = { runnerInstanceId: randomUUID(), environmentLeaseId: acquired.lease.id, runId,
       normalizedSessionId: randomUUID(), turnId: "turn", itemId: "item" };
-    const requirements: RunnerProviderLaunchRequirements = { schema: "paperclip.runner.launch-requirements.v1", identity,
+    const requirements: RunnerProviderLaunchRequirements = { schema: "pilibala.runner.launch-requirements.v1", identity,
       provider: "codex", model: "fixture", instructions: "Core policy", runtimeContext: null, settings: {},
       approvalPolicy: "never", readOnly: false, preparedConversation: false, includeCollaborationModeInstructions: false };
     const prepared = await owner.driver.prepareLaunch!(requirements);
@@ -306,7 +306,7 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
       const recovered = await environmentRunOrchestrator(db, { environmentRuntime: environmentRuntimeService(db, { pluginWorkerManager: workers }) }).acquireForRun({
         companyId, selectedEnvironmentId: environmentId, localEnvironmentId: randomUUID(), agentId,
         issueId: null, heartbeatRunId: runId, persistedExecutionWorkspace: null,
-        executionWorkspaceSettings: null, adapterType: "paperclip_runner",
+        executionWorkspaceSettings: null, adapterType: "pilibala_runner",
         reattachRemoteLease: { kind: "plugin_task", leaseId: saved.id },
       });
       expect(recovered.lease.id).toBe(saved.id);
@@ -347,7 +347,7 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
 
       // A controller that dies after dispatch leaves only the lease marker.
       const second = await runtime.acquireRunLease({ companyId, environment: environment as never, agentId,
-        issueId: null, heartbeatRunId: runId, persistedExecutionWorkspace: null, adapterType: "paperclip_runner" });
+        issueId: null, heartbeatRunId: runId, persistedExecutionWorkspace: null, adapterType: "pilibala_runner" });
       if (submit?.kind !== "submit") throw new Error("Missing submit fixture");
       await runtime.task({ companyId, leaseId: second.lease.id, operation: { kind: "check_project_auth", configurationId: "second-config", provider: "openai", projectIds: [projectId] } });
       await runtime.task({ companyId, leaseId: second.lease.id,
@@ -381,7 +381,7 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
   it.each([false, true])("replaces a same-run task only after the provider confirms termination (%s)", async stopped => {
     const companyId = randomUUID(), agentId = randomUUID(), runId = randomUUID(), pluginId = randomUUID(), environmentId = randomUUID(), oldLeaseId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Task recovery", issuePrefix: `R${companyId.slice(0, 7)}` });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Fixture", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Fixture", adapterType: "pilibala_runner" });
     await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, invocationSource: "manual", status: "running" });
     await db.insert(environments).values({ id: environmentId, name: `Recovery ${environmentId}`, driver: "plugin", status: "active", config: { pluginKey: pluginId, driverKey: "tasks", driverConfig: {} } });
     await db.insert(plugins).values({ id: pluginId, pluginKey: pluginId, packageName: "fixture-recovery", version: "1.0.0", status: "ready", manifestJson: {
@@ -406,7 +406,7 @@ databaseSuite("Core plugin Runner task lifecycle", () => {
       } } as unknown as PluginWorkerManager;
     const runtime = environmentRuntimeService(db, { pluginWorkerManager: workers });
     const acquire = environmentRunOrchestrator(db, { environmentRuntime: runtime }).acquireForRun({
-      companyId, selectedEnvironmentId: environmentId, localEnvironmentId: randomUUID(), adapterType: "paperclip_runner", agentId,
+      companyId, selectedEnvironmentId: environmentId, localEnvironmentId: randomUUID(), adapterType: "pilibala_runner", agentId,
       issueId: null, heartbeatRunId: runId, persistedExecutionWorkspace: null, executionWorkspaceSettings: null, recoverPluginTask: true,
     });
     if (!stopped) {

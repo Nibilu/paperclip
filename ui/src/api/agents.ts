@@ -1,5 +1,5 @@
-import type { AgentPublicIdentity } from "@paperclipai/shared";
-import type { AgentProjectAccess } from "@paperclipai/shared";
+import type { AgentPublicIdentity } from "@pilibalaai/shared";
+import type { AgentProjectAccess } from "@pilibalaai/shared";
 import type {
   Agent,
   EnvironmentProbeResult,
@@ -37,8 +37,8 @@ import type {
   AgentConfigRevision,
   ClearAgentErrorResponse,
   AgentApiKeyScope,
-} from "@paperclipai/shared";
-import { isUuidLike, normalizeAgentUrlKey } from "@paperclipai/shared";
+} from "@pilibalaai/shared";
+import { isUuidLike, normalizeAgentUrlKey } from "@pilibalaai/shared";
 import { ApiError, api, type RequestOptions } from "./client";
 
 export interface AgentKey {
@@ -158,7 +158,7 @@ export const agentsApi = {
   qualifyRunner: (id: string, expectedEnvironmentId: string, companyId?: string) =>
     api.post<EnvironmentProbeResult>(agentPath(id, companyId, "/qualify-runner"), { expectedEnvironmentId }),
   setAvatar: (companyId: string, agentId: string, imageBase64: string | null) =>
-    api.put<{ agentId: string; appearance: import("@paperclipai/shared").AgentAppearance; avatarUrl: string }>(`/companies/${companyId}/agents/${agentId}/avatar`, { imageBase64 }),
+    api.put<{ agentId: string; appearance: import("@pilibalaai/shared").AgentAppearance; avatarUrl: string }>(`/companies/${companyId}/agents/${agentId}/avatar`, { imageBase64 }),
   getIdentity: (id: string, companyId?: string) =>
     api.get<AgentPublicIdentity | null>(agentPath(id, companyId, "/identity")),
   adoptAiConnection: (agentId: string, interactionId: string, connectionId: string, companyId: string) =>
@@ -195,7 +195,7 @@ export const agentsApi = {
     }
   },
   getConfiguration: (id: string, companyId?: string) =>
-    api.get<import("@paperclipai/shared").AgentConfigurationResponse>(agentPath(id, companyId, "/configuration")),
+    api.get<import("@pilibalaai/shared").AgentConfigurationResponse>(agentPath(id, companyId, "/configuration")),
   listConfigRevisions: (id: string, companyId?: string) =>
     api.get<AgentConfigRevision[]>(agentPath(id, companyId, "/config-revisions")),
   getConfigRevision: (id: string, revisionId: string, companyId?: string) =>
@@ -206,10 +206,10 @@ export const agentsApi = {
     api.post<Agent>(`/companies/${companyId}/agents`, data),
   hire: (companyId: string, data: Record<string, unknown>) =>
     api.post<AgentHireResponse>(`/companies/${companyId}/agent-hires`, data),
-  updateRuntimeSettings: (id: string, runtimeSettings: import("@paperclipai/shared").AgentRuntimeSettingsPatch, companyId: string) =>
+  updateRuntimeSettings: (id: string, runtimeSettings: import("@pilibalaai/shared").AgentRuntimeSettingsPatch, companyId: string) =>
     api.patch<Agent>(agentPath(id, companyId), { runtimeSettings }),
   update: (id: string, data: Record<string, unknown>, companyId?: string) =>
-    api.patch<Agent & import("@paperclipai/shared").AgentConfigurationResponse>(agentPath(id, companyId), data),
+    api.patch<Agent & import("@pilibalaai/shared").AgentConfigurationResponse>(agentPath(id, companyId), data),
   updatePermissions: (id: string, data: AgentPermissionUpdate, companyId?: string) =>
     api.patch<AgentDetail>(agentPath(id, companyId, "/permissions"), data),
   instructionsBundle: (id: string, companyId?: string) =>
@@ -282,7 +282,7 @@ export const agentsApi = {
   adapterModels: (
     companyId: string,
     type: string,
-    options?: { refresh?: boolean; environmentId?: string | null; provider?: string; acpxAgent?: string; aiConnection?: import("@paperclipai/shared").AiConnectionBinding; agentId?: string; poolId?: string },
+    options?: { refresh?: boolean; environmentId?: string | null; provider?: string; acpxAgent?: string; aiConnection?: import("@pilibalaai/shared").AiConnectionBinding; agentId?: string; poolId?: string },
   ) => {
     const params = new URLSearchParams();
     if (options?.refresh) params.set("refresh", "1");
@@ -310,8 +310,8 @@ export const agentsApi = {
     type: string,
     data: {
       adapterConfig: Record<string, unknown>;
-      runner?: import("@paperclipai/shared").AgentRunnerChoice;
-      aiConnection?: import("@paperclipai/shared").AiRuntimeConnectionBinding;
+      runner?: import("@pilibalaai/shared").AgentRunnerChoice;
+      aiConnection?: import("@pilibalaai/shared").AiRuntimeConnectionBinding;
       agentId?: string;
       testCredentials?: Record<string, string>;
       environmentId?: string | null;
@@ -325,12 +325,12 @@ export const agentsApi = {
     ),
   capabilityCheck: (id: string, companyId?: string) =>
     api.post<{
-      observation: import("@paperclipai/shared").AgentCapabilityObservation;
-      diff: import("@paperclipai/shared").AgentCapabilityDiffEntry[];
+      observation: import("@pilibalaai/shared").AgentCapabilityObservation;
+      diff: import("@pilibalaai/shared").AgentCapabilityDiffEntry[];
       upgradeTaskRequired: boolean;
     }>(agentPath(id, companyId, "/capability-check"), {}),
   capabilityObservations: (id: string, companyId?: string) =>
-    api.get<{ observations: import("@paperclipai/shared").AgentCapabilityObservation[] }>(
+    api.get<{ observations: import("@pilibalaai/shared").AgentCapabilityObservation[] }>(
       agentPath(id, companyId, "/capability-observations"),
     ),
   capabilityUpgradeTasks: (id: string, companyId?: string) =>
@@ -402,7 +402,7 @@ export const agentsApi = {
   startAdapterAuthLogin: (
     companyId: string,
     type: string,
-    data: { environmentId: string; ttlSeconds?: number; aiConnection?: import("@paperclipai/shared").AiConnectionLoginIntent },
+    data: { environmentId: string; ttlSeconds?: number; aiConnection?: import("@pilibalaai/shared").AiConnectionLoginIntent },
   ) =>
     api.post<AdapterAuthSessionResponse>(
       `/companies/${encodeURIComponent(companyId)}/adapters/${encodeURIComponent(type)}/login-sessions`,
@@ -445,7 +445,7 @@ export const agentsApi = {
     ),
   startClaudeSetupTokenLogin: (
     companyId: string,
-    data: { environmentId: string; overwrite?: ClaudeSetupTokenOverwrite; aiConnection?: import("@paperclipai/shared").AiConnectionLoginIntent },
+    data: { environmentId: string; overwrite?: ClaudeSetupTokenOverwrite; aiConnection?: import("@pilibalaai/shared").AiConnectionLoginIntent },
   ) =>
     api.post<ClaudeSetupTokenSessionOwnerResponse>(
       `/companies/${encodeURIComponent(companyId)}/setup-token-login-sessions`,
@@ -491,5 +491,5 @@ export const agentsApi = {
 export interface AvailableSkill {
   name: string;
   description: string;
-  isPaperclipManaged: boolean;
+  isPilibalaManaged: boolean;
 }

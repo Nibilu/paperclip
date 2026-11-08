@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { heartbeatRuns, issues, type Db } from "@paperclipai/db";
+import { heartbeatRuns, issues, type Db } from "@pilibalaai/db";
 import { issueRecoveryActionService } from "./issue-recovery-actions.js";
 import { REMOTE_WORKSPACE_RESTORE_FAILED_CODE } from "./remote-workspace-transport.js";
 import { REMOTE_WORKSPACE_RESTORE_NEXT_ACTION } from "./recovery/stranded-notice.js";

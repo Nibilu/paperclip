@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { HeartbeatRunEvent } from "@paperclipai/shared";
+import type { HeartbeatRunEvent } from "@pilibalaai/shared";
 import { nativeRunEventsToTranscript } from "./native-run-events";
 import { transcriptToTaskChatItems } from "../task-chat/transcript-adapter";
 import { protocolActivityLabel, protocolActivityPresentation } from "../task-chat/task-chat-activity-presentation";
@@ -21,7 +21,7 @@ function event(seq: number, eventType: string, payload: Record<string, unknown>)
     message: null,
     payload: {
       prpEvent: {
-        schema: "paperclip.prp.event.v1",
+        schema: "pilibala.prp.event.v1",
         sourceEventId: `event-${seq}`,
         sourceSeq: seq,
         sourceInstanceId: "runner-1",
@@ -41,7 +41,7 @@ function event(seq: number, eventType: string, payload: Record<string, unknown>)
 
 function review(seq: number, reviewId: string, target: string | null, decision: string, extra: Record<string, unknown> = {}) {
   return event(seq, decision === "pending" ? "safety.review.started" : "safety.review.completed", {
-    schema: "paperclip.safety.review.v1",
+    schema: "pilibala.safety.review.v1",
     reviewId,
     targetExecutionId: target,
     status: decision === "pending" ? "running" : "completed",
@@ -59,7 +59,7 @@ function review(seq: number, reviewId: string, target: string | null, decision: 
 
 function command(seq: number, executionId: string, name: string, status: "running" | "completed") {
   return event(seq, status === "running" ? "tool.execution.started" : "tool.execution.completed", {
-    schema: "paperclip.tool.execution.v1",
+    schema: "pilibala.tool.execution.v1",
     executionId,
     transport: "process",
     operation: "execute",
@@ -74,7 +74,7 @@ function command(seq: number, executionId: string, name: string, status: "runnin
 
 function hook(seq: number, payload: Record<string, unknown>) {
   return event(seq, "hook.completed", {
-    schema: "paperclip.hook.v1",
+    schema: "pilibala.hook.v1",
     hookId: "pre-tool-use-0",
     event: "preToolUse",
     scope: "turn",
@@ -156,9 +156,9 @@ describe("governance activity", () => {
   it("keeps two calls that share a hook id as two rows, so a later pass cannot hide a block", () => {
     const blocked = { status: "blocked", outcome: "blocked", message: "Migrations are append-only." };
     const rows = governance(items([
-      event(1, "hook.started", { schema: "paperclip.hook.v1", hookId: "same", event: "preToolUse", scope: "turn", status: "running", blocking: true, durationMs: null, summary: null, outcome: "running" }),
+      event(1, "hook.started", { schema: "pilibala.hook.v1", hookId: "same", event: "preToolUse", scope: "turn", status: "running", blocking: true, durationMs: null, summary: null, outcome: "running" }),
       hook(2, { hookId: "same", ...blocked }),
-      event(3, "hook.started", { schema: "paperclip.hook.v1", hookId: "same", event: "preToolUse", scope: "turn", status: "running", blocking: true, durationMs: null, summary: null, outcome: "running" }),
+      event(3, "hook.started", { schema: "pilibala.hook.v1", hookId: "same", event: "preToolUse", scope: "turn", status: "running", blocking: true, durationMs: null, summary: null, outcome: "running" }),
       hook(4, { hookId: "same" }),
     ]));
     expect(rows.map((row) => label(row).label)).toEqual(["PreToolUse hook blocked a tool call", "PreToolUse hook ran"]);
@@ -167,7 +167,7 @@ describe("governance activity", () => {
 
   it("says a hook or review stopped when the run ended before it finished", () => {
     const settled = transcriptToTaskChatItems(nativeRunEventsToTranscript([
-      event(1, "hook.started", { schema: "paperclip.hook.v1", hookId: "h", event: "preToolUse", scope: "turn", status: "running", blocking: true, durationMs: null, summary: null, outcome: "running" }),
+      event(1, "hook.started", { schema: "pilibala.hook.v1", hookId: "h", event: "preToolUse", scope: "turn", status: "running", blocking: true, durationMs: null, summary: null, outcome: "running" }),
       review(2, "review-x", "exec-x", "pending"),
     ]), { runId: RUN_ID, agentName: "Codex", running: false });
     const rows = governance(settled);
@@ -185,7 +185,7 @@ describe("governance activity", () => {
 
   it("reads hook records written before outcome existed", () => {
     const [row] = governance(items([event(1, "hook.completed", {
-      schema: "paperclip.hook.v1",
+      schema: "pilibala.hook.v1",
       hookId: "legacy",
       event: "post-tool",
       scope: "workspace",

@@ -1,5 +1,5 @@
 import { and, inArray, isNull } from "drizzle-orm";
-import { executionWorkspaces } from "@paperclipai/db";
+import { executionWorkspaces } from "@pilibalaai/db";
 
 export function taskWorkspaceSelectableCondition() {
   return and(

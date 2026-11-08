@@ -1,4 +1,4 @@
-import type { InboxSourceError } from "@paperclipai/shared";
+import type { InboxSourceError } from "@pilibalaai/shared";
 
 type IssueRow = { id: string; parentId?: string | null };
 type RunRow = { id: string; issueId?: unknown; contextSnapshot?: unknown };

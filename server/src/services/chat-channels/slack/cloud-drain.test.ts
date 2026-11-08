@@ -1,15 +1,15 @@
 import { generateKeyPairSync } from "node:crypto";
 import { registerSlackCloudEnrollmentOwner } from "./cloud-enrollment.js";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { afterEach, expect, it, vi } from "vitest";
 import { githubConnectionEventService } from "../../github-connection-events.js";
-import type { PaperclipCloudConnector } from "../../paperclip-cloud-connector.js";
+import type { PilibalaCloudConnector } from "../../pilibala-cloud-connector.js";
 import { registerSlackCloudEventIngress } from "./cloud-ingress.js";
 import { SlackCloudReceiptError, type SlackCloudEvent } from "./cloud-event.js";
 
 afterEach(() => vi.unstubAllEnvs());
 function fixture(handler: (event: SlackCloudEvent) => Promise<void>, pendingEnrollment = false) {
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_BASE_URL", "");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_BASE_URL", "");
   let reads = 0;
   const db = { select: () => {
     const rows = [[], [], [{ companyId: "company" }], [{ id: "endpoint", setup: { slackCloudIntent: { nextAttemptAt: "2000-01-01T00:00:00Z" } } }]][reads++ % (pendingEnrollment ? 4 : 3)]!;
@@ -23,7 +23,7 @@ function fixture(handler: (event: SlackCloudEvent) => Promise<void>, pendingEnro
     acknowledgeEvents: vi.fn(async () => 1), eventWakeVersion: () => 1 as const };
   const unregister = registerSlackCloudEventIngress(db, handler);
   let time = Date.now();
-  const service = githubConnectionEventService(db, { connector: connector as unknown as PaperclipCloudConnector, now: () => new Date(time) });
+  const service = githubConnectionEventService(db, { connector: connector as unknown as PilibalaCloudConnector, now: () => new Date(time) });
   return { db, service, connector, unregister, event, time: () => time, advance: (ms: number) => { time += ms; } };
 }
 
@@ -50,11 +50,11 @@ it.each(["retry", "attention", "invalid"] as const)("actual owner distinguishes 
 
 it.each(["chat_endpoint_credentials_busy", "temporary enrollment owner failure"])("drains and ACKs before retaining %s on a bounded existing-worker retry", async message => {
   const handler = vi.fn(async () => {}), f = fixture(handler, true);
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_BASE_URL", "https://cloud.example.test");
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID", "instance");
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_ENVIRONMENT", "test");
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", generateKeyPairSync("ed25519").privateKey.export({ format: "jwk" }).d!);
-  vi.stubEnv("PAPERCLIP_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", generateKeyPairSync("x25519").privateKey.export({ format: "jwk" }).d!);
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_BASE_URL", "https://cloud.example.test");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID", "instance");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_ENVIRONMENT", "test");
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY", generateKeyPairSync("ed25519").privateKey.export({ format: "jwk" }).d!);
+  vi.stubEnv("PILIBALA_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY", generateKeyPairSync("x25519").privateKey.export({ format: "jwk" }).d!);
   const owner = vi.fn(async () => {
     expect(handler).toHaveBeenCalled();
     expect(f.connector.acknowledgeEvents).toHaveBeenCalled();

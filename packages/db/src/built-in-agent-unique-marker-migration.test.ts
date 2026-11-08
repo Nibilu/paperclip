@@ -22,7 +22,7 @@ async function migrationHash() {
 function markerObj(key: string) {
   // Return a plain object (not a JSON string) so `sql.json` stores it as a jsonb
   // object; a JSON string param + `::jsonb` would double-encode into a scalar.
-  return { paperclipBuiltInAgent: { key, featureKeys: [key] } };
+  return { pilibalaBuiltInAgent: { key, featureKeys: [key] } };
 }
 
 describeEmbeddedPostgres("built-in agent unique marker migration", () => {
@@ -31,7 +31,7 @@ describeEmbeddedPostgres("built-in agent unique marker migration", () => {
   });
 
   it("resolves pre-existing duplicates and enforces uniqueness going forward", async () => {
-    const database = await startEmbeddedPostgresTestDatabase("paperclip-built-in-unique-marker-");
+    const database = await startEmbeddedPostgresTestDatabase("pilibala-built-in-unique-marker-");
     cleanups.push(database.cleanup);
     const sql = postgres(database.connectionString, { max: 1 });
     cleanups.push(async () => sql.end());
@@ -89,7 +89,7 @@ describeEmbeddedPostgres("built-in agent unique marker migration", () => {
       SELECT count(*)::text AS count FROM "agents"
       WHERE "company_id" = ${affectedCompanyId}
         AND "status" <> 'terminated'
-        AND ("metadata" -> 'paperclipBuiltInAgent' ->> 'key') = 'summarizer'
+        AND ("metadata" -> 'pilibalaBuiltInAgent' ->> 'key') = 'summarizer'
     `;
     expect(activeMarked[0]!.count).toBe("1");
 

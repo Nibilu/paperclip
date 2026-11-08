@@ -2,12 +2,12 @@ import { NativeControllerRecoveryWaitingError } from "../native-runtime/native-c
 
 import { createNativeUsageDelivery } from "../native-runtime/native-usage-delivery.js";
 import { flushBudgetEvaluationWork } from "../budgets.js";
-import { NativeSessionCloseUnrecoverableError, type PrpEvent } from "../../vendor/paperclip-runner/index.js";
+import { NativeSessionCloseUnrecoverableError, type PrpEvent } from "../../vendor/pilibala-runner/index.js";
 import { randomUUID } from "node:crypto";
 import { mkdtemp, rm, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { agents, agentWakeupRequests, approvals, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRuns, issueApprovals, issues, nativeRunFinalizations, runUsageReceipts, workspaceOperations, type Db, budgetPolicies, completionContracts, nativeRunResults, costEvents, executionWorkspaces } from "@paperclipai/db";
+import { agents, agentWakeupRequests, approvals, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, heartbeatRuns, issueApprovals, issues, nativeRunFinalizations, runUsageReceipts, workspaceOperations, type Db, budgetPolicies, completionContracts, nativeRunResults, costEvents, executionWorkspaces } from "@pilibalaai/db";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { trace } from "@opentelemetry/api";
@@ -21,7 +21,7 @@ import { createAdapterExecutionControl } from "../adapter-execution-control.js";
 import { executionWorkspaceService } from "../execution-workspaces.js";
 import { workspaceOperationService } from "../workspace-operations.js";
 import { instanceSettingsService } from "../instance-settings.js";
-import { executePaperclipNativeSession, NativeCancellationPendingRecoveryError, NativeControllerDetachedForRestartError, nativeSessionFailureSourceCode, nativeSessionFailureDisposition } from "../native-runtime/native-session-executor.js";
+import { executePilibalaNativeSession, NativeCancellationPendingRecoveryError, NativeControllerDetachedForRestartError, nativeSessionFailureSourceCode, nativeSessionFailureDisposition } from "../native-runtime/native-session-executor.js";
 import { NativeRunnerOwnershipUnverifiedError } from "../native-runtime/native-runner-ownership.js";
 import { NativeWorkspaceFinalizationBusyError, NativeWorkspaceFinalizationOwnershipLostError } from "../native-runtime/native-workspace-finalization-ownership.js";
 import { resolveHeartbeatNativeRuntimeMode } from "../native-runtime/runtime-mode.js";
@@ -35,22 +35,22 @@ import { awaitBoardToolApproval, executeHeartbeatRuntime, type HeartbeatRuntimeE
 import { prepareNativeHeartbeatRun } from "../native-runtime/prepare-native-run.js";
 import { buildNativeCompletionContract } from "../native-runtime/completion-contracts.js";
 import { currentNativeControllerIdentity } from "../native-runtime/native-restart-recovery.js";
-import { CONTROL_PLANE_CONFORMANCE_RESULT } from "../../vendor/paperclip-runner/testing.js";
-import type { ControlPlanePort, NativeExecutionInputV1 } from "@paperclipai/paperclip-runner";
+import { CONTROL_PLANE_CONFORMANCE_RESULT } from "../../vendor/pilibala-runner/testing.js";
+import type { ControlPlanePort, NativeExecutionInputV1 } from "@pilibalaai/pilibala-runner";
 const postResultProvider = vi.hoisted(() => ({ execute: vi.fn() }));
-vi.mock("../../vendor/paperclip-runner/index.js", async original => ({
-  ...await original<typeof import("../../vendor/paperclip-runner/index.js")>(), executeNativeSession: postResultProvider.execute,
+vi.mock("../../vendor/pilibala-runner/index.js", async original => ({
+  ...await original<typeof import("../../vendor/pilibala-runner/index.js")>(), executeNativeSession: postResultProvider.execute,
 }));
 
 // Keep real accounting, workspace barriers, and task-session persistence. Providers
 // and gateway delivery are external boundaries; browser acceptance covers their wiring.
 vi.mock("../native-runtime/native-session-executor.js", async original => ({
   ...await original<typeof import("../native-runtime/native-session-executor.js")>(),
-  executePaperclipNativeSession: vi.fn(),
+  executePilibalaNativeSession: vi.fn(),
 }));
 vi.mock("./run-preparation.js", async original => ({
   ...await original<typeof import("./run-preparation.js")>(),
-  buildPaperclipRuntimeMcpServers: vi.fn(async () => []),
+  buildPilibalaRuntimeMcpServers: vi.fn(async () => []),
   createAdapterRuntimeToolAccess: vi.fn(() => null),
   createManagedMcpRunConfig: vi.fn(async () => null),
   revokeHeartbeatRunGatewayTokens: vi.fn(async () => {}),
@@ -61,9 +61,9 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
   let db: Db;
   let home: string;
   beforeAll(async () => {
-    home = await mkdtemp(join(tmpdir(), "paperclip-runtime-execution-"));
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    database = await startRecoveryPostgres("paperclip-runtime-execution");
+    home = await mkdtemp(join(tmpdir(), "pilibala-runtime-execution-"));
+    vi.stubEnv("PILIBALA_HOME", home);
+    database = await startRecoveryPostgres("pilibala-runtime-execution");
     db = createDb(database.connectionString);
     await db.execute(sql`set client_min_messages = warning`);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
@@ -71,12 +71,12 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
   beforeEach(async () => {
     await db.execute(sql`truncate table companies restart identity cascade`);
     vi.clearAllMocks();
-    vi.mocked(executePaperclipNativeSession).mockResolvedValue({ exitCode: 0, signal: null, timedOut: false });
+    vi.mocked(executePilibalaNativeSession).mockResolvedValue({ exitCode: 0, signal: null, timedOut: false });
   });
 
   async function fixture(native = false, provider: "codex" | "grok_bot" | "openai_dot" = "codex") {
     const [company] = await db.insert(companies).values({ name: "Runtime execution", issuePrefix: "EXE" }).returning();
-    const [agent] = await db.insert(agents).values({ companyId: company.id, name: "Executing agent", status: "running", adapterType: native ? "paperclip_runner" : "process", adapterConfig: provider === "codex" ? { provider } : { provider, lifecycleMode: "per_turn", allowUnmeteredProvider: true, [provider === "grok_bot" ? "externalBindingId" : "dotBindingId"]: randomUUID() } }).returning();
+    const [agent] = await db.insert(agents).values({ companyId: company.id, name: "Executing agent", status: "running", adapterType: native ? "pilibala_runner" : "process", adapterConfig: provider === "codex" ? { provider } : { provider, lifecycleMode: "per_turn", allowUnmeteredProvider: true, [provider === "grok_bot" ? "externalBindingId" : "dotBindingId"]: randomUUID() } }).returning();
     const [issue] = await db.insert(issues).values({ companyId: company.id, title: "Complete this task", assigneeAgentId: agent.id }).returning();
     const [run] = await db.insert(heartbeatRuns).values({ companyId: company.id, agentId: agent.id, issueId: issue.id, scopeKind: "issue", status: "running", runtimeMode: native ? "native" : "legacy" }).returning();
     const state = createHeartbeatRunState(db);
@@ -88,7 +88,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
       taskPrompt: issue.title, workspace: { id: run.id, cwd: home, repoUrl: null, repoRef: null, branchName: null },
       normalizedSessionId: null, provider, runtimeContext: nativeRuntimeContextFixture(),
       dotBinding: { bindingId: randomUUID(), bindingGeneration: 1, companyId: company.id, agentId: agent.id, acceptByUnixMs: Date.now() + 60_000, expiresAtUnixMs: Date.now() + 120_000 },
-      completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "paperclip.run-result.v1", contract: { revision: "1", objective: issue.title, criteria: [{ id: "output", requirement: issue.title }] } },
+      completionContract: { id: randomUUID(), sha256: `sha256:${"a".repeat(64)}`, schemaVersion: "pilibala.run-result.v1", contract: { revision: "1", objective: issue.title, criteria: [{ id: "output", requirement: issue.title }] } },
     }) : null;
     const input: HeartbeatRuntimeExecutionInput = {
       run, agent, options: {},
@@ -136,8 +136,8 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
       const completion = buildNativeCompletionContract(issue, { revision: contract.revision });
       await db.insert(nativeRunFinalizations).values({ runId: run.id, companyId: run.companyId, issueId: issue.id, phase: "observed" });
       const execution: NativeExecutionInputV1 = {
-        schema: "paperclip.native-execution-input.v1", interactionResponses: [], credentialBindings: [], binding: { companyId: run.companyId, agentId: run.agentId, issueId: issue.id, runId: run.id, executionWorkspaceId: run.id },
-        completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "paperclip.completion-contract.v1", contract: completion },
+        schema: "pilibala.native-execution-input.v1", interactionResponses: [], credentialBindings: [], binding: { companyId: run.companyId, agentId: run.agentId, issueId: issue.id, runId: run.id, executionWorkspaceId: run.id },
+        completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "pilibala.completion-contract.v1", contract: completion },
         provider: { kind: "codex", model: "test-model" },
         task: { identifier: issue.id, title: issue.title, description: null, prompt: "Local post-result fault", workMode: "standard" },
         workspace: { cwd: home, repoUrl: null, repoRef: null, branchName: null },
@@ -146,7 +146,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
       input.runtime.nativeExecution = execution;
       input.runtime.nativeRunnerInstanceId = prepared.runnerInstanceId;
       input.workspace.nativeWorkspaceSync = { mode: "host_current", reference: {
-        schema: "paperclip.native-workspace-sync/v3", state: "prepared", descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
+        schema: "pilibala.native-workspace-sync/v3", state: "prepared", descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
         workspaceId: run.id, leaseId: randomUUID(), providerLeaseId: "controlled-local", remoteCwd: home, resourceDisposition: null },
         restoreWorkspace: vi.fn(async () => {}), cleanup: vi.fn(async () => {}) };
       const diagnosticExpected = ["current", "stopped", "unknown-code", "permission", "io", "diagnostic-sink-failed"].includes(scenario);
@@ -206,7 +206,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
       postResultProvider.execute.mockReset().mockImplementationOnce(async (options: { controlPlane: ControlPlanePort }) => {
         await options.controlPlane.openRun({ identity: { companyId: run.companyId, issueId: issue.id, runId: run.id, agentId: run.agentId, sessionId: prepared.normalizedSessionId }, backendKind: "mock", sourceInstanceId: prepared.runnerInstanceId });
         await options.controlPlane.completeRun({ result: { ...CONTROL_PLANE_CONFORMANCE_RESULT, completionClaim: { ...CONTROL_PLANE_CONFORMANCE_RESULT.completionClaim, contractRevision: completion.revision } },
-          terminal: { schema: "paperclip.prp.terminal.v1", turnTerminalState: "completed", runTerminalState: "succeeded", reportedWorkDisposition: "done" }, turnId: prepared.turnId });
+          terminal: { schema: "pilibala.prp.terminal.v1", turnTerminalState: "completed", runTerminalState: "succeeded", reportedWorkDisposition: "done" }, turnId: prepared.turnId });
         const [owner] = await db.select().from(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, run.id));
         const controller = await currentNativeControllerIdentity();
         expect(owner).toMatchObject({ phase: "workspace_finalizing", attempt: 1, controllerGeneration: 1, controllerBootId: controller.bootId, controllerPid: controller.pid, controllerProcessStartedAt: controller.processStartedAt });
@@ -234,8 +234,8 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
       const events: unknown[] = [];
       let controlError: unknown;
       const actual = await vi.importActual<typeof import("../native-runtime/native-session-executor.js")>("../native-runtime/native-session-executor.js");
-      vi.mocked(executePaperclipNativeSession).mockImplementationOnce(async options => {
-        try { return await actual.executePaperclipNativeSession({ ...options, useRunnerd: false,
+      vi.mocked(executePilibalaNativeSession).mockImplementationOnce(async options => {
+        try { return await actual.executePilibalaNativeSession({ ...options, useRunnerd: false,
           backend: { descriptor: async () => { throw new Error("Unexpected provider call"); }, openSession: async () => { throw new Error("Unexpected provider call"); } },
           onEvent: async event => {
             events.push(event);
@@ -298,8 +298,8 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     const completion = buildNativeCompletionContract(issue, { revision: contract.revision });
     await db.insert(nativeRunFinalizations).values({ runId: run.id, companyId: run.companyId, issueId: issue.id, phase: "observed" });
     input.runtime.nativeExecution = {
-      schema: "paperclip.native-execution-input.v1", interactionResponses: [], credentialBindings: [], binding: { companyId: run.companyId, agentId: run.agentId, issueId: issue.id, runId: run.id, executionWorkspaceId: run.id },
-      completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "paperclip.completion-contract.v1", contract: completion },
+      schema: "pilibala.native-execution-input.v1", interactionResponses: [], credentialBindings: [], binding: { companyId: run.companyId, agentId: run.agentId, issueId: issue.id, runId: run.id, executionWorkspaceId: run.id },
+      completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "pilibala.completion-contract.v1", contract: completion },
       provider: { kind: "codex", model: "test-model" },
       task: { identifier: issue.id, title: issue.title, description: null, prompt: "Local runner settlement fault", workMode: "standard" },
       workspace: { cwd: home, repoUrl: null, repoRef: null, branchName: null },
@@ -309,7 +309,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     postResultProvider.execute.mockReset().mockImplementationOnce(async (options: { controlPlane: ControlPlanePort }) => {
       await options.controlPlane.openRun({ identity: { companyId: run.companyId, issueId: issue.id, runId: run.id, agentId: run.agentId, sessionId: prepared.normalizedSessionId }, backendKind: "mock", sourceInstanceId: prepared.runnerInstanceId });
       await options.controlPlane.completeRun({ result: { ...CONTROL_PLANE_CONFORMANCE_RESULT, completionClaim: { ...CONTROL_PLANE_CONFORMANCE_RESULT.completionClaim, contractRevision: completion.revision } },
-        terminal: { schema: "paperclip.prp.terminal.v1", turnTerminalState: "completed", runTerminalState: "succeeded", reportedWorkDisposition: "done" }, turnId: prepared.turnId });
+        terminal: { schema: "pilibala.prp.terminal.v1", turnTerminalState: "completed", runTerminalState: "succeeded", reportedWorkDisposition: "done" }, turnId: prepared.turnId });
       if (scenario === "terminal-unreadable") {
         await db.update(nativeRunResults).set({ resultJson: sql`${nativeRunResults.resultJson} - 'terminal'` }).where(eq(nativeRunResults.runId, run.id));
       }
@@ -318,7 +318,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
       throw new NativeSessionCloseUnrecoverableError({ runnerSuspended: false, providerDrained: true }, true);
     });
     const actual = await vi.importActual<typeof import("../native-runtime/native-session-executor.js")>("../native-runtime/native-session-executor.js");
-    vi.mocked(executePaperclipNativeSession).mockImplementationOnce(async options => actual.executePaperclipNativeSession({ ...options, useRunnerd: false,
+    vi.mocked(executePilibalaNativeSession).mockImplementationOnce(async options => actual.executePilibalaNativeSession({ ...options, useRunnerd: false,
       backend: { descriptor: async () => { throw new Error("Unexpected provider call"); }, openSession: async () => { throw new Error("Unexpected provider call"); } } }));
 
     if (scenario === "terminal-unreadable") {
@@ -372,8 +372,8 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     const completion = buildNativeCompletionContract(issue, { revision: contract.revision });
     await db.insert(nativeRunFinalizations).values({ runId: run.id, companyId: run.companyId, issueId: issue.id, phase: "observed" });
     input.runtime.nativeExecution = {
-      schema: "paperclip.native-execution-input.v1", interactionResponses: [], credentialBindings: [], binding: { companyId: run.companyId, agentId: run.agentId, issueId: issue.id, runId: run.id, executionWorkspaceId: run.id },
-      completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "paperclip.completion-contract.v1", contract: completion },
+      schema: "pilibala.native-execution-input.v1", interactionResponses: [], credentialBindings: [], binding: { companyId: run.companyId, agentId: run.agentId, issueId: issue.id, runId: run.id, executionWorkspaceId: run.id },
+      completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "pilibala.completion-contract.v1", contract: completion },
       provider: { kind: "codex", model: "test-model" },
       task: { identifier: issue.id, title: issue.title, description: null, prompt: "Local post-result I/O fault", workMode: "standard" },
       workspace: { cwd: home, repoUrl: null, repoRef: null, branchName: null },
@@ -383,12 +383,12 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     postResultProvider.execute.mockReset().mockImplementationOnce(async (options: { controlPlane: ControlPlanePort }) => {
       await options.controlPlane.openRun({ identity: { companyId: run.companyId, issueId: issue.id, runId: run.id, agentId: run.agentId, sessionId: prepared.normalizedSessionId }, backendKind: "mock", sourceInstanceId: prepared.runnerInstanceId });
       await options.controlPlane.completeRun({ result: { ...CONTROL_PLANE_CONFORMANCE_RESULT, completionClaim: { ...CONTROL_PLANE_CONFORMANCE_RESULT.completionClaim, contractRevision: completion.revision } },
-        terminal: { schema: "paperclip.prp.terminal.v1", turnTerminalState: "completed", runTerminalState: "succeeded", reportedWorkDisposition: "done" }, turnId: prepared.turnId });
+        terminal: { schema: "pilibala.prp.terminal.v1", turnTerminalState: "completed", runTerminalState: "succeeded", reportedWorkDisposition: "done" }, turnId: prepared.turnId });
       await readFile(join(home, `missing-${run.id}`, "harmless-checkpoint"));
       throw new Error("fixture must fail with ENOENT");
     });
     const actual = await vi.importActual<typeof import("../native-runtime/native-session-executor.js")>("../native-runtime/native-session-executor.js");
-    vi.mocked(executePaperclipNativeSession).mockImplementationOnce(async options => actual.executePaperclipNativeSession({ ...options, useRunnerd: false,
+    vi.mocked(executePilibalaNativeSession).mockImplementationOnce(async options => actual.executePilibalaNativeSession({ ...options, useRunnerd: false,
       backend: { descriptor: async () => { throw new Error("Unexpected provider call"); }, openSession: async () => { throw new Error("Unexpected provider call"); } } }));
 
     await expect(executeHeartbeatRuntime(db, input)).rejects.toMatchObject({ message: "native_session_lease_lost", diagnostic: { category: "io_not_found" } });
@@ -412,7 +412,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     const acquired = vi.fn(async () => undefined);
     input.runtime.runOptions.onNativeExecutionLeaseAcquired = acquired;
     await executeHeartbeatRuntime(db, input);
-    expect(executePaperclipNativeSession).toHaveBeenCalledWith(expect.objectContaining({ onExecutionLeaseAcquired: acquired }));
+    expect(executePilibalaNativeSession).toHaveBeenCalledWith(expect.objectContaining({ onExecutionLeaseAcquired: acquired }));
     // Preparation is still protected until the native executor claims its lease.
     expect(acquired).not.toHaveBeenCalled();
   });
@@ -422,7 +422,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     input.control.dispatchResolvedInteractionContinuationWithAtomicGate = async () => ({ dispatched: false });
     expect(await executeHeartbeatRuntime(db, input)).toEqual({ dispatched: false });
     expect(adapter.execute).not.toHaveBeenCalled();
-    expect(executePaperclipNativeSession).not.toHaveBeenCalled();
+    expect(executePilibalaNativeSession).not.toHaveBeenCalled();
     expect(input.effects.onNativeDispatchStarted).not.toHaveBeenCalled();
     expect(input.effects.onLegacyAdapterEntered).not.toHaveBeenCalled();
     expect(await finalizations()).toHaveLength(0);
@@ -507,7 +507,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     [new NativeWorkspaceFinalizationOwnershipLostError(), "onNativeWorkspaceFinalizeScheduled"],
   ] as const)("transfers recovery ownership for %s before cleanup", async (error, effect) => {
     const { input } = await fixture(true);
-    vi.mocked(executePaperclipNativeSession).mockRejectedValueOnce(error);
+    vi.mocked(executePilibalaNativeSession).mockRejectedValueOnce(error);
     input.instructions.releaseInstructionCopy = vi.fn(async () => {
       if (effect) expect(input.effects[effect]).toHaveBeenCalledOnce();
     });
@@ -523,7 +523,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
 
   it("dispatches native execution with the selected session and persists its usage", async () => {
     const { input, adapter, run } = await fixture(true);
-    vi.mocked(executePaperclipNativeSession).mockImplementationOnce(async native => {
+    vi.mocked(executePilibalaNativeSession).mockImplementationOnce(async native => {
       expect(native.execution).toBe(input.runtime.nativeExecution);
       expect(native.runnerInstanceId).toBe(input.runtime.nativeRunnerInstanceId);
       await native.onUsage?.({ usage: { inputTokens: 7, outputTokens: 3 }, complete: true });
@@ -544,7 +544,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     await db.insert(budgetPolicies).values({ companyId: run.companyId, scopeType: "agent", scopeId: input.agent.id,
       metric: "billed_cents", windowKind: "lifetime", amount: 100, notifyEnabled: false });
     let exact: string | undefined;
-    vi.mocked(executePaperclipNativeSession).mockImplementationOnce(async native => {
+    vi.mocked(executePilibalaNativeSession).mockImplementationOnce(async native => {
       expect(native.onUsage).toBeUndefined();
       const delivery = await createNativeUsageDelivery(db, { companyId: run.companyId, runId: run.id,
         runnerInstanceId: native.runnerInstanceId, provider: native.execution.provider,
@@ -597,7 +597,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     await db.update(heartbeatRuns).set({ nativeIssueId: input.task.issueId }).where(eq(heartbeatRuns.id, run.id));
     await db.insert(nativeRunFinalizations).values({ companyId: run.companyId, issueId: input.task.issueId!, runId: run.id, phase: "retryable_failure" });
     const error = new Error("session connection lost");
-    vi.mocked(executePaperclipNativeSession).mockRejectedValueOnce(error);
+    vi.mocked(executePilibalaNativeSession).mockRejectedValueOnce(error);
     await expect(executeHeartbeatRuntime(db, input)).rejects.toMatchObject({
       name: "NativeSessionResumeScheduledError", original: error,
     });
@@ -611,7 +611,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     await db.update(heartbeatRuns).set({ nativeIssueId: input.task.issueId }).where(eq(heartbeatRuns.id, run.id));
     await db.insert(nativeRunFinalizations).values({ companyId: run.companyId, issueId: input.task.issueId!, runId: run.id, phase: "retryable_failure" });
     const error = new Error('native_session_recovery_failed: Error: PRP command run.attach failed: {"result":{"message":"run.attach requires a settled Codex provider session: active_turn"}}');
-    vi.mocked(executePaperclipNativeSession).mockRejectedValueOnce(error);
+    vi.mocked(executePilibalaNativeSession).mockRejectedValueOnce(error);
     await expect(executeHeartbeatRuntime(db, input)).rejects.toMatchObject({ name: "NativeSessionResumeScheduledError", original: error });
     expect(input.output.onLog).toHaveBeenCalledWith("stderr", expect.stringContaining("doc/execution-semantics.md#session-settlement-after-a-run"));
     expect(input.output.onLog).toHaveBeenCalledWith("stderr", expect.stringContaining("run.attach requires a settled Codex provider session: active_turn"));
@@ -621,7 +621,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
   it("preserves the retained sandbox while native admission waits for its current owner", async () => {
     const { input } = await fixture(true);
     const error = new NativeControllerRecoveryWaitingError(new Date(Date.now() + 60_000));
-    vi.mocked(executePaperclipNativeSession).mockRejectedValueOnce(error);
+    vi.mocked(executePilibalaNativeSession).mockRejectedValueOnce(error);
     await expect(executeHeartbeatRuntime(db, input)).rejects.toMatchObject({
       name: "NativeSessionResumeScheduledError", original: error,
     });
@@ -646,7 +646,7 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     });
     input.workspace.nativeWorkspaceSync = {
       mode: "host_current",
-      reference: { schema: "paperclip.native-workspace-sync/v3", state: "prepared",
+      reference: { schema: "pilibala.native-workspace-sync/v3", state: "prepared",
         descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
         workspaceId: run.id, leaseId: randomUUID(), providerLeaseId: "sandbox", remoteCwd: "/workspace", resourceDisposition: null },
       restoreWorkspace: restore,
@@ -688,21 +688,21 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     const exporter = new InMemorySpanExporter();
     const provider = new TracerProvider({ spanProcessors: [new SimpleSpanProcessor({ exporter })] });
     expect(trace.setGlobalTracerProvider(provider)).toBe(true);
-    let release!: (result: Awaited<ReturnType<typeof executePaperclipNativeSession>>) => void;
-    const providerResult = new Promise<Awaited<ReturnType<typeof executePaperclipNativeSession>>>(resolve => { release = resolve; });
+    let release!: (result: Awaited<ReturnType<typeof executePilibalaNativeSession>>) => void;
+    const providerResult = new Promise<Awaited<ReturnType<typeof executePilibalaNativeSession>>>(resolve => { release = resolve; });
     const providerWork = async () => {
       const result = await providerResult;
       await createRunPreparationTiming(run.id, "native.controller")("coordinator_release", async () => {});
       return result;
     };
-    if (native) vi.mocked(executePaperclipNativeSession).mockImplementationOnce(providerWork);
+    if (native) vi.mocked(executePilibalaNativeSession).mockImplementationOnce(providerWork);
     else adapter.execute.mockImplementationOnce(providerWork);
     const running = withRunExecutionTiming(run.id, () => executeHeartbeatRuntime(db, input));
     try {
       await vi.waitFor(() => {
         expect(exporter.getFinishedSpans().filter(span => span.name === "execution.dispatch_admission")).toHaveLength(1);
       }, { timeout: 5_000 });
-      expect(native ? executePaperclipNativeSession : adapter.execute).toHaveBeenCalledOnce();
+      expect(native ? executePilibalaNativeSession : adapter.execute).toHaveBeenCalledOnce();
       expect(exporter.getFinishedSpans().find(span => span.name === "task.execution_attempt")).toBeUndefined();
       expect(await finalizations()).toHaveLength(0);
       release({ exitCode: 0, signal: null, timedOut: false });
@@ -726,13 +726,13 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     const { input, run } = await fixture(true, provider);
     input.workspace.nativeWorkspaceSync = {
       mode: "host_current",
-      reference: { schema: "paperclip.native-workspace-sync/v3", state: "prepared",
+      reference: { schema: "pilibala.native-workspace-sync/v3", state: "prepared",
         descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
         workspaceId: run.id, leaseId: randomUUID(), providerLeaseId: "sandbox", remoteCwd: "/workspace", resourceDisposition: "destroy" },
       restoreWorkspace: vi.fn(), cleanup: vi.fn(),
     };
     const error = new Error("runner_remote_process_identity_unavailable");
-    vi.mocked(executePaperclipNativeSession).mockRejectedValueOnce(error);
+    vi.mocked(executePilibalaNativeSession).mockRejectedValueOnce(error);
     input.instructions.releaseInstructionCopy = vi.fn(async () => {
       if (provider === "codex") expect(input.effects.onProviderResourceDisposition).toHaveBeenCalledWith("stop_and_retain");
       else expect(input.effects.onProviderResourceDisposition).not.toHaveBeenCalledWith("stop_and_retain");
@@ -790,7 +790,7 @@ describe("awaitBoardToolApproval", () => {
     let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
     let db: Db;
     beforeAll(async () => {
-      database = await startEmbeddedPostgresTestDatabase("paperclip-tool-approval");
+      database = await startEmbeddedPostgresTestDatabase("pilibala-tool-approval");
       db = createDb(database.connectionString);
       await db.execute(sql`set client_min_messages = warning`);
     }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);

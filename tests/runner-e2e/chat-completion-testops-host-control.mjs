@@ -31,7 +31,7 @@ export function paidWorker(definition, called) {
  */
 export async function verifyHostContract(workspace, temporaryRoot, env = process.env) {
   if (env.ALLURE_TOKEN || env.OPENROUTER_API_KEY || !path.isAbsolute(workspace)) throw new Error('Credential-free source control required');
-  const full = env.GITHUB_WORKFLOW_REF === `paperclipai/paperclip/${catalogWorkflow}@refs/heads/master`;
+  const full = env.GITHUB_WORKFLOW_REF === `pilibalaai/pilibala/${catalogWorkflow}@refs/heads/master`;
   const { cases, targetSha, workflow } = catalogDefinition(full ? { catalog: 'full' } : {});
   const source = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: workspace, encoding: 'utf8' }).trim();
   if (source !== targetSha) throw new Error('Source control pin mismatch');
@@ -40,7 +40,7 @@ export async function verifyHostContract(workspace, temporaryRoot, env = process
   // workflow input or another repository/ref cannot supply the worker body.
   const worker = full ? paidWorker(definition, parse(await readFile(new URL('../../.github/workflows/chat-catalog-testops-case.yml', import.meta.url), 'utf8'))) : definition.jobs.chat;
   const paid = worker.steps.find(step => step.env?.OPENROUTER_API_KEY);
-  if (paid.env.PAPERCLIP_CHAT_COMPLETION_TESTOPS !== 'v1' || paid.env.ALLURE_JOB_RUN_ID !== '${{ inputs.ALLURE_JOB_RUN_ID }}'
+  if (paid.env.PILIBALA_CHAT_COMPLETION_TESTOPS !== 'v1' || paid.env.ALLURE_JOB_RUN_ID !== '${{ inputs.ALLURE_JOB_RUN_ID }}'
     || !paid.run.includes('--max-automatic-retries 0') || definition.jobs.chat.strategy['max-parallel'] !== (full ? '${{ fromJSON(needs.select.outputs.parallelism) }}' : 1)) throw new Error('Workflow host contract mismatch');
   const { runnerMatrix } = await import(pathToFileURL(path.join(workspace, 'tests/runner-e2e/catalog.ts')).href);
   const { prepareChatRemoteHost } = await import(pathToFileURL(path.join(workspace, 'tests/runner-e2e/chat-remote-host.ts')).href);
@@ -57,9 +57,9 @@ export async function verifyHostContract(workspace, temporaryRoot, env = process
           || execution.suite.definitionMetadata?.companyAndAgentBudgetCents !== 500
           || execution.suite.definitionMetadata?.maximumAttemptsPerCell !== 1)) throw new Error('Pinned source selection mismatch');
       if (full) validateCompanySecretBindingApprovalSource(descriptor, execution.task);
-      const controlEnv = { GITHUB_ACTIONS: 'true', GITHUB_REPOSITORY: 'paperclipai/paperclip', GITHUB_REF: 'refs/heads/master',
-        GITHUB_WORKFLOW_REF: `paperclipai/paperclip/${workflow}@refs/heads/master`, GITHUB_RUN_ID: '1', GITHUB_RUN_ATTEMPT: '1',
-        PAPERCLIP_RUNNER_E2E_SOURCE_SHA: targetSha, PAPERCLIP_CHAT_COMPLETION_TESTOPS: paid.env.PAPERCLIP_CHAT_COMPLETION_TESTOPS,
+      const controlEnv = { GITHUB_ACTIONS: 'true', GITHUB_REPOSITORY: 'pilibalaai/pilibala', GITHUB_REF: 'refs/heads/master',
+        GITHUB_WORKFLOW_REF: `pilibalaai/pilibala/${workflow}@refs/heads/master`, GITHUB_RUN_ID: '1', GITHUB_RUN_ATTEMPT: '1',
+        PILIBALA_RUNNER_E2E_SOURCE_SHA: targetSha, PILIBALA_CHAT_COMPLETION_TESTOPS: paid.env.PILIBALA_CHAT_COMPLETION_TESTOPS,
         ALLURE_JOB_RUN_ID: '1' };
       let calls = 0;
       const dependencies = { platform: 'linux', arch: 'x64', sourceRevision: async () => source,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildCodexLocalConfig, buildPaperclipRunnerConfig } from "./build-config.js";
-import type { CreateConfigValues } from "@paperclipai/adapter-utils";
+import { buildCodexLocalConfig, buildPilibalaRunnerConfig } from "./build-config.js";
+import type { CreateConfigValues } from "@pilibalaai/adapter-utils";
 
 function makeValues(overrides: Partial<CreateConfigValues> = {}): CreateConfigValues {
   return {
@@ -39,56 +39,56 @@ describe("buildCodexLocalConfig", () => {
   it("round-trips native Cursor Cloud fields and credentials without adding local command permission defaults", () => {
     const cloud = { provider: "cursor_cloud", repoUrl: "https://github.com/acme/repo", repoRef: "feature", cloudEnvType: "cloud", autoCreatePR: true };
     const env = { CURSOR_API_KEY: { type: "secret_ref" as const, secretId: "company-key", version: "latest" as const } };
-    const first = buildPaperclipRunnerConfig(makeValues({ model: "caller-custom-model", envBindings: env, adapterSchemaValues: cloud }));
+    const first = buildPilibalaRunnerConfig(makeValues({ model: "caller-custom-model", envBindings: env, adapterSchemaValues: cloud }));
     expect(first).toEqual({ ...cloud, model: "caller-custom-model", env, lifecycleMode: "per_turn" });
-    const reopened = buildPaperclipRunnerConfig(makeValues({ model: "", envBindings: env, adapterSchemaValues: first }));
+    const reopened = buildPilibalaRunnerConfig(makeValues({ model: "", envBindings: env, adapterSchemaValues: first }));
     expect(reopened).toEqual(first);
-    expect(() => buildPaperclipRunnerConfig(makeValues({ model: "", adapterSchemaValues: cloud }))).toThrow("explicit model");
+    expect(() => buildPilibalaRunnerConfig(makeValues({ model: "", adapterSchemaValues: cloud }))).toThrow("explicit model");
   });
 
   it("round-trips qualified Kimi Code with its exact selected model", () => {
-    const first = buildPaperclipRunnerConfig(makeValues({ model: "explicit-kimi-model", adapterSchemaValues: { provider: "acpx", acpxAgent: "kimi" } }));
-    const reopened = buildPaperclipRunnerConfig(makeValues({ model: "", adapterSchemaValues: JSON.parse(JSON.stringify(first)) }));
+    const first = buildPilibalaRunnerConfig(makeValues({ model: "explicit-kimi-model", adapterSchemaValues: { provider: "acpx", acpxAgent: "kimi" } }));
+    const reopened = buildPilibalaRunnerConfig(makeValues({ model: "", adapterSchemaValues: JSON.parse(JSON.stringify(first)) }));
     expect(reopened).toMatchObject({ provider: "acpx", acpxAgent: "kimi", model: "explicit-kimi-model" });
     expect(first).not.toHaveProperty("candidateHarnesses");
-    expect(() => buildPaperclipRunnerConfig(makeValues({ model: "", adapterSchemaValues: { provider: "acpx", acpxAgent: "kimi" } })))
+    expect(() => buildPilibalaRunnerConfig(makeValues({ model: "", adapterSchemaValues: { provider: "acpx", acpxAgent: "kimi" } })))
       .toThrow("kimi requires an explicit provider model");
   });
   it("refuses pending Antigravity selection before saving Runner config", () => {
-    expect(() => buildPaperclipRunnerConfig(makeValues({ model: "exact-antigravity-model",
+    expect(() => buildPilibalaRunnerConfig(makeValues({ model: "exact-antigravity-model",
       adapterSchemaValues: { provider: "acpx", acpxAgent: "antigravity" } })))
       .toThrow("Google Antigravity is not enabled for production");
   });
   it("builds only the exact candidate model from non-persisted UI context", () => {
     const values = makeValues({ model: "exact-antigravity-model", adapterSchemaValues: { provider: "acpx", acpxAgent: "antigravity" } });
     const context = { candidateHarnesses: [{ agent: "antigravity" as const, model: "exact-antigravity-model" }] };
-    expect(buildPaperclipRunnerConfig(values, context)).toMatchObject({ provider: "acpx", acpxAgent: "antigravity", model: values.model });
-    expect(buildPaperclipRunnerConfig(values, context)).not.toHaveProperty("candidateHarnesses");
-    expect(() => buildPaperclipRunnerConfig({ ...values, model: "another-model" }, context)).toThrow();
-    expect(() => buildPaperclipRunnerConfig(values)).toThrow();
+    expect(buildPilibalaRunnerConfig(values, context)).toMatchObject({ provider: "acpx", acpxAgent: "antigravity", model: values.model });
+    expect(buildPilibalaRunnerConfig(values, context)).not.toHaveProperty("candidateHarnesses");
+    expect(() => buildPilibalaRunnerConfig({ ...values, model: "another-model" }, context)).toThrow();
+    expect(() => buildPilibalaRunnerConfig(values)).toThrow();
   });
 
   it("preserves explicitly disabled hosted search in native Codex configuration", () => {
-    expect(buildPaperclipRunnerConfig(makeValues({ search: false }))).toHaveProperty("search", false);
-    expect(buildPaperclipRunnerConfig(makeValues({ search: true }))).not.toHaveProperty("search");
+    expect(buildPilibalaRunnerConfig(makeValues({ search: false }))).toHaveProperty("search", false);
+    expect(buildPilibalaRunnerConfig(makeValues({ search: true }))).not.toHaveProperty("search");
   });
 
   describe("qualified Copilot config", () => {
     it("round-trips Copilot with the exact selected model", () => {
-      const first = buildPaperclipRunnerConfig(makeValues({ model: "gpt-5.6-luna", adapterSchemaValues: { provider: "acpx", acpxAgent: "copilot" } }));
-      const reopened = buildPaperclipRunnerConfig(makeValues({ model: "", adapterSchemaValues: JSON.parse(JSON.stringify(first)) }));
+      const first = buildPilibalaRunnerConfig(makeValues({ model: "gpt-5.6-luna", adapterSchemaValues: { provider: "acpx", acpxAgent: "copilot" } }));
+      const reopened = buildPilibalaRunnerConfig(makeValues({ model: "", adapterSchemaValues: JSON.parse(JSON.stringify(first)) }));
       expect(reopened).toMatchObject({ provider: "acpx", acpxAgent: "copilot", model: "gpt-5.6-luna" });
     });
     it.each(["", "auto", "default", "Auto", "DEFAULT"])("rejects a missing or implicit Copilot model (%s)", model => {
-      expect(() => buildPaperclipRunnerConfig(makeValues({ model, adapterSchemaValues: { provider: "acpx", acpxAgent: "copilot" } }))).toThrow("Select an available Copilot model");
+      expect(() => buildPilibalaRunnerConfig(makeValues({ model, adapterSchemaValues: { provider: "acpx", acpxAgent: "copilot" } }))).toThrow("Select an available Copilot model");
     });
   });
 
-  it.each([undefined, "approve-all", "approve-paperclip", "approve-reads", "deny-all"])(
+  it.each([undefined, "approve-all", "approve-pilibala", "approve-reads", "deny-all"])(
     "defaults Grok to full auto while preserving an explicit %s permission mode",
     (acpxPermissionMode) => {
-      const config = buildPaperclipRunnerConfig(makeValues({
-        adapterType: "paperclip_runner",
+      const config = buildPilibalaRunnerConfig(makeValues({
+        adapterType: "pilibala_runner",
         model: "",
         adapterSchemaValues: { provider: "acpx", acpxAgent: "grok", acpxPermissionMode },
       }));
@@ -104,13 +104,13 @@ describe("buildCodexLocalConfig", () => {
   it.each(["", "grok-4.7-custom"])("retains the Grok harness and its model when normalizing runner fields (%s)", (model) => {
     const values = makeValues({
       model,
-      adapterSchemaValues: { provider: "acpx", acpxAgent: "grok", acpxPermissionMode: "approve-paperclip" },
+      adapterSchemaValues: { provider: "acpx", acpxAgent: "grok", acpxPermissionMode: "approve-pilibala" },
     });
-    expect(buildPaperclipRunnerConfig(values)).toMatchObject({
+    expect(buildPilibalaRunnerConfig(values)).toMatchObject({
       provider: "acpx",
       acpxAgent: "grok",
       model: model || "grok-4.7",
-      acpxPermissionMode: "approve-paperclip",
+      acpxPermissionMode: "approve-pilibala",
     });
     expect(values.adapterSchemaValues?.acpxAgent).toBe("grok");
   });
@@ -165,24 +165,24 @@ describe("buildCodexLocalConfig", () => {
   });
 });
 
-describe("buildPaperclipRunnerConfig", () => {
+describe("buildPilibalaRunnerConfig", () => {
   it.each(["codex", "claude"])("preserves, overrides and explicitly clears saved %s reasoning effort", harness => {
     const profile = harness === "codex" ? { provider: "codex" } : { provider: "acpx", acpxAgent: "claude" };
     const values = makeValues({ adapterSchemaValues: { ...profile, modelReasoningEffort: "high", reasoningEffort: "low", effort: "low" } });
     const unhydrated = { ...values };
     Reflect.deleteProperty(unhydrated, "thinkingEffort");
-    expect(buildPaperclipRunnerConfig(unhydrated).modelReasoningEffort).toBe("high");
-    expect(buildPaperclipRunnerConfig({ ...values, thinkingEffort: "max" }).modelReasoningEffort).toBe("max");
-    const cleared = buildPaperclipRunnerConfig({ ...values, thinkingEffort: "" });
+    expect(buildPilibalaRunnerConfig(unhydrated).modelReasoningEffort).toBe("high");
+    expect(buildPilibalaRunnerConfig({ ...values, thinkingEffort: "max" }).modelReasoningEffort).toBe("max");
+    const cleared = buildPilibalaRunnerConfig({ ...values, thinkingEffort: "" });
     for (const key of ["modelReasoningEffort", "reasoningEffort", "effort"]) expect(cleared).not.toHaveProperty(key);
   });
   it.each([undefined, false, true])("preserves Dot attachment consent in create/import forms: %s", value => {
-    const config = buildPaperclipRunnerConfig(makeValues({ adapterType: "paperclip_runner", adapterSchemaValues: { provider: "openai_dot", dotAttachmentAccess: value } }));
+    const config = buildPilibalaRunnerConfig(makeValues({ adapterType: "pilibala_runner", adapterSchemaValues: { provider: "openai_dot", dotAttachmentAccess: value } }));
     expect(config.dotAttachmentAccess).toBe(value === true);
     expect(config.dotWorkspaceAccess).toBe(false);
   });
   it("keeps only settings implemented by the Codex runner profile", () => {
-    const config = buildPaperclipRunnerConfig(makeValues({
+    const config = buildPilibalaRunnerConfig(makeValues({
       codexEngine: "acp",
       codexAcpAgentCommand: "custom-acp",
       codexAcpStateDir: "/tmp/acp",
@@ -219,11 +219,11 @@ describe("buildPaperclipRunnerConfig", () => {
   });
 
   it("persists bounded Codex permission and warm lifecycle values", () => {
-    const config = buildPaperclipRunnerConfig(makeValues({
-      adapterType: "paperclip_runner",
+    const config = buildPilibalaRunnerConfig(makeValues({
+      adapterType: "pilibala_runner",
       codexPermissionMode: "never",
-      paperclipRunnerLifecycleMode: "warm",
-      paperclipRunnerIdleTimeoutMs: 45_000,
+      pilibalaRunnerLifecycleMode: "warm",
+      pilibalaRunnerIdleTimeoutMs: 45_000,
     }));
 
     expect(config).toMatchObject({
@@ -235,7 +235,7 @@ describe("buildPaperclipRunnerConfig", () => {
   });
 
   it("rejects an unsupported persisted Codex permission instead of coercing it", () => {
-    expect(() => buildPaperclipRunnerConfig(makeValues({
+    expect(() => buildPilibalaRunnerConfig(makeValues({
       adapterSchemaValues: {
         provider: "unknown",
         codexPermissionMode: "unrestricted",
@@ -246,8 +246,8 @@ describe("buildPaperclipRunnerConfig", () => {
   });
 
   it("builds a qualified OpenCode profile from schema-backed values", () => {
-    expect(buildPaperclipRunnerConfig(makeValues({
-      adapterType: "paperclip_runner",
+    expect(buildPilibalaRunnerConfig(makeValues({
+      adapterType: "pilibala_runner",
       model: "",
       adapterSchemaValues: {
         provider: "opencode",
@@ -263,8 +263,8 @@ describe("buildPaperclipRunnerConfig", () => {
   });
 
   it("does not let a stale schema model override the active Codex model", () => {
-    expect(buildPaperclipRunnerConfig(makeValues({
-      adapterType: "paperclip_runner",
+    expect(buildPilibalaRunnerConfig(makeValues({
+      adapterType: "pilibala_runner",
       model: "gpt-5.6-sol",
       adapterSchemaValues: {
         provider: "codex",
@@ -279,16 +279,16 @@ describe("buildPaperclipRunnerConfig", () => {
   });
 
   it.each(["modelReasoningEffort", "reasoningEffort", "effort"])("keeps explicit Auto Claude effort cleared over saved %s", key => {
-    const config = buildPaperclipRunnerConfig(makeValues({ thinkingEffort: "", adapterSchemaValues: { provider: "acpx", acpxAgent: "claude", [key]: "high" } }));
+    const config = buildPilibalaRunnerConfig(makeValues({ thinkingEffort: "", adapterSchemaValues: { provider: "acpx", acpxAgent: "claude", [key]: "high" } }));
     for (const effortKey of ["modelReasoningEffort", "reasoningEffort", "effort"]) expect(config).not.toHaveProperty(effortKey);
   });
   it.each(["claude-opus-5", "my-custom-model"])("preserves the selected ACPX Claude model %s", (model) => {
-    expect(buildPaperclipRunnerConfig(makeValues({ model, adapterSchemaValues: { provider: "acpx" } })))
+    expect(buildPilibalaRunnerConfig(makeValues({ model, adapterSchemaValues: { provider: "acpx" } })))
       .toMatchObject({ provider: "acpx", acpxAgent: "claude", model });
   });
 
   it("normalizes the removed ACPX Codex configuration to native Codex", () => {
-    const config = buildPaperclipRunnerConfig(makeValues({ model: "gpt-5.6-sol", adapterSchemaValues: { provider: "acpx", acpxAgent: "codex" } }));
+    const config = buildPilibalaRunnerConfig(makeValues({ model: "gpt-5.6-sol", adapterSchemaValues: { provider: "acpx", acpxAgent: "codex" } }));
     expect(config).toMatchObject({ provider: "codex", model: "gpt-5.6-sol" });
     expect(config).not.toHaveProperty("acpxAgent");
   });
@@ -296,24 +296,24 @@ describe("buildPaperclipRunnerConfig", () => {
 
 
   it.each(["agent", "plan", "ask"])("preserves Cursor's explicit model and %s mode", (mode) => {
-    expect(buildPaperclipRunnerConfig(makeValues({
+    expect(buildPilibalaRunnerConfig(makeValues({
       model: "explicit-cursor-model",
       adapterSchemaValues: { provider: "acpx", acpxAgent: "cursor", acpxSessionMode: mode },
     }))).toMatchObject({ provider: "acpx", acpxAgent: "cursor", model: "explicit-cursor-model", acpxSessionMode: mode });
   });
 
   it("defaults Cursor to Agent and requires an explicit model", () => {
-    expect(buildPaperclipRunnerConfig(makeValues({
+    expect(buildPilibalaRunnerConfig(makeValues({
       model: "explicit-cursor-model", adapterSchemaValues: { provider: "acpx", acpxAgent: "cursor" },
     }))).toMatchObject({ acpxAgent: "cursor", acpxSessionMode: "agent", model: "explicit-cursor-model" });
-    expect(() => buildPaperclipRunnerConfig(makeValues({
+    expect(() => buildPilibalaRunnerConfig(makeValues({
       model: "", adapterSchemaValues: { provider: "acpx", acpxAgent: "cursor" },
     }))).toThrow("cursor requires an explicit provider model");
   });
 
   it("builds a Claude Managed profile reference with explicit retention and spend controls", () => {
-    const config = buildPaperclipRunnerConfig(makeValues({
-      adapterType: "paperclip_runner",
+    const config = buildPilibalaRunnerConfig(makeValues({
+      adapterType: "pilibala_runner",
       model: "claude-sonnet-5",
       adapterSchemaValues: {
         provider: "claude_managed",
@@ -334,8 +334,8 @@ describe("buildPaperclipRunnerConfig", () => {
   });
 
   it("builds an AgentCore profile reference with bounded invocation controls", () => {
-    expect(buildPaperclipRunnerConfig(makeValues({
-      adapterType: "paperclip_runner",
+    expect(buildPilibalaRunnerConfig(makeValues({
+      adapterType: "pilibala_runner",
       model: "",
       adapterSchemaValues: {
         provider: "aws_agentcore",
@@ -365,8 +365,8 @@ describe("buildPaperclipRunnerConfig", () => {
     ["maxOutputTokens", 4_097],
     ["timeoutSeconds", 301],
   ])("rejects an unsafe AgentCore %s value", (field, value) => {
-    expect(() => buildPaperclipRunnerConfig(makeValues({
-      adapterType: "paperclip_runner",
+    expect(() => buildPilibalaRunnerConfig(makeValues({
+      adapterType: "pilibala_runner",
       adapterSchemaValues: {
         provider: "aws_agentcore",
         agentCoreProfileId: "agentcore-primary",
@@ -377,16 +377,16 @@ describe("buildPaperclipRunnerConfig", () => {
   });
 
   it("uses the Codex default when no model was selected", () => {
-    expect(buildPaperclipRunnerConfig(makeValues({ model: "" }))).toMatchObject({
+    expect(buildPilibalaRunnerConfig(makeValues({ model: "" }))).toMatchObject({
       provider: "codex",
       model: "gpt-6.1-sol",
     });
   });
 
   it("bounds warm lifecycle values to the shared safe default", () => {
-    expect(buildPaperclipRunnerConfig(makeValues({
-      paperclipRunnerLifecycleMode: "warm",
-      paperclipRunnerIdleTimeoutMs: 86_400_001,
+    expect(buildPilibalaRunnerConfig(makeValues({
+      pilibalaRunnerLifecycleMode: "warm",
+      pilibalaRunnerIdleTimeoutMs: 86_400_001,
     }))).toMatchObject({
       lifecycleMode: "warm",
       idleTimeoutMs: 300_000,
@@ -394,9 +394,9 @@ describe("buildPaperclipRunnerConfig", () => {
   });
 
   it("omits an idle timeout for turn-by-turn sessions", () => {
-    const config = buildPaperclipRunnerConfig(makeValues({
-      paperclipRunnerLifecycleMode: "per_turn",
-      paperclipRunnerIdleTimeoutMs: 45_000,
+    const config = buildPilibalaRunnerConfig(makeValues({
+      pilibalaRunnerLifecycleMode: "per_turn",
+      pilibalaRunnerIdleTimeoutMs: 45_000,
     }));
 
     expect(config).not.toHaveProperty("idleTimeoutMs");
@@ -404,9 +404,9 @@ describe("buildPaperclipRunnerConfig", () => {
 });
 
 it.each([undefined, "off", "low", "high", "max"] as const)("builds exact Pi thinking configuration %s", piThinkingLevel => {
-  const config = buildPaperclipRunnerConfig(makeValues({ adapterType: "paperclip_runner", model: "openrouter/deepseek/deepseek-v4-flash-0731", adapterSchemaValues: { provider: "acpx", acpxAgent: "pi", piThinkingLevel } }));
+  const config = buildPilibalaRunnerConfig(makeValues({ adapterType: "pilibala_runner", model: "openrouter/deepseek/deepseek-v4-flash-0731", adapterSchemaValues: { provider: "acpx", acpxAgent: "pi", piThinkingLevel } }));
   expect(config.piThinkingLevel).toBe(piThinkingLevel ?? "low");
 });
 it("rejects silently clamped Pi aliases during configuration", () => {
-  expect(() => buildPaperclipRunnerConfig(makeValues({ adapterType: "paperclip_runner", adapterSchemaValues: { provider: "acpx", acpxAgent: "pi", piThinkingLevel: "medium" } }))).toThrow();
+  expect(() => buildPilibalaRunnerConfig(makeValues({ adapterType: "pilibala_runner", adapterSchemaValues: { provider: "acpx", acpxAgent: "pi", piThinkingLevel: "medium" } }))).toThrow();
 });

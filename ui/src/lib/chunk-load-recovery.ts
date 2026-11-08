@@ -1,8 +1,8 @@
 // Holds the bare start time of the guard window. Builds without retries read
 // this key too, so it keeps their single-reload guard working during a deploy.
-const RELOAD_AT_KEY = "paperclip:chunk-load-reload-at";
+const RELOAD_AT_KEY = "pilibala:chunk-load-reload-at";
 // Holds "<window start>:<attempts>"; it only counts for the matching window.
-const RELOAD_ATTEMPTS_KEY = "paperclip:chunk-load-reload-attempts";
+const RELOAD_ATTEMPTS_KEY = "pilibala:chunk-load-reload-attempts";
 const RELOAD_GUARD_MS = 5 * 60 * 1000;
 export const RELOAD_ABANDONED_MS = 10_000;
 // During a deploy, old and new servers can both answer for a few seconds, so a

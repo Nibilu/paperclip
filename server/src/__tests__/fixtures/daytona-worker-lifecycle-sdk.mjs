@@ -4,7 +4,7 @@ const sandboxes = new Map();
 let nextId = 0;
 
 function record(event, fields = {}) {
-  appendFileSync(process.env.PAPERCLIP_DAYTONA_FIXTURE_JOURNAL, `${JSON.stringify({ event, ...fields })}\n`);
+  appendFileSync(process.env.PILIBALA_DAYTONA_FIXTURE_JOURNAL, `${JSON.stringify({ event, ...fields })}\n`);
 }
 
 function sandbox(params) {
@@ -36,7 +36,7 @@ function sandbox(params) {
         record("execute", { id, afterRelease });
         if (command.includes("fixture-provider-stop")) resource.state = "stopped";
         const sentinel = command.match(/^cat '([^']+)'/);
-        const result = afterRelease ? readFileSync(process.env.PAPERCLIP_DAYTONA_FIXTURE_SAVED_FILE, "utf8")
+        const result = afterRelease ? readFileSync(process.env.PILIBALA_DAYTONA_FIXTURE_SAVED_FILE, "utf8")
           : sentinel ? files.get(sentinel[1]) ?? "" : "bash";
         return { exitCode: 0, result, artifacts: { stdout: result } };
       },
@@ -51,7 +51,7 @@ function sandbox(params) {
           async kill() { record("pty.kill", { id }); finish({ exitCode: 0 }); },
           async disconnect() {
             record("pty.disconnect", { id });
-            if (process.env.PAPERCLIP_DAYTONA_FIXTURE_HANG_CLOSE === "1" && id === "fixture-sandbox-1") {
+            if (process.env.PILIBALA_DAYTONA_FIXTURE_HANG_CLOSE === "1" && id === "fixture-sandbox-1") {
               await new Promise(() => {});
             }
           },

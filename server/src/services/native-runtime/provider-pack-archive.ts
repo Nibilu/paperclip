@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
 import type { NativeRunTrace } from "./native-run-trace.js";
 import { invalidArchive, readProviderPackLayers, stageProviderPackLayers, verifyArchive } from "./provider-pack-layers.js";
 import { providerPackExtractionProbe } from "./provider-pack-extraction.js";
@@ -17,10 +17,10 @@ export async function readProviderPackArchive(root: string, expectedDigest: stri
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw invalidArchive("receipt_unreadable", error);
   }
-  if (receipt.schema === "paperclip-runner/provider-pack-archive/v2") {
+  if (receipt.schema === "pilibala-runner/provider-pack-archive/v2") {
     return readProviderPackLayers(root, expectedDigest, receipt, signal);
   }
-  if (receipt.schema !== "paperclip-runner/provider-pack-archive/v1"
+  if (receipt.schema !== "pilibala-runner/provider-pack-archive/v1"
     || receipt.encoding !== "tar+zstd"
     || receipt.providerPackDigest !== expectedDigest
     || !/^[a-f0-9]{64}$/.test(receipt.sha256 ?? "")

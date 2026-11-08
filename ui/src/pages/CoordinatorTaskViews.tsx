@@ -29,7 +29,7 @@ export function CoordinatorTaskViews() {
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
-  const key = JSON.stringify(["paperclip:coordinator-task-view:v2", selectedCompanyId, userId]);
+  const key = JSON.stringify(["pilibala:coordinator-task-view:v2", selectedCompanyId, userId]);
   const [preference, setPreference] = useState(() => ({ key, view: loadView(key, userId) }));
   const savedView = preference.key === key ? preference.view : loadView(key, userId);
   const requested = params.get("view") === "inbox" ? "mine" : params.get("view");

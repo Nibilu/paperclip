@@ -13,7 +13,7 @@ const meta = {
           "Production runner activity group with Claude and Codex tool rows: verb icon, real subject, exit chip and duration. Runs of three or more completed reads fold into one row. A refused tool shows the reason.",
       },
     },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "tasks/discussion",
         "runs-adapters/runs"

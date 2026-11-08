@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
   ConnectionGrantsResponse,
   ToolConnection,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { browserUseApi } from "@/api/browser-use";
 import { QueryErrorState, useQueryView } from "@/components/QueryView";
 import { Button } from "@/components/ui/button";
@@ -59,11 +59,11 @@ function CredentialSettings({
           min="0"
           step="0.01"
           value={limit}
-          placeholder="Use the remaining Paperclip budget"
+          placeholder="Use the remaining Pilibala budget"
           onChange={(e) => setLimit(e.target.value)}
         />
         <p className="text-sm text-muted-foreground">
-          The agent can choose a lower limit. Paperclip also applies any
+          The agent can choose a lower limit. Pilibala also applies any
           remaining hard budget limit.
         </p>
       </div>

@@ -182,7 +182,7 @@ try {
   fixture = await retainFixture(apiClients.candidate);
   for (const arm of arms) await api(apiClients[arm], "GET", `/companies/${fixture.company.id}`);
   await api(apiClients.candidate, "PUT", `/companies/${fixture.company.id}/workspace-preferences/me`, { coordinatorWorkspaceEnabled: true });
-  browser = await chromium.launch({ headless: process.env.INBOX_HEADFUL !== "1", channel: process.env.PAPERCLIP_PLAYWRIGHT_CHANNEL });
+  browser = await chromium.launch({ headless: process.env.INBOX_HEADFUL !== "1", channel: process.env.PILIBALA_PLAYWRIGHT_CHANNEL });
   if (scenarios.includes("warm")) for (const arm of arms) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: "block" });
     const prepared = await preparePage(context, origins[arm]);

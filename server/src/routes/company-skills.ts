@@ -7,18 +7,18 @@ import { skillAccessRequestContext, skillAccessService } from "../services/skill
 import { skillSourceService, type SkillSourceContext } from "../services/skill-sources.js";
 import { skillSourceGitHubReader } from "../services/skill-source-github-access.js";
 import { toolAccessService } from "../services/tool-access.js";
-import { skillSourceCreateSchema, skillSourceDiscoverySchema, skillSourcePreviewSchema, skillSourceSelectionSchema, skillSourceSettingsSchema, skillSourceBranchesQuerySchema, projectSkillSourceAdoptSchema, skillSourceDisconnectSchema } from "@paperclipai/shared";
+import { skillSourceCreateSchema, skillSourceDiscoverySchema, skillSourcePreviewSchema, skillSourceSelectionSchema, skillSourceSettingsSchema, skillSourceBranchesQuerySchema, projectSkillSourceAdoptSchema, skillSourceDisconnectSchema } from "@pilibalaai/shared";
 import type { ActivityPublication } from "../services/activity-log.js";
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
 import { once } from "node:events";
-import type { SkillSourceDiscoveryEvent } from "@paperclipai/shared";
+import type { SkillSourceDiscoveryEvent } from "@pilibalaai/shared";
 import { createHash } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
-import { activityLog, companySkills, companySkillMutationReceipts } from "@paperclipai/db";
+import { activityLog, companySkills, companySkillMutationReceipts } from "@pilibalaai/db";
 import { persistActivity, publishActivity } from "../services/activity-log.js";
 import { projectToolContext } from "../services/project-tool-context.js";
 import { Router, type Request } from "express";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   catalogSkillListQuerySchema,
   companySkillCommentCreateSchema,
@@ -43,8 +43,8 @@ import {
   companySkillTestRunListQuerySchema,
   companySkillUpdateSchema,
   companySkillVersionCreateSchema,
-} from "@paperclipai/shared";
-import { trackSkillImported } from "@paperclipai/shared/telemetry";
+} from "@pilibalaai/shared";
+import { trackSkillImported } from "@pilibalaai/shared/telemetry";
 import { validate } from "../middleware/validate.js";
 import {
   accessService,
@@ -73,7 +73,7 @@ import {
   type SkillPolicyAction,
   type SkillPolicyDecision,
   type SkillPolicyEvaluationResource,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 type SkillTelemetryInput = {
   key: string;

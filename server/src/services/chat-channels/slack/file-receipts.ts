@@ -21,7 +21,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 
 import {
   chatActions,
@@ -30,11 +30,11 @@ import {
   chatEndpoints,
   chatMessageLinks,
   chatPublications,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 
 import {
   isUuidLike,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 import {
   type SlackFileUploadAcceptedReceipt,

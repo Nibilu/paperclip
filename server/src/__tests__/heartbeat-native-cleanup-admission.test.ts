@@ -1,10 +1,10 @@
-import { EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@paperclipai/db";
+import { EMBEDDED_POSTGRES_TEST_TIMEOUT_MS } from "@pilibalaai/db";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, agentWakeupRequests, authUsers, companies, companyMemberships, createDb, environmentLeases, environments, heartbeatRuns, issues, nativeRunFinalizations } from "@paperclipai/db";
+import { agents, agentWakeupRequests, authUsers, companies, companyMemberships, createDb, environmentLeases, environments, heartbeatRuns, issues, nativeRunFinalizations } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { heartbeatService } from "../services/heartbeat.js";
 import { NativeStartupCleanupPendingError, readNativeStartupCleanup } from "../services/native-runtime/native-startup-cleanup.js";
@@ -83,8 +83,8 @@ suite("native terminal-run cleanup admission", () => {
 
   it.each(["continue", "stop", "reassign", "failed cleanup"] as const)(
     "settles an automatic legacy retry from the committed cleanup event: %s", async mode => {
-      const home = createIsolatedTestHome(), previousHome = process.env.PAPERCLIP_HOME;
-      process.env.PAPERCLIP_HOME = home.home;
+      const home = createIsolatedTestHome(), previousHome = process.env.PILIBALA_HOME;
+      process.env.PILIBALA_HOME = home.home;
       const companyId = randomUUID(), agentId = randomUUID(), issueId = randomUUID(), sourceId = randomUUID();
       const successorId = randomUUID(), wakeId = randomUUID(), ownerId = randomUUID();
       const cwd = path.join(home.home, "saved-task");
@@ -166,15 +166,15 @@ suite("native terminal-run cleanup admission", () => {
         await coordinator.stop();
         await heartbeat.drainActiveRunExecutions();
         await db.update(agents).set({ status: "paused" }).where(eq(agents.id, agentId));
-        if (previousHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = previousHome;
+        if (previousHome === undefined) delete process.env.PILIBALA_HOME; else process.env.PILIBALA_HOME = previousHome;
         home.cleanup();
       }
     }, 30_000,
   );
 
   it("retries a failed startup intent through timer failure and drain before verified cancellation", async () => {
-    const home = createIsolatedTestHome(), originalHome = process.env.PAPERCLIP_HOME;
-    process.env.PAPERCLIP_HOME = home.home;
+    const home = createIsolatedTestHome(), originalHome = process.env.PILIBALA_HOME;
+    process.env.PILIBALA_HOME = home.home;
     const companyId = randomUUID(), agentId = randomUUID(), issueId = randomUUID(), leaseId = randomUUID();
     const contextId = randomUUID(), leaseOwner = randomUUID(), taskId = randomUUID(), deadlineAtMs = Date.now() - 1;
     const originalSetTimeout = globalThis.setTimeout;
@@ -189,7 +189,7 @@ suite("native terminal-run cleanup admission", () => {
     }) as typeof setTimeout);
     let failSuppression = false, runId = "";
     const runtimeEnv = new Proxy<Record<string, string | undefined>>({}, { get(_target, key) {
-      if (key === "PAPERCLIP_DATABASE_RESTORE_IN_PROGRESS" && failSuppression) {
+      if (key === "PILIBALA_DATABASE_RESTORE_IN_PROGRESS" && failSuppression) {
         failSuppression = false;
         throw new Error("Scheduling dependency unavailable");
       }
@@ -218,14 +218,14 @@ suite("native terminal-run cleanup admission", () => {
         runId = context.runId;
         const [run] = await db.update(heartbeatRuns).set({ runtimeMode: "native", runtimeModeResolvedAt: null }).where(eq(heartbeatRuns.id, runId)).returning();
         await prepareNativeHeartbeatRun({ db, run, issue: { id: issueId, title: "Recover startup", description: null }, environmentLeaseId: leaseId });
-        await db.update(agents).set({ adapterType: "paperclip_runner", adapterConfig: { provider: "codex" } }).where(eq(agents.id, agentId));
+        await db.update(agents).set({ adapterType: "pilibala_runner", adapterConfig: { provider: "codex" } }).where(eq(agents.id, agentId));
         await db.update(issues).set({ executionRunId: runId }).where(eq(issues.id, issueId));
         await db.insert(nativeRunFinalizations).values({ runId, companyId, issueId, phase: "observed", attempt: 1,
           controllerGeneration: 1, leaseOwner, leaseExpiresAt: new Date(Date.now() - 1_000) });
         await db.insert(environmentLeases).values({ id: leaseId, companyId, environmentId: environment.id, heartbeatRunId: runId,
           issueId, status: "active", provider: "plugin", providerLeaseId: taskId, leasePolicy: "reuse_by_environment", metadata: { runnerTaskLease: true } });
         await db.update(heartbeatRuns).set({ runnerProfileJson: sql`coalesce(${heartbeatRuns.runnerProfileJson}, '{}'::jsonb) || ${JSON.stringify({
-          nativeStartupContext: { schema: "paperclip.native-startup-context.v1", companyId, agentId, runId,
+          nativeStartupContext: { schema: "pilibala.native-startup-context.v1", companyId, agentId, runId,
             contextId, deadlineAtMs, leaseId, leaseOwner, controllerGeneration: 1, attempt: 1 },
         })}::jsonb` }).where(eq(heartbeatRuns.id, runId));
         throw new NativeStartupCleanupPendingError(contextId, deadlineAtMs, leaseOwner, false, leaseId);
@@ -269,8 +269,8 @@ suite("native terminal-run cleanup admission", () => {
       await db.execute(sql`drop function if exists test_reject_cleanup_intent()`);
       await db.execute(sql`drop table if exists test_cleanup_intent_fault`);
       await db.execute(sql`drop sequence if exists test_cleanup_intent_attempts`);
-      if (originalHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = originalHome;
+      if (originalHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = originalHome;
       home.cleanup();
     }
   }, 30_000);

@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { idleRetryWorkChecks } from "./heartbeat/idle-retry-schedule.js";
 import type { IdlePluginCatalogEntry } from "./plugin-idle-catalog.js";
 import { createHash, randomUUID } from "node:crypto";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import type { VerifiedIdleCapabilities } from "./idle-incoming-wake-capability.js";
 import type { ScheduledWake } from "./idle-scheduled-work.js";
 import { IDLE_DEADLINE_CATALOG, type DomainScheduledWake, type IdleDeadlineSnapshot, type IdleDeadlineOwners, type IdleDeadlineOwnerInspection } from "./idle-deadline-types.js";

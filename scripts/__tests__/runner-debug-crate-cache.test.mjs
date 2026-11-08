@@ -7,9 +7,9 @@ import test from "node:test";
 import { debugContract, debugKey } from "../runner-debug-crate-cache.mjs";
 import { markCurrent } from "../runner-release-crate-cache.mjs";
 
-const bins = [...readFileSync("packages/paperclip-runner/runner/crates/runner-core/Cargo.toml", "utf8")
+const bins = [...readFileSync("packages/pilibala-runner/runner/crates/runner-core/Cargo.toml", "utf8")
   .matchAll(/\[\[bin\]\]\nname = "([^"]+)"/g)].map(match => match[1]);
-const metadata = { workspace_members: ["core"], packages: [{ id: "core", name: "paperclip-runner-core",
+const metadata = { workspace_members: ["core"], packages: [{ id: "core", name: "pilibala-runner-core",
   targets: bins.map(name => ({ name, kind: ["bin"] })) }] };
 
 test("every debug binary must be complete before the restored units are marked fresh", t => {
@@ -23,7 +23,7 @@ test("every debug binary must be complete before the restored units are marked f
     mkdirSync(path.dirname(filename), { recursive: true });
     writeFileSync(filename, "cached artifact");
   }
-  const dependency = path.join(root, "packages/paperclip-runner/runner/target/debug/deps/libserde-123.rlib");
+  const dependency = path.join(root, "packages/pilibala-runner/runner/target/debug/deps/libserde-123.rlib");
   writeFileSync(dependency, "dependency");
   const previous = statSync(dependency).mtimeMs;
   assert.equal(markCurrent({ root, ...contract }).action, "marked");
@@ -40,10 +40,10 @@ test("every debug binary must be complete before the restored units are marked f
 test("the process-table library is cached with the crate, and any other workspace member needs review", t => {
   const root = mkdtempSync(path.join(os.tmpdir(), "runner-debug-cache-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const table = { id: "table", name: "paperclip-process-table", targets: [{ name: "paperclip_process_table", kind: ["lib"] }] };
+  const table = { id: "table", name: "pilibala-process-table", targets: [{ name: "pilibala_process_table", kind: ["lib"] }] };
   const withTable = { workspace_members: ["core", "table"], packages: [...metadata.packages, table] };
   const contract = debugContract(root, withTable);
-  assert.ok(contract.cachedPaths.some(entry => entry.endsWith("/deps/libpaperclip_process_table-*")));
+  assert.ok(contract.cachedPaths.some(entry => entry.endsWith("/deps/libpilibala_process_table-*")));
   assert.ok(contract.required.some(item => item.label === "the process-table lib rlib"));
   for (const item of contract.required) {
     const filename = path.join(root, item.glob.replaceAll("*", "0123456789abcdef"));
@@ -55,14 +55,14 @@ test("the process-table library is cached with the crate, and any other workspac
   assert.match(markCurrent({ root, ...contract }).reason, /process-table lib rlib/);
   const tableWithBin = { ...table, targets: [...table.targets, { name: "probe", kind: ["bin"] }] };
   assert.throws(() => debugContract(root, { ...withTable, packages: [...metadata.packages, tableWithBin] }), /Review/);
-  const other = { id: "other", name: "paperclip-other", targets: [{ name: "other", kind: ["lib"] }] };
+  const other = { id: "other", name: "pilibala-other", targets: [{ name: "other", kind: ["lib"] }] };
   assert.throws(() => debugContract(root, { workspace_members: ["core", "other"], packages: [...metadata.packages, other] }), /Review/);
 });
 
 test("debug cache keys invalidate source, included inputs, deletions and compiler flags", t => {
   const root = mkdtempSync(path.join(os.tmpdir(), "runner-debug-key-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const source = path.join(root, "packages/paperclip-runner/runner/crates/runner-core/src/lib.rs");
+  const source = path.join(root, "packages/pilibala-runner/runner/crates/runner-core/src/lib.rs");
   mkdirSync(path.dirname(source), { recursive: true });
   writeFileSync(source, "pub fn run() {}\n");
   execFileSync("git", ["init", "-q"], { cwd: root });
@@ -80,7 +80,7 @@ test("debug cache keys invalidate source, included inputs, deletions and compile
   rmSync(source);
   assert.notEqual(debugKey(root, env), first);
   writeFileSync(source, "pub fn run() {}\n");
-  const protocol = path.join(root, "packages/paperclip-runner/protocol/input.json");
+  const protocol = path.join(root, "packages/pilibala-runner/protocol/input.json");
   mkdirSync(path.dirname(protocol), { recursive: true });
   writeFileSync(protocol, "{}");
   execFileSync("git", ["add", "."], { cwd: root });
@@ -100,7 +100,7 @@ test("PRs only restore exact debug keys and only verified master pushes publish 
   for (const name of ["Compute the Runner debug crate cache key", "Check for this push's Runner debug crate",
     "Clean debug test variants before publishing workspace binaries", "Save the Runner debug crate"]) {
     const body = step(release, name);
-    assert.match(body, /matrix.lane == 'rust' && github.repository == 'paperclipai\/paperclip' && github.event_name == 'push' && github.ref == 'refs\/heads\/master' && inputs.ref == github.sha/);
+    assert.match(body, /matrix.lane == 'rust' && github.repository == 'pilibalaai\/pilibala' && github.event_name == 'push' && github.ref == 'refs\/heads\/master' && inputs.ref == github.sha/);
   }
   assert.match(step(release, "Save the Runner debug crate"), /runner_debug_crate.outputs.cache-hit != 'true'/);
   assert.match(step(release, "Warm debug dependencies for the shared Runner cache"), /build:rust/);

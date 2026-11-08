@@ -22,12 +22,12 @@ function readMetadata(root) {
 
 // The workspace is the Runner crate plus its process-table library, which
 // has only a lib target. Any other shape needs this contract reviewed.
-const PROCESS_TABLE = "paperclip-process-table";
+const PROCESS_TABLE = "pilibala-process-table";
 
 export function debugContract(root, metadata = readMetadata(root)) {
   const packages = metadata.packages.filter(pkg => metadata.workspace_members.includes(pkg.id));
-  const core = packages.filter(pkg => pkg.name === "paperclip-runner-core");
-  const others = packages.filter(pkg => pkg.name !== "paperclip-runner-core");
+  const core = packages.filter(pkg => pkg.name === "pilibala-runner-core");
+  const others = packages.filter(pkg => pkg.name !== "pilibala-runner-core");
   const libraryOnly = pkg => pkg.name === PROCESS_TABLE
     && pkg.targets.every(target => target.kind.every(kind => kind === "lib"));
   if (core.length !== 1 || others.length > 1 || !others.every(libraryOnly)) {
@@ -35,18 +35,18 @@ export function debugContract(root, metadata = readMetadata(root)) {
   }
   const withProcessTable = others.length === 1;
   const bins = core[0].targets.filter(target => target.kind.includes("bin")).map(target => target.name).sort();
-  if (!bins.includes("paperclip-runnerd")) throw new Error("Missing Runner binary target");
-  const fingerprint = `${directory}/.fingerprint/paperclip-runner-core-*`;
-  const cachedPaths = [fingerprint, `${directory}/deps/libpaperclip_runner_core-*`,
-    `${directory}/deps/paperclip_runner_core-*.d`, ...bins.flatMap(bin => [
+  if (!bins.includes("pilibala-runnerd")) throw new Error("Missing Runner binary target");
+  const fingerprint = `${directory}/.fingerprint/pilibala-runner-core-*`;
+  const cachedPaths = [fingerprint, `${directory}/deps/libpilibala_runner_core-*`,
+    `${directory}/deps/pilibala_runner_core-*.d`, ...bins.flatMap(bin => [
       `${directory}/deps/${bin.replaceAll("-", "_")}-*`, `${directory}/${bin}`, `${directory}/${bin}.d`,
     ]), ...(withProcessTable ? [`${directory}/.fingerprint/${PROCESS_TABLE}-*`,
-      `${directory}/deps/libpaperclip_process_table-*`, `${directory}/deps/paperclip_process_table-*.d`] : [])];
+      `${directory}/deps/libpilibala_process_table-*`, `${directory}/deps/pilibala_process_table-*.d`] : [])];
   const required = [
-    { label: "lib fingerprint", glob: `${fingerprint}/lib-paperclip_runner_core` },
-    { label: "lib dep-info", glob: `${fingerprint}/dep-lib-paperclip_runner_core` },
-    { label: "lib rlib", glob: `${directory}/deps/libpaperclip_runner_core-*.rlib` },
-    { label: "lib rmeta", glob: `${directory}/deps/libpaperclip_runner_core-*.rmeta` },
+    { label: "lib fingerprint", glob: `${fingerprint}/lib-pilibala_runner_core` },
+    { label: "lib dep-info", glob: `${fingerprint}/dep-lib-pilibala_runner_core` },
+    { label: "lib rlib", glob: `${directory}/deps/libpilibala_runner_core-*.rlib` },
+    { label: "lib rmeta", glob: `${directory}/deps/libpilibala_runner_core-*.rmeta` },
     ...bins.flatMap(bin => [
       { label: `${bin} fingerprint`, glob: `${fingerprint}/bin-${bin}` },
       { label: `${bin} dep-info`, glob: `${fingerprint}/dep-bin-${bin}` },
@@ -79,7 +79,7 @@ function main() {
   const root = process.env.GITHUB_WORKSPACE || process.cwd();
   const contract = debugContract(root);
   if (process.argv[2] === "mark-current") {
-    console.log(JSON.stringify(markCurrent({ root, ...contract, schema: "paperclip.runner-debug-crate.v1" })));
+    console.log(JSON.stringify(markCurrent({ root, ...contract, schema: "pilibala.runner-debug-crate.v1" })));
   } else if (process.argv[2] === "plan") {
     const key = debugKey(root);
     if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT,

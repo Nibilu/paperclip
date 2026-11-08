@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { canonicalProviderEventsFromOpenCodePart } from "../../../packages/paperclip-runner/src/provider-events.js";
-import { openCodeProxyToolNotification } from "../../../packages/paperclip-runner/src/cli/opencode-proxy-events.js";
-import { validatePrpEvent } from "../../../packages/paperclip-runner/src/protocol/replay-contract.js";
+import { canonicalProviderEventsFromOpenCodePart } from "../../../packages/pilibala-runner/src/provider-events.js";
+import { openCodeProxyToolNotification } from "../../../packages/pilibala-runner/src/cli/opencode-proxy-events.js";
+import { validatePrpEvent } from "../../../packages/pilibala-runner/src/protocol/replay-contract.js";
 import { savedSkillFixture, savedSkillReadAssignment, savedSkillReadReceipts, savedSkillReadRuntimeName } from "./saved-skill-use-evidence.js";
 
 type Row = Record<string, any>;
@@ -34,7 +34,7 @@ function observations() {
     const eventType = direct.eventType;
     return { ...binding, seq: index + 1, eventType, protocolSchemaVersion: 1,
       sourceSeq: index + 1, sourceEventId: `event-${index}`, sourceInstanceId: "runner",
-      payload: { prpEvent: { schema: "paperclip.prp.event.v1", schemaVersion: 1, sourceKind: "runner",
+      payload: { prpEvent: { schema: "pilibala.prp.event.v1", schemaVersion: 1, sourceKind: "runner",
         priority: 0, emittedAt: "2026-11-04T04:00:00.000Z",
         runId: "run", normalizedSessionId: "session", turnId: "turn", itemId: "item",
         sourceSeq: index + 1, sourceEventId: `event-${index}`, sourceInstanceId: "runner", eventType, payload } } };

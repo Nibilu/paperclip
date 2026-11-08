@@ -4,8 +4,8 @@ import { createOAuthRefreshLeases } from "../services/tool-access/oauth/refresh-
 import { createOAuthGrantRefresh } from "../services/tool-access/oauth/grant-refresh.js";
 import { secretService } from "../services/secrets.js";
 import { writeConnectionCredential } from "../services/connection-credentials.js";
-import type { PaperclipCloudConnector } from "../services/paperclip-cloud-connector.js";
-import { GITHUB_CONNECTOR_PROFILES } from "@paperclipai/shared";
+import type { PilibalaCloudConnector } from "../services/pilibala-cloud-connector.js";
+import { GITHUB_CONNECTOR_PROFILES } from "@pilibalaai/shared";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -22,7 +22,7 @@ import { readIdleSleepSafety } from "../services/idle-sleep-safety.js";
 import { randomUUID } from "node:crypto";
 import { eq, sql, inArray } from "drizzle-orm";
 import { agents, companies, heartbeatRuns, plugins, pluginJobs, pluginJobRuns, pluginState, providerTraceRecords, issues, issueWatchdogs, issueThreadInteractions, toolApplications, toolConnections, connectionGrants, companySecrets, companySecretVersions, routines, routineTriggers,
-  applyPendingMigrations, createDb, type Db } from "@paperclipai/db";
+  applyPendingMigrations, createDb, type Db } from "@pilibalaai/db";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
@@ -32,7 +32,7 @@ import { claimDueTimerHeartbeatForAgent } from "../services/heartbeat/queue.js";
 import { createHeartbeatTimerPolicy } from "../services/heartbeat/timer-policy.js";
 import { pluginJobStore } from "../services/plugin-job-store.js";
 
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_IDLE_DEADLINE_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_IDLE_DEADLINE_TEST_DATABASE_URL");
 const support = external ? { supported: true } : await getEmbeddedPostgresTestSupport();
 (support.supported ? describe : describe.skip)("durable domain deadline snapshot with PostgreSQL", () => {
   let temporary: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | undefined;
@@ -43,10 +43,10 @@ const support = external ? { supported: true } : await getEmbeddedPostgresTestSu
     else temporary = await startEmbeddedPostgresTestDatabase("idle-domain-deadlines-");
     db = createDb(external ?? temporary!.connectionString, { maxConnections: 4, idleTimeoutSeconds: 0, maxLifetimeSeconds: 0 });
     directory = await fs.mkdtemp(path.join(os.tmpdir(), "idle-deadline-producers-"));
-    vi.stubEnv("PAPERCLIP_CONFIG", path.join(directory, "config.json"));
+    vi.stubEnv("PILIBALA_CONFIG", path.join(directory, "config.json"));
     vi.stubEnv("PROVIDER_TRACE_BASE_PATH", path.join(directory, "traces"));
-    vi.stubEnv("PAPERCLIP_STORAGE_PROVIDER", "local_disk");
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "d".repeat(64));
+    vi.stubEnv("PILIBALA_STORAGE_PROVIDER", "local_disk");
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "d".repeat(64));
   }, 60_000);
   afterAll(async () => { vi.useRealTimers(); vi.unstubAllEnvs(); await db?.$client.end({ timeout: 1 }); await temporary?.cleanup();
     if (directory) await fs.rm(directory, { recursive: true, force: true }); });
@@ -332,11 +332,11 @@ const support = external ? { supported: true } : await getEmbeddedPostgresTestSu
     await db.insert(companies).values({ id: companyId, name: "GitHub deadline", issuePrefix: `G${companyId.slice(0, 6)}` });
     const [app] = await db.insert(toolApplications).values({ companyId, applicationKey: randomUUID(), name: "GitHub", type: "mcp_http", status: "active" }).returning();
     const [connection] = await db.insert(toolConnections).values({ companyId, applicationId: app.id, uid: randomUUID(), name: "GitHub", status: "active", enabled: true,
-      transport: "mcp_remote", authKind: "oauth", credentialPolicy: "per_user", credentialSource: "paperclip_vault", transportConfig: {},
-      config: { sourceTemplateKey: "github", oauth: { strategy: "paperclip_cloud_connector", connectorProfile: "github.code" } } }).returning();
+      transport: "mcp_remote", authKind: "oauth", credentialPolicy: "per_user", credentialSource: "pilibala_vault", transportConfig: {},
+      config: { sourceTemplateKey: "github", oauth: { strategy: "pilibala_cloud_connector", connectorProfile: "github.code" } } }).returning();
     const [grant] = await db.insert(connectionGrants).values({ companyId, connectionId: connection.id, kind: "user", subjectUserId: owner, status: "active",
       credentialSecretRefs: [{ configPath: "oauth.access_token", secretId: randomUUID(), versionSelector: "latest" }],
-      providerTenant: { oauth: { strategy: "paperclip_cloud_connector", accessTokenExpiresAt: new Date(now + 8 * 3_600_000).toISOString(), refreshedAt: new Date(now).toISOString() },
+      providerTenant: { oauth: { strategy: "pilibala_cloud_connector", accessTokenExpiresAt: new Date(now + 8 * 3_600_000).toISOString(), refreshedAt: new Date(now).toISOString() },
         github: { userId: "42", login: "fixture", installationCount: 1, repositoryCount: 1, repositorySelection: "all", installationIds: ["101"],
           installationOwnerLogins: ["fixture"], accessRevision: randomUUID(), lastAccessRefreshAt: new Date(now).toISOString(), webhookHealth: "healthy" } } }).returning();
     const read = () => db.transaction(async tx => {
@@ -382,17 +382,17 @@ const support = external ? { supported: true } : await getEmbeddedPostgresTestSu
     let failBindings = true, rotations = 0;
     const successfulBindings = new Map<string, { active: boolean; grantId: string }>();
     const connector = {
-      refresh: async (input: Parameters<PaperclipCloudConnector["refresh"]>[0]) => {
+      refresh: async (input: Parameters<PilibalaCloudConnector["refresh"]>[0]) => {
         rotations++; expect(input.refreshToken).toBe("saved-refresh"); expect(input.subject).toBe(owner);
         return { v: 1 as const, accessToken: "renewed-access", refreshToken: "renewed-refresh", tokenType: "Bearer", accessTokenExpiresAt: new Date(Date.now() + 8 * 3_600_000).toISOString(),
           refreshTokenExpiresAt: null, scopes: [...GITHUB_CONNECTOR_PROFILES["github.code"].scopes], subject: owner, companyId, instanceId: "fixture", environment: "test" as const, provider: "github" as const, profile: "github.code" };
       },
-      setWebhookBinding: async (input: Parameters<PaperclipCloudConnector["setWebhookBinding"]>[0]) => {
+      setWebhookBinding: async (input: Parameters<PilibalaCloudConnector["setWebhookBinding"]>[0]) => {
         expect(input.accessToken).toBe("renewed-access"); expect(input.companyId).toBe(companyId);
         if (failBindings) throw new Error("named Cloud binding provider unavailable");
         successfulBindings.set(input.id, { active: input.active, grantId: input.grantId });
       },
-    } as PaperclipCloudConnector;
+    } as PilibalaCloudConnector;
     const refresh = createOAuthGrantRefresh(db, { now: () => new Date(), store: credentials, leases, getConnectionRow: getConnection,
       currentCloudConnector: () => connector, exchangeOAuthToken: async () => { throw new Error("Direct OAuth must not run for managed GitHub"); } });
     const continuity = createGitHubGrantContinuity(db, { now: () => new Date(), currentCloudConnector: () => connector,

@@ -1,9 +1,9 @@
-import type { Issue, Project } from "@paperclipai/shared";
+import type { Issue, Project } from "@pilibalaai/shared";
 import {
   createIssue,
   storybookAuthSession,
   storybookCompanies,
-} from "../../fixtures/paperclipData";
+} from "../../fixtures/pilibalaData";
 
 export const projectHealthProjectIds = {
   onboarding: "project-health-trial-onboarding",

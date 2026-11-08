@@ -11,12 +11,12 @@ import {
   issueRecoveryActions,
   issueThreadInteractions,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@pilibalaai/shared";
 import { issueService } from "../services/issues.js";
 
 const embeddedPostgresSupport = await getEmbeddedPostgresTestSupport();
@@ -41,7 +41,7 @@ describeEmbeddedPostgres("issue review attention", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-issue-review-attention-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-issue-review-attention-");
     db = createDb(tempDb.connectionString);
     svc = issueService(db);
   }, 30_000);

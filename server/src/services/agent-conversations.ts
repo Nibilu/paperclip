@@ -3,7 +3,7 @@ import { notifyStatusCardIssueChange } from "./status-card-notifications.js";
 import { notifyIssueRecovery } from "./issue-recovery-notifications.js";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "./delivery-work-notifications.js";
 import { notifyUnsafeWorkspaceExportRecovery } from "./unsafe-workspace-export-notifications.js";
-import { FAST_RESPONSE_AGENT_GUIDANCE, fastResponseHistoryBody } from "@paperclipai/shared";
+import { FAST_RESPONSE_AGENT_GUIDANCE, fastResponseHistoryBody } from "@pilibalaai/shared";
 import {
   persistActivity,
   publishActivity,
@@ -21,7 +21,7 @@ import {
   issueThreadInteractions,
   issues,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 
 import { notifyChatRunMilestones } from "./chat-run-milestone-notifications.js";
 import { sanitizeQuarantinedCommentForHigherTrust } from "./source-trust.js";
@@ -110,13 +110,13 @@ Create ordinary assigned tasks; this conversation is never a parent. Choose the 
 
 For review or follow-up tasks, include the existing source materials the assignee needs, not just task identifiers or a rubric. Read the source task's saved documents and comments, then copy the relevant existing content into the handoff or attach resources the recipient can actually read. A new task's tools may only expose its own documents and history. Supplying existing source material is coordination, not creating the assigned deliverable.
 
-For task links, use the company-prefixed relative path /<prefix>/issues/<identifier>, deriving the prefix from the returned task identifier. For approval links, use /<prefix>/approvals/<approvalId> with the same company prefix and the returned approval id, so the person can open the approval to decide it. An absolute URL is appropriate only when its actual origin was supplied by the platform. Never invent a hostname for a Paperclip link. For an execution run, link /<prefix>/agents/<agentId>/runs/<runId> using the run's returned agentId. Issue run listings (GET /api/issues/{id}/runs) return the run ID as runId; use id only from responses that return the run itself, such as GET /api/heartbeat-runs/{runId}. Run listings return agent IDs, not names: read the agent and name it rather than showing a raw ID.
+For task links, use the company-prefixed relative path /<prefix>/issues/<identifier>, deriving the prefix from the returned task identifier. For approval links, use /<prefix>/approvals/<approvalId> with the same company prefix and the returned approval id, so the person can open the approval to decide it. An absolute URL is appropriate only when its actual origin was supplied by the platform. Never invent a hostname for a Pilibala link. For an execution run, link /<prefix>/agents/<agentId>/runs/<runId> using the run's returned agentId. Issue run listings (GET /api/issues/{id}/runs) return the run ID as runId; use id only from responses that return the run itself, such as GET /api/heartbeat-runs/{runId}. Run listings return agent IDs, not names: read the agent and name it rather than showing a raw ID.
 
 When a reply concerns a specific agent, such as one you paused, resumed, configured, or reported on, link its profile at /<prefix>/agents/<urlKey or id> using the agent's returned urlKey or id. A profile link is not a mention: use agent:// only when you intend to notify that agent.
 
 For status updates, distinguish recorded task status from active execution and verified progress. Read the latest relevant comments and run outcome before explaining a blocker or claiming work is underway. Use the advertised API tools for another task's details when needed. A completed dependency does not prove a block is stale; report the assignee's recorded reason. Agent configuration may be redacted: an empty configuration object without configuration-read permission does not prove settings are disabled or at their defaults. If the evidence is unavailable, say what you could verify and what remains unknown rather than guessing or recommending a status change.
 
-Keep discussion here and leave the conversation available for the next message. Link handed-off tasks in your reply; do not make this conversation blocked by their completion or wait for them. Paperclip will bring completed handed-off tasks back as a new input here so you can explain the result and link it without another user message. After creating an assigned task, let its own run execute the work; do not create its deliverables or change its execution status from this chat. Reply normally and end your turn; Paperclip manages the conversation waiting state. Do not change its status, create a review confirmation just to finish a reply, mark it complete, or poll for another reply. An accepted plan authorizes handoff to execution tasks, never implementation on this conversation. Honor normal approvals. Ask mode is non-mutating. Plan mode supports research and writing/revising the plan; hand off for execution only through the normal authorized workflow.`;
+Keep discussion here and leave the conversation available for the next message. Link handed-off tasks in your reply; do not make this conversation blocked by their completion or wait for them. Pilibala will bring completed handed-off tasks back as a new input here so you can explain the result and link it without another user message. After creating an assigned task, let its own run execute the work; do not create its deliverables or change its execution status from this chat. Reply normally and end your turn; Pilibala manages the conversation waiting state. Do not change its status, create a review confirmation just to finish a reply, mark it complete, or poll for another reply. An accepted plan authorizes handoff to execution tasks, never implementation on this conversation. Honor normal approvals. Ask mode is non-mutating. Plan mode supports research and writing/revising the plan; hand off for execution only through the normal authorized workflow.`;
 
 /** Presentation guidance for the opted-in Coordinator experience; not authority. */
 export const COORDINATOR_CHAT_HANDOFF_DIRECTIVE = `For an exploratory conversation that has become a concrete work opportunity, distinguish recommending work from the user's authorization to start it. Once the outcome and success criteria are clear, use request_human_input with interactionKind: "suggest_tasks", a stable idempotencyKey, and payload.tasks containing a clientKey, concise title, description with success criteria, assigneeAgentId defaulting to this conversation's agent (yourself), projectId and relevant initialPlan. Preserve a different agent or person only when the user explicitly specifies that assignee. Accepted tasks are standalone by default. For several related parts one owner coordinates, propose one top-level task plus child tasks that set parentClientKey to it; for unrelated outcomes, propose separate tasks. Nest only one level. The suggestion card is a proposal, not a created task. Wait for its recorded acceptance before claiming a task exists; acceptance creates the task atomically, so read result.createdTasks instead of creating it again. Revise or clarify an ambiguous proposal in chat. If the user explicitly authorized task creation, use create_task directly with an idempotencyKey and initialPlan, verify the returned task, and link it without asking for redundant confirmation. An existing approved plan also retains its normal handoff authority. Ask mode remains non-mutating.`;
@@ -524,7 +524,7 @@ export async function conversationReplay(
     .reverse()
     .map((row) =>
       JSON.stringify({
-        author: row.origin === "fast_response" ? "paperclip_receipt" : row.authorAgentId ? "agent" : "user",
+        author: row.origin === "fast_response" ? "pilibala_receipt" : row.authorAgentId ? "agent" : "user",
         body: fastResponseHistoryBody(sanitizeQuarantinedCommentForHigherTrust(row)).slice(0, 8000),
       }),
     )

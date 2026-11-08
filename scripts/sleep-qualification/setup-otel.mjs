@@ -8,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // Explicit opt-in test setup. No manifests, lockfiles or other worktrees change.
 const server = fileURLToPath(new URL('../../server/', import.meta.url));
 export const otelPeerNames = ['@opentelemetry/sdk-node', '@opentelemetry/auto-instrumentations-node', '@opentelemetry/exporter-trace-otlp-http', '@opentelemetry/resources', '@opentelemetry/semantic-conventions'];
-const ledgerPath = root => path.join(root, 'node_modules', '.paperclip-sleep-otel-links.json');
+const ledgerPath = root => path.join(root, 'node_modules', '.pilibala-sleep-otel-links.json');
 async function entryAt(destination) {
   try { return await lstat(destination); } catch (error) { if (error.code !== 'ENOENT') throw error; }
 }
@@ -82,7 +82,7 @@ export async function setupSleepOtelPeers({ serverDirectory = server, temporaryR
     missing.push(name);
   }
   if (!missing.length) return { linked: [], alreadyInstalled: true };
-  const directory = await mkdtemp(path.join(temporaryRoot, 'paperclip-sleep-otel-'));
+  const directory = await mkdtemp(path.join(temporaryRoot, 'pilibala-sleep-otel-'));
   let linked = 0;
   try {
     await writeFile(path.join(directory, 'package.json'), JSON.stringify({ private: true, dependencies: Object.fromEntries(otelPeerNames.map(name => [name, manifest.peerDependencies[name]])) }, null, 2));

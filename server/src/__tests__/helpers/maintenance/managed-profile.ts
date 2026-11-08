@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { authUsers, companyMemberships, type Db } from '@paperclipai/db';
+import { authUsers, companyMemberships, type Db } from '@pilibalaai/db';
 import { and, eq } from 'drizzle-orm';
 import { cloudTenantPrimaryCompanyId } from '../../../services/cloud-instance.js';
 import type { MaintenanceConfiguration, MaintenanceServerOptions, startMaintenanceServer } from './server-harness.js';
@@ -14,9 +14,9 @@ export function managedSleepServerOptions(configuration: MaintenanceConfiguratio
   broker: { origin: string; variables: Record<string, string> }): MaintenanceServerOptions {
   return { configuration, controlJwks: jwks, cloud: { jwks, s3Origin, standby: false }, tenantActor: managedTenantActor,
     githubOrigin: broker.origin, connector: { origin: broker.origin,
-      instanceId: broker.variables.PAPERCLIP_CLOUD_CONNECTOR_INSTANCE_ID,
-      signPrivateKey: broker.variables.PAPERCLIP_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY,
-      sealPrivateKey: broker.variables.PAPERCLIP_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY } };
+      instanceId: broker.variables.PILIBALA_CLOUD_CONNECTOR_INSTANCE_ID,
+      signPrivateKey: broker.variables.PILIBALA_CLOUD_CONNECTOR_SIGN_PRIVATE_KEY,
+      sealPrivateKey: broker.variables.PILIBALA_CLOUD_CONNECTOR_SEAL_PRIVATE_KEY } };
 }
 export async function provisionManagedSleepCompany(server: Awaited<ReturnType<typeof startMaintenanceServer>>, db: Db) {
   // This real request invokes resolveCloudTenantActor, never a table seed or a bypassed company-create route.

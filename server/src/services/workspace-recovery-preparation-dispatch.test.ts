@@ -1,7 +1,7 @@
 import { nextWorkspaceRecoveryAt } from "./system-recovery.js";
 import { notifyDeferredExecutionEligibility } from "./deferred-execution-notifications.js";
 import { isPreDispatchExecutionWaitVerified } from "./pre-dispatch-execution-wait.js";
-import { heartbeatRunEvents, companyObservability, executionWorkspaceRepositories, issueWorkProducts, authUsers, companyMemberships, agents, createDb, environments, heartbeatRuns, issueRecoveryActions, issues, nativeRunResults, executionWorkspaces } from "@paperclipai/db";
+import { heartbeatRunEvents, companyObservability, executionWorkspaceRepositories, issueWorkProducts, authUsers, companyMemberships, agents, createDb, environments, heartbeatRuns, issueRecoveryActions, issues, nativeRunResults, executionWorkspaces } from "@pilibalaai/db";
 import { settleInterruptedNativeBootstrap } from "./legacy-execution-recovery.js";
 import { DELIVERY_QUEUES, subscribeDeliveryWork } from "./delivery-work-notifications.js";
 import { environmentService } from "./environments.js";
@@ -18,9 +18,9 @@ import path from "node:path";
 import request from "supertest";
 import { and, eq, sql } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
-import { CONTROL_PLANE_CONFORMANCE_RESULT, CONTROL_PLANE_CONFORMANCE_TERMINAL } from "../vendor/paperclip-runner/testing.js";
-import type { NativeExecutionInput, NativeSession, NativeSessionBackend, PrpEvent } from "../vendor/paperclip-runner/index.js";
-import type { AdapterSandboxExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
+import { CONTROL_PLANE_CONFORMANCE_RESULT, CONTROL_PLANE_CONFORMANCE_TERMINAL } from "../vendor/pilibala-runner/testing.js";
+import type { NativeExecutionInput, NativeSession, NativeSessionBackend, PrpEvent } from "../vendor/pilibala-runner/index.js";
+import type { AdapterSandboxExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
 import { remoteTerminationReceipt } from "./remote-execution-termination.js";
 import { recoverRetainedWorkspace, reconcileRetainedWorkspaces, retainedWorkspaceCandidates } from "./workspace-recovery.js";
 import { createDeliveryWorkCoordinator } from "./delivery-work-coordinator.js";
@@ -44,7 +44,7 @@ describe("automatic retained workspace recovery", () => {
     "dispatches the recovered failed-preparation Retry once through the native provider boundary (%s)", async mode => {
     const unavailableCatalog = mode !== "complete" && mode !== "stopped_worker" && mode !== "automatic_lost" && mode !== "invalid_published_root", withWarning = mode.includes("warning");
     const localStorage = getStorageService();
-    const databaseUrl = process.env.DATABASE_URL, masterKey = process.env.PAPERCLIP_SECRETS_MASTER_KEY;
+    const databaseUrl = process.env.DATABASE_URL, masterKey = process.env.PILIBALA_SECRETS_MASTER_KEY;
     const experimental = await instanceSettingsService(db).getExperimental();
     let stoppedWorker: Awaited<ReturnType<typeof stoppedWorkspaceWorker>> | undefined;
     let storage: { mockRestore(): void } | undefined;
@@ -59,7 +59,7 @@ describe("automatic retained workspace recovery", () => {
     let recoveryWorker: ReturnType<typeof registerWorkspaceRecoveryWork> | undefined;
     try {
       storage = vi.spyOn(storageBackend, "getStorageService").mockReturnValue({ ...localStorage, provider: "s3" });
-      process.env.DATABASE_URL = connectionString; process.env.PAPERCLIP_SECRETS_MASTER_KEY = "63".repeat(32);
+      process.env.DATABASE_URL = connectionString; process.env.PILIBALA_SECRETS_MASTER_KEY = "63".repeat(32);
       await instanceSettingsService(db).updateExperimental({ enableNativeRunner: true, enableIsolatedWorkspaces: true });
       const f = mode === "automatic_lost" ? await interruptedRemotePreparation("process_lost", "published")
         : await failedRemotePreparation(mode === "invalid_published_root" ? "raw" : "published");
@@ -96,7 +96,7 @@ describe("automatic retained workspace recovery", () => {
         return { filesTransferred: operations.reduce((count, operation) => count + operation.files.length, 0), bytesTransferred: 0, operations: [] };
       };
       const filesystemExecute = oldTarget.runner!.execute;
-      const fixtureCodex = "/opt/paperclip-fixture/bin/codex";
+      const fixtureCodex = "/opt/pilibala-fixture/bin/codex";
       const executeCommand: typeof filesystemExecute = async input => {
         if (input.command === "sh" && input.args?.some(arg => arg.includes("command -v codex"))) {
           return { exitCode: 0, signal: null, timedOut: false, pid: null, startedAt: new Date().toISOString(), stdout: `${fixtureCodex}\n`, stderr: "" };
@@ -128,7 +128,7 @@ describe("automatic retained workspace recovery", () => {
       }] });
       const workProductId = randomUUID(), evidenceRef = `work_product:${workProductId}`;
       await db.insert(issueWorkProducts).values({ id: workProductId, companyId: f.companyId, issueId: f.issueId,
-        type: "artifact", provider: "paperclip", title: "Continued saved work", status: "ready_for_review", reviewState: "approved" });
+        type: "artifact", provider: "pilibala", title: "Continued saved work", status: "ready_for_review", reviewState: "approved" });
       const inputs: NativeExecutionInput[] = [], startTurn = vi.fn();
       const backendFactory = (execution: NativeExecutionInput): NativeSessionBackend => {
         inputs.push(execution);
@@ -147,7 +147,7 @@ describe("automatic retained workspace recovery", () => {
           async *events() {
             await turnStarted;
             const current = await run(identity.runId);
-            yield { schema: "paperclip.prp.event.v1", sourceEventId: `${identity.runId}:terminal`, sourceSeq: 1,
+            yield { schema: "pilibala.prp.event.v1", sourceEventId: `${identity.runId}:terminal`, sourceSeq: 1,
               sourceInstanceId: current.runnerInstanceId!, sourceKind: "runner", runId: identity.runId,
               normalizedSessionId: identity.sessionId, turnId, eventType: "turn.completed", schemaVersion: 1,
               priority: 0, emittedAt: new Date().toISOString(), payload: {} } satisfies PrpEvent;
@@ -259,7 +259,7 @@ describe("automatic retained workspace recovery", () => {
       expect({ status: completed.status, error: completed.error, runtimeMode: completed.runtimeMode })
         .toEqual({ status: "succeeded", error: null, runtimeMode: "native" });
       expect(inputs).toHaveLength(1); expect(startTurn).toHaveBeenCalledOnce();
-      expect(path.basename(path.dirname(inputs[0].workspace.cwd!))).toBe(".paperclip-workspaces");
+      expect(path.basename(path.dirname(inputs[0].workspace.cwd!))).toBe(".pilibala-workspaces");
       expect(completed.runnerProfileJson?.nativeExecutionInput).toMatchObject({ provider: { kind: "codex", model: "gpt-6.1-sol" } });
       expect(await readFile(path.join(inputs[0].workspace.cwd!, "continued.txt"), "utf8")).toBe("continued from preserved work\n");
       expect(await db.select().from(nativeRunResults).where(eq(nativeRunResults.runId, completed.id)))
@@ -282,7 +282,7 @@ describe("automatic retained workspace recovery", () => {
         stoppedWorker?.proof.mockRestore();
         storage?.mockRestore();
         if (databaseUrl === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = databaseUrl;
-        if (masterKey === undefined) delete process.env.PAPERCLIP_SECRETS_MASTER_KEY; else process.env.PAPERCLIP_SECRETS_MASTER_KEY = masterKey;
+        if (masterKey === undefined) delete process.env.PILIBALA_SECRETS_MASTER_KEY; else process.env.PILIBALA_SECRETS_MASTER_KEY = masterKey;
         await instanceSettingsService(db).updateExperimental(experimental);
       }
     }

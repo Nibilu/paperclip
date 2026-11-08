@@ -1,5 +1,5 @@
-import { readEnvironmentAcquireErrorDiagnostic } from "@paperclipai/plugin-sdk";
-import type { ProviderFailure } from "@paperclipai/shared";
+import { readEnvironmentAcquireErrorDiagnostic } from "@pilibalaai/plugin-sdk";
+import type { ProviderFailure } from "@pilibalaai/shared";
 
 /**
  * Setup failure code for a lease acquisition that the environment provider
@@ -72,12 +72,12 @@ export class EnvironmentProviderUnavailableError extends Error {
     this.httpStatus = input.evidence.httpStatus ?? null;
     this.errorCode = input.evidence.errorCode ?? null;
     this.providerFailure = {
-      schema: "paperclip.provider-failure.v1",
+      schema: "pilibala.provider-failure.v1",
       provider: /^[a-zA-Z0-9_.:/-]{1,80}$/.test(input.driver) ? input.driver : "environment",
       phase: "startup",
       category: category(input.evidence),
-      message: `The provider for "${input.environmentName}" was temporarily unavailable while Paperclip was starting it (${status}). `
-        + "No agent work had started. Paperclip retries automatically; if those retries are used up, use Retry once the provider is available.",
+      message: `The provider for "${input.environmentName}" was temporarily unavailable while Pilibala was starting it (${status}). `
+        + "No agent work had started. Pilibala retries automatically; if those retries are used up, use Retry once the provider is available.",
       ...(input.evidence.httpStatus !== undefined ? { httpStatus: input.evidence.httpStatus } : {}),
       ...(input.evidence.errorCode !== undefined ? { providerCode: input.evidence.errorCode } : {}),
       retryability: "transient",

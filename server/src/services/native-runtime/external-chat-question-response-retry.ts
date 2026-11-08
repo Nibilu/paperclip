@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { heartbeatRuns, type Db } from "@paperclipai/db";
+import { heartbeatRuns, type Db } from "@pilibalaai/db";
 import { INTERACTION_CONTINUATION_INFRA_RETRY_REASON } from "../../modules/run-dispatch/index.js";
 import { executionFailureRetryCount } from "../execution-recovery-attempt.js";
 import { REVIEWED_CHAT_BINDING_NOT_READY } from "../reviewed-chat-binding-diagnostics.js";

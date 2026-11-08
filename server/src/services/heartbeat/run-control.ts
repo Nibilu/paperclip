@@ -43,7 +43,7 @@ import {
   acknowledgedNativeApiStopExecutionHasStopped,
   acknowledgedNativeStopExecutionHasStopped,
 } from "../acknowledged-native-stop.js";
-import { completeTerminatedRemoteNativeSessionCleanup } from "../../vendor/paperclip-runner/index.js";
+import { completeTerminatedRemoteNativeSessionCleanup } from "../../vendor/pilibala-runner/index.js";
 import {
   hasRemoteTerminationReceipt,
   remoteExecutionHasStopped,
@@ -93,10 +93,10 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   type EnvironmentLeaseStatus,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import {
   agentWakeupRequests,
   browserUseRuns,
@@ -109,7 +109,7 @@ import {
   issueRecoveryActions,
   issues,
   nativeRunFinalizations,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   conflict,
   HttpError,
@@ -137,7 +137,7 @@ import {
 import { terminateLocalService } from "../local-service-supervisor.js";
 import { deriveCommentId } from "../../modules/run-dispatch/index.js";
 import { WakeQueueApplicationError } from "../../modules/wake-queue/index.js";
-import { isUuidLike } from "@paperclipai/shared";
+import { isUuidLike } from "@pilibalaai/shared";
 import {
   type ProviderResourceDisposition,
 } from "../environment-runtime.js";
@@ -317,7 +317,7 @@ function runCancellationFenceSql(input: {
     'beforeNativeSelection', ${heartbeatRuns.runtimeMode} = 'legacy'
       and ${heartbeatRuns.runtimeModeResolvedAt} is null
       and ${heartbeatRuns.executionStage} = 'preparing'
-      and coalesce(${heartbeatRuns.runnerProfileJson}->'adapterDispatch'->>'adapterType' = 'paperclip_runner', false)
+      and coalesce(${heartbeatRuns.runnerProfileJson}->'adapterDispatch'->>'adapterType' = 'pilibala_runner', false)
   )`;
   let startupFence = input.preserveCancellation
     ? sql`coalesce(${heartbeatRuns.resultJson}->'startupCancellation', ${startupCancellation})`
@@ -542,7 +542,7 @@ export function createHeartbeatRunControl(db: Db, dependencies: HeartbeatRunCont
             eq(heartbeatRuns.agentId, stopped.agentId), eq(heartbeatRuns.nativeIssueId, stopped.nativeIssueId!),
             isNull(heartbeatRuns.processPid), isNull(heartbeatRuns.processGroupId),
             eq(heartbeatRuns.nativeSessionId, stopped.nativeSessionId!), eq(heartbeatRuns.runnerInstanceId, stopped.runnerInstanceId!),
-            sql`${heartbeatRuns.runnerProfileJson}->'executionPlacement' = ${JSON.stringify({ kind: "provider_api", provider: "cursor_cloud", controller: "paperclip" })}::jsonb`,
+            sql`${heartbeatRuns.runnerProfileJson}->'executionPlacement' = ${JSON.stringify({ kind: "provider_api", provider: "cursor_cloud", controller: "pilibala" })}::jsonb`,
             sql`${heartbeatRuns.runnerProfileJson}->>'backend' = 'cursor_cloud_api'`,
             sql`jsonb_build_object(
               'companyId', ${heartbeatRuns.runnerProfileJson}->'nativeExecutionInput'->'binding'->'companyId',
@@ -737,7 +737,7 @@ export function createHeartbeatRunControl(db: Db, dependencies: HeartbeatRunCont
     }
     if (!actorId) return;
     const agent = await getAgent(wake.agentId);
-    if (!agent || agent.companyId !== companyId || (agent.adapterType === "paperclip_runner" && !interrupted && !response?.source.requiresFreshSession)) return;
+    if (!agent || agent.companyId !== companyId || (agent.adapterType === "pilibala_runner" && !interrupted && !response?.source.requiresFreshSession)) return;
     const [active] = await db.select({ id: heartbeatRuns.id }).from(heartbeatRuns).where(and(
       eq(heartbeatRuns.companyId, companyId),
       eq(heartbeatRuns.agentId, wake.agentId),
@@ -810,7 +810,7 @@ export function createHeartbeatRunControl(db: Db, dependencies: HeartbeatRunCont
     await enqueueWakeup(wake.agentId, {
       source: "on_demand", triggerDetail: "manual", reason: "issue_commented",
       payload: deliveryPayload, contextSnapshot: response
-        ? { ...parseObject(payload._paperclipWakeContext), issueId, triggeredBy: "board", actorId,
+        ? { ...parseObject(payload._pilibalaWakeContext), issueId, triggeredBy: "board", actorId,
             responsibleUserId: actorId }
         : withQueuedCommentIdsInRunContext({
             issueId, triggeredBy: "board", actorId, responsibleUserId: actorId,
@@ -1166,7 +1166,7 @@ export function createHeartbeatRunControl(db: Db, dependencies: HeartbeatRunCont
   function hasRecordedStopAcknowledgement(run: typeof heartbeatRuns.$inferSelect) {
     if (parseObject(run.resultJson?.executionCancellation).state === "acknowledged") return true;
     const intent = parseObject(run.resultJson?.nativeCancellation);
-    return intent.schema === "paperclip.native-cancellation.v1" && intent.runId === run.id
+    return intent.schema === "pilibala.native-cancellation.v1" && intent.runId === run.id
       && intent.companyId === run.companyId && intent.issueId === run.nativeIssueId
       && intent.scope === "run" && intent.reasonCode === "cancellation_run_only"
       && intent.dispatchState === "acknowledged" && intent.dispatched === true
@@ -1271,7 +1271,7 @@ export function createHeartbeatRunControl(db: Db, dependencies: HeartbeatRunCont
           // Promotion must remain fenced after this transaction releases the
           // run lock, before the ordinary Stop path performs its settlement.
           startupCancellation: { requestedAt, beforeNativeSelection: currentRun.runtimeMode === "legacy" && !currentRun.runtimeModeResolvedAt
-            && currentRun.executionStage === "preparing" && parseObject(currentRun.runnerProfileJson?.adapterDispatch).adapterType === "paperclip_runner" },
+            && currentRun.executionStage === "preparing" && parseObject(currentRun.runnerProfileJson?.adapterDispatch).adapterType === "pilibala_runner" },
         } : {};
         await notifyScheduledRetryCancellation(tx, { companyId: run!.companyId, runId });
         const [fenced] = await tx.update(heartbeatRuns).set({
@@ -1755,11 +1755,11 @@ export function createHeartbeatRunControl(db: Db, dependencies: HeartbeatRunCont
   async function stopBrowserSessionsForBudgetScope(tx: Db, scope: BudgetEnforcementScope) {
     // Browser work can outlive its terminal parent run. Its admitted project
     // snapshot remains authoritative even if the task moves to another project.
-    const activeHold = sql`(select ${browserUseRuns.result}->'paperclipBudgetHold'
+    const activeHold = sql`(select ${browserUseRuns.result}->'pilibalaBudgetHold'
       from ${browserUseRuns} where ${browserUseRuns.companyId} = ${browserUseSessions.companyId}
         and ${browserUseRuns.sessionId} = ${browserUseSessions.id}
-        and ${browserUseRuns.result}->'paperclipBudgetHold'->>'state' = 'held'
-        and ${browserUseRuns.result}->'paperclipBudgetHold'->>'invocationId' = ${browserUseRuns.invocationId}::text
+        and ${browserUseRuns.result}->'pilibalaBudgetHold'->>'state' = 'held'
+        and ${browserUseRuns.result}->'pilibalaBudgetHold'->>'invocationId' = ${browserUseRuns.invocationId}::text
       order by ${browserUseRuns.createdAt} desc, ${browserUseRuns.id} desc limit 1)`;
     const project = sql`case when ${activeHold} ? 'projectId' then ${activeHold}->>'projectId'
       else (select ${issues.projectId}::text from ${issues}

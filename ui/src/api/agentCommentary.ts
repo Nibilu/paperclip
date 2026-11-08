@@ -1,4 +1,4 @@
-import type { AgentCommentaryDetail, AgentCommentaryPage, AgentCommentaryQuery } from "@paperclipai/shared";
+import type { AgentCommentaryDetail, AgentCommentaryPage, AgentCommentaryQuery } from "@pilibalaai/shared";
 import { api } from "./client";
 
 export const agentCommentaryApi = {

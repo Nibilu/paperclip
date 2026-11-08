@@ -22,7 +22,7 @@ import {
   issueComments,
   issues,
   projects,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -38,9 +38,9 @@ vi.mock("../telemetry.js", () => ({
   getTelemetryClient: () => mockTelemetryClient,
 }));
 
-vi.mock("@paperclipai/shared/telemetry", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/shared/telemetry")>(
-    "@paperclipai/shared/telemetry",
+vi.mock("@pilibalaai/shared/telemetry", async () => {
+  const actual = await vi.importActual<typeof import("@pilibalaai/shared/telemetry")>(
+    "@pilibalaai/shared/telemetry",
   );
   return {
     ...actual,
@@ -99,7 +99,7 @@ describeEmbeddedPostgres("heartbeat bounded retry scheduling", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-heartbeat-retry-scheduling-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-heartbeat-retry-scheduling-");
     db = createDb(tempDb.connectionString);
     heartbeat = heartbeatService(db);
     registerServerAdapter({
@@ -201,7 +201,7 @@ describeEmbeddedPostgres("heartbeat bounded retry scheduling", () => {
     const agentName = input.agentName ?? (adapterType === "claude_local" ? "ClaudeCoder" : "CodexCoder");
     await db.insert(companies).values({
       id: input.companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${input.companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -325,7 +325,7 @@ describeEmbeddedPostgres("heartbeat bounded retry scheduling", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -420,7 +420,7 @@ describeEmbeddedPostgres("heartbeat bounded retry scheduling", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -497,7 +497,7 @@ describeEmbeddedPostgres("heartbeat bounded retry scheduling", () => {
   it.each(["remote_workspace_prepare_timeout", "reusable_sandbox_resume_failed", "remote_workspace_restore_failed", "reviewed_chat_execution_binding_not_ready"].flatMap(errorCode =>
     (["resume", "paused", "Stop", "dependency"] as const).map(action => [errorCode, action] as const)))("bounds %s bootstrap retries across restart and honors %s", async (errorCode, action) => {
     const { companyId, agentId, issueId, runId, now } = await seedMaxTurnFixture();
-    await db.update(agents).set({ adapterType: "paperclip_runner", adapterConfig: { provider: "codex", model: "gpt-6.1-sol" } })
+    await db.update(agents).set({ adapterType: "pilibala_runner", adapterConfig: { provider: "codex", model: "gpt-6.1-sol" } })
       .where(eq(agents.id, agentId));
     const resultJson = { executionRecovery: { kind: "bootstrap", providerWorkStarted: false } };
     await db.update(heartbeatRuns).set({ errorCode, resultJson }).where(eq(heartbeatRuns.id, runId));
@@ -658,7 +658,7 @@ describeEmbeddedPostgres("heartbeat bounded retry scheduling", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -1070,7 +1070,7 @@ describeEmbeddedPostgres("heartbeat bounded retry scheduling", () => {
     await db.insert(projects).values({
       id: projectId,
       companyId,
-      name: "Paperclip App",
+      name: "Pilibala App",
       status: "in_progress",
     });
     await db.insert(executionWorkspaces).values({
@@ -1235,7 +1235,7 @@ describeEmbeddedPostgres("heartbeat bounded retry scheduling", () => {
     await db.insert(projects).values({
       id: projectId,
       companyId,
-      name: "Paperclip App",
+      name: "Pilibala App",
       status: "in_progress",
     });
     await db.insert(issues).values({
@@ -1373,7 +1373,7 @@ describeEmbeddedPostgres("heartbeat bounded retry scheduling", () => {
     await db.insert(projects).values({
       id: projectId,
       companyId,
-      name: "Paperclip App",
+      name: "Pilibala App",
       status: "in_progress",
     });
     await db.insert(executionWorkspaces).values([
@@ -1792,7 +1792,7 @@ describeEmbeddedPostgres("heartbeat bounded retry scheduling", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -1960,7 +1960,7 @@ describeEmbeddedPostgres("heartbeat bounded retry scheduling", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",
@@ -2558,7 +2558,7 @@ describeEmbeddedPostgres("heartbeat bounded retry scheduling", () => {
 
       await db.insert(companies).values({
         id: companyId,
-        name: "Paperclip",
+        name: "Pilibala",
         issuePrefix,
         requireBoardApprovalForNewAgents: false,
         defaultResponsibleUserId: "responsible-user",

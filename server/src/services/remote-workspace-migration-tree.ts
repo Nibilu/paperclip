@@ -3,8 +3,8 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { and, asc, eq, gt, inArray, ne, sql } from "drizzle-orm";
-import { executionWorkspaces, executionWorkspaceSnapshots, heartbeatRuns, workspaceOperations, type Db } from "@paperclipai/db";
-import { resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { executionWorkspaces, executionWorkspaceSnapshots, heartbeatRuns, workspaceOperations, type Db } from "@pilibalaai/db";
+import { resolvePilibalaInstanceRoot } from "../home-paths.js";
 import { adapterExecutionControls } from "./adapter-execution-control.js";
 import { assertCurrentWorkspaceSourceHeld, managedProjectSourceIdentity, withWorkspaceSourceLocks } from "./workspace-source-lock.js";
 import { readWorkspaceGitSourceRoots } from "./workspace-git-source-roots.js";
@@ -47,7 +47,7 @@ export async function physicalPath(value: string): Promise<string> {
 
 export function validateImportedWorkspaceChildren(raw: unknown): ImportedWorkspaceChild[] {
   if (!Array.isArray(raw) || raw.some(child => !child || typeof child !== "object"
-    || typeof child.relativePath !== "string" || !child.relativePath.startsWith(".paperclip/worktrees/")
+    || typeof child.relativePath !== "string" || !child.relativePath.startsWith(".pilibala/worktrees/")
     || child.relativePath.split("/").some((part: string) => !part || part === "." || part === "..")
     || !/^[a-f0-9-]{36}$/.test(child.workspaceId) || !/^[a-f0-9-]{36}$/.test(child.snapshotId)
     || !/^[a-f0-9-]{36}$/.test(child.operationId) || !/^[a-f0-9]{64}$/.test(child.manifestDigest)))
@@ -56,14 +56,14 @@ export function validateImportedWorkspaceChildren(raw: unknown): ImportedWorkspa
 }
 
 export async function offlineWorkspaceMigrationBlockers(db: ReadDb) {
-  if (process.env.PAPERCLIP_EPHEMERAL_MIGRATION !== "true") return ["offline_maintenance_required"];
+  if (process.env.PILIBALA_EPHEMERAL_MIGRATION !== "true") return ["offline_maintenance_required"];
   const [active] = await db.select({ id: heartbeatRuns.id }).from(heartbeatRuns)
     .where(offlineMigrationExecutionWhere()).limit(1);
   return active ? ["active_execution_requires_drain"] : [];
 }
 
 export type WorkspaceMigrationCohort = {
-  schema: "paperclip.remote-workspace-cohort.v1";
+  schema: "pilibala.remote-workspace-cohort.v1";
   id: string; companyId: string; sourceProof: string;
   members: Array<{ workspaceId: string; operationId: string }>;
 };
@@ -76,7 +76,7 @@ export type WorkspaceSourceScope = {
 
 export async function requiresOnlineOrdinarySource(workspace: Workspace): Promise<boolean> {
   if (workspace.providerType !== "local_fs" || workspace.repoUrl || workspace.branchName) return false;
-  const instance = await physicalPath(resolvePaperclipInstanceRoot());
+  const instance = await physicalPath(resolvePilibalaInstanceRoot());
   for (const cwd of localWorkspaceSourcePaths(workspace)) {
     const root = await physicalPath(cwd);
     const parts = path.relative(instance, root).split(path.sep);
@@ -96,7 +96,7 @@ export async function requiresOnlineOrdinarySource(workspace: Workspace): Promis
 export async function inspectOnlineOrdinarySource(db: ReadDb, workspace: Workspace): Promise<Omit<WorkspaceSourceScope, "importedChildren"> | null> {
   if (!workspace.cwd || workspace.providerType !== "local_fs" || workspace.repoUrl || workspace.branchName) return null;
   const root = await physicalPath(workspace.cwd);
-  const instance = await physicalPath(resolvePaperclipInstanceRoot());
+  const instance = await physicalPath(resolvePilibalaInstanceRoot());
   const parts = path.relative(instance, root).split(path.sep);
   const isolated = workspace.sourceIssueId && workspace.mode === "isolated_workspace"
     && parts[1] === workspace.companyId && parts[2] === workspace.sourceIssueId
@@ -247,7 +247,7 @@ export async function workspaceMigrationLayoutBlockers(db: ReadDb, workspace: Wo
   for (const row of local) {
     for (const cwd of localWorkspaceSourcePaths(row)) {
       const physical = await physicalPath(cwd);
-      if (onlineSource?.gitSourceRoots && physical.startsWith(`${root}/.paperclip/worktrees/`)) {
+      if (onlineSource?.gitSourceRoots && physical.startsWith(`${root}/.pilibala/worktrees/`)) {
         const entry = await fs.lstat(physical).catch((error: NodeJS.ErrnoException) => { if (error.code !== "ENOENT") throw error; return null; });
         if (entry) return ["nested_workspace_import_required"];
       }
@@ -261,7 +261,7 @@ export async function workspaceMigrationLayoutBlockers(db: ReadDb, workspace: Wo
   for (const row of migrated) {
     if (!row.cwd) continue;
     const sourcePath = await physicalPath(row.cwd);
-    if (sourcePath.startsWith(`${root}/.paperclip/worktrees/`)
+    if (sourcePath.startsWith(`${root}/.pilibala/worktrees/`)
       && !(onlineSource?.gitSourceRoots && onlineSource.importedChildren?.some(child => child.operationId === row.id && child.sourcePath === sourcePath)))
       return ["overlapping_workspace_requires_maintenance"];
   }
@@ -288,7 +288,7 @@ async function importedWorkspaceCandidates(db: ReadDb, workspace: Workspace) {
     if (!row.operation.cwd) continue;
     located.push({ ...row, sourcePath: await physicalPath(row.operation.cwd) });
   }
-  return located.filter(row => row.sourcePath.startsWith(`${root}/.paperclip/worktrees/`))
+  return located.filter(row => row.sourcePath.startsWith(`${root}/.pilibala/worktrees/`))
     .sort((a, b) => a.sourcePath.length - b.sourcePath.length || a.operation.id.localeCompare(b.operation.id));
 }
 

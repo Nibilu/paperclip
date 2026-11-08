@@ -7,7 +7,7 @@ const {
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetRuntimeCommandInstalled,
   executeGeminiAcp,
-  readPaperclipRuntimeSkillEntries,
+  readPilibalaRuntimeSkillEntries,
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
 } = vi.hoisted(() => ({
@@ -16,7 +16,7 @@ const {
   executeGeminiAcp: vi.fn(async () => {
     throw new Error('Transform failed with 1 error: execute.ts:818:0: ERROR: Unexpected "<<"');
   }),
-  readPaperclipRuntimeSkillEntries: vi.fn(async () => []),
+  readPilibalaRuntimeSkillEntries: vi.fn(async () => []),
   resolveAdapterExecutionTargetCommandForLogs: vi.fn(async () => "gemini"),
   runAdapterExecutionTargetProcess: vi.fn(async () => ({
     exitCode: 0,
@@ -47,9 +47,9 @@ vi.mock("./acp.js", () => ({
       : { engine: "acp", explicit: false },
 }));
 
-vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/execution-target")>(
-    "@paperclipai/adapter-utils/execution-target",
+vi.mock("@pilibalaai/adapter-utils/execution-target", async () => {
+  const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/execution-target")>(
+    "@pilibalaai/adapter-utils/execution-target",
   );
   return {
     ...actual,
@@ -60,18 +60,18 @@ vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
   };
 });
 
-vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/server-utils")>(
-    "@paperclipai/adapter-utils/server-utils",
+vi.mock("@pilibalaai/adapter-utils/server-utils", async () => {
+  const actual = await vi.importActual<typeof import("@pilibalaai/adapter-utils/server-utils")>(
+    "@pilibalaai/adapter-utils/server-utils",
   );
   return {
     ...actual,
-    readPaperclipRuntimeSkillEntries,
+    readPilibalaRuntimeSkillEntries,
   };
 });
 
 import { execute } from "./execute.js";
-import { createPromptContextFixture } from "@paperclipai/adapter-utils/test-fixtures/prompt-context";
+import { createPromptContextFixture } from "@pilibalaai/adapter-utils/test-fixtures/prompt-context";
 
 function buildContext(config: Record<string, unknown> = {}) {
   return {
@@ -133,7 +133,7 @@ describe("gemini_local ACP startup fallback", () => {
         await execute({
           ...ctx,
           runtime: { ...ctx.runtime, sessionId: state === "fresh" ? null : "previous" },
-          context: { paperclipTaskCommunicationGuidance: "Frozen Slack preferences." },
+          context: { pilibalaTaskCommunicationGuidance: "Frozen Slack preferences." },
           onMeta: async (meta) => { prompts.push(meta.prompt ?? ""); },
         });
         if (state === "fresh") {

@@ -9,7 +9,7 @@ import {
   getSshEnvLabSupport,
   startSshEnvLabFixture,
   stopSshEnvLabFixture,
-} from "@paperclipai/adapter-utils/ssh";
+} from "@pilibalaai/adapter-utils/ssh";
 import {
   agents,
   companies,
@@ -19,8 +19,8 @@ import {
   environmentLeases,
   environments,
   heartbeatRuns,
-} from "@paperclipai/db";
-import type { Environment, EnvironmentDriver } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import type { Environment, EnvironmentDriver } from "@pilibalaai/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -292,7 +292,7 @@ describeEmbeddedPostgres("environment runtime driver contract", () => {
       return;
     }
 
-    const fixtureRoot = await mkdtemp(path.join(os.tmpdir(), "paperclip-env-runtime-contract-ssh-"));
+    const fixtureRoot = await mkdtemp(path.join(os.tmpdir(), "pilibala-env-runtime-contract-ssh-"));
     fixtureRoots.push(fixtureRoot);
     const fixture = await startSshEnvLabFixture({ statePath: path.join(fixtureRoot, "state.json") });
     const sshConfig = await buildSshEnvLabFixtureConfig(fixture);

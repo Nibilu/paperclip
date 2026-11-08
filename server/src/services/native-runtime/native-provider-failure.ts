@@ -1,5 +1,5 @@
-import type { PrpEvent, PrpTerminalState } from "../../vendor/paperclip-runner/index.js";
-import { readProviderFailure, type ProviderFailure } from "@paperclipai/shared";
+import type { PrpEvent, PrpTerminalState } from "../../vendor/pilibala-runner/index.js";
+import { readProviderFailure, type ProviderFailure } from "@pilibalaai/shared";
 
 // Shared by every provider whose selected model is rejected, so it names no specific connection.
 export const NATIVE_MODEL_REJECTION_MESSAGE =

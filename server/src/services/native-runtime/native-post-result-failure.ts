@@ -1,4 +1,4 @@
-import { NativeSessionCloseUnrecoverableError } from "../../vendor/paperclip-runner/index.js";
+import { NativeSessionCloseUnrecoverableError } from "../../vendor/pilibala-runner/index.js";
 
 /**
  * Closed labels for a native execution failure after its result was accepted.

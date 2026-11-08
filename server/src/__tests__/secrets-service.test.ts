@@ -7,7 +7,7 @@ import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { MockInstance } from "vitest";
 import { and, eq, sql } from "drizzle-orm";
-import { resolveCodexAuthCacheDir, withAccountHomeSecretMutationLock } from "@paperclipai/adapter-codex-local/server";
+import { resolveCodexAuthCacheDir, withAccountHomeSecretMutationLock } from "@pilibalaai/adapter-codex-local/server";
 import {
   activityLog,
   agents,
@@ -22,8 +22,8 @@ import {
   secretAccessEvents,
   userSecretDeclarations,
   userSecretDefinitions,
-} from "@paperclipai/db";
-import { LOW_TRUST_REVIEW_PRESET } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { LOW_TRUST_REVIEW_PRESET } from "@pilibalaai/shared";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { awsSecretsManagerProvider } from "../secrets/aws-secrets-manager-provider.js";
 import { localEncryptedProvider } from "../secrets/local-encrypted-provider.js";
@@ -148,12 +148,12 @@ function waitEntryDetectionWindow(uncontendedEntryDurationMs: number, violationS
 describeEmbeddedPostgres("secretService", () => {
   let stopDb: (() => Promise<void>) | null = null;
   let db!: ReturnType<typeof createDb>;
-  const previousKeyFile = process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
-  const secretsTmpDir = path.join(os.tmpdir(), `paperclip-secrets-service-${randomUUID()}`);
+  const previousKeyFile = process.env.PILIBALA_SECRETS_MASTER_KEY_FILE;
+  const secretsTmpDir = path.join(os.tmpdir(), `pilibala-secrets-service-${randomUUID()}`);
 
   beforeAll(async () => {
     mkdirSync(secretsTmpDir, { recursive: true });
-    process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE = path.join(secretsTmpDir, "master.key");
+    process.env.PILIBALA_SECRETS_MASTER_KEY_FILE = path.join(secretsTmpDir, "master.key");
     const started = await startEmbeddedPostgresTestDatabase("secrets-service");
     stopDb = started.cleanup;
     db = createDb(started.connectionString);
@@ -178,9 +178,9 @@ describeEmbeddedPostgres("secretService", () => {
   afterAll(async () => {
     await stopDb?.();
     if (previousKeyFile === undefined) {
-      delete process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
+      delete process.env.PILIBALA_SECRETS_MASTER_KEY_FILE;
     } else {
-      process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE = previousKeyFile;
+      process.env.PILIBALA_SECRETS_MASTER_KEY_FILE = previousKeyFile;
     }
     rmSync(secretsTmpDir, { recursive: true, force: true });
   });
@@ -967,7 +967,7 @@ describeEmbeddedPostgres("secretService", () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
     const awsVault = await svc.createProviderConfig(companyId, awsVaultInput());
-    const createSecretSpy = vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/aws-secret", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
+    const createSecretSpy = vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/aws-secret", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
 
     const originalProviderWrite = createSecretSpy.getMockImplementation()!;
     const uncontendedEntryDurationMs = await measureUncontendedEntryDurationMs(
@@ -1032,8 +1032,8 @@ describeEmbeddedPostgres("secretService", () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
     const awsVault = await svc.createProviderConfig(companyId, awsVaultInput());
-    vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/aws-secret-rotate", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
-    const createVersionSpy = vi.spyOn(awsSecretsManagerProvider, "createVersion").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/aws-secret-rotate", "aws-version-2", "value-sha-2", "fingerprint-sha-2"));
+    vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/aws-secret-rotate", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
+    const createVersionSpy = vi.spyOn(awsSecretsManagerProvider, "createVersion").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/aws-secret-rotate", "aws-version-2", "value-sha-2", "fingerprint-sha-2"));
     const existing = await svc.create(companyId, {
       name: `aws-secret-rotate-${randomUUID()}`,
       provider: "aws_secrets_manager",
@@ -2078,7 +2078,7 @@ describeEmbeddedPostgres("secretService", () => {
         operation: "createSecret",
         message: "AWS Secrets Manager denied the request. Check IAM permissions for this provider vault.",
         rawMessage:
-          "AccessDeniedException: arn:aws:sts::123456789012:assumed-role/prod/Paperclip cannot create secret",
+          "AccessDeniedException: arn:aws:sts::123456789012:assumed-role/prod/Pilibala cannot create secret",
       }),
     );
     vi.spyOn(db, "delete").mockImplementationOnce(() => {
@@ -2092,7 +2092,7 @@ describeEmbeddedPostgres("secretService", () => {
       }),
     ).rejects.toMatchObject({
       status: 500,
-      message: "Secret create failed and Paperclip could not roll back the local secret reservation.",
+      message: "Secret create failed and Pilibala could not roll back the local secret reservation.",
       details: {
         code: "secret_create_rollback_failed",
         provider: "aws_secrets_manager",
@@ -2129,7 +2129,7 @@ describeEmbeddedPostgres("secretService", () => {
       providerConfigId: awsVault.id,
     });
     const externalRef =
-      "arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/user/github-token";
+      "arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/user/github-token";
     vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion(externalRef, "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
     vi.spyOn(awsSecretsManagerProvider, "deleteOrArchive").mockResolvedValue();
     vi.spyOn(db, "transaction").mockRejectedValueOnce(new Error("db activate failed"));
@@ -2144,7 +2144,7 @@ describeEmbeddedPostgres("secretService", () => {
       }),
     ).rejects.toMatchObject({
       status: 500,
-      message: "Secret create failed and Paperclip could not roll back the local secret reservation.",
+      message: "Secret create failed and Pilibala could not roll back the local secret reservation.",
       details: {
         code: "secret_create_rollback_failed",
         provider: "aws_secrets_manager",
@@ -2211,7 +2211,7 @@ describeEmbeddedPostgres("secretService", () => {
     vi.spyOn(awsSecretsManagerProvider, "createSecret").mockImplementation(async (input) => {
       nextVersion += 1;
       const externalRef =
-        `arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/${input.context!.secretKey}`;
+        `arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/${input.context!.secretKey}`;
       return preparedAwsVersion(externalRef, `aws-version-${nextVersion}`, `value-sha-${nextVersion}`, `fingerprint-sha-${nextVersion}`);
     });
     const deleteSpy = vi.spyOn(awsSecretsManagerProvider, "deleteOrArchive").mockResolvedValue();
@@ -2273,7 +2273,7 @@ describeEmbeddedPostgres("secretService", () => {
       provider: "aws_secrets_manager",
       providerConfigId: awsVault.id,
     });
-    vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/user-secret", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
+    vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/user-secret", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
     const deleteSpy = vi.spyOn(awsSecretsManagerProvider, "deleteOrArchive").mockResolvedValue();
     const userSecret = await svc.createCurrentUserSecretValue(companyId, "user-1", {
       definitionId: definition.id,
@@ -2947,7 +2947,7 @@ describeEmbeddedPostgres("secretService", () => {
     const draftVault = await svc.createProviderConfig(companyId, {
       provider: "gcp_secret_manager",
       displayName: "GCP draft",
-      config: { projectId: "paperclip-prod1" },
+      config: { projectId: "pilibala-prod1" },
     });
 
     expect(draftVault.status).toBe("coming_soon");
@@ -2970,12 +2970,12 @@ describeEmbeddedPostgres("secretService", () => {
       config: {
         region: "us-east-1",
         namespace: "prod-use1",
-        secretNamePrefix: "paperclip",
+        secretNamePrefix: "pilibala",
       },
     });
 
-    const createSpy = vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/openai-api-key", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
-    const createVersionSpy = vi.spyOn(awsSecretsManagerProvider, "createVersion").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/openai-api-key", "aws-version-2", "value-sha-2", "fingerprint-sha-2"));
+    const createSpy = vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/openai-api-key", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
+    const createVersionSpy = vi.spyOn(awsSecretsManagerProvider, "createVersion").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/openai-api-key", "aws-version-2", "value-sha-2", "fingerprint-sha-2"));
     const resolveSpy = vi.spyOn(awsSecretsManagerProvider, "resolveVersion").mockResolvedValue("resolved-secret");
 
     const secret = await svc.create(companyId, {
@@ -3009,7 +3009,7 @@ describeEmbeddedPostgres("secretService", () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
     const awsVault = await svc.createProviderConfig(companyId, awsVaultInput());
-    const prepared = preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/create-rollback", "aws-version-1", "value-sha-1", "fingerprint-sha-1");
+    const prepared = preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/create-rollback", "aws-version-1", "value-sha-1", "fingerprint-sha-1");
     vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(prepared);
     const deleteSpy = vi.spyOn(awsSecretsManagerProvider, "deleteOrArchive").mockResolvedValue();
     vi.spyOn(db, "transaction").mockRejectedValueOnce(new Error("db insert failed"));
@@ -3047,7 +3047,7 @@ describeEmbeddedPostgres("secretService", () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
     const awsVault = await svc.createProviderConfig(companyId, awsVaultInput());
-    const prepared = preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/create-cleanup-handle", "aws-version-1", "value-sha-1", "fingerprint-sha-1");
+    const prepared = preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/create-cleanup-handle", "aws-version-1", "value-sha-1", "fingerprint-sha-1");
     vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(prepared);
     vi.spyOn(awsSecretsManagerProvider, "deleteOrArchive").mockRejectedValue(
       new Error("cleanup failed"),
@@ -3064,7 +3064,7 @@ describeEmbeddedPostgres("secretService", () => {
       }),
     ).rejects.toMatchObject({
       status: 500,
-      message: "Secret create failed and Paperclip could not clean up the remote provider secret.",
+      message: "Secret create failed and Pilibala could not clean up the remote provider secret.",
       details: {
         code: "secret_create_provider_cleanup_failed",
         provider: "aws_secrets_manager",
@@ -3098,7 +3098,7 @@ describeEmbeddedPostgres("secretService", () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
     const awsVault = await svc.createProviderConfig(companyId, awsVaultInput());
-    const prepared = preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/create-local-cleanup", "aws-version-1", "value-sha-1", "fingerprint-sha-1");
+    const prepared = preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/create-local-cleanup", "aws-version-1", "value-sha-1", "fingerprint-sha-1");
     vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(prepared);
     vi.spyOn(awsSecretsManagerProvider, "deleteOrArchive").mockResolvedValue();
     vi.spyOn(db, "transaction").mockRejectedValueOnce(new Error("db activate failed"));
@@ -3116,7 +3116,7 @@ describeEmbeddedPostgres("secretService", () => {
       }),
     ).rejects.toMatchObject({
       status: 500,
-      message: "Secret create failed and Paperclip could not roll back the local secret reservation.",
+      message: "Secret create failed and Pilibala could not roll back the local secret reservation.",
       details: {
         code: "secret_create_rollback_failed",
         provider: "aws_secrets_manager",
@@ -3137,7 +3137,7 @@ describeEmbeddedPostgres("secretService", () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
     const awsVault = await svc.createProviderConfig(companyId, awsVaultInput());
-    vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/rotate-rollback", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
+    vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/rotate-rollback", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
     const secret = await svc.create(companyId, {
       name: "Rotate Rollback",
       key: "rotate-rollback",
@@ -3145,7 +3145,7 @@ describeEmbeddedPostgres("secretService", () => {
       providerConfigId: awsVault.id,
       value: "runtime-secret",
     });
-    const prepared = preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/rotate-rollback", "aws-version-2", "value-sha-2", "fingerprint-sha-2");
+    const prepared = preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/rotate-rollback", "aws-version-2", "value-sha-2", "fingerprint-sha-2");
     vi.spyOn(awsSecretsManagerProvider, "createVersion").mockResolvedValue(prepared);
     const deleteSpy = vi.spyOn(awsSecretsManagerProvider, "deleteOrArchive").mockResolvedValue();
     vi.spyOn(db, "transaction").mockRejectedValueOnce(new Error("db rotate failed"));
@@ -3172,7 +3172,7 @@ describeEmbeddedPostgres("secretService", () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
     const awsVault = await svc.createProviderConfig(companyId, awsVaultInput());
-    vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/rotate-cleanup-handle", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
+    vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/rotate-cleanup-handle", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
     const secret = await svc.create(companyId, {
       name: "Rotate Cleanup Handle",
       key: "rotate-cleanup-handle",
@@ -3180,7 +3180,7 @@ describeEmbeddedPostgres("secretService", () => {
       providerConfigId: awsVault.id,
       value: "runtime-secret",
     });
-    const prepared = preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/rotate-cleanup-handle", "aws-version-2", "value-sha-2", "fingerprint-sha-2");
+    const prepared = preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/rotate-cleanup-handle", "aws-version-2", "value-sha-2", "fingerprint-sha-2");
     vi.spyOn(awsSecretsManagerProvider, "createVersion").mockResolvedValue(prepared);
     vi.spyOn(awsSecretsManagerProvider, "deleteOrArchive").mockRejectedValue(
       new Error("cleanup failed"),
@@ -3221,7 +3221,7 @@ describeEmbeddedPostgres("secretService", () => {
       displayName: "AWS secondary",
       config: { region: "us-west-2", namespace: "prod-usw2" },
     });
-    vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company/vault-reassign", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
+    vi.spyOn(awsSecretsManagerProvider, "createSecret").mockResolvedValue(preparedAwsVersion("arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company/vault-reassign", "aws-version-1", "value-sha-1", "fingerprint-sha-1"));
     const secret = await svc.create(companyId, {
       name: "Vault Reassign",
       key: "vault-reassign",
@@ -3338,7 +3338,7 @@ describeEmbeddedPostgres("secretService", () => {
     const svc = secretService(db);
     const awsVault = await svc.createProviderConfig(companyId, awsVaultInput());
     const rawProviderMessage =
-      "AccessDeniedException: User: arn:aws:sts::123456789012:assumed-role/prod/Paperclip is not authorized to perform secretsmanager:ListSecrets";
+      "AccessDeniedException: User: arn:aws:sts::123456789012:assumed-role/prod/Pilibala is not authorized to perform secretsmanager:ListSecrets";
 
     vi.spyOn(awsSecretsManagerProvider, "listRemoteSecrets").mockRejectedValueOnce(
       new SecretProviderClientError({
@@ -3372,7 +3372,7 @@ describeEmbeddedPostgres("secretService", () => {
     const svc = secretService(db);
     const awsVault = await svc.createProviderConfig(companyId, awsVaultInput());
     const rawProviderMessage =
-      "AccessDeniedException: User: arn:aws:sts::123456789012:assumed-role/prod/Paperclip is not authorized to perform secretsmanager:CreateSecret on arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1";
+      "AccessDeniedException: User: arn:aws:sts::123456789012:assumed-role/prod/Pilibala is not authorized to perform secretsmanager:CreateSecret on arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1";
 
     vi.spyOn(awsSecretsManagerProvider, "createSecret").mockRejectedValueOnce(
       new SecretProviderClientError({
@@ -3391,7 +3391,7 @@ describeEmbeddedPostgres("secretService", () => {
         key: "vercel_token",
         provider: "aws_secrets_manager",
         providerConfigId: awsVault.id,
-        managedMode: "paperclip_managed",
+        managedMode: "pilibala_managed",
         value: "vcp_test",
       });
     } catch (error) {
@@ -3411,7 +3411,7 @@ describeEmbeddedPostgres("secretService", () => {
       },
     });
     expect(((thrown as HttpError).details as { actionableMessage?: string } | undefined)?.actionableMessage).toContain(
-      "Ensure the Paperclip server runtime can resolve valid AWS credentials",
+      "Ensure the Pilibala server runtime can resolve valid AWS credentials",
     );
     expect(JSON.stringify(thrown)).not.toContain("arn:aws");
     expect(JSON.stringify(thrown)).not.toContain("123456789012");
@@ -3436,7 +3436,7 @@ describeEmbeddedPostgres("secretService", () => {
         operation: "createSecret",
         message: "AWS Secrets Manager denied the request. Check IAM permissions for this provider vault.",
         rawMessage:
-          "AccessDeniedException: arn:aws:sts::123456789012:assumed-role/prod/Paperclip cannot create secret",
+          "AccessDeniedException: arn:aws:sts::123456789012:assumed-role/prod/Pilibala cannot create secret",
       }),
     );
     vi.spyOn(db, "delete").mockImplementationOnce(() => {
@@ -3449,12 +3449,12 @@ describeEmbeddedPostgres("secretService", () => {
         key: "vercel_token",
         provider: "aws_secrets_manager",
         providerConfigId: awsVault.id,
-        managedMode: "paperclip_managed",
+        managedMode: "pilibala_managed",
         value: "vcp_test",
       }),
     ).rejects.toMatchObject({
       status: 500,
-      message: "Secret create failed and Paperclip could not roll back the local secret reservation.",
+      message: "Secret create failed and Pilibala could not roll back the local secret reservation.",
       details: {
         code: "secret_create_rollback_failed",
         provider: "aws_secrets_manager",
@@ -3486,7 +3486,7 @@ describeEmbeddedPostgres("secretService", () => {
       provider: "aws_secrets_manager",
       nextToken: null,
       sampledSecretCount: 1,
-      skippedForeignPaperclipSampleCount: 0,
+      skippedForeignPilibalaSampleCount: 0,
       candidates: [
         {
           provider: "aws_secrets_manager",
@@ -3494,25 +3494,25 @@ describeEmbeddedPostgres("secretService", () => {
           config: {
             region: "us-east-1",
             namespace: "prod-use1",
-            secretNamePrefix: "paperclip",
+            secretNamePrefix: "pilibala",
             kmsKeyId: null,
             ownerTag: "platform",
             environmentTag: "production",
           },
           sampleCount: 1,
           samples: [
-            { name: "paperclip/prod-use1/company-1/openai", hasKmsKey: false, tagKeys: ["paperclip:environment"] },
+            { name: "pilibala/prod-use1/company-1/openai", hasKmsKey: false, tagKeys: ["pilibala:environment"] },
           ],
           signals: {
             namespace: "prod-use1",
-            secretNamePrefix: "paperclip",
+            secretNamePrefix: "pilibala",
             environmentTag: "production",
             ownerTag: "platform",
             kmsKeyId: null,
             hasKmsKey: false,
             sampleCount: 1,
-            paperclipManagedSampleCount: 0,
-            skippedForeignPaperclipSampleCount: 0,
+            pilibalaManagedSampleCount: 0,
+            skippedForeignPilibalaSampleCount: 0,
           },
           warnings: [],
         },
@@ -3552,7 +3552,7 @@ describeEmbeddedPostgres("secretService", () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
     const rawProviderMessage =
-      "AccessDeniedException: User: arn:aws:sts::123456789012:assumed-role/prod/Paperclip is not authorized to perform secretsmanager:ListSecrets";
+      "AccessDeniedException: User: arn:aws:sts::123456789012:assumed-role/prod/Pilibala is not authorized to perform secretsmanager:ListSecrets";
 
     vi.spyOn(awsSecretsManagerProvider, "discoverProviderConfigs").mockRejectedValueOnce(
       new SecretProviderClientError({
@@ -3584,10 +3584,10 @@ describeEmbeddedPostgres("secretService", () => {
         providerConfigId: "discovery-preview",
         providerVaultContext: "draft_config",
         region: "us-east-1",
-        credentialPath: "Paperclip server runtime/provider credential path",
+        credentialPath: "Pilibala server runtime/provider credential path",
         requiredCapability: "secretsmanager:ListSecrets",
         actionableMessage:
-          "AWS discovery preview needs secretsmanager:ListSecrets in the selected region for the Paperclip server runtime/provider credential path.",
+          "AWS discovery preview needs secretsmanager:ListSecrets in the selected region for the Pilibala server runtime/provider credential path.",
         safeAlternative:
           "If the operator already knows the exact AWS Secrets Manager ARN, paste/link that ARN instead of using discovery. Exact-resource DescribeSecret and runtime read permissions are still required.",
       },
@@ -3809,7 +3809,7 @@ describeEmbeddedPostgres("secretService", () => {
     const svc = secretService(db);
     const awsVault = await svc.createProviderConfig(companyId, awsVaultInput());
     const rawProviderMessage =
-      "AccessDeniedException: User: arn:aws:sts::123456789012:assumed-role/prod/Paperclip is not authorized to perform secretsmanager:DescribeSecret on arn:aws:secretsmanager:us-east-1:123456789012:secret:prod/openai";
+      "AccessDeniedException: User: arn:aws:sts::123456789012:assumed-role/prod/Pilibala is not authorized to perform secretsmanager:DescribeSecret on arn:aws:secretsmanager:us-east-1:123456789012:secret:prod/openai";
     vi.spyOn(awsSecretsManagerProvider, "linkExternalSecret").mockRejectedValueOnce(
       new SecretProviderClientError({
         code: "access_denied",
@@ -3847,7 +3847,7 @@ describeEmbeddedPostgres("secretService", () => {
     expect(JSON.stringify(result.results[0]?.reason)).not.toContain("123456789012");
   });
 
-  it("rejects Paperclip-managed AWS namespace refs during preview and import commit", async () => {
+  it("rejects Pilibala-managed AWS namespace refs during preview and import commit", async () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
     const awsVault = await svc.createProviderConfig(companyId, awsVaultInput());
@@ -3856,13 +3856,13 @@ describeEmbeddedPostgres("secretService", () => {
       secrets: [
         {
           externalRef:
-            "arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company-b/openai",
-          name: "paperclip/prod-use1/company-b/openai",
+            "arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company-b/openai",
+          name: "pilibala/prod-use1/company-b/openai",
           providerVersionRef: null,
           metadata: {
-            arn: "arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company-b/openai",
+            arn: "arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company-b/openai",
             description: "must not leak",
-            tags: [{ Key: "paperclip:company-id", Value: "company-b" }],
+            tags: [{ Key: "pilibala:company-id", Value: "company-b" }],
           },
         },
       ],
@@ -3879,19 +3879,19 @@ describeEmbeddedPostgres("secretService", () => {
       providerMetadata: null,
     });
     expect(JSON.stringify(preview)).not.toContain("must not leak");
-    expect(JSON.stringify(preview)).not.toContain("paperclip:company-id");
+    expect(JSON.stringify(preview)).not.toContain("pilibala:company-id");
 
     const result = await svc.importRemoteSecrets(companyId, {
       providerConfigId: awsVault.id,
       secrets: [
         {
           externalRef:
-            "arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company-b/openai",
+            "arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company-b/openai",
           name: "Foreign managed secret",
           key: "foreign-managed-secret",
           providerMetadata: {
             description: "client-submitted metadata must not persist",
-            tags: [{ Key: "paperclip:company-id", Value: "company-b" }],
+            tags: [{ Key: "pilibala:company-id", Value: "company-b" }],
           },
         },
       ],
@@ -3903,7 +3903,7 @@ describeEmbeddedPostgres("secretService", () => {
       errorCount: 1,
       results: [expect.objectContaining({ status: "error" })],
     });
-    expect(result.results[0]?.reason).toMatch(/Paperclip-managed namespace/i);
+    expect(result.results[0]?.reason).toMatch(/Pilibala-managed namespace/i);
     const imported = await db.select().from(companySecrets).where(eq(companySecrets.key, "foreign-managed-secret"));
     expect(imported).toHaveLength(0);
   });
@@ -3980,14 +3980,14 @@ describeEmbeddedPostgres("secretService", () => {
 
     await expect(
       svc.update(secret.id, {
-        externalRef: "arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod/company-b/openai-api-key",
+        externalRef: "arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod/company-b/openai-api-key",
       }),
     ).rejects.toThrow(/Managed secrets cannot override externalRef/i);
 
     await expect(
       svc.rotate(secret.id, {
         value: "rotated-runtime-secret",
-        externalRef: "arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod/company-b/openai-api-key",
+        externalRef: "arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod/company-b/openai-api-key",
       }),
     ).rejects.toThrow(/Managed secrets cannot override externalRef/i);
   });
@@ -4037,7 +4037,7 @@ describeEmbeddedPostgres("secretService", () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
     const externalRef =
-      "arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company-1/openai-api-key";
+      "arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company-1/openai-api-key";
 
     const secret = await db
       .insert(companySecrets)
@@ -4046,7 +4046,7 @@ describeEmbeddedPostgres("secretService", () => {
         key: "openai-api-key",
         name: "OpenAI API Key",
         provider: "aws_secrets_manager",
-        managedMode: "paperclip_managed",
+        managedMode: "pilibala_managed",
         externalRef,
         latestVersion: 1,
         status: "active",
@@ -4091,7 +4091,7 @@ describeEmbeddedPostgres("secretService", () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
     const externalRef =
-      "arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company-1/remove-failure";
+      "arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company-1/remove-failure";
     const secret = await db
       .insert(companySecrets)
       .values({
@@ -4099,7 +4099,7 @@ describeEmbeddedPostgres("secretService", () => {
         key: "remove-failure",
         name: "Remove Failure",
         provider: "aws_secrets_manager",
-        managedMode: "paperclip_managed",
+        managedMode: "pilibala_managed",
         externalRef,
         latestVersion: 1,
         status: "active",
@@ -4137,7 +4137,7 @@ describeEmbeddedPostgres("secretService", () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
     const externalRef =
-      "arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod-use1/company-1/retry-delete";
+      "arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod-use1/company-1/retry-delete";
     const secretId = randomUUID();
     await db.insert(companySecrets).values({
       id: secretId,
@@ -4145,7 +4145,7 @@ describeEmbeddedPostgres("secretService", () => {
       key: `retry-delete__deleted__${secretId}`,
       name: `Retry Delete__deleted__${secretId}`,
       provider: "aws_secrets_manager",
-      managedMode: "paperclip_managed",
+      managedMode: "pilibala_managed",
       externalRef,
       latestVersion: 1,
       status: "deleted",
@@ -4184,7 +4184,7 @@ describeEmbeddedPostgres("secretService", () => {
       },
     });
     const externalRef =
-      "arn:aws:secretsmanager:us-east-1:123456789012:secret:paperclip/prod/company-1/openai-api-key";
+      "arn:aws:secretsmanager:us-east-1:123456789012:secret:pilibala/prod/company-1/openai-api-key";
     const secret = await db
       .insert(companySecrets)
       .values({
@@ -4193,7 +4193,7 @@ describeEmbeddedPostgres("secretService", () => {
         name: "OpenAI API Key",
         provider: "aws_secrets_manager",
         providerConfigId: vault.id,
-        managedMode: "paperclip_managed",
+        managedMode: "pilibala_managed",
         externalRef,
         latestVersion: 1,
         status: "active",

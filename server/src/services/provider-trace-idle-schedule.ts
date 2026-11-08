@@ -1,4 +1,4 @@
-import { providerTraceRecords, type Db } from "@paperclipai/db";
+import { providerTraceRecords, type Db } from "@pilibalaai/db";
 import { getTableColumns, sql } from "drizzle-orm";
 import { importingProviderTraceRef, objectProviderTraceRef } from "./provider-trace-object-store.js";
 import { finishedIdleRun } from "./idle-work-proof.js";

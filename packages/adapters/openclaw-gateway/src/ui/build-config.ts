@@ -1,4 +1,4 @@
-import type { CreateConfigValues } from "@paperclipai/adapter-utils";
+import type { CreateConfigValues } from "@pilibalaai/adapter-utils";
 
 function parseJsonObject(text: string): Record<string, unknown> | null {
   const trimmed = text.trim();
@@ -41,8 +41,8 @@ export function buildOpenClawGatewayConfig(v: CreateConfigValues): Record<string
     if (parsed.length > 0) ac.scopes = parsed;
   }
 
-  // Paperclip API override
-  if (v.paperclipApiUrl) ac.paperclipApiUrl = v.paperclipApiUrl;
+  // Pilibala API override
+  if (v.pilibalaApiUrl) ac.pilibalaApiUrl = v.pilibalaApiUrl;
 
   // Headers — parse headersJson first, then inject authToken on top
   const headers = parseJsonObject(v.headersJson ?? "");

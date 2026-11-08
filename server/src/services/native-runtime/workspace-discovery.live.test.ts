@@ -3,7 +3,7 @@ import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { eq } from "drizzle-orm";
-import { agents, companies, executionWorkspaces, heartbeatRunEvents, heartbeatRuns, issues } from "@paperclipai/db";
+import { agents, companies, executionWorkspaces, heartbeatRunEvents, heartbeatRuns, issues } from "@pilibalaai/db";
 import { expect, it } from "vitest";
 import { startRunnerApiTestServer } from "../../__tests__/helpers/runner-api-server.js";
 import { createIsolatedTestHome } from "../../__tests__/helpers/isolated-test-home.js";
@@ -12,28 +12,28 @@ import { issueService } from "../issues.js";
 import { instanceSettingsService } from "../instance-settings.js";
 import { closeIdleWarmNativeSessionsForRestart } from "./native-session-executor.js";
 
-it.skipIf(process.env.PAPERCLIP_LIVE_WORKSPACE_DISCOVERY !== "true")("settles workspace discovery and resumes a second real Codex turn", async () => {
+it.skipIf(process.env.PILIBALA_LIVE_WORKSPACE_DISCOVERY !== "true")("settles workspace discovery and resumes a second real Codex turn", async () => {
   const home = createIsolatedTestHome();
-  const keys = ["PAPERCLIP_HOME", "CODEX_HOME", "PAPERCLIP_API_URL", "PAPERCLIP_AGENT_JWT_SECRET", "PAPERCLIP_TELEMETRY_DISABLED"];
+  const keys = ["PILIBALA_HOME", "CODEX_HOME", "PILIBALA_API_URL", "PILIBALA_AGENT_JWT_SECRET", "PILIBALA_TELEMETRY_DISABLED"];
   const saved = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   let server: Awaited<ReturnType<typeof startRunnerApiTestServer>> | undefined;
   let heartbeat: ReturnType<typeof heartbeatService> | undefined;
   try {
     const codexHome = join(home.home, "codex");
     await mkdir(codexHome, { mode: 0o700 });
-    await copyFile(join(process.env.PAPERCLIP_LIVE_CODEX_HOME ?? join(homedir(), ".codex"), "auth.json"), join(codexHome, "auth.json"));
+    await copyFile(join(process.env.PILIBALA_LIVE_CODEX_HOME ?? join(homedir(), ".codex"), "auth.json"), join(codexHome, "auth.json"));
     process.env.CODEX_HOME = codexHome;
-    process.env.PAPERCLIP_HOME = join(home.home, "instance");
-    process.env.PAPERCLIP_AGENT_JWT_SECRET = randomUUID();
-    process.env.PAPERCLIP_TELEMETRY_DISABLED = "1";
+    process.env.PILIBALA_HOME = join(home.home, "instance");
+    process.env.PILIBALA_AGENT_JWT_SECRET = randomUUID();
+    process.env.PILIBALA_TELEMETRY_DISABLED = "1";
     server = await startRunnerApiTestServer({ deploymentMode: "local_trusted" });
-    process.env.PAPERCLIP_API_URL = server.apiUrl;
+    process.env.PILIBALA_API_URL = server.apiUrl;
     const f = await server.fixture({ connectionScenario: "fresh" });
     const db = server.db;
     await db.insert(executionWorkspaces).values(Array.from({ length: 2_000 }, (_, index) => ({ companyId: f.companyId,
       name: `Workspace ${index}`, mode: "shared_workspace", strategyType: "task_directory", cwd: `/tmp/${"repository/".repeat(20)}${index}` })));
     await db.update(issues).set({ executionRunId: null, executionWorkspaceSettings: { mode: "shared_workspace" },
-      title: "Verify paged workspace discovery", description: "Follow each latest comment. Use list_workspaces twice: request limit 2, then request limit 2 with its nextCursor. Confirm both pages have two distinct workspace IDs and hasMore true. Follow the comment's file step and finish this step with paperclip_finish, reportedWorkDisposition done. No external services or public writes are needed.",
+      title: "Verify paged workspace discovery", description: "Follow each latest comment. Use list_workspaces twice: request limit 2, then request limit 2 with its nextCursor. Confirm both pages have two distinct workspace IDs and hasMore true. Follow the comment's file step and finish this step with pilibala_finish, reportedWorkDisposition done. No external services or public writes are needed.",
     }).where(eq(issues.id, f.issueId));
     await db.update(heartbeatRuns).set({ status: "succeeded", finishedAt: new Date() }).where(eq(heartbeatRuns.id, f.runId));
     await db.update(companies).set({ defaultResponsibleUserId: f.userId }).where(eq(companies.id, f.companyId));
@@ -97,7 +97,7 @@ it.skipIf(process.env.PAPERCLIP_LIVE_WORKSPACE_DISCOVERY !== "true")("settles wo
     const evidence = { passed: true, model: "gpt-6.1-sol", effort: "high", lifecycleMode: "per_turn",
       platform: `${process.platform}-${process.arch}`, inventory: 2_000, completed, fileLines: 2, taskStatus: "done", locksCleared: true,
       cursorFollowed: true, nonOverlappingPages: true };
-    if (process.env.PAPERCLIP_LIVE_EVIDENCE_PATH) await writeFile(process.env.PAPERCLIP_LIVE_EVIDENCE_PATH, JSON.stringify(evidence, null, 2) + "\n");
+    if (process.env.PILIBALA_LIVE_EVIDENCE_PATH) await writeFile(process.env.PILIBALA_LIVE_EVIDENCE_PATH, JSON.stringify(evidence, null, 2) + "\n");
     console.log(JSON.stringify(evidence));
   } finally {
     await heartbeat?.drainActiveRunExecutions();

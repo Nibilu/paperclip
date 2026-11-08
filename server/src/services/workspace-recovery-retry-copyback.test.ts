@@ -13,7 +13,7 @@ import { attachPreservedWorkspaceSnapshots, verifiedWorkspaceSnapshotReceipt } f
 import { requestTaskRetry } from "./task-retry.js";
 import { requestInterruptedNativeTurnRetry, requestRestartInterruptedTurnRetry } from "./heartbeat/restart-interrupted-turn.js";
 import { startTaskDrain, stopTaskDrain } from "./task-admission.js";
-import { activityLog, companies, environmentLeases, environments, heartbeatRuns, issueComments, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, agentWakeupRequests, workspaceOperations, executionWorkspaces, withDedicatedDbConnection } from "@paperclipai/db";
+import { activityLog, companies, environmentLeases, environments, heartbeatRuns, issueComments, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, agentWakeupRequests, workspaceOperations, executionWorkspaces, withDedicatedDbConnection } from "@pilibalaai/db";
 import { readFreshWorkspaceReadiness } from "./fresh-workspace-continuation.js";
 import { createHash, randomUUID } from "node:crypto";
 import { chmod, cp, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
@@ -22,8 +22,8 @@ import request from "supertest";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import { resumePreservedResultFinalization } from "./preserved-result-finalization.js";
-import type { AdapterSandboxExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import type { EnvironmentLease } from "@paperclipai/shared";
+import type { AdapterSandboxExecutionTarget } from "@pilibalaai/adapter-utils/execution-target";
+import type { EnvironmentLease } from "@pilibalaai/shared";
 import { nativeWorkspaceExportPendingForResource } from "./native-runtime/native-workspace-finalization-state.js";
 import { remoteTerminationReceipt } from "./remote-execution-termination.js";
 import { prepareStoppedSandboxForRecovery, settleStopOnlyCleanup } from "./sandbox-stop-and-retain.js";
@@ -52,7 +52,7 @@ describe("automatic retained workspace recovery", () => {
     await db.delete(issueRecoveryActions).where(eq(issueRecoveryActions.id, f.actionId));
     await db.update(issues).set({ conversationAgentId: original.agentId, conversationUserId: "operator",
       conversationState: "active", status: "in_review" }).where(eq(issues.id, f.issueId));
-    const nativeCancellation = { schema: "paperclip.native-cancellation.v1", runId: f.runId, companyId: f.companyId,
+    const nativeCancellation = { schema: "pilibala.native-cancellation.v1", runId: f.runId, companyId: f.companyId,
       issueId: f.issueId, scope: "run", reasonCode: "cancellation_run_only", dispatchState: "acknowledged", dispatched: false,
       intentAuditId: randomUUID(), acknowledgementAuditId: randomUUID() };
     await db.update(heartbeatRuns).set({ status: "cancelled", errorCode: "cancelled", resultJson: {
@@ -225,7 +225,7 @@ describe("automatic retained workspace recovery", () => {
     expect(await prepareNativeWorkspaceSync({ db, companyId: f.companyId, workspaceId: f.issueId, workspaceLocalDir: f.host,
       runId, lease: lease as EnvironmentLease, target, resourceDisposition: "destroy" })).not.toBeNull();
     await writeFile(path.join(remote, "retry-work.txt"), "retry turn work\n");
-    const recovery = { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [lease.id] };
+    const recovery = { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [lease.id] };
     await db.update(heartbeatRuns).set({ resultJson: { workspaceRestoreFailure: "restore_failed", workspaceRestoreRecovery: recovery,
       conversationContinuation: "continue_conversation_v1" } }).where(eq(heartbeatRuns.id, runId));
     await db.update(environmentLeases).set({ metadata: { ...lease.metadata,
@@ -347,7 +347,7 @@ describe("automatic retained workspace recovery", () => {
     expect(await readFile(path.join(f.host, "newer.txt"), "utf8")).toBe("newer local work\n");
     expect(await hasVerifiedWorkspaceRepair(db, await run(f.runId))).toBe(true);
     const current = await action(f.actionId);
-    expect(current.evidence.nativeSourceRetention).toMatchObject({ schema: "paperclip.native-source-retention.v1",
+    expect(current.evidence.nativeSourceRetention).toMatchObject({ schema: "pilibala.native-source-retention.v1",
       sourceRunId: f.runId, requestId: f.retry.requestId, previousGeneration: f.failed });
     expect(readSystemRecovery(current.evidence)).toMatchObject({ state: "complete", intentId: f.retry.requestId });
     expect((await db.select().from(environmentLeases).where(eq(environmentLeases.id, f.lease.id)))[0])
@@ -484,7 +484,7 @@ describe("automatic retained workspace recovery", () => {
       }
       if (["already_adopted", "prior_export", "other_failure"].includes(reason)) await db.update(issueRecoveryActions).set({ evidence: {
         ...(await action(f.actionId)).evidence,
-        ...(reason === "already_adopted" ? { nativeSourceRetention: { schema: "paperclip.native-source-retention.v1" } } : {}),
+        ...(reason === "already_adopted" ? { nativeSourceRetention: { schema: "pilibala.native-source-retention.v1" } } : {}),
         ...(reason === "prior_export" ? { systemRecovery: { ...f.failed, preservationOperationIds: [randomUUID()] } } : {}),
         ...(reason === "other_failure" ? { systemRecovery: { ...f.failed, failure: { ...f.failed.failure!, code: "source_unavailable" } } } : {}),
       } }).where(eq(issueRecoveryActions.id, f.actionId));
@@ -519,7 +519,7 @@ describe("automatic retained workspace recovery", () => {
 
   it.each(["retained", "removed", "child", "expired-owner", "no-descriptor"])("preserves an old sandbox after storage migration without writing its old host (%s)", async mode => {
     vi.stubEnv("DATABASE_URL", connectionString);
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "63".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "63".repeat(32));
     const f = await seed("native", mode !== "no-descriptor");
     // The fixture's command runner supports native copyback; the provider
     // snapshot boundary separately needs its real-file syncOut capability.
@@ -549,7 +549,7 @@ describe("automatic retained workspace recovery", () => {
         metadata: { remoteCwd: lease.metadata!.remoteCwd as string } }));
       const source = await run(f.runId);
       await db.update(heartbeatRuns).set({ resultJson: { ...source.resultJson,
-        workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [f.lease.id, secondId] },
+        workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [f.lease.id, secondId] },
       } }).where(eq(heartbeatRuns.id, f.runId));
     }
     const sourceIssueId = mode === "child" ? randomUUID() : f.issueId;
@@ -563,7 +563,7 @@ describe("automatic retained workspace recovery", () => {
     if (mode === "expired-owner" || mode === "no-descriptor") await db.update(nativeRunFinalizations).set({ phase: "observed",
       leaseOwner: "stopped-old-controller", leaseExpiresAt: new Date(Date.now() - 60_000) })
       .where(eq(nativeRunFinalizations.runId, f.runId));
-    vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "true");
+    vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "true");
     try {
       await migrateRemoteWorkspace({ db, storage: getStorageService(), companyId: f.companyId,
         workspaceId: f.issueId, apply: true, writersStopped: true });
@@ -585,7 +585,7 @@ describe("automatic retained workspace recovery", () => {
       if (mode === "no-descriptor") {
         const source = await run(f.runId);
         await db.update(heartbeatRuns).set({ resultJson: { ...source.resultJson,
-          workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [f.lease.id] },
+          workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [f.lease.id] },
         } }).where(eq(heartbeatRuns.id, f.runId));
         expect(await hasVerifiedWorkspaceRepair(db, await run(f.runId))).toBe(false);
         await db.update(heartbeatRuns).set({ resultJson: source.resultJson }).where(eq(heartbeatRuns.id, f.runId));
@@ -604,7 +604,7 @@ describe("automatic retained workspace recovery", () => {
         // The parent must not receive the child's task-scoped recovery copy.
         if (mode === "child") expect(await attachPreservedWorkspaceSnapshots({ db, companyId: f.companyId, issueId: sourceIssueId,
           sourceRunIds: [f.runId], cwd: restored })).toHaveLength(0);
-        vi.stubEnv("PAPERCLIP_EPHEMERAL_MIGRATION", "false");
+        vi.stubEnv("PILIBALA_EPHEMERAL_MIGRATION", "false");
         const nextRunId = randomUUID(), nextLeaseId = randomUUID(), sourceRun = await run(f.runId);
         const [comment] = await db.insert(issueComments).values({ companyId: f.companyId, issueId: f.issueId,
           authorType: "user", authorUserId: "operator", body: "/new" }).returning();
@@ -637,7 +637,7 @@ describe("automatic retained workspace recovery", () => {
         const prepared = await prepareRemoteWorkspace({ db, storage, workspace: reserved,
           runId: nextRunId, lease: lease as EnvironmentLease, target });
         expect(prepared.workspace.sourceIssueId).toBe(sourceIssueId);
-        expect(await readFile(path.join(prepared.remoteRoot, ".paperclip-recovered", copies[0]!.operationId, "files", "saved.txt"), "utf8"))
+        expect(await readFile(path.join(prepared.remoteRoot, ".pilibala-recovered", copies[0]!.operationId, "files", "saved.txt"), "utf8"))
           .toBe("finished work\n");
       }
       if (mode === "retained" || mode === "no-descriptor") {
@@ -681,7 +681,7 @@ describe("automatic retained workspace recovery", () => {
       startedAt: new Date(), finishedAt: new Date(), errorCode: "setup_failed",
       error: "The workspace still has an unfinished writer or save operation.",
       contextSnapshot: { issueId: f.issueId, executionWorkspaceId: f.workspaceId },
-      runnerProfileJson: { adapterDispatch: { adapterType: "paperclip_runner" } },
+      runnerProfileJson: { adapterDispatch: { adapterType: "pilibala_runner" } },
       resultJson: { executionRecovery: { kind: "bootstrap", providerWorkStarted: false } },
     }).returning();
     return { ...f, stopped, preparation };
@@ -735,7 +735,7 @@ describe("automatic retained workspace recovery", () => {
     if (gate === "wrong-epoch") await db.update(heartbeatRuns).set({ runnerProfileJson: { ...source.runnerProfileJson,
       remoteWorkspace: { ...(source.runnerProfileJson!.remoteWorkspace as object), epoch: 99 } } }).where(eq(heartbeatRuns.id, f.runId));
     if (gate === "native-sync") await db.update(heartbeatRuns).set({ runnerProfileJson: { ...source.runnerProfileJson,
-      nativeWorkspaceSync: { schema: "paperclip.native-workspace-sync/v3" } } }).where(eq(heartbeatRuns.id, f.runId));
+      nativeWorkspaceSync: { schema: "pilibala.native-workspace-sync/v3" } } }).where(eq(heartbeatRuns.id, f.runId));
     if (gate === "source-binding") await db.update(environmentLeases).set({ metadata: { ...f.stopped.metadata, remoteCwd: "/other" } })
       .where(eq(environmentLeases.id, f.lease.id));
     const [lease] = await db.select().from(environmentLeases).where(eq(environmentLeases.id, f.lease.id));
@@ -783,7 +783,7 @@ describe("automatic retained workspace recovery", () => {
 
   async function pressuredToolCache(pressure: "transfer" | "sandbox-write" = "transfer") {
     const f = await acceptedRemoteExport();
-    const runner = path.join(f.remote, ".paperclip-runtime", "paperclip-runner");
+    const runner = path.join(f.remote, ".pilibala-runtime", "pilibala-runner");
     const pack = path.join(runner, "provider-pack"), sessions = path.join(runner, "sessions", "retained");
     await mkdir(path.join(pack, "node_modules"), { recursive: true });
     await mkdir(path.join(pack, "provider-assets")); await mkdir(sessions, { recursive: true });
@@ -793,13 +793,13 @@ describe("automatic retained workspace recovery", () => {
     const payload = { target: { platform: "linux", architecture: "x64" } };
     const digest = `sha256:${createHash("sha256").update(canonicalProviderPackJson(payload)).digest("hex")}`;
     await writeFile(path.join(pack, "provider-pack.json"), JSON.stringify({
-      schema: "paperclip-runner/remote-provider-pack/v1", digest, payload,
+      schema: "pilibala-runner/remote-provider-pack/v1", digest, payload,
     }));
     const before = await run(f.runId);
     await db.update(heartbeatRuns).set({ runnerProfileJson: { ...before.runnerProfileJson,
-      nativeProviderPackAdmissionState: { schema: "paperclip.native-provider-pack-admission-state.v1",
+      nativeProviderPackAdmissionState: { schema: "pilibala.native-provider-pack-admission-state.v1",
         state: "verified", admissionEpoch: randomUUID() },
-      nativeProviderPackAdmission: { schema: "paperclip.native-provider-pack-admission.v1", stage: "session_admitted",
+      nativeProviderPackAdmission: { schema: "pilibala.native-provider-pack-admission.v1", stage: "session_admitted",
         authority: "core_verified_selection", runId: f.runId, companyId: f.companyId, agentId: before.agentId,
         providerPackDigest: digest },
     } }).where(eq(heartbeatRuns.id, f.runId));
@@ -844,7 +844,7 @@ describe("automatic retained workspace recovery", () => {
   it("recovers when sandbox writes fail before any archive can be created", async () => {
     const f = await pressuredToolCache("sandbox-write");
     const target = targets.get(f.lease.id)!, execute = target.runner!.execute;
-    const staging = path.join(f.remote, ".paperclip-runtime", "workspace-snapshots");
+    const staging = path.join(f.remote, ".pilibala-runtime", "workspace-snapshots");
     const before = await readdir(staging).catch(() => []);
     let committedPreparation = false;
     target.runner!.execute = async input => {
@@ -887,7 +887,7 @@ describe("automatic retained workspace recovery", () => {
     expect(f.transfers()).toBe(2);
     expect(f.readonlyExports).toEqual([{ kind: "directory", sourcePath: await realpath(f.remote),
       targetPath: expect.stringMatching(/[/]source$/), followSymlinks: false, preserveSourceEntries: true,
-      exclude: [".paperclip-runtime"] }]);
+      exclude: [".pilibala-runtime"] }]);
     await expect(lstat(path.join(f.pack, "node_modules"))).rejects.toMatchObject({ code: "ENOENT" });
     await expect(lstat(path.join(f.pack, "provider-assets"))).rejects.toMatchObject({ code: "ENOENT" });
     expect(JSON.parse(await readFile(path.join(f.pack, "provider-pack.json"), "utf8")).digest).toBe(f.digest);
@@ -1070,7 +1070,7 @@ describe("automatic retained workspace recovery", () => {
       if (!interrupted && input.args[2] === "reclaim") {
         interrupted = true;
         fault += `(()=>{const fs=require('node:fs/promises'),path=require('node:path'),remove=fs.rm;
-          fs.rm=async(p,options)=>{if(p===${JSON.stringify(interruptedTarget)}||p.startsWith(${JSON.stringify(interruptedTarget + ".paperclip-reclaim-")})){
+          fs.rm=async(p,options)=>{if(p===${JSON.stringify(interruptedTarget)}||p.startsWith(${JSON.stringify(interruptedTarget + ".pilibala-reclaim-")})){
             await fs.unlink(path.join(p===${JSON.stringify(interruptedTarget)}?p:path.dirname(p),'installed-tool'));process.exit(77);
           }return remove(p,options);};})();`;
       }
@@ -1084,7 +1084,7 @@ describe("automatic retained workspace recovery", () => {
     expect(readWorkspaceRecovery((await action(f.actionId)).evidence)?.status).not.toBe("recovered");
     const [prepared] = await db.select().from(workspaceOperations).where(and(eq(workspaceOperations.companyId, f.companyId),
       eq(workspaceOperations.phase, "native_provider_cache_reclaim_prepare")));
-    const staged = path.join(f.pack, `node_modules.paperclip-reclaim-${prepared.id}`);
+    const staged = path.join(f.pack, `node_modules.pilibala-reclaim-${prepared.id}`);
     const interruptedDirectory = await lstat(staged).then(() => staged, () => path.join(f.pack, "node_modules"));
     await expect(lstat(path.join(interruptedDirectory, "installed-tool"))).rejects.toMatchObject({ code: "ENOENT" });
     expect((await lstat(path.join(interruptedDirectory, "remaining-tool"))).isFile()).toBe(true);
@@ -1099,7 +1099,7 @@ describe("automatic retained workspace recovery", () => {
       await writeFile(path.join(staged, "replacement-tool"), "replacement installation\n");
     }
     if (scenario === "marker_replaced") {
-      const marker = path.join(staged, `.paperclip-reclaim-${prepared.id}.json`), bytes = await readFile(marker);
+      const marker = path.join(staged, `.pilibala-reclaim-${prepared.id}.json`), bytes = await readFile(marker);
       await rename(marker, `${marker}.original`);
       await writeFile(marker, bytes);
     }
@@ -1108,7 +1108,7 @@ describe("automatic retained workspace recovery", () => {
     if (["unchanged", "full_disk"].includes(scenario)) {
       expect(readWorkspaceRecovery((await action(f.actionId)).evidence)?.status).toBe("recovered");
       expect(cleanupConfirmed).toBe(true);
-      expect(await readdir(staged)).toEqual([`.paperclip-reclaim-${prepared.id}.json`]);
+      expect(await readdir(staged)).toEqual([`.pilibala-reclaim-${prepared.id}.json`]);
       const [workspace] = await db.select().from(executionWorkspaces).where(eq(executionWorkspaces.id, f.workspaceId));
       const authority = readRemoteWorkspaceAuthority(workspace.metadata)!;
       const saved = await createSavedWorkspaceLoader(db)({ companyId: f.companyId, workspaceId: f.workspaceId, snapshotId: authority.snapshotId! });
@@ -1142,7 +1142,7 @@ describe("automatic retained workspace recovery", () => {
       if (input.args[2] === "reclaim") {
         const [prepared] = await db.select().from(workspaceOperations).where(and(eq(workspaceOperations.companyId, f.companyId),
           eq(workspaceOperations.phase, "native_provider_cache_reclaim_prepare")));
-        const staged = path.join(f.pack, `provider-assets.paperclip-reclaim-${prepared.id}`);
+        const staged = path.join(f.pack, `provider-assets.pilibala-reclaim-${prepared.id}`);
         expect(await readFile(path.join(staged, "cursor-executable"), "utf8")).toBe("immutable executable\n");
         expect((await lstat(path.join(staged, "cursor-executable"))).mode & 0o777).toBe(0o500);
         expect(await readFile(path.join(staged, "cursor-metadata.json"), "utf8")).toBe("immutable metadata\n");
@@ -1198,7 +1198,7 @@ describe("automatic retained workspace recovery", () => {
         lost = true;
         fault += `(()=>{const fs=require('node:fs/promises'),open=fs.open;
           fs.open=async(...args)=>{const handle=await open(...args),write=handle.writeFile.bind(handle);
-            if(args[0].includes('/.paperclip-reclaim-'))handle.writeFile=async bytes=>{await write(bytes.slice(0,32));process.exit(77);};
+            if(args[0].includes('/.pilibala-reclaim-'))handle.writeFile=async bytes=>{await write(bytes.slice(0,32));process.exit(77);};
             return handle;};})();`;
       }
       const result = await execute({ ...input, args: ["-e", fault + input.args[1], ...input.args.slice(2)] });
@@ -1223,7 +1223,7 @@ describe("automatic retained workspace recovery", () => {
       const [prepared] = await db.select().from(workspaceOperations).where(and(eq(workspaceOperations.companyId, f.companyId),
         eq(workspaceOperations.phase, "native_provider_cache_reclaim_prepare")));
       expect(prepared.metadata?.staged).toBeUndefined();
-      const staged = path.join(f.pack, `node_modules.paperclip-reclaim-${prepared.id}`);
+      const staged = path.join(f.pack, `node_modules.pilibala-reclaim-${prepared.id}`);
       const preserved = await lstat(staged).then(() => staged, () => path.join(f.pack, "node_modules"));
       expect((await lstat(path.join(preserved, "remaining-tool"))).isFile()).toBe(true);
     } finally {
@@ -1246,7 +1246,7 @@ describe("automatic retained workspace recovery", () => {
   it.each(["pending", "foreign", "lease", "active", "recoverable", "manifest", "symlink"])("keeps files intact when %s cache authority is unproven", async failure => {
     const f = await pressuredToolCache(), before = await run(f.runId);
     if (failure === "pending") await db.update(heartbeatRuns).set({ runnerProfileJson: { ...before.runnerProfileJson,
-      nativeProviderPackAdmissionState: { schema: "paperclip.native-provider-pack-admission-state.v1",
+      nativeProviderPackAdmissionState: { schema: "pilibala.native-provider-pack-admission-state.v1",
         state: "pending", admissionEpoch: randomUUID() } } }).where(eq(heartbeatRuns.id, f.runId));
     if (failure === "foreign") await db.update(heartbeatRuns).set({ runnerProfileJson: { ...before.runnerProfileJson,
       nativeProviderPackAdmission: { ...before.runnerProfileJson!.nativeProviderPackAdmission as Record<string, unknown>,
@@ -1259,7 +1259,7 @@ describe("automatic retained workspace recovery", () => {
     if (failure === "recoverable") await db.update(nativeRunFinalizations).set({ failureDetail: { recoverable: true } })
       .where(eq(nativeRunFinalizations.runId, f.runId));
     if (failure === "manifest") await writeFile(path.join(f.pack, "provider-pack.json"), JSON.stringify({
-      schema: "paperclip-runner/remote-provider-pack/v1", digest: `sha256:${"f".repeat(64)}`, payload: {},
+      schema: "pilibala-runner/remote-provider-pack/v1", digest: `sha256:${"f".repeat(64)}`, payload: {},
     }));
     if (failure === "symlink") {
       const outside = path.join(path.dirname(f.remote), "retained-installation");

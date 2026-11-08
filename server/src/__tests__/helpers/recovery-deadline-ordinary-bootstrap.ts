@@ -1,4 +1,4 @@
-import { classifyCodexTerminalSessionFailure } from "@paperclipai/adapter-codex-local/server";
+import { classifyCodexTerminalSessionFailure } from "@pilibalaai/adapter-codex-local/server";
 import type { AdapterExecutionResult } from "../../adapters/types.js";
 
 export const controlledOrdinaryBootstrapFailure = {

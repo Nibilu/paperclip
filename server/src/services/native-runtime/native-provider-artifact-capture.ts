@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, dirname, posix } from "node:path";
-import type { CommandManagedRuntimeRunner } from "@paperclipai/adapter-utils/command-managed-runtime";
+import type { CommandManagedRuntimeRunner } from "@pilibalaai/adapter-utils/command-managed-runtime";
 import type { NativeProviderArtifactSource } from "./native-provider-artifacts.js";
 import type { OpenCodeLaunchArtifacts } from "./remote-opencode-artifacts.js";
 import type { NativeExecutionContext } from "./native-execution-context.js";
@@ -56,13 +56,13 @@ export async function captureRemoteNativeProviderArtifacts<T>(
   },
   publish: (source: NativeProviderArtifactSource) => Promise<T>,
 ): Promise<T> {
-  const root = await mkdtemp(join(tmpdir(), "paperclip-provider-launch-"));
+  const root = await mkdtemp(join(tmpdir(), "pilibala-provider-launch-"));
   let ownedByOperation = false;
   try {
     const exportParent = posix.join(
       input.remoteCwd,
-      ".paperclip-runtime",
-      "paperclip-runner",
+      ".pilibala-runtime",
+      "pilibala-runner",
       "provider-artifact-export",
     );
     const exportRoot = posix.join(exportParent, randomUUID());

@@ -1,5 +1,5 @@
 /**
- * Hermes provider and model discovery for Paperclip setup UX.
+ * Hermes provider and model discovery for Pilibala setup UX.
  *
  * Two sources, both read-only against the host Hermes installation:
  *

@@ -68,7 +68,7 @@ export const historyBrowserScript = String.raw`
   const controls = Object.fromEntries(names.map(name => [name, document.querySelector('[data-index-filter="'+name+'"]')]));
   const unknown = value => value === '__none__' ? 'Browser only' : value === '__unknown__' ? 'Not recorded' : value;
   const label = (name, value) => name === 'suite' ? suiteLabels.get(value) || value :
-    name === 'target' && value !== '__unknown__' ? (new URL(value).hostname === 'qa.test.paperclip.app' ? 'QA staging · ' : '') + value :
+    name === 'target' && value !== '__unknown__' ? (new URL(value).hostname === 'qa.test.pilibala.app' ? 'QA staging · ' : '') + value :
     name === 'preset' && value === 'qa-smoke' ? 'QA smoke' : unknown(value);
   for (const name of [...executionNames, 'preset']) {
     const values = [...new Set(data.campaigns.flatMap(campaign => name === 'preset' ? [campaign.preset].filter(Boolean) : campaign.executions.map(execution => execution[name])))].sort();

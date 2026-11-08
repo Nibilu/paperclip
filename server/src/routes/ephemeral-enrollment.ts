@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { validate } from "../middleware/validate.js";
 import { verifiedCloudControlClaims } from "../middleware/cloud-control.js";
 import { prepareOnlineEphemeralEnrollment } from "../services/ephemeral-enrollment.js";

@@ -1,6 +1,6 @@
 import { and, eq, gte, inArray, ne, or, sql } from "drizzle-orm";
 import { completionContracts, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations,
-  nativeRunResults, type Db } from "@paperclipai/db";
+  nativeRunResults, type Db } from "@pilibalaai/db";
 import { z } from "zod";
 import { issueTreeControlService } from "../issue-tree-control.js";
 import { remoteExecutionHasStopped } from "../remote-execution-termination.js";
@@ -9,7 +9,7 @@ import { completedWorkspaceRecoveryCondition, readWorkspaceRecovery, verifiedWor
 import { nativeSha256 } from "./canonical.js";
 
 export const nativeWorkspaceFinalizationBlockSchema = z.object({
-  schema: z.literal("paperclip.native-workspace-finalization-block.v1"),
+  schema: z.literal("pilibala.native-workspace-finalization-block.v1"),
   companyId: z.uuid(), issueId: z.uuid(), runId: z.uuid(), agentId: z.uuid(),
   resultId: z.uuid(), resultSha256: z.string().min(1),
   contractId: z.uuid(), contractSha256: z.string().min(1),

@@ -1,6 +1,6 @@
 import { and, asc, eq, sql } from "drizzle-orm";
-import { heartbeatRunEvents, heartbeatRuns, type Db } from "@paperclipai/db";
-import { isUuidLike } from "@paperclipai/shared";
+import { heartbeatRunEvents, heartbeatRuns, type Db } from "@pilibalaai/db";
+import { isUuidLike } from "@pilibalaai/shared";
 
 type Source = Pick<typeof heartbeatRuns.$inferSelect, "id" | "companyId" | "agentId" | "error">;
 

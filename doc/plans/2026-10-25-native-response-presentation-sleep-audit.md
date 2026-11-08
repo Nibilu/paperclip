@@ -2,7 +2,7 @@
 
 Status: worker, producers, and startup/periodic integration implemented; full local and remote acceptance pending.
 Branch: `codex/sleep-48-native-response-presentation`.
-Parent: [#17690](https://github.com/paperclipai/paperclip/pull/17690),
+Parent: [#17690](https://github.com/pilibalaai/pilibala/pull/17690),
 `56c3601ea605b333141e86e0a810ed790fb6ce48`.
 
 ## Reason for work
@@ -101,7 +101,7 @@ private disposition, cross-company/run binding, live heartbeat fences, the older
 port-bound digest, GitHub internal prose/attachments, failure-lane replacement,
 provider-dispatch reauthorization, selected/deleted answers, and contention.
 Log: `/tmp/sleep48-chat-baseline.log`. Database:
-`paperclip_sleep48_chat_baseline_20261025_test`.
+`pilibala_sleep48_chat_baseline_20261025_test`.
 
 The monitor-continuation and control-plane-port suites currently require embedded
 PostgreSQL directly. Qualify a validated external-test path if needed before using
@@ -456,7 +456,7 @@ retry, drain/resume, and unrelated retained-history isolation. Per-file counts:
 | src/services/native-runtime/native-session-executor.test.ts | 968 |
 | src/services/native-runtime/native-workspace-export-retry.test.ts | 80 |
 | src/services/native-runtime/native-workspace-reconstruction.test.ts | 50 |
-| src/services/native-runtime/paperclip-control-plane-port.test.ts | 55 |
+| src/services/native-runtime/pilibala-control-plane-port.test.ts | 55 |
 
 The complete 94-case status-authority corpus also passes again on the same
 database in 16.68 seconds. It is not double-counted. Three retained PSC/OUT and

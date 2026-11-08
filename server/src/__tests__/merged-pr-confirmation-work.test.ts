@@ -3,7 +3,7 @@ import { createPullRequestMergeStateResolver } from "../services/github-pull-req
 import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { eq, sql } from "drizzle-orm";
-import { activityLog, agents, chatActions, chatConversations, chatEndpoints, chatPublications, companies, createDb, issues, issueThreadInteractions, toolApplications, toolConnections, type Db } from "@paperclipai/db";
+import { activityLog, agents, chatActions, chatConversations, chatEndpoints, chatPublications, companies, createDb, issues, issueThreadInteractions, toolApplications, toolConnections, type Db } from "@pilibalaai/db";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDeliveryWorkCoordinator } from "../services/delivery-work-coordinator.js";
 import { issueThreadInteractionService } from "../services/issue-thread-interactions.js";
@@ -13,7 +13,7 @@ import { idleWorkSnapshot } from "../services/task-admission.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
 
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_MERGE_WORK_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_MERGE_WORK_TEST_DATABASE_URL");
 const support = external ? { supported: true } : await getEmbeddedPostgresTestSupport();
 (support.supported ? describe : describe.skip)("merge confirmation work with PostgreSQL and simulated GitHub", () => {
   let temporary: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | undefined;
@@ -48,7 +48,7 @@ const support = external ? { supported: true } : await getEmbeddedPostgresTestSu
   });
   afterAll(async () => { await db?.$client.end({ timeout: 1 }); await temporary?.cleanup(); });
   const service = (database: Db = db) => issueThreadInteractionService(database, { resolvePullRequestState: provider, wakeup });
-  const input = (number = 39) => ({ kind: "request_confirmation" as const, title: `Merge paperclipai/paperclip#${number}?`,
+  const input = (number = 39) => ({ kind: "request_confirmation" as const, title: `Merge pilibalaai/pilibala#${number}?`,
     resolverPolicy: "human_only" as const, continuationPolicy: "wake_assignee_on_accept" as const,
     payload: { version: 1 as const, prompt: "Merge the PR?" } });
   const create = (database: Db = db, number = 39) => service(database).create({ id: issueId, companyId }, input(number), { agentId });
@@ -215,7 +215,7 @@ const support = external ? { supported: true } : await getEmbeddedPostgresTestSu
   it("honors terminal issues, pure merge URL targets and continuationPolicy none", async () => {
     await start(); await quiet();
     const target = await service().create({ id: issueId, companyId }, { ...input(), title: "Merge the linked PR?", continuationPolicy: "none",
-      payload: { version: 1, prompt: "Merge the PR?", target: { type: "custom", key: "github-pr-39", href: "https://github.com/paperclipai/paperclip/pull/39" } } }, { agentId });
+      payload: { version: 1, prompt: "Merge the PR?", target: { type: "custom", key: "github-pr-39", href: "https://github.com/pilibalaai/pilibala/pull/39" } } }, { agentId });
     await waitFor(async () => expect((await stored(target.id)).status).toBe("accepted")); await quiet();
     expect(wakeup).not.toHaveBeenCalled();
     provider.mockClear();
@@ -435,7 +435,7 @@ const support = external ? { supported: true } : await getEmbeddedPostgresTestSu
     await db.insert(issues).values({ id: foreignIssue, companyId: foreignCompany, title: "Other", status: "todo" });
     const foreign = await service().create({ id: foreignIssue, companyId: foreignCompany }, input(), { userId: "board" });
     const local = service();
-    const hint = [{ companyId, owner: "PAPERCLIPAI", repo: "paperclip", number: 39 }];
+    const hint = [{ companyId, owner: "PILIBALAAI", repo: "pilibala", number: 39 }];
     expect((await local.sweepMergedPullRequestConfirmations(hint)).accepted).toBe(1);
     expect((await stored(own.id)).status).toBe("accepted"); expect((await stored(foreign.id)).status).toBe("pending");
     expect(provider).not.toHaveBeenCalled();

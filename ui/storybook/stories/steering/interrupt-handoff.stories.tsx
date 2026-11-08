@@ -101,7 +101,7 @@ function ActivityCard({
 }
 
 const meta: Meta = {
-  parameters: { paperclip: {
+  parameters: { pilibala: {
       "capabilities": [
         "steering/interrupt"
       ],

@@ -4,5 +4,5 @@
     "declaration": false,
     "declarationMap": false
   },
-  "references": [{ "path": "../../../../node_modules/.cache/paperclip-typecheck/tsconfig.declarations.json" }]
+  "references": [{ "path": "../../../../node_modules/.cache/pilibala-typecheck/tsconfig.declarations.json" }]
 }

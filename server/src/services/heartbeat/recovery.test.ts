@@ -2,8 +2,8 @@ import { retireInheritedRemoteRunnerIdentity } from "../native-runtime/native-in
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import type { Db } from "@paperclipai/db";
-import { activityLog, agents, applyPendingMigrations, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, environments, environmentLeases, heartbeatRunEvents, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunnerCheckpoints } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { activityLog, agents, applyPendingMigrations, companies, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, environments, environmentLeases, heartbeatRunEvents, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunnerCheckpoints } from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
@@ -185,7 +185,7 @@ describe("heartbeat recovery module callbacks", () => {
   });
 });
 
-const externalUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_RECOVERY_TEST_DATABASE_URL");
+const externalUrl = resolveExternalTestDatabaseUrl("PILIBALA_RECOVERY_TEST_DATABASE_URL");
 const support = externalUrl ? { supported: true, reason: undefined } : await getEmbeddedPostgresTestSupport();
 const describePostgres = support.supported ? describe : describe.skip;
 if (!support.supported) console.warn(`Skipping recovery module database tests: ${support.reason}`);
@@ -195,7 +195,7 @@ describePostgres("heartbeat recovery module ownership", () => {
   let database: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>>;
   beforeAll(async () => {
     if (externalUrl) await applyPendingMigrations(externalUrl);
-    else database = await startEmbeddedPostgresTestDatabase("paperclip-heartbeat-recovery-module-");
+    else database = await startEmbeddedPostgresTestDatabase("pilibala-heartbeat-recovery-module-");
     db = createDb(externalUrl ?? database.connectionString);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
   afterAll(async () => { await db?.$client.end(); await database?.cleanup(); });
@@ -211,11 +211,11 @@ describePostgres("heartbeat recovery module ownership", () => {
   it("routes an expired pre-capability startup to cleanup before generic orphan ownership holds", async () => {
     const run = await seedRun(), leaseId = randomUUID(), environmentId = randomUUID(), leaseOwner = randomUUID();
     const deadlineAtMs = Date.now() - 1_000, contextId = randomUUID();
-    await db.update(agents).set({ adapterType: "paperclip_runner" }).where(eq(agents.id, run.agentId));
+    await db.update(agents).set({ adapterType: "pilibala_runner" }).where(eq(agents.id, run.agentId));
     await db.update(issues).set({ executionRunId: run.id }).where(eq(issues.id, run.issueId!));
     await db.update(heartbeatRuns).set({ runtimeMode: "native", nativeIssueId: run.issueId, nativePhase: "observed",
       runnerInstanceId: randomUUID(), nativeSessionId: randomUUID(), runnerProfileJson: { nativeStartupContext: {
-        schema: "paperclip.native-startup-context.v1", companyId: run.companyId, agentId: run.agentId, runId: run.id,
+        schema: "pilibala.native-startup-context.v1", companyId: run.companyId, agentId: run.agentId, runId: run.id,
         contextId, deadlineAtMs, leaseId, leaseOwner, controllerGeneration: 1, attempt: 1 } } }).where(eq(heartbeatRuns.id, run.id));
     await db.insert(nativeRunFinalizations).values({ runId: run.id, companyId: run.companyId, issueId: run.issueId!,
       phase: "observed", attempt: 1, leaseOwner, controllerGeneration: 1, leaseExpiresAt: new Date(Date.now() - 1_000),
@@ -245,7 +245,7 @@ describePostgres("heartbeat recovery module ownership", () => {
   });
 
   async function ownedProcess() {
-    const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)", `paperclip-recovery-${randomUUID()}`], {
+    const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)", `pilibala-recovery-${randomUUID()}`], {
       stdio: "ignore", detached: true, env: { PATH: process.env.PATH },
     });
     await once(child, "spawn");
@@ -318,17 +318,17 @@ describePostgres("heartbeat recovery module ownership", () => {
       heartbeatRunId: fixture.run.id, issueId: fixture.run.issueId, status: "active", provider: "daytona",
       providerLeaseId: randomUUID(), metadata: target === "plugin_task" ? { runnerTaskLease: true } : {},
     }).returning();
-    await db.update(agents).set({ adapterType: "paperclip_runner" }).where(eq(agents.id, fixture.run.agentId));
+    await db.update(agents).set({ adapterType: "pilibala_runner" }).where(eq(agents.id, fixture.run.agentId));
     await db.update(issues).set({ executionRunId: fixture.run.id }).where(eq(issues.id, fixture.run.issueId!));
     await db.update(heartbeatRuns).set({ nativeSessionId: sessionId,
       ...(target === "remote_workspace" ? { processGroupId: null } : {}), runnerProfileJson: {
       sessionCheckpoint: { identity: { runId: fixture.run.id, companyId: fixture.run.companyId,
         issueId: fixture.run.issueId, agentId: fixture.run.agentId, sessionId }, providerSessionId: "existing-provider" },
-      ...(target === "workspace" ? { nativeWorkspaceSync: { schema: "paperclip.native-workspace-sync/v3", state: "prepared",
+      ...(target === "workspace" ? { nativeWorkspaceSync: { schema: "pilibala.native-workspace-sync/v3", state: "prepared",
         workspaceId: randomUUID(), leaseId: lease.id, providerLeaseId: lease.providerLeaseId, remoteCwd: "/work",
         descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
         resourceDisposition: "keep_running" } } : {}),
-      ...(target === "remote_workspace" ? { remoteWorkspace: { schema: "paperclip.remote-workspace-run.v1",
+      ...(target === "remote_workspace" ? { remoteWorkspace: { schema: "pilibala.remote-workspace-run.v1",
         workspaceId: randomUUID(), epoch: 3, leaseId: lease.id, providerLeaseId: lease.providerLeaseId,
         remoteCwd: "/work", state: "prepared", snapshotId: randomUUID() } } : {}),
     } }).where(eq(heartbeatRuns.id, fixture.run.id));
@@ -422,7 +422,7 @@ describePostgres("heartbeat recovery module ownership", () => {
       const current = await f.current();
       expect(current).toMatchObject({ processPid: null, processGroupId: null, processStartedAt: null });
       expect(current.runnerProfileJson?.nativeInheritedRunnerRetirement).toEqual({
-        schema: "paperclip.native-inherited-runner-retirement.v1", predecessorRunId: f.predecessorId,
+        schema: "pilibala.native-inherited-runner-retirement.v1", predecessorRunId: f.predecessorId,
         retainedSandbox: { leaseId: f.lease.id, providerLeaseId: f.lease.providerLeaseId, remoteCwd: "/work" } });
       const events = await db.select().from(heartbeatRunEvents).where(eq(heartbeatRunEvents.runId, f.run.id));
       expect(events.find(event => event.payload?.reason === "inherited_runner_never_launched")?.payload)
@@ -589,7 +589,7 @@ describePostgres("heartbeat recovery module ownership", () => {
     const child = await ownedProcess();
     const f = await nativeProcessFixture(child.pid, "local", status);
     try {
-      await db.update(agents).set({ adapterType: "paperclip_runner", adapterConfig: { driver: "daytona" } })
+      await db.update(agents).set({ adapterType: "pilibala_runner", adapterConfig: { driver: "daytona" } })
         .where(eq(agents.id, f.run.agentId));
       await createHeartbeatRecovery(db, f.deps).reapOrphanedRuns();
       expect(await f.current()).toMatchObject({ status, processPid: child.pid, processGroupId: child.pid,
@@ -627,7 +627,7 @@ describePostgres("heartbeat recovery module ownership", () => {
           }).where(eq(heartbeatRunEvents.id, event.id));
         }
         if (evidence === "remote_workspace") await db.update(heartbeatRuns).set({
-          runnerProfileJson: { nativeWorkspaceSync: { schema: "paperclip.native-workspace-sync/v3", state: "prepared",
+          runnerProfileJson: { nativeWorkspaceSync: { schema: "pilibala.native-workspace-sync/v3", state: "prepared",
             workspaceId: randomUUID(), leaseId: randomUUID(), providerLeaseId: randomUUID(), remoteCwd: "/work",
             descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null, resourceDisposition: "destroy" } },
         }).where(eq(heartbeatRuns.id, f.run.id));
@@ -692,7 +692,7 @@ describePostgres("heartbeat recovery module ownership", () => {
       }).returning();
       await db.update(heartbeatRuns).set({ status: "failed", runtimeMode: "native", nativeIssueId: run.issueId,
         finishedAt: new Date(), errorCode: "execution_finalization_deadline_exceeded", contextSnapshot: { issueId: run.issueId },
-        runnerProfileJson: { nativeWorkspaceSync: { schema: "paperclip.native-workspace-sync/v3", state: "prepared",
+        runnerProfileJson: { nativeWorkspaceSync: { schema: "pilibala.native-workspace-sync/v3", state: "prepared",
           descriptorSha256: "a".repeat(64), baselineSha256: "b".repeat(64), finalHostSha256: null,
           workspaceId: run.id, leaseId: lease.id, providerLeaseId: lease.providerLeaseId,
           remoteCwd: state === "mismatched_source" ? "/other" : "/work", resourceDisposition: "keep_running" } },
@@ -760,7 +760,7 @@ describePostgres("heartbeat recovery module ownership", () => {
       expect(deps.scheduleBoundedRetryForRun).not.toHaveBeenCalled();
       expect((await deps.getRun(run.id))?.status).toBe("interrupted");
       const resultJson = outcome === "restore_failed" ? { workspaceRestoreFailure: "restore_failed",
-        workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: [randomUUID()] } }
+        workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: [randomUUID()] } }
         : { workspaceRestored: true };
       await db.update(heartbeatRuns).set({ resultJson }).where(eq(heartbeatRuns.id, run.id));
       control.finish();
@@ -1267,7 +1267,7 @@ describePostgres("heartbeat recovery module ownership", () => {
   it("notifies a replacement after committing the departing controller's released lease", async () => {
     const run = await seedRun(), deps = callbacks(db);
     const identity = await currentNativeControllerIdentity();
-    await db.update(agents).set({ adapterType: "paperclip_runner" }).where(eq(agents.id, run.agentId));
+    await db.update(agents).set({ adapterType: "pilibala_runner" }).where(eq(agents.id, run.agentId));
     await db.update(heartbeatRuns).set({ runtimeMode: "native", nativeIssueId: run.issueId }).where(eq(heartbeatRuns.id, run.id));
     await db.insert(nativeRunFinalizations).values({ runId: run.id, companyId: run.companyId, issueId: run.issueId!,
       phase: "observed", controllerBootId: identity.bootId, leaseOwner: "departing-server", leaseExpiresAt: new Date(Date.now() + 60_000) });
@@ -1292,7 +1292,7 @@ describePostgres("heartbeat recovery module ownership", () => {
     const deps = callbacks(db);
     const bootId = randomUUID();
     const expiresAt = new Date(Date.now() + 60_000);
-    await db.update(agents).set({ adapterType: "paperclip_runner" }).where(eq(agents.id, run.agentId));
+    await db.update(agents).set({ adapterType: "pilibala_runner" }).where(eq(agents.id, run.agentId));
     await db.update(heartbeatRuns).set({ runtimeMode: "native", nativeIssueId: run.issueId }).where(eq(heartbeatRuns.id, run.id));
     await db.insert(nativeRunFinalizations).values({ runId: run.id, companyId: run.companyId, issueId: run.issueId!,
       phase: "observed", controllerBootId: bootId, leaseOwner: "other-server", leaseExpiresAt: expiresAt });
@@ -1310,7 +1310,7 @@ describePostgres("heartbeat recovery module ownership", () => {
 
   it("does not dispatch recovery for a run still preparing in this heartbeat process", async () => {
     const run = await seedRun();
-    await db.update(agents).set({ adapterType: "paperclip_runner" }).where(eq(agents.id, run.agentId));
+    await db.update(agents).set({ adapterType: "pilibala_runner" }).where(eq(agents.id, run.agentId));
     await db.update(issues).set({ executionRunId: run.id }).where(eq(issues.id, run.issueId!));
     await db.update(heartbeatRuns).set({ runtimeMode: "native", nativeIssueId: run.issueId }).where(eq(heartbeatRuns.id, run.id));
     await db.insert(nativeRunFinalizations).values({ runId: run.id, companyId: run.companyId, issueId: run.issueId!, phase: "observed" });
@@ -1418,15 +1418,15 @@ describePostgres("heartbeat recovery module ownership", () => {
   it.each(["nativeWorkspaceSync", "remoteWorkspace"])("routes a due %s retry to remote ownership verification", async reference => {
     const run = await seedRun();
     const leaseId = randomUUID(), workspaceId = randomUUID();
-    await db.update(agents).set({ adapterType: "paperclip_runner", status: "active" }).where(eq(agents.id, run.agentId));
+    await db.update(agents).set({ adapterType: "pilibala_runner", status: "active" }).where(eq(agents.id, run.agentId));
     await db.update(issues).set({ status: "in_progress", assigneeAgentId: run.agentId,
       executionRunId: null, checkoutRunId: null }).where(eq(issues.id, run.issueId!));
     const location = { workspaceId, leaseId, providerLeaseId: "retained-sandbox", remoteCwd: "/workspace", state: "prepared" };
     await db.update(heartbeatRuns).set({ runtimeMode: "native", nativeIssueId: run.issueId, status: "failed",
       processPid: process.pid, processStartedAt: new Date(), runnerProfileJson: {
         [reference]: reference === "remoteWorkspace"
-          ? { ...location, schema: "paperclip.remote-workspace-run.v1", epoch: 1, snapshotId: null }
-          : { ...location, schema: "paperclip.native-workspace-sync/v3", descriptorSha256: "a".repeat(64),
+          ? { ...location, schema: "pilibala.remote-workspace-run.v1", epoch: 1, snapshotId: null }
+          : { ...location, schema: "pilibala.native-workspace-sync/v3", descriptorSha256: "a".repeat(64),
             baselineSha256: "b".repeat(64), finalHostSha256: null, resourceDisposition: "destroy" },
       } }).where(eq(heartbeatRuns.id, run.id));
     await db.insert(nativeRunFinalizations).values({ runId: run.id, companyId: run.companyId, issueId: run.issueId!,

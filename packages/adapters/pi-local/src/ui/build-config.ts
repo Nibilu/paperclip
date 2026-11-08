@@ -1,18 +1,18 @@
-import { buildAdapterEnvConfig, type CreateConfigValues } from "@paperclipai/adapter-utils";
+import { buildAdapterEnvConfig, type CreateConfigValues } from "@pilibalaai/adapter-utils";
 
 export function buildPiLocalConfig(v: CreateConfigValues): Record<string, unknown> {
   const ac: Record<string, unknown> = {};
   if (v.cwd) ac.cwd = v.cwd;
   if (v.instructionsFilePath) ac.instructionsFilePath = v.instructionsFilePath;
   if (v.model) ac.model = v.model;
-  const nativeSelected = v.runner === "paperclip"
-    || ((v.runner === undefined || v.runner === "auto") && v.resolvedRunner === "paperclip");
+  const nativeSelected = v.runner === "pilibala"
+    || ((v.runner === undefined || v.runner === "auto") && v.resolvedRunner === "pilibala");
   if (nativeSelected) {
     const thinking = v.adapterSchemaValues?.piThinkingLevel ?? v.thinkingEffort;
     if (thinking) ac.piThinkingLevel = thinking;
     if (v.adapterSchemaValues?.acpxPermissionMode !== undefined) ac.acpxPermissionMode = v.adapterSchemaValues.acpxPermissionMode;
-    if (v.paperclipRunnerLifecycleMode !== undefined) ac.lifecycleMode = v.paperclipRunnerLifecycleMode;
-    if (v.paperclipRunnerIdleTimeoutMs !== undefined) ac.idleTimeoutMs = v.paperclipRunnerIdleTimeoutMs;
+    if (v.pilibalaRunnerLifecycleMode !== undefined) ac.lifecycleMode = v.pilibalaRunnerLifecycleMode;
+    if (v.pilibalaRunnerIdleTimeoutMs !== undefined) ac.idleTimeoutMs = v.pilibalaRunnerIdleTimeoutMs;
   } else if (v.thinkingEffort) ac.thinking = v.thinkingEffort;
   
   // Pi sessions can run until the CLI exits naturally; keep timeout disabled (0)

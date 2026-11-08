@@ -46,7 +46,7 @@ const meta = {
   parameters: {
     layout: "fullscreen",
     viewport: { defaultViewport: "mobile1" },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "tasks/create"
       ],

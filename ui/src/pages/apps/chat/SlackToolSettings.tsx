@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import type {
   SlackSearchStatus,
   SlackToolCapabilities,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { describeError } from "@/api/errors";
 import { slackToolsApi } from "@/api/slackTools";
 import { QueryErrorState, useQueryView } from "@/components/QueryView";

@@ -7,8 +7,8 @@ import request from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { agents, companies, companyMemberships, createDb, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS, environments,
-  environmentLeases, executionWorkspaces, heartbeatRuns, issues, projects, projectWorkspaces } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
+  environmentLeases, executionWorkspaces, heartbeatRuns, issues, projects, projectWorkspaces } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority } from "@pilibalaai/shared";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
 import { createStorageService } from "../storage/service.js";
@@ -28,8 +28,8 @@ describe.skipIf(!support.supported)("remote workspace reservation authority", ()
   let home: string;
 
   beforeAll(async () => {
-    home = await mkdtemp(join(tmpdir(), "paperclip-remote-reservation-"));
-    database = await startEmbeddedPostgresTestDatabase("paperclip-remote-reservation-");
+    home = await mkdtemp(join(tmpdir(), "pilibala-remote-reservation-"));
+    database = await startEmbeddedPostgresTestDatabase("pilibala-remote-reservation-");
     db = createDb(database.connectionString);
     await instanceSettingsService(db).updateExperimental({ enableIsolatedWorkspaces: true });
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
@@ -41,11 +41,11 @@ describe.skipIf(!support.supported)("remote workspace reservation authority", ()
   });
 
   async function fixture(mode = "isolated_workspace") {
-    vi.stubEnv("PAPERCLIP_HOME", home);
+    vi.stubEnv("PILIBALA_HOME", home);
     vi.stubEnv("DATABASE_URL", database.connectionString);
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "62".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "62".repeat(32));
     const [company] = await db.insert(companies).values({ name: "Reservation proof", issuePrefix: `R${randomUUID().slice(0, 6)}` }).returning();
-    const [agent] = await db.insert(agents).values({ companyId: company.id, name: "Worker", adapterType: "paperclip_runner" }).returning();
+    const [agent] = await db.insert(agents).values({ companyId: company.id, name: "Worker", adapterType: "pilibala_runner" }).returning();
     const [project] = await db.insert(projects).values({ companyId: company.id, name: "Source project" }).returning();
     const [source] = await db.insert(projectWorkspaces).values({ companyId: company.id, projectId: project.id,
       name: "Task files", sourceType: "empty" }).returning();
@@ -53,7 +53,7 @@ describe.skipIf(!support.supported)("remote workspace reservation authority", ()
     const [parent] = await db.insert(issues).values({ companyId: company.id, projectId: project.id,
       projectWorkspaceId: source.id, title: "Coordinator", status: "done", assigneeAgentId: agent.id }).returning();
     const snapshotId = randomUUID();
-    const authority = { schema: "paperclip.remote-workspace.v1" as const, epoch: 3, snapshotId,
+    const authority = { schema: "pilibala.remote-workspace.v1" as const, epoch: 3, snapshotId,
       source: { kind: "empty" as const }, location: null, writerRunId: null, dirty: false };
     const [workspace] = await db.insert(executionWorkspaces).values({ companyId: company.id, sourceIssueId: parent.id,
       projectId: project.id, projectWorkspaceId: source.id, name: "Coordinator files", mode,

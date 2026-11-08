@@ -28,7 +28,7 @@ vi.mock("@/api/access", () => ({
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip", issuePrefix: "PAP" },
+    selectedCompany: { id: "company-1", name: "Pilibala", issuePrefix: "PAP" },
   }),
 }));
 
@@ -68,14 +68,14 @@ describe("InvitesSection", () => {
       acceptedAt: isActive ? null : "2026-04-11T00:00:00.000Z",
       createdAt: `2026-04-${String(inviteNumber).padStart(2, "0")}T00:00:00.000Z`,
       updatedAt: `2026-04-${String(inviteNumber).padStart(2, "0")}T00:00:00.000Z`,
-      companyName: "Paperclip",
+      companyName: "Pilibala",
       humanRole: isActive ? "operator" : "viewer",
       inviteMessage: null,
       state: isActive ? "active" : "accepted",
       invitedByUser: {
         id: "user-1",
         name: `Board User ${inviteNumber}`,
-        email: `board${inviteNumber}@paperclip.local`,
+        email: `board${inviteNumber}@pilibala.local`,
         image: null,
       },
       relatedJoinRequestId: isActive ? "join-1" : null,
@@ -97,7 +97,7 @@ describe("InvitesSection", () => {
     createCompanyInviteMock.mockImplementation(() => {
       return Promise.resolve({
         token: "new-token",
-        inviteUrl: "https://paperclip.local/invite/new-token",
+        inviteUrl: "https://pilibala.local/invite/new-token",
         onboardingTextUrl: null,
         onboardingTextPath: null,
         humanRole: "viewer",
@@ -200,12 +200,12 @@ describe("InvitesSection", () => {
       humanRole: "viewer",
       agentMessage: null,
     });
-    expect(clipboardWriteTextMock).toHaveBeenCalledWith("https://paperclip.local/invite/new-token");
+    expect(clipboardWriteTextMock).toHaveBeenCalledWith("https://pilibala.local/invite/new-token");
     expect(container.textContent).toContain("Latest invite link");
-    expect(container.textContent).toContain("This URL includes the current Paperclip domain returned by the server.");
+    expect(container.textContent).toContain("This URL includes the current Pilibala domain returned by the server.");
     expect(container.querySelector('input[aria-label="Latest invite URL"]')).toHaveProperty(
       "value",
-      "https://paperclip.local/invite/new-token",
+      "https://pilibala.local/invite/new-token",
     );
     expect(container.textContent).toContain("Copy link");
     // The inviter opening their own single-use link is never what they
@@ -283,7 +283,7 @@ describe("InvitesSection", () => {
     await flushReact();
 
     const inviteInput = container.querySelector('input[aria-label="Latest invite URL"]') as HTMLInputElement | null;
-    expect(inviteInput?.value).toBe("https://paperclip.local/invite/new-token");
+    expect(inviteInput?.value).toBe("https://pilibala.local/invite/new-token");
     expect(document.execCommand).toHaveBeenCalledWith("copy");
     expect(pushToastMock).toHaveBeenCalledWith({
       title: "Invite created",
@@ -354,7 +354,7 @@ describe("InvitesSection", () => {
     expect(container.textContent).toContain("Board User 25");
 
     listInvitesMock.mockRejectedValue(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await act(async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.access.invites("company-1", "all", 5) });
@@ -365,7 +365,7 @@ describe("InvitesSection", () => {
     expect(container.textContent).toContain("Board User 25");
     expect(container.textContent).toContain("Invite a person");
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
     expect(container.textContent).not.toContain("tenant_app_unavailable");
 
     await act(async () => root.unmount());

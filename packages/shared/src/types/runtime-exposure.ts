@@ -31,8 +31,8 @@ export interface RuntimeExposureConfig {
   hostname: "auto";
   /** Only "same" is supported; the public port equals the loopback app port. */
   publicPort: "same";
-  /** Provision the Paperclip Vite HMR companion listener alongside the app. */
-  includePaperclipViteHmr: boolean;
+  /** Provision the Pilibala Vite HMR companion listener alongside the app. */
+  includePilibalaViteHmr: boolean;
   failurePolicy: RuntimeExposureFailurePolicy;
 }
 

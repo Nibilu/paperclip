@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { agents, companies, completionContracts, createDb, heartbeatRuns, issueWorkProducts, issues, nativeRunFinalizations,
-  nativeRunResults, statusDecisions, type Db } from "@paperclipai/db";
+  nativeRunResults, statusDecisions, type Db } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { resolveExternalTestDatabaseUrl } from "../../__tests__/helpers/external-test-database.js";
 import { NativeRunCoordinatorStore } from "./native-run-coordinator-store.js";
@@ -10,7 +10,7 @@ import { finalizeNativeRun } from "./native-run-finalizer.js";
 import { reconcileNativeFinalizations } from "./native-finalization-reconciler.js";
 import { NATIVE_STATUS_ARBITER_POLICY_VERSION, supersedeStaleOwnerCompletion, type NativeStatusDecision } from "./status-arbiter.js";
 
-const external = resolveExternalTestDatabaseUrl("PAPERCLIP_NATIVE_STALE_OWNER_TEST_DATABASE_URL");
+const external = resolveExternalTestDatabaseUrl("PILIBALA_NATIVE_STALE_OWNER_TEST_DATABASE_URL");
 describe("stale owner completion policy", () => {
   const done: NativeStatusDecision = { policyVersion: NATIVE_STATUS_ARBITER_POLICY_VERSION, statusAction: "done", toStatus: "done",
     reasonCode: "completion_claim_policy_accepted", unblockDescriptor: null, effects: [{ kind: "release_checkout" }] };
@@ -53,13 +53,13 @@ describe.skipIf(!support.supported)("native completion after reassignment", () =
     const runId = randomUUID(), sessionId = randomUUID(), runnerId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Stale owner fixture", issuePrefix: companyId.slice(0, 8) });
     await db.insert(agents).values([
-      { id: agentId, companyId, name: "Original owner", adapterType: "paperclip_runner" },
-      { id: successorId, companyId, name: "New owner", adapterType: "paperclip_runner" },
+      { id: agentId, companyId, name: "Original owner", adapterType: "pilibala_runner" },
+      { id: successorId, companyId, name: "New owner", adapterType: "pilibala_runner" },
     ]);
     await db.insert(issues).values({ id: issueId, companyId, title: "FizzBuzz variants", status: "in_progress",
       assigneeAgentId: agentId, description: "Write fizzbuzz with tests and mark done." });
     const [contract] = await db.insert(completionContracts).values({ companyId, issueId, revision: 1,
-      schemaVersion: "paperclip.completion-contract.v1", policyVersion: "test", risk: options.pendingEvidence ? "standard" : "low",
+      schemaVersion: "pilibala.completion-contract.v1", policyVersion: "test", risk: options.pendingEvidence ? "standard" : "low",
       completionAuthority: options.pendingEvidence ? "server_arbiter" : "agent_claim_policy",
       incompleteCriteriaPolicy: "preserve_non_terminal", contractJson: { revision: "test", objective: "Write fizzbuzz", criteria: [{ id: "objective", requirement: "Complete the task" }] },
       canonicalSha256: `stale-owner-${issueId}`, createdByActorType: "system", createdByActorId: "test" }).returning();
@@ -69,17 +69,17 @@ describe.skipIf(!support.supported)("native completion after reassignment", () =
     await db.update(issues).set({ executionRunId: runId }).where(eq(issues.id, issueId));
     const workProductId = randomUUID();
     if (options.pendingEvidence) await db.insert(issueWorkProducts).values({ id: workProductId, companyId, issueId,
-      type: "artifact", provider: "paperclip", title: "fizzbuzz.py", status: "ready_for_review", reviewState: "none" });
+      type: "artifact", provider: "pilibala", title: "fizzbuzz.py", status: "ready_for_review", reviewState: "none" });
     const evidenceRef = options.pendingEvidence ? `work_product:${workProductId}` : `task:${issueId}`;
     const port = new NativeRunCoordinatorStore(db, { companyId, issueId, runId, agentId, normalizedSessionId: sessionId,
       runnerSourceInstanceId: runnerId, completionContractId: contract.id, completionContractSha256: contract.canonicalSha256,
       completionContractRevision: "test", completionContractCriterionIds: ["objective"] });
-    await port.completeRun({ result: { schema: "paperclip.run_result.v1", reportedWorkDisposition: "done",
+    await port.completeRun({ result: { schema: "pilibala.run_result.v1", reportedWorkDisposition: "done",
       summary: "Implemented fizzbuzz; 6 passed.", completionClaim: { contractRevision: "test", objectiveSatisfied: true,
         criteria: [{ criterionId: "objective", status: "satisfied", evidenceRefs: [evidenceRef] }], remainingWork: [] },
       evidence: [{ ref: evidenceRef }],
       verification: [{ commandOrCheck: "pytest -q", status: "passed", detail: "6 passed", artifactRef: evidenceRef }], attentionRequests: [], artifacts: [] },
-    terminal: { schema: "paperclip.prp.terminal.v1", runTerminalState: "succeeded", turnTerminalState: "completed",
+    terminal: { schema: "pilibala.prp.terminal.v1", runTerminalState: "succeeded", turnTerminalState: "completed",
       reportedWorkDisposition: "done" }, turnId: "fizzbuzz-turn" });
     return { companyId, agentId, successorId, issueId, runId, workProductId };
   }

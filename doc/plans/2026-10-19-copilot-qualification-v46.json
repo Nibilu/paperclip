@@ -1,5 +1,5 @@
 {
-  "schema": "paperclip.copilot.production-qualification.v1",
+  "schema": "pilibala.copilot.production-qualification.v1",
   "recordedAt": "2026-10-19",
   "productionReady": false,
   "merged": false,
@@ -10,7 +10,7 @@
   "profileDigest": "sha256:b93823e6fa44a9f9a8ed1b03f371d15db54ee4c4f3b1d2bbfeea97a634c23e91",
   "model": "gpt-5.6-luna",
   "product": {
-    "schema": "paperclip.copilot.frozen-product-qualification/v1",
+    "schema": "pilibala.copilot.frozen-product-qualification/v1",
     "sourceRevision": "e6b9cbdee04de8d33857c1709da877369bfd9497",
     "profile": 46,
     "profileDigest": "sha256:b93823e6fa44a9f9a8ed1b03f371d15db54ee4c4f3b1d2bbfeea97a634c23e91",
@@ -28,7 +28,7 @@
     "behaviorFailures": 0,
     "qualificationOverrides": false,
     "installation": "normal cloud-produced public CLI/server archives and separately installed packaged Daytona plugin",
-    "image": "ghcr.io/paperclipai/paperclip-daytona-runner@sha256:2dae5d07e522b4ea937f7681d8689a4e392feaa1a53f75bed9a8df53d7e6e927",
+    "image": "ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:2dae5d07e522b4ea937f7681d8689a4e392feaa1a53f75bed9a8df53d7e6e927",
     "nativeUsd": null,
     "billingProvider": "github",
     "includedCreditsAreNotMeasuredUsd": true,
@@ -299,14 +299,14 @@
     "linux-x64": "actual normal-installed Daytona Product native startup, completion and cleanup"
   },
   "cloudBuilds": {
-    "image": "ghcr.io/paperclipai/paperclip-daytona-runner@sha256:2dae5d07e522b4ea937f7681d8689a4e392feaa1a53f75bed9a8df53d7e6e927",
-    "imagePublication": "https://github.com/paperclipai/paperclip/actions/runs/39289860734",
-    "normalPackages": "https://github.com/paperclipai/paperclip/actions/runs/39284194338",
+    "image": "ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:2dae5d07e522b4ea937f7681d8689a4e392feaa1a53f75bed9a8df53d7e6e927",
+    "imagePublication": "https://github.com/pilibalaai/pilibala/actions/runs/39289860734",
+    "normalPackages": "https://github.com/pilibalaai/pilibala/actions/runs/39284194338",
     "selectedCredentialScanFindings": 0,
     "scanLayers": 42,
     "scanRegularFiles": 247824,
     "anonymousDigestVerified": true,
-    "imageBuild": "https://github.com/paperclipai/paperclip/actions/runs/39284189969"
+    "imageBuild": "https://github.com/pilibalaai/pilibala/actions/runs/39284189969"
   },
   "onboardingReconnectRepair": {
     "source": "ec68f27b33208ce34319f3299770abf45e772e1b",
@@ -343,12 +343,12 @@
     "Named shipped canary and verification before broader rollout"
   ],
   "pullRequests": [
-    "https://github.com/paperclipai/paperclip/pull/15701",
-    "https://github.com/paperclipai/paperclip/pull/15703",
-    "https://github.com/paperclipai/paperclip/pull/15705",
-    "https://github.com/paperclipai/paperclip/pull/15706"
+    "https://github.com/pilibalaai/pilibala/pull/15701",
+    "https://github.com/pilibalaai/pilibala/pull/15703",
+    "https://github.com/pilibalaai/pilibala/pull/15705",
+    "https://github.com/pilibalaai/pilibala/pull/15706"
   ],
-  "supersededWork": "https://github.com/paperclipai/paperclip/pull/14434",
+  "supersededWork": "https://github.com/pilibalaai/pilibala/pull/14434",
   "deferred": [
     "native steering",
     "native plan mode",

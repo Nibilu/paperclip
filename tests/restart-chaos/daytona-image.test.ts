@@ -58,8 +58,8 @@ function layer(digest: string, entries: Entry[]): LayerSource {
   return { digest, open: async function* () { for (let offset = 0; offset < bytes.length; offset += 333) yield bytes.subarray(offset, offset + 333); } };
 }
 
-const RUNNERD = "usr/local/bin/paperclip-runnerd";
-const PACK = "opt/paperclip-runner/provider-pack";
+const RUNNERD = "usr/local/bin/pilibala-runnerd";
+const PACK = "opt/pilibala-runner/provider-pack";
 const directories: string[] = [];
 async function outDir() { const directory = await mkdtemp(path.join(os.tmpdir(), "chaos-layers-")); directories.push(directory); return directory; }
 afterEach(async () => { await Promise.all(directories.splice(0).map(directory => rm(directory, { recursive: true, force: true }))); });
@@ -138,8 +138,8 @@ describe("extractFromLayers", () => {
     const out = await outDir();
     await expect(extractFromLayers([
       layer("base", [{ path: RUNNERD, type: "file", content: "r" }, { path: `${PACK}/provider-pack.json`, type: "file", content: "{}" }]),
-      layer("top", [{ path: "usr/local/bin/.wh.paperclip-runnerd", type: "file", content: "" }]),
-    ], [RUNNERD, PACK], out)).rejects.toThrow(/paperclip-runnerd was not found/);
+      layer("top", [{ path: "usr/local/bin/.wh.pilibala-runnerd", type: "file", content: "" }]),
+    ], [RUNNERD, PACK], out)).rejects.toThrow(/pilibala-runnerd was not found/);
   });
 
   it("a whiteout does not hide entries of its own layer", async () => {
@@ -177,8 +177,8 @@ describe("extractFromLayers", () => {
     const out = await outDir();
     await expect(extractFromLayers([
       layer("base", [{ path: RUNNERD, type: "file", content: "r" }, { path: `${PACK}/provider-pack.json`, type: "file", content: "{}" }]),
-      layer("top", [{ path: "opt/paperclip-runner", type: "symlink", target: "/elsewhere" }]),
-    ], [RUNNERD, PACK], out)).rejects.toThrow(/replaces parent directory \/opt\/paperclip-runner/);
+      layer("top", [{ path: "opt/pilibala-runner", type: "symlink", target: "/elsewhere" }]),
+    ], [RUNNERD, PACK], out)).rejects.toThrow(/replaces parent directory \/opt\/pilibala-runner/);
   });
 });
 

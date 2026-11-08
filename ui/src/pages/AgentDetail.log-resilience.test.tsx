@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type { HeartbeatRun } from "@paperclipai/shared";
+import type { HeartbeatRun } from "@pilibalaai/shared";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ApiError } from "../api/client";
 import { ConnectivityProvider, createConnectivityStore, type ConnectivityStore } from "../lib/connectivity";
@@ -24,7 +24,7 @@ vi.mock("../components/transcript/RunTranscriptView", () => ({
 }));
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const unavailable = () => new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" });
+const unavailable = () => new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" });
 const row = (seq: number, chunk: string) => JSON.stringify({ seq, ts: `2026-09-10T12:00:0${seq}Z`, stream: "stdout", chunk }) + "\n";
 const run = { id: "run-1", companyId: "company-1", agentId: "agent-1", status: "succeeded", logRef: "log" } as HeartbeatRun;
 

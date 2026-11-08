@@ -13,8 +13,8 @@ import {
   environmentCustomImageTemplates,
   environments,
   plugins,
-} from "@paperclipai/db";
-import type { PaperclipPluginManifestV1 } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import type { PilibalaPluginManifestV1 } from "@pilibalaai/shared";
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
 import {
   environmentCustomImageService,
@@ -32,7 +32,7 @@ import {
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
 
-const externalTestDatabase = resolveExternalTestDatabaseUrl("PAPERCLIP_CUSTOM_IMAGE_TEST_DATABASE_URL");
+const externalTestDatabase = resolveExternalTestDatabaseUrl("PILIBALA_CUSTOM_IMAGE_TEST_DATABASE_URL");
 const embeddedPostgresSupport = externalTestDatabase ? { supported: true, reason: undefined } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 
@@ -44,12 +44,12 @@ if (!embeddedPostgresSupport.supported) {
 
 function pluginManifest() {
   return {
-    id: "paperclip.fake-sandbox-provider",
+    id: "pilibala.fake-sandbox-provider",
     apiVersion: 1,
     version: "0.1.0",
     displayName: "Fake Sandbox Provider",
     description: "Test fake sandbox provider",
-    author: "Paperclip",
+    author: "Pilibala",
     categories: ["automation"],
     capabilities: ["environment.drivers.register"],
     entrypoints: { worker: "./dist/worker.js" },
@@ -71,7 +71,7 @@ function pluginManifest() {
         configSchema: { type: "object" },
       },
     ],
-  } satisfies PaperclipPluginManifestV1;
+  } satisfies PilibalaPluginManifestV1;
 }
 
 const ALL_CUSTOM_IMAGE_WORKER_METHODS = [
@@ -199,8 +199,8 @@ describeEmbeddedPostgres("environmentCustomImageService", () => {
       envVars: {},
     });
     await db.insert(plugins).values({
-      pluginKey: "paperclip.fake-sandbox-provider",
-      packageName: "paperclip-plugin-fake-sandbox",
+      pluginKey: "pilibala.fake-sandbox-provider",
+      packageName: "pilibala-plugin-fake-sandbox",
       version: "0.1.0",
       apiVersion: 1,
       categories: ["automation"],
@@ -1056,8 +1056,8 @@ describeEmbeddedPostgres("environmentCustomImageService reconciliation", () => {
       envVars: {},
     });
     await db.insert(plugins).values({
-      pluginKey: "paperclip.fake-sandbox-provider",
-      packageName: "paperclip-plugin-fake-sandbox",
+      pluginKey: "pilibala.fake-sandbox-provider",
+      packageName: "pilibala-plugin-fake-sandbox",
       version: "0.1.0",
       apiVersion: 1,
       categories: ["automation"],
@@ -1228,12 +1228,12 @@ describeEmbeddedPostgres("environmentCustomImageService reconciliation", () => {
 
 function secretPluginManifest() {
   return {
-    id: "paperclip.fake-secret-sandbox-provider",
+    id: "pilibala.fake-secret-sandbox-provider",
     apiVersion: 1,
     version: "0.1.0",
     displayName: "Fake Secret Sandbox Provider",
     description: "Test fake sandbox provider",
-    author: "Paperclip",
+    author: "Pilibala",
     categories: ["automation"],
     capabilities: ["environment.drivers.register"],
     entrypoints: { worker: "./dist/worker.js" },
@@ -1264,17 +1264,17 @@ function secretPluginManifest() {
         },
       },
     ],
-  } satisfies PaperclipPluginManifestV1;
+  } satisfies PilibalaPluginManifestV1;
 }
 
 function invalidIdentityPluginManifest() {
   return {
-    id: "paperclip.fake-invalid-sandbox-provider",
+    id: "pilibala.fake-invalid-sandbox-provider",
     apiVersion: 1,
     version: "0.1.0",
     displayName: "Fake Invalid Identity Sandbox Provider",
     description: "Test fake sandbox provider",
-    author: "Paperclip",
+    author: "Pilibala",
     categories: ["automation"],
     capabilities: ["environment.drivers.register"],
     entrypoints: { worker: "./dist/worker.js" },
@@ -1294,17 +1294,17 @@ function invalidIdentityPluginManifest() {
         configSchema: { type: "object" },
       },
     ],
-  } satisfies PaperclipPluginManifestV1;
+  } satisfies PilibalaPluginManifestV1;
 }
 
 function prototypeKeyIdentityPluginManifest() {
   return {
-    id: "paperclip.fake-prototype-key-sandbox-provider",
+    id: "pilibala.fake-prototype-key-sandbox-provider",
     apiVersion: 1,
     version: "0.1.0",
     displayName: "Fake Prototype Key Sandbox Provider",
     description: "Test fake sandbox provider",
-    author: "Paperclip",
+    author: "Pilibala",
     categories: ["automation"],
     capabilities: ["environment.drivers.register"],
     entrypoints: { worker: "./dist/worker.js" },
@@ -1325,7 +1325,7 @@ function prototypeKeyIdentityPluginManifest() {
         configSchema: { type: "object" },
       },
     ],
-  } satisfies PaperclipPluginManifestV1;
+  } satisfies PilibalaPluginManifestV1;
 }
 
 describeEmbeddedPostgres("environmentCustomImageService relink", () => {
@@ -1374,7 +1374,7 @@ describeEmbeddedPostgres("environmentCustomImageService relink", () => {
     });
     await db.insert(plugins).values({
       pluginKey: manifest.id,
-      packageName: `paperclip-plugin-${provider}`,
+      packageName: `pilibala-plugin-${provider}`,
       version: "0.1.0",
       apiVersion: 1,
       categories: ["automation"],

@@ -14,7 +14,7 @@ import { appendFileSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const REPOSITORY = "paperclipai/paperclip";
+export const REPOSITORY = "pilibalaai/pilibala";
 export const REPOSITORY_ID = 1170821064;
 export const PR_WORKFLOW_PATH = ".github/workflows/pr.yml";
 

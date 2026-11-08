@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { toolApplications, toolConnections } from "@paperclipai/db";
+import { toolApplications, toolConnections } from "@pilibalaai/db";
 
 /** Match connection setup's provider identity precedence. Select only this
  * value with a company-scoped connection/application join, never credentials. */

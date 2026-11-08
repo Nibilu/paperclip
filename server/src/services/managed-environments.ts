@@ -2,9 +2,9 @@
  * Managed-environment bootstrap (harness → app contract).
  *
  * Managed-cloud instances may declare sandbox environments in the
- * `environments` section of `PAPERCLIP_MANAGED_CONFIG` (parsed fail-closed in
+ * `environments` section of `PILIBALA_MANAGED_CONFIG` (parsed fail-closed in
  * `managed-config.ts`). On boot, each declared environment is idempotently
- * ensured as the instance-level Paperclip-managed sandbox row via the
+ * ensured as the instance-level Pilibala-managed sandbox row via the
  * provider-agnostic `ensureManagedSandboxEnvironment` — the control plane
  * provisions, tenants use, for any bundled sandbox provider plugin.
  *
@@ -58,7 +58,7 @@
  * instance, whose default is already set, keeps its default.
  */
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import { HttpError } from "../errors.js";
 import { logger } from "../middleware/logger.js";
 import { environmentService } from "./environments.js";
@@ -260,15 +260,15 @@ export async function applyManagedEnvironments(
   const pluginSpecs = managedConfig.pluginEnvironments;
   if (managedConfig.environments.length === 0 && pluginSpecs.length === 0) return null;
 
-  // The forced-execution-mode bootstrap (`PAPERCLIP_EXECUTION_MODE=kubernetes`)
-  // and this one both own the single Paperclip-managed sandbox row
+  // The forced-execution-mode bootstrap (`PILIBALA_EXECUTION_MODE=kubernetes`)
+  // and this one both own the single Pilibala-managed sandbox row
   // (`environments_managed_sandbox_idx`). Configuring both is contradictory;
   // refuse startup rather than let bootstrap ordering pick a winner. Plugin
   // entries do not touch that slot.
   const env = opts.env ?? process.env;
   if (managedConfig.environments.length > 0 && parseExecutionPolicyBootstrapEnv(env)) {
     throw new Error(
-      `PAPERCLIP_EXECUTION_MODE and the PAPERCLIP_MANAGED_CONFIG "environments" section are mutually exclusive: both manage the single instance sandbox environment`,
+      `PILIBALA_EXECUTION_MODE and the PILIBALA_MANAGED_CONFIG "environments" section are mutually exclusive: both manage the single instance sandbox environment`,
     );
   }
 
@@ -283,7 +283,7 @@ export async function applyManagedEnvironments(
     for (const spec of pluginSpecs) {
       if (!autoInstalledPluginKeys.includes(spec.pluginKey)) {
         throw new Error(
-          `PAPERCLIP_MANAGED_CONFIG "environments" entry "${spec.name}" uses plugin "${spec.pluginKey}", which no "plugins.autoInstall" catalog entry installs; a managed plugin environment requires its plugin to be provisioned`,
+          `PILIBALA_MANAGED_CONFIG "environments" entry "${spec.name}" uses plugin "${spec.pluginKey}", which no "plugins.autoInstall" catalog entry installs; a managed plugin environment requires its plugin to be provisioned`,
         );
       }
     }

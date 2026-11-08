@@ -1,6 +1,6 @@
 # Plugin Runner execution
 
-Core can run `paperclip_runner` tasks in a plugin environment.
+Core can run `pilibala_runner` tasks in a plugin environment.
 The plugin owns the execution host and its files.
 Core owns run identity, selected policy, assigned tools, and the PRP journal.
 
@@ -253,7 +253,7 @@ property. The reason must come from `WORKSPACE_OPERATION_FAILURE_REASONS`:
 | `storage_pending`, `runtime_unavailable`, `remote_incomplete`, `context_changed`, `deadline_exceeded` | Yes |
 
 ```ts
-import { PluginWorkspaceOperationError } from "@paperclipai/plugin-sdk";
+import { PluginWorkspaceOperationError } from "@pilibalaai/plugin-sdk";
 
 throw new PluginWorkspaceOperationError("storage_grant_unavailable", "Project mount grants unavailable");
 ```
@@ -374,7 +374,7 @@ Unconfigured providers continue ordinary work without authenticated GitHub acces
 Managed GitHub command providers must retain the qualified provider executable
 and arguments. Supply helper discovery through the task environment instead of
 wrapping that executable. Claude ACPX preserves explicit `BASH_ENV`, `ZDOTDIR`,
-`GH_CONFIG_DIR`, and `PAPERCLIP_GITHUB_LAUNCHER_DIR` selectors across the sidecar
+`GH_CONFIG_DIR`, and `PILIBALA_GITHUB_LAUNCHER_DIR` selectors across the sidecar
 boundary. It does not forward GitHub tokens or broker capabilities to the provider.
 The helper reads the current task capability at invocation, including after warm
 reuse. These selectors must come from the trusted environment owner.
@@ -391,6 +391,6 @@ Launcher capability before advertising managed GitHub commands. The installed
 Runner must match the factory's source revision.
 
 The helper projection is marked by the controller-owned
-`PAPERCLIP_GITHUB_LAUNCHER_DIR`. Task overrides cannot supply that marker or the
+`PILIBALA_GITHUB_LAUNCHER_DIR`. Task overrides cannot supply that marker or the
 shell selectors. Run preparation strips stored bindings before secret resolution,
 and configured task-environment projections reject the shell selectors too.

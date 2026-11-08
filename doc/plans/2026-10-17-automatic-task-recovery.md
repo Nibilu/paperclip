@@ -51,7 +51,7 @@ map recipes where behavior changes.
 - OpenCode process-boundary refusal and acceptance pass; all 218 selected
   provider tests and 84 recovery UI tests pass. Workspace typecheck/build and
   focused final server/UI checks pass. The standalone Storybook builds.
-- PR [#16686](https://github.com/paperclipai/paperclip/pull/16686) is published.
+- PR [#16686](https://github.com/pilibalaai/pilibala/pull/16686) is published.
   Its initial review found unchanged-poll expiry and cached-activity read errors;
   both now have failing-baseline/passing-treatment regressions and fixes. The
   latest review and CI are the delivery record. The unsharded local full-suite

@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import { Readable } from "node:stream";
 import { CreateMultipartUploadCommand, S3Client, UploadPartCommand } from "@aws-sdk/client-s3";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import type { heartbeatRuns } from "@paperclipai/db";
+import type { heartbeatRuns } from "@pilibalaai/db";
 import { collectRunFailureDiagnostics } from "../services/run-failure-diagnostics.js";
 import { storageFailureDiagnosticsFor } from "../storage/failure-diagnostics.js";
 import { createS3StorageProvider } from "../storage/s3-provider.js";

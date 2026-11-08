@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "packageName": "@paperclipai/teams-catalog",
+  "packageName": "@pilibalaai/teams-catalog",
   "packageVersion": "0.1.0",
   "generatedAt": "2026-10-08T10:35:56.448Z",
   "teams": [
     {
-      "id": "paperclipai:bundled:company-defaults:core-exec-team",
-      "key": "paperclipai/bundled/company-defaults/core-exec-team",
+      "id": "pilibalaai:bundled:company-defaults:core-exec-team",
+      "key": "pilibalaai/bundled/company-defaults/core-exec-team",
       "kind": "bundled",
       "category": "company-defaults",
       "slug": "core-exec-team",
       "name": "Core Exec Team",
-      "description": "Default leadership and engineering team for bootstrapping a Paperclip company with a CEO, CTO, QA Engineer, starter project, and a recurring CEO heartbeat review task.",
+      "description": "Default leadership and engineering team for bootstrapping a Pilibala company with a CEO, CTO, QA Engineer, starter project, and a recurring CEO heartbeat review task.",
       "path": "catalog/bundled/company-defaults/core-exec-team",
       "entrypoint": "TEAM.md",
       "schema": "agentcompanies/v1",
@@ -55,8 +55,8 @@
             "cto"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:software-development:github-pr-workflow",
-          "catalogSkillKey": "paperclipai/bundled/software-development/github-pr-workflow"
+          "catalogSkillId": "pilibalaai:bundled:software-development:github-pr-workflow",
+          "catalogSkillKey": "pilibalaai/bundled/software-development/github-pr-workflow"
         },
         {
           "type": "catalog",
@@ -65,8 +65,8 @@
             "ceo"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:paperclip-operations:issue-triage",
-          "catalogSkillKey": "paperclipai/bundled/paperclip-operations/issue-triage"
+          "catalogSkillId": "pilibalaai:bundled:pilibala-operations:issue-triage",
+          "catalogSkillKey": "pilibalaai/bundled/pilibala-operations/issue-triage"
         },
         {
           "type": "catalog",
@@ -75,8 +75,8 @@
             "qa"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:quality:qa-acceptance",
-          "catalogSkillKey": "paperclipai/bundled/quality/qa-acceptance"
+          "catalogSkillId": "pilibalaai:bundled:quality:qa-acceptance",
+          "catalogSkillKey": "pilibalaai/bundled/quality/qa-acceptance"
         },
         {
           "type": "catalog",
@@ -86,8 +86,8 @@
             "cto"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:paperclip-operations:task-planning",
-          "catalogSkillKey": "paperclipai/bundled/paperclip-operations/task-planning"
+          "catalogSkillId": "pilibalaai:bundled:pilibala-operations:task-planning",
+          "catalogSkillKey": "pilibalaai/bundled/pilibala-operations/task-planning"
         }
       ],
       "envInputs": [],
@@ -135,8 +135,8 @@
       "contentHash": "sha256:9d0416ebc0a81585dc51b73efb25decba9e1e3f3741940fc9fca74f3238f344d"
     },
     {
-      "id": "paperclipai:bundled:product:product-design",
-      "key": "paperclipai/bundled/product/product-design",
+      "id": "pilibalaai:bundled:product:product-design",
+      "key": "pilibalaai/bundled/product/product-design",
       "kind": "bundled",
       "category": "product",
       "slug": "product-design",
@@ -182,8 +182,8 @@
             "ux-designer"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:optional:product:design-critique",
-          "catalogSkillKey": "paperclipai/optional/product/design-critique"
+          "catalogSkillId": "pilibalaai:optional:product:design-critique",
+          "catalogSkillKey": "pilibalaai/optional/product/design-critique"
         },
         {
           "type": "catalog",
@@ -192,8 +192,8 @@
             "ux-designer"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:paperclip-operations:task-planning",
-          "catalogSkillKey": "paperclipai/bundled/paperclip-operations/task-planning"
+          "catalogSkillId": "pilibalaai:bundled:pilibala-operations:task-planning",
+          "catalogSkillKey": "pilibalaai/bundled/pilibala-operations/task-planning"
         },
         {
           "type": "catalog",
@@ -202,8 +202,8 @@
             "ux-designer"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:product:wireframe",
-          "catalogSkillKey": "paperclipai/bundled/product/wireframe"
+          "catalogSkillId": "pilibalaai:bundled:product:wireframe",
+          "catalogSkillKey": "pilibalaai/bundled/product/wireframe"
         }
       ],
       "envInputs": [],
@@ -239,8 +239,8 @@
       "contentHash": "sha256:67b041c3adc20583f844fd2415e1c67859a8342b59e46ec32b038b70b7af0108"
     },
     {
-      "id": "paperclipai:bundled:software-development:product-engineering",
-      "key": "paperclipai/bundled/software-development/product-engineering",
+      "id": "pilibalaai:bundled:software-development:product-engineering",
+      "key": "pilibalaai/bundled/software-development/product-engineering",
       "kind": "bundled",
       "category": "software-development",
       "slug": "product-engineering",
@@ -290,8 +290,8 @@
             "senior-coder"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:docs:doc-maintenance",
-          "catalogSkillKey": "paperclipai/bundled/docs/doc-maintenance"
+          "catalogSkillId": "pilibalaai:bundled:docs:doc-maintenance",
+          "catalogSkillKey": "pilibalaai/bundled/docs/doc-maintenance"
         },
         {
           "type": "catalog",
@@ -301,8 +301,8 @@
             "senior-coder"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:software-development:github-pr-workflow",
-          "catalogSkillKey": "paperclipai/bundled/software-development/github-pr-workflow"
+          "catalogSkillId": "pilibalaai:bundled:software-development:github-pr-workflow",
+          "catalogSkillKey": "pilibalaai/bundled/software-development/github-pr-workflow"
         },
         {
           "type": "catalog",
@@ -311,8 +311,8 @@
             "qa"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:quality:qa-acceptance",
-          "catalogSkillKey": "paperclipai/bundled/quality/qa-acceptance"
+          "catalogSkillId": "pilibalaai:bundled:quality:qa-acceptance",
+          "catalogSkillKey": "pilibalaai/bundled/quality/qa-acceptance"
         },
         {
           "type": "catalog",
@@ -321,8 +321,8 @@
             "cto"
           ],
           "resolved": true,
-          "catalogSkillId": "paperclipai:bundled:paperclip-operations:task-planning",
-          "catalogSkillKey": "paperclipai/bundled/paperclip-operations/task-planning"
+          "catalogSkillId": "pilibalaai:bundled:pilibala-operations:task-planning",
+          "catalogSkillKey": "pilibalaai/bundled/pilibala-operations/task-planning"
         }
       ],
       "envInputs": [],
@@ -335,7 +335,7 @@
           "sha256": "7204eeef78a48714dd3f82b82e171a4039adc6325e91a6bdf51a442105ee33b0"
         },
         {
-          "path": ".paperclip.yaml",
+          "path": ".pilibala.yaml",
           "kind": "extension",
           "sizeBytes": 81,
           "sha256": "54babf05ba130ec54a143abf01581d99c0ac2936fd0d929bf0e0edd00e29d861"
@@ -376,8 +376,8 @@
       "contentHash": "sha256:b9076b17a551b704a97df2e0204cefb83edfda4d36e909889071bb02d251e5ea"
     },
     {
-      "id": "paperclipai:optional:communications:speko-company-phone-agent",
-      "key": "paperclipai/optional/communications/speko-company-phone-agent",
+      "id": "pilibalaai:optional:communications:speko-company-phone-agent",
+      "key": "pilibalaai/optional/communications/speko-company-phone-agent",
       "kind": "optional",
       "category": "communications",
       "slug": "speko-company-phone-agent",
@@ -448,8 +448,8 @@
       "contentHash": "sha256:e723a036948dcb292382fbcb116c68500c2247b004d0a8d8ef818b6725f91215"
     },
     {
-      "id": "paperclipai:optional:content:content-machine",
-      "key": "paperclipai/optional/content/content-machine",
+      "id": "pilibalaai:optional:content:content-machine",
+      "key": "pilibalaai/optional/content/content-machine",
       "kind": "optional",
       "category": "content",
       "slug": "content-machine",

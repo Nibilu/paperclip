@@ -36,7 +36,7 @@ import {
   CHAT_COMPLETION_WAKE_REASON,
   isCompletedOnboardingHandoffWake,
 } from "../chat-completion-delivery.js";
-import { hasWorkspaceRestoreFailure } from "@paperclipai/shared";
+import { hasWorkspaceRestoreFailure } from "@pilibalaai/shared";
 import { readQueuedInteractionResponse } from "../queued-interaction-response.js";
 import {
   isConversation,
@@ -75,7 +75,7 @@ import {
   unadmittedChatWakeupCondition,
 } from "../durable-chat-wakeup.js";
 import { agentService } from "../agents.js";
-import { normalizeLegacyRunnerProvider } from "@paperclipai/adapter-utils";
+import { normalizeLegacyRunnerProvider } from "@pilibalaai/adapter-utils";
 import { randomUUID } from "node:crypto";
 import {
   and,
@@ -91,7 +91,7 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   caseHandoffs,
@@ -108,7 +108,7 @@ import {
   issueRecoveryActions,
   issueRelations,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   conflict,
   HttpError,
@@ -176,7 +176,7 @@ import {
   type AgentOrgRow,
 } from "../agent-invokability.js";
 import { supportsUnscopedTimerHeartbeat } from "../heartbeat-policy.js";
-import { isUuidLike } from "@paperclipai/shared";
+import { isUuidLike } from "@pilibalaai/shared";
 import { retryChatControlAdmission } from "../chat-control-admission-retry.js";
 
 import type { HeartbeatServiceOptions } from "../heartbeat.js";
@@ -240,7 +240,7 @@ export interface HeartbeatQueueDependencies extends Pick<HeartbeatRetryDependenc
 
 
 
-export const DEFERRED_WAKE_CONTEXT_KEY = "_paperclipWakeContext";
+export const DEFERRED_WAKE_CONTEXT_KEY = "_pilibalaWakeContext";
 
 export const EXECUTION_PATH_HEARTBEAT_RUN_STATUSES = [
   "queued",
@@ -1673,7 +1673,7 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
   ) {
     const now = new Date();
     const reason =
-      "Cancelled because issue dependencies are still blocked; Paperclip will wake the assignee when blockers resolve";
+      "Cancelled because issue dependencies are still blocked; Pilibala will wake the assignee when blockers resolve";
     const cancelled = await setRunStatus(run.id, "cancelled", {
       finishedAt: now,
       error: reason,
@@ -1759,15 +1759,15 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
       .innerJoin(issues, and(eq(issues.companyId, agentWakeupRequests.companyId),
         sql`${issues.id}::text = ${agentWakeupRequests.payload}->>'issueId'`,
         or(eq(issues.assigneeAgentId, agentWakeupRequests.agentId),
-          sql`${agentWakeupRequests.payload} #>> '{_paperclipWakeContext,wakeReason}' = 'issue_comment_mentioned'`)))
+          sql`${agentWakeupRequests.payload} #>> '{_pilibalaWakeContext,wakeReason}' = 'issue_comment_mentioned'`)))
       .innerJoin(companies, and(eq(companies.id, issues.companyId), eq(companies.status, "active")))
       .where(and(scope.companyId ? eq(agentWakeupRequests.companyId, scope.companyId) : undefined,
         scope.requestId ? eq(agentWakeupRequests.id, scope.requestId) : undefined,
         eq(agentWakeupRequests.status, "deferred_issue_execution"),
         isNull(issues.executionRunId),
         or(and(
-          sql`jsonb_typeof(${agentWakeupRequests.payload} #> '{_paperclipWakeContext,wakeCommentIds}') = 'array'`,
-          sql`${agentWakeupRequests.payload} #> '{_paperclipWakeContext,wakeCommentIds}' <> '[]'::jsonb`,
+          sql`jsonb_typeof(${agentWakeupRequests.payload} #> '{_pilibalaWakeContext,wakeCommentIds}') = 'array'`,
+          sql`${agentWakeupRequests.payload} #> '{_pilibalaWakeContext,wakeCommentIds}' <> '[]'::jsonb`,
         ), sql`${agentWakeupRequests.payload}->>'mutation' = 'interaction'`,
         issueBlockersResolvedWakePayloadSql),
         sql`${agentWakeupRequests.payload}->'queuedCommentInterrupt' is null`,
@@ -2256,7 +2256,7 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
         if (isWaitingConversation(conversation) && !hasIndependentConversationWakeCause()) return null;
       }
     }
-    if (agent.adapterType === "paperclip_runner") {
+    if (agent.adapterType === "pilibala_runner") {
       const oldConfig = parseObject(agent.adapterConfig);
       const nextConfig = normalizeLegacyRunnerProvider(oldConfig);
       if (nextConfig !== oldConfig) {
@@ -2298,7 +2298,7 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
           companyId: failed.companyId, runId: failed.id, actorId: opts.requestedByActorId,
         } });
       }
-      if (isConversationAdapter(agent.adapterType) || agent.adapterType === "paperclip_runner") {
+      if (isConversationAdapter(agent.adapterType) || agent.adapterType === "pilibala_runner") {
         enrichedContextSnapshot.previousRunId = failed.id;
         enrichedContextSnapshot.forceFreshSession = true;
       }
@@ -2350,7 +2350,7 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
         dotRequest.companyId !== agent.companyId || dotRequest.issueId !== issueId ||
         dotRequest.requestId !== payload?.dotRequestId || source !== "assignment" ||
         opts.requestedByActorType !== "agent" || opts.requestedByActorId !== agentId ||
-        agent.adapterType !== "paperclip_runner" || !["openai_dot", "grok_bot"].includes(String(parseObject(agent.adapterConfig).provider)) ||
+        agent.adapterType !== "pilibala_runner" || !["openai_dot", "grok_bot"].includes(String(parseObject(agent.adapterConfig).provider)) ||
         opts.idempotencyKey !== dotRequest.idempotencyKey)) {
       throw conflict("Dot work request does not match its admission authority.");
     }
@@ -2358,7 +2358,7 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
         museRequest.companyId !== agent.companyId || museRequest.issueId !== issueId ||
         museRequest.requestId !== payload?.museRequestId || source !== "assignment" ||
         opts.requestedByActorType !== "agent" || opts.requestedByActorId !== agentId ||
-        agent.adapterType !== "paperclip_runner" || parseObject(agent.adapterConfig).provider !== "muse" ||
+        agent.adapterType !== "pilibala_runner" || parseObject(agent.adapterConfig).provider !== "muse" ||
         parseObject(agent.adapterConfig).museBindingId !== museRequest.bindingId ||
         !Number.isSafeInteger(museRequest.bindingGeneration) || museRequest.bindingGeneration < 1 ||
         payload?.museBindingId !== museRequest.bindingId || payload?.museBindingGeneration !== museRequest.bindingGeneration ||
@@ -3920,7 +3920,7 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
                 issue.id,
               );
               const blockedComment = [
-                `Paperclip blocked ${issueLabel} before dispatch because its workspace settings are not runnable.`,
+                `Pilibala blocked ${issueLabel} before dispatch because its workspace settings are not runnable.`,
                 "",
                 `- Code: \`${WORKSPACE_WORKTREE_REQUIRES_PROJECT_CODE}\``,
                 `- Reason: ${WORKSPACE_WORKTREE_REQUIRES_PROJECT_MESSAGE}`,
@@ -4020,7 +4020,7 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
             const followUpPayloadKey = museFollowUp ? "museAssignmentFollowUp" : "dotAssignmentFollowUp";
             let followUp: false | { assignmentId: string; consumed: boolean } = false;
             let pendingFollowUps: typeof agentWakeupRequests.$inferSelect[] = [];
-            if (agent.adapterType === "paperclip_runner" && ["openai_dot", "grok_bot", "muse"].includes(String(followUpProvider))
+            if (agent.adapterType === "pilibala_runner" && ["openai_dot", "grok_bot", "muse"].includes(String(followUpProvider))
                 && bindingId && activeExecutionRun.agentId === agentId && issue.assigneeAgentId === agentId
                 && reason === "issue_commented" && wakeCommentId && opts.allowRunCoalescing !== false
                 && enrichedContextSnapshot.forceFreshSession !== true && !explicitResumeSession && !opts.manualUserWake
@@ -4844,7 +4844,7 @@ export function createHeartbeatQueue(db: Db, dependencies: HeartbeatQueueDepende
 
     for (const candidate of candidates) {
       const payload = parseObject(candidate.payload);
-      const wakeContext = parseObject(payload._paperclipWakeContext);
+      const wakeContext = parseObject(payload._pilibalaWakeContext);
       const issueId =
         readNonEmptyString(payload.issueId) ??
         readNonEmptyString(payload.taskId) ??

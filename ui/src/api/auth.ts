@@ -5,7 +5,7 @@ import {
   readBoardBootstrap,
   type CurrentUserProfile,
   type UpdateCurrentUserProfile,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { redactUrlSecrets } from "@/lib/redact-url-secrets";
 import { tenantSessionRecovery } from "@/lib/tenant-session-recovery";
 import { apiFetch } from "./client";

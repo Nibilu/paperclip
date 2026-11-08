@@ -3,8 +3,8 @@ import express from "express";
 import request from "supertest";
 import { eq } from "drizzle-orm";
 import { expect, it, vi } from "vitest";
-import { agents, authUsers, companyMemberships, heartbeatRuns, issueInboxArchives, issues } from "@paperclipai/db";
-import { INBOX_MINE_ISSUE_STATUS_FILTER, type CompactIssue, type InboxMineSnapshot } from "@paperclipai/shared";
+import { agents, authUsers, companyMemberships, heartbeatRuns, issueInboxArchives, issues } from "@pilibalaai/db";
+import { INBOX_MINE_ISSUE_STATUS_FILTER, type CompactIssue, type InboxMineSnapshot } from "@pilibalaai/shared";
 import { actorMiddleware } from "../middleware/auth.js";
 import { errorHandler } from "../middleware/error-handler.js";
 import { agentRoutes } from "../routes/agents.js";
@@ -226,7 +226,7 @@ describeEmbeddedPostgres("Mine inbox snapshot routes", () => {
       await vi.waitFor(() => expect(started).toHaveBeenCalledTimes(2), { timeout: 2000 });
       const afterArchive = await fresh;
       expect(afterArchive.status).toBe(200);
-      expect(afterArchive.headers["x-paperclip-request-cache"]).toBe("miss");
+      expect(afterArchive.headers["x-pilibala-request-cache"]).toBe("miss");
       expect(afterArchive.body.issues).toEqual([]);
       // Retiring reuse does not retire the old compute's admission. It still
       // occupies one of the same eight slots until its failure read settles.
@@ -284,14 +284,14 @@ describeEmbeddedPostgres("Mine inbox snapshot routes", () => {
       release();
       const responses = await Promise.all(requests);
       expect(responses.every(response => response.status === 200)).toBe(true);
-      if (coalesced) expect((await coalesced).headers["x-paperclip-request-cache"]).toBe("coalesced");
+      if (coalesced) expect((await coalesced).headers["x-pilibala-request-cache"]).toBe("coalesced");
       // The aborted snapshot can outlive the seven ordinary reads. A coalesced
       // response waits for that compute to settle before we require a fresh one.
       const settled = await request(app).get(snapshotPath).expect(200);
-      const fresh = settled.headers["x-paperclip-request-cache"] === "coalesced"
+      const fresh = settled.headers["x-pilibala-request-cache"] === "coalesced"
         ? await request(app).get(snapshotPath).expect(200)
         : settled;
-      expect(fresh.headers["x-paperclip-request-cache"]).toBe("miss");
+      expect(fresh.headers["x-pilibala-request-cache"]).toBe("miss");
       expect(started).toHaveBeenCalledTimes(9);
     } finally {
       release();

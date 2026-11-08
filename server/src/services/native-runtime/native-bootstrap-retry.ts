@@ -1,7 +1,7 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
-import { heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
+import { heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
 import { inspectUnclaimedBootstrapState, parseNativeExecutionInput,
-  type NativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+  type NativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 import { nativeSha256 } from "./canonical.js";
 import { loadNativeUnclaimedBootstrapCheckpoint } from "./native-runner-checkpoint.js";
 import { isNativeRunnerOwnershipHeld } from "./native-runner-ownership.js";

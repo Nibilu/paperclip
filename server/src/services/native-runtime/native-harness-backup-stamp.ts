@@ -3,10 +3,10 @@ import { constants, lstatSync, readFileSync, readdirSync, readlinkSync } from "n
 import { lstat, open, readdir, readlink } from "node:fs/promises";
 import { MAX_NATIVE_HARNESS_BYTES, MAX_NATIVE_HARNESS_ENTRIES } from "./native-harness-backup-archive.js";
 import { dirname, resolve } from "node:path";
-import { resolvePaperclipInstanceRoot } from "../../home-paths.js";
+import { resolvePilibalaInstanceRoot } from "../../home-paths.js";
 
 export interface NativeHarnessBackupStamp {
-  schema: "paperclip.native-harness-backup-stamp.v2";
+  schema: "pilibala.native-harness-backup-stamp.v2";
   normalizedSessionId: string;
   runnerInstanceId: string;
   sessionScopeSha256: string;
@@ -18,11 +18,11 @@ export interface NativeHarnessBackupStamp {
 
 export function nativeHarnessStateBase(): string {
   return resolve(
-    process.env.PAPERCLIP_RUNNER_STATE_DIR ??
+    process.env.PILIBALA_RUNNER_STATE_DIR ??
       resolve(
-        resolvePaperclipInstanceRoot(),
+        resolvePilibalaInstanceRoot(),
         "runtime",
-        "paperclip-runner",
+        "pilibala-runner",
         "durable-sessions",
       ),
   );
@@ -123,7 +123,7 @@ export function createNativeHarnessBackupStamp(input: {
     unknown
   >;
   if (
-    manifest.schema !== "paperclip.native-harness-backup.v1" ||
+    manifest.schema !== "pilibala.native-harness-backup.v1" ||
     manifest.normalizedSessionId !== input.normalizedSessionId ||
     manifest.runnerInstanceId !== input.runnerInstanceId ||
     manifest.completedAt !== input.completedAt ||
@@ -133,7 +133,7 @@ export function createNativeHarnessBackupStamp(input: {
     throw new Error("runner_harness_backup_scope_invalid");
   }
   return {
-    schema: "paperclip.native-harness-backup-stamp.v2",
+    schema: "pilibala.native-harness-backup-stamp.v2",
     normalizedSessionId: input.normalizedSessionId,
     runnerInstanceId: input.runnerInstanceId,
     sessionScopeSha256,
@@ -152,7 +152,7 @@ export function readNativeHarnessBackupStamp(
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const stamp = value as Record<string, unknown>;
   if (
-    stamp.schema !== "paperclip.native-harness-backup-stamp.v2" ||
+    stamp.schema !== "pilibala.native-harness-backup-stamp.v2" ||
     typeof stamp.normalizedSessionId !== "string" ||
     !stamp.normalizedSessionId ||
     typeof stamp.runnerInstanceId !== "string" ||
@@ -176,7 +176,7 @@ function matchingBackupDirectories(candidate: string, stamp: NativeHarnessBackup
   const bytes = readFileSync(manifestPath);
   if (`sha256:${createHash("sha256").update(bytes).digest("hex")}` !== stamp.manifestSha256) return null;
   const manifest = JSON.parse(bytes.toString("utf8"));
-  if (manifest.schema !== "paperclip.native-harness-backup.v1" || manifest.normalizedSessionId !== stamp.normalizedSessionId
+  if (manifest.schema !== "pilibala.native-harness-backup.v1" || manifest.normalizedSessionId !== stamp.normalizedSessionId
     || manifest.runnerInstanceId !== stamp.runnerInstanceId || manifest.sourceProviderLeaseId !== stamp.sourceProviderLeaseId
     || !Array.isArray(manifest.directories) || manifest.directories.length === 0) return null;
   const directories: Array<{ path: string; sha256: string; bytes: number }> = [];

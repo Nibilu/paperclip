@@ -32,8 +32,8 @@ async function acquire(error: unknown) {
 }
 
 const cleanup = {
-  providerLeaseId: "paperclip-create-05f81d77", companyId: "company-1", environmentId: "environment-1",
-  attemptId: "05f81d77", accountFingerprint: "a".repeat(64), labels: { "paperclip-provider": "daytona" },
+  providerLeaseId: "pilibala-create-05f81d77", companyId: "company-1", environmentId: "environment-1",
+  attemptId: "05f81d77", accountFingerprint: "a".repeat(64), labels: { "pilibala-provider": "daytona" },
 };
 
 describe("environment acquisition refusal diagnostics", () => {
@@ -48,7 +48,7 @@ describe("environment acquisition refusal diagnostics", () => {
     const createError = Object.assign(new Error("create failed"), { statusCode: 502 });
     const lookupError = Object.assign(new Error("not found"), { statusCode: 404 });
     const callError = await acquire(new PluginEnvironmentCreationCleanupError([createError, lookupError],
-      "Daytona sandbox creation failed (HTTP 502); cleanup could not be confirmed for paperclip-create-05f81d77", cleanup));
+      "Daytona sandbox creation failed (HTTP 502); cleanup could not be confirmed for pilibala-create-05f81d77", cleanup));
     expect(readEnvironmentAcquireErrorDiagnostic(callError)).toEqual({ httpStatus: 502 });
     // The ownership envelope that drives cleanup reconciliation is unchanged.
     expect(readEnvironmentCreationCleanupError(callError)).toMatchObject({ providerLeaseId: cleanup.providerLeaseId, attemptId: cleanup.attemptId });
@@ -65,7 +65,7 @@ describe("environment acquisition refusal diagnostics", () => {
   it("rejects forged or out-of-range envelopes", () => {
     const forged = (data: unknown) => Object.assign(new Error("x"), { data });
     expect(readEnvironmentAcquireErrorDiagnostic(forged({ schema: "other", providerDiagnostic: { httpStatus: 502 } }))).toBeNull();
-    expect(readEnvironmentAcquireErrorDiagnostic(forged({ schema: "paperclip/environment-acquire-error/v1",
+    expect(readEnvironmentAcquireErrorDiagnostic(forged({ schema: "pilibala/environment-acquire-error/v1",
       providerDiagnostic: { httpStatus: 9000, errorCode: "EVIL" } }))).toBeNull();
   });
 });

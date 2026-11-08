@@ -96,8 +96,8 @@ it("keeps the unchanged 256MiB packaging/archive caps with one canonical large a
   const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=", "base64");
   await writeFile(path.join(f.cell, "final-state.png"), png);
   const descriptor = fullCatalogCases.find(row => row.executionId === id)!;
-  await writeFile(path.join(f.cell, "result.json"), JSON.stringify({ schema: "paperclip.runner-e2e.result/v2", executionId: id, suiteId: "chat-features", suiteDefinitionHash: "c".repeat(64),
-    source: { sha: catalogTargetSha, ref: "refs/heads/master", workflowRunUrl: "https://github.com/paperclipai/paperclip/actions/runs/123" }, attempt: 1, status: "failed", error: "original failed assertion", cleanup: "passed", evidenceValid: false,
+  await writeFile(path.join(f.cell, "result.json"), JSON.stringify({ schema: "pilibala.runner-e2e.result/v2", executionId: id, suiteId: "chat-features", suiteDefinitionHash: "c".repeat(64),
+    source: { sha: catalogTargetSha, ref: "refs/heads/master", workflowRunUrl: "https://github.com/pilibalaai/pilibala/actions/runs/123" }, attempt: 1, status: "failed", error: "original failed assertion", cleanup: "passed", evidenceValid: false,
     runIds: [], profileId: "runner-opencode", environmentId: "local", caseId: descriptor.scenario, provider: "opencode", model: "openrouter/deepseek/deepseek-v4.1-flash-1017", runtimeMode: "native",
     startedAt: "2026-11-01T00:00:00Z", finishedAt: "2026-11-01T00:00:01Z", durationMs: 1000, matcherResults: [], screenshots: [] }));
   const rawFramework = await readFile(path.join(f.cell, "snapshots/playwright-framework-original.txt"));
@@ -130,14 +130,14 @@ it("keeps the unchanged 256MiB packaging/archive caps with one canonical large a
   const report = path.join(f.root, "normalized"), repository = path.resolve(import.meta.dirname, "../..");
   const cli = createRequire(path.join(repository, "cli/package.json")).resolve("tsx/cli");
   const reportProcess = await promisify(execFile)(process.execPath, ["--import", path.join(path.dirname(cli), "loader.mjs"), path.join(repository, "tests/runner-e2e/report.ts")], { cwd: repository, timeout: 30000, env: { PATH: process.env.PATH, CI: "1", NODE_OPTIONS: "", NODE_PATH: "",
-    PAPERCLIP_RUNNER_E2E_REPORT_ROOT: selected, PAPERCLIP_RUNNER_E2E_REPORT_OUT: report, PAPERCLIP_RUNNER_E2E_EXPECTED_IDS: JSON.stringify([id]),
-    PAPERCLIP_E2E_CAMPAIGN_ID: "gha-123-1", PAPERCLIP_RUNNER_E2E_SOURCE_SHA: catalogTargetSha, PAPERCLIP_RUNNER_E2E_SOURCE_REF: "refs/heads/master" } }).then(() => 0, error => error.code);
+    PILIBALA_RUNNER_E2E_REPORT_ROOT: selected, PILIBALA_RUNNER_E2E_REPORT_OUT: report, PILIBALA_RUNNER_E2E_EXPECTED_IDS: JSON.stringify([id]),
+    PILIBALA_E2E_CAMPAIGN_ID: "gha-123-1", PILIBALA_RUNNER_E2E_SOURCE_SHA: catalogTargetSha, PILIBALA_RUNNER_E2E_SOURCE_REF: "refs/heads/master" } }).then(() => 0, error => error.code);
   expect(reportProcess).toBe(1);
   const binding = { runId: "123", attempt: "1", workflowSha: "a".repeat(40), targetSha: catalogTargetSha, catalog: "full" as const };
   const projection = path.join(f.root, "projection");
   const exported = await exportCompletionPilot(report, projection, binding, [id]);
   expect(exported.privateEvidence[0]!.finalScreenshot!.sha256).toBe(createHash("sha256").update(png).digest("hex"));
-  const allure = await exportPilotAllure(projection, path.join(f.root, "allure"), binding, { schema: "paperclip.chat-completion-testops-selection/v1", ...binding, projectId: 1, planId: 10, jobId: 11, launchId: 12, allureJobRunId: "77", cases: [{ ...descriptor, caseId: 100 }] });
+  const allure = await exportPilotAllure(projection, path.join(f.root, "allure"), binding, { schema: "pilibala.chat-completion-testops-selection/v1", ...binding, projectId: 1, planId: 10, jobId: 11, launchId: 12, allureJobRunId: "77", cases: [{ ...descriptor, caseId: 100 }] });
   expect(allure[0]!.status).toBe("failed");
   expect(JSON.parse(await readFile(path.join(projection, "normalized-results.json"), "utf8")).results[0].status).toBe("failed");
 }, 120_000);

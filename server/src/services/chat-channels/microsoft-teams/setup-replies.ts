@@ -1,4 +1,4 @@
-import { chatDeliveries, type Db } from "@paperclipai/db";
+import { chatDeliveries, type Db } from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
 import { notifyChatDeliveryWork } from "../../chat-work-notifications.js";
 
@@ -32,7 +32,7 @@ export async function deferTeamsSetupReply(
               principalId: null,
               nextAttemptAt: null,
               processedAt: resolutionAt,
-              redactedError: "Destination is not enabled in Paperclip",
+              redactedError: "Destination is not enabled in Pilibala",
               updatedAt: resolutionAt,
             },
       )

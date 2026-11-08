@@ -135,7 +135,7 @@ describe("InstanceAccess read resilience", () => {
     expect(container.textContent).toContain("admin@example.com");
 
     mocks.searchAdminUsers.mockRejectedValue(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await act(async () => {
       await client.invalidateQueries({ queryKey: queryKeys.access.adminUsers("") });
@@ -145,7 +145,7 @@ describe("InstanceAccess read resilience", () => {
     expect(container.textContent).toContain("admin@example.com");
     expect(button("Save organization access")).toBeDefined();
     expect(container.querySelector('[data-query-view="error"]')).toBeNull();
-    expect(container.textContent).not.toContain("Paperclip is restarting.");
+    expect(container.textContent).not.toContain("Pilibala is restarting.");
     expect(container.textContent).not.toContain("tenant_app_unavailable");
   });
 

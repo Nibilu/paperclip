@@ -12,7 +12,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 import {
   agents, authUsers, companies, companyMemberships, connectionGrants, createDb,
   executionWorkspaceRepositories, executionWorkspaces, heartbeatRuns, issues, toolApplications, toolConnections,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { RepositoryCatalogUnavailableError } from "../services/repository-catalog-unavailable-error.js";
 import { heartbeatService } from "../services/heartbeat.js";
 import { taskRepositoryRelativePath } from "../services/execution-workspace-repositories.js";
@@ -38,9 +38,9 @@ describe.skipIf(!recoveryPostgresSupport.supported)("repository catalog bootstra
 
   beforeAll(async () => {
     root = await realpath(await mkdtemp(path.join(tmpdir(), "repository-catalog-recovery-")));
-    vi.stubEnv("PAPERCLIP_HOME", path.join(root, "home"));
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "01234567890123456789012345678901");
-    vi.stubEnv("PAPERCLIP_ISSUE_PRIVACY_MODE", "enforce");
+    vi.stubEnv("PILIBALA_HOME", path.join(root, "home"));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "01234567890123456789012345678901");
+    vi.stubEnv("PILIBALA_ISSUE_PRIVACY_MODE", "enforce");
     temporary = await startRecoveryPostgres("repository-catalog-recovery-");
     db = createDb(temporary.connectionString);
     await instanceSettingsService(db).updateExperimental({ enableIsolatedWorkspaces: true });
@@ -79,7 +79,7 @@ describe.skipIf(!recoveryPostgresSupport.supported)("repository catalog bootstra
     git("add", "saved.txt");
     git("commit", "-m", "Saved fixture");
     const pinnedCommit = git("rev-parse", "HEAD");
-    await writeFile(path.join(checkout, ".git", "paperclip-workspace-owner.json"), JSON.stringify({ version: 1, repositoryId, pinnedCommit }));
+    await writeFile(path.join(checkout, ".git", "pilibala-workspace-owner.json"), JSON.stringify({ version: 1, repositoryId, pinnedCommit }));
     await db.insert(agents).values({ id: agentId, companyId, name: "Catalog worker", status: "idle", adapterType: "codex_local",
       adapterConfig: { cwd }, runtimeConfig: { heartbeat: { wakeOnDemand: true, maxConcurrentRuns: 1 } }, permissions: {} });
     await db.insert(issues).values({ id: issueId, companyId, title: "Continue retained repository", status: "todo", assigneeAgentId: agentId,

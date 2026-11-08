@@ -90,7 +90,7 @@ All three waves cover Codex and OpenCode in workloads A1, B1 and B5 under K1 (SI
 
 `--lifecycle default` on this pull request's revision (`ttft-baseline.ts --adapters codex,opencode --samples 2 --phases coldwarm --lifecycle default`): both agents read back with no stored lifecycle (`agentLifecycles: unset`), and every follow-up reused the runner and provider session (`run.startup.reuse` runner and provider_session `reused`, no `runner.process.launch`). Follow-up TTFT: Codex 4.8 s and 3.6 s, OpenCode 4.1 s and 3.7 s.
 
-This check found that `normalizePaperclipRunnerAdapterConfig`, which runs on every create and update, wrote `lifecycleMode: "per_turn"` into every native config. Without the fix in this pull request, the default never applied and any edit after the migration would have written the old default back.
+This check found that `normalizePilibalaRunnerAdapterConfig`, which runs on every create and update, wrote `lifecycleMode: "per_turn"` into every native config. Without the fix in this pull request, the default never applied and any edit after the migration would have written the old default back.
 
 ## Safety model of the warm default
 

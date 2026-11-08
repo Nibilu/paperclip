@@ -1,4 +1,4 @@
-import { agentWakeupRequests, agents, companies, createDb, heartbeatRuns, issues } from "@paperclipai/db";
+import { agentWakeupRequests, agents, companies, createDb, heartbeatRuns, issues } from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../../__tests__/helpers/embedded-postgres.js";
@@ -38,7 +38,7 @@ describe.skipIf(!support.supported)("promoted Retry receipt scope", () => {
       companyId: company.id, agentId: agent.id, source: "on_demand", triggerDetail: "manual", reason: "task_retry",
       status: "deferred_issue_execution", requestedByActorType: "user", requestedByActorId: "responsible-user",
       payload: { issueId: issue.id,
-        taskRetry: { schema: "paperclip.task-retry.v1", sourceRunId: finished.id, actorId: "responsible-user" } },
+        taskRetry: { schema: "pilibala.task-retry.v1", sourceRunId: finished.id, actorId: "responsible-user" } },
     }).returning();
     const release = createReleaseIssueExecution({
       issueLock: createPostgresWakeQueueAdapter(db, {

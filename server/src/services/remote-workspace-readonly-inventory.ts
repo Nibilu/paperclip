@@ -6,7 +6,7 @@ export async function readWorkspaceInventory(root: string, controllerCopy = fals
   const check = () => signal?.throwIfAborted();
   check();
   if (!path.isAbsolute(root) || await fs.realpath(root) !== root || !(await fs.lstat(root)).isDirectory()) fail();
-  const digest = crypto.createHash("sha256"), exclude = [".paperclip-runtime"];
+  const digest = crypto.createHash("sha256"), exclude = [".pilibala-runtime"];
   const repositories: string[] = [], configs: string[] = [];
   let entries = 0, scannedEntries = 0, byteSize = 0, configBytes = 0;
   const gitRead = async (cwd: string, args: string[]) => {
@@ -39,7 +39,7 @@ export async function readWorkspaceInventory(root: string, controllerCopy = fals
     for (const name of names.sort()) {
       check();
       const next = relative ? `${relative}/${name}` : name;
-      if (next === ".paperclip-runtime") continue;
+      if (next === ".pilibala-runtime") continue;
       if (!name || name === "." || name === ".." || /[\\\u0000-\u001f\u007f]/u.test(name)) fail();
       const file = path.join(root, next), stat = await fs.lstat(file);
       // A copied worktree pointer or alternate could resolve against the

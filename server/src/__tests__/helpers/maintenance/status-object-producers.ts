@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { INSTANCE_FEATURE_CATALOG, PAPERCLIP_CLOUD_MANAGED_BY, type InstanceExperimentalSettingsWithManaged } from '@paperclipai/shared';
+import { INSTANCE_FEATURE_CATALOG, PILIBALA_CLOUD_MANAGED_BY, type InstanceExperimentalSettingsWithManaged } from '@pilibalaai/shared';
 import { createServer } from 'node:http';
 import { writeFile, rename } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +8,7 @@ type Server = Awaited<ReturnType<typeof startMaintenanceServer>>;
 async function assertManagedOwnerFeature(server: Server, chosen: 'enableStatusCards' | 'enableExternalObjects') {
   const settings = await server.api<InstanceExperimentalSettingsWithManaged>('GET', '/instance/settings/experimental');
   assert.equal(settings[chosen], true);
-  assert.deepEqual(settings.managedKeys?.[chosen], { managed: true, managedBy: PAPERCLIP_CLOUD_MANAGED_BY });
+  assert.deepEqual(settings.managedKeys?.[chosen], { managed: true, managedBy: PILIBALA_CLOUD_MANAGED_BY });
   const unchosen = chosen === 'enableStatusCards' ? 'enableExternalObjects' : 'enableStatusCards';
   assert.equal(settings[unchosen], INSTANCE_FEATURE_CATALOG[unchosen].cloudDefault);
   assert.equal(settings.managedKeys?.[unchosen], undefined);
@@ -28,7 +28,7 @@ export async function prepareStatusInterval(server: Server, companyId: string, s
   await assertManagedOwnerFeature(server, 'enableStatusCards');
   const agent = await server.api<{ id: string }>('POST', `/companies/${companyId}/agents`, {
     name: 'Controlled interval summarizer', adapterType: 'process', runner: 'legacy',
-    adapterConfig: { env: { STATUS_OBJECT_EXPECTED_API_ORIGIN_FILE: originPath, DATABASE_URL: '', PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG: process.env.PAPERCLIP_SKILL_DEFAULT_CADENCE_GUARD_LOG }, command: process.execPath, args: ['--require',
+    adapterConfig: { env: { STATUS_OBJECT_EXPECTED_API_ORIGIN_FILE: originPath, DATABASE_URL: '', PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG: process.env.PILIBALA_SKILL_DEFAULT_CADENCE_GUARD_LOG }, command: process.execPath, args: ['--require',
       fileURLToPath(new URL('../../../../../scripts/fixtures/skill-default-cadence-network-guard.cjs', import.meta.url)),
       fileURLToPath(new URL('./status-interval-agent.mjs', import.meta.url)), statePath], timeoutSec: 30, graceSec: 5 },
   });

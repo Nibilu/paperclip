@@ -64,7 +64,7 @@ beforeEach(async () => {
   invites.copy.mockResolvedValue(undefined);
   state.adapters = [
     { type: "codex_local", loaded: true },
-    { type: "paperclip_runner", loaded: true },
+    { type: "pilibala_runner", loaded: true },
     { type: "claude_local", loaded: true, disabled: true },
   ];
   container = document.createElement("div");
@@ -214,7 +214,7 @@ it("renames a numbered draft only after the user edits its name", async () => {
 });
 it("offers one Codex harness without a runner/provider tile", async () => {
   await name();
-  expect(document.querySelector('input[value="paperclip_runner"]')).toBeNull();
+  expect(document.querySelector('input[value="pilibala_runner"]')).toBeNull();
   expect(document.querySelectorAll('input[value="codex_local"]')).toHaveLength(1);
   expect(document.querySelector("select")).toBeNull();
 });
@@ -222,7 +222,7 @@ it("opens native Cursor Cloud from the ordinary hosted adapter picker", async ()
   await act(async () => {
     cache.setQueryData(queryKeys.health, { status: "ok", cloud: { managed: true } });
     cache.setQueryData(queryKeys.adapters.availability("company-1", null), [...state.adapters,
-      { type: "cursor_cloud", loaded: true, supportedRunners: ["paperclip"], defaultRunner: "paperclip" }]);
+      { type: "cursor_cloud", loaded: true, supportedRunners: ["pilibala"], defaultRunner: "pilibala" }]);
   });
   await name();
   const cursor = document.querySelector<HTMLInputElement>('input[value="cursor_cloud"]');
@@ -230,12 +230,12 @@ it("opens native Cursor Cloud from the ordinary hosted adapter picker", async ()
   await act(async () => cursor!.click());
   await click("Configure agent");
   expect(agents.update).toHaveBeenCalledWith(agents.create.mock.calls[0][1].setupId, expect.objectContaining({
-    adapterType: "paperclip_runner", runner: "paperclip", adapterConfig: { provider: "cursor_cloud" },
+    adapterType: "pilibala_runner", runner: "pilibala", adapterConfig: { provider: "cursor_cloud" },
   }), "company-1");
   const query = new URL(state.navigate.mock.calls[0][0], "http://local").searchParams;
-  expect(query.get("adapterType")).toBe("paperclip_runner");
+  expect(query.get("adapterType")).toBe("pilibala_runner");
   expect(query.get("runnerProvider")).toBe("cursor_cloud");
-  expect(query.get("runner")).toBe("paperclip");
+  expect(query.get("runner")).toBe("pilibala");
 });
 
 it("hides explicitly unsupported harnesses while keeping the qualified Cursor API card", async () => {
@@ -244,8 +244,8 @@ it("hides explicitly unsupported harnesses while keeping the qualified Cursor AP
     cache.setQueryData(queryKeys.adapters.availability("company-1", null), [
       { type: "codex_local", loaded: true, supportedRunners: [] },
       { type: "opencode_local", loaded: true, supportedRunners: [] },
-      { type: "paperclip_runner", loaded: true, supportedRunners: [] },
-      { type: "cursor_cloud", loaded: true, supportedRunners: ["paperclip"], defaultRunner: "paperclip" },
+      { type: "pilibala_runner", loaded: true, supportedRunners: [] },
+      { type: "cursor_cloud", loaded: true, supportedRunners: ["pilibala"], defaultRunner: "pilibala" },
     ]);
   });
   await name();
@@ -261,7 +261,7 @@ it.each(["gate off", "native unavailable"])("keeps hosted Cursor Cloud hidden wh
     cache.setQueryData(queryKeys.health, { status: "ok", cloud: { managed: true } });
     if (reason === "gate off") cache.setQueryData(queryKeys.instance.experimentalSettings, { enableNativeRunner: false });
     cache.setQueryData(queryKeys.adapters.availability("company-1", null), [...state.adapters,
-      { type: "cursor_cloud", loaded: true, supportedRunners: reason === "native unavailable" ? ["legacy"] : ["paperclip"], defaultRunner: "legacy" }]);
+      { type: "cursor_cloud", loaded: true, supportedRunners: reason === "native unavailable" ? ["legacy"] : ["pilibala"], defaultRunner: "legacy" }]);
   });
   await name();
   expect(document.querySelector('input[value="cursor_cloud"]')).toBeNull();
@@ -272,11 +272,11 @@ it.each([true, false, undefined])("opens saved-token Copilot setup without an ex
   await act(async () => document.querySelector<HTMLInputElement>('input[value="copilot_runtime"]')!.click());
   await click("Configure agent");
   const query = new URL(state.navigate.mock.calls[0][0], "http://local").searchParams;
-  expect(query.get("adapterType")).toBe("paperclip_runner");
+  expect(query.get("adapterType")).toBe("pilibala_runner");
   expect(query.get("runnerProvider")).toBe("copilot");
 });
 it("hides Copilot when its runtime adapter is disabled", async () => {
-  await act(async () => cache.setQueryData(queryKeys.adapters.availability("company-1", null), state.adapters.map((entry: any) => entry.type === "paperclip_runner" ? { ...entry, disabled: true } : entry)));
+  await act(async () => cache.setQueryData(queryKeys.adapters.availability("company-1", null), state.adapters.map((entry: any) => entry.type === "pilibala_runner" ? { ...entry, disabled: true } : entry)));
   await name();
   expect(document.querySelector('input[value="copilot_runtime"]')).toBeNull();
 });
@@ -292,17 +292,17 @@ it.each([true, false])("offers Google Antigravity in the ordinary picker while e
   await act(async () => choice!.click());
   await click("Configure agent");
   const query = new URL(state.navigate.mock.calls[0][0], "http://local").searchParams;
-  expect(query.get("adapterType")).toBe("paperclip_runner");
+  expect(query.get("adapterType")).toBe("pilibala_runner");
   expect(query.get("runnerProvider")).toBe("antigravity");
   expect(query.get("setupAgentId")).toBe(agents.create.mock.calls[0][1].setupId);
   expect(agents.update).toHaveBeenCalledWith(agents.create.mock.calls[0][1].setupId, {
     name: "Ada & Co", metadata: { setupAdapterPending: true,
-      setupAdapterChoice: { adapterType: "paperclip_runner", runnerProvider: "antigravity", runner: "auto" } },
+      setupAdapterChoice: { adapterType: "pilibala_runner", runnerProvider: "antigravity", runner: "auto" } },
   }, "company-1");
   expect(agents.create.mock.calls[0][1]).toMatchObject({ adapterType: "process", metadata: { setupAdapterPending: true } });
 });
 it("hides Google Antigravity when the runtime adapter is disabled", async () => {
-  await act(async () => cache.setQueryData(queryKeys.adapters.availability("company-1", null), state.adapters.map((entry: any) => entry.type === "paperclip_runner" ? { ...entry, disabled: true } : entry)));
+  await act(async () => cache.setQueryData(queryKeys.adapters.availability("company-1", null), state.adapters.map((entry: any) => entry.type === "pilibala_runner" ? { ...entry, disabled: true } : entry)));
   await name();
   expect(document.querySelector('input[value="antigravity_runtime"]')).toBeNull();
 });
@@ -313,16 +313,16 @@ it.each(["grok", "opencode"])("preserves explicit experimental %s creation in Ad
   await act(async () => document.querySelector<HTMLButtonElement>(`[role="option"][data-value="${provider}"]`)!.click());
   await click("Configure agent");
   const query = new URL(state.navigate.mock.calls[0][0], "http://local").searchParams;
-  expect(query.get("adapterType")).toBe("paperclip_runner");
+  expect(query.get("adapterType")).toBe("pilibala_runner");
   expect(query.get("runnerProvider")).toBe(provider);
   expect(agents.update).toHaveBeenCalledWith(agents.create.mock.calls[0][1].setupId, expect.objectContaining({
-    adapterType: "paperclip_runner", adapterConfig: provider === "grok" ? { provider: "acpx", acpxAgent: "grok", model: "grok-4.7" } : { provider: "opencode" },
+    adapterType: "pilibala_runner", adapterConfig: provider === "grok" ? { provider: "acpx", acpxAgent: "grok", model: "grok-4.7" } : { provider: "opencode" },
   }), "company-1");
 });
 it.each(["gate off", "disabled adapter"])("hides experimental native creation when %s", async reason => {
   await act(async () => {
     if (reason === "gate off") cache.setQueryData(queryKeys.instance.experimentalSettings, { enableNativeRunner: false });
-    else cache.setQueryData(queryKeys.adapters.availability("company-1", null), state.adapters.map((entry: any) => entry.type === "paperclip_runner" ? { ...entry, disabled: true } : entry));
+    else cache.setQueryData(queryKeys.adapters.availability("company-1", null), state.adapters.map((entry: any) => entry.type === "pilibala_runner" ? { ...entry, disabled: true } : entry));
   });
   await name();
   expect(document.querySelector('[aria-label="Experimental harness"]')).toBeNull();
@@ -376,7 +376,7 @@ it.each([{ enableOpenAiDot: false, enablePublicMcp: true }, { enableOpenAiDot: t
 });
 
 it("copies one scoped Dot prompt, resumes on Back, and trusts only server readiness", async () => {
-  const connection = { enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true, binding: null as any };
+  const connection = { enabled: true, resourceUrl: "https://pilibala.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true, binding: null as any };
   dotApi.create.mockResolvedValue({ agent: { id: "dot-agent", status: "idle" }, approvalId: null, binding: null });
   dotApi.connection.mockImplementation(async () => ({ ...connection }));
   dotApi.pair.mockImplementation(async () => {
@@ -420,7 +420,7 @@ it("copies one scoped Dot prompt, resumes on Back, and trusts only server readin
 
 it("waits for company approval before issuing a Dot capability", async () => {
   dotApi.create.mockResolvedValue({ agent: { id: "pending-dot", status: "pending_approval" }, approvalId: "approval-id", binding: null });
-  dotApi.connection.mockResolvedValue({ enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", agentStatus: "pending_approval", agentLifecycleState: "pending_approval", canConfigureConnection: false, binding: null });
+  dotApi.connection.mockResolvedValue({ enabled: true, resourceUrl: "https://pilibala.example/mcp/runner", agentStatus: "pending_approval", agentLifecycleState: "pending_approval", canConfigureConnection: false, binding: null });
   await act(async () => cache.setQueryData(queryKeys.instance.experimentalSettings, { enableOpenAiDot: true, enablePublicMcp: true }));
   await click("Invite an external agent");
   await act(async () => [...document.querySelectorAll("button")].find(b => b.textContent?.startsWith("Dot"))!.click());
@@ -453,7 +453,7 @@ const pendingDotBinding = (id: string, expiresAt: string) => ({
 });
 
 it.each(["expired", "unavailable"])("automatically replaces an %s saved Dot prompt on opening", async condition => {
-  const connection = { enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true,
+  const connection = { enabled: true, resourceUrl: "https://pilibala.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true,
     binding: pendingDotBinding("saved-binding", new Date(Date.now() + (condition === "expired" ? -60000 : 900000)).toISOString()) };
   dotApi.create.mockResolvedValue({ agent: { id: "dot-agent", status: "idle" }, approvalId: null, binding: connection.binding });
   dotApi.connection.mockImplementation(async () => ({ ...connection }));
@@ -473,7 +473,7 @@ it.each(["expired", "unavailable"])("automatically replaces an %s saved Dot prom
 });
 
 it("renews a Dot prompt that expires while setup stays open", async () => {
-  const connection = { enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true, binding: null as any };
+  const connection = { enabled: true, resourceUrl: "https://pilibala.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true, binding: null as any };
   dotApi.create.mockResolvedValue({ agent: { id: "dot-agent", status: "idle" }, approvalId: null, binding: null });
   dotApi.connection.mockImplementation(async () => ({ ...connection }));
   let generation = 0;
@@ -497,10 +497,10 @@ it("renews a Dot prompt that expires while setup stays open", async () => {
 it("checks fresh connection state before renewing a cached pending Dot invitation", async () => {
   const staleBinding = pendingDotBinding("saved-binding", new Date(Date.now() - 60000).toISOString());
   cache.setQueryData(["dot-binding", "company-1", "dot-agent"], {
-    enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true, binding: staleBinding,
+    enabled: true, resourceUrl: "https://pilibala.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true, binding: staleBinding,
   });
   dotApi.create.mockResolvedValue({ agent: { id: "dot-agent", status: "idle" }, approvalId: null, binding: staleBinding });
-  dotApi.connection.mockResolvedValue({ enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true,
+  dotApi.connection.mockResolvedValue({ enabled: true, resourceUrl: "https://pilibala.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true,
     binding: { ...staleBinding, status: "ready", connected: true, subscriptionVerified: true } });
   await openDotSetup();
   expect(dotApi.connection).toHaveBeenCalled();
@@ -509,7 +509,7 @@ it("checks fresh connection state before renewing a cached pending Dot invitatio
 });
 
 it("offers a retry after automatic renewal fails without rotating on every poll", async () => {
-  const connection = { enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true,
+  const connection = { enabled: true, resourceUrl: "https://pilibala.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true,
     binding: pendingDotBinding("saved-binding", new Date(Date.now() - 60000).toISOString()) };
   dotApi.create.mockResolvedValue({ agent: { id: "dot-agent", status: "idle" }, approvalId: null, binding: connection.binding });
   dotApi.connection.mockImplementation(async () => ({ ...connection }));
@@ -533,7 +533,7 @@ it("offers a retry after automatic renewal fails without rotating on every poll"
 
 
 it("does not let an older window renew another window's fresh Dot prompt", async () => {
-  const connection = { enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true, binding: null as any };
+  const connection = { enabled: true, resourceUrl: "https://pilibala.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true, binding: null as any };
   dotApi.create.mockResolvedValue({ agent: { id: "dot-agent", status: "idle" }, approvalId: null, binding: null });
   dotApi.connection.mockImplementation(async () => ({ ...connection }));
   dotApi.pair.mockImplementation(async () => {
@@ -551,7 +551,7 @@ it("does not let an older window renew another window's fresh Dot prompt", async
 });
 
 it("retries the event test after Dot connects during a failed prompt renewal", async () => {
-  const connection = { enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true,
+  const connection = { enabled: true, resourceUrl: "https://pilibala.example/mcp/runner", agentStatus: "idle", agentLifecycleState: "ready", canConfigureConnection: true,
     binding: pendingDotBinding("saved-binding", new Date(Date.now() - 60000).toISOString()) as any };
   dotApi.create.mockResolvedValue({ agent: { id: "dot-agent", status: "idle" }, approvalId: null, binding: connection.binding });
   dotApi.connection.mockImplementation(async () => ({ ...connection }));
@@ -569,7 +569,7 @@ it("retries the event test after Dot connects during a failed prompt renewal", a
 
 
 it.each(["preparing", "verifying"])("prepares the Dot prompt while the hire is %s", async agentLifecycleState => {
-  const connection = { enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", agentStatus: "paused",
+  const connection = { enabled: true, resourceUrl: "https://pilibala.example/mcp/runner", agentStatus: "paused",
     agentLifecycleState, canConfigureConnection: true, binding: null as any };
   dotApi.create.mockResolvedValue({ agent: { id: "dot-agent", status: "paused" }, approvalId: null, binding: null });
   dotApi.connection.mockImplementation(async () => ({ ...connection }));
@@ -586,7 +586,7 @@ it.each(["preparing", "verifying"])("prepares the Dot prompt while the hire is %
 
 it("does not prepare a Dot capability for a real paused agent", async () => {
   dotApi.create.mockResolvedValue({ agent: { id: "dot-agent", status: "paused" }, approvalId: null, binding: null });
-  dotApi.connection.mockResolvedValue({ enabled: true, resourceUrl: "https://paperclip.example/mcp/runner",
+  dotApi.connection.mockResolvedValue({ enabled: true, resourceUrl: "https://pilibala.example/mcp/runner",
     agentStatus: "paused", agentLifecycleState: "paused", canConfigureConnection: false, binding: null });
   await openDotSetup();
   expect(dotApi.pair).not.toHaveBeenCalled();
@@ -594,7 +594,7 @@ it("does not prepare a Dot capability for a real paused agent", async () => {
 });
 
 it("keeps watching after the event check until hire verification completes", async () => {
-  const connection = { enabled: true, resourceUrl: "https://paperclip.example/mcp/runner", agentStatus: "paused",
+  const connection = { enabled: true, resourceUrl: "https://pilibala.example/mcp/runner", agentStatus: "paused",
     agentLifecycleState: "verifying", canConfigureConnection: true, binding: null as any };
   dotApi.create.mockResolvedValue({ agent: { id: "dot-agent", status: "paused" }, approvalId: null, binding: null });
   dotApi.connection.mockImplementation(async () => ({ ...connection }));
@@ -608,7 +608,7 @@ it("keeps watching after the event check until hire verification completes", asy
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
   expect(document.body.textContent).not.toContain("Your Dot is connected");
   expect(document.body.textContent).toContain("Test event confirmed: complete");
-  expect(document.body.textContent).toContain("Your Dot confirmed the test event. Paperclip is finishing agent setup.");
+  expect(document.body.textContent).toContain("Your Dot confirmed the test event. Pilibala is finishing agent setup.");
   const finishing = Array.from(document.querySelectorAll("button")).find(button => button.textContent?.includes("Finishing setup…"));
   expect(finishing?.disabled).toBe(true);
   connection.agentLifecycleState = "ready";
@@ -621,7 +621,7 @@ it("keeps watching after the event check until hire verification completes", asy
 
 it("keeps completed checks but shows a pause blocker for a paired paused Dot", async () => {
   dotApi.create.mockResolvedValue({ agent: { id: "dot-agent", status: "paused" }, approvalId: null, binding: null });
-  dotApi.connection.mockResolvedValue({ enabled: true, resourceUrl: "https://paperclip.example/mcp/runner",
+  dotApi.connection.mockResolvedValue({ enabled: true, resourceUrl: "https://pilibala.example/mcp/runner",
     agentStatus: "paused", agentLifecycleState: "paused", canConfigureConnection: false,
     binding: { ...pendingDotBinding("binding", new Date(Date.now() + 900000).toISOString()),
       status: "ready", connected: true, subscriptionVerified: true, hasPendingChallenge: false } });
@@ -629,7 +629,7 @@ it("keeps completed checks but shows a pause blocker for a paired paused Dot", a
   expect(document.body.textContent).toContain("Test event confirmed: complete");
   expect(document.body.textContent).toContain("Resume this agent before connecting Dot.");
   expect(document.body.textContent).not.toContain("Finishing setup…");
-  expect(document.body.textContent).not.toContain("Paperclip is finishing agent setup.");
+  expect(document.body.textContent).not.toContain("Pilibala is finishing agent setup.");
   const blocked = Array.from(document.querySelectorAll("button")).find(button => button.textContent?.includes("Agent unavailable"));
   expect(blocked?.disabled).toBe(true);
   expect(dotApi.pair).not.toHaveBeenCalled();

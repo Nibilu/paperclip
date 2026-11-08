@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { ProviderFailure } from "@paperclipai/shared";
+import type { ProviderFailure } from "@pilibalaai/shared";
 import { InlineBanner } from "./InlineBanner";
 
 const labels: Record<ProviderFailure["category"], string> = {

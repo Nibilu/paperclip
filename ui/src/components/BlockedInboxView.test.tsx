@@ -3,7 +3,7 @@
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
-import type { Issue, IssueBlockedInboxAttention } from "@paperclipai/shared";
+import type { Issue, IssueBlockedInboxAttention } from "@pilibalaai/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/api/client";
 
@@ -417,7 +417,7 @@ describe("BlockedInboxView", () => {
 
     // A refetch during a deploy fails: the loaded rows stay, no error banner.
     mockIssuesApi.list.mockRejectedValueOnce(
-      new ApiError("Paperclip is restarting.", 503, { error: "tenant_app_unavailable" }),
+      new ApiError("Pilibala is restarting.", 503, { error: "tenant_app_unavailable" }),
     );
     await act(async () => {
       await queryClient.invalidateQueries({ refetchType: "active" });

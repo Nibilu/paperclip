@@ -41,7 +41,7 @@ describe("workspace operation failure reasons", () => {
   it("carries the closed reason across the real workspaceOperation RPC", async () => {
     const response = await invoke("workspaceOperation", new PluginWorkspaceOperationError("storage_grant_unavailable", "Project mount grants unavailable"));
     if (!("error" in response) || !response.error) throw new Error("Expected RPC error");
-    expect(response.error.data).toEqual({ schema: "paperclip/workspace-operation-error/v1", reason: "storage_grant_unavailable" });
+    expect(response.error.data).toEqual({ schema: "pilibala/workspace-operation-error/v1", reason: "storage_grant_unavailable" });
     const callError = new JsonRpcCallError(response.error);
     expect(readWorkspaceOperationFailureReason(callError)).toBe("storage_grant_unavailable");
     expect(readWorkspaceOperationFailureReason(new Error("wrapped", { cause: new Error("again", { cause: callError }) })))
@@ -77,7 +77,7 @@ describe("workspace operation failure reasons", () => {
   });
 
   it.each([null, {}, { data: { schema: "other", reason: "binding_mismatch" } },
-    { data: { schema: "paperclip/workspace-operation-error/v1", reason: "private" } }])(
+    { data: { schema: "pilibala/workspace-operation-error/v1", reason: "private" } }])(
     "rejects malformed envelopes %j", (value) => {
       expect(readWorkspaceOperationFailureReason(value)).toBeNull();
     });

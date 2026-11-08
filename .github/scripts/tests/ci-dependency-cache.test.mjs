@@ -20,7 +20,7 @@ const entries = {
   "packages/plugins/sdk/src/index.ts": 'SDK API',
   "server/src/server.ts": 'server',
 };
-const scope = { node: 'v24.19.0', root: '/work/paperclip', arch: 'x64', libc: '2.39', pnpm: '9.15.4', store: '/store' };
+const scope = { node: 'v24.19.0', root: '/work/pilibala', arch: 'x64', libc: '2.39', pnpm: '9.15.4', store: '/store' };
 const plan = (files = entries, runtime = scope) => cachePlan({
   files: Object.keys(files), read: (file) => files[file] === null ? null : Buffer.from(files[file]), scope: runtime,
   packageDirs: ['.', 'packages/plugins/sdk', 'packages/shared', 'server'],
@@ -74,19 +74,19 @@ test('unmodelled workspace lifecycle scripts disable materialized reuse', () => 
 test('known Copilot hooks permit caching, track their helpers, and still run on restore', () => {
   const files = { ...entries,
     'server/package.json': JSON.stringify({ scripts: { postinstall: 'node scripts/install-copilot-assets.mjs' } }),
-    'packages/paperclip-runner/package.json': JSON.stringify({ scripts: { postinstall: 'node scripts/install-copilot-assets.mjs' } }),
+    'packages/pilibala-runner/package.json': JSON.stringify({ scripts: { postinstall: 'node scripts/install-copilot-assets.mjs' } }),
     'server/scripts/install-copilot-assets.mjs': 'server bootstrap',
-    'packages/paperclip-runner/scripts/install-copilot-assets.mjs': 'runner bootstrap',
-    'packages/paperclip-runner/scripts/materialize-copilot-binary.mjs': 'native materializer',
-    'packages/paperclip-runner/scripts/copilot-inner-distribution.mjs': 'closure pins',
+    'packages/pilibala-runner/scripts/install-copilot-assets.mjs': 'runner bootstrap',
+    'packages/pilibala-runner/scripts/materialize-copilot-binary.mjs': 'native materializer',
+    'packages/pilibala-runner/scripts/copilot-inner-distribution.mjs': 'closure pins',
   };
   const compute = (input) => cachePlan({ files: Object.keys(input),
     read: file => input[file] == null ? null : Buffer.from(input[file]), scope,
-    packageDirs: ['.', 'server', 'packages/paperclip-runner'],
+    packageDirs: ['.', 'server', 'packages/pilibala-runner'],
   });
   const original = compute(files);
   assert.equal(original.cacheable, true);
-  for (const file of Object.keys(files).filter(file => /^(server|packages\/paperclip-runner)\/scripts\//.test(file))) {
+  for (const file of Object.keys(files).filter(file => /^(server|packages\/pilibala-runner)\/scripts\//.test(file))) {
     for (const replacement of ['changed', null]) {
       assert.notEqual(compute({ ...files, [file]: replacement }).dependencyKey, original.dependencyKey, file);
     }
@@ -108,7 +108,7 @@ test('cache restores are exact and only a frozen canonical master push can publi
   for (const restore of [installed, builds]) assert.doesNotMatch(restore, /restore-keys:/);
   for (const step of action.split('    - name: Save ').slice(1)) {
     assert.match(step, /inputs\.save-cache == 'true'/);
-    assert.match(step, /github\.repository == 'paperclipai\/paperclip'/);
+    assert.match(step, /github\.repository == 'pilibalaai\/pilibala'/);
     assert.match(step, /github\.event_name == 'push'/);
     assert.match(step, /github\.ref == 'refs\/heads\/master'/);
     assert.match(step, /steps\.install\.outputs\.frozen == 'true'/);
@@ -137,5 +137,5 @@ test('paired test timings remain available when lifecycle hooks disable material
     'server/src/__tests__/setup-supertest.ts', 'server/src/__tests__/workspace-runtime.test.ts',
     'server/src/services/workspace-git-snapshot-streaming.test.ts']) assert.ok(scope.includes(file));
   assert.doesNotMatch(scope, /scripts\/ci-dependency-cache|\.github\/actions\/setup-ci-dependencies/);
-  assert.match(step('Exercise restored dependencies for cache-only changes'), /pnpm exec vitest run --project @paperclipai\/shared/);
+  assert.match(step('Exercise restored dependencies for cache-only changes'), /pnpm exec vitest run --project @pilibalaai\/shared/);
 });

@@ -97,7 +97,7 @@ export async function copyPrivateFrameworkReport(source: string, destination: st
     const previous = attachments.get(relative); if (previous && JSON.stringify(previous) !== JSON.stringify(row)) fail();
     attachments.set(relative, row);
   }
-  const sidecar: FrameworkReport = { schema: "paperclip.private-framework-json/v1", sourceReportSha256: hash(raw), report,
+  const sidecar: FrameworkReport = { schema: "pilibala.private-framework-json/v1", sourceReportSha256: hash(raw), report,
     attachments: [...attachments.values()].sort((a, b) => a.path.localeCompare(b.path)) };
   await mkdir(path.join(destination, "snapshots"), { recursive: true, mode: 0o700 });
   await writeFile(path.join(destination, PRIVATE_FRAMEWORK_ORIGINAL_REPORT), raw, { flag: "wx", mode: 0o600 });
@@ -108,7 +108,7 @@ export async function validatePrivateFrameworkReport(directory: string, canonica
   const value = JSON.parse(raw.toString("utf8")) as FrameworkReport;
   const keys = Object.keys(value).sort().join();
   if (keys !== (executionId ? "attachments,canonicalExecutionId,report,schema,sourceReportSha256" : "attachments,report,schema,sourceReportSha256")
-    || value.schema !== "paperclip.private-framework-json/v1" || !/^[0-9a-f]{64}$/.test(value.sourceReportSha256)
+    || value.schema !== "pilibala.private-framework-json/v1" || !/^[0-9a-f]{64}$/.test(value.sourceReportSha256)
     || executionId && value.canonicalExecutionId !== executionId || !Array.isArray(value.attachments) || value.attachments.length > 4096) fail();
   if (executionId) {
     const original = await validatePrivateFrameworkReport(canonical);

@@ -21,7 +21,7 @@ describe("onboarding connection test deadline", () => {
   it("clears the deadline after success and preserves genuine failures", async () => {
     vi.useFakeTimers();
     await expect(runOnboardingConnectionTest(async () => "ready")).resolves.toBe("ready");
-    const failure = new Error("Paperclip is temporarily unavailable.");
+    const failure = new Error("Pilibala is temporarily unavailable.");
     await expect(runOnboardingConnectionTest(async () => { throw failure; })).rejects.toBe(failure);
     expect(vi.getTimerCount()).toBe(0);
   });

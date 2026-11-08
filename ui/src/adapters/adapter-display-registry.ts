@@ -6,7 +6,7 @@
  * `getAdapterDisplay()`.
  */
 import type { ComponentType } from "react";
-import { agentHarnessType } from "@paperclipai/shared";
+import { agentHarnessType } from "@pilibalaai/shared";
 import {
   Bot,
   Code,
@@ -62,9 +62,9 @@ export interface AdapterDisplayInfo {
 }
 
 const adapterDisplayMap: Record<string, AdapterDisplayInfo> = {
-  antigravity_runtime: { label: "Google Antigravity", description: "Antigravity through Paperclip Runner", icon: Gem, hideFromVisualSelection: true },
-  copilot_runtime: { label: "GitHub Copilot", description: "Copilot through Paperclip Runner", icon: Code, hideFromVisualSelection: true },
-  kimi_runtime: { label: "Kimi Code (Runner)", description: "Kimi Code through Paperclip Runner", icon: Moon, hideFromVisualSelection: true },
+  antigravity_runtime: { label: "Google Antigravity", description: "Antigravity through Pilibala Runner", icon: Gem, hideFromVisualSelection: true },
+  copilot_runtime: { label: "GitHub Copilot", description: "Copilot through Pilibala Runner", icon: Code, hideFromVisualSelection: true },
+  kimi_runtime: { label: "Kimi Code (Runner)", description: "Kimi Code through Pilibala Runner", icon: Moon, hideFromVisualSelection: true },
   acpx_local: {
     label: "ACPX (retired)",
     description: "Retired standalone ACPX adapter",
@@ -85,8 +85,8 @@ const adapterDisplayMap: Record<string, AdapterDisplayInfo> = {
     icon: Code,
     recommended: true,
   },
-  paperclip_runner: {
-    label: "Paperclip Runner",
+  pilibala_runner: {
+    label: "Pilibala Runner",
     description: "Experimental Rust runner with a Codex provider",
     icon: Cpu,
     experimental: true,
@@ -132,7 +132,7 @@ const adapterDisplayMap: Record<string, AdapterDisplayInfo> = {
     description: "Cursor CLI harness",
     icon: MousePointer2,
   },
-  // Display-only choice: persisted as paperclip_runner with provider openai_dot.
+  // Display-only choice: persisted as pilibala_runner with provider openai_dot.
   grok_bot: { label: "Grok Bot", experimental: true, icon: Bot, description: "An existing external Bot in Grok" },
   openai_dot: {
     label: "OpenAI Dot",
@@ -222,7 +222,7 @@ export function getAdapterDisplay(type: string): AdapterDisplayInfo {
 export function agentDisplayAdapterType(agent: { adapterType: string; adapterConfig: Record<string, unknown>; pauseReason?: unknown; metadata?: unknown }): string {
   const pendingSetup = pendingAgentSetupDisplayAdapter(agent);
   if (pendingSetup) return pendingSetup;
-  if (agent.adapterType !== "paperclip_runner") return agent.adapterType;
+  if (agent.adapterType !== "pilibala_runner") return agent.adapterType;
   if (agent.adapterConfig.provider === "openai_dot" || agent.adapterConfig.provider === "grok_bot" || agent.adapterConfig.provider === "muse") {
     return agent.adapterConfig.provider;
   }

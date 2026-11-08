@@ -1,8 +1,8 @@
 import { oauthConfig, sameOAuthIssuer } from "./metadata.js";
 import type { OAuthProviderEndpoints } from "./types.js";
 import { createHash, randomBytes } from "node:crypto";
-import { toolConnections } from "@paperclipai/db";
-import type { AppDefinition } from "@paperclipai/shared";
+import { toolConnections } from "@pilibalaai/db";
+import type { AppDefinition } from "@pilibalaai/shared";
 import { badRequest, unprocessable } from "../../../errors.js";
 
 export function assertOAuthRedirectConstraints(

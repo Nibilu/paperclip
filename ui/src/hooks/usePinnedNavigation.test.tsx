@@ -5,7 +5,7 @@ import { expect, it, vi } from "vitest";
 import { usePinnedNavigation } from "./usePinnedNavigation";
 
 it("reorders hundreds of pins without nested scans and preserves hidden-company slots", async () => {
-  const key = "paperclip.coordinator.pinned-nav.v1:pin-review";
+  const key = "pilibala.coordinator.pinned-nav.v1:pin-review";
   const visible = Array.from({ length: 500 }, (_, index) => `agent-chat:company:agent-${index}`);
   const hidden = "agent-chat:other-company:hidden";
   localStorage.setItem(key, JSON.stringify([...visible.slice(0, 250), hidden, ...visible.slice(250)]));

@@ -11,7 +11,7 @@ import type { RunnerE2EResult } from "./types.js";
 
 function fixture() {
   const cell = runnerMatrix[0]!;
-  const result: RunnerE2EResult = { schema: "paperclip.runner-e2e.result/v2", executionId: cell.id, suiteId: cell.suite.id,
+  const result: RunnerE2EResult = { schema: "pilibala.runner-e2e.result/v2", executionId: cell.id, suiteId: cell.suite.id,
     suiteDefinitionHash: cell.suiteDefinitionHash, attempt: 1, status: "failed", profileId: cell.profile.id,
     environmentId: cell.environment.id, caseId: cell.task.id, provider: cell.profile.provider, model: cell.profile.model, runtimeMode: cell.profile.expectedRuntimeMode,
     runIds: [], startedAt: "2026-10-20T00:00:00Z", finishedAt: "2026-10-20T00:00:01Z", durationMs: 1000, cleanup: "passed",
@@ -53,7 +53,7 @@ it("preserves dispositions on regeneration without changing failed grades or inc
     const html = await readFile(path.join(root, "dashboard.html"), "utf8");
     expect(html).toContain("1 actionable; 1 duplicate; 0 already fixed; 1 unsupported; 0 needs investigation");
     expect(html).toContain("1 attempts have incomplete collection");
-    expect(html).toContain("https://github.com/paperclipai/paperclip/issues/123");
+    expect(html).toContain("https://github.com/pilibalaai/pilibala/issues/123");
     const summary = await readFile(path.join(root, "summary.md"), "utf8");
     expect(summary).toBe(`${retainedHeader}${campaignFeedbackReviewText(campaign)}\n`);
     expect(summary).not.toContain("await review");

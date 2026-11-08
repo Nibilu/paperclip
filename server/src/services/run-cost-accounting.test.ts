@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, budgetEvaluationWork, budgetPolicies, companies, costEvents, costAdjustments, createDb, heartbeatRuns, projects, promptInjectionInvocations, runUsageReceipts, type Db } from "@paperclipai/db";
+import { agents, budgetEvaluationWork, budgetPolicies, companies, costEvents, costAdjustments, createDb, heartbeatRuns, projects, promptInjectionInvocations, runUsageReceipts, type Db } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { accountRunCost, createCostAccountingReconciler, readCostAccountingWork } from "./run-cost-accounting.js";
 import { createRunUsageRecorder, persistUsageReceipt, type UsageReceiptEnvelope } from "./usage-receipts.js";
@@ -39,7 +39,7 @@ const support = await getEmbeddedPostgresTestSupport();
   }
 
   function receipt(owner: { companyId: string; runId: string }, sourceId: string, sequence: number, costUsd: number, inputTokens = 10): UsageReceiptEnvelope {
-    return { schema: "paperclip/accounting-receipt/v1", ...owner, id: randomUUID(), sourceId, sequence,
+    return { schema: "pilibala/accounting-receipt/v1", ...owner, id: randomUUID(), sourceId, sequence,
       adapterType: "process", receivedAt: new Date().toISOString(),
       receipt: { complete: true, usageBasis: "per_run", usage: { inputTokens, cachedInputTokens: 0, outputTokens: 2 },
         provider: "test", biller: "test", model: "test", billingType: "metered_api", costUsd, costStatus: "reported",

@@ -7,7 +7,7 @@ index 0214a50..73f0c16 100644
                              }
                              case "hook_started":
 +                            case "hook_response": {
-+                                // Paperclip patch: forward hook lifecycle so automatic hook
++                                // Pilibala patch: forward hook lifecycle so automatic hook
 +                                // decisions stay auditable. ACP has no hook update, so it rides
 +                                // on session_info_update `_meta` (no title/updatedAt change).
 +                                // Output is bounded; the runner derives the outcome.
@@ -64,12 +64,12 @@ index 0214a50..73f0c16 100644
                                  break;
 -                            case "task_progress":
 +                            case "task_progress": {
-+                                // Paperclip: a subagent's progress summary (SDK option
++                                // Pilibala: a subagent's progress summary (SDK option
 +                                // agentProgressSummaries) has no ACP home while native
 +                                // subagent sessions are off. Attach it to the spawning
 +                                // Agent/Task tool call so the client can show it there.
 +                                const progressTask = session.liveBackgroundTasks.get(message.task_id);
-+                                if (process.env.PAPERCLIP_ACPX_ISOLATED_CONTEXT === "1" &&
++                                if (process.env.PILIBALA_ACPX_ISOLATED_CONTEXT === "1" &&
 +                                    progressTask?.isSubagent &&
 +                                    progressTask.parentToolUseId &&
 +                                    (message.summary || message.description)) {
@@ -105,7 +105,7 @@ index 0214a50..73f0c16 100644
                              case "task_notification":
                                  // The task settled — no further tool calls can originate
                                  // from it, so its registry entry can be dropped.
-+                                await this.paperclipForwardSubagentState(session, message.session_id, message.task_id, message.tool_use_id ?? null, message.status, message.summary, sendUpdate);
++                                await this.pilibalaForwardSubagentState(session, message.session_id, message.task_id, message.tool_use_id ?? null, message.status, message.summary, sendUpdate);
                                  await subagents.finishTask(message.task_id, message.status, sendUpdate, message.tool_use_id);
                                  await asyncTasks.taskNotification({
                                      task_id: message.task_id,
@@ -113,7 +113,7 @@ index 0214a50..73f0c16 100644
                                  if (message.patch.status === "completed" ||
                                      message.patch.status === "failed" ||
                                      message.patch.status === "killed") {
-+                                    await this.paperclipForwardSubagentState(session, message.session_id, message.task_id, undefined, message.patch.status, undefined, sendUpdate);
++                                    await this.pilibalaForwardSubagentState(session, message.session_id, message.task_id, undefined, message.patch.status, undefined, sendUpdate);
                                      await subagents.finishTask(message.task_id, message.patch.status, sendUpdate);
                                      session.liveBackgroundTasks.delete(message.task_id);
                                  }
@@ -145,17 +145,17 @@ index 0214a50..73f0c16 100644
       *  ignores it. A `cancelled` outcome, request rejection, and local abort all
       *  surface the same "Tool use aborted" the callers already expect. */
 +    /**
-+     * Paperclip: an async subagent's Agent/Task tool call completes as soon as
++     * Pilibala: an async subagent's Agent/Task tool call completes as soon as
 +     * the subagent launches. With native subagent sessions off, report the
 +     * subagent's own terminal state and summary on that tool call so the
 +     * client can settle its subagent card. Sent once per task.
 +     */
-+    async paperclipForwardSubagentState(session, sessionId, taskId, toolUseId, status, summary, sendUpdate) {
-+        if (process.env.PAPERCLIP_ACPX_ISOLATED_CONTEXT !== "1")
++    async pilibalaForwardSubagentState(session, sessionId, taskId, toolUseId, status, summary, sendUpdate) {
++        if (process.env.PILIBALA_ACPX_ISOLATED_CONTEXT !== "1")
 +            return;
 +        // The terminal task_updated branch drops the live registry entry
 +        // before task_notification arrives, so remember subagent parents here.
-+        const parents = (session.paperclipSubagentParents ??= new Map());
++        const parents = (session.pilibalaSubagentParents ??= new Map());
 +        const task = session.liveBackgroundTasks.get(taskId);
 +        if (task?.isSubagent && task.parentToolUseId)
 +            parents.set(taskId, task.parentToolUseId);
@@ -164,7 +164,7 @@ index 0214a50..73f0c16 100644
 +            return;
 +        // The terminal task_updated patch can precede task_notification, which
 +        // alone carries the summary; dedupe only the notification.
-+        const forwarded = (session.paperclipForwardedSubagentStates ??= new Set());
++        const forwarded = (session.pilibalaForwardedSubagentStates ??= new Set());
 +        if (forwarded.has(taskId))
 +            return;
 +        if (toolUseId !== undefined || summary)
@@ -193,23 +193,23 @@ index 0214a50..73f0c16 100644
              settingSources: ["user", "project", "local"],
              ...(thinking !== undefined && { thinking }),
              ...userProvidedOptions,
-+            // Paperclip Runner owns the complete session context. Its isolated
++            // Pilibala Runner owns the complete session context. Its isolated
 +            // user root contains only assigned skills; project/local settings
 +            // would reintroduce host prompts, plugins, skills, and MCP servers.
-+            ...(process.env.PAPERCLIP_ACPX_ISOLATED_CONTEXT === "1" && { settingSources: ["user"] }),
++            ...(process.env.PILIBALA_ACPX_ISOLATED_CONTEXT === "1" && { settingSources: ["user"] }),
 +            // Subagent progress summaries (~30s) feed the task chat's subagent card.
-+            ...(process.env.PAPERCLIP_ACPX_ISOLATED_CONTEXT === "1" && { agentProgressSummaries: true }),
++            ...(process.env.PILIBALA_ACPX_ISOLATED_CONTEXT === "1" && { agentProgressSummaries: true }),
              ...(settings && { settings }),
              env,
              // Override certain fields that must be controlled by ACP
              cwd: params.cwd,
              includePartialMessages: true,
-+            // Paperclip patch: emit hook_started/hook_response for every hook event.
++            // Pilibala patch: emit hook_started/hook_response for every hook event.
 +            includeHookEvents: true,
              forwardSubagentText,
              mcpServers: {
 -                ...(userProvidedOptions?.mcpServers || {}),
-+                ...(process.env.PAPERCLIP_ACPX_ISOLATED_CONTEXT === "1"
++                ...(process.env.PILIBALA_ACPX_ISOLATED_CONTEXT === "1"
 +                    ? {}
 +                    : (userProvidedOptions?.mcpServers || {})),
                  ...mcpServers,
@@ -222,11 +222,11 @@ index 0214a50..73f0c16 100644
 +            // The runner pins this actual MCP endpoint before provider launch.
 +            // Exempt only task delivery/control tools at the SDK dispatch boundary,
 +            // not arbitrary provider permission metadata or MCP name prefixes.
-+            ...(process.env.PAPERCLIP_ACPX_ISOLATED_CONTEXT === "1" && {
-+                allowedTools: mcpServers.paperclip?.type === "http"
-+                    && mcpServers.paperclip.url === process.env.PAPERCLIP_ACPX_TASK_TOOL_BRIDGE_URL
-+                    ? ["paperclip_finish", "paperclip_block", "read_current_wake_comments", "request_human_input"]
-+                        .map((tool) => `mcp__paperclip__${tool}`)
++            ...(process.env.PILIBALA_ACPX_ISOLATED_CONTEXT === "1" && {
++                allowedTools: mcpServers.pilibala?.type === "http"
++                    && mcpServers.pilibala.url === process.env.PILIBALA_ACPX_TASK_TOOL_BRIDGE_URL
++                    ? ["pilibala_finish", "pilibala_block", "read_current_wake_comments", "request_human_input"]
++                        .map((tool) => `mcp__pilibala__${tool}`)
 +                    : [],
 +            }),
              // Forward MCP elicitation requests onto ACP elicitation. Only attached

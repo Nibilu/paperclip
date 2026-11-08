@@ -1,4 +1,4 @@
-import type { AdapterRegistryEntryParsed } from "@paperclipai/shared";
+import type { AdapterRegistryEntryParsed } from "@pilibalaai/shared";
 import { logger } from "../middleware/logger.js";
 import { listServerAdapters } from "../adapters/registry.js";
 export { parseAdapterRegistryEnv, type AdapterRegistryEnv } from "./adapter-registry-config.js";
@@ -14,7 +14,7 @@ export function reconcileAdapterAvailability(
   const missing = [...declared.keys()].filter((t) => !knownTypes.has(t));
   if (missing.length > 0) {
     throw new Error(
-      `PAPERCLIP_ADAPTERS declares adapter type(s) with no installed adapter: ${missing.join(", ")}`,
+      `PILIBALA_ADAPTERS declares adapter type(s) with no installed adapter: ${missing.join(", ")}`,
     );
   }
 
@@ -26,6 +26,6 @@ export function reconcileAdapterAvailability(
     (shouldEnable ? enabled : disabled).push(type);
   }
 
-  logger.info({ enabled, disabled }, "validated adapter availability from PAPERCLIP_ADAPTERS");
+  logger.info({ enabled, disabled }, "validated adapter availability from PILIBALA_ADAPTERS");
   return { enabled, disabled };
 }

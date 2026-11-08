@@ -1,7 +1,7 @@
 import { getCloudRuntimeIdentity } from "../cloud-runtime-identity.js";
 import { and, asc, eq, gt, inArray, isNull, lte, or, sql } from "drizzle-orm";
-import { mcpOauthGrants as grants, mcpOauthTokens as tokens, type Db } from "@paperclipai/db";
-import { createPaperclipCloudConnector, paperclipCloudConnectorConfigFromEnv } from "../paperclip-cloud-connector.js";
+import { mcpOauthGrants as grants, mcpOauthTokens as tokens, type Db } from "@pilibalaai/db";
+import { createPilibalaCloudConnector, pilibalaCloudConnectorConfigFromEnv } from "../pilibala-cloud-connector.js";
 import { deriveLocalEncryptedInstanceSecret } from "../../secrets/local-encrypted-provider.js";
 import { DELIVERY_QUEUES } from "../delivery-work-notifications.js";
 import type { createDeliveryWorkCoordinator } from "../delivery-work-coordinator.js";
@@ -17,8 +17,8 @@ function response(value: unknown): McpRevocationIndexResponse {
 }
 export function startMcpRevocationIndexSync(db: Db, coordinator: Pick<ReturnType<typeof createDeliveryWorkCoordinator>, "register">,
   input: { client?: { publish: (request: McpRevocationIndexRequest) => Promise<unknown> }; key?: string } = {}) {
-  const config = paperclipCloudConnectorConfigFromEnv();
-  const connector = config ? createPaperclipCloudConnector({ config }) : undefined;
+  const config = pilibalaCloudConnectorConfigFromEnv();
+  const connector = config ? createPilibalaCloudConnector({ config }) : undefined;
   const client = input.client ?? (connector ? { publish: (request: McpRevocationIndexRequest) => connector.syncMcpRevocationIndex({
     subject: request.operatorId, companyId: request.companyId, serialized: JSON.stringify(request) }) } : undefined);
   const requested = new Set<string>(["*"]);
@@ -30,9 +30,9 @@ export function startMcpRevocationIndexSync(db: Db, coordinator: Pick<ReturnType
 
       const managed = getCloudRuntimeIdentity();
       if (!client || !managed) { requested.clear(); return; }
-      const resources = [managed.canonicalOrigin + "/mcp/paperclip", managed.canonicalOrigin + "/mcp/runner"];
+      const resources = [managed.canonicalOrigin + "/mcp/pilibala", managed.canonicalOrigin + "/mcp/runner"];
       const assertCurrentAuthority = () => {
-        const current = getCloudRuntimeIdentity(), currentConfig = paperclipCloudConnectorConfigFromEnv();
+        const current = getCloudRuntimeIdentity(), currentConfig = pilibalaCloudConnectorConfigFromEnv();
         if (!current || current.stackId !== managed.stackId || current.canonicalOrigin !== managed.canonicalOrigin
           || config && (!currentConfig || currentConfig.instanceId !== config.instanceId || currentConfig.baseUrl !== config.baseUrl
             || currentConfig.environment !== config.environment || currentConfig.signPrivateKey !== config.signPrivateKey

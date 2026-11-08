@@ -9,12 +9,12 @@ import os from 'node:os';
 import path from 'node:path';
 
 const context = { catalog: 'full', runId: '123', attempt: '1', workflowSha: 'a'.repeat(40), targetSha: catalogTargetSha };
-const runUrl = 'https://github.com/paperclipai/paperclip/actions/runs/123';
+const runUrl = 'https://github.com/pilibalaai/pilibala/actions/runs/123';
 const selected = fullCatalogCases.map((row, index) => ({ ...row, caseId: row.key === 'tasks.create-backlog' ? 388 : 1000 + index,
   registeredFullName: row.aliases[0] ?? row.fullName }));
 const compact = row => ({ key: row.key, caseId: row.caseId, registeredFullName: row.registeredFullName });
 const binding = { planId: 10, jobId: 11, integrationId: 1, cases: selected.map(compact) };
-const selection = { schema: 'paperclip.chat-completion-testops-selection/v1', ...context,
+const selection = { schema: 'pilibala.chat-completion-testops-selection/v1', ...context,
   projectId: 1, planId: 10, jobId: 11, launchId: 12, allureJobRunId: '77', cases: selected };
 const env = { CHAT_FULL_CATALOG_TESTOPS_BINDING: JSON.stringify(binding), ALLURE_JOB_RUN_ID: '77' };
 const attachments = [
@@ -35,7 +35,7 @@ function api(replace = {}) {
     if (route === '/api/testplan/10') return { id: 10, projectId: 1, name: fullCatalogPlanName,
       testCasesCount: 244, treeSelection: { inverted: false, leafsInclude: selected.map(row => row.caseId) } };
     if (route === '/api/testplan/10/job') return [{ job: { id: 11 }, testCasesCount: 244 }];
-    if (route === '/api/job/11') return { id: 11, type: 'github', url: 'https://github.com/paperclipai/paperclip/actions/workflows/chat-catalog-testops.yml',
+    if (route === '/api/job/11') return { id: 11, type: 'github', url: 'https://github.com/pilibalaai/pilibala/actions/workflows/chat-catalog-testops.yml',
       parameters: [{ id: 34, name: 'Branch', defaultValue: 'refs/heads/master' }] };
     if (route === '/api/jobrun/77') return { id: 77, job: { id: 11, type: 'github' }, stage: 'in_progress', launchId: 12, url: runUrl };
     if (route === '/api/launch/12') return { id: 12, projectId: 1, closed: false };
@@ -62,19 +62,19 @@ test('the complete 244 mapping uses compact actual IDs and preserves the legacy 
   assert.equal(bindingFromEnv(env, context).cases.length, 244);
   const f = api(), value = await validatePilotSelection(f.get, env, context, 99);
   assert.equal(validateSelection(value, context, '77').length, 244);
-  assert.equal(value.cases.find(row => row.caseId === 388).registeredFullName, 'paperclip.Product E2E.chat-features.create-backlog');
+  assert.equal(value.cases.find(row => row.caseId === 388).registeredFullName, 'pilibala.Product E2E.chat-features.create-backlog');
   assert.equal(value.targetSha, catalogTargetSha);
 });
 
 test('selection accepts the exact master workflow URL returned by a build-server refresh', async () => {
   const job = { id: 11, type: 'github', name: 'Chat catalog TestOps',
-    url: 'https://github.com/paperclipai/paperclip/blob/master/.github/workflows/chat-catalog-testops.yml',
+    url: 'https://github.com/pilibalaai/pilibala/blob/master/.github/workflows/chat-catalog-testops.yml',
     parameters: [{ id: 34, name: 'Branch', defaultValue: 'master' }] };
   const refreshed = api({ '/api/job/11': job });
   const value = await validatePilotSelection(refreshed.get, env, context, 99);
   assert.deepEqual(value.cases.map(row => row.caseId), selected.map(row => row.caseId));
   assert.equal(value.targetSha, catalogTargetSha);
-  for (const url of [job.url.replace('/master/', '/other-branch/'), job.url.replace('/paperclipai/', '/other-owner/'),
+  for (const url of [job.url.replace('/master/', '/other-branch/'), job.url.replace('/pilibalaai/', '/other-owner/'),
     job.url.replace('chat-catalog-testops.yml', 'chat-catalog-testops-case.yml')]) {
     const wrong = api({ '/api/job/11': { ...job, url } });
     await assert.rejects(validatePilotSelection(wrong.get, env, context, 99), /job_mismatch/);
@@ -89,7 +89,7 @@ test('the actual full registration receipt fits one protected variable without a
   const receipt = await completePilotRegistration(f.get, prepared, { jobRunId: '77', launchId: 12 }, context, 99, async () => {});
   assert.ok(Buffer.byteLength(JSON.stringify(receipt.binding)) < 48_000);
   assert.equal(bindingFromEnv({ CHAT_FULL_CATALOG_TESTOPS_BINDING: JSON.stringify(receipt.binding) }, context).cases.length, 244);
-  assert.equal(receipt.binding.cases.find(row => row.caseId === 388).registeredFullName, 'paperclip.Product E2E.chat-features.create-backlog');
+  assert.equal(receipt.binding.cases.find(row => row.caseId === 388).registeredFullName, 'pilibala.Product E2E.chat-features.create-backlog');
 });
 
 test('every case has a singleton private approval instead of broadening the original eight-cell authority', () => {
@@ -107,10 +107,10 @@ test('every case has a singleton private approval instead of broadening the orig
 });
 
 test('full catalog source admission is independent from the old three-case workflow', () => {
-  const event = { repository: { full_name: 'paperclipai/paperclip', private: false, default_branch: 'master' }, ref: 'refs/heads/master',
+  const event = { repository: { full_name: 'pilibalaai/pilibala', private: false, default_branch: 'master' }, ref: 'refs/heads/master',
     sender: { id: 42 }, inputs: { operation: 'evaluate', ALLURE_JOB_RUN_ID: '77' } };
   const dispatchEnv = { GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REPOSITORY: event.repository.full_name,
-    GITHUB_REF: event.ref, GITHUB_WORKFLOW_REF: `paperclipai/paperclip/${catalogWorkflow}@refs/heads/master`, GITHUB_SHA: context.workflowSha,
+    GITHUB_REF: event.ref, GITHUB_WORKFLOW_REF: `pilibalaai/pilibala/${catalogWorkflow}@refs/heads/master`, GITHUB_SHA: context.workflowSha,
     GITHUB_RUN_ATTEMPT: '1', GITHUB_RUN_ID: '123', GITHUB_ACTOR_ID: '42', TESTOPS_ALLOWED_ACTOR_IDS: '[42]' };
   assert.equal(admitDispatch(dispatchEnv, event, 42).targetSha, catalogTargetSha);
   assert.equal(catalogDefinition({}).cases.length, 3);
@@ -213,11 +213,11 @@ test('the real bootstrap facade preserves fixed reconciliation failures and disc
     const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'catalog-bootstrap-failure-')));
     let stderr = ''; const capture = t.mock.method(process.stderr, 'write', value => { stderr += value; return true; });
     try {
-      const event = { repository: { full_name: 'paperclipai/paperclip', private: false, default_branch: 'master' },
+      const event = { repository: { full_name: 'pilibalaai/pilibala', private: false, default_branch: 'master' },
         ref: 'refs/heads/master', sender: { id: 42 }, inputs: { operation: 'bootstrap' } };
       const eventPath = path.join(root, 'event.json'); await writeFile(eventPath, JSON.stringify(event));
       const runtime = { GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REPOSITORY: event.repository.full_name,
-        GITHUB_REF: event.ref, GITHUB_WORKFLOW_REF: `paperclipai/paperclip/${catalogWorkflow}@refs/heads/master`, GITHUB_SHA: context.workflowSha,
+        GITHUB_REF: event.ref, GITHUB_WORKFLOW_REF: `pilibalaai/pilibala/${catalogWorkflow}@refs/heads/master`, GITHUB_SHA: context.workflowSha,
         GITHUB_RUN_ATTEMPT: '1', GITHUB_RUN_ID: '123', GITHUB_ACTOR_ID: '42', TESTOPS_ALLOWED_ACTOR_IDS: '[42]', GITHUB_RUN_NUMBER: '1',
         GITHUB_EVENT_PATH: eventPath, GH_TOKEN: 'SYNTHETIC_GITHUB_SECRET', ALLURE_TOKEN: 'SYNTHETIC_REPORTING_SECRET',
         RUNNER_TEMP: root, GITHUB_WORKSPACE: root, CHAT_TESTOPS_INTEGRATION_ID: '1' };

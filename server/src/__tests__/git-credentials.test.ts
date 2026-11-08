@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   DEFAULT_GITHUB_TOKEN_SECRET_NAMES,
   GIT_CREDENTIAL_TOKEN_ENV_KEY,
@@ -79,7 +79,7 @@ describe("createGitRemoteAuthProvider", () => {
   const githubUrl = "https://github.com/example/repo.git";
 
   it("prefers company secrets in declared order", async () => {
-    const secrets = buildSecretsFake({ GH_TOKEN: "gh-token", PAPERCLIP_GITHUB_TOKEN: "pc-token" });
+    const secrets = buildSecretsFake({ GH_TOKEN: "gh-token", PILIBALA_GITHUB_TOKEN: "pc-token" });
     const provider = createGitRemoteAuthProvider(fakeDb, "company-1", undefined, {
       secrets,
       env: { GITHUB_TOKEN: "env-token" },
@@ -254,7 +254,7 @@ describe("buildGitAuthInvocation", () => {
 
 describe("credential helper execution (real git, no network)", () => {
   async function runCredentialFill(description: string) {
-    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-git-cred-fill-"));
+    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-git-cred-fill-"));
     try {
       const invocation = buildGitAuthInvocation({
         token: "abc123",
@@ -403,13 +403,13 @@ describe("DEFAULT_GITHUB_TOKEN_SECRET_NAMES", () => {
     expect([...DEFAULT_GITHUB_TOKEN_SECRET_NAMES]).toEqual([
       "GITHUB_TOKEN",
       "GH_TOKEN",
-      "PAPERCLIP_GITHUB_TOKEN",
+      "PILIBALA_GITHUB_TOKEN",
     ]);
   });
 });
 
 describe("createIssueGitRemoteAuthProvider", () => {
-  const githubUrl = "https://github.com/paperclipai/private-repo.git";
+  const githubUrl = "https://github.com/pilibalaai/private-repo.git";
   function issueDb(rows: unknown[]) {
     const where = vi.fn(async () => rows);
     return { db: { select: vi.fn(() => ({ from: () => ({ where }) })) } as unknown as Db, where };

@@ -17,8 +17,8 @@ import type {
   IssueTreeHold,
   IssueWorkProduct,
   Project,
-} from "@paperclipai/shared";
-import { ONBOARDING_FIRST_TASK_ORIGIN_KIND } from "@paperclipai/shared";
+} from "@pilibalaai/shared";
+import { ONBOARDING_FIRST_TASK_ORIGIN_KIND } from "@pilibalaai/shared";
 import type {
   AnchorHTMLAttributes,
   ButtonHTMLAttributes,
@@ -288,7 +288,7 @@ vi.mock("../context/CompanyContext", () => ({
     companies: [
       {
         id: "company-1",
-        name: "Paperclip",
+        name: "Pilibala",
         issuePrefix: "PAP",
         status: "active",
       },
@@ -296,7 +296,7 @@ vi.mock("../context/CompanyContext", () => ({
     selectedCompanyId: "company-1",
     selectedCompany: {
       id: "company-1",
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: "PAP",
       status: "active",
     },
@@ -901,7 +901,7 @@ function createQueuedCommentQueue(
     state: "deferred",
     targetRunId: "run-active-1",
     revision: "queue-revision-1",
-    protocol: "paperclip_runner_v1",
+    protocol: "pilibala_runner_v1",
     steeringDisposition: "available",
     entries: [{ comment, position: 0, canEdit: true, canDiscard: true }],
     ...overrides,
@@ -960,7 +960,7 @@ function createArtifactWorkProduct(
     executionWorkspaceId: null,
     runtimeServiceId: null,
     type: "artifact",
-    provider: "paperclip",
+    provider: "pilibala",
     externalId: null,
     title: overrides.title ?? originalFilename,
     url: null,
@@ -1879,7 +1879,7 @@ describe("IssueDetail", () => {
     mockIssuesApi.get.mockResolvedValue(issue);
     mockIssuesApi.getCore.mockImplementation(async (_id, options) => options?.cache === "no-store" ? fresh : issue);
     mockIssuesApi.update.mockClear();
-    const key = `paperclip:inline-draft:v2:${owner}:issue:${issue.id}:title`;
+    const key = `pilibala:inline-draft:v2:${owner}:issue:${issue.id}:title`;
     localStorage.setItem(key, JSON.stringify({ version: 1, draft: "Restored title B", base: issue.title }));
     await act(async () => renderIssueView());
     await waitForAssertion(() => expect(mockIssuesApi.getCore).toHaveBeenCalledWith(issue.id, { cache: "no-store", fresh: true }));
@@ -2001,8 +2001,8 @@ describe("IssueDetail", () => {
     await waitForAssertion(() => expect(mockIssueChatThreadRender).toHaveBeenCalled());
     expect(container.textContent).toContain(second.title);
     expect(container.textContent).not.toContain("Only the first task's draft");
-    expect(localStorage.getItem("paperclip:inline-draft:v2:pending-route-user:issue:issue-1:title")).toContain("Only the first task's draft");
-    expect(localStorage.getItem("paperclip:inline-draft:v2:pending-route-user:issue:issue-2:title")).toBeNull();
+    expect(localStorage.getItem("pilibala:inline-draft:v2:pending-route-user:issue:issue-1:title")).toContain("Only the first task's draft");
+    expect(localStorage.getItem("pilibala:inline-draft:v2:pending-route-user:issue:issue-2:title")).toBeNull();
     expect(mockIssuesApi.update).not.toHaveBeenCalled();
   });
 
@@ -2381,7 +2381,7 @@ describe("IssueDetail", () => {
     mockIssuesApi.get.mockResolvedValue(issue);
     const run = { runId: "stopped-run", runtimeMode: "native", status: "cancelled", agentId: "agent-1", createdAt: new Date().toISOString(),
       resultJson: { executionCancellation: { state: "acknowledged", proof: "provider_api_stop_receipt" },
-        nativeCancellation: { schema: "paperclip.native-cancellation.v1", runId: "stopped-run", companyId: issue.companyId, dispatchState: "acknowledged" } } };
+        nativeCancellation: { schema: "pilibala.native-cancellation.v1", runId: "stopped-run", companyId: issue.companyId, dispatchState: "acknowledged" } } };
     mockActivityApi.recentRunsForIssue.mockResolvedValue([run]);
     await act(async () => renderIssueView());
     await waitForAssertion(() => {
@@ -2740,10 +2740,10 @@ describe("IssueDetail", () => {
     const comment = createQueuedCommentQueue().entries[0].comment;
     mockIssuesApi.get.mockResolvedValue(createIssue({ status: "in_progress", assigneeAgentId: "agent-1", executionRunId: "run-active-1" }));
     mockIssuesApi.recentComments.mockResolvedValue({ comments: [comment], latestCommentId: comment.id, hasMore: true });
-    mockAgentsApi.list.mockResolvedValue([createAgent({ adapterType: "paperclip_runner" })]);
+    mockAgentsApi.list.mockResolvedValue([createAgent({ adapterType: "pilibala_runner" })]);
     mockHeartbeatsApi.activeRunForIssue.mockResolvedValue({
       id: "run-active-1", runtimeMode: "native", status: "running", agentId: "agent-1",
-      adapterType: "paperclip_runner", startedAt: "2026-04-21T00:00:00.000Z", createdAt: "2026-04-21T00:00:00.000Z",
+      adapterType: "pilibala_runner", startedAt: "2026-04-21T00:00:00.000Z", createdAt: "2026-04-21T00:00:00.000Z",
     });
     mockActivityApi.inputFactsForIssue.mockResolvedValue([{
       id: "old-receipt", action: "issue.queued_comment_steered", createdAt: "2026-04-21T00:00:06.000Z",
@@ -3551,7 +3551,7 @@ describe("IssueDetail", () => {
     const createdFrom: Issue["createdFrom"] = {
       issue: { id: "origin-task", identifier: "PAP-168", title: "Origin task", status: "in_progress" },
       run: { id: "run-1", agentId: "qa-agent" },
-      agent: { id: "qa-agent", name: "Paperclip QA" },
+      agent: { id: "qa-agent", name: "Pilibala QA" },
     };
     const source = createIssue({ ancestors, createdFrom });
     const child = createIssue({ id: "manual-child", parentId: source.id, title: "Manual child" });
@@ -3819,7 +3819,7 @@ describe("IssueDetail", () => {
       id: "file-recovery", companyId: "company-1", sourceIssueId: "issue-1",
       kind: "active_run_watchdog", cause: "native_workspace_sync_out_retry_exhausted",
       status: "active", ownerType: "system", evidence: { runId: "stopped-run", workspaceRecovery: {
-        schema: "paperclip.workspace-recovery.v1", runId: "stopped-run", status: "blocked",
+        schema: "pilibala.workspace-recovery.v1", runId: "stopped-run", status: "blocked",
         stage: "restoring_files", requestIds: [], retryable: true,
       }, systemRecovery: { state: "exhausted", preservationOperationIds: [] } },
     } as unknown as NonNullable<Issue["activeRecoveryAction"]>;
@@ -3890,7 +3890,7 @@ describe("IssueDetail", () => {
       activeRecoveryAction: { id: "legacy-recovery", companyId: "company-1", sourceIssueId: "issue-1",
         kind: "active_run_watchdog", cause: "legacy_execution_requires_reconciliation", status: "active", ownerType: "system",
         evidence: { runId: "legacy-run", workspaceRestoreFailure: "restore_failed",
-          workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1", leaseIds: ["legacy-lease"] },
+          workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1", leaseIds: ["legacy-lease"] },
           systemRecovery: { state: "exhausted" } },
       } as unknown as NonNullable<Issue["activeRecoveryAction"]>,
       executionBlocker: { runId: "legacy-run", cause: "legacy_execution_requires_reconciliation",
@@ -4532,7 +4532,7 @@ describe("IssueDetail", () => {
     mockIssuesApi.recentComments.mockResolvedValue({ comments: [opener, followUp], latestCommentId: followUp.id, hasMore: false });
     const queuedRuns = [{
       runId: "reopened-run", status: "queued", contextIssueId: "issue-1", agentId: "agent-1",
-      adapterType: "paperclip_runner", startedAt: null, finishedAt: null,
+      adapterType: "pilibala_runner", startedAt: null, finishedAt: null,
       createdAt: "2026-04-21T00:00:06.000Z", invocationSource: "automation",
       wakeupRequestId: "reopen-wake", wakeCommentIds: [opener.id, followUp.id],
     }];
@@ -4650,7 +4650,7 @@ describe("IssueDetail", () => {
           runId: "run-private-board",
           agentId: "agent-1",
           agentName: "Runner",
-          adapterType: "paperclip_runner",
+          adapterType: "pilibala_runner",
           runtimeMode: "native",
           status: "succeeded",
           createdAt: "2026-04-21T00:00:00.000Z",
@@ -4659,7 +4659,7 @@ describe("IssueDetail", () => {
           contextIssueId: "issue-1",
           resultJson: {
             presentationDecision: {
-              schema: "paperclip.run_presentation_decision.v1",
+              schema: "pilibala.run_presentation_decision.v1",
               chosenSource: "existing_issue_comment",
               commentId: "private-board-answer",
             },
@@ -4724,7 +4724,7 @@ describe("IssueDetail", () => {
         runId: "run-original",
         agentId: "agent-1",
         agentName: "Runner",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         status: "succeeded",
         createdAt: "2026-04-21T00:00:00.000Z",
         startedAt: "2026-04-21T00:00:00.000Z",
@@ -4736,7 +4736,7 @@ describe("IssueDetail", () => {
         runId: "run-successor",
         agentId: "agent-1",
         agentName: "Runner",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         status: "succeeded",
         createdAt: "2026-04-21T00:01:01.000Z",
         startedAt: "2026-04-21T00:01:01.000Z",
@@ -4784,7 +4784,7 @@ describe("IssueDetail", () => {
         runId: "run-unrelated",
         agentId: "agent-1",
         agentName: "Runner",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         status: "succeeded",
         createdAt: "2026-04-21T00:00:00.000Z",
         startedAt: "2026-04-21T00:00:00.000Z",
@@ -4796,7 +4796,7 @@ describe("IssueDetail", () => {
         runId: "run-ordinary",
         agentId: "agent-1",
         agentName: "Runner",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         status: "succeeded",
         createdAt: "2026-04-21T00:01:01.000Z",
         startedAt: "2026-04-21T00:01:01.000Z",
@@ -4847,7 +4847,7 @@ describe("IssueDetail", () => {
         runId: "run-source",
         agentId: "agent-1",
         agentName: "Runner",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         status: "succeeded",
         createdAt: "2026-04-21T00:00:00.000Z",
         startedAt: "2026-04-21T00:00:00.000Z",
@@ -4859,7 +4859,7 @@ describe("IssueDetail", () => {
         runId: "run-intervening",
         agentId: "agent-1",
         agentName: "Runner",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         status: "succeeded",
         createdAt: "2026-04-21T00:00:40.000Z",
         startedAt: "2026-04-21T00:00:40.000Z",
@@ -4871,7 +4871,7 @@ describe("IssueDetail", () => {
         runId: "run-successor",
         agentId: "agent-1",
         agentName: "Runner",
-        adapterType: "paperclip_runner",
+        adapterType: "pilibala_runner",
         status: "succeeded",
         createdAt: "2026-04-21T00:01:11.000Z",
         startedAt: "2026-04-21T00:01:11.000Z",
@@ -4942,7 +4942,7 @@ describe("IssueDetail", () => {
             },
           ],
           questionSet: {
-            schema: "paperclip.question_set.v1",
+            schema: "pilibala.question_set.v1",
             questions: [
               {
                 id: "runtime",
@@ -5269,7 +5269,7 @@ describe("IssueDetail", () => {
       createdAt: "2026-04-21T00:00:01.000Z",
       agentId: "agent-1",
       agentName: "Runner",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       issueId: "issue-1",
     };
     mockIssuesApi.get.mockResolvedValue(
@@ -5280,7 +5280,7 @@ describe("IssueDetail", () => {
       }),
     );
     mockAgentsApi.list.mockResolvedValue([
-      createAgent({ adapterType: "paperclip_runner" }),
+      createAgent({ adapterType: "pilibala_runner" }),
     ]);
     mockHeartbeatsApi.activeRunForIssue.mockResolvedValue(activeRun);
     mockHeartbeatsApi.liveRunsForIssue.mockResolvedValue([activeRun]);
@@ -5317,7 +5317,7 @@ describe("IssueDetail", () => {
     expect(pendingProps.queuedCommentQueue).toMatchObject({
       queueId: null,
       targetRunId: "run-native",
-      protocol: "paperclip_runner_v1",
+      protocol: "pilibala_runner_v1",
       entries: [
         expect.objectContaining({
           comment: expect.objectContaining({
@@ -5368,10 +5368,10 @@ describe("IssueDetail", () => {
       contextCommentId: null, contextWakeCommentId: null,
       startedAt: "2026-04-21T00:00:01.000Z", finishedAt: null,
       createdAt: "2026-04-21T00:00:01.000Z", agentId: "agent-1",
-      agentName: "Runner", adapterType: "paperclip_runner", issueId: "issue-1",
+      agentName: "Runner", adapterType: "pilibala_runner", issueId: "issue-1",
     };
     mockIssuesApi.get.mockResolvedValue(createIssue({ status: "in_progress", executionRunId: run.id }));
-    mockAgentsApi.list.mockResolvedValue([createAgent({ adapterType: "paperclip_runner" })]);
+    mockAgentsApi.list.mockResolvedValue([createAgent({ adapterType: "pilibala_runner" })]);
     mockHeartbeatsApi.activeRunForIssue.mockResolvedValue(run);
     mockHeartbeatsApi.liveRunsForIssue.mockResolvedValue([run]);
     mockIssuesApi.addComment.mockReturnValue(postedComment.promise);
@@ -5452,7 +5452,7 @@ describe("IssueDetail", () => {
       entries: [{ comment: queued, position: 0, canEdit: true, canDiscard: true }],
     }));
     mockActivityApi.runsForIssue.mockResolvedValue([{
-      runId: "run-queued", agentId: "agent-1", adapterType: "paperclip_runner",
+      runId: "run-queued", agentId: "agent-1", adapterType: "pilibala_runner",
       status: "queued", startedAt: null, finishedAt: null,
       createdAt: "2026-04-21T00:00:01.000Z", wakeCommentIds: [queued.id],
       wakeupRequestId: "wake-queue-1",
@@ -5475,7 +5475,7 @@ describe("IssueDetail", () => {
       entries: [{ comment: retry, position: 0, canEdit: true, canDiscard: true }],
     }));
     const originalRun = {
-      runId: "run-old", agentId: "agent-1", adapterType: "paperclip_runner",
+      runId: "run-old", agentId: "agent-1", adapterType: "pilibala_runner",
       status: "failed", startedAt: "2026-04-21T00:00:01.000Z",
       finishedAt: "2026-04-21T00:00:02.000Z",
       createdAt: "2026-04-21T00:00:01.000Z", wakeCommentIds: [retry.id],
@@ -6098,15 +6098,15 @@ describe("IssueDetail", () => {
     mockGrokBotApi.stop.mockClear();
     mockIssuesApi.get.mockResolvedValue(createIssue({ status: "in_progress", assigneeAgentId: "agent-1", executionRunId: "run-active-1" }));
     mockAgentsApi.list.mockResolvedValue([
-      createAgent({ adapterType: "paperclip_runner", adapterConfig: { provider: "grok_bot" } }),
-      createAgent({ id: "agent-2", adapterType: "paperclip_runner", adapterConfig: { provider: "grok_bot" } }),
+      createAgent({ adapterType: "pilibala_runner", adapterConfig: { provider: "grok_bot" } }),
+      createAgent({ id: "agent-2", adapterType: "pilibala_runner", adapterConfig: { provider: "grok_bot" } }),
     ]);
     mockHeartbeatsApi.liveRunsForIssue.mockResolvedValue([
-      { id: "run-active-1", agentId: "agent-1", status: "running", runtimeMode: "native", issueId: "issue-1", adapterType: "paperclip_runner" },
-      { id: "run-queued-2", agentId: "agent-2", status: "queued", runtimeMode: "native", issueId: "issue-1", adapterType: "paperclip_runner" },
+      { id: "run-active-1", agentId: "agent-1", status: "running", runtimeMode: "native", issueId: "issue-1", adapterType: "pilibala_runner" },
+      { id: "run-queued-2", agentId: "agent-2", status: "queued", runtimeMode: "native", issueId: "issue-1", adapterType: "pilibala_runner" },
     ]);
     await act(async () => { renderIssueView(); });
-    await waitForAssertion(() => expect(mockIssueChatThreadRender.mock.calls.at(-1)?.[0]).toMatchObject({ stopRunLabel: "Stop Paperclip work" }));
+    await waitForAssertion(() => expect(mockIssueChatThreadRender.mock.calls.at(-1)?.[0]).toMatchObject({ stopRunLabel: "Stop Pilibala work" }));
     await act(async () => { await mockIssueChatThreadRender.mock.calls.at(-1)![0].onStopRun("run-queued-2"); });
     expect(mockGrokBotApi.stop).toHaveBeenCalledExactlyOnceWith("company-1", "agent-2", "run-queued-2");
     expect(mockHeartbeatsApi.cancel).not.toHaveBeenCalled();
@@ -6250,7 +6250,7 @@ describe("IssueDetail", () => {
     mockHeartbeatsApi.cancel.mockReset().mockResolvedValue({
       id: "run-active-1", companyId: "company-1", runtimeMode: "native", status: "cancelled",
       resultJson: { nativeCancellation: {
-        schema: "paperclip.native-cancellation.v1", runId: "run-active-1", companyId: "company-1",
+        schema: "pilibala.native-cancellation.v1", runId: "run-active-1", companyId: "company-1",
         scope: "run", dispatchState: "acknowledged",
       } },
     });
@@ -6261,7 +6261,7 @@ describe("IssueDetail", () => {
     mockAgentsApi.list.mockResolvedValue([createAgent()]);
     mockHeartbeatsApi.liveRunsForIssue.mockResolvedValue([{
       id: "run-active-1", agentId: "agent-1", status: "running", runtimeMode: "native",
-      issueId: "issue-1", adapterType: "paperclip_runner",
+      issueId: "issue-1", adapterType: "pilibala_runner",
     }]);
     await act(async () => { renderIssueView(); });
     await waitForAssertion(() => expect(mockIssueChatThreadRender.mock.calls.at(-1)?.[0].onCancelRun).toBeTypeOf("function"));
@@ -6745,7 +6745,7 @@ describe("IssueDetail", () => {
       },
     ]);
     localStorage.setItem(
-      "paperclip:issue-comment-draft:issue-1",
+      "pilibala:issue-comment-draft:issue-1",
       "Draft follow-up message",
     );
     mockIssuesApi.update.mockResolvedValue(
@@ -6771,10 +6771,10 @@ describe("IssueDetail", () => {
     expect(mockIssuesApi.update).toHaveBeenCalledWith(issue.identifier, {
       workMode: "ask",
     });
-    expect(localStorage.getItem("paperclip:issue-comment-draft:issue-1")).toBe(
+    expect(localStorage.getItem("pilibala:issue-comment-draft:issue-1")).toBe(
       "Draft follow-up message",
     );
-    localStorage.removeItem("paperclip:issue-comment-draft:issue-1");
+    localStorage.removeItem("pilibala:issue-comment-draft:issue-1");
   });
 
   describe.each([false, true])("composer tree control (mobile=%s)", (isMobile) => {
@@ -7135,7 +7135,7 @@ describe("IssueDetail", () => {
     });
   });
 
-  it("keeps the authoritative Paperclip queue mounted after handoff promotion", async () => {
+  it("keeps the authoritative Pilibala queue mounted after handoff promotion", async () => {
     mockIssuesApi.get.mockResolvedValue(
       createIssue({
         status: "in_progress",
@@ -7144,7 +7144,7 @@ describe("IssueDetail", () => {
       }),
     );
     mockAgentsApi.list.mockResolvedValue([
-      createAgent({ adapterType: "paperclip_runner" }),
+      createAgent({ adapterType: "pilibala_runner" }),
     ]);
     mockIssuesApi.getQueuedComments.mockResolvedValue(
       createQueuedCommentQueue({
@@ -7182,7 +7182,7 @@ describe("IssueDetail", () => {
         }),
       );
       mockAgentsApi.list.mockResolvedValue([
-        createAgent({ adapterType: "paperclip_runner" }),
+        createAgent({ adapterType: "pilibala_runner" }),
       ]);
       const directRun = {
         id: "run-direct-1",
@@ -7226,14 +7226,14 @@ describe("IssueDetail", () => {
   it.each([true, false])("optimistically promotes the last steering message and restores it without a toast on rejection (history loaded: %s)", async historyLoaded => {
     const queue = createQueuedCommentQueue();
     mockIssuesApi.get.mockResolvedValue(createIssue({ status: "in_progress", assigneeAgentId: "agent-1", executionRunId: "run-active-1" }));
-    mockAgentsApi.list.mockResolvedValue([createAgent({ adapterType: "paperclip_runner" })]);
+    mockAgentsApi.list.mockResolvedValue([createAgent({ adapterType: "pilibala_runner" })]);
     mockIssuesApi.listComments.mockResolvedValue(historyLoaded ? [queue.entries[0].comment] : []);
     mockIssuesApi.getQueuedComments.mockResolvedValue(queue);
     mockHeartbeatsApi.activeRunForIssue.mockResolvedValue({
       id: "run-active-1", runtimeMode: "native", status: "running", invocationSource: "issue",
       triggerDetail: null, contextCommentId: null, contextWakeCommentId: null,
       startedAt: "2026-04-21T00:00:00.000Z", finishedAt: null, createdAt: "2026-04-21T00:00:00.000Z",
-      agentId: "agent-1", agentName: "Runner", adapterType: "paperclip_runner", issueId: "issue-1",
+      agentId: "agent-1", agentName: "Runner", adapterType: "pilibala_runner", issueId: "issue-1",
     });
     let rejectSteer!: (error: Error) => void;
     mockIssuesApi.steerQueuedComment.mockReturnValue(new Promise((_, reject) => { rejectSteer = reject; }));
@@ -7279,7 +7279,7 @@ describe("IssueDetail", () => {
       }),
     );
     mockAgentsApi.list.mockResolvedValue([
-      createAgent({ adapterType: "paperclip_runner" }),
+      createAgent({ adapterType: "pilibala_runner" }),
     ]);
     mockIssuesApi.listComments.mockResolvedValue([queue.entries[0].comment]);
     mockIssuesApi.getQueuedComments.mockResolvedValue(queue);
@@ -7296,7 +7296,7 @@ describe("IssueDetail", () => {
       createdAt: "2026-04-21T00:00:00.000Z",
       agentId: "agent-1",
       agentName: "Runner",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       issueId: "issue-1",
     });
     mockIssuesApi.steerQueuedComment.mockResolvedValue(steeredQueue);
@@ -7480,7 +7480,7 @@ describe("IssueDetail", () => {
       }),
     );
     mockAgentsApi.list.mockResolvedValue([
-      createAgent({ adapterType: "paperclip_runner" }),
+      createAgent({ adapterType: "pilibala_runner" }),
     ]);
     mockIssuesApi.getQueuedComments.mockResolvedValue(
       createQueuedCommentQueue({
@@ -7528,7 +7528,7 @@ describe("IssueDetail", () => {
       }),
     );
     mockAgentsApi.list.mockResolvedValue([
-      createAgent({ adapterType: "paperclip_runner" }),
+      createAgent({ adapterType: "pilibala_runner" }),
     ]);
     mockIssuesApi.recentComments.mockResolvedValue({ comments: [queue.entries[0].comment], latestCommentId: "queued-comment-1", hasMore: false });
     // Keep returning the pre-discard page to exercise the local projection
@@ -7549,7 +7549,7 @@ describe("IssueDetail", () => {
       createdAt: "2026-04-21T00:00:00.000Z",
       agentId: "agent-1",
       agentName: "Runner",
-      adapterType: "paperclip_runner",
+      adapterType: "pilibala_runner",
       issueId: "issue-1",
     });
 
@@ -7605,7 +7605,7 @@ describe("IssueDetail", () => {
       queryClient.setQueryData([...queryKeys.issues.comments(ref), "linked", comment.id], comment);
     }
     mockIssuesApi.get.mockResolvedValue(createIssue({ status: "in_progress", assigneeAgentId: "agent-1" }));
-    mockAgentsApi.list.mockResolvedValue([createAgent({ adapterType: "paperclip_runner" })]);
+    mockAgentsApi.list.mockResolvedValue([createAgent({ adapterType: "pilibala_runner" })]);
     mockIssuesApi.getQueuedComments.mockResolvedValue(queue);
     mockIssuesApi.recentComments.mockResolvedValue({ comments: [earlier, comment], latestCommentId: comment.id, hasMore: true });
     await act(async () => renderIssueView());
@@ -7672,7 +7672,7 @@ describe("IssueDetail", () => {
       }),
     );
     mockAgentsApi.list.mockResolvedValue([
-      createAgent({ adapterType: "paperclip_runner" }),
+      createAgent({ adapterType: "pilibala_runner" }),
     ]);
     mockIssuesApi.getQueuedComments.mockResolvedValue(queue);
     mockIssuesApi.discardQueuedComment.mockRejectedValue(

@@ -1,5 +1,5 @@
 import { and, eq, or } from "drizzle-orm";
-import { environmentLeases, heartbeatRuns, type Db } from "@paperclipai/db";
+import { environmentLeases, heartbeatRuns, type Db } from "@pilibalaai/db";
 import { hasRemoteTerminationReceipt, remoteExecutionHasStopped } from "./remote-execution-termination.js";
 
 /** A saved provider task can resume only within the same authorized agent workspace. */

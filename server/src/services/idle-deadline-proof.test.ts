@@ -1,5 +1,5 @@
 import { pluginIdleManifestGeneration } from "./plugin-idle-catalog.js";
-import { agents, heartbeatRuns, costEvents, issues, type Db } from "@paperclipai/db";
+import { agents, heartbeatRuns, costEvents, issues, type Db } from "@pilibalaai/db";
 import { getTableName } from "drizzle-orm";
 import { readIdleAgentTimerSchedule } from "./heartbeat/idle-timer-schedule.js";
 import { createHeartbeatTimerPolicy } from "./heartbeat/timer-policy.js";
@@ -93,7 +93,7 @@ it("trace expiry transfers actual retained data; capture/import/deletion/cross-c
   expect(projectIdleProviderTraceSchedule([expired], now)).toMatchObject({ blocked: false, deadlines: [] });
 });
 type ContinuityRow = Parameters<typeof projectIdleGitHubGrantContinuity>[0][number];
-const github = (): ContinuityRow => ({ companyStatus: "active", connection: { id: "connection", companyId: "company", status: "active", enabled: true, authKind: "oauth", credentialSource: "paperclip_vault", config: { sourceTemplateKey: "github", oauth: { strategy: "paperclip_cloud_connector", connectorProfile: "github.code" } } } as unknown as ContinuityRow["connection"], grant: { id: "grant", companyId: "company", connectionId: "connection", kind: "user", subjectUserId: "user", credentialSecretRefs: [{ configPath: "oauth.access_token", secretId: "secret" }], providerTenant: { oauth: { accessTokenExpiresAt: new Date(now + 8 * 3_600_000).toISOString(), refreshedAt: new Date(now).toISOString() }, github: { userId: "user", installationIds: ["101"], lastAccessRefreshAt: new Date(now).toISOString() } } } as ContinuityRow["grant"] });
+const github = (): ContinuityRow => ({ companyStatus: "active", connection: { id: "connection", companyId: "company", status: "active", enabled: true, authKind: "oauth", credentialSource: "pilibala_vault", config: { sourceTemplateKey: "github", oauth: { strategy: "pilibala_cloud_connector", connectorProfile: "github.code" } } } as unknown as ContinuityRow["connection"], grant: { id: "grant", companyId: "company", connectionId: "connection", kind: "user", subjectUserId: "user", credentialSecretRefs: [{ configPath: "oauth.access_token", secretId: "secret" }], providerTenant: { oauth: { accessTokenExpiresAt: new Date(now + 8 * 3_600_000).toISOString(), refreshedAt: new Date(now).toISOString() }, github: { userId: "user", installationIds: ["101"], lastAccessRefreshAt: new Date(now).toISOString() } } } as ContinuityRow["grant"] });
 it("GitHub enrollment alone never bypasses its credential continuity deadline or unresolved authority", () => {
   expect(projectIdleGitHubGrantContinuity([github()], now)).toMatchObject({ blocked: false, deadlines: [now + 7 * 3_600_000], connectionIds: ["connection"] });
   const nonexpiring = github(); delete nonexpiring.grant.providerTenant!.oauth;
@@ -173,8 +173,8 @@ it("single and batch owner schedules share cap, actionable, UTC and decimal sema
 it("checks global suppression even without eligible timers and retains owner org-chain checks", async () => {
   for (const rows of [[], [timerAgent(1)], [{ ...timerAgent(1), status: "paused" }]]) {
     if (rows[0]?.status === "idle") rows[0].runtimeConfig = { heartbeat: { enabled: false } };
-    for (const env of [{ PAPERCLIP_IN_WORKTREE: "true" }, { PAPERCLIP_DATABASE_RESTORE_IN_PROGRESS: "1" },
-      { PAPERCLIP_RESTORE_IN_PROGRESS: "yes" }, { HEARTBEAT_SCHEDULER_ENABLED: "false" }]) {
+    for (const env of [{ PILIBALA_IN_WORKTREE: "true" }, { PILIBALA_DATABASE_RESTORE_IN_PROGRESS: "1" },
+      { PILIBALA_RESTORE_IN_PROGRESS: "yes" }, { HEARTBEAT_SCHEDULER_ENABLED: "false" }]) {
       let reads = 0;
       expect((await readIdleAgentTimerSchedule(fixtureDb({ agents: rows }, () => { reads++; }), now, env)).blocked).toBe(true);
       expect(reads).toBe(0);
@@ -209,7 +209,7 @@ it("does not turn unrelated GitHub grant shapes into continuity authority", () =
     const malformed = github(); Object.assign(malformed.connection!, patch);
     expect(projectIdleGitHubGrantContinuity([malformed], now).blocked).toBe(true);
   }
-  const persisted = github(); persisted.connection!.config.oauth = { connectorProfile: "github.code", strategy: "paperclip_id_connector" };
+  const persisted = github(); persisted.connection!.config.oauth = { connectorProfile: "github.code", strategy: "pilibala_id_connector" };
   expect(projectIdleGitHubGrantContinuity([persisted], now).blocked).toBe(false);
   const agent = github(); agent.grant.kind = "agent"; agent.grant.subjectUserId = null; agent.grant.subjectAgentId = "dedicated-agent";
   expect(projectIdleGitHubGrantContinuity([agent], now).connectionIds).toEqual(["connection"]);

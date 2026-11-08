@@ -2,8 +2,8 @@ import { constants } from "node:fs";
 import { lstat, open, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
-import { heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@paperclipai/db";
-import { captureLegacyDurablePrpCheckpoint, inspectDurablePrpCheckpointHeader, parseNativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+import { heartbeatRuns, issues, nativeRunFinalizations, type Db } from "@pilibalaai/db";
+import { captureLegacyDurablePrpCheckpoint, inspectDurablePrpCheckpointHeader, parseNativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 import { offlineMigrationExecutionWhere } from "../offline-migration-execution.js";
 import { findNativeSessionResumeRun } from "./native-session-resume.js";
 import { nativeControllerMigrationDescriptor } from "./native-session-executor.js";
@@ -84,7 +84,7 @@ async function* retainedSources(db: Db, signal?: AbortSignal) {
       r.native_issue_id as "issueId", r.native_session_id as "sessionId", r.created_at as "createdAt", r.id as "lastRunId"
       from agent_task_sessions s join heartbeat_runs r on r.id = s.last_run_id
         and r.company_id = s.company_id and r.agent_id = s.agent_id
-      where s.adapter_type = 'paperclip_runner' and r.native_issue_id is not null and r.native_session_id is not null
+      where s.adapter_type = 'pilibala_runner' and r.native_issue_id is not null and r.native_session_id is not null
         ${after ? sql`and s.id > ${after}::uuid` : sql``} order by s.id limit 100`);
     for (const selected of rows) {
       signal?.throwIfAborted();

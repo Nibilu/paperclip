@@ -8,7 +8,7 @@
     "noEmit": true,
     "paths": {
       "@/*": ["../ui/src/*"],
-      "@paperclipai/shared": ["../packages/shared/src/index.ts"]
+      "@pilibalaai/shared": ["../packages/shared/src/index.ts"]
     },
     "rootDir": "..",
     "types": ["node"],

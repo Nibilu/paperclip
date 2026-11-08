@@ -1,6 +1,6 @@
 import { pluginIdleManifestGeneration, type IdlePluginCatalogEntry } from "./plugin-idle-catalog.js";
-import type { PluginJobDeclaration } from "@paperclipai/shared";
-import { plugins, pluginJobs, type Db } from "@paperclipai/db";
+import type { PluginJobDeclaration } from "@pilibalaai/shared";
+import { plugins, pluginJobs, type Db } from "@pilibalaai/db";
 import { eq, getTableColumns, sql } from "drizzle-orm";
 import { validateCron } from "./cron.js";
 import { idleDeadlineRowLimit, isFutureIdleDeadline, type IdleDeadlineSnapshot } from "./idle-deadline-types.js";

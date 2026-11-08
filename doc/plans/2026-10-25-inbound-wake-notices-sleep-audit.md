@@ -216,7 +216,7 @@ after surviving coalesced input promotes.
   deciding which writes belong to this reason or the next failed-retry slice.
 
 The full chat integration suite was launched at local branch `c579148977` on a
-fresh `paperclip_sleep30_full_chat_20261025_test` database, with output at
+fresh `pilibala_sleep30_full_chat_20261025_test` database, with output at
 `/tmp/sleep30-full-chat-acceptance.log`; its result must be read before claiming
 acceptance. Typecheck after merging the second parent repair passed in
 `/tmp/sleep30-after-parent-typecheck.log`.
@@ -485,7 +485,7 @@ remote current-head CI and review remain required before protected merge.
 ### Review repair: discover scopes without rereading action pages
 
 Greptile's current-head 5/5 summary also contained a valid P2:
-[discovery rereads denied history](https://github.com/paperclipai/paperclip/pull/17647#discussion_r4386889825).
+[discovery rereads denied history](https://github.com/pilibalaai/pilibala/pull/17647#discussion_r4386889825).
 A task notification already contains its scope, but discovery reread every page
 of denied actions before bounded authorization could begin. Company/startup
 selection likewise transferred all candidate actions merely to deduplicate tasks.
@@ -520,7 +520,7 @@ these runs establishes full local repository acceptance or deployed sleep.
 ### Review repair: restore ordinary Retry input in its notifying transaction
 
 The fresh review of `661f2f6da8c6c22cdcc25edccd57502ee6fa8c4b` reports
-[restored input stays silent](https://github.com/paperclipai/paperclip/pull/17647#discussion_r4404007181),
+[restored input stays silent](https://github.com/pilibalaai/pilibala/pull/17647#discussion_r4404007181),
 P1/4 out of 5. Earlier retry admission and denial notifications do not cover
 `releaseUnadmittedTaskRetryInput`: reconciliation invokes this owner after the
 failed action settles, and its separate transaction restores coalesced ordinary

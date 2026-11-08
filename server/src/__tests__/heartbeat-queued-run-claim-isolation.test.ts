@@ -11,7 +11,7 @@ import {
   heartbeatRuns,
   externalAgentHolds,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -246,7 +246,7 @@ describeEmbeddedPostgres("heartbeat queued-run claim isolation", () => {
       finishedAt: new Date(), contextSnapshot: { issueId: holderIssueId } });
     await db.update(issues).set({ executionRunId: holderRunId }).where(sql`${issues.id} = ${holderIssueId}`);
     const userId = `routine-owner-${randomUUID()}`;
-    await db.insert(authUsers).values({ id: userId, name: "Routine owner", email: `${userId}@paperclip.test`,
+    await db.insert(authUsers).values({ id: userId, name: "Routine owner", email: `${userId}@pilibala.test`,
       createdAt: new Date(), updatedAt: new Date() });
     await db.insert(companyMemberships).values({ companyId, principalType: "user", principalId: userId,
       status: "active", membershipRole: "owner" });

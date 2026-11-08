@@ -12,14 +12,14 @@ export async function reuseCanaryImage(sha, {
   const digest = await resolve(sha);
   if (digest === null) return false;
   assert.match(digest, /^sha256:[a-f0-9]{64}$/);
-  const image = `ghcr.io/paperclipai/paperclip@${digest}`;
+  const image = `ghcr.io/pilibalaai/pilibala@${digest}`;
   await run("gh", ["attestation", "verify", `oci://${image}`,
-    "--repo", "paperclipai/paperclip", "--bundle-from-oci",
-    "--signer-workflow", "paperclipai/paperclip/.github/workflows/docker.yml",
+    "--repo", "pilibalaai/pilibala", "--bundle-from-oci",
+    "--signer-workflow", "pilibalaai/pilibala/.github/workflows/docker.yml",
     "--source-ref", "refs/heads/master", "--source-digest", sha,
     "--signer-digest", sha, "--deny-self-hosted-runners"]);
   await run("docker", ["buildx", "imagetools", "create", "-t",
-    `ghcr.io/paperclipai/paperclip:sha-${sha.slice(0, 7)}`, image]);
+    `ghcr.io/pilibalaai/pilibala:sha-${sha.slice(0, 7)}`, image]);
   return true;
 }
 

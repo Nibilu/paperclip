@@ -11,7 +11,7 @@ A denied tool call does not authorize silently relaxing policy. Governed-action
 self-approval and editing one's own principal permissions remain prohibited;
 see [shared guidance](../../packages/shared/src/connection-intent-guidance.ts).
 
-Review date: 2026-10-26. Source base: `a1f77821b9cd5c9c846fdf7a0fa5cc620ad2b6bb`; implementation: [#17737](https://github.com/paperclipai/paperclip/pull/17737).
+Review date: 2026-10-26. Source base: `a1f77821b9cd5c9c846fdf7a0fa5cc620ad2b6bb`; implementation: [#17737](https://github.com/pilibalaai/pilibala/pull/17737).
 
 Connection operations reviewed in this working tree. The inventory was reconciled
 against production UI clients, REST registrations and service entry points; it is

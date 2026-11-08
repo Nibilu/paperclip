@@ -1,11 +1,11 @@
 import { and, asc, eq, sql } from "drizzle-orm";
-import { heartbeatRuns, nativeRunFinalizations, withDedicatedDbConnection, workspaceOperations, type Db } from "@paperclipai/db";
+import { heartbeatRuns, nativeRunFinalizations, withDedicatedDbConnection, workspaceOperations, type Db } from "@pilibalaai/db";
 import { z } from "zod";
 import type { RemoteWorkspaceTarget } from "../remote-workspace-transport.js";
 
-const schema = "paperclip.native-provider-cache-reclaim.v1";
-const prepareSchema = "paperclip.native-provider-cache-prepare.v1";
-const inventorySchema = "paperclip.native-provider-cache-inventory.v1";
+const schema = "pilibala.native-provider-cache-reclaim.v1";
+const prepareSchema = "pilibala.native-provider-cache-prepare.v1";
+const inventorySchema = "pilibala.native-provider-cache-inventory.v1";
 const preparePhase = "native_provider_cache_reclaim_prepare";
 const digestPattern = /^sha256:[a-f0-9]{64}$/;
 const uuidPattern = /^[a-f0-9-]{36}$/;
@@ -27,9 +27,9 @@ type Staged = z.infer<typeof stagedCodec>;
 function verifiedCacheDigest(run: typeof heartbeatRuns.$inferSelect, workspaceId: string, target: RemoteWorkspaceTarget): string | null {
   const profile = record(run.runnerProfileJson), state = record(profile.nativeProviderPackAdmissionState);
   const admission = record(profile.nativeProviderPackAdmission), workspace = record(profile.remoteWorkspace);
-  if (!uuidPattern.test(target.leaseId ?? "") || state.schema !== "paperclip.native-provider-pack-admission-state.v1" || state.state !== "verified"
+  if (!uuidPattern.test(target.leaseId ?? "") || state.schema !== "pilibala.native-provider-pack-admission-state.v1" || state.state !== "verified"
     || typeof state.admissionEpoch !== "string" || !uuidPattern.test(state.admissionEpoch)
-    || admission.schema !== "paperclip.native-provider-pack-admission.v1" || admission.stage !== "session_admitted"
+    || admission.schema !== "pilibala.native-provider-pack-admission.v1" || admission.stage !== "session_admitted"
     || admission.authority !== "core_verified_selection" || admission.runId !== run.id
     || admission.companyId !== run.companyId || admission.agentId !== run.agentId
     || workspace.workspaceId !== workspaceId || workspace.remoteCwd !== target.remoteCwd || workspace.leaseId !== target.leaseId
@@ -40,10 +40,10 @@ function verifiedCacheDigest(run: typeof heartbeatRuns.$inferSelect, workspaceId
 const reclaimScript = String.raw`
 const fs=require('node:fs/promises'),path=require('node:path'),crypto=require('node:crypto'),{constants}=require('node:fs');
 (async()=>{
- const [mode,root,source,expected,raw]=process.argv.slice(1),schema='paperclip.native-provider-cache-reclaim.v1';
+ const [mode,root,source,expected,raw]=process.argv.slice(1),schema='pilibala.native-provider-cache-reclaim.v1';
  if(!['inventory','stage','reclaim'].includes(mode)||!path.isAbsolute(root)||!/^[a-f0-9-]{36}$/.test(source)
    ||!/^sha256:[a-f0-9]{64}$/.test(expected)||await fs.realpath(root)!==root)throw Error('invalid_binding');
- const runtime=path.join(root,'.paperclip-runtime'),runner=path.join(runtime,'paperclip-runner'),pack=path.join(runner,'provider-pack');
+ const runtime=path.join(root,'.pilibala-runtime'),runner=path.join(runtime,'pilibala-runner'),pack=path.join(runner,'provider-pack');
  const sessions=path.join(runner,'sessions'),file=path.join(pack,'provider-pack.json');
  const stat=async p=>fs.lstat(p,{bigint:true}).catch(e=>{if(e.code==='ENOENT')return null;throw e;});
  const directory=async p=>{const x=await fs.lstat(p,{bigint:true});if(!x.isDirectory()||x.isSymbolicLink()||await fs.realpath(p)!==p)throw Error('unsafe_directory');return x;};
@@ -55,7 +55,7 @@ const fs=require('node:fs/promises'),path=require('node:path'),crypto=require('n
  const bytes=await fs.readFile(file),manifest=JSON.parse(bytes),manifestIdentity=identity(m);
  const canonical=v=>Array.isArray(v)?'['+v.map(canonical).join(',')+']':v&&typeof v==='object'?'{'+Object.entries(v).sort(([a],[b])=>a.localeCompare(b)).map(([k,x])=>JSON.stringify(k)+':'+canonical(x)).join(',')+'}':JSON.stringify(v);
  const manifestSha256=crypto.createHash('sha256').update(bytes).digest('hex');
- if(manifest.schema!=='paperclip-runner/remote-provider-pack/v1'||manifest.digest!==expected
+ if(manifest.schema!=='pilibala-runner/remote-provider-pack/v1'||manifest.digest!==expected
    ||expected!=='sha256:'+crypto.createHash('sha256').update(canonical(manifest.payload)).digest('hex'))throw Error('manifest_changed');
  const available=async()=>{try{const capacity=await fs.statfs(root),bytes=capacity.bavail*capacity.bsize;
   return Number.isSafeInteger(bytes)?Math.max(0,bytes):null;}catch{return null;}};
@@ -64,17 +64,17 @@ const fs=require('node:fs/promises'),path=require('node:path'),crypto=require('n
   const targets=[];
   for(const name of ['node_modules','provider-assets']){const p=path.join(pack,name),x=await stat(p);if(!x)continue;
    if(!x.isDirectory()||x.isSymbolicLink()||await fs.realpath(p)!==p)throw Error('unsafe_cache_directory');targets.push({name,...identity(x)});}
-  console.log(JSON.stringify({schema:'paperclip.native-provider-cache-inventory.v1',sourceRunId:source,manifestDigest:expected,
+  console.log(JSON.stringify({schema:'pilibala.native-provider-cache-inventory.v1',sourceRunId:source,manifestDigest:expected,
    manifestSha256,root:rootIdentity,pack:packIdentity,manifest:manifestIdentity,sessions:sessionIdentity,
    targets,availableBytesBefore}));return;
  }
  const request=JSON.parse(raw),plan=request.inventory;
- if(!/^[a-f0-9-]{36}$/.test(request.preparationOperationId)||plan?.schema!=='paperclip.native-provider-cache-inventory.v1'
+ if(!/^[a-f0-9-]{36}$/.test(request.preparationOperationId)||plan?.schema!=='pilibala.native-provider-cache-inventory.v1'
    ||plan.sourceRunId!==source||plan.manifestDigest!==expected||plan.manifestSha256!==manifestSha256
    ||!same(plan.root,rootIdentity)||!same(plan.pack,packIdentity,false)||!same(plan.manifest,manifestIdentity)||!same(plan.sessions,sessionIdentity)
    ||!Array.isArray(plan.targets)||plan.targets.length>2||new Set(plan.targets.map(x=>x.name)).size!==plan.targets.length)throw Error('plan_changed');
- const markerName='.paperclip-reclaim-'+request.preparationOperationId+'.json';
- const stagedPath=item=>path.join(pack,item.name+'.paperclip-reclaim-'+request.preparationOperationId);
+ const markerName='.pilibala-reclaim-'+request.preparationOperationId+'.json';
+ const stagedPath=item=>path.join(pack,item.name+'.pilibala-reclaim-'+request.preparationOperationId);
  const markerText=item=>JSON.stringify({preparationOperationId:request.preparationOperationId,source,expected,item});
  const markerState=async(p,item,partial=false)=>{const x=await stat(p);
   if(!x||!x.isFile()||x.isSymbolicLink()||x.nlink!==1n||x.size>4096n)throw Error('marker_changed');

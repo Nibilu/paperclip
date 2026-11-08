@@ -38,7 +38,7 @@ Installed-target implementation and API-key qualification are complete on the ex
 
 ## Hosted user acceptance — 2026-10-15
 
-A dedicated test organization served exact candidate `49f99e130aff317cb270c367523755910f20d080` after a successful single-organization deployment. The supported Core-only branch preview excluded private Cloud UI plugins; it does not qualify the full private distribution. [Cloud image build](https://github.com/paperclipai/paperclip/actions/runs/38778601920) completed remotely. No local Docker or Rust build ran.
+A dedicated test organization served exact candidate `49f99e130aff317cb270c367523755910f20d080` after a successful single-organization deployment. The supported Core-only branch preview excluded private Cloud UI plugins; it does not qualify the full private distribution. [Cloud image build](https://github.com/pilibalaai/pilibala/actions/runs/38778601920) completed remotely. No local Docker or Rust build ran.
 
 The strict user-only journey started at the supplied management entry, entered the fresh organization, created Claude Staging Writer, connected the authorized API key through the normal masked field, and completed onboarding without any runner/model override. The saved runtime form displayed `Default (claude-opus-5-5)` but **`Legacy runner (default)`** in Advanced. Acceptance failed at that point. No task or follow-up was submitted, so native execution, downloaded artifacts and session continuity remain unverified on this hosted deployment. The failure is preserved in 33 chronological screenshots and the structured journal; later engineering diagnosis is separate.
 
@@ -50,7 +50,7 @@ Experience findings: the Connectors announcement covered part of the first-task 
 
 ## Delivery checkpoint — 2026-10-15
 
-New Claude agents use Paperclip Runner and ordinary Opus 5.5 defaults on the four qualified installed targets. Saved Legacy/native choices, explicit models, provider routing, and the latest Codex defaults remain intact. Runtime source is `0670b85392a0be51745f1ba7ca84f998bf122c07`, integrated with master through `7420af26fc9a80d6252ababd879e2fc991eebd07`. Required source CI passed, with exact-source Greptile 5/5 and zero unresolved threads. The final record changes evidence only; the linked PRs show current-head checks.
+New Claude agents use Pilibala Runner and ordinary Opus 5.5 defaults on the four qualified installed targets. Saved Legacy/native choices, explicit models, provider routing, and the latest Codex defaults remain intact. Runtime source is `0670b85392a0be51745f1ba7ca84f998bf122c07`, integrated with master through `7420af26fc9a80d6252ababd879e2fc991eebd07`. Required source CI passed, with exact-source Greptile 5/5 and zero unresolved threads. The final record changes evidence only; the linked PRs show current-head checks.
 
 | Target | Completed evidence |
 | --- | --- |
@@ -59,7 +59,7 @@ New Claude agents use Paperclip Runner and ordinary Opus 5.5 defaults on the fou
 | Linux x64 | Clean installed consumer, exact-artifact immutable cloud image, final-source API task/revision across fresh Daytona sandboxes, exact files, effort/permission acknowledgment, session continuity and successful cleanup. |
 | Intel Mac | Native cloud build and clean installed consumer pass. Attended provider execution was not required. |
 
-Delivery order: [protocol prerequisite #15994](https://github.com/paperclipai/paperclip/pull/15994), [Apple Silicon behavior #15993](https://github.com/paperclipai/paperclip/pull/15993), then [remaining platforms #15997](https://github.com/paperclipai/paperclip/pull/15997). None is merged or deployed to production.
+Delivery order: [protocol prerequisite #15994](https://github.com/pilibalaai/pilibala/pull/15994), [Apple Silicon behavior #15993](https://github.com/pilibalaai/pilibala/pull/15993), then [remaining platforms #15997](https://github.com/pilibalaai/pilibala/pull/15997). None is merged or deployed to production.
 
 Reviewable previews: [Mac task and revision](http://127.0.0.1:3105/CLA/issues/CLA-3), [ARM task and revision](http://127.0.0.1:3105/CLAAA/issues/CLAAA-1), and [x64 task and revision](http://127.0.0.1:3105/CLAAA/issues/CLAAA-2). Acceptance reports and screenshots are attached to those tasks and independently checked after upload. The earlier 3115 preview is retained separately.
 
@@ -67,7 +67,7 @@ Known rate-card estimates total **$4.810616600**, excluding unknown charges. Agg
 
 ## Finish line and baseline
 
-New Claude agents created through ordinary product entry points select Paperclip Runner automatically, use `claude-opus-5-5` unless an explicit model/provider override exists, and complete a useful task plus revision. Saved Legacy/native choices remain stable. Deliver tested, reviewable PRs; merge and production rollout remain separate.
+New Claude agents created through ordinary product entry points select Pilibala Runner automatically, use `claude-opus-5-5` unless an explicit model/provider override exists, and complete a useful task plus revision. Saved Legacy/native choices remain stable. Deliver tested, reviewable PRs; merge and production rollout remain separate.
 
 Planning baseline fetched from origin/master: `7fc2dc8b3236e1149ae32756b6153a503623404b`. Implementation later integrated master through `7420af26fc9a80d6252ababd879e2fc991eebd07`; see the current evidence below.
 Clean baseline checkout: `/private/tmp/claude-default-master-plan`, branch `codex/claude-default-master-plan`. Existing three PR branches and installed preview are preserved. This planning checkout is current master plus this record; it does not yet contain the Claude implementation.
@@ -78,7 +78,7 @@ Clean baseline checkout: `/private/tmp/claude-default-master-plan`, branch `code
 - Existing native Claude ACPX profile: Claude ACP 0.73.0, SDK 0.3.286. Native Claude is not a new adapter implementation.
 - Pinned Claude Linux ARM64 executable admission, including actual digest `0292fa22ac2fd43e16be9d0e511ddd8347280d6e0ebaca744ef5b27e05d8d0f8`, landed in #16372 (`854ab294cc`). Reuse this implementation.
 - Network-safe libc detection and asynchronous startup probing (#16333/#16335), plus newer task recovery, repository admission, workspace retention, and snapshot isolation. These must survive integration.
-- Claude still has no automatic runner mapping: `paperclipRunnerProfileForHarness` and `agentRunnerAvailability` select Codex only. Legacy Claude defaults to Opus 5; generic ACPX defaults to Sonnet 5. Native Claude remains subject to the experimental gate.
+- Claude still has no automatic runner mapping: `pilibalaRunnerProfileForHarness` and `agentRunnerAvailability` select Codex only. Legacy Claude defaults to Opus 5; generic ACPX defaults to Sonnet 5. Native Claude remains subject to the experimental gate.
 - Native setup's SSH architecture whitelist still excludes Linux ARM64. Executable admission alone does not prove onboarding/remote selection works.
 
 ## Existing work and evidence at the planning checkpoint
@@ -101,8 +101,8 @@ Use the existing PR stack; integrate master forward into its prerequisite, then 
 
 An index-free merge rehearsal against the complete local stack found 25 overlapping changed files and six textual conflicts:
 
-- packages/paperclip-runner/README.md
-- packages/paperclip-runner/src/drivers/acpx/installation-integrity.ts
+- packages/pilibala-runner/README.md
+- packages/pilibala-runner/src/drivers/acpx/installation-integrity.ts
 - server/src/__tests__/agent-skills-routes.test.ts
 - server/src/__tests__/issue-update-comment-wakeup-routes.test.ts
 - ui/src/components/AgentConfigForm.render.test.tsx
@@ -118,8 +118,8 @@ Exit: focused selection/UI/protocol/resume checks pass with current Codex behavi
 
 First implementation delivery enables Apple Silicon only. Other Claude targets retain their current default until their package/execution gates pass.
 
-- Extend existing centralized resolution to `claude_local` -> `paperclip_runner`, `provider: acpx`, `acpxAgent: claude`. Graduate this profile only from the experimental gate.
-- Preserve request-level `runner: auto | paperclip | legacy`, discovery fields, and resolved stored configuration. No migration or bulk rewrite of saved agents.
+- Extend existing centralized resolution to `claude_local` -> `pilibala_runner`, `provider: acpx`, `acpxAgent: claude`. Graduate this profile only from the experimental gate.
+- Preserve request-level `runner: auto | pilibala | legacy`, discovery fields, and resolved stored configuration. No migration or bulk rewrite of saved agents.
 - Reuse Claude connections, secret storage, selected account, subscription actions, and built-in setup probes. Use the API key from ~/.secrets through the existing connection flow without exposing it.
 - Reuse the shared Advanced runner selector with Claude branding. Omit legacy-only defaults from native forms; incompatible custom execution settings require explicit Legacy with a useful error.
 - Apply ordinary Opus 5.5 defaults consistently while preserving explicit models, ANTHROPIC_MODEL, and provider routing.
@@ -183,7 +183,7 @@ Master's retained-reader authorization batching and CI profile export are preser
 
 Review corrections are committed and covered by failing-before/passing-after controls. Discovery changes invalidate stale onboarding probes. Finish setup now saves the exact configuration admitted during qualification rather than rebuilding Legacy defaults from an older render. V7 native input retains prepared transport, constraints, and completion-only second turns. The latter regression reproduces `session cannot start another turn` before the fix. All 160 focused protocol/session tests, all 71 New Agent tests, 148 onboarding tests, UI typecheck, and runner TypeScript build pass. Earlier focused verification also passed 343 selection/configuration checks, 849 skills/comment/native-session checks, 320 latest-master lifecycle/selection/snapshot checks, 148 platform-selection controls, 114 release controls, 16 image-consumer controls and token gates. Master's subsequently landed snapshot-worker test fix replaces the earlier local timeout change. All three heads have fresh 5/5 reviews with zero unresolved findings and passing required CI. One earlier platform shard hit an ephemeral HTTP/2 EADDRINUSE test-port collision in unchanged code; a single provider-free rerun passed, preserving the original failure log at `/private/tmp/claude-v7-platform-workspaces-b-failure-20261015.log`. The final packaged Mac pair subsequently passed; current remote execution gates are recorded below.
 
-Preview: http://127.0.0.1:3105/CLA/issues/CLA-2, data `/private/tmp/claude-master-local-20261015`. Historical preview 3115 is separate. Ordinary New Agent -> Claude Code -> saved Anthropic API key -> Model Default -> high effort -> Finish setup originally saved agent `5339638d-b41d-4a6f-a041-4e5d1698a8de` as `paperclip_runner`/`acpx`/`claude`/`claude-opus-5-5`. No runner/model was patched after creation. Only timeout (180 seconds) and concurrency (one) were bounded. Experimental native runner remains false. The isolated PATH uses the already-qualified Claude 2.1.286 executable, preserving the user's system CLI.
+Preview: http://127.0.0.1:3105/CLA/issues/CLA-2, data `/private/tmp/claude-master-local-20261015`. Historical preview 3115 is separate. Ordinary New Agent -> Claude Code -> saved Anthropic API key -> Model Default -> high effort -> Finish setup originally saved agent `5339638d-b41d-4a6f-a041-4e5d1698a8de` as `pilibala_runner`/`acpx`/`claude`/`claude-opus-5-5`. No runner/model was patched after creation. Only timeout (180 seconds) and concurrency (one) were bounded. Experimental native runner remains false. The isolated PATH uses the already-qualified Claude 2.1.286 executable, preserving the user's system CLI.
 
 The first integrated local pair passed on `77936b2973`: runs `58291208-459e-4de4-8b3e-5eff25d4e98c` and `37e6164e-98e3-42fe-8847-2ee061629055`, independent 160/217-byte artifacts, high effort, unchanged task/provider/backend session across controller restart, estimate $0.336505200. Its report remains `/private/tmp/claude-master-local-proof-20261015/acceptance.json` and attached to CLA-1. This is preserved historical evidence for that runtime.
 
@@ -191,14 +191,14 @@ After rebuilding the corrected TypeScript runtime, the new pair passed on `f1dfd
 
 The local daemon retains verified source `2646b94533bac1eae0d30b11d3774b104eeaf981` and its original manifest. Rust/protocol trees are unchanged; Darwin ARM64 daemon SHA256 is `094e5e809843efc3d16c796ee4271ff11fcb550afb927b3fa0e745d964bcba2d`. Current-source JS was rebuilt locally. No local Docker or Rust builds ran. Local source acceptance is passed; final installed-package proof remains separate.
 
-The first new cloud campaign [38734513491](https://github.com/paperclipai/paperclip/actions/runs/38734513491), source `64e721e5f5`, was cancelled after review identified the v7 session defect. Its ARM64 Linux, ARM64 Mac and x64 Linux daemon jobs succeeded; Intel and package assembly were cancelled. Those artifacts are preserved and are not final qualification. Following the corrected local pair, [campaign 38738177651](https://github.com/paperclipai/paperclip/actions/runs/38738177651) builds frozen source `bd74bf5059` in cloud workers. The exact-artifact image consumer and final installed Mac/Linux execution follow that successful producer. Live subscription acceptance remains unverified under the user's API-key direction.
+The first new cloud campaign [38734513491](https://github.com/pilibalaai/pilibala/actions/runs/38734513491), source `64e721e5f5`, was cancelled after review identified the v7 session defect. Its ARM64 Linux, ARM64 Mac and x64 Linux daemon jobs succeeded; Intel and package assembly were cancelled. Those artifacts are preserved and are not final qualification. Following the corrected local pair, [campaign 38738177651](https://github.com/pilibalaai/pilibala/actions/runs/38738177651) builds frozen source `bd74bf5059` in cloud workers. The exact-artifact image consumer and final installed Mac/Linux execution follow that successful producer. Live subscription acceptance remains unverified under the user's API-key direction.
 
 Budget remains $50 total with historical holds intact. The fresh fixture cap is now $2.30: $0.80 from the original safe reallocation, then $1.50 from unused allowance in held fixture `16cc3ada` while retaining its $1 pending reservation and $1 setup reserve. Donor remains hard-stopped and its agents paused. Receipts: `/private/tmp/claude-master-local-allocation-20261015.json` and `/private/tmp/claude-master-platform-allocation-20261015.json`. Fresh fixture observed usage is $0.688181200, pending/unpriced zero, leaving $1.611818800. Historical known rate-card estimate plus these runs is $3.742819800, excluding unknown charges. Per-run reservation remains $0.50; automatic paid retries and timer heartbeats remain disabled.
 
 
 ## Packaged acceptance and remote staging repair — 2026-10-15
 
-Cloud producer [38738177651](https://github.com/paperclipai/paperclip/actions/runs/38738177651) passed all four native daemon builds and clean package consumers on source `bd74bf50596d099e138bc6824cf0230f1026bfe1`. Public package artifact 11976635617 has ZIP SHA256 `079a0e5277ce978ccbe8464e4413ddb7f9a537a76fd71da931e3ee355bbe4198`; all 18 package archives were independently verified and installed into `/private/tmp/claude-installed-bd74bf50-preview/consumer`. The [cloud image consumer](https://github.com/paperclipai/paperclip/actions/runs/38744991246) also passed. Image `ghcr.io/paperclipai/paperclip-daytona-runner@sha256:41cde6894c649ff76a06ddb925f1be1945d5efc901b13a7e43d371427a205235` contains the exact producer's Linux x64 daemon and provider pack. No Docker or Rust build ran locally.
+Cloud producer [38738177651](https://github.com/pilibalaai/pilibala/actions/runs/38738177651) passed all four native daemon builds and clean package consumers on source `bd74bf50596d099e138bc6824cf0230f1026bfe1`. Public package artifact 11976635617 has ZIP SHA256 `079a0e5277ce978ccbe8464e4413ddb7f9a537a76fd71da931e3ee355bbe4198`; all 18 package archives were independently verified and installed into `/private/tmp/claude-installed-bd74bf50-preview/consumer`. The [cloud image consumer](https://github.com/pilibalaai/pilibala/actions/runs/38744991246) also passed. Image `ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:41cde6894c649ff76a06ddb925f1be1945d5efc901b13a7e43d371427a205235` contains the exact producer's Linux x64 daemon and provider pack. No Docker or Rust build ran locally.
 
 The installed Mac task/revision passed in ordinary New Agent UI with saved API key, Default model, high effort, and no runner override. Agent `766dddf5-1178-4cdf-81ee-ec542cfe0673` saved native ACPX Claude/Opus 5.5 with the experimental gate disabled. Preview http://127.0.0.1:3105/CLA/issues/CLA-3. Runs `ae8386b6-6a41-493c-a35c-a34bcd5feb7c` and `f79a151e-2267-4acd-ad81-6a34be25e1ff` succeeded across a controller restart with the same task/provider/backend session and high-effort acknowledgment. Independently downloaded v1 (114 bytes) SHA256 `f1da81caf11f90e80c3fe008adf3c1d6e180d38188f929dc8244edd64e4ff41a`; v2 (157 bytes) SHA256 `cae638f5f239806842b9ef1fa9694097e142035f803a89ff743696e558f5b3b2`. V1 remained unchanged. Settled API estimate $0.347345000. Report `/private/tmp/claude-v7-installed-mac-proof-20261015/acceptance.json` retains the state at acceptance; later company holds do not invalidate those settled runs.
 
@@ -209,9 +209,9 @@ Credential-free reproduction proved that BSD tar emits non-contiguous directory 
 Earlier allocation receipt `/private/tmp/claude-v7-remote-allocation-20261015.json` preserves the $50 aggregate ceiling and all historical holds. Known rate-card estimates total $4.090164800, excluding pending/unpriced charges and setup reservations. The current remote fixture has a $1.22 cap with its new $0.50 pending hold. Live subscription acceptance remains explicitly unverified under the user's API-key direction.
 
 
-The staging repair is frozen at `0670b85392a0be51745f1ba7ca84f998bf122c07`. Its source CI passed; Greptile reviewed this exact commit at 5/5 with zero unresolved threads. [Package campaign 38751544488](https://github.com/paperclipai/paperclip/actions/runs/38751544488) passed the Linux and Apple Silicon producers, then was cancelled after the Intel worker stalled in checkout for 17 minutes. Its artifacts and checkout log remain preserved. A single infrastructure retry, [38756070238](https://github.com/paperclipai/paperclip/actions/runs/38756070238), uses the same frozen source and one consistent producer attempt. Its Intel checkout completed normally; all three other producers passed. All four producers subsequently passed; package assembly is queued for a hosted Linux worker, followed by clean consumers. No provider retry occurred. The new ARM pack differs from the previous payload only in `runnerSourceRevision`; its new manifest digest is `sha256:9b4dfddca028ac8befcc84b9cbe724553531d991386f80329b4bdcab3890874d`. Daemon bytes remain SHA256 `4720c6a23784d3b4535329ecf852d38af8c14ae920447a662a00c4657711387a`, and the pinned Claude executable remains SHA256 `0292fa22ac2fd43e16be9d0e511ddd8347280d6e0ebaca744ef5b27e05d8d0f8`. The verified new pack is installed in the dedicated QA user's standard location; receipt `/private/tmp/claude-staging-arm-activation-20261015.json`. The previous user pack and the system/root installations remain preserved.
+The staging repair is frozen at `0670b85392a0be51745f1ba7ca84f998bf122c07`. Its source CI passed; Greptile reviewed this exact commit at 5/5 with zero unresolved threads. [Package campaign 38751544488](https://github.com/pilibalaai/pilibala/actions/runs/38751544488) passed the Linux and Apple Silicon producers, then was cancelled after the Intel worker stalled in checkout for 17 minutes. Its artifacts and checkout log remain preserved. A single infrastructure retry, [38756070238](https://github.com/pilibalaai/pilibala/actions/runs/38756070238), uses the same frozen source and one consistent producer attempt. Its Intel checkout completed normally; all three other producers passed. All four producers subsequently passed; package assembly is queued for a hosted Linux worker, followed by clean consumers. No provider retry occurred. The new ARM pack differs from the previous payload only in `runnerSourceRevision`; its new manifest digest is `sha256:9b4dfddca028ac8befcc84b9cbe724553531d991386f80329b4bdcab3890874d`. Daemon bytes remain SHA256 `4720c6a23784d3b4535329ecf852d38af8c14ae920447a662a00c4657711387a`, and the pinned Claude executable remains SHA256 `0292fa22ac2fd43e16be9d0e511ddd8347280d6e0ebaca744ef5b27e05d8d0f8`. The verified new pack is installed in the dedicated QA user's standard location; receipt `/private/tmp/claude-staging-arm-activation-20261015.json`. The previous user pack and the system/root installations remain preserved.
 
-The prerequisite [#15994](https://github.com/paperclipai/paperclip/pull/15994) and Apple Silicon default [#15993](https://github.com/paperclipai/paperclip/pull/15993) are ready for review, with final packaged Mac evidence in their bodies. Neither is merged. The platform PR [#15997](https://github.com/paperclipai/paperclip/pull/15997) remains draft until its final remote task/revision acceptance passes. The installed Mac acceptance report and screenshot are attached to the completed preview task as `beec99dd-a9b3-40bb-84f5-6cae7c867562` and `fa8f2a00-d18b-444b-802e-11ad25166055`; both were downloaded again and verified after upload.
+The prerequisite [#15994](https://github.com/pilibalaai/pilibala/pull/15994) and Apple Silicon default [#15993](https://github.com/pilibalaai/pilibala/pull/15993) are ready for review, with final packaged Mac evidence in their bodies. Neither is merged. The platform PR [#15997](https://github.com/pilibalaai/pilibala/pull/15997) remains draft until its final remote task/revision acceptance passes. The installed Mac acceptance report and screenshot are attached to the completed preview task as `beec99dd-a9b3-40bb-84f5-6cae7c867562` and `fa8f2a00-d18b-444b-802e-11ad25166055`; both were downloaded again and verified after upload.
 
 The fresh remote fixture `99824208-435b-4c44-8f63-829fc79faad9` (CLAAA) has a $1.40 shared cap. It receives $0.72 of unused allowance from held fixture `4389d6ab` (retaining its $0.50 hold) and $0.68 from original QA `f1dd89ef` (retaining its known spend plus two conservative $8 unknown-charge reserves). Aggregate caps remain $50; every prior hold and the separate $1 setup reserve remain. Receipt `/private/tmp/claude-staging-fixture-allocation-20261015.json` verifies paused donors before and after the reduction. No hold was released and no task retry was submitted. Ordinary UI creation on the unchanged `bd74bf50` UI saved native Claude/Opus 5.5/high effort for ARM agent `7233d811-41f0-4059-9084-5eeea09da7dd` and x64 agent `3ba4cef6-bca9-4341-b9f2-88696e892dba`. Both existing CLI API-key checks succeeded in the selected environments; this is connection evidence, not native execution acceptance. Both agents are bounded to 180 seconds and one concurrent run. UI journal `/private/tmp/claude-staging-ui-20261015`; no runner/model switch occurred after onboarding.
 
@@ -220,12 +220,12 @@ The isolated database is backed up before package replacement at `/private/tmp/c
 
 ### Final installed ARM acceptance — 2026-10-15
 
-The replacement campaign's public package assembly passed. Artifact `11985673906` is 109691616 bytes, ZIP SHA256 `de6810dca086f2320a52bc4dc3d06e6e07374a0e9246add568f017b56b1bef89`. All 18 archive digests were verified before installing into `/private/tmp/claude-installed-0670b853-preview/consumer`. The controller preview now reports frozen source `0670b85392a0be51745f1ba7ca84f998bf122c07`, with the native experiment disabled. All four installed daemon hashes match the release manifest and are unchanged from the prior packaged Mac proof. The installed ARM provider-pack authority exactly matches the dedicated host's standard installation. All four native builds and all clean consumers have now passed in [campaign 38756070238](https://github.com/paperclipai/paperclip/actions/runs/38756070238). The matching x64 image is building in cloud via [38764436597](https://github.com/paperclipai/paperclip/actions/runs/38764436597); no local Docker build runs.
+The replacement campaign's public package assembly passed. Artifact `11985673906` is 109691616 bytes, ZIP SHA256 `de6810dca086f2320a52bc4dc3d06e6e07374a0e9246add568f017b56b1bef89`. All 18 archive digests were verified before installing into `/private/tmp/claude-installed-0670b853-preview/consumer`. The controller preview now reports frozen source `0670b85392a0be51745f1ba7ca84f998bf122c07`, with the native experiment disabled. All four installed daemon hashes match the release manifest and are unchanged from the prior packaged Mac proof. The installed ARM provider-pack authority exactly matches the dedicated host's standard installation. All four native builds and all clean consumers have now passed in [campaign 38756070238](https://github.com/pilibalaai/pilibala/actions/runs/38756070238). The matching x64 image is building in cloud via [38764436597](https://github.com/pilibalaai/pilibala/actions/runs/38764436597); no local Docker build runs.
 
 The ARM task and revision both succeeded on the final installed source: `47cf1e62-2023-4198-ba04-65564b56ecf8` and `3f07e836-acc0-4141-9daa-bd74013317ac`. Preview http://127.0.0.1:3105/CLAAA/issues/CLAAA-1. Independent downloads match the 114/157-byte oracles and SHA256 values recorded for the packaged Mac pair; the original remains unchanged. Task/provider/backend session identity is the same across turns, and high effort is requested and acknowledged on both. API accounting settled at $0.216398000 and $0.163966600 ($0.380364600 combined), with no pending or unpriced usage in this fresh company. Report `/private/tmp/claude-staging-installed-arm-proof-20261015/acceptance.json`; runtime identities `/private/tmp/claude-0670b853-installed-runtime-identity.json`. The earlier read-only staging failure is preserved and is not counted as passing evidence. The report and reloaded completed-task screenshot were attached and independently downloaded again (`13602319-1f90-4176-94c6-4789df9c630a`, `10c4c7fe-d745-4034-b356-b15565304a8e`). Reloading the agent also retained Claude/Opus 5.5/High settings; UI journal step 51. No runner or provider processes remained in the dedicated ARM account after both turns.
 
 
-The [cloud image consumer](https://github.com/paperclipai/paperclip/actions/runs/38764436597) passed. Immutable image `ghcr.io/paperclipai/paperclip-daytona-runner@sha256:d241ab13d48297a0fe85b04acf70980a427a5fbcd4a95ca2284c7022cd29d03c` contains the exact installed Linux x64 pack `sha256:6adcfdf1a90d922fb65d647e13936eafff7d9cc5f0142ebdfbc11d9470b00c55` and daemon SHA256 `cd46aa8e809f4f3a4f705bfdc93b17b1466c010235f37b0b2f71572f927b5f8f`. Evidence artifact `11989266220` ZIP SHA256 `f6878e2c8e97d0f9d0dc8bfc8af9ea4b255d1f5b92ea6323cd5a983c6e003f34` was independently verified, as were source and inner-image identities. The dedicated x64 environment now uses this image with its saved credential reference preserved. No local Docker or Rust build ran.
+The [cloud image consumer](https://github.com/pilibalaai/pilibala/actions/runs/38764436597) passed. Immutable image `ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:d241ab13d48297a0fe85b04acf70980a427a5fbcd4a95ca2284c7022cd29d03c` contains the exact installed Linux x64 pack `sha256:6adcfdf1a90d922fb65d647e13936eafff7d9cc5f0142ebdfbc11d9470b00c55` and daemon SHA256 `cd46aa8e809f4f3a4f705bfdc93b17b1466c010235f37b0b2f71572f927b5f8f`. Evidence artifact `11989266220` ZIP SHA256 `f6878e2c8e97d0f9d0dc8bfc8af9ea4b255d1f5b92ea6323cd5a983c6e003f34` was independently verified, as were source and inner-image identities. The dedicated x64 environment now uses this image with its saved credential reference preserved. No local Docker or Rust build ran.
 
 
 ### Final installed x64 acceptance and accounting — 2026-10-15
@@ -246,24 +246,24 @@ Updated 2026-10-12.
 
 ## Outcome and constraints
 
-Start from `058af8f1b69c5fa3d9bc974b9eab73c141b52823`; branch `codex/claude-runner-default`, checkout `/Users/dotta/.codex/worktrees/670b/paperclip`. New Claude agents eventually default to native ACPX Claude on Apple Silicon, Intel Mac, Linux x64 and Linux ARM64. Codex selection remains owned by the dependency branch. On 2026-10-12 the user explicitly approved preserving its latest Linux ARM64 default from `dcdf09a0f33536fa2b6daaf6e731d921d5711282` during reconciliation. Ordinary Claude defaults become Opus 5.5; explicit models and existing runner selections remain intact.
+Start from `058af8f1b69c5fa3d9bc974b9eab73c141b52823`; branch `codex/claude-runner-default`, checkout `/Users/dotta/.codex/worktrees/670b/pilibala`. New Claude agents eventually default to native ACPX Claude on Apple Silicon, Intel Mac, Linux x64 and Linux ARM64. Codex selection remains owned by the dependency branch. On 2026-10-12 the user explicitly approved preserving its latest Linux ARM64 default from `dcdf09a0f33536fa2b6daaf6e731d921d5711282` during reconciliation. Ordinary Claude defaults become Opus 5.5; explicit models and existing runner selections remain intact.
 
 Local Apple Silicon API-key task and follow-up are the first gate. Keep existing connection/login tools. Complete core settings and local subscription next, then package/qualify other targets. Two behavior/platform delivery boundaries plus the user-approved protocol prerequisite PR; no merge or deployment. Linux ARM64 covers installed hosts and SSH, not ARM cloud images. Separate $50 Claude ceiling including setup probes, unknown-charge holds and task turns. No automatic paid retry loops. Docker and expensive Rust builds run in cloud infrastructure; never build Docker images on this Mac.
 
 ## Current state
 
-- Review boundaries: the user approved a separate shared-protocol prerequisite to keep each PR below the repository's 100-file limit. The behavior PR is [#15993](https://github.com/paperclipai/paperclip/pull/15993); the platform branch is `codex/claude-runner-platforms` and remains gated. Protocol prerequisite [#15994](https://github.com/paperclipai/paperclip/pull/15994), initial candidate `2e8d5e906e`, has 44 source files and preserves latest Codex startup changes from `a200495cc7`. Behavior candidate `12f30702d7` includes that prerequisite.
+- Review boundaries: the user approved a separate shared-protocol prerequisite to keep each PR below the repository's 100-file limit. The behavior PR is [#15993](https://github.com/pilibalaai/pilibala/pull/15993); the platform branch is `codex/claude-runner-platforms` and remains gated. Protocol prerequisite [#15994](https://github.com/pilibalaai/pilibala/pull/15994), initial candidate `2e8d5e906e`, has 44 source files and preserves latest Codex startup changes from `a200495cc7`. Behavior candidate `12f30702d7` includes that prerequisite.
 - Review corrections preserve legacy ACP permission aliases, retained native import settings and fixed Claude OAuth claims through native creation. Unknown inherited-property model names stay unpriced. Legacy onboarding cases now explicitly select Legacy; ordinary native Claude onboarding skips unqualified controller targets before provisioning. Focused import52, selection/pricing117, OAuth54, CLI fixture104, shared Pi92, Copilot28 and Pi evidence72 controls passed; final CI/review remains required.
 - Shared source attestations are versioned rather than rewriting historical identities: Pi v23 and pending Copilot v18 bind the changed Claude effort sources. Prior declarations remain. Executable closures and platform qualification are unchanged; prior mismatched profiles require session reopening. These new generated bindings require a current-source daemon/package build.
 - Local ordinary API-key onboarding, useful task, revision, cold resume with high effort, independent artifact downloads and persistence passed. The active preview is `http://127.0.0.1:3105/CLAA/issues/CLAA-1`.
 - The user redirected the remaining live checks to API keys. Subscription login remains supported, but no further attended subscription qualification is required; subscription follow-up is not claimed.
 - Shared runner controls passed light/dark, 390-pixel mobile and keyboard opening/closing checks. The walkthrough found native Command/Extra args controls; they are now hidden for native execution. The saved Claude preservation test covers this path. Agent form 111 tests, UI TypeScript and token gates passed.
 - Four-target cloud producers and required source checks are running on 9788c05; clean-install consumers are still pending. The existing authorized SSH development host is Linux ARM64 with GNU libc 2.39; qualification will use an isolated directory and preserve its other services.
-- Reviewed source chat “Make Paperclip Runner the default”; source worktree remains separate and active.
+- Reviewed source chat “Make Pilibala Runner the default”; source worktree remains separate and active.
 - Isolated feature branch starts at the exact requested SHA.
 - Workspace dependencies installed with pinned pnpm 9.15.4 and lifecycle scripts disabled.
 - Local key source exists; no credentials retained here.
-- Verified baseline Apple Silicon daemon is available at `/private/tmp/pr2-d522-mac-remote-daemon/darwin-arm64/paperclip-runnerd`; use its receipt and digest for phase 1.
+- Verified baseline Apple Silicon daemon is available at `/private/tmp/pr2-d522-mac-remote-daemon/darwin-arm64/pilibala-runnerd`; use its receipt and digest for phase 1.
 - Local default selection, narrow experimental-gate graduation, Opus defaults, and shared runner UI are being implemented. Claude effort transport and acknowledgment are being implemented; the live milestone used default effort on the unchanged baseline daemon.
 
 ## Remaining gates
@@ -302,9 +302,9 @@ Implementation commit `6fd56c445d` adds the Apple Silicon default, native-input 
 Reconcile the latest Codex dependency (`dcdf09a0f3`, direct descendant of the requested baseline), preserve its newly supplied four-target producer/consumer work, and keep Claude automatic selection restricted to Apple Silicon. No Docker build ran locally. The baseline local API proof remains tied to its original runtime; new effort acceptance requires the cloud-built candidate.
 
 
-Frozen runtime candidate: `5f0b898e9ecef77afefe309a230e04d7fef66cde`. [Cloud daemon and clean-install qualification](https://github.com/paperclipai/paperclip/actions/runs/38273229107) uses the reconciled source's four-target release matrix. [Cloud required-source verification](https://github.com/paperclipai/paperclip/actions/runs/38273238920) resolves the branch to an immutable target under the trusted master workflow. Both are in progress; no passing claim yet. Image publication is disabled. All Docker/Rust compilation is remote.
+Frozen runtime candidate: `5f0b898e9ecef77afefe309a230e04d7fef66cde`. [Cloud daemon and clean-install qualification](https://github.com/pilibalaai/pilibala/actions/runs/38273229107) uses the reconciled source's four-target release matrix. [Cloud required-source verification](https://github.com/pilibalaai/pilibala/actions/runs/38273238920) resolves the branch to an immutable target under the trusted master workflow. Both are in progress; no passing claim yet. Image publication is disabled. All Docker/Rust compilation is remote.
 
-Subscription setup is prepared through the ordinary Claude Code wizard. The existing host CLI account is Paperclip Team (`claude.ai`, Team subscription), but the provider browser requires fresh reauthentication after selecting that organization. The user has been asked to complete that sign-in; no credential was extracted from the host or pasted into chat. The API-key preview/artifacts remain available while the subscription draft is pending.
+Subscription setup is prepared through the ordinary Claude Code wizard. The existing host CLI account is Pilibala Team (`claude.ai`, Team subscription), but the provider browser requires fresh reauthentication after selecting that organization. The user has been asked to complete that sign-in; no credential was extracted from the host or pasted into chat. The API-key preview/artifacts remain available while the subscription draft is pending.
 
 ## Cold-resume diagnosis and corrective candidate
 
@@ -324,13 +324,13 @@ Cloud source verification retained failures rather than claiming a pass: the pro
 
 The user redirected remaining live execution checks to the API key in `~/.secrets`; the fresh subscription sign-in was closed and its unused company archived. Do not require more attended subscription sign-in for this delivery. Preserve existing connection tools and the prior successful subscription first-task evidence; subscription follow-up qualification is not claimed.
 
-Ordinary API-key wizard agent `688ff15d-eb48-4cb5-9f31-2d394ab3fbbb` saved `paperclip_runner` / `acpx` / `claude`, model `claude-opus-5-5`, effort `high`, and the existing responsible-user API-key connection. Preview: [successful API task and revision](http://127.0.0.1:3105/CLAA/issues/CLAA-1). Runs `271e0877-c60c-4ac7-aa1a-7b075481872b` and `eb95ed4d-c219-463e-b04a-1bc4ac83c012` both succeeded with `acpx_runtime`, acknowledged high effort, and metered Anthropic API attribution. Estimated costs: $0.194798400 and $0.342168800. The task, provider, and backend session identities all matched across the controller restart; private provider IDs are omitted from the report. Both runs finished accounting. Saved settings and `enableNativeRunner=false` persisted after reload.
+Ordinary API-key wizard agent `688ff15d-eb48-4cb5-9f31-2d394ab3fbbb` saved `pilibala_runner` / `acpx` / `claude`, model `claude-opus-5-5`, effort `high`, and the existing responsible-user API-key connection. Preview: [successful API task and revision](http://127.0.0.1:3105/CLAA/issues/CLAA-1). Runs `271e0877-c60c-4ac7-aa1a-7b075481872b` and `eb95ed4d-c219-463e-b04a-1bc4ac83c012` both succeeded with `acpx_runtime`, acknowledged high effort, and metered Anthropic API attribution. Estimated costs: $0.194798400 and $0.342168800. The task, provider, and backend session identities all matched across the controller restart; private provider IDs are omitted from the report. Both runs finished accounting. Saved settings and `enableNativeRunner=false` persisted after reload.
 
 Independent downloads matched both byte oracles, and the original remained unchanged after the revision: v1 137 bytes, sha256 `fe24122962056946d5d01f693342c86fd83e22dbb21d6d0bc20d35f220f7952c`; v2 194 bytes, sha256 `0232a93ccc4da44fd156907b22a64b14487a981fdf12ab9cf73b4ef20d755816`. [First download](http://127.0.0.1:3105/api/attachments/fe58953d-7d1d-4b33-9548-c7611a2e82c6/content?download=1), [revision download](http://127.0.0.1:3105/api/attachments/3a0b5877-5afc-4088-b958-daa3c0b61f61/content?download=1). Sanitized report: `/private/tmp/claude-final-api-acceptance.json`.
 
 Executable identities: daemon source `5f0b898e9ecef77afefe309a230e04d7fef66cde`, sha256 `228c7814c4786614c8358b205da01cf43df822ca5e6f6b74d5a1e8304d03a6de`; sidecar sha256 `daabddfc1373e6b6d2a754cb60bc4c33d7a8b6d6d5c3564ce511ebfaeb8a463d`; Claude SDK 0.3.286 executable sha256 `75e3016e9d2570767b08e43a7467d4817a4f149232c169ca295f2c95fef21433`. Behavior source is `9788c05d0a9825d825c0461eab3191da6a6dcad7`. Reconciled source `966b3d5bc294442f71c1def9406ed2027f41d191` merges Codex dependency `123a18837478d8cd0e2aff23f7e7aa86c9107de3`, retaining its GNU libc 2.39 gate and Linux ARM64 selection. Claude admission/sandbox/input and daemon Rust sources did not change during that reconciliation; the rebuilt sidecar digest is identical. Updated runner TypeScript build, server TypeScript, 95 selection controls and 15 installed-startup controls passed after reconciliation.
 
-[Corrected cloud source checks](https://github.com/paperclipai/paperclip/actions/runs/38279356267) and [corrected four-target packaging](https://github.com/paperclipai/paperclip/actions/runs/38279359427) run on frozen behavior source 9788c05. Carry forward only unchanged evidence; final source and package consumers still require passing checks. Active company caps after archiving the unused subscription-only fixture total $42: original $17, failed candidate $9, API acceptance $16. Agent limits share these allocations, and unknown-charge holds remain in place. Known API estimates now total $0.9975406; this excludes the original unpriced receipt and is not a provider invoice.
+[Corrected cloud source checks](https://github.com/pilibalaai/pilibala/actions/runs/38279356267) and [corrected four-target packaging](https://github.com/pilibalaai/pilibala/actions/runs/38279359427) run on frozen behavior source 9788c05. Carry forward only unchanged evidence; final source and package consumers still require passing checks. Active company caps after archiving the unused subscription-only fixture total $42: original $17, failed candidate $9, API acceptance $16. Agent limits share these allocations, and unknown-charge holds remain in place. Known API estimates now total $0.9975406; this excludes the original unpriced receipt and is not a provider invoice.
 
 
 ## Approved prerequisite split and current CI
@@ -362,13 +362,13 @@ The first new ARM selection test failed from shared durable fixture identity;
 a unique workspace/session per case fixed the fixture. No product guard was
 removed. Platform TypeScript build passed. Cloud package and actual Linux task
 pairs remain required. Current behavior package campaign:
-https://github.com/paperclipai/paperclip/actions/runs/38284813521 .
+https://github.com/pilibalaai/pilibala/actions/runs/38284813521 .
 
 ## Review and qualification update after the prerequisite split
 
-Review stack: [protocol #15994](https://github.com/paperclipai/paperclip/pull/15994),
-[behavior #15993](https://github.com/paperclipai/paperclip/pull/15993),
-[platform #15997](https://github.com/paperclipai/paperclip/pull/15997).
+Review stack: [protocol #15994](https://github.com/pilibalaai/pilibala/pull/15994),
+[behavior #15993](https://github.com/pilibalaai/pilibala/pull/15993),
+[platform #15997](https://github.com/pilibalaai/pilibala/pull/15997).
 Before the latest dependency reconciliation, protocol `33c9216614` and behavior
 `23d834fc0a` each received 5/5 with their findings resolved. Platform pack parity
 was corrected in `4dc13aa32c`; its review still requires refresh. All remain
@@ -453,8 +453,8 @@ noemit and token gates passed. Current historical instruction admission: 6
 passed. Platform `33077bed73` pins producer Node to the image's 24.21.0 version;
 its narrow policy exception and workflow controls passed (71 tests).
 
-[Four-target campaign](https://github.com/paperclipai/paperclip/actions/runs/38293566808)
-and [cloud image build](https://github.com/paperclipai/paperclip/actions/runs/38293576503)
+[Four-target campaign](https://github.com/pilibalaai/pilibala/actions/runs/38293566808)
+and [cloud image build](https://github.com/pilibalaai/pilibala/actions/runs/38293576503)
 retain source `557c3064a30779e86e1ae312eab3d1d42c3a8b8d`. Actual pack/image
 identity agreement remains required. Additional Claude defaults remain gated
 pending clean-install and execution evidence. No local Docker or Rust build.
@@ -462,7 +462,7 @@ pending clean-install and execution evidence. No local Docker or Rust build.
 ### Independent cloud pack comparison and explicit-asset compatibility
 
 The cloud image build `38293576503` passed. Its immutable image is
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:d9dbda3a9435e3e555f431bdeb0ba22e1241ae9103184e6c1646a200e26423e1`.
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:d9dbda3a9435e3e555f431bdeb0ba22e1241ae9103184e6c1646a200e26423e1`.
 The image manifest, copied from a stopped disposable container on the cloud
 host, exactly matches the independently downloaded Linux x64 producer manifest:
 pack digest `sha256:97f44524d1b35ed6295c922f6b52ac376960213be0a0e09a3635c281db26aecf`;
@@ -483,10 +483,10 @@ explicit Mac SSH assets. The restriction now applies only when selecting a
 bundled pack; explicit assets retain their existing manifest integrity checks.
 Eight targeted controls passed, including both Mac architectures and unchanged
 automatic Linux selection. Final broad source checks run in the cloud on
-reconciled `06c4f5e5a0`: [campaign 38296110502](https://github.com/paperclipai/paperclip/actions/runs/38296110502).
+reconciled `06c4f5e5a0`: [campaign 38296110502](https://github.com/pilibalaai/pilibala/actions/runs/38296110502).
 The behavior head `2874232d25` received 5/5 after its three settings fixes.
 
-Installed Mac proof is available as a Paperclip
+Installed Mac proof is available as a Pilibala
 [acceptance report](http://127.0.0.1:3105/api/attachments/61653e0a-3ae0-459c-b1d1-20b5d1db73d6/content?download=1)
 and [screenshot](http://127.0.0.1:3105/api/attachments/bce37c56-3984-45b9-a995-b6a23cc9a85d/content?download=1),
 with artifact work products on CLAA-2. The actual native SDK is the server's
@@ -503,7 +503,7 @@ calls. The raw packaging manifest's `publicInstallationVerified: false`
 precedes those consumer checks; it is not rewritten as execution evidence.
 
 The cloud image campaign succeeded with immutable image
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:d9dbda3a9435e3e555f431bdeb0ba22e1241ae9103184e6c1646a200e26423e1`.
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:d9dbda3a9435e3e555f431bdeb0ba22e1241ae9103184e6c1646a200e26423e1`.
 Independent native/image Linux x64 manifest comparison matched pack
 `sha256:97f44524d1b35ed6295c922f6b52ac376960213be0a0e09a3635c281db26aecf`,
 Node `sha256:7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c`,
@@ -546,7 +546,7 @@ Module SHA256 changed from
 The stack incorporates latest Codex composed source
 `d3916151f65ca08904bda309474a35e4c48c54fe`. The authorized source-chat owner
 will lift the identical shared SSH fix into prerequisite
-[PR #16028](https://github.com/paperclipai/paperclip/pull/16028) before Codex;
+[PR #16028](https://github.com/pilibalaai/pilibala/pull/16028) before Codex;
 our retained commit will coalesce on later reconciliation. That owner coordinates
 normal squash merge order. No dependent PR or production deployment is performed
 by this qualification session.
@@ -558,7 +558,7 @@ Aggregate allocated cap is $46, reserving $4 for Linux x64, within the separate
 $50 ceiling. Timer heartbeats and automatic paid retries remain disabled.
 Known estimates remain $1.331719, excluding unknown charges.
 
-[Required cloud source checks](https://github.com/paperclipai/paperclip/actions/runs/38302321706)
+[Required cloud source checks](https://github.com/pilibalaai/pilibala/actions/runs/38302321706)
 passed authorization and await a build worker. Current-source full checks,
 latest reviews, useful remote task/follow-up pairs, additional platform defaults,
 and final package qualification remain gates. No local Docker or Rust build.
@@ -668,7 +668,7 @@ saved native configuration by applying actual form changes. Explicit empty
 model/effort and account-binding removal remain removals. Mounted Codex and
 Claude import cases cover ordinary edits, model/effort clears, connection-binding
 removal, Legacy selection and harness changes. Switching a Legacy Claude import
-to Paperclip preserves deny-all/approve-reads through the native builder.
+to Pilibala preserves deny-all/approve-reads through the native builder.
 Current import/builder controls: 123 passed; mounted existing-agent form controls:
 121 passed, including hydration and explicit Auto clearing for both harnesses
 and all three effort aliases. Server/UI noemit, token gates and capability-map
@@ -683,7 +683,7 @@ stale `/opt` pack cannot hide a matching user installation. Failed verification
 still uses the existing upload/error path. These controls are separate from live
 provider execution evidence.
 
-[Cloud required-source campaign](https://github.com/paperclipai/paperclip/actions/runs/38302321706)
+[Cloud required-source campaign](https://github.com/pilibalaai/pilibala/actions/runs/38302321706)
 completed on immutable source `b754869376e7bee831e87d879d5d89575044cb04`:
 recursive typecheck, build, token gates, Runner E2E typecheck, 124 Runner E2E
 unit files (2619 tests), and public installation verification passed. The full
@@ -1170,7 +1170,7 @@ remain unchanged until that dependency is reconciled. Local behavior/platform
 review slices remain 88/42 files.
 
 The source owner's provider-free campaign
-[38338806076](https://github.com/paperclipai/paperclip/actions/runs/38338806076)
+[38338806076](https://github.com/pilibalaai/pilibala/actions/runs/38338806076)
 passed four native producers and all clean consumers, including Intel Mac, on
 literal source 16a53254. That result is not relabeled as the Claude v7/Pi25
 composition. A separate immutable qualification ref will carry this composition
@@ -1183,7 +1183,7 @@ later source changes require an explicit evidence applicability check.
 
 Frozen qualification source is `ad5875fa4b78804e77911703f7ab2aacb9b32067`
 on `codex/claude-runner-qualification-ad5875`. Its
-[four-target package campaign](https://github.com/paperclipai/paperclip/actions/runs/38342761144)
+[four-target package campaign](https://github.com/pilibalaai/pilibala/actions/runs/38342761144)
 has passed all native producers; package assembly and clean consumers remain
 pending at this checkpoint. Independent no-follow reads verified all downloaded
 daemon hashes, source bindings and executable architectures without executing
@@ -1196,9 +1196,9 @@ them locally. Receipt: `/private/tmp/claude-ad5875-daemon-identities.json`.
 | Linux ARM64 | `2b8f13c311cc33de809ba97718fd6f79e9f184658a2fe316dfc6c1f3251fdddc` |
 | Linux x64 | `e55a45705095558110592fa38a7bf6e5ae52da5199c6051298e6db3c27ca3a78` |
 
-The [Linux x64 image build](https://github.com/paperclipai/paperclip/actions/runs/38342885632)
+The [Linux x64 image build](https://github.com/pilibalaai/pilibala/actions/runs/38342885632)
 passed on the same source. Its recorded immutable image is
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:d42fc84fda9af4cf37c52ba850b6d928c475e8ec72d3c9df0332120f247ea62d`.
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:d42fc84fda9af4cf37c52ba850b6d928c475e8ec72d3c9df0332120f247ea62d`.
 Source/digest receipts are in `/private/tmp/claude-ad5875-image-evidence`; build
 dispatch and fixed workflow identities are retained in
 `/private/tmp/claude-ad5875-qualification-dispatch.json`. Neither campaign uses
@@ -1246,7 +1246,7 @@ heartbeat scheduling and zero live runs are verified. Receipts:
 `/private/tmp/claude-ad5875-local-installed-identity.json` and
 `/private/tmp/claude-ad5875-preview-health-receipt.json`.
 
-The actual creation UI selected Claude Code and displayed Paperclip Runner as
+The actual creation UI selected Claude Code and displayed Pilibala Runner as
 the default with the existing saved API-key account. Setup then failed before
 authentication with `acpx_runtime_unavailable`: the default installed verifier
 did not carry its owning server's package authority. The SDK and qualified
@@ -1362,14 +1362,14 @@ complete data backed up to /private/tmp/claude-qa-before-js-treatment-snapshot,
 and the private treatment started at 3105 with scheduling and ambient Claude
 credentials disabled. This is explicitly a treatment, not a final package.
 
-The real creation UI displays Paperclip Runner (default) for Claude Code. Both
+The real creation UI displays Pilibala Runner (default) for Claude Code. Both
 native readiness and the existing supplementary credential check pass with the
 saved personal Anthropic API key. Three bounded setup walkthroughs were used:
 the first browser harness waited on the wrong Configure label; the corrected
 walkthrough reached Configure; the final walkthrough saved the agent but watched
 /agents rather than the product's /agent-hires response. No duplicate agent was
 created. Reload independently verifies agent dd26921e-fe79-4ef7-a83c-5755bebd8936
-as paperclip_runner/acpx/claude/claude-opus-5-5 with the existing managed API-key
+as pilibala_runner/acpx/claude/claude-opus-5-5 with the existing managed API-key
 binding. The runner control was inspected without changing its default.
 
 The first manual file task CLAAAAAAA-2 (6689bb7c-785e-4884-842f-13f6f5fddefa)
@@ -1490,7 +1490,7 @@ production defaults.
 
 Codex #15683 merged as `adb69e8f09852c772d9901ae270e5b2d66e39c77`.
 Fetched that exact object using the existing repository authentication. The
-original /Users/dotta/.codex/worktrees/670b/paperclip checkout no longer exists,
+original /Users/dotta/.codex/worktrees/670b/pilibala checkout no longer exists,
 but its committed behavior branch is intact at f4b24bf695. App-managed recovery
 reported Not a git repository, so the same branch was recovered into the isolated
 /private/tmp/claude-runner-default-recovery worktree. No source-owner branch,
@@ -1580,7 +1580,7 @@ A replacement package campaign waits for fresh review of the corrected runtime.
 
 The existing Product E2E browser helper exercised UI source 7069077274 against
 the retained older backend at 3115 through New Agent, Claude Code and Advanced.
-The runner shows Paperclip Runner (default); keyboard Legacy/native selection
+The runner shows Pilibala Runner (default); keyboard Legacy/native selection
 passes. Stable light/dark screenshots at 1440 and 390 px show no horizontal page
 overflow. The inherited Custom Gateway subtitle clips on 390 px; Claude API-key
 controls remain visible. Every API mutation was blocked by the browser guard;
@@ -1619,7 +1619,7 @@ present and untouched; retrying that exact old session is not execution proof.
 
 ### Installed API-key acceptance — 2026-10-14
 
-The full frozen package campaign [38610086180](https://github.com/paperclipai/paperclip/actions/runs/38610086180)
+The full frozen package campaign [38610086180](https://github.com/pilibalaai/pilibala/actions/runs/38610086180)
 passed all four native producers and clean consumers, including default installed
 Claude authority on Apple Silicon, Intel Mac and Linux ARM64. Linux x64 passed
 its existing clean public-install controls; that lane does not separately run
@@ -1682,7 +1682,7 @@ source Release Smoke artifact set. It validates repository/workflow/source,
 artifact archive digests, canonical paths, package authority, daemon architecture
 and daemon bytes before constructing the image. The release pack must equal the
 manifest inside the public server tarball. This mode copies the producer's pack
-and daemon over an immutable Paperclip base image without rebuilding either or
+and daemon over an immutable Pilibala base image without rebuilding either or
 resolving dependencies. The resulting image is read back to compare pack and
 daemon identities. Existing source-build mode remains available. Fifteen focused
 negative/positive controls and 71 existing release workflow controls pass; full
@@ -1738,9 +1738,9 @@ states. All remain draft. No merge or production deployment occurred.
 
 Behavior head 4ee0d1d444 subsequently completed all 54 checks successfully, with
 fresh Greptile 5/5 and zero unresolved review threads. Exact hosted source CI:
-[38622133620](https://github.com/paperclipai/paperclip/actions/runs/38622133620);
+[38622133620](https://github.com/pilibalaai/pilibala/actions/runs/38622133620);
 Docker context/native compilation control:
-[38622133915](https://github.com/paperclipai/paperclip/actions/runs/38622133915).
+[38622133915](https://github.com/pilibalaai/pilibala/actions/runs/38622133915).
 The behavior PR checklist now reflects those completed gates. This does not
 qualify or publish the still-local platform image consumer.
 
@@ -1788,15 +1788,15 @@ The corrected candidate `15e37379e94535fd9692a4f0c4d3fadd2595b188` is deployed
 to the dedicated test organization. The deployment receipt confirms
 `sha-15e37379e94535fd9692a4f0c4d3fadd2595b188-cloud`, status succeeded, and
 verification verified. Cloud build:
-[38793774125](https://github.com/paperclipai/paperclip/actions/runs/38793774125).
+[38793774125](https://github.com/pilibalaai/pilibala/actions/runs/38793774125).
 Deployment campaign: `fleet-campaign-1791979001533`. This is a Core-only preview;
 private Cloud UI plugins are excluded. All image builds ran in cloud infrastructure.
 
-A fresh strict browser journey started at `https://test.paperclip.app`, selected
+A fresh strict browser journey started at `https://test.pilibala.app`, selected
 the test organization, created Claude Hosted Writer through New Agent, reused
 the saved personal Claude API connection, and submitted default model/runner
-settings. The saved Runtime form showed Paperclip Runner (default), Claude
-Opus 5.5, effort Auto, and Paperclip Computer. No runner or model override was
+settings. The saved Runtime form showed Pilibala Runner (default), Claude
+Opus 5.5, effort Auto, and Pilibala Computer. No runner or model override was
 submitted. The native experimental flag remained at its disabled app default.
 Prior interface familiarity and the preconfigured $2 project are disclosed.
 
@@ -1846,9 +1846,9 @@ Docker context/native compilation, and the aggregate verification gates.
 Greptile is 5/5 with zero unresolved threads. The optional supply-chain scan
 remains neutral/inconclusive. The evidence-only follow-up does not change runtime
 bytes or invalidate these serving-source results. PRs remain
-[#15994](https://github.com/paperclipai/paperclip/pull/15994),
-[#15993](https://github.com/paperclipai/paperclip/pull/15993), and
-[#15997](https://github.com/paperclipai/paperclip/pull/15997).
+[#15994](https://github.com/pilibalaai/pilibala/pull/15994),
+[#15993](https://github.com/pilibalaai/pilibala/pull/15993), and
+[#15997](https://github.com/pilibalaai/pilibala/pull/15997).
 No merge or production rollout occurred.
 
 
@@ -1866,7 +1866,7 @@ Rust prerequisite; it was stopped and replaced with direct TypeScript checks.
 Subsequent native builds and package qualification ran in GitHub Actions.
 
 Ordinary web creation of `Claude Default QA` with `enableNativeRunner=false`
-saved `paperclip_runner`, `provider: acpx`, `acpxAgent: claude`,
+saved `pilibala_runner`, `provider: acpx`, `acpxAgent: claude`,
 `model: claude-opus-5-5`, and `modelReasoningEffort: high`, without runner or
 model overrides. The API-key connection initially applied a Legacy CLI version
 check. The fix reuses the existing Anthropic key-validation endpoint for native
@@ -1881,7 +1881,7 @@ v9 preserves master's explicit homeMode and historical v1–v8 readers.
 
 The first task attempt (`075e4543-e04f-4af2-bad3-c0d6c4987947`, original company
 `1de13e1c-5957-4920-9332-f77396c976ec`) failed before provider launch because
-the test-drive CLI intentionally removes inherited PAPERCLIP_* overrides.
+the test-drive CLI intentionally removes inherited PILIBALA_* overrides.
 The verified daemon was then staged in the package-owned target location.
 That failed record and its full $2 pending reservation remain intact.
 
@@ -1918,7 +1918,7 @@ The cloud-built Mac daemon used by this pair has source
 `04e0202ca81387b17cbe7fd094a8338648356fe9` and SHA-256
 `0d7ef273fb9b7df2e73a4a6ef6b284a8b6cb59f949a8b9f78af5f391f8d296ef`.
 Its header, receipt digest, regular-file status, and build metadata were checked.
-[Exact-source four-target package qualification](https://github.com/paperclipai/paperclip/actions/runs/39267321383)
+[Exact-source four-target package qualification](https://github.com/pilibalaai/pilibala/actions/runs/39267321383)
 passed, including the four native builds, package assembly, and installed-host
 consumers. Subsequent changes affect setup, controller admission, credential
 configuration guards, and sandbox proof revocation; the runner/provider source

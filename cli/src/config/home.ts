@@ -7,33 +7,33 @@ import {
   resolveDefaultSecretsKeyFilePath as resolveSharedDefaultSecretsKeyFilePath,
   resolveDefaultStorageDir as resolveSharedDefaultStorageDir,
   resolveHomeAwarePath,
-  resolvePaperclipConfigPathForInstance,
-  resolvePaperclipHomeDir,
-  resolvePaperclipInstanceId,
-  resolvePaperclipInstanceRoot as resolveSharedPaperclipInstanceRoot,
-} from "@paperclipai/shared/home-paths";
+  resolvePilibalaConfigPathForInstance,
+  resolvePilibalaHomeDir,
+  resolvePilibalaInstanceId,
+  resolvePilibalaInstanceRoot as resolveSharedPilibalaInstanceRoot,
+} from "@pilibalaai/shared/home-paths";
 
 export {
   expandHomePrefix,
   resolveHomeAwarePath,
-  resolvePaperclipHomeDir,
-  resolvePaperclipInstanceId,
+  resolvePilibalaHomeDir,
+  resolvePilibalaInstanceId,
 };
 
-export function resolvePaperclipInstanceRoot(instanceId?: string): string {
-  return resolveSharedPaperclipInstanceRoot({ instanceId });
+export function resolvePilibalaInstanceRoot(instanceId?: string): string {
+  return resolveSharedPilibalaInstanceRoot({ instanceId });
 }
 
 export function resolveDefaultConfigPath(instanceId?: string): string {
-  return resolvePaperclipConfigPathForInstance({ instanceId });
+  return resolvePilibalaConfigPathForInstance({ instanceId });
 }
 
 export function resolveDefaultContextPath(): string {
-  return path.resolve(resolvePaperclipHomeDir(), "context.json");
+  return path.resolve(resolvePilibalaHomeDir(), "context.json");
 }
 
 export function resolveDefaultCliAuthPath(): string {
-  return path.resolve(resolvePaperclipHomeDir(), "auth.json");
+  return path.resolve(resolvePilibalaHomeDir(), "auth.json");
 }
 
 export function resolveDefaultEmbeddedPostgresDir(instanceId?: string): string {
@@ -57,10 +57,10 @@ export function resolveDefaultBackupDir(instanceId?: string): string {
 }
 
 export function describeLocalInstancePaths(instanceId?: string) {
-  const resolvedInstanceId = resolvePaperclipInstanceId(instanceId);
-  const instanceRoot = resolvePaperclipInstanceRoot(resolvedInstanceId);
+  const resolvedInstanceId = resolvePilibalaInstanceId(instanceId);
+  const instanceRoot = resolvePilibalaInstanceRoot(resolvedInstanceId);
   return {
-    homeDir: resolvePaperclipHomeDir(),
+    homeDir: resolvePilibalaHomeDir(),
     instanceId: resolvedInstanceId,
     instanceRoot,
     configPath: resolveDefaultConfigPath(resolvedInstanceId),

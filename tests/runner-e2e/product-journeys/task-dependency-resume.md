@@ -15,7 +15,7 @@ The saved dependency, blocked status, and empty task/agent run histories must
 remain observable for at least ten seconds. This is a finite measured wait,
 not an unlimited claim that no execution can ever occur.
 
-The person completes the blocker through the task's status control. Paperclip must
+The person completes the blocker through the task's status control. Pilibala must
 then start exactly one native run automatically. Its durable wake must name the
 same resolved blocker, reason `issue_blockers_resolved`, and saved source
 `issue.blockers_resolved`; `blocker_done` is the producer's separate mutation

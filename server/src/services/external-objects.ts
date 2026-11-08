@@ -3,8 +3,8 @@ import type { DeadlineReconciliationSnapshot } from "./deadline-reconciliation.j
 import { idleDeadlineRowLimit, type IdleDeadlineSnapshot } from "./idle-deadline-types.js";
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, exists, gt, inArray, isNotNull, isNull, lte, not, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { companies, documents, externalObjectMentions, externalObjects, issueComments, issueDocuments, issues, plugins, pluginCompanySettings } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { companies, documents, externalObjectMentions, externalObjects, issueComments, issueDocuments, issues, plugins, pluginCompanySettings } from "@pilibalaai/db";
 import {
   formatExternalObjectMentionSourceLabel,
   type ExternalObjectCanonicalUrl,
@@ -13,10 +13,10 @@ import {
   type ExternalObjectMentionSourceKind,
   type ExternalObjectStatusCategory,
   type ExternalObjectStatusTone,
-  type PaperclipPluginManifestV1,
-} from "@paperclipai/shared";
-import { extractExternalObjectCanonicalUrls } from "@paperclipai/shared/external-objects-server";
-import type { PluginExternalObjectRecordSnapshot, PluginExternalObjectResolveResult } from "@paperclipai/plugin-sdk";
+  type PilibalaPluginManifestV1,
+} from "@pilibalaai/shared";
+import { extractExternalObjectCanonicalUrls } from "@pilibalaai/shared/external-objects-server";
+import type { PluginExternalObjectRecordSnapshot, PluginExternalObjectResolveResult } from "@pilibalaai/plugin-sdk";
 import { notFound } from "../errors.js";
 import { logger } from "../middleware/logger.js";
 import { logActivity, type LogActivityInput } from "./activity-log.js";
@@ -230,7 +230,7 @@ export function createExternalObjectResolverRegistry(resolvers: ExternalObjectRe
 }
 
 function manifestProvidesObject(
-  manifest: PaperclipPluginManifestV1,
+  manifest: PilibalaPluginManifestV1,
   object: Pick<ExternalObjectRecord, "providerKey" | "objectType">,
 ) {
   return (manifest.objectReferences ?? []).some(

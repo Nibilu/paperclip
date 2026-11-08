@@ -10,7 +10,7 @@ const checkpoints = [{ phase: "final", attachments: [{ originalFilename: "migrat
   contentSha256: referenceSha256, contentVerified: true }] }] as ContinuationCheckpoint[];
 const before: MigrationPoint = { workspaceId: "workspace", providerType: "isolated_worktree", migrated: false,
   proofSha256: referenceSha256, runId: "first", sessionId: "session", providerSessionSha256: "provider-session",
-  logicalCwd: "/old-controller/workspace", remoteCwd: "/home/daytona/paperclip-workspace" };
+  logicalCwd: "/old-controller/workspace", remoteCwd: "/home/daytona/pilibala-workspace" };
 const after: MigrationPoint = { ...before, runId: "second", migrated: true, providerType: "cloud_sandbox" };
 
 describe("legacy workspace migration qualification", () => {
@@ -43,6 +43,6 @@ describe("legacy workspace migration qualification", () => {
     expect(new Set(cells.map(cell => cell.suite.id)).size).toBe(2);
     expect(cells.every(cell => cell.suite.manualOnly && cell.task.flow === "continuation" && cell.task.expectedRunCount === 2)).toBe(true);
     expect(remoteWorkspaceStorageServerEnvironment({ executions: [cells[0]!], instanceId: "migration-test",
-      env: { PAPERCLIP_RUNNER_E2E_WORKSPACE_STORAGE_BUCKET: "owned-migration-bucket" } })).toMatchObject({ PAPERCLIP_STORAGE_PROVIDER: "s3" });
+      env: { PILIBALA_RUNNER_E2E_WORKSPACE_STORAGE_BUCKET: "owned-migration-bucket" } })).toMatchObject({ PILIBALA_STORAGE_PROVIDER: "s3" });
   });
 });

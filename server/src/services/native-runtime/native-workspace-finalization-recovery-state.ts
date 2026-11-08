@@ -1,11 +1,11 @@
 import { and, eq } from "drizzle-orm";
-import { heartbeatRuns, type Db } from "@paperclipai/db";
-import { isUuidLike, type IssueRecoveryAction } from "@paperclipai/shared";
+import { heartbeatRuns, type Db } from "@pilibalaai/db";
+import { isUuidLike, type IssueRecoveryAction } from "@pilibalaai/shared";
 import { nativeSha256 } from "./canonical.js";
 
 export const NATIVE_WORKSPACE_OWNER_UNVERIFIED = "native_workspace_finalization_owner_unverified";
 /** Describes the wait. It never asks a person to inspect a server or sandbox. */
-export const NATIVE_WORKSPACE_OWNER_WAIT_NEXT_ACTION = "Paperclip is holding this saved result until it can confirm that the previous server stopped, so the work is not saved twice. Saving then resumes without repeating the agent's work. If this platform cannot confirm it, an owner or administrator can resume the save from this task (Resume saved result).";
+export const NATIVE_WORKSPACE_OWNER_WAIT_NEXT_ACTION = "Pilibala is holding this saved result until it can confirm that the previous server stopped, so the work is not saved twice. Saving then resumes without repeating the agent's work. If this platform cannot confirm it, an owner or administrator can resume the save from this task (Resume saved result).";
 
 export function hasNativeWorkspaceFinalizationOwner(profile: Record<string, unknown> | null | undefined): boolean {
   return profile?.nativeWorkspaceFinalizationOwner != null;

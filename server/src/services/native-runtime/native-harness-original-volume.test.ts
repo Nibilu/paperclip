@@ -12,14 +12,14 @@ afterEach(async () => { vi.unstubAllEnvs(); vi.useRealTimers(); for (const root 
 async function fixture() {
   const root = await realpath(await mkdtemp(join(tmpdir(), "harness-original-volume-"))); roots.push(root);
   const projectId = randomUUID(), serviceId = randomUUID(), environmentId = randomUUID(), volumeId = randomUUID(), deploymentId = randomUUID();
-  for (const [key, value] of Object.entries({ PAPERCLIP_HOME: root, PAPERCLIP_INSTANCE_ID: "default", RAILWAY_PROJECT_ID: projectId,
+  for (const [key, value] of Object.entries({ PILIBALA_HOME: root, PILIBALA_INSTANCE_ID: "default", RAILWAY_PROJECT_ID: projectId,
     RAILWAY_SERVICE_ID: serviceId, RAILWAY_ENVIRONMENT_ID: environmentId, RAILWAY_VOLUME_ID: volumeId,
     RAILWAY_DEPLOYMENT_ID: deploymentId, RAILWAY_VOLUME_MOUNT_PATH: root })) vi.stubEnv(key, value);
-  vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", join(root, "instances/default/runtime/paperclip-runner/durable-sessions"));
+  vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", join(root, "instances/default/runtime/pilibala-runner/durable-sessions"));
   const anchorPath = originalHarnessVolumeAnchorPath(); await mkdir(join(root, "instances/default/recovery"), { recursive: true, mode: 0o700 });
-  await mkdir(process.env.PAPERCLIP_RUNNER_STATE_DIR!, { recursive: true, mode: 0o700 });
+  await mkdir(process.env.PILIBALA_RUNNER_STATE_DIR!, { recursive: true, mode: 0o700 });
   const m = await lstat(root), i = await lstat(join(root, "instances/default"));
-  const anchor: OriginalHarnessVolumeAnchor = { schema: "paperclip.native-harness-original-volume-anchor.v1", nonce: "b".repeat(64),
+  const anchor: OriginalHarnessVolumeAnchor = { schema: "pilibala.native-harness-original-volume-anchor.v1", nonce: "b".repeat(64),
     projectId, serviceId, environmentId, volumeId, volumeInstanceId: randomUUID(), mountPath: root,
     mountIdentity: { dev: m.dev, ino: m.ino }, instanceIdentity: { dev: i.dev, ino: i.ino },
     createdFrom: { deploymentId: randomUUID(), commit: "c".repeat(40), providerWitnessSha256: "d".repeat(64) }, createdAt: new Date().toISOString() };
@@ -45,7 +45,7 @@ it.each(["expired", "future", "wrong-deployment", "missing-volume", "wrong-mount
   if (control === "wrong-deployment") vi.stubEnv("RAILWAY_DEPLOYMENT_ID", randomUUID());
   if (control === "missing-volume") vi.stubEnv("RAILWAY_VOLUME_ID", "");
   if (control === "wrong-mount") vi.stubEnv("RAILWAY_VOLUME_MOUNT_PATH", "/");
-  if (control === "external-state") vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", "/tmp/outside-instance");
+  if (control === "external-state") vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", "/tmp/outside-instance");
   if (control === "changed-anchor") await writeFile(anchorPath, "{}");
   if (control === "public-anchor") await chmod(anchorPath, 0o644);
   if (control === "symlink-anchor") { await rm(anchorPath); const other = join(root, "alias.json"); await writeFile(other, "{}"); await symlink(other, anchorPath); }

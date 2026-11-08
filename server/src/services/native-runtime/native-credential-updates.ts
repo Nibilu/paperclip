@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import { heartbeatRuns, type Db } from "@paperclipai/db";
-import { validatePrpEvent, type PrpEvent } from "../../vendor/paperclip-runner/index.js";
+import { heartbeatRuns, type Db } from "@pilibalaai/db";
+import { validatePrpEvent, type PrpEvent } from "../../vendor/pilibala-runner/index.js";
 import { appendHeartbeatRunEvent } from "../heartbeat-run-events.js";
 
 export async function appendNativeCredentialUpdate(db: Db, input: {

@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { searchRunnerApi } from "../services/native-runtime/runner-api-catalog.js";
-import { startOpenCodeMcpBridge } from "../../../packages/paperclip-runner/src/drivers/opencode/mcp-bridge.js";
-import { searchApiAction } from "../../../packages/paperclip-runner/src/protocol-actions/search-api.js";
+import { startOpenCodeMcpBridge } from "../../../packages/pilibala-runner/src/drivers/opencode/mcp-bridge.js";
+import { searchApiAction } from "../../../packages/pilibala-runner/src/protocol-actions/search-api.js";
 
 it("discovers the existing secure human entry surface through native API search", async () => {
   const descriptor = searchApiAction.live.descriptor;
@@ -14,7 +14,7 @@ it("discovers the existing secure human entry surface through native API search"
       const response = await fetch(bridge.url, { method: "POST", headers: {
         Authorization: `Bearer ${bridge.secret}`, "Content-Type": "application/json", Accept: "application/json, text/event-stream",
       }, body: JSON.stringify({ jsonrpc: "2.0", id: query, method: "tools/call",
-        params: { name: "paperclip_search_api", arguments: { query } } }) });
+        params: { name: "pilibala_search_api", arguments: { query } } }) });
       expect(response.status).toBe(200);
       const wire = await response.json() as { result: { isError?: boolean; content: Array<{ text: string }> } };
       expect(wire.result.isError).not.toBe(true);

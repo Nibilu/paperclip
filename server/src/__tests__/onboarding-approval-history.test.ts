@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
-import { activityLog, agents, companyMemberships, heartbeatRuns, issues, issueThreadInteractions } from "@paperclipai/db";
+import { activityLog, agents, companyMemberships, heartbeatRuns, issues, issueThreadInteractions } from "@pilibalaai/db";
 import { createLocalAgentJwt } from "../agent-auth-jwt.js";
 import { documentService } from "../services/documents.js";
 import { initializeRunIdentity } from "../services/run-identity.js";
-import { PaperclipRunnerToolAuthority } from "../services/native-runtime/paperclip-runner-tool-authority.js";
+import { PilibalaRunnerToolAuthority } from "../services/native-runtime/pilibala-runner-tool-authority.js";
 import { recoveryPostgresSupport as support } from "./helpers/recovery-postgres.js";
 import { startRunnerApiTestServer } from "./helpers/runner-api-server.js";
 
@@ -14,9 +14,9 @@ describe.skipIf(!support.supported)("onboarding approval producer/consumer contr
   let server: Awaited<ReturnType<typeof startRunnerApiTestServer>>;
   let decisionUserId: string;
   let cookie: string;
-  const originalSecret = process.env.PAPERCLIP_AGENT_JWT_SECRET;
+  const originalSecret = process.env.PILIBALA_AGENT_JWT_SECRET;
   beforeAll(async () => {
-    process.env.PAPERCLIP_AGENT_JWT_SECRET = randomUUID();
+    process.env.PILIBALA_AGENT_JWT_SECRET = randomUUID();
     server = await startRunnerApiTestServer({ humanSessions: true });
     const board = await server.fixture({ connectionScenario: "fresh", disableWakeOnDemand: true });
     decisionUserId = board.responsibleUserId!;
@@ -24,8 +24,8 @@ describe.skipIf(!support.supported)("onboarding approval producer/consumer contr
   }, 60_000);
   afterAll(async () => {
     await server?.close();
-    if (originalSecret === undefined) delete process.env.PAPERCLIP_AGENT_JWT_SECRET;
-    else process.env.PAPERCLIP_AGENT_JWT_SECRET = originalSecret;
+    if (originalSecret === undefined) delete process.env.PILIBALA_AGENT_JWT_SECRET;
+    else process.env.PILIBALA_AGENT_JWT_SECRET = originalSecret;
   });
 
   type Fixture = Awaited<ReturnType<typeof server.fixture>>;
@@ -66,7 +66,7 @@ describe.skipIf(!support.supported)("onboarding approval producer/consumer contr
     // Agent creation is fixture setup here; the live journey exercises hiring.
     const workerId = randomUUID();
     await server.db.insert(agents).values({ id: workerId, companyId: f.companyId, name: "Platform Engineer",
-      status: "active", adapterType: "paperclip_runner", runtimeConfig: { heartbeat: { enabled: false, wakeOnDemand: false } } });
+      status: "active", adapterType: "pilibala_runner", runtimeConfig: { heartbeat: { enabled: false, wakeOnDemand: false } } });
     const executionId = await request(f, "confirmation", "Start Step 1: Discovery");
     return { f, plan, planId, hiringId, executionId, workerId };
   };
@@ -80,7 +80,7 @@ describe.skipIf(!support.supported)("onboarding approval producer/consumer contr
     await server.db.update(issues).set({ executionRunId: runId }).where(eq(issues.id, f.issueId));
     await initializeRunIdentity(server.db, { companyId: f.companyId, runId, issueId: f.issueId,
       responsibleUserId: f.responsibleUserId!, cause: "instruction" });
-    return { ...f, runId, authority: new PaperclipRunnerToolAuthority(server.db, { ...f, runId }) };
+    return { ...f, runId, authority: new PilibalaRunnerToolAuthority(server.db, { ...f, runId }) };
   };
 
   for (const kind of ["confirmation", "checkbox"] as const) {
@@ -105,7 +105,7 @@ describe.skipIf(!support.supported)("onboarding approval producer/consumer contr
         if (kind === "checkbox") expect(context.acceptedPlan.approvedOptions).toEqual([selected]);
         else expect(context.acceptedPlan).not.toHaveProperty("approvedOptions");
 
-        const token = createLocalAgentJwt(f.agentId, f.companyId, "paperclip_runner", f.runId, f.responsibleUserId)!;
+        const token = createLocalAgentJwt(f.agentId, f.companyId, "pilibala_runner", f.runId, f.responsibleUserId)!;
         const post = async () => {
           const route = path === "decomposition" ? `/api/issues/${f.issueId}/accepted-plan-decompositions`
             : path === "REST child" ? `/api/issues/${f.issueId}/children` : `/api/companies/${f.companyId}/issues`;
@@ -123,7 +123,7 @@ describe.skipIf(!support.supported)("onboarding approval producer/consumer contr
           const created = await f.authority.execute(nativeInput) as { task: { id: string }; scheduledWakeIds: string[] };
           childId = created.task.id;
           expect(created.scheduledWakeIds).toEqual([`created-child:${childId}`]);
-          const reconnected = new PaperclipRunnerToolAuthority(server.db, f);
+          const reconnected = new PilibalaRunnerToolAuthority(server.db, f);
           expect(await reconnected.execute({ ...nativeInput, callId: randomUUID() })).toEqual(created);
         } else {
           childId = await post();

@@ -14,7 +14,7 @@ deferred. No provider/platform expansion or local Docker is part of this work.
 All seven fresh cloud cases pass canonically on shipping source
 `10dc43c9ec65d88c2f782d62afb296d09494f215`, committed harness
 `1a4408a48cfb5a1f094a311141c257c92cd7a893` and immutable image
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:5b3a775b383591bda1b0c1889e509acc70ce7f37c53f09733c81d59037f02280`. The accepted fixture uses
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:5b3a775b383591bda1b0c1889e509acc70ce7f37c53f09733c81d59037f02280`. The accepted fixture uses
 `openrouter/anthropic/claude-sonnet-4.6` with native low thinking. Production
 accepts the caller's explicit native model; no allowlist, hardcoded default or
 fallback is added. Pi profile 19 has command digest
@@ -68,7 +68,7 @@ The production correction exposes native question field types at the schema
 root and preserves every method-specific constraint and runtime validator.
 Empty arguments, stringified options and cross-method fields remain invalid.
 All three previous closure hashes are reproduced from the retained full
-manifest and reviewed Node pins; only `extensions/paperclip.js` changes.
+manifest and reviewed Node pins; only `extensions/pilibala.js` changes.
 Historical Pi profile-18 decoding retains its exact stored identity; current
 launch admission still rejects it. Later changes are tests, harness and docs.
 Shipping packages and image stay frozen at the source above.
@@ -131,7 +131,7 @@ Frozen runtime/image `b696e131ae32a82418e570b32f4727b5adb14e49` passes all
 54 applicable PR checks and cloud image/public-install job `37777555436`.
 The job retains the exact 20 normal archives and their source-bound hash
 manifest. Its immutable image is
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:ce622e03c606cb93eedda824133b791449f7be752d85e220a2e316f825f37226`.
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:ce622e03c606cb93eedda824133b791449f7be752d85e220a2e316f825f37226`.
 A fresh cloud consumer passes normal install and lifecycle, complete package
 archive and managed-Pi verification, normal companion import, the actual
 installed production pack reader, and installed CLI health/UI startup. The
@@ -143,7 +143,7 @@ writes the requested 33 bytes, performs one complete native read with the exact
 nonce plus LF, receives the expected cross-root denial, saves the exact bytes
 through the public managed-file API, and retires cleanly. The grader wrongly
 requires a null projected target for cloud agent files. The remote projection
-correctly names `.paperclip-runtime/agent-files/<agent-id>/<run-id>/memory/pi-native.txt`;
+correctly names `.pilibala-runtime/agent-files/<agent-id>/<run-id>/memory/pi-native.txt`;
 local private-root reads remain withheld. This is a grader-authority mismatch,
 not evidence of wrong file content. Restart and the fresh task were not reached.
 
@@ -200,7 +200,7 @@ applicable PR checks, with two intentional skips and no unresolved review
 threads. Cloud build `37774605672` also passes its normal source build,
 18-package clean npm installation, lifecycle isolation and Pi profile-18
 admission. Its immutable image is
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:098bd31be64612dd15490f2507ae0cdc08875cc6e35ce6fe5e2ef87fce7d0d69`.
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:098bd31be64612dd15490f2507ae0cdc08875cc6e35ce6fe5e2ef87fce7d0d69`.
 These are credential-free checks; they do not qualify the live cloud memory
 case or the remaining Product and Runner cases.
 
@@ -353,11 +353,11 @@ remaining case counts below are not current delivery instructions.
 | Offline cancellation proof | Profile 18 passes all 49 Pi ACP protocol checks. Historical profile 17 remains decodable; exact launch requires profile 18. |
 | Snapshot retirement proof | Shipping source `06a3d9739` passes 271 focused TypeScript tests, one existing skip, 16 Rust transport tests and Runner typecheck. Actual installed native copy, cancellation and deletion probes pass. All six actual live attempts have independent zero-snapshot cleanup. Installed real Pi RPC recovery and pending cancellation also pass with exact-child retirement. |
 | Normal Linux build and public installation | Source `b696e131ae32a82418e570b32f4727b5adb14e49` passes the normal hosted Linux build, clean 18-package npm install, lifecycle isolation and 20-archive retention in job `37777555436`. A fresh cloud consumer passes full public/plugin graph audits, normal Pi setup and companion import, the actual installed pack reader and server/UI startup before the definition-22 memory pass. |
-| Normal ARM Mac installation | [Native hosted ARM check](https://github.com/paperclipai/paperclip/actions/runs/37694650556) passes on shipping `06a3d9739`: normal workspace/public builds, npm lifecycle, graph audits, Pi setup and packaged admission. All 18 archives and logs are retained and hash-verified; no provider prompts. |
-| Normal Intel Mac installation | [Native Intel continuation](https://github.com/paperclipai/paperclip/actions/runs/37700732418) passes normal npm lifecycle, Pi setup, signed native daemon, graph audits and closed admission in 24,770 ms using the exact 18 retained archives. The original cancelled attempt remains retained; no Rosetta or provider prompts. |
+| Normal ARM Mac installation | [Native hosted ARM check](https://github.com/pilibalaai/pilibala/actions/runs/37694650556) passes on shipping `06a3d9739`: normal workspace/public builds, npm lifecycle, graph audits, Pi setup and packaged admission. All 18 archives and logs are retained and hash-verified; no provider prompts. |
+| Normal Intel Mac installation | [Native Intel continuation](https://github.com/pilibalaai/pilibala/actions/runs/37700732418) passes normal npm lifecycle, Pi setup, signed native daemon, graph audits and closed admission in 24,770 ms using the exact 18 retained archives. The original cancelled attempt remains retained; no Rosetta or provider prompts. |
 | Final Product acceptance | Current-freeze Sonnet 4.6 coverage is 1/26 on installed runtime/image `b696e131ae32a82418e570b32f4727b5adb14e49` and harness `da8d4454ae165b557ff11730e9fe018c9b1cd9b9`: the definition-22 cloud memory cell passes both native reads, exact LF, controller restart, fresh-task readback, cross-root denial and independent cleanup. All 31 canonical files are retained and independently hash-verified. The remaining 25 Product cells need current-freeze qualification. The definition-21 local pass on `06a3d9739` and both historical cloud failures retain their original source and grades. Earlier Sonnet and DeepSeek receipts are historical evidence only. |
 | Final Runner acceptance | Current-freeze coverage remains 0/7. Historical Sonnet coverage is 0/7 on definitions `bf8c509d`. The first get-task-context attempt passed all semantic assertions but retained canonical `accounting_failure/provider_budget_coverage_unknown`: the installed evaluation SDK has no Sonnet 4.6 price entry. The six remaining cases did not run. Native low, 120-second limits and scoring rules remain required; no automatic retries. |
-| Cloud image | [Hosted Linux build and retained packages](https://github.com/paperclipai/paperclip/actions/runs/37777555436) pass for `b696e131ae32a82418e570b32f4727b5adb14e49`. Immutable image `sha256:ce622e03c606cb93eedda824133b791449f7be752d85e220a2e316f825f37226` passes normal companion import and installed pack admission, then the real definition-22 cloud memory case. Guest retirement and owned qualification-host stop are confirmed. Earlier image receipts remain historical. No local Docker is used. |
+| Cloud image | [Hosted Linux build and retained packages](https://github.com/pilibalaai/pilibala/actions/runs/37777555436) pass for `b696e131ae32a82418e570b32f4727b5adb14e49`. Immutable image `sha256:ce622e03c606cb93eedda824133b791449f7be752d85e220a2e316f825f37226` passes normal companion import and installed pack admission, then the real definition-22 cloud memory case. Guest retirement and owned qualification-host stop are confirmed. Earlier image receipts remain historical. No local Docker is used. |
 | PR CI and review | Frozen runtime source `b696e131ae32a82418e570b32f4727b5adb14e49` passes all 54 applicable checks with two skips. Memory harness `da8d4454ae165b557ff11730e9fe018c9b1cd9b9` passes 173 focused regressions and the live cloud case. Current-head CI and review remain required PR gates; a passing memory case does not qualify the full release. Prerequisite #14921 retains the valid premature-admission finding. No merge, release or rollout is authorized. |
 
 The earlier cancellation defect and all failed attempts remain retained. Pi omits
@@ -380,7 +380,7 @@ Production and installed packages are frozen at
 `d38ebc674d9138b941908d5128321e91db05a3a8`. Normal workspace/public builds,
 consumer installation and lifecycle hooks, strict graphs, Pi setup and real
 server/UI admission pass. All 20 archives are hash-verified and retained.
-[Hosted image build](https://github.com/paperclipai/paperclip/actions/runs/37676853634)
+[Hosted image build](https://github.com/pilibalaai/pilibala/actions/runs/37676853634)
 passes. Image `sha256:5e62c8e294cd9d663316ba09b0aae1d7358a8938fe37d17936ef394cf1723ab2`
 passes anonymous Linux admission and an actual credential-free Daytona probe;
 probe deletion is confirmed. Current-source CI passes 54 checks with two skips.
@@ -555,12 +555,12 @@ public admission in 22,245 ms. Its daemon is
 All 18 archives and step logs are retained and independently hash-verified.
 Build lock and platform-specific graph/archive identities remain attached to
 that platform receipt; they are not substituted for the Linux member's bytes.
-The original [native Intel job](https://github.com/paperclipai/paperclip/actions/runs/37694650556)
+The original [native Intel job](https://github.com/pilibalaai/pilibala/actions/runs/37694650556)
 was cancelled by the agent based on a stale live log. Its retained receipt proves
 the workspace/public builds, all 18 archives, normal npm installation and native
 signature check had passed; cancellation interrupted Pi setup. Preserve the
 original receipt and all hash-verified archives. The
-[continuation](https://github.com/paperclipai/paperclip/actions/runs/37700732418)
+[continuation](https://github.com/pilibalaai/pilibala/actions/runs/37700732418)
 binds that original receipt and artifact, uses the same package bytes on native
 Intel hardware and emits synchronous progress. It passes normal npm lifecycle,
 Pi setup, signature verification, complete installed-graph audits and closed
@@ -665,7 +665,7 @@ remains deferred and no prior-source live result transfers to this candidate.
 This branch merges `origin/master` through `a9a20fb5c6c080884ced7ee0a4e3b04f9cbf3a6e`.
 The original integration point was `a6306ba606eb87c89b9ef0344e9fe8e0025580f9`;
 two additional master commits are included in the final merge.
-Pi accepts the operator's explicit provider/model ID without a Paperclip model
+Pi accepts the operator's explicit provider/model ID without a Pilibala model
 allowlist. Catalog discovery does not gate selection. Exact native model
 acknowledgment remains required before prompting. API credentials for built-in
 providers and explicit native custom-provider configurations remain session-bound.
@@ -746,7 +746,7 @@ the review-thread audit finds no unresolved threads or omitted pages.
 All 18 public archives are freshly packed and installed with verified integrity.
 The public-payload audit excludes credentials, databases and run evidence. The
 source-bound image is
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:e8c38507c99db401a23d62c680cea888c58ee213c3edc3b85bf3ff04e3e26090`.
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:e8c38507c99db401a23d62c680cea888c58ee213c3edc3b85bf3ff04e3e26090`.
 Anonymous access and source/content labels pass. Normal native Linux CLI
 installation, Pi setup and offline admission pass with lifecycle scripts and
 the packaged daemon, without a binary override or model key. Admission takes
@@ -809,7 +809,7 @@ The preceding `fc661a364` revision completes full build, recursive typecheck,
 Product harness typecheck and all 1,847 Product unit tests. All 18 freshly
 packed archives install with verified integrity and its Darwin x64 binary
 compiles. Its intermediate image is
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:4238d570faac69149ab718bc0a336876b2afbef6924ab2c1eccbaddb2a347d65`.
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:4238d570faac69149ab718bc0a336876b2afbef6924ab2c1eccbaddb2a347d65`.
 That exact head has 52 successful checks, two skips and one failed Greptile
 cleanup review. These artifacts and checks stay historical for the new claim
 correction; do not admit or qualify them as the final shipping set. No paid
@@ -872,7 +872,7 @@ not attest its missing raw write arguments or regrade either live failure.
 The first cleanup revision `3f6b11a1e` passes full build, recursive typecheck and
 Product harness typecheck. Its qualification-only Linux image is built and
 published at
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:ab05e949af8ccff1a1f94317272ce5d934398a9548b6197de273bfb942bf74a4`.
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:ab05e949af8ccff1a1f94317272ce5d934398a9548b6197de273bfb942bf74a4`.
 The issue/workspace follow-up changes shipping inputs again, so that intermediate
 image is historical and is not admitted or qualified. Preserve its receipts.
 No new paid attempts run in either correction. Latest-head CI and review remain
@@ -945,7 +945,7 @@ sandbox absent, and the superseded Product controller is retired after both its
 jobs finish and every runner process is absent. Their evidence stays preserved.
 
 The rebuilt immutable image is
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:6029b52f8266a64b84160b51b1cd68914b7ea42657896fa30358834254aab071`.
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:6029b52f8266a64b84160b51b1cd68914b7ea42657896fa30358834254aab071`.
 Anonymous digest/source-label verification passes. The freeze manifest is
 `sha256:e15b2b70cad3890555e422a82e62718d1eadf55c3557920a662d6108b596cf2b`.
 The evaluation consumer verifies 722 packages and 79,367 files with zero
@@ -992,7 +992,7 @@ merge or release.
 The fresh Runner human-confirmation case reaches its original 120-second
 provider-turn deadline before any control-plane operation or human interaction.
 The native transcript contains a DSML invocation of
-`mcp__paperclip__request_human_input` as assistant text, followed by a claim that
+`mcp__pilibala__request_human_input` as assistant text, followed by a claim that
 a card was created. The mock state records no such operation or card. There is
 no terminal turn. Provider metadata records Inceptron HTTP 499 after 119.7 seconds
 at 5.3 tokens/second. This observation narrows the failure to native tool-call
@@ -1087,7 +1087,7 @@ qualify changed shipping inputs. Keep rollout held and do not merge or release.
 ## Sandbox GitHub housekeeping correction — 2026-10-06
 
 The shipping correction moves sandbox GitHub launchers, upload locks and
-per-command configuration below `.paperclip-runtime/paperclip-runner/github`.
+per-command configuration below `.pilibala-runtime/pilibala-runner/github`.
 One shared path now binds staging, the native callback bridge and cleanup.
 Local and SSH locations keep their existing behavior. The native watcher,
 excluded subtree, exact byte grades, timeouts and lifecycle assertions do not
@@ -1097,7 +1097,7 @@ image before any further paid qualification. The new set starts at Product
 
 The corrected shipping source is `7f66a30ad7723c1fbcb6ef64b3281eaebddada29`.
 All 18 public package archives are rebuilt and frozen. The immutable Linux image
-is `ghcr.io/paperclipai/paperclip-daytona-runner@sha256:8e744211ded7c19015aececeb87da4e1ee994ca9d85c6fbbebcd916682425231`.
+is `ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:8e744211ded7c19015aececeb87da4e1ee994ca9d85c6fbbebcd916682425231`.
 Anonymous pull, source labels, Daytona import and normal Linux installation,
 Pi setup and offline admission pass; the admission sandbox is deleted. Normal
 ARM Mac and x64 Node under Rosetta install/setup/admission also pass. Physical
@@ -1163,7 +1163,7 @@ Rollout remains held. Do not merge or release.
 
 Shipping source is now `0cff2b20b5ea785880ad119dde59e6f011a3f9e1`.
 All 18 public workspace tarballs are freshly packed from that source. The Linux
-image is `ghcr.io/paperclipai/paperclip-daytona-runner@sha256:f8cfc51909edbc728063e815a2c81ce9169ab58784d1f7c26f7a9f422b3f718f`.
+image is `ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:f8cfc51909edbc728063e815a2c81ce9169ab58784d1f7c26f7a9f422b3f718f`.
 Anonymous pull, source labels, immutable Daytona import and normal Linux npm
 installation, Pi setup and admission pass. Its owned admission sandbox is deleted.
 Normal npm lifecycle installation, Pi setup and admission also pass on ARM Mac
@@ -1191,7 +1191,7 @@ Build and recursive typecheck pass at the shipping source. Fixture head
 `6c09e4c87` has 53 successful GitHub checks, two skips, Greptile 5/5 and no
 unresolved review threads. The first full local workspace run retains 15,042
 passes, 87 skips and five plugin auto-build failures. Its launcher globally set
-`PAPERCLIP_DISABLE_PLUGIN_AUTOBUILD=1`. Removing that test-environment flag makes
+`PILIBALA_DISABLE_PLUGIN_AUTOBUILD=1`. Removing that test-environment flag makes
 all 11 affected tests pass with unchanged source and assertions. The corrected
 full `pnpm test:run` child reaches terminal failure after its launcher was
 interrupted: 12,920 passes, 2,210 skips, four failed tests and 36 failed files.
@@ -1221,7 +1221,7 @@ browser helper path and subsequent write-once log collision remain retained;
 the corrected free phase reuses its already passing graph and observer controls.
 
 Private Runner definitions are now `dc97fdcbef5de3ea061bc1f0a3b68af6e617f0bc`
-in draft [Evals PR #44](https://github.com/paperclipai/paperclip-evals/pull/44).
+in draft [Evals PR #44](https://github.com/pilibalaai/pilibala-evals/pull/44).
 They bind native profile 15 and its platform closure digests. All 76 admission,
 roster and campaign tests pass with supported Python. All seven requests pass the
 actual installed CLI checks before provider construction; profile 14 is still
@@ -1243,7 +1243,7 @@ Product 0/26 and Runner 0/7.
 
 A credential-free regression reproduces the fallback restore defect after
 controller recovery: file bytes survive, but transfer creates a reserved
-`.paperclip-runtime/agent-files` directory inside native `AGENT_HOME`. The
+`.pilibala-runtime/agent-files` directory inside native `AGENT_HOME`. The
 product's complete agent-directory probe rejects that directory. Transfer
 scratch now lives in the original materialization's host runtime area, outside
 native memory. Both staging and recovery use the same lease-confined path.
@@ -1384,7 +1384,7 @@ and profile 15. The normal public ARM graph verifies 722 packages and 79,373
 files with zero mismatches. Full build and recursive typecheck pass. Normal
 Linux public install, companion import, native admission and browser startup
 pass against immutable image
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:20c7fffddeee4298830ead1ea3f0b70819f61e549279588b605440d1155f7260`.
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:20c7fffddeee4298830ead1ea3f0b70819f61e549279588b605440d1155f7260`.
 Its controller passes 342 fixture checks, 21 native fault checks and collection
 of all 26 Product cells with zero model calls. An installed-UI intercepted POST
 proves one fenced prompt with valid JSON, all 33 content bytes and no duplicate.
@@ -1569,7 +1569,7 @@ qualification remain required after this binding correction.
 The source-bound `b012b3aeb` artifacts now pass normal public profile-15
 admission on ARM Mac (8.618 seconds) and native Linux (8.498 seconds). The new
 immutable image is
-`ghcr.io/paperclipai/paperclip-daytona-runner@sha256:3279d92405a59b4654cb6af5de27bfacffee73a2c57311bf5f2d5ff9272b9b67`.
+`ghcr.io/pilibalaai/pilibala-daytona-runner@sha256:3279d92405a59b4654cb6af5de27bfacffee73a2c57311bf5f2d5ff9272b9b67`.
 Anonymous pull, source identity, normal companion import, and Linux installed
 server health/browser startup pass with zero provider calls. The temporary
 image-admission sandbox is deleted. The Linux qualification controller remains
@@ -1946,7 +1946,7 @@ is claimed. No automatic paid retry, fallback key, model change, workflow edit,
 or lockfile commit occurs.
 
 Normal installed Mac-to-Linux authority now passes the documented
-`paperclipai runtime import-remote` path. The companion comes from immutable
+`pilibalaai runtime import-remote` path. The companion comes from immutable
 image `sha256:342f1fd5cb8cabfa2242f38f4f686608b28b6536aa879c54b0cb0da6fba9ef47`,
 contains 24,352 inventoried entries, and has manifest SHA256
 `2c9d337c7d3753db6b8c44c5b347e195a2544b574670af7f32e5dfaffc0b4017`.
@@ -1965,7 +1965,7 @@ Historical corrections and evidence as of October 3:
   a full wake and the next sleep, with no state event during its 11:54–11:57 UTC
   attempt. The separate workflow-context/document sleep correction does not
   establish a correction for this failure.
-- Runner finish-task reports the run through `paperclip_finish` without invoking
+- Runner finish-task reports the run through `pilibala_finish` without invoking
   the advertised `finish_task` mutation. Preserve the mock authority distinction
   and the failed behavior grade. The actual failed attempt advertises and
   authorizes `finish_task`; runtime instructions already explain the distinction.
@@ -2589,7 +2589,7 @@ They are retained history, not the current remaining-case roster.
    build then exits 137; the kernel records one OOM kill and a peak at the
    8 GiB cap. The resize request fails with an unavailable API endpoint.
    The full native Linux CI build independently passes `pnpm build` across all
-   35 build projects using Node 24.21.0 and Rust 1.97.1. [Job 111317358779](https://github.com/paperclipai/paperclip/actions/runs/37162051919/job/111317358779)
+   35 build projects using Node 24.21.0 and Rust 1.97.1. [Job 111317358779](https://github.com/pilibalaai/pilibala/actions/runs/37162051919/job/111317358779)
    checks out `5e36276bd`; its complete Git tree exactly equals PR head `e90143a5c`.
    Shipping inputs also match the frozen artifacts. This proves the required
    full build command without regrading either failed Daytona build or claiming
@@ -2633,9 +2633,9 @@ the database status. Drain or recover recorded cleanup before rolling back to
 a release that cannot interpret its metadata, and preserve the provider handle
 and receipts throughout that operation.
 
-1. Record `paperclipai --version`, the prior CLI/server package versions, the
+1. Record `pilibalaai --version`, the prior CLI/server package versions, the
    current company configuration and the exact retained package set. Run
-   `paperclipai db:backup --json` against the intended instance. Retain the
+   `pilibalaai db:backup --json` against the intended instance. Retain the
    reported backup path and size. Record the backup file SHA256 before updating.
    Drain active native runs on every platform before updating. On Linux, also
    drain before crossing between ctime-based and kernel-birth receipts. Never
@@ -2647,9 +2647,9 @@ and receipts throughout that operation.
    separately reviewed install procedure rather than this npm version command.
 
    ```sh
-   paperclipai update --version "$PI_RELEASE_VERSION" --dry-run --json
-   paperclipai update --version "$PI_RELEASE_VERSION"
-   paperclipai runtime setup pi
+   pilibalaai update --version "$PI_RELEASE_VERSION" --dry-run --json
+   pilibalaai update --version "$PI_RELEASE_VERSION"
+   pilibalaai runtime setup pi
    ```
 
 3. For Daytona, select the exact image in the completed release qualification
@@ -2662,7 +2662,7 @@ and receipts throughout that operation.
    platform-specific manifest digests are evidence, not published release assets.
 
    ```sh
-   paperclipai runtime import-remote "$PI_RELEASE_COMPANION" --sha256 "$PI_RELEASE_COMPANION_SHA256"
+   pilibalaai runtime import-remote "$PI_RELEASE_COMPANION" --sha256 "$PI_RELEASE_COMPANION_SHA256"
    ```
 
 4. After all release gates pass, begin with one operator-owned Linux Pi company using profile 18,
@@ -2690,8 +2690,8 @@ platform. On Linux, also drain before crossing the process-birth format change.
 Preserve terminal and cleanup evidence.
 
 ```sh
-paperclipai update --rollback --dry-run --json
-paperclipai update --rollback
+pilibalaai update --rollback --dry-run --json
+pilibalaai update --rollback
 ```
 
 The CLI restores the retained prior managed payload and restarts an active

@@ -11,7 +11,7 @@ afterEach(async () => { while (cleanups.length) await cleanups.pop()?.(); });
 
 (support.supported ? describe : describe.skip)("standard workspace defaults", () => {
   it("defaults new people to Coordinator", async () => {
-    const database = await startEmbeddedPostgresTestDatabase("paperclip-workspace-defaults-fresh-");
+    const database = await startEmbeddedPostgresTestDatabase("pilibala-workspace-defaults-fresh-");
     cleanups.push(database.cleanup);
     const sql = postgres(database.connectionString, { max: 1, onnotice: () => {} });
     try {
@@ -22,7 +22,7 @@ afterEach(async () => { while (cleanups.length) await cleanups.pop()?.(); });
   }, 30_000);
 
   it.each([null, true, false])("preserves legacy preferences and unrelated instance storage (%s) on upgrade and replay", async chat => {
-    const database = await startEmbeddedPostgresTestDatabase("paperclip-workspace-defaults-upgrade-");
+    const database = await startEmbeddedPostgresTestDatabase("pilibala-workspace-defaults-upgrade-");
     cleanups.push(database.cleanup);
     const sql = postgres(database.connectionString, { max: 1, onnotice: () => {} });
     try {
@@ -52,7 +52,7 @@ afterEach(async () => { while (cleanups.length) await cleanups.pop()?.(); });
   }, 30_000);
 
   it("starts Classic off for legacy preferences and preserves a later explicit opt-in on replay", async () => {
-    const database = await startEmbeddedPostgresTestDatabase("paperclip-classic-workspace-upgrade-");
+    const database = await startEmbeddedPostgresTestDatabase("pilibala-classic-workspace-upgrade-");
     cleanups.push(database.cleanup);
     const sql = postgres(database.connectionString, { max: 1, onnotice: () => {} });
     try {

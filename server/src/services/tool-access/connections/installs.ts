@@ -4,9 +4,9 @@ import { actorBinding } from "../actor.js";
 import { lockToolAssignmentAgents, lockToolConnectionRuntimeInputs } from "../assignment-locks.js";
 import type { ActorInfo } from "../types.js";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { toolAccessAuditEvents, toolConnectionInstalls, toolConnections, toolProfileBindings, toolProfileEntries, toolProfiles } from "@paperclipai/db";
-import type { ToolConnection, ToolConnectionInstall, ToolConnectionInstallSnapshot, PutToolConnectionInstalls } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { toolAccessAuditEvents, toolConnectionInstalls, toolConnections, toolProfileBindings, toolProfileEntries, toolProfiles } from "@pilibalaai/db";
+import type { ToolConnection, ToolConnectionInstall, ToolConnectionInstallSnapshot, PutToolConnectionInstalls } from "@pilibalaai/shared";
 import { unprocessable } from "../../../errors.js";
 import { logActivity } from "../../activity-log.js";
 

@@ -1,4 +1,4 @@
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import type { IdleLocalWorkOptions } from "../services/idle-local-work.js";
 import type { VerifiedIdleCapabilities } from "../services/idle-incoming-wake-capability.js";
 import { installDatabaseWorkSignals } from "../../../packages/db/src/work-signals.js";

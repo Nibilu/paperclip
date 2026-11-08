@@ -250,7 +250,7 @@ const meta = {
           "Delegated subagents inside a runner turn. A Claude `Task`/`Agent` call (or a Codex collab child thread) becomes a collapsible card with the subagent type, prompt, live progress summary, nested tool rows and result. Parallel subagents dispatched together render as a small tree with status dots.",
       },
     },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "tasks/discussion",
         "runs-adapters/runs"

@@ -34,7 +34,7 @@ or instance administrator.
 
 Choose the environment in agent/project/workspace configuration, then inspect the resulting task/run and workspace.
 
-## Driving it with Playwright and the Paperclip CLI
+## Driving it with Playwright and the Pilibala CLI
 
 Preconditions: follow the [baseline](./README.md#before-driving-a-journey). Use an owned disposable target and a supported provider plugin. Record provider, target identity, account, and spending constraints before a live remote run.
 
@@ -52,7 +52,7 @@ the live lease and cleanup is confirmed. Inspect `platformQualificationRecorded`
 and its diagnostic in the probe result: connection success alone does not mean
 the image has native runtime qualification.
 
-Paperclip-managed Cloud images use the current platform-selected image without
+Pilibala-managed Cloud images use the current platform-selected image without
 a saved qualification prerequisite when the active Cloud configuration provisions
 the sandbox provider. Custom environments and active captured custom images
 retain qualification requirements.
@@ -66,7 +66,7 @@ account, image or active captured template invalidates
 the record; normal metadata edits cannot forge or overwrite it, and API reads
 omit the private metadata. Reading this evidence for discovery or creation does
 not allocate a sandbox. The draft `probe-config` checks are not a saved-image
-qualification operation. See the [runtime contract](../../packages/paperclip-runner/README.md)
+qualification operation. See the [runtime contract](../../packages/pilibala-runner/README.md)
 and [adapter validation recipe](./runs-adapters.md#adapter-setup) for native
 binary/provider readiness after platform qualification.
 
@@ -85,7 +85,7 @@ execution. Remote-driver probes and a real bounded run need their own evidence.
 
 ### `remote-execution`
 
-For `paperclip_runner`, a saved plugin environment can provide per-turn Runner
+For `pilibala_runner`, a saved plugin environment can provide per-turn Runner
 execution when its manifest and worker expose the Runner task API. The task
 contract starts a provider-owned Runner without shell or workspace hooks. Core
 resolves the saved lease, connects through PRP, and verifies stop before lease

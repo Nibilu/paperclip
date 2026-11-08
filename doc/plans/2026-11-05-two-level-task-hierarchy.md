@@ -207,7 +207,7 @@ What exists today, and what changes:
   (`assertExecutionTaskParent`). Chat-created work hangs off its *own* top-level
   task, not the chat. `originIssueId` = the conversation records the link.
 - **Runner `create_task` in a conversation** always creates top-level and has no
-  parent input (`paperclip-runner-tool-authority.ts:1706/1803`). To allow
+  parent input (`pilibala-runner-tool-authority.ts:1706/1803`). To allow
   "top-level task + subtasks" in one chat, let the conversation-bound tool accept
   an optional parent **that is a task created from this same conversation**
   (`originIssueId` = this conversation). Anything else is ignored (created
@@ -261,9 +261,9 @@ Routes (`server/src/routes/issues.ts`):
 
 ## 6. Every agent/harness creator (covered by the choke points; one test each)
 
-- Runner `create_task`: `paperclip-runner-tool-authority.ts:1803` always calls
+- Runner `create_task`: `pilibala-runner-tool-authority.ts:1803` always calls
   `createChild(binding.issueId)`. Update its description in
-  `packages/paperclip-runner/src/protocol-actions/create-task.ts`.
+  `packages/pilibala-runner/src/protocol-actions/create-task.ts`.
 - Project tools `create_task`: `project-tools.ts:50`.
 - Native `create_delegated_issue`: `status-decision-committer.ts:729`.
 - Accepted-plan decomposition: `issues.ts:~10021`. Its cursor tracks explicit
@@ -288,13 +288,13 @@ Routes (`server/src/routes/issues.ts`):
   `ui/src/components/task-chat/task-created-items.ts`).
 - **CLI** (`cli/src/commands/client/issue.ts:289-352`). With an agent key, print
   the `parentAdjusted` notice. With user auth, nesting is unrestricted.
-- **Skills/docs.** Update `skills/paperclip/SKILL.md`,
-  `skills/paperclip/references/api-reference.md`,
-  `skills/paperclip-board/SKILL.md` and
-  `packages/skills-catalog/catalog/bundled/paperclip-operations/issue-triage/SKILL.md`:
+- **Skills/docs.** Update `skills/pilibala/SKILL.md`,
+  `skills/pilibala/references/api-reference.md`,
+  `skills/pilibala-board/SKILL.md` and
+  `packages/skills-catalog/catalog/bundled/pilibala-operations/issue-triage/SKILL.md`:
   agents nest one level, deeper requests become siblings, use
   `blockedByIssueIds` for ordering. Do the same for the external
-  `paperclip-converting-plans-to-tasks` skill. Add the rule to
+  `pilibala-converting-plans-to-tasks` skill. Add the rule to
   `doc/SPEC-implementation.md` (additive).
 
 ## 8. Tests

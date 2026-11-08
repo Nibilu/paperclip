@@ -62,7 +62,7 @@ test("repository-wide guidance guards run uncached for every scanned UI file typ
   assert.equal(config.tasks["//#ci:typecheck"].cache, false);
   const workflow = readFileSync(new URL(".github/workflows/pr-trusted.yml", root), "utf8");
   const job = workflow.split("\n  typecheck_release_registry:\n")[1].split("\n  general_tests:\n")[0];
-  assert.match(job, /- name: Verify repository-wide CLI guidance safety\n        run: pnpm exec vitest run --project @paperclipai\/server server\/src\/__tests__\/cli-invocation-safety.test.ts/);
+  assert.match(job, /- name: Verify repository-wide CLI guidance safety\n        run: pnpm exec vitest run --project @pilibalaai\/server server\/src\/__tests__\/cli-invocation-safety.test.ts/);
   assert.ok(!job.includes("uses: ./.github/actions/run-ci-task"));
 });
 
@@ -72,7 +72,7 @@ test("shared contracts, runtime prompts, protocol inputs and fixtures reach cons
     assert.ok(shared.has(task), task);
   }
   assert.ok(selectedTasks(plan(["server/src/onboarding-assets/default/AGENTS.md"])).has("ci:runner-vitest"));
-  assert.ok(selectedTasks(plan(["packages/paperclip-runner/protocol/schema.json"])).has("ci:runner-rust"));
+  assert.ok(selectedTasks(plan(["packages/pilibala-runner/protocol/schema.json"])).has("ci:runner-rust"));
   for (const file of ["tests/runner-e2e/fixtures/prompt.md", "scripts/run-vitest-stable.mjs", "pnpm-lock.yaml"]) {
     assert.ok(Object.values(plan([file]).jobs).every((job) => job.selected === job.total), file);
   }
@@ -85,7 +85,7 @@ test("sandbox provider tests run only for the providers, the plugin SDK, and wha
     assert.equal(selected(plan([file]), "sandbox_provider_tests"), true, file);
   }
   for (const file of ["server/src/index.ts", "ui/src/components/Sidebar.tsx", "cli/src/index.ts",
-    "packages/paperclip-runner/src/index.ts", "packages/plugins/plugin-workspace-diff/src/worker.ts"]) {
+    "packages/pilibala-runner/src/index.ts", "packages/plugins/plugin-workspace-diff/src/worker.ts"]) {
     assert.equal(selected(plan([file]), "sandbox_provider_tests"), false, file);
   }
   // The provider lockfiles, the shared install workspace and the runner script are global inputs.
@@ -97,7 +97,7 @@ test("sandbox provider tests run only for the providers, the plugin SDK, and wha
   const sdk = JSON.parse(readFileSync(new URL("packages/plugins/sdk/package.json", root), "utf8"));
   const workspace = Object.entries({ ...sdk.dependencies, ...sdk.peerDependencies })
     .filter(([, version]) => String(version).startsWith("workspace:")).map(([name]) => name);
-  assert.deepEqual(workspace, ["@paperclipai/shared"]);
+  assert.deepEqual(workspace, ["@pilibalaai/shared"]);
   const shared = JSON.parse(readFileSync(new URL("packages/shared/package.json", root), "utf8"));
   assert.deepEqual(Object.values({ ...shared.dependencies, ...shared.peerDependencies })
     .filter((version) => String(version).startsWith("workspace:")), []);
@@ -237,7 +237,7 @@ test("the real routing step uses pinned trusted definitions and defaults to full
     writeFileSync(path.join(directory, "git"), `#!/usr/bin/env node
 const {spawnSync}=require('node:child_process');
 if(process.env.TEST_GIT_FAILURE==='true')process.exit(1);
-const args=process.argv.slice(2).map(a=>a==='https://github.com/paperclipai/paperclip.git'?process.env.TEST_GIT_REPOSITORY:a);
+const args=process.argv.slice(2).map(a=>a==='https://github.com/pilibalaai/pilibala.git'?process.env.TEST_GIT_REPOSITORY:a);
 const r=spawnSync(${JSON.stringify(gitBin)},args,{stdio:'inherit'});process.exit(r.status??1);
 `);
     chmodSync(path.join(directory, "git"), 0o755);
@@ -293,7 +293,7 @@ test("audited prose does not widen source selection, but guidance still runs its
   assert.deepEqual([...selectedTasks(guidance)], ["ci:typecheck"]);
   assert.equal(config.tasks["//#ci:typecheck"].cache, false);
   assert.deepEqual([...selectedTasks(plan(["doc/plans/2026-10-30-example.md"]))], []);
-  for (const file of ["docs/api/issues.md", "doc/unknown.md", "doc/plans/tool.sh", "skills/paperclip/SKILL.md",
+  for (const file of ["docs/api/issues.md", "doc/unknown.md", "doc/plans/tool.sh", "skills/pilibala/SKILL.md",
     "server/src/onboarding-assets/default/AGENTS.md", "tests/fixtures/example.md"]) {
     assert.ok(selectedTasks(plan([source, file])).has("ci:server"), file);
   }

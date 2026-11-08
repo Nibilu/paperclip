@@ -1,9 +1,9 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
-import { companies, heartbeatRuns, issueComments, issueThreadInteractions, issues, type Db } from "@paperclipai/db";
+import { companies, heartbeatRuns, issueComments, issueThreadInteractions, issues, type Db } from "@pilibalaai/db";
 import {
   normalizeIssueThreadInteractionResolverPolicy, resolveConfirmationFromCommentSchema,
   type InteractionResolverGovernance, type IssueThreadInteractionKind, type ResolveConfirmationFromComment,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { assertAgentRunWriteAllowed } from "../agent-run-cancellation.js";
 import { conflict, forbidden, notFound, unprocessable } from "../errors.js";
 import { persistActivity, publishActivity, type ActivityPublication } from "./activity-log.js";

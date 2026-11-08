@@ -1,4 +1,4 @@
-import { executionAdmissions } from "@paperclipai/db";
+import { executionAdmissions } from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
 import type { CompanyDeletionParticipant } from "../../../lib/company-deletion.js";
 

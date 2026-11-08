@@ -12,8 +12,8 @@ import {
   pluginDatabaseNamespaces,
   pluginMigrations,
   plugins,
-} from "@paperclipai/db";
-import type { PaperclipPluginManifestV1 } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import type { PilibalaPluginManifestV1 } from "@pilibalaai/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -29,8 +29,8 @@ import { buildPluginWorkerEnv, pluginLoader } from "../services/plugin-loader.js
 
 const embeddedPostgresSupport = await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
-const multiMigrationPluginKey = "paperclip.dbfixture";
-const llmWikiPluginKey = "paperclipai.plugin-llm-wiki";
+const multiMigrationPluginKey = "pilibala.dbfixture";
+const llmWikiPluginKey = "pilibalaai.plugin-llm-wiki";
 
 if (!embeddedPostgresSupport.supported) {
   console.warn(
@@ -156,8 +156,8 @@ describe("buildPluginWorkerEnv", () => {
       processEnv: { PROVIDER_ORIGIN: "https://provider.test", PROVIDER_BLANK: " ", DATABASE_URL: "postgres://host", OPENAI_API_KEY: "openai-token" },
     });
     expect(env).toEqual({
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public",
+      PILIBALA_DEPLOYMENT_MODE: "authenticated",
+      PILIBALA_DEPLOYMENT_EXPOSURE: "public",
       PROVIDER_ORIGIN: "https://provider.test",
     });
   });
@@ -175,8 +175,8 @@ describe("buildPluginWorkerEnv", () => {
     });
 
     expect(env).toEqual({
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public",
+      PILIBALA_DEPLOYMENT_MODE: "authenticated",
+      PILIBALA_DEPLOYMENT_EXPOSURE: "public",
       ANTHROPIC_API_KEY: "anthropic-token",
       OPENAI_API_KEY: "openai-token",
     });
@@ -195,8 +195,8 @@ describe("buildPluginWorkerEnv", () => {
     });
 
     expect(env).toEqual({
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public",
+      PILIBALA_DEPLOYMENT_MODE: "authenticated",
+      PILIBALA_DEPLOYMENT_EXPOSURE: "public",
       KUBERNETES_SERVICE_HOST: "10.0.0.1",
       KUBERNETES_SERVICE_PORT: "443",
     });
@@ -212,17 +212,17 @@ describe("buildPluginWorkerEnv", () => {
     });
 
     expect(env).toEqual({
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public",
+      PILIBALA_DEPLOYMENT_MODE: "authenticated",
+      PILIBALA_DEPLOYMENT_EXPOSURE: "public",
     });
   });
 
   it.each([
-    { packagePath: null, packageName: "@paperclipai/plugin-createos", driverKey: "createos", allowed: true },
-    { packagePath: "/app/packages/plugins/sandbox-providers/createos", packageName: "@paperclipai/plugin-createos", driverKey: "createos", allowed: true },
-    { packagePath: "/home/operator/plugins/fake-createos", packageName: "@paperclipai/plugin-createos", driverKey: "createos", allowed: false },
+    { packagePath: null, packageName: "@pilibalaai/plugin-createos", driverKey: "createos", allowed: true },
+    { packagePath: "/app/packages/plugins/sandbox-providers/createos", packageName: "@pilibalaai/plugin-createos", driverKey: "createos", allowed: true },
+    { packagePath: "/home/operator/plugins/fake-createos", packageName: "@pilibalaai/plugin-createos", driverKey: "createos", allowed: false },
     { packagePath: null, packageName: "@acme/plugin-createos", driverKey: "createos", allowed: false },
-    { packagePath: null, packageName: "@paperclipai/plugin-createos", driverKey: "daytona", allowed: false },
+    { packagePath: null, packageName: "@pilibalaai/plugin-createos", driverKey: "daytona", allowed: false },
   ])("confines the CreateOS fallback credential to its trusted worker: $packageName / $packagePath / $driverKey", ({ allowed, driverKey, ...installation }) => {
     const env = buildPluginWorkerEnv({
       ...installation,
@@ -235,18 +235,18 @@ describe("buildPluginWorkerEnv", () => {
       processEnv: { CREATEOS_API_KEY: "createos-token", DAYTONA_API_KEY: "daytona-token" },
     });
     expect(env).toEqual({
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public",
+      PILIBALA_DEPLOYMENT_MODE: "authenticated",
+      PILIBALA_DEPLOYMENT_EXPOSURE: "public",
       ...(allowed ? { CREATEOS_API_KEY: "createos-token" } : {}),
     });
   });
 
   it.each([
-    { packagePath: null, packageName: "@paperclipai/plugin-boxd", driverKey: "boxd", allowed: true },
-    { packagePath: "/app/packages/plugins/sandbox-providers/boxd", packageName: "@paperclipai/plugin-boxd", driverKey: "boxd", allowed: true },
-    { packagePath: "/home/operator/plugins/fake-boxd", packageName: "@paperclipai/plugin-boxd", driverKey: "boxd", allowed: false },
+    { packagePath: null, packageName: "@pilibalaai/plugin-boxd", driverKey: "boxd", allowed: true },
+    { packagePath: "/app/packages/plugins/sandbox-providers/boxd", packageName: "@pilibalaai/plugin-boxd", driverKey: "boxd", allowed: true },
+    { packagePath: "/home/operator/plugins/fake-boxd", packageName: "@pilibalaai/plugin-boxd", driverKey: "boxd", allowed: false },
     { packagePath: null, packageName: "@acme/plugin-boxd", driverKey: "boxd", allowed: false },
-    { packagePath: null, packageName: "@paperclipai/plugin-boxd", driverKey: "daytona", allowed: false },
+    { packagePath: null, packageName: "@pilibalaai/plugin-boxd", driverKey: "daytona", allowed: false },
   ])("confines the boxd fallback credential to its trusted worker: $packageName / $packagePath / $driverKey", ({ allowed, driverKey, ...installation }) => {
     const env = buildPluginWorkerEnv({
       ...installation,
@@ -259,8 +259,8 @@ describe("buildPluginWorkerEnv", () => {
       processEnv: { BOXD_API_KEY: "boxd-token", DAYTONA_API_KEY: "daytona-token" },
     });
     expect(env).toEqual({
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public",
+      PILIBALA_DEPLOYMENT_MODE: "authenticated",
+      PILIBALA_DEPLOYMENT_EXPOSURE: "public",
       ...(allowed ? { BOXD_API_KEY: "boxd-token" } : {}),
     });
   });
@@ -271,7 +271,7 @@ describe("buildPluginWorkerEnv", () => {
         capabilities: ["environment.drivers.register"],
         environmentDrivers: [{ driverKey: "daytona" }],
       },
-      packageName: "@paperclipai/plugin-daytona",
+      packageName: "@pilibalaai/plugin-daytona",
       packagePath: null,
       instanceInfo,
       processEnv: {
@@ -282,8 +282,8 @@ describe("buildPluginWorkerEnv", () => {
     });
 
     expect(env).toEqual({
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public",
+      PILIBALA_DEPLOYMENT_MODE: "authenticated",
+      PILIBALA_DEPLOYMENT_EXPOSURE: "public",
       DAYTONA_API_KEY: "daytona-token",
     });
   });
@@ -294,7 +294,7 @@ describe("buildPluginWorkerEnv", () => {
         capabilities: ["environment.drivers.register"],
         environmentDrivers: [{ driverKey: "daytona" }],
       },
-      packageName: "@paperclipai/plugin-daytona",
+      packageName: "@pilibalaai/plugin-daytona",
       packagePath: "/app/packages/plugins/sandbox-providers/daytona",
       trustedLocalPluginRoots: ["/app/packages/plugins"],
       instanceInfo,
@@ -304,8 +304,8 @@ describe("buildPluginWorkerEnv", () => {
     });
 
     expect(env).toEqual({
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public",
+      PILIBALA_DEPLOYMENT_MODE: "authenticated",
+      PILIBALA_DEPLOYMENT_EXPOSURE: "public",
       DAYTONA_API_KEY: "daytona-token",
     });
   });
@@ -316,8 +316,8 @@ describe("buildPluginWorkerEnv", () => {
         capabilities: ["environment.drivers.register"],
         environmentDrivers: [{ driverKey: "daytona" }],
       },
-      packageName: "@paperclipai/plugin-daytona",
-      packagePath: "/home/operator/.paperclip/plugins/fake-daytona",
+      packageName: "@pilibalaai/plugin-daytona",
+      packagePath: "/home/operator/.pilibala/plugins/fake-daytona",
       trustedLocalPluginRoots: ["/app/packages/plugins"],
       instanceInfo,
       processEnv: {
@@ -326,8 +326,8 @@ describe("buildPluginWorkerEnv", () => {
     });
 
     expect(env).toEqual({
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public",
+      PILIBALA_DEPLOYMENT_MODE: "authenticated",
+      PILIBALA_DEPLOYMENT_EXPOSURE: "public",
     });
   });
 
@@ -345,8 +345,8 @@ describe("buildPluginWorkerEnv", () => {
     });
 
     expect(env).toEqual({
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public",
+      PILIBALA_DEPLOYMENT_MODE: "authenticated",
+      PILIBALA_DEPLOYMENT_EXPOSURE: "public",
     });
   });
 
@@ -356,7 +356,7 @@ describe("buildPluginWorkerEnv", () => {
         capabilities: ["environment.drivers.register"],
         environmentDrivers: [{ driverKey: "kubernetes" }],
       },
-      packageName: "@paperclipai/plugin-daytona",
+      packageName: "@pilibalaai/plugin-daytona",
       instanceInfo,
       processEnv: {
         DAYTONA_API_KEY: "daytona-token",
@@ -364,8 +364,8 @@ describe("buildPluginWorkerEnv", () => {
     });
 
     expect(env).toEqual({
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public",
+      PILIBALA_DEPLOYMENT_MODE: "authenticated",
+      PILIBALA_DEPLOYMENT_EXPOSURE: "public",
     });
   });
 });
@@ -376,12 +376,12 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
   let packageRoots: string[] = [];
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-plugin-db-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-plugin-db-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
   afterEach(async () => {
-    for (const pluginKey of ["paperclip.dbtest", "paperclip.escape", "paperclip.refresh", multiMigrationPluginKey, llmWikiPluginKey]) {
+    for (const pluginKey of ["pilibala.dbtest", "pilibala.escape", "pilibala.refresh", multiMigrationPluginKey, llmWikiPluginKey]) {
       const namespace = derivePluginDatabaseNamespace(pluginKey);
       await db.execute(sql.raw(`DROP SCHEMA IF EXISTS "${namespace}" CASCADE`));
     }
@@ -400,8 +400,8 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     await tempDb?.cleanup();
   });
 
-  async function createPluginPackage(manifest: PaperclipPluginManifestV1, migrationSql: string) {
-    const packageRoot = await mkdtemp(path.join(os.tmpdir(), "paperclip-plugin-package-"));
+  async function createPluginPackage(manifest: PilibalaPluginManifestV1, migrationSql: string) {
+    const packageRoot = await mkdtemp(path.join(os.tmpdir(), "pilibala-plugin-package-"));
     packageRoots.push(packageRoot);
     const migrationsDir = path.join(packageRoot, manifest.database!.migrationsDir);
     await mkdir(migrationsDir, { recursive: true });
@@ -409,14 +409,14 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     return packageRoot;
   }
 
-  function llmWikiManifest(): PaperclipPluginManifestV1 {
+  function llmWikiManifest(): PilibalaPluginManifestV1 {
     return {
       id: llmWikiPluginKey,
       apiVersion: 1,
       version: "0.1.0",
       displayName: "LLM Wiki",
       description: "Local-file LLM Wiki plugin.",
-      author: "Paperclip",
+      author: "Pilibala",
       categories: ["automation", "ui"],
       capabilities: [
         "database.namespace.migrate",
@@ -433,7 +433,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
   }
 
   async function createInstallablePluginPackage(
-    pluginManifest: PaperclipPluginManifestV1,
+    pluginManifest: PilibalaPluginManifestV1,
     migrationSql: string,
   ) {
     const packageRoot = await createPluginPackage(pluginManifest, migrationSql);
@@ -443,7 +443,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
         name: pluginManifest.id,
         version: pluginManifest.version,
         type: "module",
-        paperclipPlugin: { manifest: "./manifest.js" },
+        pilibalaPlugin: { manifest: "./manifest.js" },
       }),
       "utf8",
     );
@@ -457,7 +457,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     return packageRoot;
   }
 
-  async function installPluginRecord(manifest: PaperclipPluginManifestV1) {
+  async function installPluginRecord(manifest: PilibalaPluginManifestV1) {
     const pluginId = randomUUID();
     await db.insert(plugins).values({
       id: pluginId,
@@ -473,14 +473,14 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     return pluginId;
   }
 
-  function manifest(pluginKey = "paperclip.dbtest"): PaperclipPluginManifestV1 {
+  function manifest(pluginKey = "pilibala.dbtest"): PilibalaPluginManifestV1 {
     return {
       id: pluginKey,
       apiVersion: 1,
       version: "1.0.0",
       displayName: "DB Test",
       description: "Exercises restricted plugin database access.",
-      author: "Paperclip",
+      author: "Pilibala",
       categories: ["automation"],
       capabilities: [
         "database.namespace.migrate",
@@ -535,7 +535,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
       .where(and(eq(pluginMigrations.pluginId, pluginId), eq(pluginMigrations.status, "applied")));
     expect(migrations.map((migration) => migration.migrationKey)).toEqual([
       "001_llm_wiki.sql",
-      "002_paperclip_distillation.sql",
+      "002_pilibala_distillation.sql",
       "003_spaces.sql",
     ]);
 
@@ -566,13 +566,13 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
       ]),
     );
     expect(constraints).not.toContain("wiki_pages_company_id_wiki_id_path_key");
-    expect(constraints).not.toContain("paperclip_distillation_cursor_company_id_wiki_id_source_sco_key");
-    expect(constraints).not.toContain("paperclip_distillation_work_i_company_id_wiki_id_idempotenc_key");
-    expect(constraints).not.toContain("paperclip_page_bindings_company_id_wiki_id_page_path_key");
+    expect(constraints).not.toContain("pilibala_distillation_cursor_company_id_wiki_id_source_sco_key");
+    expect(constraints).not.toContain("pilibala_distillation_work_i_company_id_wiki_id_idempotenc_key");
+    expect(constraints).not.toContain("pilibala_page_bindings_company_id_wiki_id_page_path_key");
     expect(uniqueColumnSets).not.toContain("wiki_pages:company_id,wiki_id,path");
-    expect(uniqueColumnSets).not.toContain("paperclip_distillation_cursors:company_id,wiki_id,source_scope,scope_key,source_kind");
-    expect(uniqueColumnSets).not.toContain("paperclip_distillation_work_items:company_id,wiki_id,idempotency_key");
-    expect(uniqueColumnSets).not.toContain("paperclip_page_bindings:company_id,wiki_id,page_path");
+    expect(uniqueColumnSets).not.toContain("pilibala_distillation_cursors:company_id,wiki_id,source_scope,scope_key,source_kind");
+    expect(uniqueColumnSets).not.toContain("pilibala_distillation_work_items:company_id,wiki_id,idempotency_key");
+    expect(uniqueColumnSets).not.toContain("pilibala_page_bindings:company_id,wiki_id,page_path");
   });
 
   it("applies migrations once and allows whitelisted core joins at runtime", async () => {
@@ -593,7 +593,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     const issueId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: "TST",
       requireBoardApprovalForNewAgents: false,
     });
@@ -645,7 +645,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
   });
 
   it("records a failed migration when SQL escapes the plugin namespace", async () => {
-    const pluginManifest = manifest("paperclip.escape");
+    const pluginManifest = manifest("pilibala.escape");
     const packageRoot = await createPluginPackage(
       pluginManifest,
       "CREATE TABLE public.plugin_escape (id uuid PRIMARY KEY);",
@@ -664,7 +664,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
   });
 
   it("rolls back plugin install when migration validation fails", async () => {
-    const pluginManifest = manifest("paperclip.escape");
+    const pluginManifest = manifest("pilibala.escape");
     const namespace = derivePluginDatabaseNamespace(pluginManifest.id);
     const packageRoot = await createInstallablePluginPackage(
       pluginManifest,
@@ -703,8 +703,8 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
   });
 
   it("refreshes persisted manifests from disk before activation", async () => {
-    const staleManifest = manifest("paperclip.refresh");
-    const refreshedManifest: PaperclipPluginManifestV1 = {
+    const staleManifest = manifest("pilibala.refresh");
+    const refreshedManifest: PilibalaPluginManifestV1 = {
       ...staleManifest,
       capabilities: [...staleManifest.capabilities, "agent.tools.register"],
       database: {
@@ -783,8 +783,8 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
       expect.objectContaining({
         databaseNamespace: namespace,
         env: {
-          PAPERCLIP_DEPLOYMENT_MODE: "authenticated",
-          PAPERCLIP_DEPLOYMENT_EXPOSURE: "public",
+          PILIBALA_DEPLOYMENT_MODE: "authenticated",
+          PILIBALA_DEPLOYMENT_EXPOSURE: "public",
         },
         manifest: expect.objectContaining({
           database: expect.objectContaining({ coreReadTables: ["companies"] }),

@@ -6,7 +6,7 @@ import express from "express";
 import request from "supertest";
 import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { agents, agentApiKeys, authUsers, companies, companyMemberships, createDb, principalPermissionGrants } from "@paperclipai/db";
+import { agents, agentApiKeys, authUsers, companies, companyMemberships, createDb, principalPermissionGrants } from "@pilibalaai/db";
 import { actorMiddleware } from "../middleware/auth.js";
 import { errorHandler } from "../middleware/error-handler.js";
 import { agentRoutes } from "../routes/agents.js";
@@ -19,9 +19,9 @@ const support = await getEmbeddedPostgresTestSupport();
   it("authenticates a scoped read-only key, redacts reads, denies writes, and rechecks revocation", async () => {
     const database = await startEmbeddedPostgresTestDatabase("agent-config-read-access-");
     const db = createDb(database.connectionString);
-    const previousHome = process.env.PAPERCLIP_HOME;
+    const previousHome = process.env.PILIBALA_HOME;
     const home = await fs.mkdtemp(path.join(os.tmpdir(), "agent-config-read-home-"));
-    process.env.PAPERCLIP_HOME = home;
+    process.env.PILIBALA_HOME = home;
     try {
       const companyId = randomUUID(), foreignCompanyId = randomUUID(), actorId = randomUUID(), targetId = randomUUID(), otherId = randomUUID(), foreignId = randomUUID(), userId = randomUUID();
       const plaintext = "config-read-secret-must-not-leak";
@@ -90,8 +90,8 @@ const support = await getEmbeddedPostgresTestSupport();
       expect(humanRevoked.body.code).toBe("RESPONSIBLE_USER_UNAUTHORIZED");
       expect(await fs.readFile(path.join(root, "AGENTS.md"), "utf8")).toBe("Peer operating instructions");
     } finally {
-      if (previousHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousHome;
+      if (previousHome === undefined) delete process.env.PILIBALA_HOME;
+      else process.env.PILIBALA_HOME = previousHome;
       await database.cleanup();
       await fs.rm(home, { recursive: true, force: true });
     }

@@ -60,7 +60,7 @@ export type SecretSensitiveRouteFamily =
 
 const SECRET_SENSITIVE_HTTP_PATHS: ReadonlyArray<readonly [SecretSensitiveRouteFamily, RegExp]> = [
   ["voice_sessions", /^\/api\/companies\/[^/]+\/voice-sessions(?:\/|$)/],
-  ["mcp_oauth", /^\/mcp\/(?:oauth|paperclip)(?:\/|$)/],
+  ["mcp_oauth", /^\/mcp\/(?:oauth|pilibala)(?:\/|$)/],
   ["api_mcp", /^\/api\/mcp(?:\/|$)/],
   ["chat_endpoint_setup", /^\/api\/chat-endpoints\/[^/]+\/setup(?:-secret)?(?:\/|$)/],
 ];

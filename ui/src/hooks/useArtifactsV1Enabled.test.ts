@@ -15,7 +15,7 @@ describe("resolveArtifactsV1Enabled", () => {
   });
 
   it("honours a hosting operator's managed value", () => {
-    const managedKeys = { enableArtifactsV1: { managed: true as const, managedBy: "paperclip-cloud" as const } };
+    const managedKeys = { enableArtifactsV1: { managed: true as const, managedBy: "pilibala-cloud" as const } };
     expect(resolveArtifactsV1Enabled({ enableArtifactsV1: false, managedKeys })).toBe(false);
     expect(resolveArtifactsV1Enabled({ enableArtifactsV1: true, managedKeys })).toBe(true);
   });

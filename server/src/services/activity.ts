@@ -3,7 +3,7 @@ import { skillAccessService } from "./skill-access.js";
 import { credentialAccessConnectionNameSql } from "./credential-access-visibility.js";
 import { executionProjectionsForRuns } from "./execution-projection.js";
 import { and, asc, desc, eq, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   activityLog,
   agents,
@@ -19,8 +19,8 @@ import {
   issues,
   issueWorkProducts,
   workspaceOperations,
-} from "@paperclipai/db";
-import { hasWorkspaceRestoreFailure, safeWorkspaceRestorePath, ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { hasWorkspaceRestoreFailure, safeWorkspaceRestorePath, ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY } from "@pilibalaai/shared";
 import { logger } from "../middleware/logger.js";
 import { visibleIssueCondition } from "./issue-visibility.js";
 import { classifyRunLiveness } from "./run-liveness.js";
@@ -104,11 +104,11 @@ export function activityService(db: Db) {
             then ${heartbeatRuns.resultJson} #>> '{executionCancellation,state}' else 'unknown' end) end,
         'nativeCancellation', case
           when jsonb_typeof(${heartbeatRuns.resultJson} -> 'nativeCancellation') = 'object'
-            and ${heartbeatRuns.resultJson} #>> '{nativeCancellation,schema}' = 'paperclip.native-cancellation.v1'
+            and ${heartbeatRuns.resultJson} #>> '{nativeCancellation,schema}' = 'pilibala.native-cancellation.v1'
             and ${heartbeatRuns.resultJson} #>> '{nativeCancellation,runId}' = ${heartbeatRuns.id}::text
             and ${heartbeatRuns.resultJson} #>> '{nativeCancellation,companyId}' = ${heartbeatRuns.companyId}::text
             and ${heartbeatRuns.resultJson} #>> '{nativeCancellation,dispatchState}' in ('pending', 'acknowledged')
-          then jsonb_build_object('schema', 'paperclip.native-cancellation.v1',
+          then jsonb_build_object('schema', 'pilibala.native-cancellation.v1',
             'runId', ${heartbeatRuns.id}, 'companyId', ${heartbeatRuns.companyId},
             'dispatchState', ${heartbeatRuns.resultJson} #>> '{nativeCancellation,dispatchState}') end,
         'configurationIncomplete', case

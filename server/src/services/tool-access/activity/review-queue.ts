@@ -1,8 +1,8 @@
 import { writeToolReviewChange } from "../../tool-review-work-notifications.js";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { toolApplications, toolActionRequests, toolCatalogEntries, toolConnections, toolInvocations } from "@paperclipai/db";
-import type { ToolActionRequestListItem, ToolActionRequestStatus } from "@paperclipai/shared";
+import type { Db } from "@pilibalaai/db";
+import { toolApplications, toolActionRequests, toolCatalogEntries, toolConnections, toolInvocations } from "@pilibalaai/db";
+import type { ToolActionRequestListItem, ToolActionRequestStatus } from "@pilibalaai/shared";
 import { readSignedToolArgumentsPayload, TOOL_ACTION_REQUEST_SIGNING_GRACE_MS } from "../../tool-content-guards.js";
 import { toToolActionRequest } from "./projection.js";
 /** Pending requests stay hidden until signing completes; invalid signatures are cancelled. */

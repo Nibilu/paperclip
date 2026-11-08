@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
-import { costAdjustments, costEvents, decisionInvocations, promptInjectionInvocations, fastResponseRequests, heartbeatRuns, issues, type Db } from "@paperclipai/db";
-import { normalizeCents } from "@paperclipai/shared";
+import { costAdjustments, costEvents, decisionInvocations, promptInjectionInvocations, fastResponseRequests, heartbeatRuns, issues, type Db } from "@pilibalaai/db";
+import { normalizeCents } from "@pilibalaai/shared";
 import { conflict, notFound } from "../errors.js";
 import { receiptFingerprint } from "./receipt-fingerprint.js";
 import { logActivity, type ActivityPublication } from "./activity-log.js";

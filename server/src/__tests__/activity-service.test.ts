@@ -13,8 +13,8 @@ import {
   issueComments,
   issueDocuments,
   issues,
-} from "@paperclipai/db";
-import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY } from "@paperclipai/shared";
+} from "@pilibalaai/db";
+import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY } from "@pilibalaai/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -57,7 +57,7 @@ describeEmbeddedPostgres("activity service", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-activity-service-");
+    tempDb = await startEmbeddedPostgresTestDatabase("pilibala-activity-service-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -113,7 +113,7 @@ describeEmbeddedPostgres("activity service", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -210,7 +210,7 @@ describeEmbeddedPostgres("activity service", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -332,7 +332,7 @@ describeEmbeddedPostgres("activity service", () => {
       await db.insert(companies).values({ id: companyId, name: "Stop history", issuePrefix: `S${companyId.slice(0, 6)}` });
       await db.insert(agents).values({ id: agentId, companyId, name: "Stopped runner", adapterType: "process" });
       await db.insert(issues).values({ id: issueId, companyId, title: "Stop the current run", assigneeAgentId: agentId });
-      const native = { schema: "paperclip.native-cancellation.v1", runId, companyId,
+      const native = { schema: "pilibala.native-cancellation.v1", runId, companyId,
         dispatchState: proof === "pending_native" ? "pending" : "acknowledged",
         intentAuditId: "private-stop-proof", effects: ["private-stop-proof"], secret: "private-stop-proof" };
       const result: Record<string, unknown> = {
@@ -357,7 +357,7 @@ describeEmbeddedPostgres("activity service", () => {
         executionCancellation: { state: proof === "requested" ? "requested"
           : proof === "malformed_execution" || proof === "null_execution" ? "unknown" : "acknowledged" },
         ...(["missing_native", "wrong_run", "wrong_company", "malformed_native"].includes(proof) ? {} : {
-          nativeCancellation: { schema: "paperclip.native-cancellation.v1", runId, companyId,
+          nativeCancellation: { schema: "pilibala.native-cancellation.v1", runId, companyId,
             dispatchState: proof === "pending_native" ? "pending" : "acknowledged" },
         }),
       });
@@ -374,7 +374,7 @@ describeEmbeddedPostgres("activity service", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -470,7 +470,7 @@ describeEmbeddedPostgres("activity service", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -597,7 +597,7 @@ describeEmbeddedPostgres("activity service", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Pilibala",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

@@ -1,7 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { request } from "node:http";
 import { isAbsolute } from "node:path";
-import { RUNNER_TOOL_SCOPE_TOKEN_HEADER } from "../../vendor/paperclip-runner/index.js";
+import { RUNNER_TOOL_SCOPE_TOKEN_HEADER } from "../../vendor/pilibala-runner/index.js";
 
 export interface RemoteMcpRelayBinding {
   runId: string;
@@ -32,7 +32,7 @@ export function createRemoteMcpRelayToken(): string {
 export function remoteMcpRelayUrl(origin: string, runId: string): string {
   const url = new URL(origin);
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash || url.pathname !== "/") {
-    throw new Error("cursor_cloud_public_url_required: configure PAPERCLIP_PUBLIC_URL with a reachable HTTPS origin");
+    throw new Error("cursor_cloud_public_url_required: configure PILIBALA_PUBLIC_URL with a reachable HTTPS origin");
   }
   return `${url.origin}/mcp/native-runs/${encodeURIComponent(runId)}`;
 }

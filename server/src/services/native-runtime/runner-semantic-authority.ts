@@ -1,4 +1,4 @@
-import { fastResponseHistoryBody } from "@paperclipai/shared";
+import { fastResponseHistoryBody } from "@pilibalaai/shared";
 import { readTaskQuestionContext } from "../issue-question-context.js";
 import { isConversation } from "../agent-conversations.js";
 import {
@@ -8,7 +8,7 @@ import {
 } from "../source-trust.js";
 import { and, desc, eq, isNull } from "drizzle-orm";
 
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   agents,
   documentRevisions,
@@ -17,20 +17,20 @@ import {
   issueComments,
   issueDocuments,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
-  PaperclipSemanticDispatcher,
-  type PaperclipJsonValue,
-  type PaperclipSemanticActionBinding,
-  type PaperclipSemanticActionId,
-  type PaperclipSemanticAuthorizationRecord,
-  type PaperclipSemanticRunContext,
-  type PaperclipSemanticToolCall,
-  type PaperclipSemanticToolDefinition,
-  type PaperclipSemanticToolResult,
-} from "../../vendor/paperclip-runner/index.js";
+  PilibalaSemanticDispatcher,
+  type PilibalaJsonValue,
+  type PilibalaSemanticActionBinding,
+  type PilibalaSemanticActionId,
+  type PilibalaSemanticAuthorizationRecord,
+  type PilibalaSemanticRunContext,
+  type PilibalaSemanticToolCall,
+  type PilibalaSemanticToolDefinition,
+  type PilibalaSemanticToolResult,
+} from "../../vendor/pilibala-runner/index.js";
 
-export interface PaperclipRunnerSemanticBinding {
+export interface PilibalaRunnerSemanticBinding {
   readonly companyId: string;
   readonly issueId: string;
   readonly runId: string;
@@ -43,7 +43,7 @@ const READ_OPERATION_IDS = [
   "list_documents",
   "read_document",
   "list_document_revisions",
-] as const satisfies readonly PaperclipSemanticActionId[];
+] as const satisfies readonly PilibalaSemanticActionId[];
 
 type BoundContext = {
   readonly run: typeof heartbeatRuns.$inferSelect;
@@ -59,13 +59,13 @@ function boundedLimit(value: unknown): number {
 
 function requiredString(value: unknown): string {
   if (typeof value !== "string" || value.length === 0 || value.length > 240) {
-    throw new Error("paperclip_runner_semantic_input_invalid");
+    throw new Error("pilibala_runner_semantic_input_invalid");
   }
   return value;
 }
 
-function jsonValue(value: unknown): PaperclipJsonValue {
-  return JSON.parse(JSON.stringify(value)) as PaperclipJsonValue;
+function jsonValue(value: unknown): PilibalaJsonValue {
+  return JSON.parse(JSON.stringify(value)) as PilibalaJsonValue;
 }
 
 function activeAgentStatus(status: string): "active" | "inactive" {
@@ -79,15 +79,15 @@ function activeAgentStatus(status: string): "active" | "inactive" {
  * This first server slice binds only same-task read operations. A catalog
  * entry remains undiscoverable until a later PR adds its guarded binding.
  */
-export class PaperclipRunnerSemanticAuthority {
+export class PilibalaRunnerSemanticAuthority {
   readonly #db: Db;
-  readonly #binding: PaperclipRunnerSemanticBinding;
-  readonly #dispatcher: PaperclipSemanticDispatcher;
+  readonly #binding: PilibalaRunnerSemanticBinding;
+  readonly #dispatcher: PilibalaSemanticDispatcher;
 
-  constructor(db: Db, binding: PaperclipRunnerSemanticBinding) {
+  constructor(db: Db, binding: PilibalaRunnerSemanticBinding) {
     this.#db = db;
     this.#binding = structuredClone(binding);
-    this.#dispatcher = new PaperclipSemanticDispatcher({
+    this.#dispatcher = new PilibalaSemanticDispatcher({
       contextProvider: (runId) => this.#context(runId),
       bindings: READ_OPERATION_IDS.map((operationId) =>
         this.#readBinding(operationId),
@@ -96,24 +96,24 @@ export class PaperclipRunnerSemanticAuthority {
   }
 
   listAlwaysAvailableTools(): Promise<
-    readonly PaperclipSemanticToolDefinition[]
+    readonly PilibalaSemanticToolDefinition[]
   > {
     return this.#dispatcher.listAlwaysAvailableTools(this.#binding.runId);
   }
 
   dispatch(
-    call: Omit<PaperclipSemanticToolCall, "runId">,
-  ): Promise<PaperclipSemanticToolResult> {
+    call: Omit<PilibalaSemanticToolCall, "runId">,
+  ): Promise<PilibalaSemanticToolResult> {
     return this.#dispatcher.dispatch({ ...call, runId: this.#binding.runId });
   }
 
-  authorizationRecords(): readonly PaperclipSemanticAuthorizationRecord[] {
+  authorizationRecords(): readonly PilibalaSemanticAuthorizationRecord[] {
     return this.#dispatcher.authorizationRecords();
   }
 
   #readBinding(
     operationId: (typeof READ_OPERATION_IDS)[number],
-  ): PaperclipSemanticActionBinding {
+  ): PilibalaSemanticActionBinding {
     return {
       operationId,
       execute: async (invocation) => {
@@ -247,7 +247,7 @@ export class PaperclipRunnerSemanticAuthority {
                 ),
               )
               .limit(1);
-            if (!row) throw new Error("paperclip_runner_document_not_found");
+            if (!row) throw new Error("pilibala_runner_document_not_found");
             return {
               value: jsonValue({ document: row }),
               references: [
@@ -300,9 +300,9 @@ export class PaperclipRunnerSemanticAuthority {
     };
   }
 
-  async #context(requestedRunId: string): Promise<PaperclipSemanticRunContext> {
+  async #context(requestedRunId: string): Promise<PilibalaSemanticRunContext> {
     if (requestedRunId !== this.#binding.runId) {
-      throw new Error("paperclip_runner_semantic_run_mismatch");
+      throw new Error("pilibala_runner_semantic_run_mismatch");
     }
     const context = await this.#loadBoundContext();
     this.#assertActiveContext(context, false);
@@ -323,7 +323,7 @@ export class PaperclipRunnerSemanticAuthority {
         executionRunId: context.issue.executionRunId,
         status: context.issue.status,
         workMode: context.issue
-          .workMode as PaperclipSemanticRunContext["activeTask"]["workMode"],
+          .workMode as PilibalaSemanticRunContext["activeTask"]["workMode"],
       },
       delegatedClaims: [],
     };
@@ -357,7 +357,7 @@ export class PaperclipRunnerSemanticAuthority {
         ),
       )
       .limit(1);
-    if (!row) throw new Error("paperclip_runner_semantic_binding_not_found");
+    if (!row) throw new Error("pilibala_runner_semantic_binding_not_found");
     return row;
   }
 
@@ -369,7 +369,7 @@ export class PaperclipRunnerSemanticAuthority {
         (context.issue.assigneeAgentId !== this.#binding.agentId ||
           context.issue.executionRunId !== this.#binding.runId))
     ) {
-      throw new Error("paperclip_runner_semantic_binding_inactive");
+      throw new Error("pilibala_runner_semantic_binding_inactive");
     }
   }
 }

@@ -13,9 +13,9 @@ let root: string;
 
 beforeEach(async () => {
   root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "pc-empty-retention-")));
-  vi.stubEnv("PAPERCLIP_HOME", path.join(root, "home"));
-  vi.stubEnv("PAPERCLIP_INSTANCE_ID", "empty-retention-test");
-  vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "31".repeat(32));
+  vi.stubEnv("PILIBALA_HOME", path.join(root, "home"));
+  vi.stubEnv("PILIBALA_INSTANCE_ID", "empty-retention-test");
+  vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "31".repeat(32));
 });
 
 afterEach(async () => {

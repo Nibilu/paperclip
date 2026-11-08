@@ -10,7 +10,7 @@ function memoryStorage(initial: Record<string, string> = {}) {
 }
 
 const cssPreloadError = new Error(
-  "Unable to preload CSS for https://paperclip.example/assets/issue-detail-CIbQo9zW.css",
+  "Unable to preload CSS for https://pilibala.example/assets/issue-detail-CIbQo9zW.css",
 );
 
 function preloadErrorEvent(payload: unknown) {
@@ -20,8 +20,8 @@ function preloadErrorEvent(payload: unknown) {
 describe("isChunkLoadError", () => {
   it("matches Vite CSS preload and browser dynamic import failures", () => {
     expect(isChunkLoadError(cssPreloadError)).toBe(true);
-    expect(isChunkLoadError(new TypeError("Failed to fetch dynamically imported module: https://paperclip.example/assets/a.js"))).toBe(true);
-    expect(isChunkLoadError(new TypeError("error loading dynamically imported module: https://paperclip.example/assets/a.js"))).toBe(true);
+    expect(isChunkLoadError(new TypeError("Failed to fetch dynamically imported module: https://pilibala.example/assets/a.js"))).toBe(true);
+    expect(isChunkLoadError(new TypeError("error loading dynamically imported module: https://pilibala.example/assets/a.js"))).toBe(true);
     expect(isChunkLoadError(new TypeError("Importing a module script failed."))).toBe(true);
   });
 
@@ -83,7 +83,7 @@ describe("reloadForChunkLoadError", () => {
   it("counts a reload recorded by an older build as the first retry", () => {
     vi.useFakeTimers();
     const reload = vi.fn();
-    const storage = memoryStorage({ "paperclip:chunk-load-reload-at": "1000000" });
+    const storage = memoryStorage({ "pilibala:chunk-load-reload-at": "1000000" });
     const { reloadForChunkLoadError } = createChunkLoadRecovery({ storage: () => storage, reload, now: () => 1_010_000 });
 
     expect(reloadForChunkLoadError(cssPreloadError)).toBe(true);
@@ -101,15 +101,15 @@ describe("reloadForChunkLoadError", () => {
     createChunkLoadRecovery({ storage: () => storage, reload, now: () => now }).reloadForChunkLoadError(cssPreloadError);
 
     // An older build reads this key with Number() and keeps its one-reload guard.
-    expect(Number(storage.getItem("paperclip:chunk-load-reload-at"))).toBe(1_000_000);
+    expect(Number(storage.getItem("pilibala:chunk-load-reload-at"))).toBe(1_000_000);
   });
 
   it("ignores a retry count left from another guard window", () => {
     vi.useFakeTimers();
     const reload = vi.fn();
     const storage = memoryStorage({
-      "paperclip:chunk-load-reload-at": "2000000",
-      "paperclip:chunk-load-reload-attempts": `1000000:${RELOAD_DELAYS_MS.length}`,
+      "pilibala:chunk-load-reload-at": "2000000",
+      "pilibala:chunk-load-reload-attempts": `1000000:${RELOAD_DELAYS_MS.length}`,
     });
     const { reloadForChunkLoadError } = createChunkLoadRecovery({ storage: () => storage, reload, now: () => 2_010_000 });
 
@@ -121,7 +121,7 @@ describe("reloadForChunkLoadError", () => {
   it("cancels a delayed retry that has not started", () => {
     vi.useFakeTimers();
     const reload = vi.fn();
-    const storage = memoryStorage({ "paperclip:chunk-load-reload-at": "1000000" });
+    const storage = memoryStorage({ "pilibala:chunk-load-reload-at": "1000000" });
     const recovery = createChunkLoadRecovery({ storage: () => storage, reload, now: () => 1_010_000 });
     expect(recovery.reloadForChunkLoadError(cssPreloadError)).toBe(true);
     const abandoned = vi.fn();
@@ -186,7 +186,7 @@ describe("reloadForChunkLoadError", () => {
   it("ignores an unreadable stored marker", () => {
     for (const marker of ["not-a-time", "{\"windowStartedAt\":\"soon\"}", "null"]) {
       const reload = vi.fn();
-      const storage = memoryStorage({ "paperclip:chunk-load-reload-at": marker });
+      const storage = memoryStorage({ "pilibala:chunk-load-reload-at": marker });
       const { reloadForChunkLoadError } = createChunkLoadRecovery({ storage: () => storage, reload, now: () => 1_000 });
       expect(reloadForChunkLoadError(cssPreloadError)).toBe(true);
       expect(reload).toHaveBeenCalledTimes(1);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { BudgetOverview, CostByAgent, CostByAgentModel } from "@paperclipai/shared";
+import type { BudgetOverview, CostByAgent, CostByAgentModel } from "@pilibalaai/shared";
 import { agentBudgetSummary } from "./AgentBudgetsPanel";
 import { agentCostRow, agentModelCostRows } from "./AgentCostsPanel";
 

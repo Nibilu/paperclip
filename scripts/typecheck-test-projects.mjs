@@ -31,8 +31,8 @@ export const PROJECTS = [
 
 // The same steps as the server's typecheck script.
 export const PREPARE_STEPS = [
-  ["--filter", "@paperclipai/paperclip-runner", "run", "build:typescript"],
-  ["--filter", "@paperclipai/plugin-sdk", "ensure-build-deps"],
+  ["--filter", "@pilibalaai/pilibala-runner", "run", "build:typescript"],
+  ["--filter", "@pilibalaai/plugin-sdk", "ensure-build-deps"],
 ];
 
 /**

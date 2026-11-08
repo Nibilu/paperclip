@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { IssueSummary } from "@paperclipai/shared";
+import type { IssueSummary } from "@pilibalaai/shared";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { AGENT_STATUSES, ISSUE_PRIORITIES, ISSUE_STATUSES } from "@paperclipai/shared";
+import { AGENT_STATUSES, ISSUE_PRIORITIES, ISSUE_STATUSES } from "@pilibalaai/shared";
 import type {
   IssueBlockerAttention,
   IssueRelationIssueSummary,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { Bot, CheckCircle2, Clock3, DollarSign, FolderKanban, Inbox, MessageSquare, Users } from "lucide-react";
 import { CopyText } from "@/components/CopyText";
 import { EmptyState } from "@/components/EmptyState";
@@ -23,7 +23,7 @@ import { resolveTaskChatLiveWork, TaskChatLiveWorkLinks } from "@/components/tas
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { queryKeys } from "@/lib/queryKeys";
 import { taskStatusIconProps, type TaskStatusPresentationInput } from "@/lib/task-status-presentation";
-import { createIssue } from "../../fixtures/paperclipData";
+import { createIssue } from "../../fixtures/pilibalaData";
 
 const sameStateAcrossViews: Array<{ label: string; state: TaskStatusPresentationInput }> = [
   {
@@ -68,7 +68,7 @@ function ConversationStatusSurfaces() {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } } });
     client.setQueryData(queryKeys.auth.session, { session: { id: "session-storybook", userId: "user-storybook" }, user: { id: "user-storybook" } });
     client.setQueryData(queryKeys.issues.detail("PAP-901"), {
-      id: "pap-901", identifier: "PAP-901", title: "Paperclip onboarding", status: "blocked", blockerAttention: conversationCovered,
+      id: "pap-901", identifier: "PAP-901", title: "Pilibala onboarding", status: "blocked", blockerAttention: conversationCovered,
     });
     client.setQueryData(queryKeys.issues.detail("PAP-905"), { ...conversationSummaries[2] });
     client.setQueryData(
@@ -115,9 +115,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="paperclip-story__frame overflow-hidden">
+    <section className="pilibala-story__frame overflow-hidden">
       <div className="border-b border-border px-5 py-4">
-        <div className="paperclip-story__label">{eyebrow}</div>
+        <div className="pilibala-story__label">{eyebrow}</div>
         <h2 className="mt-1 text-xl font-semibold">{title}</h2>
       </div>
       <div className="p-5">{children}</div>
@@ -463,10 +463,10 @@ function StatusLanguage() {
   const [priority, setPriority] = useState("high");
 
   return (
-    <div className="paperclip-story">
-      <main className="paperclip-story__inner space-y-6">
-        <section className="paperclip-story__frame p-6">
-          <div className="paperclip-story__label">Language</div>
+    <div className="pilibala-story">
+      <main className="pilibala-story__inner space-y-6">
+        <section className="pilibala-story__frame p-6">
+          <div className="pilibala-story__label">Language</div>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">Status, priority, identity, and metrics</h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
             These components carry the operational vocabulary of the board: who is acting, what state work is in,
@@ -708,7 +708,7 @@ const meta = {
           "Status-language stories show the reusable operational labels, identity chips, metrics, and capacity indicators used throughout the board.",
       },
     },
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "developer-labs/design"
       ],

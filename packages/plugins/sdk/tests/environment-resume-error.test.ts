@@ -44,7 +44,7 @@ describe("environment resume refusal diagnostics", () => {
 
   it("reads a response status and omits the envelope when nothing safe is known", async () => {
     expect(environmentResumeErrorData({ response: { status: 503 } })).toEqual({
-      schema: "paperclip/environment-resume-error/v1", diagnostic: { httpStatus: 503 } });
+      schema: "pilibala/environment-resume-error/v1", diagnostic: { httpStatus: 503 } });
     const response = await invoke("environmentResumeLease", Object.assign(new Error("private"), { code: "PRIVATE_CODE", status: 42 }));
     expect("error" in response && response.error).not.toHaveProperty("data");
   });
@@ -55,7 +55,7 @@ describe("environment resume refusal diagnostics", () => {
   });
 
   it.each([null, {}, { data: { schema: "other", diagnostic: { httpStatus: 409 } } },
-    { data: { schema: "paperclip/environment-resume-error/v1", diagnostic: { httpStatus: 9000, errorCode: "secret" } } }])(
+    { data: { schema: "pilibala/environment-resume-error/v1", diagnostic: { httpStatus: 9000, errorCode: "secret" } } }])(
     "rejects malformed envelopes %j", (value) => {
       expect(readEnvironmentResumeErrorDiagnostic(value)).toBeNull();
     });

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { AiConnectionMetadata } from "@paperclipai/shared";
+import type { AiConnectionMetadata } from "@pilibalaai/shared";
 import {
   fastResponsePrompt,
   fastResponseReceipt,
@@ -467,7 +467,7 @@ describe("fast response provider", () => {
 function expectAttribution(url: string, init: RequestInit) {
   const headers = new Headers(init.headers);
   const expected = new URL(url).hostname === "openrouter.ai";
-  expect(headers.get("http-referer")).toBe(expected ? "https://paperclip.ing" : null);
-  expect(headers.get("x-openrouter-title")).toBe(expected ? "Paperclip" : null);
+  expect(headers.get("http-referer")).toBe(expected ? "https://pilibala.in" : null);
+  expect(headers.get("x-openrouter-title")).toBe(expected ? "Pilibala" : null);
   expect(headers.get("x-openrouter-categories")).toBe(expected ? "cloud-agent,programming-app" : null);
 }

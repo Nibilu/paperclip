@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { heartbeatRuns, issueRecoveryActions, type Db } from "@paperclipai/db";
+import { heartbeatRuns, issueRecoveryActions, type Db } from "@pilibalaai/db";
 import { canonicalExecutionUuid } from "./execution-identity.js";
 import { noRetainedExecutionPredicate } from "./pre-dispatch-execution-evidence.js";
 import { LEGACY_WORKSPACE_RECOVERY_SCHEMA } from "./workspace-restore-recovery-state.js";

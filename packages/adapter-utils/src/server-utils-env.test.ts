@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeInheritedPaperclipEnv } from "./server-utils.js";
+import { sanitizeInheritedPilibalaEnv } from "./server-utils.js";
 
-describe("sanitizeInheritedPaperclipEnv", () => {
-  it("drops the host-only Paperclip CLI command pointer", () => {
-    expect(sanitizeInheritedPaperclipEnv({
-      PAPERCLIPAI_CMD: "node /missing/paperclipai/dist/index.js",
-      PAPERCLIP_RUNTIME_API_URL: "http://127.0.0.1:3100",
+describe("sanitizeInheritedPilibalaEnv", () => {
+  it("drops the host-only Pilibala CLI command pointer", () => {
+    expect(sanitizeInheritedPilibalaEnv({
+      PILIBALAAI_CMD: "node /missing/pilibalaai/dist/index.js",
+      PILIBALA_RUNTIME_API_URL: "http://127.0.0.1:3100",
       PATH: "/usr/bin",
     })).toEqual({
-      PAPERCLIP_RUNTIME_API_URL: "http://127.0.0.1:3100",
+      PILIBALA_RUNTIME_API_URL: "http://127.0.0.1:3100",
       PATH: "/usr/bin",
     });
   });

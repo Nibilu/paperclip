@@ -3,8 +3,8 @@ import { mkdir, open, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { eq } from "drizzle-orm";
 import { afterEach, expect, it, vi } from "vitest";
-import { agentTaskSessions, environmentLeases, environments, heartbeatRuns, issues, nativeHarnessBackups, nativeRunFinalizations, nativeRunResults, nativeRunnerCheckpoints } from "@paperclipai/db";
-import { captureLegacyDurablePrpCheckpoint, DurablePrpControlPlane, parseNativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+import { agentTaskSessions, environmentLeases, environments, heartbeatRuns, issues, nativeHarnessBackups, nativeRunFinalizations, nativeRunResults, nativeRunnerCheckpoints } from "@pilibalaai/db";
+import { captureLegacyDurablePrpCheckpoint, DurablePrpControlPlane, parseNativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 import { describeEmbeddedPostgres, nativeRestartFixture } from "../../__tests__/helpers/native-restart.js";
 import { nativeToolContractFingerprintForTarget } from "./native-session-resume.js";
 import { nativeControllerMigrationDescriptor } from "./native-session-executor.js";
@@ -33,17 +33,17 @@ describeEmbeddedPostgres.each(["archive_online", "archive_online_owned", "archiv
   const environment = nativeRestartFixture();
   afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
   async function fixture(commandCount = 1, warm = false) {
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "73".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "73".repeat(32));
     const f = await environment.seedRun(randomUUID());
-    const { companyId, agentId, paperclipHome, runtimeRoot } = environment.current;
+    const { companyId, agentId, pilibalaHome, runtimeRoot } = environment.current;
     const binding = { companyId, agentId, issueId: f.issueId, runId: f.runId, executionWorkspaceId: f.native.environmentLeaseId };
     const execution = parseNativeExecutionInput({
-      schema: "paperclip.native-execution-input.v1", provider: { kind: "codex", model: null }, binding,
+      schema: "pilibala.native-execution-input.v1", provider: { kind: "codex", model: null }, binding,
       task: { identifier: "MIG-1", title: "Retained work", description: null, prompt: "Continue the work.", workMode: "standard" },
       workspace: { cwd: "/workspace", repoUrl: null, repoRef: null, branchName: null },
       session: { normalizedSessionId: f.native.normalizedSessionId, driverKind: "codex_app_server", protocolVersion: 1,
         lifecyclePolicy: warm ? { mode: "warm", idleTimeoutMs: 60_000 } : { mode: "per_turn", idleTimeoutMs: null } },
-      completionContract: { id: randomUUID(), sha256: "fixture", schemaVersion: "paperclip.completion-contract.v1",
+      completionContract: { id: randomUUID(), sha256: "fixture", schemaVersion: "pilibala.completion-contract.v1",
         contract: { revision: "1", objective: "Continue", criteria: [{ id: "objective", requirement: "Save work." }] } },
       credentialBindings: [], interactionResponses: [],
     });
@@ -72,14 +72,14 @@ describeEmbeddedPostgres.each(["archive_online", "archive_online_owned", "archiv
       },
     };
     const pack = resolveRemoteProviderPackAuthority({ stateDirectory: paths.root, reattach: false, binding: packBinding,
-      current: () => ({ schema: "paperclip-runner/remote-provider-pack/v1", payload,
+      current: () => ({ schema: "pilibala-runner/remote-provider-pack/v1", payload,
         digest: `sha256:${createHash("sha256").update(canonicalProviderPackJson(payload)).digest("hex")}` }),
       runnerArtifact: () => ({ version: "migration-fixture", digest: `sha256:${"a".repeat(64)}` }) });
     pack.verified();
     const snapshot = { backendKind: "mock" as const, sessionId: f.native.normalizedSessionId,
       identity: { companyId, agentId, issueId: f.issueId, runId: f.runId, sessionId: f.native.normalizedSessionId } };
     const profile = { ...f.preparedProfile, nativeExecutionInput: execution, nativeToolContractFingerprint: fingerprint, sessionCheckpoint: snapshot,
-      nativeWorkspaceSync: { schema: "paperclip.native-workspace-sync/v1", state: "prepared", descriptorSha256: "a".repeat(64),
+      nativeWorkspaceSync: { schema: "pilibala.native-workspace-sync/v1", state: "prepared", descriptorSha256: "a".repeat(64),
         baselineSha256: "b".repeat(64), finalHostSha256: null, workspaceId: binding.executionWorkspaceId, leaseId: randomUUID(),
         providerLeaseId: randomUUID(), remoteCwd: "/remote/workspace", resourceDisposition: "destroy" } };
     await f.db.update(heartbeatRuns).set({ status: "failed", finishedAt: new Date(), runnerProfileJson: profile }).where(eq(heartbeatRuns.id, f.runId));
@@ -87,9 +87,9 @@ describeEmbeddedPostgres.each(["archive_online", "archive_online_owned", "archiv
     const queuedId = randomUUID();
     await f.db.insert(heartbeatRuns).values({ id: queuedId, companyId, agentId, issueId: f.issueId, status: "queued" });
     await f.db.update(issues).set({ executionRunId: queuedId }).where(eq(issues.id, f.issueId));
-    const [session] = await f.db.insert(agentTaskSessions).values({ companyId, agentId, adapterType: "paperclip_runner",
+    const [session] = await f.db.insert(agentTaskSessions).values({ companyId, agentId, adapterType: "pilibala_runner",
       taskKey: f.issueId, lastRunId: f.runId }).returning();
-    return { ...f, companyId, agentId, paperclipHome, runtimeRoot, paths, file, source, profile, session, queuedId, identity, snapshot };
+    return { ...f, companyId, agentId, pilibalaHome, runtimeRoot, paths, file, source, profile, session, queuedId, identity, snapshot };
   }
   if (scenario.startsWith("archive_online")) it("preserves a failed source online without changing its execution or unrelated work", async () => {
     const f = await fixture();
@@ -154,7 +154,7 @@ describeEmbeddedPostgres.each(["archive_online", "archive_online_owned", "archiv
       expect((await f.db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId)))[0]).toEqual(runBefore);
       const descriptor = legacyNativeControllerArchive({ companyId: f.companyId, issueId: f.issueId, runId: f.runId, controller: f.source });
       const replacement = join(f.runtimeRoot, "online-archive-inspection");
-      await rm(f.paperclipHome, { recursive: true, force: true });
+      await rm(f.pilibalaHome, { recursive: true, force: true });
       expect(await restoreDurableNativeHarnessBackup({ db: f.db, storage, companyId: f.companyId,
         scopeDigest: descriptor.scopeDigest, backupRoot: replacement })).toBe(true);
       expect(await readFile(join(replacement, "current", "control-plane-state.json"), "utf8")).toBe(f.source);
@@ -249,7 +249,7 @@ describeEmbeddedPostgres.each(["archive_online", "archive_online_owned", "archiv
   });
   if (scenario === "import") it("imports an exact settled authority once, preserves queued work, and resumes from an empty home", async () => {
     const f = await fixture();
-    const { companyId, agentId, paperclipHome, runtimeRoot, profile, file, source, session, queuedId, identity, snapshot } = f;
+    const { companyId, agentId, pilibalaHome, runtimeRoot, profile, file, source, session, queuedId, identity, snapshot } = f;
     expect(await hasLocalNativeControllerObligations(f.db)).toBe(true);
     await f.db.update(heartbeatRuns).set({ runnerProfileJson: { ...profile,
       nativeWorkspaceSync: { ...profile.nativeWorkspaceSync, workspaceId: randomUUID() } } }).where(eq(heartbeatRuns.id, f.runId));
@@ -279,7 +279,7 @@ describeEmbeddedPostgres.each(["archive_online", "archive_online_owned", "archiv
     expect(await readFile(file, "utf8")).toBe(source);
     expect((await f.db.select().from(agentTaskSessions).where(eq(agentTaskSessions.id, session.id)))[0].lastRunId).toBe(f.runId);
     expect((await f.db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, queuedId)))[0].status).toBe("queued");
-    await rm(paperclipHome, { recursive: true, force: true });
+    await rm(pilibalaHome, { recursive: true, force: true });
     await f.db.update(heartbeatRuns).set({ nativeIssueId: f.issueId, nativeSessionId: f.native.normalizedSessionId,
       status: "running", runtimeMode: "native" }).where(eq(heartbeatRuns.id, queuedId));
     const recovered = await resolveNativeControllerRecovery(f.db, { companyId, agentId, issueId: f.issueId,
@@ -420,7 +420,7 @@ describeEmbeddedPostgres.each(["archive_online", "archive_online_owned", "archiv
     expect((await f.db.select().from(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, f.runId)))[0]).toEqual(owner);
     expect((await f.db.select().from(agentTaskSessions).where(eq(agentTaskSessions.id, f.session.id)))[0].lastRunId).toBe(f.runId);
     expect((await f.db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.queuedId)))[0].status).toBe("queued");
-    await rm(f.paperclipHome, { recursive: true, force: true });
+    await rm(f.pilibalaHome, { recursive: true, force: true });
     expect((await loadNativeRunnerCheckpoint(f.db, binding))?.records).toEqual(checkpoint.records);
     const recovery = await resolveNativeControllerRecovery(f.db, { companyId: f.companyId, agentId: f.agentId,
       issueId: f.issueId, normalizedSessionId: f.native.normalizedSessionId, currentRunId: f.queuedId });
@@ -447,7 +447,7 @@ describeEmbeddedPostgres.each(["archive_online", "archive_online_owned", "archiv
     expect((await f.db.select().from(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, f.runId)))[0]).toEqual(originalOwner);
     expect((await f.db.select().from(issues).where(eq(issues.id, f.issueId)))[0].executionRunId).toBe(f.queuedId);
     expect((await f.db.select().from(agentTaskSessions).where(eq(agentTaskSessions.id, f.session.id)))[0].lastRunId).toBe(f.runId);
-    await rm(f.paperclipHome, { recursive: true, force: true });
+    await rm(f.pilibalaHome, { recursive: true, force: true });
     const descriptor = legacyNativeControllerArchive({ companyId: f.companyId, issueId: f.issueId, runId: f.runId, controller: f.source });
     const replacement = join(f.runtimeRoot, "archived-inspection");
     expect(await restoreDurableNativeHarnessBackup({ db: f.db, storage, companyId: f.companyId,
@@ -473,7 +473,7 @@ describeEmbeddedPostgres.each(["archive_online", "archive_online_owned", "archiv
         startedAt: new Date(now - (scenario === "stale_queued" ? 30_000 : 43_000)) }).where(eq(heartbeatRuns.id, f.runId));
       await f.db.update(heartbeatRuns).set({ finishedAt: new Date(now - 40_000) }).where(eq(heartbeatRuns.id, priorId));
     }
-    const supervisor = JSON.stringify({ schema: "paperclip.native-session-supervisor.v1",
+    const supervisor = JSON.stringify({ schema: "pilibala.native-session-supervisor.v1",
       configDigest: f.paths.configDigest, snapshot: priorSnapshot });
     await mkdir(dirname(f.paths.supervisorPath), { recursive: true });
     await writeFile(f.paths.supervisorPath, supervisor, { mode: 0o600 });
@@ -516,7 +516,7 @@ describeEmbeddedPostgres.each(["archive_online", "archive_online_owned", "archiv
         nativeControllerRecovery: expect.objectContaining({ snapshotSha256: nativeSha256(f.snapshot),
           checkpoint: { runId: f.runId, runnerInstanceId: f.native.runnerInstanceId, normalizedSessionId: f.native.normalizedSessionId } }) });
       expect((await f.db.select().from(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, f.runId)))[0]).toEqual(originalOwner);
-      await rm(f.paperclipHome, { recursive: true, force: true });
+      await rm(f.pilibalaHome, { recursive: true, force: true });
       expect((await loadNativeRunnerCheckpoint(f.db, binding))?.records.size).toBe(before.length);
       await f.db.update(heartbeatRuns).set({ nativeIssueId: f.issueId, nativeSessionId: f.native.normalizedSessionId,
         status: "running", runtimeMode: "native" }).where(eq(heartbeatRuns.id, f.queuedId));
@@ -542,7 +542,7 @@ describeEmbeddedPostgres.each(["archive_online", "archive_online_owned", "archiv
     expect((await f.db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.runId)))[0]).toEqual(originalRun);
     expect((await f.db.select().from(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, f.runId)))[0]).toEqual(originalOwner);
     expect((await f.db.select().from(agentTaskSessions).where(eq(agentTaskSessions.id, f.session.id)))[0].lastRunId).toBe(f.runId);
-    await rm(f.paperclipHome, { recursive: true, force: true });
+    await rm(f.pilibalaHome, { recursive: true, force: true });
     const descriptor = legacyNativeControllerArchive({ companyId: f.companyId, issueId: f.issueId,
       runId: f.runId, controller: f.source, supervisor });
     const replacement = join(f.runtimeRoot, "archived-stale-supervisor");
@@ -658,7 +658,7 @@ describeEmbeddedPostgres.each(["archive_online", "archive_online_owned", "archiv
       expect(await migrateNativeControllers(f.db, options)).toMatchObject({ archivedFailed: 1, imported: 0 });
       expect(await hasLocalNativeControllerObligations(f.db, storage)).toBe(false);
       expect(await f.db.select().from(nativeRunnerCheckpoints).where(eq(nativeRunnerCheckpoints.runId, f.runId))).toHaveLength(0);
-      await rm(f.paperclipHome, { recursive: true, force: true });
+      await rm(f.pilibalaHome, { recursive: true, force: true });
       const descriptor = legacyNativeControllerArchive({ companyId: f.companyId, issueId: f.issueId, runId: f.runId, controller: source });
       const replacement = join(f.runtimeRoot, "archived-older-controller");
       expect(await restoreDurableNativeHarnessBackup({ db: f.db, storage, companyId: f.companyId,

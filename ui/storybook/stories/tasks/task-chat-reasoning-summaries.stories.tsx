@@ -117,7 +117,7 @@ const meta = {
   component: AllStatesGallery,
   parameters: {
     layout: "padded",
-    paperclip: {
+    pilibala: {
       capabilities: ["tasks/discussion", "runs-adapters/runs"],
       implementation: "production",
       boundary: "fixtures",

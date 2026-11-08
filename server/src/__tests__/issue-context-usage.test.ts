@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { agents, companies, createDb, heartbeatRunEvents, heartbeatRuns, issues } from "@paperclipai/db";
+import { agents, companies, createDb, heartbeatRunEvents, heartbeatRuns, issues } from "@pilibalaai/db";
 import { issueContextUsage } from "../services/issue-context-usage.js";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 
@@ -16,7 +16,7 @@ suite("issue context usage", () => {
   afterAll(async () => { await temporaryDb?.cleanup(); });
 
   function prp(runId: string, sessionId: string, eventType: string, payload: Record<string, unknown>) {
-    return { prpEvent: { schema: "paperclip.prp.event.v1", runId, normalizedSessionId: sessionId, eventType, payload } };
+    return { prpEvent: { schema: "pilibala.prp.event.v1", runId, normalizedSessionId: sessionId, eventType, payload } };
   }
 
   it("returns the latest reported context window and counts the session's compactions", async () => {
@@ -43,10 +43,10 @@ suite("issue context usage", () => {
       { ...base, runId, seq: 1, eventType: "item.completed", payload: prp(runId, "session-a", "item.completed", usage(229_500)),
         createdAt: new Date("2026-11-05T10:00:00Z") },
       { ...base, runId, seq: 2, eventType: "context.compacted", payload: prp(runId, "session-a", "context.compacted", {
-        schema: "paperclip.context.compacted.v1", compactionId: "c-1" }), createdAt: new Date("2026-11-05T10:00:01Z") },
+        schema: "pilibala.context.compacted.v1", compactionId: "c-1" }), createdAt: new Date("2026-11-05T10:00:01Z") },
       // The same compaction reported twice (item completion and thread/compacted) counts once.
       { ...base, runId, seq: 5, eventType: "context.compacted", payload: prp(runId, "session-a", "context.compacted", {
-        schema: "paperclip.context.compacted.v1", compactionId: "c-1" }), createdAt: new Date("2026-11-05T10:00:01Z") },
+        schema: "pilibala.context.compacted.v1", compactionId: "c-1" }), createdAt: new Date("2026-11-05T10:00:01Z") },
       { ...base, runId, seq: 3, eventType: "item.completed", payload: prp(runId, "session-a", "item.completed", usage(38_200)),
         createdAt: new Date("2026-11-05T10:00:02Z") },
       { ...base, runId, seq: 4, eventType: "item.completed", payload: prp(runId, "session-a", "item.completed", { kind: "usage", usage: { total: {} } }),
@@ -94,7 +94,7 @@ suite("issue context usage", () => {
         payload: prp(id, "session-c", "item.completed", usage(13_000 + index)), createdAt: new Date(at) });
     }
     await db.insert(heartbeatRunEvents).values({ ...base, runId: freshRunId, seq: 3, eventType: "context.compacted",
-      payload: prp(freshRunId, "session-c", "context.compacted", { schema: "paperclip.context.compacted.v1", compactionId: "c-2" }),
+      payload: prp(freshRunId, "session-c", "context.compacted", { schema: "pilibala.context.compacted.v1", compactionId: "c-2" }),
       createdAt: new Date("2026-11-05T11:00:03Z") });
     expect(await issueContextUsage(db, companyId, issue)).toMatchObject({ sessionId: "session-c", usedTokens: 13_002, compactions: 1 });
   });

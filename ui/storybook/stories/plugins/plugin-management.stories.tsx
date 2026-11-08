@@ -17,7 +17,7 @@ const meta = {
   title: "Apps, channels, and extensions/Plugins/Installation and lifecycle",
   component: Plugins,
   parameters: { layout: "padded",
-    paperclip: {
+    pilibala: {
       "capabilities": [
         "plugins/installation",
         "plugins/lifecycle"
@@ -50,7 +50,7 @@ async function install() {
   );
   await userEvent.type(
     await c.findByRole("textbox"),
-    "@paperclipai/storybook-fixture",
+    "@pilibalaai/storybook-fixture",
     { delay: 15 },
   );
   await userEvent.click(c.getByRole("button", { name: "Install" }));

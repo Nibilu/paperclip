@@ -1,4 +1,4 @@
-import { withDatabaseOperation } from "@paperclipai/db";
+import { withDatabaseOperation } from "@pilibalaai/db";
 import type { RequestHandler } from "express";
 
 export const databaseOperationMiddleware: RequestHandler = (_req, _res, next) =>

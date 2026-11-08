@@ -256,7 +256,7 @@ describe("typecheckLayers", () => {
       "tsconfig.above.json",
       "tsconfig.tests.json",
     ]);
-    const output = path.join(root, "node_modules", ".cache", "paperclip-typecheck");
+    const output = path.join(root, "node_modules", ".cache", "pilibala-typecheck");
     expect(JSON.parse(readFileSync(path.join(output, "package.json"), "utf8"))).toEqual({ type: "module" });
   });
 
@@ -278,7 +278,7 @@ describe("typecheckLayers", () => {
 
     expect(status).toBe(0);
     expect(configs).toEqual(["tsconfig.below.json", "tsconfig.cycle.json", "tsconfig.above.json"]);
-    const output = path.join(root, "node_modules", ".cache", "paperclip-typecheck");
+    const output = path.join(root, "node_modules", ".cache", "pilibala-typecheck");
     expect(JSON.parse(readFileSync(path.join(output, "tsconfig.declarations.json"), "utf8")).references).toEqual([
       { path: "./tsconfig.below.json" },
       { path: "./tsconfig.cycle.json" },
@@ -385,7 +385,7 @@ describe("typecheckLayers with the real compiler", () => {
 
     expect(output).toBe("");
     expect(status).toBe(0);
-    const declarations = path.join(root, "node_modules", ".cache", "paperclip-typecheck", "dts");
+    const declarations = path.join(root, "node_modules", ".cache", "pilibala-typecheck", "dts");
     for (const name of ["leaf.d.ts", "one.d.ts", "two.d.ts", "route.d.ts"]) {
       expect(existsSync(path.join(declarations, name))).toBe(true);
     }
@@ -404,7 +404,7 @@ describe("typecheckLayers with the real compiler", () => {
         extends: "../tsconfig.json",
         compilerOptions: { noEmit: true, rootDir: "..", outDir: null },
         include: ["*.ts"],
-        references: [{ path: "../node_modules/.cache/paperclip-typecheck/tsconfig.declarations.json" }],
+        references: [{ path: "../node_modules/.cache/pilibala-typecheck/tsconfig.declarations.json" }],
       })}\n`,
     );
     const buildDeclarations = () =>
@@ -424,7 +424,7 @@ describe("typecheckLayers with the real compiler", () => {
     expect(passing.stdout).toBe("");
     expect(passing.status).toBe(0);
     const loaded = tscOutside("--listFilesOnly").stdout;
-    expect(loaded).toContain("paperclip-typecheck/dts/route.d.ts");
+    expect(loaded).toContain("pilibala-typecheck/dts/route.d.ts");
     expect(loaded).not.toContain("src/route.ts");
     expect(findServerSource(loaded.split("\n").filter(Boolean), root)).toEqual([]);
 
@@ -561,7 +561,7 @@ describe("typecheckLowMemory", () => {
   it("runs every step in low-memory mode and stops at a failure", () => {
     const calls = [];
     const run = (args, { env }) => {
-      calls.push([args, env.PAPERCLIP_TYPECHECK_LOW_MEMORY]);
+      calls.push([args, env.PILIBALA_TYPECHECK_LOW_MEMORY]);
       return calls.length === 1 ? 0 : 3;
     };
 
@@ -626,7 +626,7 @@ describe("typecheckTestProjects", () => {
         return pnpmStatus(args);
       },
       run: (args, { env }) => {
-        const target = path.basename(path.dirname(args[1])) === "paperclip-typecheck" ? path.basename(args[1]) : args[1];
+        const target = path.basename(path.dirname(args[1])) === "pilibala-typecheck" ? path.basename(args[1]) : args[1];
         calls.push({ tool: "tsc", target, env });
         return tscResult(target);
       },
@@ -740,7 +740,7 @@ describe("typecheckTestProjects", () => {
           file("src/data.json"),
           file("src/route.test.ts"),
           file("src/__tests__/helpers/home.ts"),
-          file("node_modules/.cache/paperclip-typecheck/dts/route.d.ts"),
+          file("node_modules/.cache/pilibala-typecheck/dts/route.d.ts"),
           file("test-baselines/lifecycle.test.ts"),
           path.join(path.sep, "repo", "tests", "a.ts"),
         ],
@@ -778,7 +778,7 @@ describe("typecheckTestProjects", () => {
     const layered = readConfig("tsconfig.layers.json");
     expect(layered.extends).toBe("./tsconfig.json");
     expect(layered.references.map((reference) => path.resolve(directory, reference.path))).toEqual([
-      path.join(serverRoot, "node_modules", ".cache", "paperclip-typecheck", "tsconfig.declarations.json"),
+      path.join(serverRoot, "node_modules", ".cache", "pilibala-typecheck", "tsconfig.declarations.json"),
     ]);
   });
 });
@@ -802,7 +802,7 @@ describe("runTsc", () => {
       );
       writeFileSync(path.join(root, "src", "a.ts"), `export const value: number = "not a number";\n`);
 
-      const { status } = runTsc([], { cwd: root, env: { ...process.env, PAPERCLIP_TSC_EMIT_ONLY: "1" } });
+      const { status } = runTsc([], { cwd: root, env: { ...process.env, PILIBALA_TSC_EMIT_ONLY: "1" } });
 
       expect(status).toBe(0);
       expect(existsSync(path.join(root, "dist", "a.js"))).toBe(true);
@@ -815,7 +815,7 @@ describe("runTsc", () => {
   it("accepts build mode with low-memory mode on", () => {
     const { status } = runTsc(["-b", "--dry"], {
       cwd: serverRoot,
-      env: { ...process.env, PAPERCLIP_TYPECHECK_LOW_MEMORY: "1" },
+      env: { ...process.env, PILIBALA_TYPECHECK_LOW_MEMORY: "1" },
     });
 
     expect(status).toBe(0);
@@ -824,7 +824,7 @@ describe("runTsc", () => {
 
 describe("emitOnlyTscArgs", () => {
   it("removes checks and declarations only in emit-only mode", () => {
-    expect(emitOnlyTscArgs({ PAPERCLIP_TSC_EMIT_ONLY: "1" })).toEqual([
+    expect(emitOnlyTscArgs({ PILIBALA_TSC_EMIT_ONLY: "1" })).toEqual([
       "--noCheck",
       "--declaration",
       "false",
@@ -837,14 +837,14 @@ describe("emitOnlyTscArgs", () => {
   it("is what the Dockerfile selects for the server build", () => {
     const dockerfile = readFileSync(path.join(serverRoot, "..", "Dockerfile"), "utf8");
 
-    expect(dockerfile).toContain("RUN PAPERCLIP_TSC_EMIT_ONLY=1 pnpm --filter @paperclipai/server build\n");
+    expect(dockerfile).toContain("RUN PILIBALA_TSC_EMIT_ONLY=1 pnpm --filter @pilibalaai/server build\n");
   });
 });
 
 describe("lowMemoryTscArgs", () => {
   it("uses one thread only when low-memory mode is on", () => {
-    expect(lowMemoryTscArgs({ PAPERCLIP_TYPECHECK_LOW_MEMORY: "1" })).toEqual(["--singleThreaded"]);
-    expect(lowMemoryTscArgs({ PAPERCLIP_TYPECHECK_LOW_MEMORY: "0" })).toEqual([]);
+    expect(lowMemoryTscArgs({ PILIBALA_TYPECHECK_LOW_MEMORY: "1" })).toEqual(["--singleThreaded"]);
+    expect(lowMemoryTscArgs({ PILIBALA_TYPECHECK_LOW_MEMORY: "0" })).toEqual([]);
     expect(lowMemoryTscArgs({})).toEqual([]);
   });
 });

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import request from "supertest";
 import { expect, it } from "vitest";
-import { activityLog, agents, authUsers, issues } from "@paperclipai/db";
+import { activityLog, agents, authUsers, issues } from "@pilibalaai/db";
 import { issueRoutes } from "../routes/issues.js";
 import { deriveIssueUserContext, issueService } from "../services/issues.js";
 import { describeEmbeddedPostgres, resetCompanyIssueFixtures, routeApp, seedCompanyWithBoardAccess, useEmbeddedPostgres } from "./helpers/route-test-harness.js";
@@ -12,7 +12,7 @@ import { describeEmbeddedPostgres, resetCompanyIssueFixtures, routeApp, seedComp
 type IssueRowForUser = Awaited<ReturnType<ReturnType<typeof issueService>["list"]>>[number] & ReturnType<typeof deriveIssueUserContext>;
 
 describeEmbeddedPostgres("human assignee unread comments", () => {
-  const ctx = useEmbeddedPostgres("paperclip-assignee-unread-", {
+  const ctx = useEmbeddedPostgres("pilibala-assignee-unread-", {
     resetEach: async db => {
       await db.delete(activityLog);
       await db.delete(issues);

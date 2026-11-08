@@ -199,7 +199,7 @@ export const runnerApiReference: Record<string, { section: string; description?:
           "payload": {
             "version": 1,
             "questionSet": {
-              "schema": "paperclip.question_set.v1",
+              "schema": "pilibala.question_set.v1",
               "questions": [
                 {
                   "id": "responsibility",
@@ -222,7 +222,7 @@ export const runnerApiReference: Record<string, { section: string; description?:
           "payload": {
             "version": 1,
             "questionSet": {
-              "schema": "paperclip.question_set.v1",
+              "schema": "pilibala.question_set.v1",
               "questions": [
                 {
                   "id": "responsibility",
@@ -517,16 +517,16 @@ export const runnerApiReference: Record<string, { section: string; description?:
       },
       {
         "body": {
-          "name": "Paperclip Mobile App",
+          "name": "Pilibala Mobile App",
           "description": "Ship iOS + Android client",
           "status": "planned",
           "goalIds": [
             "{goalId}"
           ],
           "workspace": {
-            "name": "paperclip-mobile",
-            "cwd": "/Users/me/paperclip-mobile",
-            "repoUrl": "https://github.com/acme/paperclip-mobile",
+            "name": "pilibala-mobile",
+            "cwd": "/Users/me/pilibala-mobile",
+            "repoUrl": "https://github.com/acme/pilibala-mobile",
             "repoRef": "main",
             "isPrimary": true
           }
@@ -534,7 +534,7 @@ export const runnerApiReference: Record<string, { section: string; description?:
       },
       {
         "body": {
-          "name": "Paperclip Mobile App",
+          "name": "Pilibala Mobile App",
           "description": "Ship iOS + Android client",
           "status": "planned"
         }
@@ -555,8 +555,8 @@ export const runnerApiReference: Record<string, { section: string; description?:
     "examples": [
       {
         "body": {
-          "cwd": "/Users/me/paperclip-mobile",
-          "repoUrl": "https://github.com/acme/paperclip-mobile",
+          "cwd": "/Users/me/pilibala-mobile",
+          "repoUrl": "https://github.com/acme/pilibala-mobile",
           "repoRef": "main",
           "isPrimary": true
         }
@@ -671,7 +671,7 @@ export const runnerApiReference: Record<string, { section: string; description?:
           "role": "researcher",
           "reportsTo": "{manager-agent-id}",
           "capabilities": "Market research, competitor analysis",
-          "adapterType": "paperclip_runner",
+          "adapterType": "pilibala_runner",
           "inheritRuntimeFrom": "caller",
           "instructionsBundle": {
             "entryFile": "AGENTS.md",
@@ -692,7 +692,7 @@ export const runnerApiReference: Record<string, { section: string; description?:
           "instructionsBundle": {
             "entryFile": "AGENTS.md",
             "files": {
-              "AGENTS.md": "# Marketing Analyst\nResearch markets and competitors. Report findings with sources to your manager. Follow the Paperclip operational skill.\n"
+              "AGENTS.md": "# Marketing Analyst\nResearch markets and competitors. Report findings with sources to your manager. Follow the Pilibala operational skill.\n"
             }
           },
           "runtimeConfig": {

@@ -132,16 +132,16 @@ describe("SecretSensitiveRequestError", () => {
     const original = new Error("x");
     original.stack = [
       "Error: x",
-      "    at verify (/home/Jane Doe/paperclip/server.js:10:2)",
-      "    at C:\\Users\\Jane Doe\\paperclip\\server\\dist\\index.js:3:4",
-      "    at Layer.handle (file:///C:/Users/Jane%20Doe/paperclip/layer.js:5:6)",
+      "    at verify (/home/Jane Doe/pilibala/server.js:10:2)",
+      "    at C:\\Users\\Jane Doe\\pilibala\\server\\dist\\index.js:3:4",
+      "    at Layer.handle (file:///C:/Users/Jane%20Doe/pilibala/layer.js:5:6)",
       "    at Router.handle (\\\\build-host\\share\\router.js:7:8)",
     ].join("\n");
 
     expect(new SecretSensitiveRequestError(original, facts).diagnostics.originFrames).toEqual([
-      "at verify (/home/Jane Doe/paperclip/server.js:10:2)",
-      "at C:\\Users\\Jane Doe\\paperclip\\server\\dist\\index.js:3:4",
-      "at Layer.handle (file:///C:/Users/Jane%20Doe/paperclip/layer.js:5:6)",
+      "at verify (/home/Jane Doe/pilibala/server.js:10:2)",
+      "at C:\\Users\\Jane Doe\\pilibala\\server\\dist\\index.js:3:4",
+      "at Layer.handle (file:///C:/Users/Jane%20Doe/pilibala/layer.js:5:6)",
       "at Router.handle (\\\\build-host\\share\\router.js:7:8)",
     ]);
   });

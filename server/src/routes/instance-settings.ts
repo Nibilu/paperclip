@@ -2,13 +2,13 @@ import type { IdleDeadlineOwners } from "../services/idle-deadline-types.js";
 import { verifiedIdleCapabilities } from "../middleware/cloud-control.js";
 import { trackIdleWork } from "../services/task-admission.js";
 import { Router, type Request } from "express";
-import { companies, type Db } from "@paperclipai/db";
+import { companies, type Db } from "@pilibalaai/db";
 import {
   patchInstanceSettingsSchema,
   patchInstanceExperimentalSettingsSchema,
   patchInstanceGeneralSettingsSchema,
   startTaskDrainRequestSchema,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { conflict, forbidden } from "../errors.js";
 import { assertAgentsReadyForEnvironmentChange } from "../services/plugin-environment-driver.js";
 import {
@@ -535,7 +535,7 @@ export function instanceSettingsRoutes(
     // endpoint is recorded as themselves, exactly like an in-product
     // unarchive.
     const actor = req.actor.source === "cloud_control"
-      ? { actorType: "system" as const, actorId: "paperclip-cloud", agentId: null, runId: null }
+      ? { actorType: "system" as const, actorId: "pilibala-cloud", agentId: null, runId: null }
       : (() => {
           const info = getActorInfo(req);
           return {

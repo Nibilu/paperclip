@@ -6,7 +6,7 @@ Status: Inventory with first delivery-coordinator implementation; full idle slee
 
 Code baseline: `0ac194450`
 
-Paperclip should release idle database connections and allow inactive customer
+Pilibala should release idle database connections and allow inactive customer
 instances to sleep without losing scheduled work, incoming events, accounting,
 or recovery. Thousands of individually hosted instances make empty polling a
 material cost even when each query is cheap.
@@ -537,7 +537,7 @@ Longer polling intervals alone do not complete an item.
   [events.ts](../../server/src/services/public-mcp/events.ts).
 
 - [x] **JOB-06 — Execution-control reconciliation.** Implemented in
-  [PR #17094](https://github.com/paperclipai/paperclip/pull/17094): six independent
+  [PR #17094](https://github.com/pilibalaai/pilibala/pull/17094): six independent
   workers wake from committed writes, saved control/login deadlines, or concrete
   unfinished obligations. Empty queues and completed history no longer cause
   recurring SQL. Existing 15s retries remain for pending work; Cloud sleep

@@ -2,7 +2,7 @@
 
 Date: 2026-10-26. Slice 55 starts at
 `f98e6b5b57558c78ba111170ab3d8d19ff667827`,
-[parent #17752](https://github.com/paperclipai/paperclip/pull/17752).
+[parent #17752](https://github.com/pilibalaai/pilibala/pull/17752).
 Branch: `codex/sleep-55-native-recovery-notices`. The full scope remains in the
 [recurring-server migration ledger](2026-10-24-recurring-server-sleep-stack.md).
 

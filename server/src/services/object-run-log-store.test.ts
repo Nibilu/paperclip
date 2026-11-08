@@ -251,7 +251,7 @@ describe("S3 run log store", () => {
     // An older/generic caller cannot carry the attestation across new bytes,
     // even when it reuses the old max cursor or calls its payload a diagnostic.
     await replacement.append(verified, { ...event(2), sourceCursor: 2,
-      chunk: '{"type":"paperclip.prp.event","event":{"duplicate":true}}' });
+      chunk: '{"type":"pilibala.prp.event","event":{"duplicate":true}}' });
     await replacement.finalize(verified);
     const legacy = await store.begin(input);
     expect(legacy.initialSourceCursor).toBe(2);

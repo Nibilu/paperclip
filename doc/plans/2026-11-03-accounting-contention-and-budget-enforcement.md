@@ -45,7 +45,7 @@ Seven additional accounting/enforcement/replay/tracing suites pass 55 tests,
 for 73 passing targeted tests across eight files with no skips.
 The full workspace typecheck passes via `node scripts/typecheck-low-memory.mjs`,
 and `node scripts/check-module-boundaries.mjs` passes.
-The full workspace build passes via `PAPERCLIP_TYPECHECK_LOW_MEMORY=1 pnpm -r
+The full workspace build passes via `PILIBALA_TYPECHECK_LOW_MEMORY=1 pnpm -r
 --workspace-concurrency=1 build`, including the current-source Runner release
 binary, server, UI and CLI. The initial incomplete local Copilot build artifact
 was repaired with the pinned installer before the successful canonical retry.

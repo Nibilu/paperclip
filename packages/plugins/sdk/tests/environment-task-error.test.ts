@@ -46,7 +46,7 @@ describe("source task refusal diagnostics", () => {
 
   it("does not trust a malformed envelope or copy its extra fields", () => {
     expect(readEnvironmentTaskErrorDiagnostic({ data: { schema: "foreign", diagnostic: failure() } })).toBeNull();
-    expect(readEnvironmentTaskErrorDiagnostic({ data: { schema: "paperclip/environment-task-error/v1", diagnostic: {
+    expect(readEnvironmentTaskErrorDiagnostic({ data: { schema: "pilibala/environment-task-error/v1", diagnostic: {
       httpStatus: 409, errorCode: "SESSION_STATE_UNAVAILABLE", reason: "provider text",
     } } })).toBeNull();
     const data = environmentTaskErrorData(failure())!;

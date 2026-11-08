@@ -1,7 +1,7 @@
 import { generateKeyPairSync, randomUUID, sign } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { agents, companies, createDb, environmentCustomImageSetupSessions, environmentLeases, environments, heartbeatRuns } from "@paperclipai/db";
+import { agents, companies, createDb, environmentCustomImageSetupSessions, environmentLeases, environments, heartbeatRuns } from "@pilibalaai/db";
 import { historicalCleanupVerificationService } from "../services/historical-cleanup-verification.js";
 import { classifyEnvironmentCapabilities, environmentRuntimeService } from "../services/environment-runtime.js";
 import { withoutCleanupVerification } from "../services/cleanup-verification-proof.js";
@@ -41,18 +41,18 @@ if (!support.supported) console.warn(`Skipping historical cleanup database tests
   it.each([false, true])("reconciles a legacy Cloud lease through signed absence and permits idle sleep (ad-hoc %s)", async adHoc => {
     const f = await seed(adHoc);
     const { privateKey, publicKey } = generateKeyPairSync("ed25519");
-    for (const [key, value] of Object.entries({ PAPERCLIP_CLOUD_STACK_ID: "fixture-stack",
-      PAPERCLIP_CLOUD_API_ORIGIN: "https://cloud.example.test", PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN: "fleet-fixture",
-      PAPERCLIP_PRIMARY_HOST: "fixture.paperclip.test", PAPERCLIP_AUTH_SECRET: "fixture-secret",
-      PAPERCLIP_CLOUD_RUNTIME_IDENTITY_JWKS: JSON.stringify({ keys: [{ ...publicKey.export({ format: "jwk" }), kid: "fixture", alg: "EdDSA", use: "sig" }] }) })) vi.stubEnv(key, value);
+    for (const [key, value] of Object.entries({ PILIBALA_CLOUD_STACK_ID: "fixture-stack",
+      PILIBALA_CLOUD_API_ORIGIN: "https://cloud.example.test", PILIBALA_CLOUD_TENANT_SERVER_TOKEN: "fleet-fixture",
+      PILIBALA_PRIMARY_HOST: "fixture.pilibala.test", PILIBALA_AUTH_SECRET: "fixture-secret",
+      PILIBALA_CLOUD_RUNTIME_IDENTITY_JWKS: JSON.stringify({ keys: [{ ...publicKey.export({ format: "jwk" }), kid: "fixture", alg: "EdDSA", use: "sig" }] }) })) vi.stubEnv(key, value);
     let absent = false;
     const fetchImpl = vi.fn(async (_url: string, init: RequestInit) => {
       if (!absent) return Response.json({ absent: false });
       const binding = JSON.parse(init.body as string), seconds = Math.floor(Date.now() / 1000);
       expect(binding).toEqual({ purpose: "cleanup", companyId: f.companyId, environmentId: f.environment.id,
         leaseId: f.lease.id, heartbeatRunId: adHoc ? null : f.runId, provider: "daytona", providerLeaseId: f.lease.providerLeaseId });
-      const header = Buffer.from(JSON.stringify({ alg: "EdDSA", kid: "fixture", typ: "paperclip-sandbox-cleanup-absence+jwt" })).toString("base64url");
-      const claims = Buffer.from(JSON.stringify({ v: 1, iss: "paperclip-cloud", aud: "paperclip-sandbox-cleanup-absence/v1",
+      const header = Buffer.from(JSON.stringify({ alg: "EdDSA", kid: "fixture", typ: "pilibala-sandbox-cleanup-absence+jwt" })).toString("base64url");
+      const claims = Buffer.from(JSON.stringify({ v: 1, iss: "pilibala-cloud", aud: "pilibala-sandbox-cleanup-absence/v1",
         sub: "fixture-stack", ...binding, absent: true, iat: seconds, exp: seconds + 60 })).toString("base64url");
       return Response.json({ receipt: `${header}.${claims}.${sign(null, Buffer.from(`${header}.${claims}`), privateKey).toString("base64url")}` });
     });
@@ -75,9 +75,9 @@ if (!support.supported) console.warn(`Skipping historical cleanup database tests
   });
   it.each(["active", "stopped", "unknown"] as const)("does not replace an explicit %s provider observation with a Cloud read", async providerState => {
     await seed(true);
-    for (const [key, value] of Object.entries({ PAPERCLIP_CLOUD_STACK_ID: "fixture-stack",
-      PAPERCLIP_CLOUD_API_ORIGIN: "https://cloud.example.test", PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN: "fleet-fixture",
-      PAPERCLIP_PRIMARY_HOST: "fixture.paperclip.test", PAPERCLIP_AUTH_SECRET: "fixture-secret" })) vi.stubEnv(key, value);
+    for (const [key, value] of Object.entries({ PILIBALA_CLOUD_STACK_ID: "fixture-stack",
+      PILIBALA_CLOUD_API_ORIGIN: "https://cloud.example.test", PILIBALA_CLOUD_TENANT_SERVER_TOKEN: "fleet-fixture",
+      PILIBALA_PRIMARY_HOST: "fixture.pilibala.test", PILIBALA_AUTH_SECRET: "fixture-secret" })) vi.stubEnv(key, value);
     const fetchImpl = vi.fn(); vi.stubGlobal("fetch", fetchImpl);
     const runtime = environmentRuntimeService(db, { drivers: [{ driver: "sandbox",
       resolveCapabilities: async () => classifyEnvironmentCapabilities({}),
@@ -173,5 +173,5 @@ if (!support.supported) console.warn(`Skipping historical cleanup database tests
 });
 
 it("removes host-owned cleanup evidence from provider metadata", () => {
-  expect(withoutCleanupVerification({ paperclipCleanupVerification: { state: "destroyed" }, driver: "sandbox" })).toEqual({ driver: "sandbox" });
+  expect(withoutCleanupVerification({ pilibalaCleanupVerification: { state: "destroyed" }, driver: "sandbox" })).toEqual({ driver: "sandbox" });
 });

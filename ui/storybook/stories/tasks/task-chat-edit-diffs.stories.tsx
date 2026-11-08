@@ -211,7 +211,7 @@ const meta = {
   title: "Tasks and conversations/Task creation and lifecycle/Tasks/Edit diffs",
   parameters: {
     layout: "fullscreen",
-    paperclip: {
+    pilibala: {
       capabilities: ["tasks/discussion", "runs-adapters/runs"],
       implementation: "production",
       boundary: "fixtures",

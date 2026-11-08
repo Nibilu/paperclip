@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCoordinatorWorkspaceEnabled } from "../hooks/useCoordinatorWorkspaceEnabled";
 import { CoordinatorNeedsYou } from "../components/coordinator/CoordinatorNeedsYou";
 import { CheckCircle2, Inbox } from "lucide-react";
-import type { Agent, AttentionItem, AttentionSubject } from "@paperclipai/shared";
+import type { Agent, AttentionItem, AttentionSubject } from "@pilibalaai/shared";
 import { useNavigate, useSearchParams } from "@/lib/router";
 import { attentionApi } from "../api/attention";
 import { agentsApi } from "../api/agents";

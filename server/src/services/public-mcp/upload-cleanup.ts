@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { mcpAttachmentUploads, type Db } from "@paperclipai/db";
+import { mcpAttachmentUploads, type Db } from "@pilibalaai/db";
 import type { StorageService } from "../../storage/types.js";
 
 type AttachmentStorage = {

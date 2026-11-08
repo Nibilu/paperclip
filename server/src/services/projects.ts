@@ -5,7 +5,7 @@ import { retireRemovedPluginWorkspaceDependents } from "./plugin-workspaces.js";
 import { DELIVERY_QUEUES, notifyDeliveryWork } from "./delivery-work-notifications.js";
 import { enqueueProjectSkillSource, detachProjectSkillSource } from "./project-skill-source-bindings.js";
 import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   projects,
   executionWorkspaces,
@@ -18,7 +18,7 @@ import {
   plugins,
   projectWorkspaces,
   workspaceRuntimeServices,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   deriveProjectUrlKey,
   hasNonAsciiContent,
@@ -36,7 +36,7 @@ import {
   type WorkspaceRuntimeService,
   type PluginManagedProjectDeclaration,
   type PluginManagedProjectResolution,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 import { conflict, unprocessable } from "../errors.js";
 import { listCurrentRuntimeServicesForProjectWorkspaces } from "./workspace-runtime-read-model.js";
 import { parseProjectExecutionWorkspacePolicy } from "./execution-workspace-policy.js";
@@ -54,7 +54,7 @@ export async function lockProjectRootMutation(tx: ProjectTransaction, projectId:
 type ProjectRow = typeof projects.$inferSelect;
 type ProjectWorkspaceRow = typeof projectWorkspaces.$inferSelect;
 type WorkspaceRuntimeServiceRow = typeof workspaceRuntimeServices.$inferSelect;
-const REPO_ONLY_CWD_SENTINEL = "/__paperclip_repo_only__";
+const REPO_ONLY_CWD_SENTINEL = "/__pilibala_repo_only__";
 type CreateWorkspaceInput = {
   name?: string | null;
   sourceType?: string | null;
@@ -142,7 +142,7 @@ interface ProjectWithGoals extends Omit<ProjectRow, "executionWorkspacePolicy"> 
   goalIds: string[];
   goals: ProjectGoalRef[];
   executionWorkspacePolicy: ProjectExecutionWorkspacePolicy | null;
-  workspaceProvider?: import("@paperclipai/shared").ProjectWorkspaceProviderConfiguration;
+  workspaceProvider?: import("@pilibalaai/shared").ProjectWorkspaceProviderConfiguration;
   codebase: ProjectCodebase;
   workspaces: ProjectWorkspace[];
   primaryWorkspace: ProjectWorkspace | null;
@@ -841,7 +841,7 @@ export function projectService(db: Db, options: { captureWorkspaceUpdates?: bool
             resourceKey: input.projectKey,
             companyId: input.companyId,
             projectId: project?.id ?? existingBinding.resourceId,
-            project: project as import("@paperclipai/shared").Project | null,
+            project: project as import("@pilibalaai/shared").Project | null,
             status: input.reset ? "reset" : "resolved",
           };
         }
@@ -875,7 +875,7 @@ export function projectService(db: Db, options: { captureWorkspaceUpdates?: bool
           resourceKey: input.projectKey,
           companyId: input.companyId,
           projectId: hydrated?.id ?? project.id,
-          project: hydrated as import("@paperclipai/shared").Project | null,
+          project: hydrated as import("@pilibalaai/shared").Project | null,
           status: "relinked",
         };
       }
@@ -914,12 +914,12 @@ export function projectService(db: Db, options: { captureWorkspaceUpdates?: bool
         resourceKey: input.projectKey,
         companyId: input.companyId,
         projectId: hydrated?.id ?? project.id,
-        project: hydrated as import("@paperclipai/shared").Project | null,
+        project: hydrated as import("@pilibalaai/shared").Project | null,
         status: "created",
       };
     },
 
-    createWithRepositories: async (companyId: string, data: Parameters<typeof createProject>[1], repositories: import("@paperclipai/shared").ProjectRepository[]): Promise<ProjectWithGoals> => {
+    createWithRepositories: async (companyId: string, data: Parameters<typeof createProject>[1], repositories: import("@pilibalaai/shared").ProjectRepository[]): Promise<ProjectWithGoals> => {
       return db.transaction(async (tx) => {
         const service = projectService(tx as unknown as Db, { captureWorkspaceUpdates: false });
         const project = await service.create(companyId, data);
@@ -930,7 +930,7 @@ export function projectService(db: Db, options: { captureWorkspaceUpdates?: bool
       });
     },
 
-    replaceRepositories: async (projectId: string, repositories: import("@paperclipai/shared").ProjectRepository[]): Promise<ProjectWithGoals | null> => {
+    replaceRepositories: async (projectId: string, repositories: import("@pilibalaai/shared").ProjectRepository[]): Promise<ProjectWithGoals | null> => {
       return db.transaction(async (tx) => {
         const project = await lockProjectRootMutation(tx, projectId);
         if (!project) return null;

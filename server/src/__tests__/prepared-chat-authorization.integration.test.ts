@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createDb, issueComments, chatEndpoints, chatDeliveries, chatMessageLinks, type Db } from "@paperclipai/db";
+import { createDb, issueComments, chatEndpoints, chatDeliveries, chatMessageLinks, type Db } from "@pilibalaai/db";
 import { seedBoundChatAuthorization } from "./helpers/bound-chat-authorization.js";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { authorizeChatConversationForBoundRun, isExternalChatWaitAuthorizationContention }
@@ -16,7 +16,7 @@ describe("prepared bound-chat authorization", () => {
     conversationId: string, principalId: string, commentId: string, deliveryId: string, userId: string;
   const authorize = (handle: Db = db, ids = [commentId]) =>
     authorizeChatConversationForBoundRun(handle, binding, { ...context, wakeCommentIds: ids }, "read");
-  const denied = "paperclip_runner_chat_attachment_binding_denied";
+  const denied = "pilibala_runner_chat_attachment_binding_denied";
   beforeAll(async () => {
     temporary = await startEmbeddedPostgresTestDatabase("prepared-chat-");
     db = createDb(temporary.connectionString);

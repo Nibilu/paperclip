@@ -7,7 +7,7 @@ Context: [`2026-11-07-warm-follow-up-ttft.md`](2026-11-07-warm-follow-up-ttft.md
 
 - **Every Claude (ACPX) follow-up relaunches the Claude provider process and reloads its session.** That is 3.2–4.2 s of each follow-up's time to first token (TTFT).
 - **The relaunch is a safety boundary.** The ACPX MCP endpoint lives as long as the provider process, so it cannot tell which turn sent a tool call. Reaping the process proves that no late call from an earlier turn can execute under a later turn's authority.
-- **The relaunch is also a run boundary.** Each follow-up comment is a new heartbeat run. A new run brings a new Paperclip gateway token, new instruction text and new file grants, which today reach the provider only at launch.
+- **The relaunch is also a run boundary.** Each follow-up comment is a new heartbeat run. A new run brings a new Pilibala gateway token, new instruction text and new file grants, which today reach the provider only at launch.
 - **Removing the relaunch needs two things:**
   - a way to bind every MCP call to the turn and run that issued it, so late calls are rejected by authentication rather than by process death;
   - a way for a live provider to adopt a new run's authority.
@@ -30,14 +30,14 @@ A per-turn follow-up pays the second and third rows. `runner.turn.submitted_to_s
 
 ## How the boundary works today
 
-- **Tool calls.** The runner's tool bridge (`startRunnerToolBridge`) serves a runner-owned MCP endpoint (`url` + `bearerToken`, where the token is the bridge secret). Paperclip's native MCP gateway is a second runner-owned binding with its own token. Both bindings are passed to the provider in ACP `session/new` or `session/load` (`runtime-host.ts`, `mcpServers`). ACP has no request that changes MCP servers during a session.
+- **Tool calls.** The runner's tool bridge (`startRunnerToolBridge`) serves a runner-owned MCP endpoint (`url` + `bearerToken`, where the token is the bridge secret). Pilibala's native MCP gateway is a second runner-owned binding with its own token. Both bindings are passed to the provider in ACP `session/new` or `session/load` (`runtime-host.ts`, `mcpServers`). ACP has no request that changes MCP servers during a session.
 - **Turn epochs.** `provider_bridge.rs` keeps a tombstone for every settled call ID, so a replayed call never executes twice. `prepare_turn` keeps the tombstones across turns. `prepare_turn_after_provider_restart` releases them, and it is legal only after the owning process was reaped. Codex continues in one process across turns because its tool calls carry turn and thread identity in the app-server protocol, so it only needs the tombstones (bounded at 65,536 call IDs, then a process-boundary rollover).
 - **ACPX turns.** `acpx_provider_session.rs` `start_turn` calls `restart_idle_provider` whenever the session has settled turns. The comment there states the reason: "The MCP endpoint is session-lifetime and cannot authenticate which provider turn originated a late HTTP callback." A new generation starts with no settled turns, so the first turn after a relaunch does not relaunch again.
 - **ACPX runs.** `acpx_provider_backend.rs` `attach_run` checkpoints the sidecar and lets the next `session.open` start a new generation. `run_attachment_policy` allows Claude to rotate registered asset paths across runs (`AuthenticatedAssetPaths`); the new text reaches the provider at launch.
 
 ## Threat model
 
-Assets: the authority of the current turn and run. That covers its tools, its Paperclip gateway grants, its completion contract and its workspace and file grants.
+Assets: the authority of the current turn and run. That covers its tools, its Pilibala gateway grants, its completion contract and its workspace and file grants.
 
 | Threat | What goes wrong | How today's design stops it |
 |---|---|---|
@@ -45,7 +45,7 @@ Assets: the authority of the current turn and run. That covers its tools, its Pa
 | T2. Replay of a completed call | A call ID that already executed is sent again. | Call-ID tombstones, kept until the owning process is reaped. |
 | T3. Credential replay | A captured bearer token is used by another process or after its owner should have lost authority. | The token is per bridge instance and dies with the process. |
 | T4. Cross-turn confusion | A call is attributed to the wrong turn's completion contract or receipts. | One turn per process generation. |
-| T5. Cross-run confusion | A call from run N executes under run N+1's Paperclip gateway grants, instructions or file grants. | `run.attach` relaunches the provider; the gateway token is run-scoped. |
+| T5. Cross-run confusion | A call from run N executes under run N+1's Pilibala gateway grants, instructions or file grants. | `run.attach` relaunches the provider; the gateway token is run-scoped. |
 | T6. Restart replay | After a controller or runner restart, a recovered generation accepts calls meant for the previous owner. | Generation identity, lifetime fences and the restart-recovery checks. |
 
 Any replacement must stop T1, T2, T4 and T5 without relying on process death, and must not weaken T3 or T6.
@@ -65,12 +65,12 @@ Keep the process when a turn settles cleanly, and relaunch only when the proof f
 
 - **Proof conditions:** the turn ended with ACP `end_turn` (not cancel, interrupt or failure); the bridge has no pending or completed receipts; there are no runtime requests; the goal is dormant. Between turns, the bridge also rejects every call.
 - **Safety argument:** stops late calls that arrive between turns. It also relies on a provider guarantee: once Claude ACP reports `end_turn`, the provider issues no further MCP calls for that turn.
-- **Gap:** that guarantee is a property of the upstream provider, not something Paperclip can verify. It would have to be qualified per provider release, and every background subagent or hook feature is a regression risk. A call that arrives during the next turn is still indistinguishable (T1, T4).
+- **Gap:** that guarantee is a property of the upstream provider, not something Pilibala can verify. It would have to be qualified per provider release, and every background subagent or hook feature is a regression risk. A call that arrives during the next turn is still indistinguishable (T1, T4).
 - **Cross-run:** B does not address T5. Run-scoped authority still needs a relaunch, so B helps only same-run turns, which are rare: each comment is a new run.
 
 ### C. In-process session reload with per-generation credentials (recommended prototype)
 
-Keep the Claude ACP process. At each turn or run boundary, revoke the bridge credential and reload the same provider session (`session/load` with the same session ID) in the same process. The reload carries a freshly minted bridge token, the new run's Paperclip gateway token, and the new instruction and grant text.
+Keep the Claude ACP process. At each turn or run boundary, revoke the bridge credential and reload the same provider session (`session/load` with the same session ID) in the same process. The reload carries a freshly minted bridge token, the new run's Pilibala gateway token, and the new instruction and grant text.
 
 - **Safety argument:** every MCP binding is authenticated by a token minted for exactly one session generation (turn, plus run where it changed). The bridge revokes the previous token before the reload is acknowledged.
   - T1 and T4: a late call from an earlier generation is rejected by authentication, whatever its call ID or arrival time.

@@ -13,7 +13,7 @@ async function plugin(): Promise<{ root: string; sdk: string }> {
   const root = path.join(base, "daytona");
   const sdk = path.join(base, "sdk-src");
   for (const [file, content] of Object.entries({
-    "package.json": "{\"name\":\"@paperclipai/plugin-daytona\"}", "pnpm-lock.yaml": "lock: 1\n", "tsconfig.json": "{}",
+    "package.json": "{\"name\":\"@pilibalaai/plugin-daytona\"}", "pnpm-lock.yaml": "lock: 1\n", "tsconfig.json": "{}",
     "src/plugin.ts": "export const v = 1;\n", "src/nested/worker.ts": "export {};\n",
     "dist/manifest.js": "", "dist/worker.js": "", "node_modules/@daytonaio/sdk/package.json": "{}",
     "node_modules/ignored/index.js": "ignored",

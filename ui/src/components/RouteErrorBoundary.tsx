@@ -8,7 +8,7 @@ import {
   reloadForChunkLoadError,
 } from "@/lib/chunk-load-recovery";
 import { captureBrowserException } from "@/lib/sentry";
-import { PaperclipLoading } from "./AnimatedPaperclipIcon";
+import { PilibalaLoading } from "./AnimatedPilibalaIcon";
 
 type RouteErrorBoundaryInnerProps = {
   resetKey: string;
@@ -77,7 +77,7 @@ class RouteErrorBoundaryInner extends Component<RouteErrorBoundaryInnerProps, Ro
   override render() {
     const { error, reloading } = this.state;
     if (!error) return this.props.children;
-    if (reloading) return <PaperclipLoading className="min-h-full" />;
+    if (reloading) return <PilibalaLoading className="min-h-full" />;
 
     return (
       <div className="mx-auto max-w-2xl space-y-4 px-4 py-10">
@@ -110,7 +110,7 @@ export function RouteErrorBoundary({ children }: { children: ReactNode }) {
 
   return (
     <RouteErrorBoundaryInner resetKey={resetKey} onReset={() => navigate(-1)}>
-      <Suspense fallback={<PaperclipLoading className="min-h-full" />}>{children}</Suspense>
+      <Suspense fallback={<PilibalaLoading className="min-h-full" />}>{children}</Suspense>
     </RouteErrorBoundaryInner>
   );
 }

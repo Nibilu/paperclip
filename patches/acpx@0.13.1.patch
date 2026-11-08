@@ -52,8 +52,8 @@ index d454fd7c5bf742b469be75eb8c3988b694a0ffaa..25d957b502a8680ff3e4d64356dc32bf
  		const parsed = parseTokenUsage(value);
  		if (parsed == null) return null;
 -		usage[key] = parsed;
-+		const receipt = parsePaperclipPiReceipt(asRecord$4(value)?.paperclip_pi);
-+		usage[key] = receipt ? { ...parsed, paperclip_pi: receipt } : parsed;
++		const receipt = parsePilibalaPiReceipt(asRecord$4(value)?.pilibala_pi);
++		usage[key] = receipt ? { ...parsed, pilibala_pi: receipt } : parsed;
  	}
  	return usage;
  }
@@ -85,7 +85,7 @@ index d454fd7c5bf742b469be75eb8c3988b694a0ffaa..25d957b502a8680ff3e4d64356dc32bf
 +            "limits",
 +            "truncated"
 +        ])) return null;
-+        if (r.schema !== "paperclip.cursor.native-usage.v1" || r.source !== "native_turn_ended" || r.completeness !== "partial" || typeof r.promptId !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(r.promptId) || typeof r.truncated !== "boolean") return null;
++        if (r.schema !== "pilibala.cursor.native-usage.v1" || r.source !== "native_turn_ended" || r.completeness !== "partial" || typeof r.promptId !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(r.promptId) || typeof r.truncated !== "boolean") return null;
 +        const reasons = [
 +            "native_counter_semantics_unverified",
 +            "native_counters_missing",
@@ -140,7 +140,7 @@ index d454fd7c5bf742b469be75eb8c3988b694a0ffaa..25d957b502a8680ff3e4d64356dc32bf
 + // Optional diagnostics cannot affect settlement or standard token/cost accounting.
 + try {
 +  if (response.stopReason !== "end_turn" && response.stopReason !== "cancelled") return;
-+  const next = boundCursorPromptUsage({request_id: requestId, prompt_message_id: promptMessageId, receipt: response._meta?.paperclipCursorUsage}, conversation.messages);
++  const next = boundCursorPromptUsage({request_id: requestId, prompt_message_id: promptMessageId, receipt: response._meta?.pilibalaCursorUsage}, conversation.messages);
 +  if (!next) return;
 +  const previous = parseCursorPromptUsage(conversation.cursor_prompt_usage);
 +  if (previous && (previous.request_id === next.request_id || previous.prompt_message_id === next.prompt_message_id || previous.receipt.promptId === next.receipt.promptId)) return;
@@ -809,7 +809,7 @@ index d454fd7c5bf742b469be75eb8c3988b694a0ffaa..25d957b502a8680ff3e4d64356dc32bf
  	trimConversationForRuntime(conversation);
  	return acpx;
  }
-+function parsePaperclipPiReceipt(raw, costField = "cost_usd") {
++function parsePilibalaPiReceipt(raw, costField = "cost_usd") {
 +	const receipt = asRecord$4(raw);
 +	if (receipt?.provenance !== "assistant_message_receipts" && receipt?.provenance !== "assistant_message_and_compaction_receipts") return;
 +	const cost = receipt[costField];
@@ -820,11 +820,11 @@ index d454fd7c5bf742b469be75eb8c3988b694a0ffaa..25d957b502a8680ff3e4d64356dc32bf
  	const tokenUsage = sourceToTokenUsage(usage);
 -	if (!tokenUsage) return false;
 -	applyTokenUsage(conversation, tokenUsage, promptMessageId);
-+	const receipt = parsePaperclipPiReceipt(asRecord$4(asRecord$4(usage)?._meta)?.paperclipPi, "costUsd");
++	const receipt = parsePilibalaPiReceipt(asRecord$4(asRecord$4(usage)?._meta)?.pilibalaPi, "costUsd");
 +	if (!tokenUsage && !receipt) return false;
 +	if (tokenUsage) applyTokenUsage(conversation, tokenUsage, promptMessageId);
 +	const userId = promptMessageId ?? lastUserMessageId(conversation);
-+	if (receipt && userId) conversation.request_token_usage[userId] = { ...conversation.request_token_usage[userId], paperclip_pi: receipt };
++	if (receipt && userId) conversation.request_token_usage[userId] = { ...conversation.request_token_usage[userId], pilibala_pi: receipt };
  	updateConversationTimestamp(conversation, timestamp);
  	trimConversationForRuntime(conversation);
  	return true;
@@ -946,7 +946,7 @@ index e8102acb03c4c38830ad5ec22f356125eb0423b7..04c7e3ae0453b352447efb53af17f6e2
     */
    availableCommands?: AcpRuntimeAvailableCommand[];
 +  /**
-+   * Paperclip patch: the ACP update's `_meta`, forwarded by reference and
++   * Pilibala patch: the ACP update's `_meta`, forwarded by reference and
 +   * unvalidated. Producer-controlled; consumers must bound and allowlist it.
 +   */
 +  _meta?: Record<string, unknown>;
@@ -962,7 +962,7 @@ index e8102acb03c4c38830ad5ec22f356125eb0423b7..04c7e3ae0453b352447efb53af17f6e2
    rawOutput?: unknown;
    content?: ToolCallContent[];
 +  /**
-+   * Paperclip patch: the ACP update's `_meta`, forwarded by reference and
++   * Pilibala patch: the ACP update's `_meta`, forwarded by reference and
 +   * unvalidated. Producer-controlled; consumers must bound and allowlist it.
 +   */
 +  _meta?: Record<string, unknown>;
@@ -1386,7 +1386,7 @@ index c3da1645235bbea22de3f8484149051cd7dca56b..40ae0565394aaa96e0315a2cf3c943c5
    cumulative_cost?: SessionUsageCost;
 -  request_token_usage: Record<string, SessionTokenUsage>;
 +  request_token_usage: Record<string, SessionTokenUsage & {
-+    paperclip_pi?: { provenance: "assistant_message_receipts" | "assistant_message_and_compaction_receipts"; cost_usd?: number };
++    pilibala_pi?: { provenance: "assistant_message_receipts" | "assistant_message_and_compaction_receipts"; cost_usd?: number };
 +  }>;
 +  cursor_prompt_usage?: { request_id: string; prompt_message_id: string; receipt: Record<string, unknown> };
    acpx?: SessionAcpxState;

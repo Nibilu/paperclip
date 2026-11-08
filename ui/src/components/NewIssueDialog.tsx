@@ -3,7 +3,7 @@ import { useWorkspaceIsolationControls } from "@/hooks/useWorkspaceIsolationCont
 import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAccountBoundMutation } from "@/hooks/useAccountBoundMutation";
-import type { AgentEnvConfig, EnvBinding, IssueWorkMode } from "@paperclipai/shared";
+import type { AgentEnvConfig, EnvBinding, IssueWorkMode } from "@pilibalaai/shared";
 import { useDialog } from "../context/DialogContext";
 import { useCompany } from "../context/CompanyContext";
 import { executionWorkspacesApi } from "../api/execution-workspaces";
@@ -35,7 +35,7 @@ import { useToastActions } from "../context/ToastContext";
 import { assigneeValueFromSelection, currentUserAssigneeOption, parseAssigneeValue } from "../lib/assignees";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Paperclip, FileText, Flag, PauseCircle, ListTree, X, ShieldAlert, Folder, ChevronDown, Lock } from "lucide-react";
+import { Paperclip as Pilibala, FileText, Flag, PauseCircle, ListTree, X, ShieldAlert, Folder, ChevronDown, Lock } from "lucide-react";
 import type { MentionOption } from "./MarkdownEditor";
 import { TaskChatComposer } from "./task-chat/TaskChatComposer";
 import { ComposerWorktreePicker } from "./task-chat/ComposerWorktreePicker";
@@ -54,9 +54,9 @@ import { useStagedIssueFiles } from "../hooks/useStagedIssueFiles";
 import type { StagedIssueFile } from "../lib/staged-issue-files";
 import { isImageAttachment } from "./task-chat/task-chat-attachments";
 
-const DRAFT_KEY = "paperclip:issue-draft";
+const DRAFT_KEY = "pilibala:issue-draft";
 /** A create that is waiting to resend: its request body and idempotency key. */
-const PENDING_CREATE_KEY = "paperclip:issue-draft:pending-create";
+const PENDING_CREATE_KEY = "pilibala:issue-draft:pending-create";
 
 /**
  * The create request keeps file names for reconciliation. File bytes are stored
@@ -91,7 +91,7 @@ class StagedFilesMissingError extends Error {
  * kept until a create succeeds or the user cancels, so reattaching after any
  * number of reloads replays a create that already reached the server.
  */
-const CREATE_AWAITING_FILES_KEY = "paperclip:issue-draft:create-awaiting-files";
+const CREATE_AWAITING_FILES_KEY = "pilibala:issue-draft:create-awaiting-files";
 
 function stagedFilesMissingDescription(names: string[]): ErrorDescription {
   return describeError(new StagedFilesMissingError(names), { action: "create the task" });
@@ -210,7 +210,7 @@ interface IssueDraft {
  * key, after a reload mid-upload) gets the existing task back from the
  * server, and must not add those files a second time.
  */
-const CREATE_UPLOAD_RECEIPTS_PREFIX = "paperclip:issue-draft:create-uploads:";
+const CREATE_UPLOAD_RECEIPTS_PREFIX = "pilibala:issue-draft:create-uploads:";
 
 function loadCreateUploadReceipts(idempotencyKey: string): Set<string> {
   try {
@@ -1402,7 +1402,7 @@ function AccountNewIssueDialog({ ignoreDefaults }: { ignoreDefaults: boolean }) 
           const target = event.detail.originalEvent.target as HTMLElement | null;
           if (
             createIssue.isPending ||
-            target?.closest("[data-radix-popper-content-wrapper], [data-paperclip-floating-ui]")
+            target?.closest("[data-radix-popper-content-wrapper], [data-pilibala-floating-ui]")
           ) {
             event.preventDefault();
           }
@@ -1598,7 +1598,7 @@ function AccountNewIssueDialog({ ignoreDefaults }: { ignoreDefaults: boolean }) 
                                 >
                                   <div className="min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                      <Pilibala className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                                       <span className="truncate text-sm">{file.file.name}</span>
                                     </div>
                                     <div className="mt-1 text-(length:--text-micro) text-muted-foreground">

@@ -8,7 +8,7 @@ import { issueRoutes } from "../routes/issues.js";
 import { errorHandler } from "../middleware/index.js";
 import { registerBudgetEnforcementWork } from "../services/budget-enforcement-worker.js";
 import { hasPendingBudgetEvaluation, queueBudgetEvaluation } from "../services/budget-evaluation-work.js";
-import { PROVIDER_QUOTA_MONITOR_SERVICE_NAME } from "@paperclipai/shared";
+import { PROVIDER_QUOTA_MONITOR_SERVICE_NAME } from "@pilibalaai/shared";
 import { readIdleQuotaSchedule } from "../services/heartbeat/idle-quota-schedule.js";
 import { registerDeadlineWork } from "../services/deadline-work.js";
 import { DELIVERY_QUEUES } from "../services/delivery-work-notifications.js";
@@ -19,7 +19,7 @@ import { issueService } from "../services/issues.js";
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { agents, agentWakeupRequests, applyPendingMigrations, authUsers, companies, companyMemberships, createDb, environmentLeases, issueExecutionDecisions, heartbeatRunEvents, heartbeatRuns, issues, type Db } from "@paperclipai/db";
+import { agents, agentWakeupRequests, applyPendingMigrations, authUsers, companies, companyMemberships, createDb, environmentLeases, issueExecutionDecisions, heartbeatRunEvents, heartbeatRuns, issues, type Db } from "@pilibalaai/db";
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
 import { heartbeatService } from "../services/heartbeat.js";
 import { createDeliveryWorkCoordinator } from "../services/delivery-work-coordinator.js";
@@ -30,8 +30,8 @@ import { idleWorkSnapshot } from "../services/task-admission.js";
 import { idleDeadlineRowLimit, type IdleDeadlineOwners } from "../services/idle-deadline-types.js";
 import type { VerifiedIdleCapabilities } from "../services/idle-incoming-wake-capability.js";
 
-const fixtureUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_RECOVERY_DEADLINES_TEST_DATABASE_URL");
-const adminUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_RECOVERY_DEADLINES_TEST_ADMIN_DATABASE_URL");
+const fixtureUrl = resolveExternalTestDatabaseUrl("PILIBALA_RECOVERY_DEADLINES_TEST_DATABASE_URL");
+const adminUrl = resolveExternalTestDatabaseUrl("PILIBALA_RECOVERY_DEADLINES_TEST_ADMIN_DATABASE_URL");
 const connectionFields = ["hostname", "port", "pathname"] as const;
 if (fixtureUrl && (!adminUrl || connectionFields.some(key =>
   new URL(fixtureUrl)[key] !== new URL(adminUrl)[key]))) {
@@ -504,7 +504,7 @@ describe.skipIf(!fixtureUrl)("recovery deadline producer, proof and resumed exec
         companyId: f.companyId, agentId: f.agent.id, issueId: f.issue.id, run, owner: worker!.retries.reconciliationSnapshot }); jitter.mockRestore(); await settled();
       expect(failed.controllerLeaseExpiresAt).toBeNull(); expect(failed.processPid).toBeNull();
       expect(f.persisted).toHaveBeenCalledTimes(1); expect(legacySettlement.legacySourceProcessSettled(failed)).toBe(true);
-      expect(failed.legacyProcessSettlement).toMatchObject({ schema: "paperclip.legacy-preparation-settlement.v1",
+      expect(failed.legacyProcessSettlement).toMatchObject({ schema: "pilibala.legacy-preparation-settlement.v1",
         targetKind: "not-dispatched", adapterDispatched: false, runId: failed.id, controllerBootId: failed.controllerBootId });
       const [retry] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.retryOfRunId, failed.id));
       expect(retry).toMatchObject({ status: "scheduled_retry", scheduledRetryReason: "transient_failure", issueId: f.issue.id,

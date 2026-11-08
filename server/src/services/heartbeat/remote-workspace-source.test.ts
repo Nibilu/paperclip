@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { agents, authUsers, companies, createDb, executionWorkspaces, heartbeatRuns, issueComments, issues, projects, projectWorkspaces, type Db } from "@paperclipai/db";
-import { buildProjectMentionHref } from "@paperclipai/shared";
+import { agents, authUsers, companies, createDb, executionWorkspaces, heartbeatRuns, issueComments, issues, projects, projectWorkspaces, type Db } from "@pilibalaai/db";
+import { buildProjectMentionHref } from "@pilibalaai/shared";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
@@ -19,10 +19,10 @@ describe.skipIf(!support.supported)("remote referenced project sources", () => {
   beforeAll(async () => {
     database = await startEmbeddedPostgresTestDatabase("remote-project-reference-");
     db = createDb(database.connectionString);
-    home = await realpath(await mkdtemp(path.join(os.tmpdir(), "paperclip-task-anchor-")));
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC", "true");
-    vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE", "true");
+    home = await realpath(await mkdtemp(path.join(os.tmpdir(), "pilibala-task-anchor-")));
+    vi.stubEnv("PILIBALA_HOME", home);
+    vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC", "true");
+    vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE", "true");
   }, 60_000);
   afterAll(async () => { await db?.$client.end(); await database?.cleanup(); if (home) await rm(home, { recursive: true, force: true }); vi.unstubAllEnvs(); });
 
@@ -32,7 +32,7 @@ describe.skipIf(!support.supported)("remote referenced project sources", () => {
     await db.insert(authUsers).values({ id: userId, name: "Project reference owner", email: `${userId}@example.test`,
       createdAt: new Date(), updatedAt: new Date() });
     await db.insert(companies).values({ id: companyId, name: "Referenced project fixture", issuePrefix: companyId.slice(0, 8) });
-    await db.insert(agents).values({ id: agentId, companyId, name: "Lead", status: "running", adapterType: "paperclip_runner" });
+    await db.insert(agents).values({ id: agentId, companyId, name: "Lead", status: "running", adapterType: "pilibala_runner" });
     await db.insert(projects).values({ id: projectId, companyId, name: "Delegate work here" });
     if (repository) await db.insert(projectWorkspaces).values({ companyId, projectId,
       name: "Repository", sourceType: "git", repoUrl: "https://example.test/team/repository.git" });
@@ -127,7 +127,7 @@ describe.skipIf(!support.supported)("remote referenced project sources", () => {
 
   it.each(["true", "false"])("keeps a metadata-only project mention without a folder when the remote-source flag is %s", async (remoteEnabled) => {
     const f = await fixture(false);
-    vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE", remoteEnabled);
+    vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE", remoteEnabled);
     try {
       const result = await resolveRemoteWorkspaceSource(db, { ...f, responsibleUserId: null,
         projectId: null, projectWorkspaceId: null, taskDirectory: true });
@@ -137,7 +137,7 @@ describe.skipIf(!support.supported)("remote referenced project sources", () => {
       expect(result.authority === "remote" && result.warnings?.length).toBe(1);
       expect(await db.select().from(executionWorkspaces).where(eq(executionWorkspaces.companyId, f.companyId))).toEqual([]);
     } finally {
-      vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE", "true");
+      vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE", "true");
     }
   });
 
@@ -155,7 +155,7 @@ describe.skipIf(!support.supported)("remote referenced project sources", () => {
     expect(result.source.repositories).toHaveLength(2);
     for (const repository of result.source.repositories!) {
       expect(repository.readOnly).not.toBe(true);
-      expect(repository.relativePath).toMatch(/^\.paperclip-repositories\/[^/]+$/);
+      expect(repository.relativePath).toMatch(/^\.pilibala-repositories\/[^/]+$/);
       expect(repository.projectWorkspaceId).toBe(repository.id);
     }
     expect(new Set(result.source.repositories!.map(repository => repository.relativePath)).size).toBe(2);
@@ -199,7 +199,7 @@ describe.skipIf(!support.supported)("remote referenced project sources", () => {
 
   it("preserves the disabled remote-source gate for a configured repository", async () => {
     const f = await fixture(true);
-    vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE", "false");
+    vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE", "false");
     try {
       await expect(resolveRemoteWorkspaceSource(db, { ...f, responsibleUserId: null,
         projectId: null, projectWorkspaceId: null, taskDirectory: true })).rejects.toMatchObject({
@@ -207,7 +207,7 @@ describe.skipIf(!support.supported)("remote referenced project sources", () => {
       });
       expect(await db.select().from(executionWorkspaces).where(eq(executionWorkspaces.companyId, f.companyId))).toEqual([]);
     } finally {
-      vi.stubEnv("PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE", "true");
+      vi.stubEnv("PILIBALA_MULTI_PROJECT_WORKSPACE_SYNC_REMOTE", "true");
     }
   });
 
@@ -267,7 +267,7 @@ describe.skipIf(!support.supported)("remote referenced project sources", () => {
     const [workspace] = await db.insert(executionWorkspaces).values({ companyId: f.companyId,
       sourceIssueId: f.issueId, mode: "shared_workspace", strategyType: "project_primary",
       name: "Saved task workspace", providerType: "cloud_sandbox", cwd: "/workspaces/saved",
-      metadata: { remoteWorkspace: { schema: "paperclip.remote-workspace.v1", epoch: 3, snapshotId,
+      metadata: { remoteWorkspace: { schema: "pilibala.remote-workspace.v1", epoch: 3, snapshotId,
         source, location: null, writerRunId: null, dirty: false } },
     }).returning();
     await db.update(issues).set({ executionWorkspaceId: workspace.id }).where(eq(issues.id, f.issueId));
@@ -285,13 +285,13 @@ describe.skipIf(!support.supported)("remote referenced project sources", () => {
     const f = await fixture(true);
     const [repository] = await db.select().from(projectWorkspaces).where(eq(projectWorkspaces.projectId, f.projectId));
     const savedRepository = { id: repository.id, projectWorkspaceId: repository.id, projectId: f.projectId,
-      relativePath: ".paperclip-repositories/saved-skills", repoUrl: repository.repoUrl!, ref: "saved-branch",
+      relativePath: ".pilibala-repositories/saved-skills", repoUrl: repository.repoUrl!, ref: "saved-branch",
       pinnedCommit: "a".repeat(40), ...(scenario === "read-only" ? { readOnly: true } : {}) };
     const source = { kind: "empty" as const, repositories: [savedRepository] };
     const [workspace] = await db.insert(executionWorkspaces).values({ companyId: f.companyId,
       sourceIssueId: f.issueId, mode: "isolated_workspace", strategyType: "project_primary",
       name: "Saved task copies", providerType: "cloud_sandbox", cwd: "/workspaces/saved",
-      metadata: { remoteWorkspace: { schema: "paperclip.remote-workspace.v1", epoch: 2, snapshotId: randomUUID(),
+      metadata: { remoteWorkspace: { schema: "pilibala.remote-workspace.v1", epoch: 2, snapshotId: randomUUID(),
         source, location: null, writerRunId: null, dirty: false } },
     }).returning();
     await db.update(issues).set({ executionWorkspaceId: workspace.id }).where(eq(issues.id, f.issueId));

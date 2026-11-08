@@ -7,9 +7,9 @@ Issue: **AMB-102 测试:S8 回退入口(API + 浏览器 E2E)**(dev 实例 :3104)
 
 **阻塞:前置未满足。** S8 尚未实现、未合入 dev:
 
-- `feature/recovery-ladder`(/home/amber/paperclip-recovery-ladder)仅有 S1–S5
+- `feature/recovery-ladder`(/home/amber/pilibala-recovery-ladder)仅有 S1–S5
   (f50845048..875f4e488:S1 分类器、S2 分类落库、S3 触发面、S4 医生选择+S5 提案 schema)。
-- dev 主 checkout(/home/amber/paperclip,branch feature/hermes-setup-provider-flow)停在基线
+- dev 主 checkout(/home/amber/pilibala,branch feature/hermes-setup-provider-flow)停在基线
   f50845048;:3104 `/api/health` 报 `commit: f50845048…` —— recovery-ladder 代码未部署。
 - 全仓分支/工作树/stash 均无 S6/S7/S8 提交;worktree 内有他人在途改动(L2 invocation gate,
   reconciliation-analysis.ts,未提交)。
@@ -38,7 +38,7 @@ Issue: **AMB-102 测试:S8 回退入口(API + 浏览器 E2E)**(dev 实例 :3104)
    - 回退入口在失败面板提案卡上**可见**;
    - 触发后**进度与结果反馈可见**(进行中状态 → 完成/失败反馈);
    - 回退后**提案卡状态更新**;
-   - 证据:截图 + Playwright trace 落盘(附到 Paperclip artifact)。
+   - 证据:截图 + Playwright trace 落盘(附到 Pilibala artifact)。
 3. **负向** — `revertible:false` 的 option **无回退入口**(UI 无按钮;API 对其回退请求返回 4xx)。
 
 ### 运行方式双层
@@ -66,4 +66,4 @@ glob,不会进入默认测试运行:
 3. [ ] dev UI 登录会话可用(board 访问);
 4. [ ] API 测试在 ladder worktree 通过(`pnpm --filter server test` 或指定 vitest 文件);
 5. [ ] E2E harness 回归通过 + :3104 真实浏览器证据(截图/trace)落盘;
-6. [ ] 证据经 paperclip artifact 上传,issue 评论链接后置 done。
+6. [ ] 证据经 pilibala artifact 上传,issue 评论链接后置 done。

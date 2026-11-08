@@ -10,7 +10,7 @@ import {
   instanceSettings,
   plugins,
   type Db,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { environmentService } from "../services/environments.js";
 import { MANAGED_CONFIG_ENV_KEY, parseManagedConfigEnv } from "../services/managed-config.js";
@@ -68,7 +68,7 @@ const support = await getEmbeddedPostgresTestSupport();
   };
 
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-managed-plugin-environment-rows-");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-managed-plugin-environment-rows-");
     db = createDb(database.connectionString);
   }, 90_000);
   afterAll(async () => { await database?.cleanup(); });
@@ -124,7 +124,7 @@ const support = await getEmbeddedPostgresTestSupport();
       driver: "plugin",
       status: "active",
       config: { pluginKey: PLUGIN_KEY, driverKey: "tasks", driverConfig: { normalized: true } },
-      metadata: { managedByPaperclip: true, managedPluginEnvironment: MARKER },
+      metadata: { managedByPilibala: true, managedPluginEnvironment: MARKER },
     });
     expect(call).toHaveBeenCalledWith(pluginId, "environmentValidateConfig", { driverKey: "tasks", config: {} });
     expect(await db.select().from(activityLog)).toHaveLength(1);
@@ -156,7 +156,7 @@ const support = await getEmbeddedPostgresTestSupport();
     expect(rows[0]).toMatchObject({
       id: handMade!.id,
       name: "Remote Host",
-      metadata: { note: "made by hand", managedByPaperclip: true, managedPluginEnvironment: MARKER },
+      metadata: { note: "made by hand", managedByPilibala: true, managedPluginEnvironment: MARKER },
     });
     const [kept] = await db.select().from(agents).where(eq(agents.id, agentId));
     expect(kept!.defaultEnvironmentId).toBe(handMade!.id);
@@ -166,7 +166,7 @@ const support = await getEmbeddedPostgresTestSupport();
     const first = await ensure();
     // What the route's marker-clear request stores.
     await db.update(environments)
-      .set({ metadata: { managedByPaperclip: null, managedPluginEnvironment: null } })
+      .set({ metadata: { managedByPilibala: null, managedPluginEnvironment: null } })
       .where(eq(environments.id, first.environment.id));
 
     const again = await ensure();
@@ -230,7 +230,7 @@ const support = await getEmbeddedPostgresTestSupport();
       const first = await boot();
       expect(first).toMatchObject({ ensured: 1, added: 1, failed: 0 });
       const [row] = await pluginRows();
-      expect(row).toMatchObject({ name: "Remote Host", status: "active", metadata: { managedByPaperclip: true, managedPluginEnvironment: MARKER } });
+      expect(row).toMatchObject({ name: "Remote Host", status: "active", metadata: { managedByPilibala: true, managedPluginEnvironment: MARKER } });
 
       const second = await boot();
       expect(second).toMatchObject({ ensured: 1, added: 0, unchanged: 1 });
@@ -272,7 +272,7 @@ const support = await getEmbeddedPostgresTestSupport();
     const sandboxRow = async () => {
       const [row] = await db.insert(environments).values({
         name: "Managed Sandbox", driver: "sandbox", status: "active", config: { provider: "daytona" },
-        metadata: { managedByPaperclip: true, managedSandboxProvider: "daytona" },
+        metadata: { managedByPilibala: true, managedSandboxProvider: "daytona" },
       }).returning();
       return row!.id;
     };

@@ -3,7 +3,7 @@ import type { RunnerApi } from "./api.js";
 import { runnerMatrix } from "./catalog.js";
 import { setupLiveFixtures } from "./live-fixtures.js";
 
-const optIn = "PAPERCLIP_CURSOR_CLOUD_ALLOW_UNPRICED_QUALIFICATION";
+const optIn = "PILIBALA_CURSOR_CLOUD_ALLOW_UNPRICED_QUALIFICATION";
 const execution = runnerMatrix.find(cell => cell.id === "cursor-cloud.runner-cursor-cloud.local.cloud-followup")!;
 const companyId = "fixture-company", agentId = "fixture-agent";
 const policyDefaults = { companyId, metric: "billed_cents", windowKind: "calendar_month_utc",
@@ -65,7 +65,7 @@ describe("Cursor Cloud qualification budgets", () => {
     ]);
     expect(calls.at(-1)).toEqual({ method: "GET", path: `/api/companies/${companyId}/budgets/overview` });
     expect((fixtures as unknown as Record<string, unknown>).qualificationBudget).toEqual({
-      schema: "paperclip.e2e.cursor-cloud.qualification-budget.v1", unpricedUsageOptIn: true,
+      schema: "pilibala.e2e.cursor-cloud.qualification-budget.v1", unpricedUsageOptIn: true,
       policies: [{ ...policyDefaults, scopeType: "company", scopeId: companyId }, { ...policyDefaults, scopeType: "agent", scopeId: agentId }],
     });
     await fixtures.teardown();

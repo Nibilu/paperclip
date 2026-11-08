@@ -14,7 +14,7 @@ import {
   issues,
   nativeRunFinalizations,
   subscribeDatabaseWork,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { agentExecutionsHaveStopped } from "../agent-execution-stop.js";
 import { readProcessStartedAt } from "../hot-restart.js";
@@ -39,7 +39,7 @@ describe("failed native run owner release", () => {
   let agentId: string;
 
   beforeAll(async () => {
-    temporary = await startEmbeddedPostgresTestDatabase("paperclip-native-owner-release-");
+    temporary = await startEmbeddedPostgresTestDatabase("pilibala-native-owner-release-");
     db = createDb(temporary.connectionString);
   }, EMBEDDED_POSTGRES_TEST_TIMEOUT_MS);
   afterAll(async () => temporary?.cleanup());
@@ -74,7 +74,7 @@ describe("failed native run owner release", () => {
       errorCode: input.errorCode ?? null, error: input.error ?? null,
       runnerProfileJson: {
         mode: "native",
-        nativeExecutionInput: { schema: "paperclip.native-execution-input.v1", binding: { runId } },
+        nativeExecutionInput: { schema: "pilibala.native-execution-input.v1", binding: { runId } },
         sessionCheckpoint: { backendKind: "codex_app_server", sessionId: "persisted-session", identity: { runId },
           providerSessionId: "provider-session", activeTurnId: "active-turn" },
       },

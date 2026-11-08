@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import type { RunLogStore } from "../run-log-store.js";
 import { readRecoverableRunLog } from "./native-run-log-recovery.js";
 

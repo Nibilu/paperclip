@@ -8,7 +8,7 @@ import { createOwnedSandbox, recoverSandboxCreations, recoverableTaskCreation } 
 import { dueRunLeaseReleaseCondition, pendingRunLeaseReleaseCondition } from "./environment-lease-release-state.js";
 import { flushDeferredEnvironmentCleanup, registerDeferredEnvironmentCleanup, writeEnvironmentCleanup } from "./environment-cleanup-notifications.js";
 import { executeEnvironmentTask, pluginEnvironmentSupportsTasks, settleDispatchedEnvironmentTask } from "./environment-task-runtime.js";
-import type { PluginEnvironmentTaskOperation } from "@paperclipai/plugin-sdk";
+import type { PluginEnvironmentTaskOperation } from "@pilibalaai/plugin-sdk";
 import { allowLegacyShutdownWorkspaceCleanup, legacyShutdownWorkspaceResourceProtected } from "./legacy-shutdown-workspace-settlement.js";
 import { nativeWorkspaceExportPendingForLease, nativeWorkspaceExportPendingForResource } from "./native-runtime/native-workspace-finalization-state.js";
 import { beginIdleTrackedWork } from "./task-admission.js";
@@ -16,7 +16,7 @@ import { historicalProviderCredentials } from "./historical-provider-credentials
 import { ownedWorkspaceRecoveryLease, type WorkspaceRecoverySourceIdentity } from "./workspace-recovery-source.js";
 import type { NativeWorkspaceFinalizationOwnership } from "./native-runtime/native-workspace-finalization-ownership.js";
 import { hasStopOnlyCleanup, prepareSandboxStopAndRetain, readStopOnlyCleanup, settleStopOnlyCleanup, stopOnlyCleanupKey } from "./sandbox-stop-and-retain.js";
-import { JsonRpcCallError, readEnvironmentAcquisitionDiagnostic, readEnvironmentCreationCleanupError } from "@paperclipai/plugin-sdk";
+import { JsonRpcCallError, readEnvironmentAcquisitionDiagnostic, readEnvironmentCreationCleanupError } from "@pilibalaai/plugin-sdk";
 import { preserveEnvironmentSyncOutErrorDiagnostic } from "./environment-sync-out-error.js";
 import { remoteTerminationReceipt } from "./remote-execution-termination.js";
 import { inspectCloudSandboxCleanupAbsence } from "./sandbox-absence-proof.js";
@@ -24,8 +24,8 @@ import { hasNativeWorkspaceExportResume, releaseCompletedNativeWorkspaceExportRe
 import { createHash, randomUUID } from "node:crypto";
 import { currentControllerProcess } from "./controller-process-identity.js";
 import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { companySecrets, companySecretVersions, environmentLeases, heartbeatRuns } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
+import { companySecrets, companySecretVersions, environmentLeases, heartbeatRuns } from "@pilibalaai/db";
 import type {
   Environment,
   EnvironmentLease,
@@ -36,14 +36,14 @@ import type {
   PluginEnvironmentConfig,
   SandboxEnvironmentConfig,
   SandboxProviderCapabilities,
-} from "@paperclipai/shared";
-import { resolveDeclaredSandboxCapabilities } from "@paperclipai/shared";
-import type { EffectiveExecutionCapabilities } from "@paperclipai/adapter-utils/execution-target";
-import { MAX_SANDBOX_SYNC_TIMEOUT_MS } from "@paperclipai/adapter-utils/sandbox-managed-runtime";
-import type { RunnerIngressEndpoint } from "@paperclipai/adapter-utils/runner-connectivity";
+} from "@pilibalaai/shared";
+import { resolveDeclaredSandboxCapabilities } from "@pilibalaai/shared";
+import type { EffectiveExecutionCapabilities } from "@pilibalaai/adapter-utils/execution-target";
+import { MAX_SANDBOX_SYNC_TIMEOUT_MS } from "@pilibalaai/adapter-utils/sandbox-managed-runtime";
+import type { RunnerIngressEndpoint } from "@pilibalaai/adapter-utils/runner-connectivity";
 import type {
   CommandManagedDuplexChannel,
-} from "@paperclipai/adapter-utils/command-managed-runtime";
+} from "@pilibalaai/adapter-utils/command-managed-runtime";
 import type {
   PluginEnvironmentAcquireLeaseParams,
   PluginEnvironmentExecuteResult,
@@ -52,13 +52,13 @@ import type {
   PluginEnvironmentRealizeWorkspaceResult,
   PluginEnvironmentSyncResult,
   PluginSyncOperation,
-} from "@paperclipai/plugin-sdk";
-import { ensureSshWorkspaceReady } from "@paperclipai/adapter-utils/ssh";
+} from "@pilibalaai/plugin-sdk";
+import { ensureSshWorkspaceReady } from "@pilibalaai/adapter-utils/ssh";
 import {
   getActiveStepContext,
   runWithRuntimeParent,
   type StartupSpanContext,
-} from "@paperclipai/adapter-utils/acpx-engine/startup-timing";
+} from "@pilibalaai/adapter-utils/acpx-engine/startup-timing";
 import { environmentService } from "./environments.js";
 import { instanceSettingsService } from "./instance-settings.js";
 import { hasSandboxSnapshotQualification, qualifiedSandboxSnapshotId, usesManagedCloudSandboxImage, type SandboxTemplateIdentity } from "./sandbox-snapshot-qualification.js";
@@ -1414,7 +1414,7 @@ function createSandboxEnvironmentDriver(
       return await input.teardown(input.metadata);
     } catch (error) {
       const previous = readEnvironmentCreationCleanupError({ data: {
-        schema: "paperclip/environment-creation-cleanup/v1", cleanup: input.metadata.failedCreateCleanup,
+        schema: "pilibala/environment-creation-cleanup/v1", cleanup: input.metadata.failedCreateCleanup,
       } });
       const observed = readEnvironmentCreationCleanupError(error);
       const scopeKeys = ["providerLeaseId", "companyId", "environmentId", "runId", "attemptId", "accountFingerprint"] as const;
@@ -1629,10 +1629,10 @@ function createSandboxEnvironmentDriver(
         throw new Error(`Expected sandbox environment config for driver "${input.environment.driver}".`);
       }
       let pinnedSnapshotId: string | null = null;
-      if (input.adapterType === "paperclip_runner" && !usesManagedCloudSandboxImage(configuredEnvironment, selectedTemplate.value)) {
+      if (input.adapterType === "pilibala_runner" && !usesManagedCloudSandboxImage(configuredEnvironment, selectedTemplate.value)) {
         pinnedSnapshotId = qualifiedSandboxSnapshotId(configuredEnvironment, input.companyId, parsed.config, selectedTemplate.value);
         if (!pinnedSnapshotId && hasSandboxSnapshotQualification(configuredEnvironment, input.companyId)) {
-          throw new Error("sandbox_snapshot_qualification_required: The snapshot qualification is missing or stale. Open the agent's Harness / Runtime page and select Run test before running Paperclip Runner.");
+          throw new Error("sandbox_snapshot_qualification_required: The snapshot qualification is missing or stale. Open the agent's Harness / Runtime page and select Run test before running Pilibala Runner.");
         }
       }
       if (input.configuredEnvironment) parsed.config = { ...parsed.config, reuseLease: storedParsed.config.reuseLease, archiveOnRelease: storedParsed.config.archiveOnRelease };
@@ -1874,7 +1874,7 @@ function createSandboxEnvironmentDriver(
           }
           if (!providerLease) {
             if (
-              input.adapterType === "paperclip_runner" &&
+              input.adapterType === "pilibala_runner" &&
               !await verifyRecoverableNativeHarnessBackup({ db, companyId: reusableLease.companyId,
                 stamp: reusableLease.metadata?.nativeHarnessBackup, providerLeaseId: reusableLease.providerLeaseId })
             ) {
@@ -2408,7 +2408,7 @@ function createSandboxEnvironmentDriver(
           return receipt;
         }
         const failedCreation = readEnvironmentCreationCleanupError({ data: {
-          schema: "paperclip/environment-creation-cleanup/v1",
+          schema: "pilibala/environment-creation-cleanup/v1",
           cleanup: input.lease.metadata?.failedCreateCleanup,
         } });
         // An environment deletion clears the lease FK. Retain the original
@@ -3327,7 +3327,7 @@ function createPluginEnvironmentDriver(
         driver.defaultAcquireTimeoutMs,
       );
       const timeoutOverride: [number?] = rpcTimeoutMs === undefined ? [] : [rpcTimeoutMs];
-      const warm = input.adapterType === "paperclip_runner" && parsed.config.runnerLifecycleMode === "warm" &&
+      const warm = input.adapterType === "pilibala_runner" && parsed.config.runnerLifecycleMode === "warm" &&
         driver.warmTaskVersion === 1 && !!input.issueId && !!input.agentId && !!input.heartbeatRunId &&
         workerManager.getWorker(plugin.id)?.supportedMethods.includes("environmentResumeLease");
       const lifecyclePolicy = warm ? { mode: "warm", idleTimeoutMs: parsed.config.runnerIdleTimeoutMs ?? 300_000 } : { mode: "per_turn", idleTimeoutMs: null };
@@ -3404,7 +3404,7 @@ function createPluginEnvironmentDriver(
           ...(input.agentId ? { agentId: input.agentId } : {}),
           providerMetadata: providerLease.metadata ?? {},
           environmentId: input.environment.id,
-          ...(input.adapterType === "paperclip_runner" && driver.supportsTasks === true ? { runnerTaskLease: true } : {}),
+          ...(input.adapterType === "pilibala_runner" && driver.supportsTasks === true ? { runnerTaskLease: true } : {}),
           driver: input.environment.driver,
           executionWorkspaceMode: input.executionWorkspaceMode,
           pluginId: plugin.id,
@@ -4030,7 +4030,7 @@ export function environmentRuntimeService(
             providerResourceDisposition === "destroy" &&
             isRecord(leaseSnapshot.metadata?.reusableSandboxLease) &&
             leaseSnapshot.metadata.reusableSandboxLease.adapterType ===
-              "paperclip_runner" &&
+              "pilibala_runner" &&
             leaseSnapshot.metadata?.sandboxLeaseAcquisition &&
             (!leaseSnapshot.providerLeaseId ||
               !await verifyRecoverableNativeHarnessBackup({ db, companyId: leaseSnapshot.companyId,
@@ -4045,7 +4045,7 @@ export function environmentRuntimeService(
                 environment, leaseRow, runId: heartbeatRunId,
                 scopeCondition: and(pendingRunLeaseReleaseCondition(true),
                   releaseOptions?.respectCleanupDeadlines ? dueRunLeaseReleaseCondition() : undefined),
-                failureReason: "paperclip_runner_destroy_after_turn",
+                failureReason: "pilibala_runner_destroy_after_turn",
               })
             : driver
               ? await driver.releaseRunLease({

@@ -46,7 +46,7 @@ it("runs every standing Product regression case through its existing full-stack 
       initial: null, checkpoints: [], projectCount: 0, runCount: 0, restarted: false, pendingInteractions: 0,
       activeOperations: 0, activeRecovery: false, artifact: null, remoteLeaseRunIds: [] });
     if (row.suite === "configured-repository") checks = gradeRepositoryProof({
-      conversion: false, expectedLegacyAdapter: "codex_local", originalAdapter: "paperclip_runner", finalAdapter: "paperclip_runner",
+      conversion: false, expectedLegacyAdapter: "codex_local", originalAdapter: "pilibala_runner", finalAdapter: "pilibala_runner",
       configurationBefore: "", configurationAfter: "", instructionsBefore: "", instructionsAfter: "", permissionsPreserved: false,
       expectedModel: execution.profile.model!, actualModel: null, actualProvider: null, expectedProvider: "codex", environmentRetained: false,
       issueDone: false, runCount: 0, committedRuns: 0, sourceBytes: "", currentSourceBytes: null, expectedCommit: "",
@@ -58,13 +58,13 @@ it("runs every standing Product regression case through its existing full-stack 
     ];
     expect(matcherResults.length).toBeGreaterThan(0);
     const sourceSha = "b".repeat(40);
-    const raw: RunnerE2EResult = { schema: "paperclip.runner-e2e.result/v2", executionId: row.executionId,
+    const raw: RunnerE2EResult = { schema: "pilibala.runner-e2e.result/v2", executionId: row.executionId,
       suiteId: row.suite, caseId: row.name, profileId: row.profile, environmentId: "local",
       source: { sha: sourceSha, ref: null, workflowRunUrl: null }, firstTask,
       attempt: 1, status: "failed", failureClass: "candidate_failure", cleanup: "passed", model: execution.profile.model,
       provider: execution.profile.provider, runtimeMode: "native", startedAt: "2026-11-04T00:00:00Z",
       finishedAt: "2026-11-04T00:00:01Z", durationMs: 1000, matcherResults };
-    const project = (result: RunnerE2EResult) => projectProductResults({ schema: "paperclip.runner-e2e.campaign/v2", campaignId: "gha-123-1",
+    const project = (result: RunnerE2EResult) => projectProductResults({ schema: "pilibala.runner-e2e.campaign/v2", campaignId: "gha-123-1",
       source: { sha: sourceSha }, expected: [row.executionId], results: [projectFirstTaskResult(result)] },
     { runId: "123", attempt: "1", workflowSha: "a".repeat(40), cases: [row] }, sourceSha);
     const projected = project(raw);

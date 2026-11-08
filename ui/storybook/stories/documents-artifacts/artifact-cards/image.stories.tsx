@@ -14,7 +14,7 @@ const meta = {
   title: "Tasks and conversations/Documents, attachments, and work products/Explorations/Artifact cards/Image",
   component: ImageCard,
   decorators,
-  parameters: { ...parameters, paperclip: {
+  parameters: { ...parameters, pilibala: {
       "capabilities": [
         "documents-artifacts/work-products"
       ],

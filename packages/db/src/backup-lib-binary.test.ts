@@ -51,7 +51,7 @@ describe("JavaScript backup binary SQL", () => {
         nullifyColumns: { binary_fixture: ["redacted"] } });
       const body = gunzipSync(await readFile(archive.backupFile)).toString("utf8");
       const inserts = body.split("\n").filter(line => line.startsWith("INSERT INTO"));
-      const literal = (value: string) => `$paperclip$${value}$paperclip$`;
+      const literal = (value: string) => `$pilibala$${value}$pilibala$`;
       const array = (value: string) => literal(value);
       const prefix = 'INSERT INTO "public"."binary_fixture" ("bytes", "payloads", "metadata", "redacted") VALUES ';
       expect(inserts).toEqual([

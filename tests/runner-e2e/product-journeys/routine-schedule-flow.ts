@@ -43,7 +43,7 @@ export async function withRoutineTriggerCleanup<T>(input: {
       try {
         await mkdir(input.directory, { recursive: true, mode: 0o700 });
         await writeFile(path.join(input.directory, "scheduled-routine-cleanup-failure.json"), JSON.stringify({
-          schema: "paperclip.product-journey.routine-cleanup-failure/v1", code: failure.code,
+          schema: "pilibala.product-journey.routine-cleanup-failure/v1", code: failure.code,
           triggerRoute: input.triggerRoute, primaryFailurePreserved: Boolean(primary),
           transportCode: error instanceof ConnectionFailure && /^(api_request_failed|api_status_[1-5][0-9]{2})$/.test(error.message)
             ? error.message : null,
@@ -120,7 +120,7 @@ export async function runScheduledRoutine(context: JourneyContext, session: Targ
       description: saved.description === prompt, concurrency: saved.concurrencyPolicy === "always_enqueue", zeroTriggers: saved.triggers.length === 0 };
     await mkdir(options.directory, { recursive: true, mode: 0o700 });
     await writeFile(path.join(options.directory, "scheduled-routine-creation.json"), JSON.stringify({
-      schema: "paperclip.product-journey.routine-creation/v1", matches: creationMatches,
+      schema: "pilibala.product-journey.routine-creation/v1", matches: creationMatches,
       expectedDescription: bodyReceipt(prompt), savedDescription: bodyReceipt(saved.description),
       expected: { companyId: company.id, titleSha256: bodyReceipt(title)!.sha256, projectId: project.id, agentId: agent.id, userId: user.id },
       saved: { id: saved.id, companyId: saved.companyId, titleSha256: bodyReceipt(saved.title)?.sha256,
@@ -189,7 +189,7 @@ export async function runScheduledRoutine(context: JourneyContext, session: Targ
       // A failed grade must retain its attribution inputs without the prompt or output body.
       await mkdir(options.directory, { recursive: true, mode: 0o700 });
       await writeFile(path.join(options.directory, "scheduled-routine-result.json"), JSON.stringify({
-        schema: "paperclip.product-journey.routine-result/v1", matches, expectedBody: bodyReceipt(expectedBody),
+        schema: "pilibala.product-journey.routine-result/v1", matches, expectedBody: bodyReceipt(expectedBody),
         documentBody: bodyReceipt(document.body), revisionBody: bodyReceipt(revision.body),
         document: { id: document.id, companyId: document.companyId, issueId: document.issueId,
           latestRevisionId: document.latestRevisionId, createdByAgentId: document.createdByAgentId,
@@ -198,7 +198,7 @@ export async function runScheduledRoutine(context: JourneyContext, session: Targ
           createdByRunId: revision.createdByRunId, createdAt: revision.createdAt },
         run: { id: state.taskRuns[0]!.id, status: state.taskRuns[0]!.status, nativePhase: state.taskRuns[0]!.nativePhase,
           agentId: state.taskRuns[0]!.agentId, companyId: state.taskRuns[0]!.companyId,
-          environmentId: state.taskRuns[0]!.contextSnapshot?.paperclipEnvironment?.id,
+          environmentId: state.taskRuns[0]!.contextSnapshot?.pilibalaEnvironment?.id,
           provider: state.taskRuns[0]!.runnerProfileJson?.nativeExecutionInput?.provider?.kind,
           model: state.taskRuns[0]!.runnerProfileJson?.nativeExecutionInput?.provider?.model },
       }, null, 2), { mode: 0o600 });

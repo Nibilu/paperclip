@@ -129,7 +129,7 @@ export async function readNestedWorkspaceGitSourceRoots(cwd: string): Promise<Wo
       roots.push(source); inRepository = true;
     } else if (children.some(child => child.name === "objects") && children.some(child => child.name === "HEAD")) throw invalid();
     for (const child of children) {
-      if (!child.isDirectory() || child.name === ".git" || depth === 0 && child.name === ".paperclip-runtime") continue;
+      if (!child.isDirectory() || child.name === ".git" || depth === 0 && child.name === ".pilibala-runtime") continue;
       const next = path.join(directory, child.name);
       if (!inRepository) {
         const marker = await entry(child.name === "node_modules" ? path.join(directory, "package.json") : path.join(next, "pyvenv.cfg"));

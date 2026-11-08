@@ -238,7 +238,7 @@ the browser gate itself must still be green on the final published head.
 
 ## Actual prerequisite adoption for final publication
 
-The skill-retention prerequisite [#17923](https://github.com/paperclipai/paperclip/pull/17923)
+The skill-retention prerequisite [#17923](https://github.com/pilibalaai/pilibala/pull/17923)
 merged at `b06ea111a254c62e0a55199b010d82e0adb33bf0`, after all 58 current
 checks were clean and the exact reviewed head `269935f6ccd7685866fd94bea66f7f803c48058d`
 had Greptile and Ponytail 5/5. Its separate, evidence-supported failed-job retry

@@ -1,5 +1,5 @@
-import { PAPERCLIP_RUNNER_IDLE_TIMEOUT_DEFAULT_MS, resolvePaperclipRunnerIdleTimeoutMs } from "@paperclipai/adapter-utils";
-import type { NativeExecutionInput } from "../../vendor/paperclip-runner/index.js";
+import { PILIBALA_RUNNER_IDLE_TIMEOUT_DEFAULT_MS, resolvePilibalaRunnerIdleTimeoutMs } from "@pilibalaai/adapter-utils";
+import type { NativeExecutionInput } from "../../vendor/pilibala-runner/index.js";
 import { supportsManagedNativeWarmSession } from "../native-runtime/native-warm-capability.js";
 
 export type NativeLifecyclePolicy = NonNullable<NativeExecutionInput["session"]["lifecyclePolicy"]>;
@@ -33,13 +33,13 @@ export function resolveHeartbeatNativeLifecyclePolicy(input: {
   // runner and provider session for the default idle window so a follow-up
   // turn skips the launch and session load.
   const agentMode = input.agentMode === "warm" || input.agentMode === "per_turn" ? input.agentMode
-    : input.adapterType === "paperclip_runner" && input.localTarget === true && defaultsToWarmLocally(input.backend)
+    : input.adapterType === "pilibala_runner" && input.localTarget === true && defaultsToWarmLocally(input.backend)
       ? "warm" : "per_turn";
   const agentPolicy: NativeLifecyclePolicy = agentMode === "warm"
     ? { mode: "warm", idleTimeoutMs: input.agentMode === "warm"
-      ? resolvePaperclipRunnerIdleTimeoutMs(input.agentIdleTimeoutMs) : PAPERCLIP_RUNNER_IDLE_TIMEOUT_DEFAULT_MS }
+      ? resolvePilibalaRunnerIdleTimeoutMs(input.agentIdleTimeoutMs) : PILIBALA_RUNNER_IDLE_TIMEOUT_DEFAULT_MS }
     : { mode: "per_turn", idleTimeoutMs: null };
-  const supportsManagedWarm = input.adapterType === "paperclip_runner" && (input.taskOwned ||
+  const supportsManagedWarm = input.adapterType === "pilibala_runner" && (input.taskOwned ||
     supportsManagedNativeWarmSession({ backend: input.backend, acpxAgent: input.acpxAgent }, input.managedAiAttribution));
   return input.persistedPolicy ??
     (["openai_dot_mcp", "grok_bot_mcp", "muse_external", "cursor_cloud_api"].includes(input.backend) || input.managedAiSelected && !supportsManagedWarm

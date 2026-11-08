@@ -1,6 +1,6 @@
 # Test audit R12: runtime and credential owner coverage
 
-Date: 2026-10-12. Base: `e12e8de07b7cbd0c1b37a921d6db432bbb8d32c5`, the head of [R11](https://github.com/paperclipai/paperclip/pull/16078). Branch: `codex/test-audit-r12-runtime-auth`.
+Date: 2026-10-12. Base: `e12e8de07b7cbd0c1b37a921d6db432bbb8d32c5`, the head of [R11](https://github.com/pilibalaai/pilibala/pull/16078). Branch: `codex/test-audit-r12-runtime-auth`.
 
 This change removes **seven redundant registered executions and 76 net test lines** across four files. It changes no production code. Each retired case repeats an existing owner invocation. Three result assertions move into the existing stronger first-login case. No wall-time improvement is inferred from these counts.
 

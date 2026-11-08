@@ -1,14 +1,14 @@
 {
-  "name": "@paperclipai/teams-catalog",
+  "name": "@pilibalaai/teams-catalog",
   "version": "0.1.0",
   "license": "MIT",
-  "homepage": "https://github.com/paperclipai/paperclip",
+  "homepage": "https://github.com/pilibalaai/pilibala",
   "bugs": {
-    "url": "https://github.com/paperclipai/paperclip/issues"
+    "url": "https://github.com/pilibalaai/pilibala/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/paperclipai/paperclip",
+    "url": "https://github.com/pilibalaai/pilibala",
     "directory": "packages/teams-catalog"
   },
   "type": "module",

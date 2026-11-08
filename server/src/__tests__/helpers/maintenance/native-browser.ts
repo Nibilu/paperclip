@@ -8,7 +8,7 @@ import type { Browser, BrowserContext } from '@playwright/test';
 /** A fresh owned browser, not a user's profile. Never terminate by process name. */
 export async function withNativeMaintenanceBrowser<T>(run: (browser: Browser, context: BrowserContext) => Promise<T>): Promise<T> {
   const { chromium } = await import('@playwright/test');
-  const profile = await mkdtemp(path.join(tmpdir(), 'paperclip-sleep-browser-'));
+  const profile = await mkdtemp(path.join(tmpdir(), 'pilibala-sleep-browser-'));
   let child: ChildProcess | undefined, browser: Browser | undefined, exited: Promise<void> | undefined;
   let exitObserved = false, launchError: Error | undefined, stderr = '', failure: { error: unknown } | undefined;
   try {

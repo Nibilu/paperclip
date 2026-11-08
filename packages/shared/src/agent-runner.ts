@@ -1,4 +1,4 @@
-export type AgentRunnerChoice = "auto" | "paperclip" | "legacy";
+export type AgentRunnerChoice = "auto" | "pilibala" | "legacy";
 export type AgentRunner = Exclude<AgentRunnerChoice, "auto">;
 
 export interface AgentRunnerAvailability {
@@ -6,7 +6,7 @@ export interface AgentRunnerAvailability {
   defaultRunner: AgentRunner;
 }
 
-export function paperclipRunnerProfileForHarness(harness: string): { provider: "codex" | "opencode" | "cursor_cloud" } | { provider: "acpx"; acpxAgent: "claude" | "pi" | "grok" } | undefined {
+export function pilibalaRunnerProfileForHarness(harness: string): { provider: "codex" | "opencode" | "cursor_cloud" } | { provider: "acpx"; acpxAgent: "claude" | "pi" | "grok" } | undefined {
   if (harness === "codex_local") return { provider: "codex" };
   if (harness === "claude_local") return { provider: "acpx", acpxAgent: "claude" };
   if (harness === "pi_local") return { provider: "acpx", acpxAgent: "pi" };
@@ -21,15 +21,15 @@ export function paperclipRunnerProfileForHarness(harness: string): { provider: "
  * none, so the server applies the product default (warm on a local target for
  * Codex and OpenCode). Other harnesses keep an explicit per_turn.
  */
-export function paperclipRunnerCreationLifecycle(
-  profile: NonNullable<ReturnType<typeof paperclipRunnerProfileForHarness>>,
+export function pilibalaRunnerCreationLifecycle(
+  profile: NonNullable<ReturnType<typeof pilibalaRunnerProfileForHarness>>,
 ): { lifecycleMode?: "per_turn" } {
   return profile.provider === "codex" || profile.provider === "opencode"
     || (profile.provider === "acpx" && profile.acpxAgent === "claude")
     ? {} : { lifecycleMode: "per_turn" };
 }
 
-export const PAPERCLIP_RUNNER_MINIMUM_GLIBC_VERSION = "2.39";
+export const PILIBALA_RUNNER_MINIMUM_GLIBC_VERSION = "2.39";
 
 function supportsLinuxLibc(libc?: "glibc" | "musl" | "unknown", version?: string): boolean {
   if (libc !== undefined && libc !== "glibc") return false;
@@ -38,12 +38,12 @@ function supportsLinuxLibc(libc?: "glibc" | "musl" | "unknown", version?: string
   if (!match) return false;
   const major = Number(match[1]), minor = Number(match[2]);
   if (!Number.isSafeInteger(major) || !Number.isSafeInteger(minor)) return false;
-  const [requiredMajor, requiredMinor] = PAPERCLIP_RUNNER_MINIMUM_GLIBC_VERSION.split(".").map(Number);
+  const [requiredMajor, requiredMinor] = PILIBALA_RUNNER_MINIMUM_GLIBC_VERSION.split(".").map(Number);
   return major > requiredMajor! || (major === requiredMajor && minor >= requiredMinor!);
 }
 
-export function paperclipRunnerSupportsPlatform(harness: string, platform: string, architecture: string, libc?: "glibc" | "musl" | "unknown", glibcVersion?: string): boolean {
-  return !!paperclipRunnerProfileForHarness(harness)
+export function pilibalaRunnerSupportsPlatform(harness: string, platform: string, architecture: string, libc?: "glibc" | "musl" | "unknown", glibcVersion?: string): boolean {
+  return !!pilibalaRunnerProfileForHarness(harness)
     && (harness !== "grok_local" || (platform === "linux" && architecture === "x64") || (platform === "darwin" && architecture === "arm64"))
     && !(["opencode_local", "pi_local"].includes(harness) && platform === "linux" && architecture === "arm64")
     && ((platform === "linux" && supportsLinuxLibc(libc, glibcVersion) && (architecture === "x64" || architecture === "arm64"))
@@ -51,7 +51,7 @@ export function paperclipRunnerSupportsPlatform(harness: string, platform: strin
 }
 
 export function agentHarnessType(adapterType: string, config: Record<string, unknown> = {}): string {
-  if (adapterType !== "paperclip_runner") return adapterType;
+  if (adapterType !== "pilibala_runner") return adapterType;
   if (config.provider === undefined || config.provider === "codex") return "codex_local";
   if (config.provider === "opencode") return "opencode_local";
   if (config.provider === "acpx") {
@@ -62,7 +62,7 @@ export function agentHarnessType(adapterType: string, config: Record<string, unk
 }
 
 export function agentRunner(adapterType: string): AgentRunner {
-  return adapterType === "paperclip_runner" ? "paperclip" : "legacy";
+  return adapterType === "pilibala_runner" ? "pilibala" : "legacy";
 }
 
 /** Stable configuration group across native and legacy execution backends. */

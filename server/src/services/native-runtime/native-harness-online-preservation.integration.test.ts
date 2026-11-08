@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { cp, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { eq } from "drizzle-orm";
-import { agentTaskSessions, createDb, environmentLeases, heartbeatRuns, issues, nativeHarnessBackups, nativeRunFinalizations, nativeRunResults } from "@paperclipai/db";
+import { agentTaskSessions, createDb, environmentLeases, heartbeatRuns, issues, nativeHarnessBackups, nativeRunFinalizations, nativeRunResults } from "@pilibalaai/db";
 import { afterEach, expect, it, vi } from "vitest";
 import { describeEmbeddedPostgres, nativeRestartFixture } from "../../__tests__/helpers/native-restart.js";
 import { createLocalDiskStorageProvider } from "../../storage/local-disk-provider.js";
@@ -22,12 +22,12 @@ describeEmbeddedPostgres("online preservation of settled legacy harness backups"
   const homes: string[] = [];
   afterEach(async () => { for (const home of homes.splice(0)) await removeNativeHarnessBackup(home); vi.unstubAllEnvs(); });
   async function fixture(options: { base?: string; scopeId?: string; unsafeLink?: boolean } = {}) {
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "51".repeat(32));
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "51".repeat(32));
     const f = await environment.seedRun(randomUUID());
     const { companyId, agentId, runtimeRoot } = environment.current;
     const base = options.base ?? join(runtimeRoot, randomUUID());
     if (!options.base) { homes.push(base); await mkdir(base); }
-    vi.stubEnv("PAPERCLIP_RUNNER_STATE_DIR", base);
+    vi.stubEnv("PILIBALA_RUNNER_STATE_DIR", base);
     const sessionScopeId = options.scopeId ?? randomUUID(), scopeDigest = createHash("sha256").update(sessionScopeId).digest("hex");
     const root = join(base, scopeDigest, "failover-backups", "current");
     await mkdir(join(root, "codex-home", "sessions"), { recursive: true }); await mkdir(join(root, "runner"));
@@ -50,7 +50,7 @@ describeEmbeddedPostgres("online preservation of settled legacy harness backups"
     await f.db.update(nativeRunFinalizations).set({ phase: "terminal_failure", leaseOwner: null, leaseExpiresAt: null,
       recoveryState: "original_failure_retained" }).where(eq(nativeRunFinalizations.runId, f.runId));
     await f.db.update(issues).set({ status: "done", executionRunId: null, checkoutRunId: null }).where(eq(issues.id, f.issueId));
-    await f.db.insert(agentTaskSessions).values({ companyId, agentId, adapterType: "paperclip_runner", taskKey: f.issueId, lastRunId: f.runId });
+    await f.db.insert(agentTaskSessions).values({ companyId, agentId, adapterType: "pilibala_runner", taskKey: f.issueId, lastRunId: f.runId });
     await f.db.insert(environmentLeases).values({ companyId, issueId: f.issueId, heartbeatRunId: f.runId, providerLeaseId,
       status: "expired", metadata: { nativeHarnessBackup: stamp } });
     const storage = createStorageService(createLocalDiskStorageProvider(join(runtimeRoot, "durable-objects")));

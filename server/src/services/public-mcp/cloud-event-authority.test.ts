@@ -1,12 +1,12 @@
 import {beforeEach,describe,expect,it,vi} from "vitest";
-import type {Db} from "@paperclipai/db";
+import type {Db} from "@pilibalaai/db";
 const current=vi.hoisted(()=>({identity:null as null|{stackId:string;canonicalOrigin:string},instanceId:null as string|null,enabled:true,settingsReads:0}));
 vi.mock("../cloud-runtime-identity.js",()=>({getCloudRuntimeIdentity:()=>current.identity}));
-vi.mock("../paperclip-cloud-connector.js",()=>({paperclipCloudConnectorConfigFromEnv:()=>current.instanceId?{instanceId:current.instanceId}:null}));
+vi.mock("../pilibala-cloud-connector.js",()=>({pilibalaCloudConnectorConfigFromEnv:()=>current.instanceId?{instanceId:current.instanceId}:null}));
 vi.mock("../instance-settings.js",()=>({instanceSettingsService:()=>({getExperimentalReadOnly:async()=>{current.settingsReads++;return{enablePublicMcp:current.enabled};}})}));
 import {cloudEventAuthoritySchema,cloudEventValidationOrigin} from "./cloud-event-authority.js";
 import {mcpClientMirrorGeneration} from "./client-mirror-contract.js";
-const origin="https://tenant.example.test",central="https://my.example.test",config={origin,resource:origin+"/mcp/paperclip"},authority={token:"opaque-wrapper",expiresAt:Date.now()+60_000,transport:"tenant-personal-v1" as const};
+const origin="https://tenant.example.test",central="https://my.example.test",config={origin,resource:origin+"/mcp/pilibala"},authority={token:"opaque-wrapper",expiresAt:Date.now()+60_000,transport:"tenant-personal-v1" as const};
 function fixture(patch:Record<string,unknown>={}){
   const receipt={version:1 as const,instanceId:"instance",origin,revision:1,enabled:true,frontDoor:"tenant-personal-v1" as const,deviceStatus:{keyId:"a".repeat(64),generation:"b".repeat(64),count:0},generation:""};receipt.generation=mcpClientMirrorGeneration(receipt);
   const row={revision:1,enabled:true,remoteResponsibility:true,receipt,deviceCutoverAt:new Date(1),deviceCutoverStackId:"stack",...patch};let reads=0;

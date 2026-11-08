@@ -6,8 +6,8 @@ import os from "node:os";
 import path from "node:path";
 import { sql, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { activityLog, agents, companies, completionContracts, createDb, environmentLeases, environments, executionWorkspaceSnapshots, executionWorkspaces, heartbeatRunEvents, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, projects, projectWorkspaces, workspaceOperations, workspaceRuntimeServices, type Db } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority, readRemoteWorkspaceRunReference } from "@paperclipai/shared";
+import { activityLog, agents, companies, completionContracts, createDb, environmentLeases, environments, executionWorkspaceSnapshots, executionWorkspaces, heartbeatRunEvents, heartbeatRuns, issueRecoveryActions, issues, nativeRunFinalizations, nativeRunResults, projects, projectWorkspaces, workspaceOperations, workspaceRuntimeServices, type Db } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority, readRemoteWorkspaceRunReference } from "@pilibalaai/shared";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../__tests__/helpers/embedded-postgres.js";
 import { resolveManagedProjectWorkspaceDir } from "../home-paths.js";
 import { createLocalDiskStorageProvider } from "../storage/local-disk-provider.js";
@@ -37,8 +37,8 @@ describe.skipIf(!support.supported)("covered historical prepared-source preserva
   afterAll(async () => { await db?.$client.end({ timeout: 1 }); await database?.cleanup(); });
   beforeEach(async () => {
     home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "covered-historical-source-")));
-    vi.stubEnv("PAPERCLIP_HOME", home);
-    vi.stubEnv("PAPERCLIP_SECRETS_MASTER_KEY", "61".repeat(32));
+    vi.stubEnv("PILIBALA_HOME", home);
+    vi.stubEnv("PILIBALA_SECRETS_MASTER_KEY", "61".repeat(32));
     storage = createStorageService(createLocalDiskStorageProvider(path.join(home, "objects")));
   });
   afterEach(async () => {
@@ -94,7 +94,7 @@ describe.skipIf(!support.supported)("covered historical prepared-source preserva
     for (const alias of base.aliases) await db.update(executionWorkspaces).set({ repoUrl, branchName: "main" })
       .where(eq(executionWorkspaces.id, alias.workspace.id));
     const [issue] = await db.insert(issues).values({ companyId: base.companyId, projectId: base.projectId, title: "Shared Git child" }).returning();
-    const cwd = path.join(base.cwd, ".paperclip", "worktrees", "child");
+    const cwd = path.join(base.cwd, ".pilibala", "worktrees", "child");
     await git(base.cwd, "worktree", "add", "-qb", "child", cwd);
     const [workspace] = await db.insert(executionWorkspaces).values({ companyId: base.companyId, projectId: base.projectId,
       sourceIssueId: issue.id, name: "Shared Git child", mode: "isolated_workspace", strategyType: "git_worktree",
@@ -110,8 +110,8 @@ describe.skipIf(!support.supported)("covered historical prepared-source preserva
     const issue = descendant ? (await db.insert(issues).values({ companyId: f.companyId, projectId: f.projectId,
       parentId: f.aliases[0].issue.id, title: "Descendant prepared recovery", executionWorkspaceId: f.workspaceId }).returning())[0]
       : f.aliases[0].issue;
-    const [agent] = await db.insert(agents).values({ companyId: f.companyId, name: "Terminal native worker", adapterType: "paperclip_runner" }).returning();
-    const reference = { schema: "paperclip.native-workspace-sync/v3", state: "prepared", workspaceId: f.workspaceId,
+    const [agent] = await db.insert(agents).values({ companyId: f.companyId, name: "Terminal native worker", adapterType: "pilibala_runner" }).returning();
+    const reference = { schema: "pilibala.native-workspace-sync/v3", state: "prepared", workspaceId: f.workspaceId,
       leaseId: randomUUID(), providerLeaseId: randomUUID(), remoteCwd: "/workspaces/retained",
       descriptorSha256: "12".repeat(32), baselineSha256: "34".repeat(32), resourceDisposition: "destroy" };
     await db.insert(heartbeatRuns).values({ id: runId, companyId: f.companyId, agentId: agent.id,
@@ -137,12 +137,12 @@ describe.skipIf(!support.supported)("covered historical prepared-source preserva
     const [issue] = await db.insert(issues).values({ companyId, title: "Unrelated object-backed task" }).returning();
     const [environment] = await db.insert(environments).values({ name: runId, driver: "daytona" }).returning();
     const remoteCwd = `/workspaces/${workspaceId}`;
-    const authority = { schema: "paperclip.remote-workspace.v1", epoch: 1, snapshotId: null, source: { kind: "empty" },
+    const authority = { schema: "pilibala.remote-workspace.v1", epoch: 1, snapshotId: null, source: { kind: "empty" },
       location: { environmentId: environment.id, leaseId, providerLeaseId, remoteCwd }, writerRunId: runId, dirty: true };
     const [workspace] = await db.insert(executionWorkspaces).values({ id: workspaceId, companyId, sourceIssueId: issue.id,
       name: "Unrelated remote writer", mode: "isolated_workspace", strategyType: "project_primary", providerType: "cloud_sandbox",
       cwd: remoteCwd, metadata: { remoteWorkspace: authority } }).returning();
-    const reference = { schema: "paperclip.remote-workspace-run.v1", workspaceId, leaseId, providerLeaseId,
+    const reference = { schema: "pilibala.remote-workspace-run.v1", workspaceId, leaseId, providerLeaseId,
       remoteCwd, epoch: 1, state: "prepared", snapshotId: null };
     const [run] = await db.insert(heartbeatRuns).values({ id: runId, companyId, agentId, issueId: issue.id,
       nativeIssueId: issue.id, status: "running", runtimeMode: "native", contextSnapshot: { executionWorkspaceId: workspaceId },
@@ -177,7 +177,7 @@ describe.skipIf(!support.supported)("covered historical prepared-source preserva
       wakePolicy: null, fingerprint: nativeSha256({ runId: f.run.id, failureCode: cause }), evidence: {
         runId: f.run.id, coordinatorAttempt: 3, workspaceFinalizeAttempt: 3,
         systemRecovery: { ...createSystemRecovery(f.run.id), state: "exhausted" },
-        workspaceRecovery: { schema: "paperclip.workspace-recovery.v1", runId: f.run.id, status: "blocked", stage: "verifying_stop", attempt: 4, requestIds: [] },
+        workspaceRecovery: { schema: "pilibala.workspace-recovery.v1", runId: f.run.id, status: "blocked", stage: "verifying_stop", attempt: 4, requestIds: [] },
         previousWorkspaceRecovery: { retained: "original recovery history" },
       } }).where(eq(issueRecoveryActions.id, f.warning.id));
     const [additionalLease] = additionalSource ? await db.insert(environmentLeases).values({ companyId: f.companyId,
@@ -186,11 +186,11 @@ describe.skipIf(!support.supported)("covered historical prepared-source preserva
       status: "released", releasedAt: new Date("2026-01-01T00:00:00Z"), leasePolicy: "retain_on_failure",
       metadata: { remoteCwd: "/workspaces/additional-retained" } }).returning() : [];
     if (additionalLease) await db.update(heartbeatRuns).set({ resultJson: { retained: "original failed export",
-      workspaceRestoreRecovery: { schema: "paperclip.workspace-restore-recovery.v1",
+      workspaceRestoreRecovery: { schema: "pilibala.workspace-restore-recovery.v1",
         leaseIds: [f.lease.id, additionalLease.id] } } }).where(eq(heartbeatRuns.id, f.run.id));
     await adoptHistoricalWorkspaceRecoveries(db);
     const [warning] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, f.warning.id));
-    expect(warning.evidence.historicalWorkspaceSource).toEqual({ schema: "paperclip.historical-workspace-source.v1",
+    expect(warning.evidence.historicalWorkspaceSource).toEqual({ schema: "pilibala.historical-workspace-source.v1",
       runId: f.run.id, leaseIds: [f.lease.id, ...(additionalLease ? [additionalLease.id] : [])].sort() });
     return { ...f, ...await gitFixture(f), warning, additionalLease };
   }

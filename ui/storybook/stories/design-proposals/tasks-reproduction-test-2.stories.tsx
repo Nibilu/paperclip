@@ -8,7 +8,7 @@ const meta = {
   parameters: {
     layout: "fullscreen",
     initialEntries: ["/PAP/issues"],
-    paperclip: {
+    pilibala: {
       capabilities: ["tasks/organize", "inbox-search/search"],
       home: "design-proposals",
       status: "proposed",

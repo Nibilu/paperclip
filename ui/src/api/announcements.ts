@@ -1,4 +1,4 @@
-import { announcementSchema, type Announcement } from "@paperclipai/shared";
+import { announcementSchema, type Announcement } from "@pilibalaai/shared";
 import { ApiError } from "./client";
 
 async function request(path: string, init: RequestInit) {

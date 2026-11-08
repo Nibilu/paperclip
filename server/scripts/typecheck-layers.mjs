@@ -34,7 +34,7 @@ import { crc32 } from "node:zlib";
 import { runTsc } from "../../scripts/run-tsc.mjs";
 
 const IMPORT_SPECIFIER = /(?:from\s+|import\s*\(\s*|import\s+)["'](\.[^"']+)["']/g;
-const OUTPUT_DIRECTORY = path.join("node_modules", ".cache", "paperclip-typecheck");
+const OUTPUT_DIRECTORY = path.join("node_modules", ".cache", "pilibala-typecheck");
 // One program over this tree peaks at 3.9 GiB on one thread. Three peak at 2.5 GiB.
 const TEST_TREE_SHARDS = 3;
 

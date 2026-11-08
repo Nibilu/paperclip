@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { agents, companies, createDb, environments, instanceSettings, type Db } from "@paperclipai/db";
+import { agents, companies, createDb, environments, instanceSettings, type Db } from "@pilibalaai/db";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import { fillUnsetInstanceDefault } from "../services/managed-instance-default.js";
 import { applyManagedEnvironments } from "../services/managed-environments.js";
@@ -14,7 +14,7 @@ const support = await getEmbeddedPostgresTestSupport();
   let sandboxId: string;
 
   beforeAll(async () => {
-    database = await startEmbeddedPostgresTestDatabase("paperclip-managed-instance-default-");
+    database = await startEmbeddedPostgresTestDatabase("pilibala-managed-instance-default-");
     db = createDb(database.connectionString);
   }, 90_000);
   afterAll(async () => { await database?.cleanup(); });
@@ -28,7 +28,7 @@ const support = await getEmbeddedPostgresTestSupport();
       driver: "sandbox",
       status: "active",
       config: { provider: "daytona" },
-      metadata: { managedByPaperclip: true, managedSandboxProvider: "daytona" },
+      metadata: { managedByPilibala: true, managedSandboxProvider: "daytona" },
     }).returning();
     sandboxId = sandbox!.id;
   });

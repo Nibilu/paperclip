@@ -1,7 +1,7 @@
 import type { Router } from "express";
-import { agents, type Db } from "@paperclipai/db";
+import { agents, type Db } from "@pilibalaai/db";
 import { eq } from "drizzle-orm";
-import { addAgentProjectAccessSchema } from "@paperclipai/shared";
+import { addAgentProjectAccessSchema } from "@pilibalaai/shared";
 import { notFound } from "../errors.js";
 import { validate } from "../middleware/validate.js";
 import { addAgentProjectAccess, readAgentProjectAccess } from "../services/agent-project-access.js";

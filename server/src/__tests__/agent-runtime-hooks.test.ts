@@ -1,4 +1,4 @@
-import * as databaseModule from "@paperclipai/db";
+import * as databaseModule from "@pilibalaai/db";
 import { randomUUID } from "node:crypto";
 import { createServer, connect, type Socket } from "node:net";
 import { EventEmitter } from "node:events";
@@ -6,7 +6,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { and, eq, sql } from "drizzle-orm";
-import { activityLog, agents, companies, applyPendingMigrations, closeFileStorageDb, createDb, pluginCompanySettings, pluginConfig, plugins, resourceLifecycleEvents, type Db } from "@paperclipai/db";
+import { activityLog, agents, companies, applyPendingMigrations, closeFileStorageDb, createDb, pluginCompanySettings, pluginConfig, plugins, resourceLifecycleEvents, type Db } from "@pilibalaai/db";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.js";
 import * as instructionModule from "../services/agent-instructions.js";
@@ -19,8 +19,8 @@ import { resolveManagedInstructionsRoot } from "../services/agent-instructions.j
 import { agentFileStore } from "../services/agent-file-store.js";
 import { agentInstructionRevisionService } from "../services/agent-instruction-revisions.js";
 
-const externalUrl = process.env.PAPERCLIP_AGENT_RUNTIME_HOOKS_TEST_DATABASE_URL;
-const expectedDatabase = process.env.PAPERCLIP_AGENT_RUNTIME_HOOKS_EXPECTED_DATABASE;
+const externalUrl = process.env.PILIBALA_AGENT_RUNTIME_HOOKS_TEST_DATABASE_URL;
+const expectedDatabase = process.env.PILIBALA_AGENT_RUNTIME_HOOKS_EXPECTED_DATABASE;
 if (externalUrl || expectedDatabase) {
   if (!externalUrl || !expectedDatabase || !/^sleep2_[a-z0-9_]+_test$/.test(expectedDatabase)) {
     throw new Error("Explicit external fixture URL and expected database are required");
@@ -42,9 +42,9 @@ describeDatabase("agent runtime synchronization hooks", () => {
   let home: string;
   beforeAll(async () => {
     if (externalUrl) await applyPendingMigrations(externalUrl);
-    else database = await startEmbeddedPostgresTestDatabase("paperclip-agent-runtime-");
+    else database = await startEmbeddedPostgresTestDatabase("pilibala-agent-runtime-");
     db = createDb(externalUrl ?? database.connectionString, { maxConnections: 4 });
-    home = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-agent-runtime-home-"));
+    home = await fs.mkdtemp(path.join(os.tmpdir(), "pilibala-agent-runtime-home-"));
   }, 90_000);
   afterAll(async () => {
     try { if (db) await closeFileStorageDb(db, 1); }
@@ -58,7 +58,7 @@ describeDatabase("agent runtime synchronization hooks", () => {
   });
   afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
   beforeEach(async () => {
-    vi.stubEnv("PAPERCLIP_HOME", home);
+    vi.stubEnv("PILIBALA_HOME", home);
     companyId = randomUUID(); pluginId = randomUUID(); agentId = randomUUID();
     await db.insert(companies).values({ id: companyId, name: "Runtime fixture", issuePrefix: `R${companyId.slice(0, 6)}` });
     await db.insert(plugins).values({ id: pluginId, pluginKey: pluginId, packageName: "runtime-fixture", version: "1.0.0", status: "ready",
@@ -240,11 +240,11 @@ describeDatabase("agent runtime synchronization hooks", () => {
 
   it("does not broadcast legacy lifecycle events to runtime listeners", async () => {
     const notifications: string[] = [];
-    const listener = await db.$client.listen("paperclip_plugin_lifecycle", payload => { notifications.push(payload); });
+    const listener = await db.$client.listen("pilibala_plugin_lifecycle", payload => { notifications.push(payload); });
     try {
       await db.transaction(async tx => {
         await tx.insert(resourceLifecycleEvents).values({ companyId, resourceType: "project", resourceId: randomUUID(), action: "update" });
-        await tx.execute(sql`SELECT pg_notify('paperclip_plugin_lifecycle', 'barrier')`);
+        await tx.execute(sql`SELECT pg_notify('pilibala_plugin_lifecycle', 'barrier')`);
       });
       await vi.waitFor(() => expect(notifications).toContain("barrier"));
       expect(notifications).toEqual(["barrier"]);
@@ -279,7 +279,7 @@ describeDatabase("agent runtime synchronization hooks", () => {
         expect(coordinator.nextWakeAt()).toBeNull();
       }, { timeout: 5000 });
       await waitForIdle();
-      await other.execute(sql`SELECT pg_notify('paperclip_plugin_lifecycle', 'startup-drained')`);
+      await other.execute(sql`SELECT pg_notify('pilibala_plugin_lifecycle', 'startup-drained')`);
       await vi.waitFor(() => expect(notifications).toContain("startup-drained"), { timeout: 5000 });
       await waitForIdle();
       let committedEventId: string | undefined;

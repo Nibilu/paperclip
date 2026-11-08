@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Crown, Loader2 } from "lucide-react";
-import type { AiManagedConnectionSummary } from "@paperclipai/shared";
+import type { AiManagedConnectionSummary } from "@pilibalaai/shared";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

@@ -56,7 +56,7 @@ export class NativeSessionDiagnostics {
   record(chunk: string): void {
     const epoch = this.active;
     if (!epoch?.sink) {
-      const kind = chunk.startsWith("[paperclip-runner] runnerd diagnostic: runner transport close requested:")
+      const kind = chunk.startsWith("[pilibala-runner] runnerd diagnostic: runner transport close requested:")
         ? "transport_close_requested" : "session_diagnostic";
       this.report(() => this.idle(epoch?.owner ?? this.lastOwner, kind));
       return;

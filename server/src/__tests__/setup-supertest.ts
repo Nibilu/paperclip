@@ -19,40 +19,40 @@ type SupertestTestInstance = {
 type SupertestTestConstructor = {
   prototype: {
     serverAddress(this: SupertestTestInstance, app: SupertestServer, path: string): string;
-    __paperclipLoopbackPatched?: boolean;
+    __pilibalaLoopbackPatched?: boolean;
   };
 };
 
 // Keep the original home available only for read-only host port-lease checks.
-process.env.PAPERCLIP_TEST_HOST_HOME ??= process.env.PAPERCLIP_HOME?.trim() || path.join(os.homedir(), ".paperclip");
+process.env.PILIBALA_TEST_HOST_HOME ??= process.env.PILIBALA_HOME?.trim() || path.join(os.homedir(), ".pilibala");
 
 // Receipt-spool recovery must never scan a developer's instance during tests.
-const { home: paperclipTestHome, cleanup: cleanupPaperclipTestHome } = createIsolatedTestHome();
-process.env.PAPERCLIP_HOME = paperclipTestHome;
-process.env.PAPERCLIP_CONFIG = path.join(paperclipTestHome, "config.json");
-process.env.PAPERCLIP_INSTANCE_ID = `vt-${process.pid}`;
+const { home: pilibalaTestHome, cleanup: cleanupPilibalaTestHome } = createIsolatedTestHome();
+process.env.PILIBALA_HOME = pilibalaTestHome;
+process.env.PILIBALA_CONFIG = path.join(pilibalaTestHome, "config.json");
+process.env.PILIBALA_INSTANCE_ID = `vt-${process.pid}`;
 // Setup-file afterAll hooks run before suites drain asynchronous heartbeats.
 // Cleanup at worker exit, after all suite teardown, avoids deleting live state.
-process.once("exit", cleanupPaperclipTestHome);
+process.once("exit", cleanupPilibalaTestHome);
 
 const require = createRequire(import.meta.url);
 const SupertestTest = require("supertest/lib/test.js") as SupertestTestConstructor;
 
 if (!process.env.CODEX_HOME) {
-  const codexHome = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-vitest-codex-home-"));
+  const codexHome = fs.mkdtempSync(path.join(os.tmpdir(), "pilibala-vitest-codex-home-"));
   fs.writeFileSync(path.join(codexHome, "auth.json"), '{"OPENAI_API_KEY":"sk-vitest"}\n', { mode: 0o600 });
   process.env.CODEX_HOME = codexHome;
 }
 
 // The automatic Tailscale HTTPS default (PAP-17158) probes for a real host
 // broker socket, so leaving it enabled would make every test that starts a
-// service named `paperclip-dev` behave differently on a broker-capable host
+// service named `pilibala-dev` behave differently on a broker-capable host
 // than on CI. Tests that exercise the default opt in explicitly.
-if (!process.env.PAPERCLIP_MANAGED_RUNTIME_HTTPS) {
-  process.env.PAPERCLIP_MANAGED_RUNTIME_HTTPS = "off";
+if (!process.env.PILIBALA_MANAGED_RUNTIME_HTTPS) {
+  process.env.PILIBALA_MANAGED_RUNTIME_HTTPS = "off";
 }
 
-if (!SupertestTest.prototype.__paperclipLoopbackPatched) {
+if (!SupertestTest.prototype.__pilibalaLoopbackPatched) {
   SupertestTest.prototype.serverAddress = function serverAddress(app, path) {
     const addr = app.address();
 
@@ -74,5 +74,5 @@ if (!SupertestTest.prototype.__paperclipLoopbackPatched) {
     return `${protocol}://${host}:${listeningAddress.port}${path}`;
   };
 
-  SupertestTest.prototype.__paperclipLoopbackPatched = true;
+  SupertestTest.prototype.__pilibalaLoopbackPatched = true;
 }

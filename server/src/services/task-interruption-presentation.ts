@@ -1,8 +1,8 @@
 import { and, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
 import { agents, agentWakeupRequests, approvals, chatActions, companies, heartbeatRuns, issueApprovals, issueRecoveryActions,
-  issues, issueTreeHoldMembers, issueTreeHolds, nativeRunFinalizations, projects, type Db } from "@paperclipai/db";
+  issues, issueTreeHoldMembers, issueTreeHolds, nativeRunFinalizations, projects, type Db } from "@pilibalaai/db";
 import { unionAll } from "drizzle-orm/pg-core";
-import { HEARTBEAT_RUN_STATUSES, readProviderFailure, type TaskInterruptionPresentation } from "@paperclipai/shared";
+import { HEARTBEAT_RUN_STATUSES, readProviderFailure, type TaskInterruptionPresentation } from "@pilibalaai/shared";
 import { captureTaskInterruptionFailure } from "../sentry.js";
 import { isAiAuthenticationBlocked } from "./ai-auth-failure.js";
 import { readSystemRecovery } from "./system-recovery-state.js";
@@ -97,22 +97,22 @@ function boundedJsonString(value: SQL, limit: number) {
 // Persisted wait messages can contain diagnostics. Ordinary task views expose
 // only these stable categories, never arbitrary payloads or source identifiers.
 const retryWaitMessages: Record<string, string> = {
-  workspace_repair_required: "Retry is waiting for Paperclip to recover the saved files. Your message is saved.",
+  workspace_repair_required: "Retry is waiting for Pilibala to recover the saved files. Your message is saved.",
   remote_cleanup: "Retry is waiting for the previous environment to stop. Your message is saved.",
   local_cleanup: "Retry is waiting for the previous execution to finish cleanup. Your message is saved.",
   cleanup_pending: "Retry is waiting for the previous execution to finish cleanup. Your message is saved.",
   execution_settling: "Retry is waiting for the previous execution to stop. Your message is saved.",
   controller_settling: "Retry is waiting for the previous execution to finish recovery. Your message is saved.",
-  process_identity_missing: "Retry is waiting for Paperclip to verify that the previous execution stopped. Your message is saved.",
+  process_identity_missing: "Retry is waiting for Pilibala to verify that the previous execution stopped. Your message is saved.",
   process_running: "Retry is waiting for the previous execution to stop. Your message is saved.",
   execution_active: "Retry is waiting for the current run to finish. Your message is saved.",
   decision_pending: "Retry is waiting for a pending approval or question to be resolved. Your message is saved.",
   "budget.blocked": "Retry is waiting for the budget to allow new work. Check Costs for unrecorded or unpriced usage.",
-  finalizing_saved_result: "Paperclip is finishing the saved result before Retry can continue.",
+  finalizing_saved_result: "Pilibala is finishing the saved result before Retry can continue.",
   // Another click cannot release a copyback owner that stopped without reporting.
   // Retry starts a new recovery generation; the agent does not repeat its work.
   saved_work_recovery_failed: "Saving the agent's files failed after automatic retries. Retry to try again; the agent will not repeat its work.",
-  workspace_owner_stop_required: "Retry is waiting until Paperclip confirms that the previous server stopped saving files. The agent's result and your Retry are saved.",
+  workspace_owner_stop_required: "Retry is waiting until Pilibala confirms that the previous server stopped saving files. The agent's result and your Retry are saved.",
   cleanup_quarantined: "Retry cannot continue this attempt. Send a new message after the previous execution has stopped.",
   cancelled_by_operator: "This attempt was stopped. Send a new message to continue from saved work.",
   // A new click replaces a Retry declined for its requester's access with a

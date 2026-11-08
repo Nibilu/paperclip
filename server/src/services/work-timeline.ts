@@ -1,6 +1,6 @@
-import { withAgentAppearance } from "@paperclipai/shared";
+import { withAgentAppearance } from "@pilibalaai/shared";
 import { and, asc, desc, eq, gte, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import {
   activityLog,
   agents,
@@ -12,10 +12,10 @@ import {
   issueComments,
   issues,
   issueThreadInteractions,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import { executionIssueCondition } from "./issue-visibility.js";
 
-// DTO types are shared with the UI via @paperclipai/shared so both sides consume
+// DTO types are shared with the UI via @pilibalaai/shared so both sides consume
 // one contract. Re-exported here for back-compat with existing server imports.
 import type {
   TimelineActorType,
@@ -24,7 +24,7 @@ import type {
   WorkTimelineEvent,
   WorkTimelineEdge,
   WorkTimelineResult,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 export type {
   TimelineActorType,
@@ -35,7 +35,7 @@ export type {
   WorkTimelineEvent,
   WorkTimelineEdge,
   WorkTimelineResult,
-} from "@paperclipai/shared";
+} from "@pilibalaai/shared";
 
 export interface WorkTimelineQuery {
   companyId: string;

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BreadcrumbProvider, useBreadcrumbs } from "../context/BreadcrumbContext";
 import { BreadcrumbBar } from "./BreadcrumbBar";
 import { CoordinatorAgentSwitcher } from "./CoordinatorAgentSwitcher";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@pilibalaai/shared";
 
 const viewport = vi.hoisted(() => ({ isMobile: false }));
 const navigate = vi.hoisted(() => vi.fn());
@@ -175,7 +175,7 @@ describe("BreadcrumbBar", () => {
     expect(button.getAttribute("aria-current")).toBe("page");
     expect(button.closest('[aria-disabled="true"]')).toBeNull();
     expect(button.querySelector("button, a")).toBeNull();
-    expect(document.title).toBe("CodexCoder • Paperclip");
+    expect(document.title).toBe("CodexCoder • Pilibala");
     for (const selector of ['[data-slot="agent-avatar"]', "[data-agent-name]", "svg"]) {
       const target = button.querySelector<HTMLElement>(selector);
       expect(target).not.toBeNull();

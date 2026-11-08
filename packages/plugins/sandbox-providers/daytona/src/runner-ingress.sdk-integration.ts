@@ -3,7 +3,7 @@ import { createInterface } from "node:readline";
 import { PassThrough } from "node:stream";
 import { describe, expect, it, vi } from "vitest";
 import { createRequest, definePlugin, isJsonRpcResponse, JsonRpcCallError, parseMessage,
-  readEnvironmentRunnerIngressFailure, serializeMessage, startWorkerRpcHost, type JsonRpcResponse } from "@paperclipai/plugin-sdk";
+  readEnvironmentRunnerIngressFailure, serializeMessage, startWorkerRpcHost, type JsonRpcResponse } from "@pilibalaai/plugin-sdk";
 import plugin, { __resetDaytonaSandboxHandleCacheForTest } from "./plugin.js";
 
 describe("Daytona ingress SDK failure over worker RPC", () => {
@@ -65,7 +65,7 @@ describe("Daytona ingress SDK failure over worker RPC", () => {
         .toEqual({ phase, httpStatus: status });
       expect(result.error.message).toContain(String(status));
       expect(JSON.stringify(result)).not.toContain("fixture-private");
-      expect(result.error.data).toEqual({ schema: "paperclip/environment-runner-ingress-error/v1",
+      expect(result.error.data).toEqual({ schema: "pilibala/environment-runner-ingress-error/v1",
         failure: { phase, httpStatus: status } });
     } finally {
       worker.stop(); lines.close(); stdin.destroy(); stdout.destroy();

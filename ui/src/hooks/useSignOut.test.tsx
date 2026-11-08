@@ -68,7 +68,7 @@ describe("useSignOut", () => {
     const stamped = startPersistedQueryCache(queryClient, { buildId: "build-one", eventTarget: null });
     stamped.flush(); stamped.dispose();
     expect(localStorage.getItem(`${QUERY_CACHE_PREFIX}alice:company-a`)).toContain("Old account task");
-    localStorage.setItem("paperclip:private-draft", "Keep my draft");
+    localStorage.setItem("pilibala:private-draft", "Keep my draft");
     const cache = startPersistedQueryCache(queryClient, { buildId, eventTarget: null });
     const account = bindAccount(queryClient);
     const onSignedOut = vi.fn();
@@ -80,7 +80,7 @@ describe("useSignOut", () => {
       expect(onSignedOut).toHaveBeenCalledOnce();
       expect(account.isCurrentScope()).toBe(false);
       expect(Object.keys(localStorage).filter(key => key.startsWith(QUERY_CACHE_PREFIX))).toEqual([]);
-      expect(localStorage.getItem("paperclip:private-draft")).toBe("Keep my draft");
+      expect(localStorage.getItem("pilibala:private-draft")).toBe("Keep my draft");
       if (deploymentMode === "cloud") {
         expect(mockNavigateTopLevel).toHaveBeenCalledWith("/cloud/logout");
         expect(mockAuthApi.signOut).not.toHaveBeenCalled();
@@ -101,7 +101,7 @@ describe("useSignOut", () => {
       status: "ok",
       cloud: {
         managed: true,
-        managedBy: "paperclip-cloud",
+        managedBy: "pilibala-cloud",
         stackSlug: "acme",
         cloudBaseUrl: "https://cloud.example.test",
       },
@@ -274,7 +274,7 @@ describe("useSignOut", () => {
       status: "ok",
       cloud: {
         managed: true,
-        managedBy: "paperclip-cloud",
+        managedBy: "pilibala-cloud",
         stackSlug: "acme",
         cloudBaseUrl: "https://cloud.example.test",
       },

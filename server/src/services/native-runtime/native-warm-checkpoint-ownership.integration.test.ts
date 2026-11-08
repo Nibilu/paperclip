@@ -4,17 +4,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, expect, it, vi } from "vitest";
-import { completionContracts, heartbeatRuns, issues, nativeRunFinalizations } from "@paperclipai/db";
-import type { NativeExecutionInputV1 } from "@paperclipai/paperclip-runner";
+import { completionContracts, heartbeatRuns, issues, nativeRunFinalizations } from "@pilibalaai/db";
+import type { NativeExecutionInputV1 } from "@pilibalaai/pilibala-runner";
 import { createLocalDiskStorageProvider } from "../../storage/local-disk-provider.js";
 import { createStorageService } from "../../storage/service.js";
 import { describeEmbeddedPostgres, nativeRestartFixture } from "../../__tests__/helpers/native-restart.js";
-import { CONTROL_PLANE_CONFORMANCE_RESULT } from "../../vendor/paperclip-runner/testing.js";
-import { defaultCapabilityRunnerdBinary } from "../../vendor/paperclip-runner/index.js";
+import { CONTROL_PLANE_CONFORMANCE_RESULT } from "../../vendor/pilibala-runner/testing.js";
+import { defaultCapabilityRunnerdBinary } from "../../vendor/pilibala-runner/index.js";
 
-type ProviderTransport = ReturnType<NonNullable<NonNullable<Parameters<typeof import("../../vendor/paperclip-runner/index.js").createNativeSessionBackend>[1]>["codexTransportFactory"]>>;
-const { FakeCodexTransport } = await import(new URL("../../../../packages/paperclip-runner/src/drivers/codex/codex-app-server-driver.test-support.ts", import.meta.url).href) as { FakeCodexTransport: new () => ProviderTransport };
-const { runnerdRecoveryInternals } = await import(new URL("../../../../packages/paperclip-runner/src/live/runnerd-codex-transport.ts", import.meta.url).href) as {
+type ProviderTransport = ReturnType<NonNullable<NonNullable<Parameters<typeof import("../../vendor/pilibala-runner/index.js").createNativeSessionBackend>[1]>["codexTransportFactory"]>>;
+const { FakeCodexTransport } = await import(new URL("../../../../packages/pilibala-runner/src/drivers/codex/codex-app-server-driver.test-support.ts", import.meta.url).href) as { FakeCodexTransport: new () => ProviderTransport };
+const { runnerdRecoveryInternals } = await import(new URL("../../../../packages/pilibala-runner/src/live/runnerd-codex-transport.ts", import.meta.url).href) as {
   runnerdRecoveryInternals: { releaseRunnerProcessOwnership(input: { runnerSettled: boolean; checkpoint: typeof state.checkpoint;
     release: () => Promise<void>; forceKill: () => Promise<void> }): Promise<void> };
 };
@@ -31,15 +31,15 @@ vi.mock("./native-runner-execution-driver.js", async original => {
     return actual.createNativeRunnerExecutionDriver(input);
   } };
 });
-vi.mock("../../vendor/paperclip-runner/index.js", async original => {
-  const actual = await original<typeof import("../../vendor/paperclip-runner/index.js")>();
+vi.mock("../../vendor/pilibala-runner/index.js", async original => {
+  const actual = await original<typeof import("../../vendor/pilibala-runner/index.js")>();
   return { ...actual, executeNativeSession: state.execute,
     createNativeSessionBackend: (input: Parameters<typeof actual.createNativeSessionBackend>[0], options: Parameters<typeof actual.createNativeSessionBackend>[1]) => {
       options?.codexTransportFactory?.();
       return actual.createNativeSessionBackend(input, { ...options, codexTransportFactory: () => state.transport as ProviderTransport });
     } };
 });
-import { closeWarmNativeSessionsForEnvironment, detachNativeSessionsForRestart, executePaperclipNativeSession, NativeControllerDetachedForRestartError } from "./native-session-executor.js";
+import { closeWarmNativeSessionsForEnvironment, detachNativeSessionsForRestart, executePilibalaNativeSession, NativeControllerDetachedForRestartError } from "./native-session-executor.js";
 import * as executionLease from "./native-execution-lease.js";
 import { finalizeNativeRun } from "./native-run-finalizer.js";
 import { prepareNativeHeartbeatRun } from "./prepare-native-run.js";
@@ -57,14 +57,14 @@ describeEmbeddedPostgres("managed warm checkpoint ownership", () => {
     const { companyId, agentId } = environment.current;
     const [contract] = await fixture.db.select().from(completionContracts).where(eq(completionContracts.issueId, fixture.issueId));
     let execution: NativeExecutionInputV1 = {
-      schema: "paperclip.native-execution-input.v1",
+      schema: "pilibala.native-execution-input.v1",
       binding: { companyId, agentId, issueId: fixture.issueId, runId: fixture.runId, executionWorkspaceId: randomUUID() },
       provider: { kind: "codex", model: "test-model" },
       task: { identifier: "WARM-1", title: "Retain checkpoint owner", description: null, prompt: "Return a failed turn.", workMode: "standard" },
       workspace: { cwd: root, repoUrl: null, repoRef: null, branchName: null },
       session: { normalizedSessionId: fixture.native.normalizedSessionId, driverKind: "codex_app_server", protocolVersion: 1,
         lifecyclePolicy: { mode: "warm", idleTimeoutMs: 60_000 } },
-      completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "paperclip.completion-contract.v1",
+      completionContract: { id: contract.id, sha256: contract.canonicalSha256, schemaVersion: "pilibala.completion-contract.v1",
         contract: { ...contract.contractJson, revision: String(contract.revision) } } as NativeExecutionInputV1["completionContract"],
       interactionResponses: [], credentialBindings: [],
     };
@@ -122,12 +122,12 @@ describeEmbeddedPostgres("managed warm checkpoint ownership", () => {
       await options.onSession(session);
       await options.controlPlane.openRun({ identity: { companyId, agentId, issueId: fixture.issueId, runId: fixture.runId,
         sessionId: execution.session.normalizedSessionId }, backendKind: "mock", sourceInstanceId: fixture.native.runnerInstanceId });
-      await options.controlPlane.appendEvent({ schema: "paperclip.prp.event.v1", runId: fixture.runId,
+      await options.controlPlane.appendEvent({ schema: "pilibala.prp.event.v1", runId: fixture.runId,
         normalizedSessionId: execution.session.normalizedSessionId, turnId: fixture.native.turnId,
         sourceInstanceId: fixture.native.runnerInstanceId, sourceEventId: "provider-overload", sourceSeq: 1,
         sourceKind: "runner", eventType: "turn.failed", schemaVersion: 1, priority: 0, emittedAt: new Date().toISOString(),
         payload: { status: "failed", error: { codexErrorInfo: "serverOverloaded" } } });
-      const terminal = { schema: "paperclip.prp.terminal.v1", runTerminalState: "failed", turnTerminalState: "failed", reportedWorkDisposition: "needs_review" };
+      const terminal = { schema: "pilibala.prp.terminal.v1", runTerminalState: "failed", turnTerminalState: "failed", reportedWorkDisposition: "needs_review" };
       const result = { ...CONTROL_PLANE_CONFORMANCE_RESULT, reportedWorkDisposition: "needs_review",
         completionClaim: { ...CONTROL_PLANE_CONFORMANCE_RESULT.completionClaim, contractRevision: execution.completionContract.contract.revision } };
       await options.controlPlane.completeRun({ result, terminal, turnId: fixture.native.turnId });
@@ -140,7 +140,7 @@ describeEmbeddedPostgres("managed warm checkpoint ownership", () => {
     const runCurrent = async () => {
       await fixture.db.update(heartbeatRuns).set({ runnerProfileJson: { ...fixture.preparedProfile, nativeExecutionInput: execution } })
         .where(eq(heartbeatRuns.id, fixture.runId));
-      return executePaperclipNativeSession({ db: fixture.db, execution, runnerInstanceId: fixture.native.runnerInstanceId,
+      return executePilibalaNativeSession({ db: fixture.db, execution, runnerInstanceId: fixture.native.runnerInstanceId,
         useRunnerd: true, runnerIngressAuthorized: true,
         runnerRemoteBinaryPath: defaultCapabilityRunnerdBinary(), runnerRemoteCodexPath: defaultCapabilityRunnerdBinary(),
         runnerExecutionTarget: { kind: "remote", transport: "sandbox", remoteCwd: root, environmentId,

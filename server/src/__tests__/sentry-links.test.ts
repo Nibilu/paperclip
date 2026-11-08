@@ -18,10 +18,10 @@ describe("Sentry navigation links", () => {
     const routineId = "77777777-7777-4777-8777-777777777777";
     setSentryRunLinkResolver(async () => ({ ...identity,
       creationProvenance: { status: "complete" as const, routineIds: [routineId], shareable: true } }));
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "");
     const event = await addSentryRunLinks({ tags: { event_kind: "run_failure", run_id: runId, company_id: companyId } });
     expect(event.tags).toMatchObject({ automation_origin_status: "complete", automation_routine_ids: routineId, task_shareable: "true" });
-    expect(event).toHaveProperty("contexts.paperclip_creation.routineIds", [routineId]);
+    expect(event).toHaveProperty("contexts.pilibala_creation.routineIds", [routineId]);
   });
 
   it("keeps missing, failed, and excessive provenance unknown without changing unrelated events", async () => {
@@ -35,7 +35,7 @@ describe("Sentry navigation links", () => {
     const truncated = await addSentryRunLinks(failure());
     expect(truncated.tags.automation_origin_status).toBe("unknown");
     expect(String(truncated.tags.automation_routine_ids).length).toBeLessThanOrEqual(200);
-    expect(truncated).toHaveProperty("contexts.paperclip_creation.routineIds", routineIds);
+    expect(truncated).toHaveProperty("contexts.pilibala_creation.routineIds", routineIds);
     const unrelated = { tags: { error_code: "unrelated" } };
     expect(await addSentryRunLinks(unrelated)).toEqual(unrelated);
     setSentryRunLinkResolver(async () => ({ ...identity,
@@ -47,7 +47,7 @@ describe("Sentry navigation links", () => {
 
   it("removes the caller run credential from all outgoing Sentry request headers", async () => {
     const event = await addSentryRunLinks({ request: { headers: {
-      "X-Paperclip-Source-Run-Token": "private-source-credential", "content-type": "application/json",
+      "X-Pilibala-Source-Run-Token": "private-source-credential", "content-type": "application/json",
     } } });
     expect(event.request.headers).toEqual({ "content-type": "application/json" });
     expect(JSON.stringify(event)).not.toContain("private-source-credential");
@@ -67,14 +67,14 @@ describe("Sentry navigation links", () => {
   });
 
   it("adds normal UI URLs to run failures and Stop errors without changing API references or unrelated events", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://paperclip.example.com");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://pilibala.example.com");
     const resolve = vi.fn(async () => identity);
     setSentryRunLinkResolver(resolve);
-    const event = { tags: { run_id: runId, company_id: companyId }, contexts: { paperclip: { runUrl: "/api/original" } }, fingerprint: ["failure"] };
+    const event = { tags: { run_id: runId, company_id: companyId }, contexts: { pilibala: { runUrl: "/api/original" } }, fingerprint: ["failure"] };
     const linked = await addSentryRunLinks(event);
-    const runUrl = `https://paperclip.example.com/TEAM/agents/${agentId}/runs/${runId}`;
-    expect(linked).toMatchObject({ tags: { task_url: "https://paperclip.example.com/TEAM/issues/TEAM-42", run_url: runUrl, task_identifier: "TEAM-42" },
-      contexts: { paperclip: { runUrl: "/api/original", runPageUrl: runUrl, taskUrl: "https://paperclip.example.com/TEAM/issues/TEAM-42" } }, fingerprint: ["failure"] });
+    const runUrl = `https://pilibala.example.com/TEAM/agents/${agentId}/runs/${runId}`;
+    expect(linked).toMatchObject({ tags: { task_url: "https://pilibala.example.com/TEAM/issues/TEAM-42", run_url: runUrl, task_identifier: "TEAM-42" },
+      contexts: { pilibala: { runUrl: "/api/original", runPageUrl: runUrl, taskUrl: "https://pilibala.example.com/TEAM/issues/TEAM-42" } }, fingerprint: ["failure"] });
     expect(resolve).toHaveBeenCalledWith({ runId, companyId });
     expect(await addSentryRunLinks({ contexts: { adapter_stop: { runId } } })).toMatchObject({ tags: { run_url: runUrl } });
     const unrelated = { tags: { error_code: "unrelated" } };
@@ -83,7 +83,7 @@ describe("Sentry navigation links", () => {
   });
 
   it("falls back to the task UUID and omits task links for taskless runs", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "http://localhost:3100");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "http://localhost:3100");
     setSentryRunLinkResolver(async () => ({ ...identity, taskIdentifier: null }));
     expect(await addSentryRunLinks({ tags: { run_id: runId } })).toMatchObject({ tags: { task_url: `http://localhost:3100/TEAM/issues/${taskId}` } });
     setSentryRunLinkResolver(async () => ({ ...identity, taskId: null, taskIdentifier: null }));
@@ -94,14 +94,14 @@ describe("Sentry navigation links", () => {
   });
 
   it.each([17, 210])("keeps navigation for a saved %i-character company prefix within tag limits", async length => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://paperclip.example.com");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://pilibala.example.com");
     const companyPrefix = "A".repeat(length);
     const taskIdentifier = `${companyPrefix}-42`;
     setSentryRunLinkResolver(async () => ({ ...identity, companyPrefix, taskIdentifier }));
     const linked = await addSentryRunLinks({ tags: { run_id: runId } });
-    const taskUrl = `https://paperclip.example.com/${companyPrefix}/issues/${taskIdentifier}`;
-    expect(linked).toHaveProperty("contexts.paperclip.taskUrl", taskUrl);
-    expect(linked).toHaveProperty("contexts.paperclip.runPageUrl");
+    const taskUrl = `https://pilibala.example.com/${companyPrefix}/issues/${taskIdentifier}`;
+    expect(linked).toHaveProperty("contexts.pilibala.taskUrl", taskUrl);
+    expect(linked).toHaveProperty("contexts.pilibala.runPageUrl");
     if (length === 17) {
       expect(linked.tags).toHaveProperty("task_identifier", taskIdentifier);
       expect(linked.tags).toHaveProperty("task_url", taskUrl);
@@ -113,7 +113,7 @@ describe("Sentry navigation links", () => {
   });
 
   it.each(["https://user:secret@example.com", "https://example.com?secret=token", "https://example.com/#private", "https://example.com/private", "ftp://example.com", "invalid", ""])("omits unsafe instance origins without a database lookup: %s", async origin => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", origin);
+    vi.stubEnv("PILIBALA_PUBLIC_URL", origin);
     const resolve = vi.fn(async () => identity);
     setSentryRunLinkResolver(resolve);
     const event = { tags: { run_id: runId } };
@@ -122,18 +122,18 @@ describe("Sentry navigation links", () => {
   });
 
   it("does not widen a malformed company identity or put long URLs in tags", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", `https://${"a".repeat(60)}.${"b".repeat(60)}.example.com`);
+    vi.stubEnv("PILIBALA_PUBLIC_URL", `https://${"a".repeat(60)}.${"b".repeat(60)}.example.com`);
     const resolve = vi.fn(async () => identity);
     setSentryRunLinkResolver(resolve);
     await addSentryRunLinks({ tags: { run_id: runId, company_id: "private-invalid" } });
     expect(resolve).not.toHaveBeenCalled();
     const linked = await addSentryRunLinks({ tags: { run_id: runId } });
     expect(linked.tags).not.toHaveProperty("run_url");
-    expect(linked).toHaveProperty("contexts.paperclip.runPageUrl");
+    expect(linked).toHaveProperty("contexts.pilibala.runPageUrl");
   });
 
   it("preserves the error on lookup rejection and bounds a stalled lookup", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://paperclip.example.com");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://pilibala.example.com");
     const event = { tags: { run_id: runId } };
     setSentryRunLinkResolver(async () => { throw new Error("database unavailable"); });
     expect(await addSentryRunLinks(event)).toEqual(event);
@@ -149,7 +149,7 @@ describe("Sentry navigation links", () => {
   });
 
   it("limits abandoned database lookups while continuing to send subsequent errors", async () => {
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://paperclip.example.com");
+    vi.stubEnv("PILIBALA_PUBLIC_URL", "https://pilibala.example.com");
     vi.useFakeTimers();
     const releases: Array<(value: typeof identity) => void> = [];
     const resolve = vi.fn(() => new Promise<typeof identity>(done => releases.push(done)));

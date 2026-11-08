@@ -14,18 +14,18 @@ import {
   issueRelations,
   issueThreadInteractions,
   issues,
-} from "@paperclipai/db";
+} from "@pilibalaai/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@pilibalaai/shared";
 import { issueService } from "../services/issues.js";
 import { buildIssueGraphLivenessIncidentKey } from "../services/recovery/origins.js";
 
 import { resolveExternalTestDatabaseUrl } from "./helpers/external-test-database.js";
 
-const externalUrl = resolveExternalTestDatabaseUrl("PAPERCLIP_BLOCKER_ATTENTION_TEST_DATABASE_URL");
+const externalUrl = resolveExternalTestDatabaseUrl("PILIBALA_BLOCKER_ATTENTION_TEST_DATABASE_URL");
 const embeddedPostgresSupport = externalUrl ? { supported: true } : await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 
@@ -49,7 +49,7 @@ describeEmbeddedPostgres("issue blocker attention", () => {
 
   beforeAll(async () => {
     if (externalUrl) await applyPendingMigrations(externalUrl);
-    else tempDb = await startEmbeddedPostgresTestDatabase("paperclip-issue-blocker-attention-");
+    else tempDb = await startEmbeddedPostgresTestDatabase("pilibala-issue-blocker-attention-");
     db = createDb(externalUrl ?? tempDb!.connectionString, { maxConnections: 6 });
     svc = issueService(db);
   }, 20_000);

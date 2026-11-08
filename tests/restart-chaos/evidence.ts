@@ -20,7 +20,7 @@ export function redactKnownSecrets(text: string, secrets: readonly string[]): st
 }
 
 export function knownSecretValues(env: NodeJS.ProcessEnv = process.env): string[] {
-  // Any *KEY, *TOKEN, *SECRET or *PASSWORD name, including PAPERCLIP_AGENT_PRIVATE_KEY and AWS_SECRET_ACCESS_KEY.
+  // Any *KEY, *TOKEN, *SECRET or *PASSWORD name, including PILIBALA_AGENT_PRIVATE_KEY and AWS_SECRET_ACCESS_KEY.
   return Object.entries(env).filter(([key, value]) => value && /(?:KEY|TOKEN|SECRET|PASSWORD)$/.test(key)).map(([, value]) => value!);
 }
 
@@ -59,7 +59,7 @@ async function logWindow(serverLogPath: string, faults: readonly FaultReceipt[])
   } finally { await handle.close(); }
 }
 
-/** Bundle everything a fix-failed-paperclip-run session needs to start (plan §5.7). */
+/** Bundle everything a fix-failed-pilibala-run session needs to start (plan §5.7). */
 export async function writeEvidenceBundle(input: {
   directory: string; api: ChaosApi; plan: WavePlan; record: TaskRecord; grade: TaskGrade; artifacts: OracleArtifacts | null;
   faults: readonly FaultReceipt[]; timeline: readonly TimelineEntry[]; serverLogPath: string; gitSha: string; gitDirty: boolean;
@@ -75,7 +75,7 @@ export async function writeEvidenceBundle(input: {
   };
   const relevant = input.faults.filter(fault => input.grade.crossingFaults.includes(fault.faultId) || record.faultIds.includes(fault.faultId));
   await write("meta.json", {
-    schema: "paperclip.restart-chaos.evidence/v1", waveId: input.plan.waveId, seed: input.plan.seed, taskId: record.plan.taskId,
+    schema: "pilibala.restart-chaos.evidence/v1", waveId: input.plan.waveId, seed: input.plan.seed, taskId: record.plan.taskId,
     gitSha: input.gitSha, gitDirty: input.gitDirty, signature: input.grade.signature, replay: replayCommand(input.plan.waveId, record.plan.taskId),
     issueId: record.issueId, identifier: record.identifier, task: record.plan, options: input.plan.options,
   });

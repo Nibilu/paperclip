@@ -7,9 +7,9 @@ import {
   collectReachableInterfaceHosts,
   resolveLocalRuntimeApiUrl,
 } from "../runtime-api.js";
-import { createPaperclipHttpServer } from "../http/server.js";
+import { createPilibalaHttpServer } from "../http/server.js";
 import { registerRunnerPrpAuthority, runnerPrpWebSocketInternals } from "../realtime/runner-prp-ws.js";
-import type { DurablePrpControlPlane } from "../vendor/paperclip-runner/index.js";
+import type { DurablePrpControlPlane } from "../vendor/pilibala-runner/index.js";
 
 describe("runtime API discovery", () => {
   it.each([
@@ -32,7 +32,7 @@ describe("runtime API discovery", () => {
       port: 3218,
     };
     expect(choosePrimaryRuntimeApiUrl(input)).toBe("https://callbacks.example.test");
-    const server = createPaperclipHttpServer((_req, response) => response.end("ready"), {
+    const server = createPilibalaHttpServer((_req, response) => response.end("ready"), {
       apiUrl: chooseLocalRuntimeApiUrl(input),
     });
     const runId = "00000000-0000-4000-8000-000000000887";
@@ -57,12 +57,12 @@ describe("runtime API discovery", () => {
   it("prefers the explicit public base URL for the primary runtime URL", () => {
     expect(
       choosePrimaryRuntimeApiUrl({
-        authPublicBaseUrl: "https://paperclip.example.com/base/path",
+        authPublicBaseUrl: "https://pilibala.example.com/base/path",
         allowedHostnames: ["198.51.100.10"],
         bindHost: "0.0.0.0",
         port: 3102,
       }),
-    ).toBe("https://paperclip.example.com");
+    ).toBe("https://pilibala.example.com");
   });
 
   it("prefers the loopback bind host over allowed hostnames for the primary runtime URL", () => {
@@ -126,7 +126,7 @@ describe("runtime API discovery", () => {
     expect(
       buildRuntimeApiCandidateUrls({
         preferredApiUrl: "https://agent-entry.example.test/base/path",
-        authPublicBaseUrl: "https://paperclip.example.test/app",
+        authPublicBaseUrl: "https://pilibala.example.test/app",
         allowedHostnames: ["198.51.100.10"],
         bindHost: "0.0.0.0",
         port: 3102,
@@ -134,7 +134,7 @@ describe("runtime API discovery", () => {
       }),
     ).toEqual([
       "https://agent-entry.example.test",
-      "https://paperclip.example.test",
+      "https://pilibala.example.test",
       "https://198.51.100.10:3102",
     ]);
   });

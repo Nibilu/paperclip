@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { and, eq } from "drizzle-orm";
 import { executionWorkspaces, heartbeatRuns, issueRecoveryActions, nativeRunFinalizations, nativeRunResults,
-  workspaceOperations, type Db } from "@paperclipai/db";
-import { readRemoteWorkspaceAuthority } from "@paperclipai/shared";
+  workspaceOperations, type Db } from "@pilibalaai/db";
+import { readRemoteWorkspaceAuthority } from "@pilibalaai/shared";
 import { adapterExecutionControls } from "./adapter-execution-control.js";
 import { isLegacyWorkspaceTaskRelated, type LegacyWorkspaceRecoverySource } from "./legacy-workspace-recovery-migration.js";
 import { readNativeWorkspaceSyncReference } from "./native-runtime/native-workspace-sync.js";

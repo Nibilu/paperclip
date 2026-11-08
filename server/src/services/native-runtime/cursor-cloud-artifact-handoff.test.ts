@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { readVerifiedWorkspaceFile, type NativeRunnerFileHandoffInput } from "./native-runner-file-handoff.js";
 
-const { stageCursorCloudArtifact } = await import(new URL("../../../../packages/paperclip-runner/src/drivers/cursor-cloud/artifact-delivery.ts", import.meta.url).href);
+const { stageCursorCloudArtifact } = await import(new URL("../../../../packages/pilibala-runner/src/drivers/cursor-cloud/artifact-delivery.ts", import.meta.url).href);
 
 const roots: string[] = [];
 afterEach(async () => {
@@ -65,13 +65,13 @@ describe("Cursor Cloud staged artifact to Core handoff", () => {
         }
       };
       syncBuiltinESMExports();
-      const { stageCursorCloudArtifact } = await import(${JSON.stringify(new URL("../../../../packages/paperclip-runner/src/drivers/cursor-cloud/artifact-delivery.ts", import.meta.url).href)});
+      const { stageCursorCloudArtifact } = await import(${JSON.stringify(new URL("../../../../packages/pilibala-runner/src/drivers/cursor-cloud/artifact-delivery.ts", import.meta.url).href)});
       const bytes = Buffer.from(${JSON.stringify(f.body.toString("base64"))}, "base64");
       await stageCursorCloudArtifact({ arguments: ${JSON.stringify(f.args)}, agentId: "owned-agent", runtimeDirectory: ${JSON.stringify(f.root)}, artifactRoot: ${JSON.stringify(f.artifactRoot)},
         client: { listArtifacts: async () => ({ items: [{ path: "artifacts/result.txt", sizeBytes: bytes.length }] }), downloadArtifact: async () => bytes }, signal: new AbortController().signal });
       process.send("unexpected-completed");
     `, { mode: 0o600 });
-    const child = spawn(process.execPath, ["--import", new URL("../../../../packages/paperclip-runner/node_modules/tsx/dist/loader.mjs", import.meta.url).pathname, script], { env: {}, stdio: ["ignore", "ignore", "pipe", "ipc"] });
+    const child = spawn(process.execPath, ["--import", new URL("../../../../packages/pilibala-runner/node_modules/tsx/dist/loader.mjs", import.meta.url).pathname, script], { env: {}, stdio: ["ignore", "ignore", "pipe", "ipc"] });
     let stderr = ""; child.stderr?.on("data", bytes => { stderr = (stderr + bytes).slice(-4_096); });
     const exited = once(child, "exit");
     try {
@@ -93,6 +93,6 @@ describe("Cursor Cloud staged artifact to Core handoff", () => {
     const f = await fixture();
     const staged = await f.stage();
     await writeFile(join(f.artifactRoot, f.args.sha256, "result.txt"), Buffer.alloc(f.body.length, 120));
-    await expect(readVerifiedWorkspaceFile(f.binding, staged as unknown as NativeRunnerFileHandoffInput)).rejects.toThrow("paperclip_runner_file_handoff_hash_mismatch");
+    await expect(readVerifiedWorkspaceFile(f.binding, staged as unknown as NativeRunnerFileHandoffInput)).rejects.toThrow("pilibala_runner_file_handoff_hash_mismatch");
   });
 });

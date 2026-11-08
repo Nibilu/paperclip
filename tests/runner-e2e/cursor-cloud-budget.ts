@@ -1,12 +1,12 @@
 import type { BudgetOverview, BudgetPolicySummary } from "../../packages/shared/src/types/budget.js";
 import type { RunnerApi } from "./api.js";
 
-const optIn = "PAPERCLIP_CURSOR_CLOUD_ALLOW_UNPRICED_QUALIFICATION";
+const optIn = "PILIBALA_CURSOR_CLOUD_ALLOW_UNPRICED_QUALIFICATION";
 const amount = 1_000;
 type QualificationPolicy = Pick<BudgetPolicySummary, "companyId" | "scopeType" | "scopeId" | "metric" | "windowKind"
   | "amount" | "hardStopEnabled" | "isActive" | "unpricedUsagePolicy">;
 export interface CursorCloudQualificationBudget {
-  schema: "paperclip.e2e.cursor-cloud.qualification-budget.v1";
+  schema: "pilibala.e2e.cursor-cloud.qualification-budget.v1";
   unpricedUsageOptIn: true;
   policies: QualificationPolicy[];
 }
@@ -44,5 +44,5 @@ export async function configureCursorCloudQualificationBudget(input: {
       windowKind: policy.windowKind, amount: policy.amount, hardStopEnabled: policy.hardStopEnabled,
       isActive: policy.isActive, unpricedUsagePolicy: policy.unpricedUsagePolicy };
   });
-  return { schema: "paperclip.e2e.cursor-cloud.qualification-budget.v1", unpricedUsageOptIn: true, policies };
+  return { schema: "pilibala.e2e.cursor-cloud.qualification-budget.v1", unpricedUsageOptIn: true, policies };
 }

@@ -13,9 +13,9 @@ const fail = code => { throw new Error(`product_regression_testops_${code}`); };
 const positive = value => /^[1-9][0-9]{0,15}$/.test(String(value ?? ''));
 
 export function admitProductTestOps(env) {
-  if (env.GITHUB_REPOSITORY !== 'paperclipai/paperclip' || env.GITHUB_REF !== 'refs/heads/master'
+  if (env.GITHUB_REPOSITORY !== 'pilibalaai/pilibala' || env.GITHUB_REF !== 'refs/heads/master'
       || env.GITHUB_EVENT_NAME !== 'workflow_dispatch'
-      || env.GITHUB_WORKFLOW_REF !== 'paperclipai/paperclip/.github/workflows/runner-full-stack-e2e.yml@refs/heads/master'
+      || env.GITHUB_WORKFLOW_REF !== 'pilibalaai/pilibala/.github/workflows/runner-full-stack-e2e.yml@refs/heads/master'
       || !positive(env.GITHUB_RUN_ID) || !positive(env.GITHUB_RUN_ATTEMPT)
       || !/^[a-f0-9]{40}$/.test(env.GITHUB_SHA ?? '') || !/^[a-f0-9]{40}$/.test(env.SOURCE_SHA ?? '')
       || env.ALLURE_ENDPOINT !== endpoint || env.ALLURE_PROJECT_ID !== '1'
@@ -45,7 +45,7 @@ export function officialProductContext(stdout) {
 export async function verifyProductJob(api, context, env, allowUnstarted = false) {
   const run = await api(`/api/jobrun/${context.jobRunId}`);
   if (run.id !== Number(context.jobRunId) || run.launchId !== context.launchId || !positive(run.job?.id)
-      || run.job.type !== 'github' || (run.url !== `https://github.com/paperclipai/paperclip/actions/runs/${env.GITHUB_RUN_ID}`
+      || run.job.type !== 'github' || (run.url !== `https://github.com/pilibalaai/pilibala/actions/runs/${env.GITHUB_RUN_ID}`
         && !(allowUnstarted && (run.url == null || run.url === '')))) fail('job_run_mismatch');
   const [job, launch] = await Promise.all([api(`/api/job/${run.job.id}`), api(`/api/launch/${context.launchId}`)]);
   if (job.id !== run.job.id || job.type !== 'github' || !workflowUrls.has(job.url)
@@ -107,7 +107,7 @@ export async function productTestOps(command, argument, env = process.env, exec 
       plan = await readJson(planFile, 65_536);
     }
     const cases = manualCases ?? selectProductRegression(plan, env.TESTOPS_CASE || 'all', true, planKey, plans);
-    const selection = { schema: 'paperclip.product-regression-testops-selection/v1',
+    const selection = { schema: 'pilibala.product-regression-testops-selection/v1',
       runId: env.GITHUB_RUN_ID, attempt: env.GITHUB_RUN_ATTEMPT, workflowSha: env.GITHUB_SHA,
       targetSha: env.SOURCE_SHA, ...context, ...job, cases };
     validateSelection(selection, env, plans);

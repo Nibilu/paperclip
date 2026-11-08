@@ -1,6 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { issueThreadInteractions, issues, type Db } from "@paperclipai/db";
-import { isUuidLike } from "@paperclipai/shared";
+import { issueThreadInteractions, issues, type Db } from "@pilibalaai/db";
+import { isUuidLike } from "@pilibalaai/shared";
 
 /**
  * A question that no run asked, such as the onboarding opening card, can be

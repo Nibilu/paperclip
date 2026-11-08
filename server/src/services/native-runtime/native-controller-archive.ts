@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { chmod, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@pilibalaai/db";
 import type { StorageService } from "../../storage/types.js";
 import { removeNativeHarnessBackup } from "./native-harness-backup-cleanup.js";
 import { persistNativeHarnessBackup, verifyDurableNativeHarnessBackup } from "./native-harness-backup-storage.js";
@@ -96,7 +96,7 @@ export function nativeControllerEvidenceDescriptor(source: { companyId: string; 
       throw new Error("native_controller_archive_authority_invalid");
     }
   }
-  const manifest = JSON.stringify({ schema: "paperclip.legacy-controller-archive.v1", companyId: source.companyId,
+  const manifest = JSON.stringify({ schema: "pilibala.legacy-controller-archive.v1", companyId: source.companyId,
     issueId: source.issueId, runId: source.runId, reason: source.purpose === "filesystem_independence"
       ? "original_volume_source_evidence" : "original_runner_artifact_unproven",
     files: { ...(source.controllerDigest === null ? {} : { "control-plane-state.json": source.controllerDigest }),

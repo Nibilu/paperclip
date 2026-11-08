@@ -4,7 +4,7 @@
  *
  * The Daytona org is shared with the live Cloud fleet, so this module NEVER
  * changes a sandbox. Its client exposes only `list`; stop, archive and delete
- * do not exist here. Cleanup goes only through Paperclip: deleting the wave's
+ * do not exist here. Cleanup goes only through Pilibala: deleting the wave's
  * own environment, which acts on the leases in the wave's isolated database.
  * Leaks are reported for a person, and expire through the environment's ttl.
  *
@@ -20,14 +20,14 @@ import type { ChaosApi } from "./api.js";
 export interface DaytonaSandboxRow { id: string; name?: string; state?: string; snapshot?: string; labels?: Record<string, string> }
 export interface LeaseRow { id: string; status: string; providerLeaseId?: string | null; heartbeatRunId?: string | null; issueId?: string | null }
 
-/** Lease statuses where Paperclip still owns a provider resource. */
+/** Lease statuses where Pilibala still owns a provider resource. */
 const HELD_LEASE_STATUSES = new Set(["active", "retained", "pending_cleanup"]);
 /** Sandbox states that no longer hold anything. */
 const GONE_SANDBOX_STATES = new Set(["destroyed", "destroying"]);
 /**
  * The Daytona plugin may archive a sandbox when it releases the lease
  * (`archiveOnRelease`, auto-deleted after 60 min) and Daytona auto-archives
- * stopped ones. An archive behind a lease Paperclip released holds no compute.
+ * stopped ones. An archive behind a lease Pilibala released holds no compute.
  */
 const ARCHIVED_SANDBOX_STATES = new Set(["archived", "archiving"]);
 
@@ -39,7 +39,7 @@ export interface DaytonaSweepResult {
   environmentId: string;
   checkedAt: string;
   liveSandboxes: string[];
-  /** Live sandboxes no held lease accounts for, or whose lease Paperclip already released. */
+  /** Live sandboxes no held lease accounts for, or whose lease Pilibala already released. */
   orphanSandboxes: SandboxLeak[];
   /** Leases still `active` or `pending_cleanup` with every task at rest. */
   heldLeases: LeaseLeak[];
@@ -61,7 +61,7 @@ export function reconcileSandboxes(sandboxes: readonly DaytonaSandboxRow[], leas
     const lease = byProviderId.get(sandbox.id) ?? (sandbox.name ? byProviderId.get(sandbox.name) : undefined);
     if (lease && HELD_LEASE_STATUSES.has(lease.status)) continue;
     if (lease && ARCHIVED_SANDBOX_STATES.has(String(sandbox.state ?? "").toLowerCase())) { archivedSandboxes.push(sandbox.id); continue; }
-    orphanSandboxes.push({ sandboxId: sandbox.id, state: sandbox.state ?? null, runId: sandbox.labels?.["paperclip-run-id"] ?? null,
+    orphanSandboxes.push({ sandboxId: sandbox.id, state: sandbox.state ?? null, runId: sandbox.labels?.["pilibala-run-id"] ?? null,
       leaseId: lease?.id ?? null, leaseStatus: lease?.status ?? null,
       reason: lease ? `sandbox alive after its lease became ${lease.status}` : "no lease references this sandbox" });
   }
@@ -122,14 +122,14 @@ export function readOnlyDaytona(client: { list(query?: { labels?: Record<string,
 
 /** Fleet sandboxes the harness must never act on, even if their labels matched. */
 export function isProtectedSandbox(sandbox: Pick<DaytonaSandboxRow, "name" | "snapshot">): boolean {
-  return (sandbox.name ?? "").startsWith("paperclip-create-") || (sandbox.snapshot ?? "").startsWith("fleet-sbx-");
+  return (sandbox.name ?? "").startsWith("pilibala-create-") || (sandbox.snapshot ?? "").startsWith("fleet-sbx-");
 }
 
 /**
- * Hard guard for any future mutating path. It refuses `paperclip-create-*`
+ * Hard guard for any future mutating path. It refuses `pilibala-create-*`
  * names and `fleet-sbx-*` snapshots outright, and anything not carrying both
  * of the wave's UUID labels. Every plugin-created sandbox is
- * `paperclip-create-*`, so the harness can never mutate one directly.
+ * `pilibala-create-*`, so the harness can never mutate one directly.
  */
 export function assertHarnessMayMutate(sandbox: DaytonaSandboxRow, wave: { companyId: string; environmentId: string }): void {
   if (isProtectedSandbox(sandbox)) throw new Error(`Refusing to change protected Daytona sandbox ${sandbox.id} (${sandbox.name ?? sandbox.snapshot})`);
@@ -141,8 +141,8 @@ const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 /** Keeps only rows whose company AND environment labels equal this wave's UUIDs. */
 export function selectWaveSandboxes(rows: readonly DaytonaSandboxRow[], wave: { companyId: string; environmentId: string }): DaytonaSandboxRow[] {
   if (!UUID.test(wave.companyId) || !UUID.test(wave.environmentId)) throw new Error("Wave sandbox selection needs the wave's company and environment UUIDs");
-  return rows.filter(row => row.labels?.["paperclip-company-id"] === wave.companyId
-    && row.labels?.["paperclip-environment-id"] === wave.environmentId);
+  return rows.filter(row => row.labels?.["pilibala-company-id"] === wave.companyId
+    && row.labels?.["pilibala-environment-id"] === wave.environmentId);
 }
 
 export class DaytonaWaveSweeper {
@@ -159,7 +159,7 @@ export class DaytonaWaveSweeper {
     const wave = { companyId: this.input.companyId, environmentId: this.input.environmentId };
     const rows: DaytonaSandboxRow[] = [];
     for await (const sandbox of (await this.daytona()).list({ labels: {
-      "paperclip-company-id": wave.companyId, "paperclip-environment-id": wave.environmentId } })) rows.push(sandbox);
+      "pilibala-company-id": wave.companyId, "pilibala-environment-id": wave.environmentId } })) rows.push(sandbox);
     return selectWaveSandboxes(rows, wave);
   }
 
@@ -184,7 +184,7 @@ export class DaytonaWaveSweeper {
   }
 
   /**
-   * Cleanup through Paperclip only: delete the wave's own environment (with its
+   * Cleanup through Pilibala only: delete the wave's own environment (with its
    * reusable leases). Then list, read-only, what is still not destroyed or
    * archived, for the report. No sandbox is changed by the harness itself.
    */
