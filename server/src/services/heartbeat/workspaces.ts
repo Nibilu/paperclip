@@ -3699,11 +3699,12 @@ export function createHeartbeatWorkspaceResolver(db: Db) {
 
     const sessionCwd = readNonEmptyString(previousSessionParams?.cwd);
     const sessionCwdLooksUnsafe = isUnsafeSessionWorkspaceCwd(sessionCwd);
-    if (configuredWorkspaceUnavailable && !configuredSourceId && !forceTaskDirectory && sessionCwd && !sessionCwdLooksUnsafe) {
-      // Resume continuity for INHERITED defaults: a dead project default must
-      // not evict this task from its own previous session workspace. An
-      // explicit configured_source pin keeps the strict contract instead — it
-      // fails loudly rather than silently continuing somewhere else. Only this
+    if (configuredWorkspaceUnavailable && !configuredSourceId && !workspaceProjectId && !forceTaskDirectory && sessionCwd && !sessionCwdLooksUnsafe) {
+      // Resume continuity for INHERITED defaults (tasks without a project
+      // context): a dead inherited default must not evict this task from its
+      // own previous session workspace. An explicit project or a
+      // configured_source pin keeps the upstream contract instead — those fall
+      // back to the instance-managed agent home with a warning. Only this
       // task's saved session cwd is consulted here — never another task's.
       const sessionCwdExists = await fs
         .stat(sessionCwd)
