@@ -45,6 +45,8 @@ function makeWake(
   }) as unknown as ReturnType<typeof import("../services/heartbeat.js").heartbeatService>["wakeup"];
 }
 
+const closureOf = (action: { evidence: Record<string, unknown> }): any => (action.evidence.closure ?? {}) as any;
+
 const RECOMMENDED_OPTION = {
   id: "clear-model",
   title: "Clear the agent's model field",
@@ -133,7 +135,7 @@ describeEmbeddedPostgres("recovery proposal closure (S7/S8/S9)", () => {
     companyId: string;
     sourceIssueId: string;
     evidence: Record<string, unknown>;
-    status?: "active" | "escalated";
+    status?: "active" | "escalated" | "resolved";
     returnOwnerAgentId?: string | null;
   }) {
     const actionId = randomUUID();
@@ -192,11 +194,11 @@ describeEmbeddedPostgres("recovery proposal closure (S7/S8/S9)", () => {
     expect(action.evidence.proposalDecision).toMatchObject({
       decision: "approved", optionId: "clear-model", autoAdopted: true, reason: "decision_timeout",
     });
-    expect(action.evidence.closure).toMatchObject({ status: "fix_dispatched" });
-    expect(action.evidence.closure.fixRunId).toEqual(expect.any(String));
+    expect(closureOf(action)).toMatchObject({ status: "fix_dispatched" });
+    expect(closureOf(action).fixRunId).toEqual(expect.any(String));
     expect(wakeCalls).toHaveLength(1);
     expect(wakeCalls[0].agentId).toBe(doctorId);
-    expect(wakeCalls[0].payload.contextSnapshot.wakeReason).toBe("recovery_fix_execution");
+    expect((wakeCalls[0].payload.contextSnapshot as Record<string, any>).wakeReason).toBe("recovery_fix_execution");
     // Idempotent: a second pass does not re-adopt or re-dispatch.
     await settleFixProposalDecisions(db, wake);
     expect(wakeCalls).toHaveLength(1);
@@ -235,7 +237,7 @@ describeEmbeddedPostgres("recovery proposal closure (S7/S8/S9)", () => {
     await settleFixProposalDecisions(db, makeWake(wakeCalls));
 
     const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, actionId));
-    expect(action.evidence.closure).toMatchObject({ status: "fix_dispatched", optionId: "clear-model" });
+    expect(closureOf(action)).toMatchObject({ status: "fix_dispatched", optionId: "clear-model" });
     expect(wakeCalls[0].agentId).toBe(doctorId);
   });
 
@@ -256,7 +258,7 @@ describeEmbeddedPostgres("recovery proposal closure (S7/S8/S9)", () => {
 
     expect(result.status).toBe("manual_required");
     const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, actionId));
-    expect(action.evidence.closure).toMatchObject({ status: "manual_required" });
+    expect(closureOf(action)).toMatchObject({ status: "manual_required" });
     expect(action.nextAction).toContain("manual execution");
     expect(wakeCalls).toHaveLength(0);
   });
@@ -273,7 +275,7 @@ describeEmbeddedPostgres("recovery proposal closure (S7/S8/S9)", () => {
     const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, actionId));
     expect(action.status).toBe("resolved");
     expect(action.outcome).toBe("restored");
-    expect(action.evidence.closure).toMatchObject({ status: "verified", completedAt: expect.any(String) });
+    expect(closureOf(action)).toMatchObject({ status: "verified", completedAt: expect.any(String) });
     const [task] = await db.select().from(issues).where(eq(issues.id, sourceIssueId));
     expect(task.status).toBe("todo");
   });
@@ -296,15 +298,15 @@ describeEmbeddedPostgres("recovery proposal closure (S7/S8/S9)", () => {
     await settleCompletedFixRuns(db, wake);
     expect(wakeCalls).toHaveLength(1);
     let [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, actionId));
-    expect(action.evidence.closure.attempts).toBe(2);
-    expect(action.evidence.closure.fixRunId).toEqual(expect.any(String));
+    expect(closureOf(action).attempts).toBe(2);
+    expect(closureOf(action).fixRunId).toEqual(expect.any(String));
 
     // Second pass: the persisted retry run is failed -> attempts exhausted -> escalate.
     await settleCompletedFixRuns(db, wake);
     [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, actionId));
     expect(action.status).toBe("escalated");
-    expect(action.evidence.closure).toMatchObject({ status: "failed", boardRequired: true });
-    expect(action.evidence.closure.revertSteps).toEqual(["Re-add the model field"]);
+    expect(closureOf(action)).toMatchObject({ status: "failed", boardRequired: true });
+    expect(closureOf(action).revertSteps).toEqual(["Re-add the model field"]);
   });
 
   it("S8 revert: wakes the executor with the recorded revert steps and records the request; refuses non-revertible", async () => {
@@ -329,11 +331,11 @@ describeEmbeddedPostgres("recovery proposal closure (S7/S8/S9)", () => {
     expect(result.ok).toBe(true);
     expect(result.revertRunId).toEqual(expect.any(String));
     expect(wakeCalls[0].agentId).toBe(doctorId);
-    const prompt = String(wakeCalls[0].payload.contextSnapshot.recoveryFixPrompt);
+    const prompt = String((wakeCalls[0].payload.contextSnapshot as Record<string, any>).recoveryFixPrompt);
     expect(prompt).toContain("Re-add the model field");
     expect(prompt).toContain("reverting");
     const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, actionId));
-    expect(action.evidence.closure.revert).toMatchObject({ requestedBy: "board-user-1" });
+    expect(closureOf(action).revert).toMatchObject({ requestedBy: "board-user-1" });
 
     // Non-revertible executed fix is refused (second issue: one active hold per source).
     const secondIssueId = randomUUID();

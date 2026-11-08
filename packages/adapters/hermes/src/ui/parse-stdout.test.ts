@@ -155,8 +155,8 @@ describe("parseHermesStdoutLine — corrupted acpx event lines", () => {
     const entries = parseHermesStdoutLine(corrupted, "2026-11-05T00:00:00.000Z");
     expect(entries).toHaveLength(1);
     expect(entries[0]?.kind).toBe("system");
-    expect(String(entries[0]?.text)).toContain("[corrupted acpx event]");
-    expect(String(entries[0]?.text)).toContain("acpx.text_delta");
+    expect(String((entries[0] as { text?: string })?.text ?? "")).toContain("[corrupted acpx event]");
+    expect(String((entries[0] as { text?: string })?.text ?? "")).toContain("acpx.text_delta");
   });
 
   it("long corrupted lines are truncated in the preview", () => {
@@ -165,12 +165,12 @@ describe("parseHermesStdoutLine — corrupted acpx event lines", () => {
     const corrupted = `{"type":"acpx.text_delta","text":"H \\"Authorization: ***","text2":"${"x".repeat(400)}"channel":"thought","tag":"agent_thought_chunk"}`;
     const entries = parseHermesStdoutLine(corrupted, "2026-11-05T00:00:00.000Z");
     expect(entries[0]?.kind).toBe("system");
-    expect(String(entries[0]?.text ?? "").length).toBeLessThan(200);
+    expect(String((entries[0] as { text?: string })?.text ?? "").length).toBeLessThan(200);
   });
 
   it("non-acpx JSON still falls through to the CLI grammar untouched", () => {
     const entries = parseHermesStdoutLine('{"unrelated":"json"}', "2026-11-05T00:00:00.000Z");
     // Whatever the CLI grammar does with it, it must not become a corrupted-acpx system note.
-    expect(entries.every((e) => !String(e.text).includes("[corrupted acpx event]"))).toBe(true);
+    expect(entries.every((e) => !String((e as { text?: string }).text ?? "").includes("[corrupted acpx event]"))).toBe(true);
   });
 });

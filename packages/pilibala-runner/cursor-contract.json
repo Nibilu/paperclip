@@ -1,11 +1,10 @@
 {
   "schema": "pilibala.cursor.production-contract.v1",
-  "profileVersion": 15,
+  "profileVersion": 17,
   "sourceSnapshot": "22c78242a4e0c2369fecf0c2dc4e7600fbad6706",
   "base": "dd868ed125cd709506dd9b29fca640a44d580501",
   "vendor": "2026.09.26-dd393fe",
   "nativePatch": "pilibala-cursor-usage-v4",
-  "acpxPatchSha256": "79ef7f6921e4657687cd37526314494c0614d4808e83c96fafd67038c505f344",
   "publicSetup": "pilibalaai runtime setup cursor",
   "assets": "public-server-and-provider-pack",
   "modes": [
@@ -19,5 +18,5 @@
   "planAcceptance": "successful-run-open-task-explicit-continuation",
   "otherProviders": "mainline-gated",
   "modelSelection": "explicit-provider-verified-startup-and-reconnect",
-  "commandDigest": "sha256:cf90baf36429dbec04ebe46bcfc3025804896f76c880072e925fdb1c1760b599"
+  "commandDigest": "sha256:f4fd9aa154e07af07c389b41da0a42797ad3c3b19ccd0b14492a33b57a993cfc"
 }

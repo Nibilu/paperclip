@@ -707,8 +707,6 @@ export function TaskChatComposer({
   }
 
   /** Upload an image and return its URL for inline `![](src)` markdown. */
-  async function uploadInlineImage(file: File): Promise<string> {
-    const id = createUuid();
   async function uploadImage(file: File): Promise<string> {
     const id = crypto.randomUUID();
     setAttachments((prev) => [

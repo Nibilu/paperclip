@@ -15,7 +15,6 @@ import { REPOSITORY_CATALOG_UNAVAILABLE_CODE } from "./repository-catalog-unavai
 import { RUNNER_REVISION_MISMATCH_CODE } from "./runner-revision-mismatch.js";
 import { hasWorkspaceRestoreFailure } from "@pilibalaai/shared";
 import { normalizeMaxTurnStopReason } from "./heartbeat-stop-metadata.js";
-import { readRunCancellation } from "./run-cancellation.js";
 import { claimedAdapterType, hasConversationContinuationPolicy } from "./conversation-continuation.js";
 import { canonicalExecutionUuid } from "./execution-identity.js";
 import { randomUUID } from "node:crypto";

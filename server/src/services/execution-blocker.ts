@@ -404,7 +404,6 @@ export async function getExecutionBlocker(db: Db, companyId: string, issueId: st
     blockedReason: action.cause,
     replayDisposition,
     freshContinuationDisposition,
-    nextAction: reconstructionPending ? "Continuation from saved sources is queued and waiting for execution checks." : nextAction,
     nextAction: (workspaceRecovery?.status === "recovered" && canRetry && !chatBinding
       ? "Saved work recovered. Retry or send a message to continue." : workspaceRecovery?.message) ?? (reconstructionPending ? "Continuation from saved sources is queued and waiting for execution checks." : nextAction),
     ...(workspaceRecovery ? { workspaceRecovery } : {}),

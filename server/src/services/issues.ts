@@ -34,7 +34,6 @@ import { readNativeContinuationSource } from "./native-runtime/native-continuati
 import { assertNoCaseHandoffMutation, cancelCaseHandoffsForIssue, completeTerminalCaseHandoffsForIssue } from "./heartbeat/case-handoff-lifecycle.js";
 import { measureRunPhase } from "./execution-preparation-timing.js";
 import { automaticReadRecoveryCleanupCondition, directHumanCommentCondition, humanCreatedIssueCondition, pendingUserRequestCondition, pendingUserRequestRowCondition, touchedByUserCondition, userParticipationActivityCondition } from "./issue-participation.js";
-import { resolveProjectDefaultWorkspaceId } from "./project-default-workspace.js";
 import { type AuthorizationActor, executionWorkspaceReadSqlCondition, projectReadSqlCondition } from "./authorization.js";
 import { assertExecutionWorkspaceRecordAccess, assertTaskWorkspaceSourceProjectAccess } from "./task-workspace-access.js";
 import {

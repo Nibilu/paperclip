@@ -1063,17 +1063,6 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
   const usesManagedConnection = Boolean(runtimeAiBinding);
   // Managed AI connections route the model themselves: their provider wins over
   // the adapter catalog so discovery and refresh keep the connection's catalog.
-  const modelProvider =
-    adapterType === "opencode_local" && runtimeAiBinding?.provider === "openrouter"
-      ? "openrouter"
-      : hasProviderCatalog
-        ? selectedModelProvider || (adapterType === "hermes_local" ? detectedHermesModel.data?.provider : undefined) || undefined
-        : runnerProvider;
-  const connectionModels = useConnectionModels(
-    isExternalRunner ? null : selectedCompanyId,
-    runtimeAiBinding,
-    aiRoutingHarness(adapterType, runnerProvider, eff("adapterConfig", "acpxAgent", config.acpxAgent)),
-  );
   const modelProvider = adapterType === "opencode_local" && aiConnectionBindingSchema.safeParse(
     (overlay.runtime.runtimeConfig as Record<string, unknown> | undefined)?.aiConnection ?? runtimeConfig.aiConnection,
   ).data?.provider === "openrouter" ? "openrouter" : runnerProvider;

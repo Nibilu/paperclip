@@ -9,6 +9,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { renderPilibalaWakePrompt } from "@pilibalaai/adapter-utils/server-utils";
 import {
+
   costEvents,
   agents,
   agentRuntimeState,
@@ -41,8 +42,8 @@ import { errorHandler } from "../middleware/index.js";
 import { issueRoutes } from "../routes/issues.js";
 import { buildPilibalaWakePayload, heartbeatService } from "../services/heartbeat.js";
 import { deliverReconciliationAnalyses } from "../services/reconciliation-analysis.js";
-import { deliverReconciledExecutions, settleUnrecoverableExecutions } from "../services/execution-recovery-resolution.js";
-import { deliverReconciledExecutions, markExecutionReconciliation } from "../services/execution-recovery-resolution.js";
+import { deliverReconciledExecutions, markExecutionReconciliation, settleUnrecoverableExecutions } from "../services/execution-recovery-resolution.js";
+
 import { workspaceOperationService, isNativeWorkspaceFinalizationOperationActive } from "../services/workspace-operations.js";
 import { issueRecoveryActionService } from "../services/issue-recovery-actions.js";
 import { recoveryService } from "../services/recovery/service.js";
@@ -56,6 +57,10 @@ import { noticeMetadataReferencesRecoveryAction } from "../services/recovery/suc
 
 const external = resolveExternalTestDatabaseUrl("PILIBALA_RECOVERY_ACTION_TEST_DATABASE_URL");
 const embeddedPostgresSupport = external ? { supported: true, reason: undefined } : await getEmbeddedPostgresTestSupport();
+// Fork-era fixtures predate the upstream LatestIssueRun shape (startedAt/createdAt required);
+// assert rather than mutate 19 seed blocks.
+const asRun = (run: Record<string, unknown>): Parameters<ReturnType<typeof recoveryService>["escalateStrandedAssignedIssue"]>[0]["latestRun"] => run as never;
+
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
 
 function makeRecoveryActionRow(overrides: Record<string, unknown> = {}) {
@@ -621,7 +626,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     const { companyId, coderId, sourceIssue } = await seedCompany();
     const enqueueWakeup = vi.fn(async () => null);
     const recovery = recoveryService(db, { enqueueWakeup });
-    const latestRun = {
+    const latestRun = asRun({
       id: randomUUID(),
       agentId: coderId,
       status: "failed",
@@ -630,7 +635,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
       contextSnapshot: { retryReason: "issue_continuation_needed" },
       livenessState: "needs_followup",
       ...LATEST_RUN_TIMES,
-    } as const;
+    });
 
     const results = await Promise.all([
       recovery.escalateStrandedAssignedIssue({
@@ -690,7 +695,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     const { coderId, sourceIssue } = await seedCompany();
     const enqueueWakeup = vi.fn(async () => null);
     const recovery = recoveryService(db, { enqueueWakeup });
-    const latestRun = {
+    const latestRun = asRun({
       id: randomUUID(),
       agentId: coderId,
       status: "failed",
@@ -699,7 +704,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
       errorCode: "adapter_failed",
       contextSnapshot: { retryReason: "issue_continuation_needed" },
       livenessState: "needs_followup",
-    } as const;
+    });
 
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
@@ -726,7 +731,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     const { coderId, sourceIssue } = await seedCompany();
     const enqueueWakeup = vi.fn(async () => null);
     const recovery = recoveryService(db, { enqueueWakeup });
-    const latestRun = {
+    const latestRun = asRun({
       id: randomUUID(),
       agentId: coderId,
       status: "failed",
@@ -734,7 +739,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
       errorCode: "adapter_failed",
       contextSnapshot: { retryReason: "issue_continuation_needed" },
       livenessState: "needs_followup",
-    } as const;
+    });
 
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
@@ -754,6 +759,8 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         ladderHint: "L2",
       },
     });
+  });
+
   it.each(["done", "cancelled", "reassigned", "returned_to_todo"] as const)(
     "preserves a concurrent %s decision when stale stranded recovery waits for the issue lock",
     async (decision) => {
@@ -1128,7 +1135,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
       const { coderId, sourceIssue } = await seedCompany();
       const enqueueWakeup = vi.fn(async () => null);
       const recovery = recoveryService(db, { enqueueWakeup });
-      const latestRun = {
+      const latestRun = asRun({
         id: randomUUID(),
         agentId: coderId,
         status: errorCode === "adapter_failed" && explicitCause === "successful_run_missing_state"
@@ -1142,7 +1149,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         resultJson: errorCode === "workspace_validation_failed"
           ? { workspaceValidation: { reason: "missing_workspace", fingerprint: "workspace:test" } }
           : null,
-      } as const;
+      });
 
       await recovery.escalateStrandedAssignedIssue({
         issue: (await issueService(db).getById(sourceIssue.id))!,
@@ -2047,7 +2054,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: recoveryIssue!,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: randomUUID(),
         agentId: managerId,
         status: "failed",
@@ -2056,7 +2063,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
         ...LATEST_RUN_TIMES,
-      },
+      }),
     });
 
     const actionRows = await db.select().from(issueRecoveryActions);
@@ -2142,7 +2149,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: runId,
         agentId: coderId,
         status: "failed",
@@ -2150,7 +2157,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         errorCode: "acpx_session_config_failed",
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
-      } as const,
+      }),
       comment: "Automatic continuation recovery failed.",
     });
     const [hold] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
@@ -2424,7 +2431,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: runId,
         agentId: coderId,
         status: "failed",
@@ -2432,7 +2439,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         errorCode: "adapter_failed",
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
-      } as const,
+      }),
       comment: "Automatic continuation recovery failed.",
     });
 
@@ -2472,7 +2479,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: runId,
         agentId: coderId,
         status: "failed",
@@ -2480,7 +2487,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         errorCode: "adapter_failed",
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
-      } as const,
+      }),
       comment: "Automatic continuation recovery failed.",
     });
     const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
@@ -2521,7 +2528,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: runId,
         agentId: coderId,
         status: "failed",
@@ -2529,7 +2536,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         errorCode: "adapter_failed",
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
-      } as const,
+      }),
       comment: "Automatic continuation recovery failed.",
     });
     const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
@@ -2567,7 +2574,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: runId,
         agentId: coderId,
         status: "failed",
@@ -2575,7 +2582,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         errorCode: "adapter_failed",
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
-      } as const,
+      }),
       comment: "Automatic continuation recovery failed.",
     });
     const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
@@ -2617,7 +2624,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: runId,
         agentId: coderId,
         status: "failed",
@@ -2625,7 +2632,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         errorCode: "adapter_failed",
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
-      } as const,
+      }),
       comment: "Automatic continuation recovery failed.",
     });
     const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
@@ -2681,7 +2688,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: runId,
         agentId: coderId,
         status: "failed",
@@ -2689,7 +2696,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         errorCode: "adapter_failed",
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
-      } as const,
+      }),
       comment: "Automatic continuation recovery failed.",
     });
     const wake = vi.fn().mockResolvedValue({ id: randomUUID() });
@@ -2712,7 +2719,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: runId,
         agentId: coderId,
         status: "failed",
@@ -2720,7 +2727,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         errorCode: "adapter_failed",
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
-      } as const,
+      }),
       comment: "Automatic continuation recovery failed.",
     });
     await db.update(agents).set({ status: "active" }).where(eq(agents.id, managerId));
@@ -2746,7 +2753,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: runId,
         agentId: coderId,
         status: "failed",
@@ -2754,7 +2761,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         errorCode: "adapter_failed",
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
-      } as const,
+      }),
       comment: "Automatic continuation recovery failed.",
     });
     const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));
@@ -2764,8 +2771,9 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await deliverReconciliationAnalyses(db, wake);
     expect(wake).not.toHaveBeenCalled();
     const [deferred] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.id, action.id));
-    expect(deferred.evidence.reconciliationAnalysis).toMatchObject({ status: "pending", attempts: 1 });
-    expect(deferred.evidence.reconciliationAnalysis.triedAgentIds ?? []).not.toContain(managerId);
+    const deferredAnalysis = (deferred?.evidence as Record<string, any>)?.reconciliationAnalysis;
+    expect(deferredAnalysis).toMatchObject({ status: "pending", attempts: 1 });
+    expect(deferredAnalysis.triedAgentIds ?? []).not.toContain(managerId);
 
     // Once invokable again, the same hold dispatches normally.
     await db.update(agents).set({ status: "idle" }).where(eq(agents.id, managerId));
@@ -2789,7 +2797,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: runId,
         agentId: coderId,
         status: "failed",
@@ -2797,7 +2805,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         errorCode: "adapter_failed",
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
-      } as const,
+      }),
       comment: "Automatic continuation recovery failed.",
     });
     await db.update(agents).set({ status: "error" }).where(eq(agents.id, managerId));
@@ -2819,7 +2827,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: runId,
         agentId: coderId,
         status: "failed",
@@ -2827,7 +2835,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         errorCode: "adapter_failed",
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
-      } as const,
+      }),
       comment: "Automatic continuation recovery failed.",
     });
     // The only doctor candidate (manager) stays paused forever.
@@ -2848,7 +2856,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
     await recovery.escalateStrandedAssignedIssue({
       issue: sourceIssue,
       previousStatus: "in_progress",
-      latestRun: {
+      latestRun: asRun({
         id: randomUUID(),
         agentId: coderId,
         status: "failed",
@@ -2856,7 +2864,7 @@ describeEmbeddedPostgres("issue recovery actions", () => {
         errorCode: "process_lost",
         contextSnapshot: { retryReason: "issue_continuation_needed" },
         livenessState: "needs_followup",
-      } as const,
+      }),
       comment: "Automatic continuation recovery failed.",
     });
     const [action] = await db.select().from(issueRecoveryActions).where(eq(issueRecoveryActions.sourceIssueId, sourceIssueId));

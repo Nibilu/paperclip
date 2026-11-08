@@ -2161,6 +2161,7 @@ async function buildRuntime(input: {
         input.ctx.onLog("stdout", `[pilibala] agent run-env file unavailable: ${error instanceof Error ? error.message : String(error)}\n`);
       }
     }
+  }
   if (input.ctx.observability) {
     applyObservabilityEnvironment(env, input.ctx.observability);
   }

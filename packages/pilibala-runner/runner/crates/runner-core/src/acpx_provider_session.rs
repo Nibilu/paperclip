@@ -1558,9 +1558,8 @@ fn validate_prp_run_result(value: &Value) -> Result<(), LocalRunnerError> {
         "../../../../protocol/schemas/result.schema.json"
     ))
     .map_err(|_| LocalRunnerError::invalid("embedded Pilibala result schema is invalid"))?;
-    let validator = jsonschema::validator_for(&schema).map_err(|_| {
-        LocalRunnerError::invalid("embedded Pilibala result schema cannot compile")
-    })?;
+    let validator = jsonschema::validator_for(&schema)
+        .map_err(|_| LocalRunnerError::invalid("embedded Pilibala result schema cannot compile"))?;
     if !validator.is_valid(value) {
         return Err(LocalRunnerError::invalid(
             "ACPX reserved semantic result failed the Pilibala result schema",

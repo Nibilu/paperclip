@@ -6,7 +6,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
 import type { AiManagedConnectionSummary } from "@pilibalaai/shared";
 import type { AiProviderSetup } from "./AiProviderSetup";
-import { AiConnectionField } from "./AiConnectionField";
 import { AiConnectionField, aiProviderForAdapter } from "./AiConnectionField";
 import { ApiError } from "@/api/client";
 import type { AiConnectionCredentialStep } from "./AiConnectionCredentialStep";

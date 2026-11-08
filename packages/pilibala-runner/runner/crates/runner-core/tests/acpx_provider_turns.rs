@@ -488,11 +488,7 @@ fn reserved_terminal_results_require_an_authorized_correlated_invocation() {
             "pilibala_finish",
             "yielded",
         ),
-        (
-            "turns-reserved-block-terminal",
-            "pilibala_block",
-            "blocked",
-        ),
+        ("turns-reserved-block-terminal", "pilibala_block", "blocked"),
     ] {
         let mut session = AcpxProviderSession::start(&config(mode)).unwrap();
         session

@@ -302,9 +302,7 @@ fn mode_round_trips_checkpoint_and_rejects_changed_or_missing_recovery_mode() {
 
 #[test]
 fn pi_thinking_level_round_trips_and_rejects_legacy_or_changed_recovery() {
-    use pilibala_runner_core::acpx_provider_session::{
-        AcpxProviderRuntimePolicy, PiThinkingLevel,
-    };
+    use pilibala_runner_core::acpx_provider_session::{AcpxProviderRuntimePolicy, PiThinkingLevel};
     let directory = temporary_directory("pi-thinking");
     let mut config = config(&directory);
     config.agent = "pi".to_owned();

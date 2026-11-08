@@ -3053,10 +3053,8 @@ mod tests {
                 Ok(())
             }
         }
-        let directory = std::env::temp_dir().join(format!(
-            "pilibala-host-retirement-{}",
-            uuid::Uuid::new_v4()
-        ));
+        let directory =
+            std::env::temp_dir().join(format!("pilibala-host-retirement-{}", uuid::Uuid::new_v4()));
         let config = config(directory.clone());
         let store = DurableStateStore::new(&config.state_dir).unwrap();
         let mut state = DurableState::new(&config);
@@ -4243,10 +4241,8 @@ mod tests {
             }
         }
         for fail_ack in [false, true] {
-            let directory = std::env::temp_dir().join(format!(
-                "pilibala-attach-evidence-{}",
-                uuid::Uuid::new_v4()
-            ));
+            let directory = std::env::temp_dir()
+                .join(format!("pilibala-attach-evidence-{}", uuid::Uuid::new_v4()));
             let config = config(directory.clone());
             let store = DurableStateStore::new(&directory).unwrap();
             let (mut state, _) = store.load_or_create(&config).unwrap();

@@ -1602,9 +1602,7 @@ impl ClaudeManagedProvider {
                         )
                     })?;
                 let validator = jsonschema::validator_for(schema).map_err(|_| {
-                    LocalRunnerError::invalid(
-                        "authorized Pilibala tool has an invalid JSON Schema",
-                    )
+                    LocalRunnerError::invalid("authorized Pilibala tool has an invalid JSON Schema")
                 })?;
                 if !validator.is_valid(&input) {
                     return Err(LocalRunnerError::invalid(

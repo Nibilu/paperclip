@@ -517,7 +517,6 @@ export async function admitExplicitNativeContinuation(input: {
               await recordUnidentifiedLocalRunnerStop(db, run, { record: !input.dryRun }))) return blocked("process_identity_missing", "The previous run has no verified stop record. Pilibala cannot start this message yet.");
         if (run.processPid && !processStopped(run.processPid)) return blocked("process_running", "Waiting for the previous process to stop. Your message will start automatically.");
         if (run.processGroupId && !processStopped(-run.processGroupId)) return blocked("process_running", "Waiting for the previous process to stop. Your message will start automatically.");
-        }
       }
     }
     // The runner keeps a closing or quarantined provider session in process

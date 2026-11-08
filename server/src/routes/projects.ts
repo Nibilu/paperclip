@@ -12,7 +12,6 @@ import { normalizeProjectRepositoryUrl, resolveProjectRepositorySelection } from
 import { toolAccessService } from "../services/tool-access.js";
 import { Router, type Request, type Response } from "express";
 import type { Db } from "@pilibalaai/db";
-import { agents, authUsers, companyMemberships, instanceUserRoles, projectAccessMembers } from "@pilibalaai/db";
 import { agents, authUsers, companyMemberships, heartbeatRuns, instanceUserRoles, projectAccessMembers } from "@pilibalaai/db";
 import { inArray } from "drizzle-orm";
 import {

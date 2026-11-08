@@ -1644,10 +1644,8 @@ impl Provider for AwsAgentCoreHarnessProvider {
     }
 
     fn destroy_session(&mut self) -> Result<(), LocalRunnerError> {
-        self.worker.stop_runtime(format!(
-            "pilibala-delete-{}",
-            sha_hex(&self.session_id, 32)
-        ))?;
+        self.worker
+            .stop_runtime(format!("pilibala-delete-{}", sha_hex(&self.session_id, 32)))?;
         self.worker.delete_memory()?;
         self.worker.shutdown();
         Ok(())

@@ -17,8 +17,7 @@ use crate::provider_bridge::{semantic_value_digest, MAX_COMPLETION_SUMMARY_CHARS
 use super::{DurableRunnerConfig, DurableRunnerError, PROTOCOL, PROTOCOL_VERSION};
 
 const STATE_SCHEMA: &str = "pilibala.runner.durable.state.v1";
-pub(crate) const TRANSITION_STATE_SCHEMA: &str =
-    "pilibala.runner.durable.state.warm-transition.v1";
+pub(crate) const TRANSITION_STATE_SCHEMA: &str = "pilibala.runner.durable.state.warm-transition.v1";
 const STATE_FILE: &str = "runner-state.json";
 const MAX_RECENT_COMMANDS: usize = 128;
 const MAX_DIAGNOSTICS: usize = 32;
@@ -3335,8 +3334,7 @@ mod tests {
             "A complete paragraph for the user. ".repeat(180)
         );
         let input = json!({"summary": summary});
-        let once_sanitized_input =
-            validate_semantic_tool_input("pilibala_finish", &input).unwrap();
+        let once_sanitized_input = validate_semantic_tool_input("pilibala_finish", &input).unwrap();
         let payload = json!({
             "semantic_tool": {
                 "schema": "pilibala.prp.semantic_tool.v1",

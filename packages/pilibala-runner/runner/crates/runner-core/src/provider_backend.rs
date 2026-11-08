@@ -4860,10 +4860,7 @@ impl CodexCommandExecutor {
                 .as_ref()
                 .is_some_and(|(operation_id, _)| {
                     !result.is_error
-                        && matches!(
-                            operation_id.as_str(),
-                            "pilibala_finish" | "pilibala_block"
-                        )
+                        && matches!(operation_id.as_str(), "pilibala_finish" | "pilibala_block")
                 });
         if let Some((operation_id, input)) = terminal_tool_input {
             admit_terminal_tool_authority(&mut next_state, &operation_id, &input, result.is_error)?;
@@ -6903,8 +6900,7 @@ done
         let mut wrong_turn = params.clone();
         wrong_turn["turnId"] = json!("stale-turn");
         assert!(
-            normalize_provider_notification(&mut state, "pilibala/runResult", &wrong_turn)
-                .is_err()
+            normalize_provider_notification(&mut state, "pilibala/runResult", &wrong_turn).is_err()
         );
         let mut changed = params;
         changed["result"]["summary"] = json!("different completion");

@@ -11,9 +11,7 @@ use pilibala_runner_core::acpx_sidecar_transport::AcpxSidecarTransportConfig;
 use pilibala_runner_core::provider_bridge::{
     authorized_tool_catalog_digest, AuthorizedTool, AuthorizedToolSet, ToolResult,
 };
-use pilibala_runner_core::provider_events::{
-    project_acpx_state_event, AcpxEventProjectionContext,
-};
+use pilibala_runner_core::provider_events::{project_acpx_state_event, AcpxEventProjectionContext};
 use serde_json::json;
 
 fn tool_set() -> AuthorizedToolSet {

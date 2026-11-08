@@ -2,9 +2,7 @@ use pilibala_runner_core::acpx_event_payload::AcpxTurnStatus;
 use pilibala_runner_core::acpx_provider_state::{AcpxProviderState, AcpxProviderStateEvent};
 use pilibala_runner_core::acpx_sidecar_transport::AcpxSidecarEvent;
 use pilibala_runner_core::generated_acpx_sidecar_contract::GeneratedAcpxSidecarEventType;
-use pilibala_runner_core::provider_events::{
-    project_acpx_state_event, AcpxEventProjectionContext,
-};
+use pilibala_runner_core::provider_events::{project_acpx_state_event, AcpxEventProjectionContext};
 use serde_json::{json, Value};
 
 fn event(

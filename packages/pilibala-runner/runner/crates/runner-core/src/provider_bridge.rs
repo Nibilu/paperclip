@@ -678,13 +678,11 @@ impl ProviderToolBridge {
                     .with_schema_locations(&validator, &input),
             );
         }
-        if matches!(
-            operation_id.as_str(),
-            "pilibala_finish" | "pilibala_block"
-        ) && input
-            .get("summary")
-            .and_then(Value::as_str)
-            .is_some_and(|summary| summary.chars().count() > MAX_COMPLETION_SUMMARY_CHARS)
+        if matches!(operation_id.as_str(), "pilibala_finish" | "pilibala_block")
+            && input
+                .get("summary")
+                .and_then(Value::as_str)
+                .is_some_and(|summary| summary.chars().count() > MAX_COMPLETION_SUMMARY_CHARS)
         {
             return Err(ProviderBridgeError::input_schema_validation(
                 &operation_id,

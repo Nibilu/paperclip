@@ -12,7 +12,6 @@ import {
   startAdapterExecutionTargetPilibalaBridge,
   startAdapterExecutionTargetProcessSessionBridge,
 } from "@pilibalaai/adapter-utils/execution-target";
-import { isAcpSessionResumeFailure } from "@pilibalaai/adapter-utils/acpx-engine/execute";
 import { isAcpSessionResumeFailure, isAcpSessionResumeFailureError } from "@pilibalaai/adapter-utils/acpx-engine/execute";
 
 // Wrap the staging seam + both sandbox bridges in call-recording spies that

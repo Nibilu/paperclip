@@ -118,8 +118,7 @@ impl StdioMcpSession {
         if bindings.is_empty() {
             return Ok(None);
         }
-        let directory =
-            std::env::temp_dir().join(format!("pilibala-mcp-{}", uuid::Uuid::new_v4()));
+        let directory = std::env::temp_dir().join(format!("pilibala-mcp-{}", uuid::Uuid::new_v4()));
         fs::DirBuilder::new().mode(0o700).create(&directory)?;
         let mut session = Self {
             directory,

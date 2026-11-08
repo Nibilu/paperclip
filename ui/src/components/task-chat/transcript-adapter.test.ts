@@ -3107,6 +3107,9 @@ describe("edit diff review fixes", () => {
     if (card?.kind !== "protocol" || card.surface !== "workspace_change") throw new Error("expected changes");
     expect(card.files.map((file) => file.path)).toEqual(["big.js"]);
     expect(card.files[0]).toMatchObject({ additions: 900, deletions: 40, diffTruncated: true });
+  });
+});
+
 describe("quiet-output hint rendering", () => {
   const ts = "2026-11-06T12:00:00.000Z";
 

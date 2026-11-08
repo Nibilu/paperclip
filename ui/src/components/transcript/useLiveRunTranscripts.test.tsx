@@ -13,7 +13,7 @@ import { TRANSCRIPT_REQUEST_TIMEOUT_MS } from "./read-transcript-request";
 const { useQueryMock, logMock, buildTranscriptMock } = vi.hoisted(() => ({
   useQueryMock: vi.fn(() => ({ data: { censorUsernameInLogs: false } })),
   logMock: vi.fn(async (_runId: string, _offset: number, _limit: number, _options: { signal: AbortSignal }) =>
-    ({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: 0 })),
+    ({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: 0 as number | undefined })),
   buildTranscriptMock: vi.fn((chunks: unknown[]) => chunks),
 }));
 
@@ -88,6 +88,43 @@ function acknowledge() {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+
+class FakeWebSocket {
+  static readonly CONNECTING = 0;
+  static readonly OPEN = 1;
+  static readonly CLOSING = 2;
+  static readonly CLOSED = 3;
+  static instances: FakeWebSocket[] = [];
+
+  readonly url: string;
+  readyState = FakeWebSocket.CONNECTING;
+  onopen: ((event: Event) => void) | null = null;
+  onmessage: ((event: MessageEvent) => void) | null = null;
+  onerror: ((event: Event) => void) | null = null;
+  onclose: ((event: CloseEvent) => void) | null = null;
+  closeCalls: Array<{ code?: number; reason?: string }> = [];
+
+  constructor(url: string) {
+    this.url = url;
+    FakeWebSocket.instances.push(this);
+  }
+
+  close(code?: number, reason?: string) {
+    this.closeCalls.push({ code, reason });
+    this.readyState = FakeWebSocket.CLOSING;
+  }
+
+  triggerOpen() {
+    this.readyState = FakeWebSocket.OPEN;
+    this.onopen?.(new Event("open"));
+  }
+
+  triggerClose() {
+    this.readyState = FakeWebSocket.CLOSED;
+    this.onclose?.(new CloseEvent("close"));
+  }
+}
+
 
 describe("useLiveRunTranscripts", () => {
   const OriginalWebSocket = globalThis.WebSocket;

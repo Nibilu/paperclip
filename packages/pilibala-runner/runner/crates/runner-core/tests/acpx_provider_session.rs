@@ -257,8 +257,7 @@ fn rejects_non_utf8_directories_before_spawning() {
     use std::ffi::OsString;
     use std::os::unix::ffi::OsStringExt;
 
-    let mut directory_name =
-        format!("pilibala-acpx-non-utf8-{}-", std::process::id()).into_bytes();
+    let mut directory_name = format!("pilibala-acpx-non-utf8-{}-", std::process::id()).into_bytes();
     directory_name.push(0xff);
     let directory = std::env::temp_dir().join(OsString::from_vec(directory_name));
 
@@ -387,9 +386,7 @@ fn receiver_admits_normal_tool_event_and_resolves_only_correlated_call_once() {
 
 #[test]
 fn pi_thinking_effective_identity_is_admitted_before_any_turn() {
-    use pilibala_runner_core::acpx_provider_session::{
-        AcpxProviderRuntimePolicy, PiThinkingLevel,
-    };
+    use pilibala_runner_core::acpx_provider_session::{AcpxProviderRuntimePolicy, PiThinkingLevel};
     let mut cfg = config("bootstrap");
     cfg.agent = "pi".to_owned();
     cfg.model = "openrouter/deepseek/deepseek-v4-flash-0731".to_owned();

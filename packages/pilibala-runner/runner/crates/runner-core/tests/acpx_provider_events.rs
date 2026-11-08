@@ -344,11 +344,7 @@ fn matches_typescript_mcp_display_identity_across_tool_lifecycle() {
             "pilibala",
             "write_document",
         ),
-        (
-            "mcp.pilibala.write_document",
-            "pilibala",
-            "write_document",
-        ),
+        ("mcp.pilibala.write_document", "pilibala", "write_document"),
         (
             "  MCP__Pilibala__write_document  ",
             "Pilibala",

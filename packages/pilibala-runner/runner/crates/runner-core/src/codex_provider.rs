@@ -5030,8 +5030,7 @@ mod tests {
     #[cfg(unix)]
     fn runtime_notification_policy_grants_only_discovery_files_and_ipc() {
         let mut args = vec![
-            "shell_environment_policy.include_only=[\"PATH\",\"LANG\",\"PILIBALA_API_KEY\"]"
-                .into(),
+            "shell_environment_policy.include_only=[\"PATH\",\"LANG\",\"PILIBALA_API_KEY\"]".into(),
         ];
         for name in [
             "pilibala-runner-workspace-only",

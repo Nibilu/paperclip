@@ -22,8 +22,7 @@ import { isNewAgentAdapterAllowed } from "@/lib/new-agent-adapters";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { pendingAgentSetupChoice } from "@/lib/agent-setup-choice";
-import { useEffect, useRef, useState } from "react";
-import { hashKey, useQuery, useQueryClient } from "@tanstack/react-query";
+import { hashKey } from "@tanstack/react-query";
 import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { ArrowLeft, ArrowRight, Check, Settings2 } from "lucide-react";
 import type {
@@ -307,12 +306,6 @@ function Setup({
   const caps = useQuery({
     queryKey: queryKeys.environments.capabilities(companyId),
     queryFn: () => environmentsApi.capabilities(companyId),
-  });
-  const models = useQuery({
-    queryKey: queryKeys.agents.adapterModels(companyId, brandType, null, aiBinding?.provider),
-    queryFn: () => agentsApi.adapterModels(companyId, brandType, { provider: aiBinding?.provider }),
-    enabled: Boolean(brandType) && showModel && !connectionModels,
-    retry: false,
   });
   // Hermes setup reads its provider catalog from the adapter itself so the
   // picker mirrors what the installed Hermes can actually route to. Falls
@@ -1402,6 +1395,8 @@ function Setup({
                               ))}
                             </select>
                           </Field>
+                        )}
+                        {!connectionAdapter && aiProviderForAdapter(brandType) && (
                           <AiConnectionField companyId={companyId} agentName={name} adapterType={brandType} model={model} environmentId={environmentId ?? undefined} value={aiBinding}
                             onChange={binding => { binding.mode !== "router" && setRuntimeAiBinding(binding); resetTest();
                               if (accountCatalogAvailable && hashKey([aiBinding ?? null]) === hashKey([binding ?? null])) void refreshAccountModels();

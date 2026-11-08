@@ -466,6 +466,8 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     expect(await executeHeartbeatRuntime(db, input)).toMatchObject({ dispatched: true });
     expect(await read(run.id)).toMatchObject({ externalRunId: null });
     expectCleanup(input);
+  });
+
   it.each([["local", null], ["remote", { kind: "remote", transport: "sandbox", remoteCwd: "/workspace" }]] as const)(
     "passes the spawn origin through the legacy adapter callback (%s)", async (expected, target) => {
     const { input, adapter } = await fixture();
@@ -783,6 +785,8 @@ describe.skipIf(!support.supported)("heartbeat runtime execution boundary", () =
     expectCleanup(input);
   });
 });
+
+import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 
 const toolApprovalSupport = await getEmbeddedPostgresTestSupport();
 describe("awaitBoardToolApproval", () => {
