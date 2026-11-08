@@ -106,7 +106,7 @@ const HERMES_RUNTIME_IDENTITY_TEMPLATE = [
 
 // Hermes applies this overlay at each API call, including after compaction,
 // without storing it in conversation history. Keep run/task deltas in -q.
-const HERMES_SYSTEM_PROMPT_TEMPLATE = [
+export const HERMES_SYSTEM_PROMPT_TEMPLATE = [
   "Pilibala API guidance:",
   "- Use `curl` from the terminal for Pilibala API calls; browser/web extraction tools may not reach localhost.",
   "- Use `$PILIBALA_API_URL`, `$PILIBALA_API_KEY`, and `$PILIBALA_RUN_ID`; do not hard-code local ports or copy secrets into comments.",
@@ -134,6 +134,11 @@ const HERMES_SYSTEM_PROMPT_TEMPLATE = [
   "    -H \"Content-Type: application/json\" \\",
   "    --data-binary @-",
   "```",
+  "",
+  "User-facing reply style:",
+  "- Your final reply is posted as a comment read by the task's human participants. Open with the answer, greeting, or substantive result — never with internal process narration.",
+  "- Never open a reply with your own setup or context verification (\"Context check done:\", \"Checked the environment:\", \"No pending work:\"). If verification mattered, fold at most one short sentence in AFTER the substance, or omit it.",
+  "- The composed prompt you receive is context, not user-visible text; never repeat or summarize it back as the reply.",
   "",
   DEFAULT_PILIBALA_AGENT_PROMPT_TEMPLATE,
 ].join("\n");
@@ -236,9 +241,97 @@ const SESSION_ID_REGEX = /^session_id:\s*(\S+)/m;
 /** Regex for legacy session output format */
 const SESSION_ID_REGEX_LEGACY = /session[_ ](?:id|saved)[:\s]+([a-zA-Z0-9_-]+)/i;
 
+/**
+ * Modern classic-CLI display: the final answer sits between two ──── separator
+ * lines, the upper one followed by the "☤ Hermes" banner. Take the LAST such
+ * block (later blocks beat earlier ones, e.g. retried renders).
+ */
+const BANNER_ANSWER_REGEX = /─{8,}[ \t]*\r?\n[ \t]*☤[ \t]*Hermes[ \t]*\r?\n([\s\S]*?)\r?\n─{8,}/g;
+
+/** Modern resume hint printed after the answer: "hermes --resume <id>". */
+const RESUME_HINT_REGEX = /--resume[ \t]+([a-zA-Z0-9_.-]+)/;
+
+/** The composed-prompt echo the CLI prints under "Query:" before running. */
+const QUERY_ECHO_PREFIX = /^Query:[ \t]/;
+
 /** Regex to extract token usage from Hermes output. */
 const TOKEN_USAGE_REGEX =
   /tokens?[:\s]+(\d+)\s*(?:input|in)\b.*?(\d+)\s*(?:output|out)\b/i;
+
+/**
+ * Streaming line filter for the CLI lane's live log (the onLog wrapper).
+ *
+ * The classic display echoes the composed prompt after "Query:" before the
+ * run's tool activity, then wraps the answer in ──── / ☤ Hermes / ──── banner
+ * chrome and prints a "Reconciled session ... (--resume <id>)" hint. The UI's
+ * per-line parser falls back to assistant-text entries for unrecognized lines,
+ * so unfiltered, the whole echo streams into the chat as a giant agent message
+ * (live evidence: issue 89ea5cce, AMB-160). Suppression rules:
+ * - A "Query: " line opens suppression; every following line is echo body and
+ *   is dropped until a structural signal ends it (a ┊ tool line, an
+ *   [hermes]/[pilibala]/session_id: line, or the banner's opening ──── rule).
+ * - Banner separators, the ☤ title line, and the resume hint never display.
+ * - Quiet-mode and legacy output have no "Query:" line and pass through.
+ * parseHermesOutput is unaffected: it parses the complete stdout collected by
+ * runChildProcess, not the filtered live stream.
+ */
+export function createCliLiveStreamFilter(): (chunk: string) => string | null {
+  let pending = "";
+  let suppressing = false;
+  return (chunk: string): string | null => {
+    pending += chunk;
+    const lines = pending.split("\n");
+    pending = lines.pop() ?? "";
+    let out = "";
+    for (const rawLine of lines) {
+      const line = rawLine.replace(/\r$/, "");
+      const trimmed = line.trim();
+      if (/^Query:\s/.test(trimmed)) {
+        suppressing = true;
+        continue;
+      }
+      if (suppressing) {
+        if (/^─{8,}$/.test(trimmed)) {
+          suppressing = false;
+        } else if (
+          /^(\[hermes\]|\[pilibala\]|session_id:)/.test(trimmed) ||
+          trimmed.includes("┊") ||
+          /^\[tool\]/.test(trimmed)
+        ) {
+          suppressing = false;
+          out += `${line}\n`;
+        }
+        continue;
+      }
+      if (/^─{8,}$/.test(trimmed) || /^☤/.test(trimmed)) continue;
+      // Session-summary footer (newer CLI builds print this block instead of
+      // a single "Reconciled session" hint line). Parser reads the resume id
+      // from the complete stdout, so the live feed can drop it wholesale.
+      if (
+        /^Reconciled session\b/.test(trimmed) ||
+        /^Resume this session with:/.test(trimmed) ||
+        /^hermes (--resume|-c )/.test(trimmed) ||
+        /^(Session|Title|Duration|Messages|Total cost|Total tokens):/.test(trimmed)
+      ) {
+        continue;
+      }
+      out += `${line}\n`;
+    }
+    return out.length > 0 ? out : null;
+  };
+}
+
+/** Take the LAST ──── / ☤ Hermes / ──── block from the raw stdout. */
+function extractLastBannerAnswer(stdout: string): string | null {
+  const bannerRegex = new RegExp(BANNER_ANSWER_REGEX.source, "g");
+  let last: RegExpExecArray | null = null;
+  for (let match = bannerRegex.exec(stdout); match; match = bannerRegex.exec(stdout)) {
+    last = match;
+  }
+  if (!last) return null;
+  const answer = last[1].replace(/\r/g, "").trim();
+  return answer.length > 0 ? answer : null;
+}
 
 /** Regex to extract cost from Hermes output. */
 const COST_REGEX = /(?:cost|spent)[:\s]*\$?([\d.]+)/i;
@@ -284,16 +377,25 @@ function cleanResponse(raw: string): string {
 // Output parsing
 // ---------------------------------------------------------------------------
 
-function parseHermesOutput(stdout: string, stderr: string): ParsedOutput {
+export function parseHermesOutput(stdout: string, stderr: string): ParsedOutput {
   const combined = stdout + "\n" + stderr;
   const result: ParsedOutput = {};
+
+  // Modern classic-CLI display: the answer lives in the ──── / ☤ Hermes / ────
+  // banner block. This is authoritative when present — the prompt echo and
+  // tool-activity noise printed before the banner are never part of the reply
+  // (live evidence: the runner submitted the 24KB "Query:" echo as the agent's
+  // reply because the echo survives cleanResponse's noise filters).
+  const bannerAnswer = extractLastBannerAnswer(stdout);
 
   // In quiet mode, Hermes outputs:
   //   <response text>
   //
   //   session_id: <id>
   const sessionMatch = stdout.match(SESSION_ID_REGEX);
-  if (sessionMatch?.[1]) {
+  if (bannerAnswer) {
+    result.response = bannerAnswer;
+  } else if (sessionMatch?.[1]) {
     result.sessionId = sessionMatch?.[1] ?? null;
     // The response is everything before the session_id line
     const sessionLineIdx = stdout.lastIndexOf("\nsession_id:");
@@ -311,6 +413,36 @@ function parseHermesOutput(stdout: string, stderr: string): ParsedOutput {
     const cleaned = cleanResponse(stdout);
     if (cleaned.length > 0) {
       result.response = cleaned;
+    }
+  }
+
+  // Echo guard (fail safe): the CLI echoes the composed prompt under "Query:"
+  // before running; when the banner block is missing (unknown future display
+  // format) and the cleaned output is that echo, submitting it would post the
+  // runner's own prompt as the agent's reply. Return no response instead —
+  // the raw stdout stays in the run log for diagnosis.
+  if (
+    result.response &&
+    QUERY_ECHO_PREFIX.test(result.response) &&
+    result.response.includes("Pilibala runtime identity:")
+  ) {
+    result.response = undefined;
+  }
+
+  // Session id precedence: quiet-mode line → legacy format → modern resume
+  // hint ("hermes --resume <id>"). Without the hint, the CLI lane never
+  // captures its session id and every run loses cross-run session continuity.
+  if (sessionMatch?.[1]) {
+    result.sessionId = sessionMatch[1];
+  } else {
+    const legacyMatch = combined.match(SESSION_ID_REGEX_LEGACY);
+    if (legacyMatch?.[1]) {
+      result.sessionId = legacyMatch[1];
+    } else {
+      const resumeHintMatch = combined.match(RESUME_HINT_REGEX);
+      if (resumeHintMatch?.[1]) {
+        result.sessionId = resumeHintMatch[1];
+      }
     }
   }
 
@@ -573,6 +705,7 @@ export async function execute(
   // Hermes writes non-error noise to stderr (MCP init, INFO logs, etc).
   // Pilibala renders all stderr as red/error in the UI.
   // Wrap onLog to reclassify benign stderr lines as stdout.
+  const liveStreamFilter = createCliLiveStreamFilter();
   const wrappedOnLog = async (stream: "stdout" | "stderr", chunk: string) => {
     if (stream === "stderr") {
       const trimmed = chunk.trimEnd();
@@ -589,6 +722,11 @@ export async function execute(
       if (isBenign) {
         return ctx.onLog("stdout", chunk);
       }
+    }
+    if (stream === "stdout") {
+      const filtered = liveStreamFilter(chunk);
+      if (filtered === null) return;
+      return ctx.onLog("stdout", filtered);
     }
     return ctx.onLog(stream, chunk);
   };

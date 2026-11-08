@@ -10285,7 +10285,7 @@ export function issueRoutes(
               assertBoard(req);
               if (
                 activeRecoveryAction ||
-                sourceIssueStatus !== "todo" ||
+                (sourceIssueStatus !== "todo" && sourceIssueStatus !== "done") ||
                 outcome !== "restored"
               ) {
                 throw conflict(
@@ -10448,7 +10448,7 @@ export function issueRoutes(
         }
 
         if (
-          sourceIssueStatus === "todo" &&
+          (sourceIssueStatus === "todo" || sourceIssueStatus === "done") &&
           requiresExecutionReconciliation(activeRecoveryAction.cause)
         ) {
           assertBoard(req);

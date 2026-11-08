@@ -1217,7 +1217,11 @@ function OnboardingWizardInner({
     adapterType === "kimi_local" ||
     adapterType === "opencode_local" ||
     adapterType === "pi_local" ||
-    adapterType === "cursor";
+    adapterType === "cursor" ||
+    // Not a local harness, but its adapter ships a real testEnvironment
+    // (gateway reachability, key, URL shape). Gating the hire on the probe is
+    // what keeps a mistyped or missing gateway from being hired silently.
+    adapterType === "hermes_gateway";
   // Build adapter grids dynamically from the UI registry + display metadata.
   // External/plugin adapters automatically appear with generic defaults, and
   // server-disabled types are filtered out.

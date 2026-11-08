@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createLocalAgentJwt, verifyLocalAgentJwt } from "../agent-auth-jwt.js";
+import { reconciliationAnalysisWriteAllowed } from "../services/reconciliation-analysis-policy.js";
 
 describe("agent local JWT", () => {
   const secretEnv = "PILIBALA_AGENT_JWT_SECRET";
@@ -83,6 +84,34 @@ describe("agent local JWT", () => {
 
     const claims = verifyLocalAgentJwt(token!);
     expect(claims?.key_scope).toEqual({ kind: "skill_test", issueId });
+  });
+
+  it("carries a reconciliation-analysis wake context as a restriction claim", () => {
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    const token = createLocalAgentJwt("agent-1", "company-1", "hermes_local", "run-1", "user-1", { kind: "standard" }, undefined, {
+      wakeReason: "reconciliation_analysis",
+      analysisSourceIssueId: "issue-9",
+    });
+    const claims = verifyLocalAgentJwt(token!);
+    expect(claims?.wake_context).toEqual({ wake_reason: "reconciliation_analysis", analysis_source_issue_id: "issue-9" });
+  });
+
+  it("omits the wake context for ordinary runs", () => {
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    const token = createLocalAgentJwt("agent-1", "company-1", "claude_local", "run-1", "user-1");
+    const claims = verifyLocalAgentJwt(token!);
+    expect(claims && "wake_context" in claims).toBe(false);
+  });
+
+  it("scopes reconciliation-analysis writes to the advisory draft submission", () => {
+    const ctx = { wakeReason: "reconciliation_analysis", analysisSourceIssueId: "issue-9" };
+    expect(reconciliationAnalysisWriteAllowed(ctx, "GET", "/api/heartbeat-runs/run-1")).toBe(true);
+    expect(reconciliationAnalysisWriteAllowed(ctx, "GET", "/api/heartbeat-runs/run-1/events")).toBe(true);
+    expect(reconciliationAnalysisWriteAllowed(ctx, "POST", "/api/issues/issue-9/recovery-actions/agent-draft")).toBe(true);
+    expect(reconciliationAnalysisWriteAllowed(ctx, "POST", "/api/issues/issue-9/comments")).toBe(false);
+    expect(reconciliationAnalysisWriteAllowed(ctx, "PATCH", "/api/issues/issue-9")).toBe(false);
+    expect(reconciliationAnalysisWriteAllowed(ctx, "POST", "/api/issues/issue-other/recovery-actions/agent-draft")).toBe(false);
+    expect(reconciliationAnalysisWriteAllowed(null, "PATCH", "/api/issues/issue-9")).toBe(true);
   });
 
   it("returns null when secret is missing", () => {

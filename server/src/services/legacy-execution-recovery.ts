@@ -15,6 +15,7 @@ import { REPOSITORY_CATALOG_UNAVAILABLE_CODE } from "./repository-catalog-unavai
 import { RUNNER_REVISION_MISMATCH_CODE } from "./runner-revision-mismatch.js";
 import { hasWorkspaceRestoreFailure } from "@pilibalaai/shared";
 import { normalizeMaxTurnStopReason } from "./heartbeat-stop-metadata.js";
+import { readRunCancellation } from "./run-cancellation.js";
 import { claimedAdapterType, hasConversationContinuationPolicy } from "./conversation-continuation.js";
 import { canonicalExecutionUuid } from "./execution-identity.js";
 import { randomUUID } from "node:crypto";
@@ -64,6 +65,20 @@ export function legacyExecutionNeedsReconciliation(
     return false;
   // A fresh model turn cannot repair or verify unrestored files.
   if (run.resultJson?.workspaceRestoreFailure === "restore_unsafe_archive" || hasRequiredWorkspaceRecovery(run.resultJson)) return true;
+  // A deliberate human stop — a board stop or a comment interrupt that makes
+  // room for fresh user input — is not a failed provider attempt. The operator
+  // decided the outcome (recovery's isOperatorCancelledRun: "recovery stands
+  // down entirely ... would fight the human"); recorded work is preserved,
+  // nothing is replayed, and a fresh continuation is the operator's own next
+  // decision. Demanding reconciliation of a stop the operator just performed
+  // would turn every manual stop and every steering comment into a hold.
+  const cancellation = readRunCancellation(run.resultJson);
+  if (run.status === "cancelled" && (
+    run.errorCode === "operator_interrupted" ||
+    run.resultJson?.cancelledByActorType === "user" ||
+    run.resultJson?.cancelledByActorType === "board" ||
+    (cancellation?.expected === true && ["operator", "queued_message"].includes(cancellation.source))
+  )) return false;
   // A fresh conversation turn lets the agent decide what remains. The retry
   // scheduler, not an action-outcome hold, owns the automatic attempt limit.
   if (hasConversationContinuationPolicy(run.resultJson)) return false;

@@ -360,6 +360,19 @@ export async function executeHeartbeatRuntime(db: Db, input: HeartbeatRuntimeExe
     issueRef?.workMode === "skill_test"
       ? { kind: "skill_test" as const, issueId: issueRef.id }
       : { kind: "standard" as const };
+  // A reconciliation-analysis run carries its wake context inside the token as
+  // a RESTRICTION: the actor-boundary write guard (middleware/auth) narrows
+  // this run's writable surface to the advisory draft submission, matching the
+  // prompt contract ("inspect, submit exactly one draft, change nothing").
+  const runContextSnapshot = run.contextSnapshot as Record<string, unknown> | null | undefined;
+  const localAgentWakeContext = runContextSnapshot?.wakeReason === "reconciliation_analysis"
+    ? {
+        wakeReason: "reconciliation_analysis",
+        analysisSourceIssueId: typeof runContextSnapshot.analysisSourceIssueId === "string"
+          ? runContextSnapshot.analysisSourceIssueId
+          : undefined,
+      }
+    : null;
   const authToken =
     nativeRuntimeResolution.kind === "legacy" &&
     adapter.supportsLocalAgentJwt
@@ -370,6 +383,8 @@ export async function executeHeartbeatRuntime(db: Db, input: HeartbeatRuntimeExe
           run.id,
           run.responsibleUserId,
           localAgentJwtScope,
+          undefined,
+          localAgentWakeContext,
         )
       : null;
   if (

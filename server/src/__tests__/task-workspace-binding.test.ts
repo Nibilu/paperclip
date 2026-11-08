@@ -193,9 +193,16 @@ const support = await getEmbeddedPostgresTestSupport();
   it.each(["create", "createChild", "strategy_only"] as const)("preserves an explicit null source through %s while applying organizational defaults", async entryPoint => {
     const f = await fixture(), tasks = issueService(db), workspaces = executionWorkspaceService(db);
     const [project] = await db.insert(projects).values({ companyId: f.companyId, name: "Organizational defaults" }).returning();
+    // Health-gated default resolution (see the workspace lifecycle plan) only
+    // binds defaults whose local directories actually exist, so the fixtures
+    // materialize their registered paths.
+    const defaultCwd = `/tmp/default-${f.issueId}`;
+    const parentCwd = `/tmp/parent-${f.issueId}`;
+    await fs.mkdir(defaultCwd, { recursive: true });
+    await fs.mkdir(parentCwd, { recursive: true });
     const [defaultSource, parentSource] = await db.insert(projectWorkspaces).values([
-      { companyId: f.companyId, projectId: project.id, name: "Default files", cwd: `/tmp/default-${f.issueId}`, isPrimary: true },
-      { companyId: f.companyId, projectId: project.id, name: "Parent files", cwd: `/tmp/parent-${f.issueId}` },
+      { companyId: f.companyId, projectId: project.id, name: "Default files", cwd: defaultCwd, isPrimary: true },
+      { companyId: f.companyId, projectId: project.id, name: "Parent files", cwd: parentCwd },
     ]).returning();
     await db.update(issues).set({ projectId: project.id }).where(eq(issues.id, f.issueId));
     await db.update(executionWorkspaces).set({ projectId: project.id, projectWorkspaceId: parentSource.id })

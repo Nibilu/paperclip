@@ -3,6 +3,8 @@ import { z } from "zod";
 import { agents, heartbeatRuns, issueRecoveryActions, issues, type Db } from "@pilibalaai/db";
 import { AGENT_STATUSES, isAgentStatusInvokable } from "@pilibalaai/shared";
 import { conflict, forbidden } from "../errors.js";
+import { agentJwtSigningConfigured } from "../agent-auth-jwt.js";
+import { listServerAdapters } from "../adapters/registry.js";
 import { evaluateAgentInvokabilityFromDb } from "./agent-invokability.js";
 import { classifyRunFailure } from "./recovery/error-classification.js";
 import { persistActivity } from "./activity-log.js";
@@ -89,6 +91,27 @@ const MAX_RECONCILIATION_DEFERRALS = 10;
  * running, error}. paused/terminated/pending_approval are never candidates.
  */
 const CANONICAL_INVOKABLE_AGENT_STATUSES = AGENT_STATUSES.filter((status) => isAgentStatusInvokable(status));
+
+/**
+ * Capability preflight for delegated diagnostics (checked at selection, before
+ * any run burns): a doctor run must carry run-bound identity end to end. Only
+ * lanes the platform spawns itself (process / ACP lanes) receive a run JWT —
+ * server-to-server lanes such as hermes_gateway declare
+ * supportsLocalAgentJwt=false, so their delegated runs cannot prove run binding
+ * and deterministically hit 403 on the draft submission ("A bound analysis
+ * agent is required"). The JWT signing secret is checked through the same
+ * config path the runtime mints with. Unknown adapter types fail CLOSED (exact
+ * type match, no process-adapter fallback). Returned gaps are persisted into
+ * the hold's evidence so the exclusion is diagnosable at selection time.
+ */
+function candidateRunBoundIdentityGaps(adapterType: string): string[] {
+  const gaps: string[] = [];
+  const supportsRunBoundJwt = listServerAdapters()
+    .some((adapter) => adapter.type === adapterType && adapter.supportsLocalAgentJwt === true);
+  if (!supportsRunBoundJwt) gaps.push("run_bound_identity_unsupported");
+  else if (!agentJwtSigningConfigured()) gaps.push("agent_jwt_signing_secret_missing");
+  return gaps;
+}
 
 const L2_CATEGORIES = new Set(["session_binding.resume_policy_refusal", "runtime.adapter_boot_failure"]);
 
@@ -304,13 +327,30 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
         sql`not exists (select 1 from ${heartbeatRuns} where ${heartbeatRuns.agentId} = ${agents.id} and ${heartbeatRuns.status} = 'running')`,
       ));
       const eligible = candidates.filter((candidate) => !triedAgentIds.has(candidate.id) && !triedAdapterTypes.has(candidate.adapterType));
+      // Capability preflight before selection: candidates whose lane cannot
+      // carry run-bound identity are excluded with the recorded gap instead of
+      // being dispatched into a guaranteed 403.
+      const preflightExcluded: Array<{ agentId: string; adapterType: string; gaps: string[] }> = [];
+      const preflightCapable = eligible.filter((candidate) => {
+        const gaps = candidateRunBoundIdentityGaps(candidate.adapterType);
+        if (gaps.length > 0) preflightExcluded.push({ agentId: candidate.id, adapterType: candidate.adapterType, gaps });
+        return gaps.length === 0;
+      });
       // Recovery ladder S4: agents explicitly marked diagnosticPriority in
       // their runtimeConfig volunteer first for doctor duty; among equals the
       // original (stable) order stands.
       const diagnosticPriority = (candidate: typeof agents.$inferSelect) =>
         (candidate.runtimeConfig as Record<string, unknown> | null)?.diagnosticPriority === true ? 0 : 1;
-      const agent = [...eligible].sort((a, b) => diagnosticPriority(a) - diagnosticPriority(b))[0];
-      if (!agent) throw conflict("No untried adapter is available for reconciliation analysis");
+      const agent = [...preflightCapable].sort((a, b) => diagnosticPriority(a) - diagnosticPriority(b))[0];
+      if (!agent) {
+        // Persist WHY no candidate qualified (per-candidate capability gaps) so
+        // the outbox failure is diagnosable without re-deriving it. The catch
+        // path below spreads this object, so the list survives the attempt.
+        await db.update(issueRecoveryActions).set({
+          evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis,preflightExcluded}', ${JSON.stringify(preflightExcluded.slice(0, 10))}::jsonb)`,
+        }).where(and(eq(issueRecoveryActions.id, action.id), sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'dispatching'`));
+        throw conflict("No untried adapter is available for reconciliation analysis");
+      }
       // Recovery ladder invocation gate: re-read the candidate's live row
       // immediately before waking (the scan is only a snapshot) and reuse the
       // canonical invokability definition (agent-invokability.ts + shared
@@ -355,7 +395,7 @@ export async function deliverReconciliationAnalyses(db: Db, wake: ReturnType<typ
           reconciliationAnalysisPrompt: reconciliationAnalysisPrompt(action.id, task.id, source.id) },
       });
       const attempts = (analysisBeforeDispatch?.attempts ?? 0) + (run ? 1 : 0);
-      await db.update(issueRecoveryActions).set({ evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({ ...analysisBeforeDispatch, status: run ? "requested" : "pending", runId: run?.id ?? null, attempts, triedAgentIds: Array.from(new Set([...triedAgentIds, ...(run ? [agent.id] : [])])), triedAdapterTypes: Array.from(new Set([...triedAdapterTypes, ...(run ? [agent.adapterType] : [])])) })}::jsonb)` })
+      await db.update(issueRecoveryActions).set({ evidence: sql`jsonb_set(${issueRecoveryActions.evidence}, '{reconciliationAnalysis}', ${JSON.stringify({ ...analysisBeforeDispatch, preflight: { laneRunBound: true, credentialConfigured: true, checkedAt: new Date().toISOString(), excludedCount: preflightExcluded.length }, status: run ? "requested" : "pending", runId: run?.id ?? null, attempts, triedAgentIds: Array.from(new Set([...triedAgentIds, ...(run ? [agent.id] : [])])), triedAdapterTypes: Array.from(new Set([...triedAdapterTypes, ...(run ? [agent.adapterType] : [])])) })}::jsonb)` })
         .where(and(eq(issueRecoveryActions.id, action.id), sql`${issueRecoveryActions.evidence}->'reconciliationAnalysis'->>'status' = 'dispatching'`));
       if (run) {
         const [persistedRun] = await db.select({ id: heartbeatRuns.id }).from(heartbeatRuns)

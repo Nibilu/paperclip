@@ -13,6 +13,7 @@ import {
   startAdapterExecutionTargetProcessSessionBridge,
 } from "@pilibalaai/adapter-utils/execution-target";
 import { isAcpSessionResumeFailure } from "@pilibalaai/adapter-utils/acpx-engine/execute";
+import { isAcpSessionResumeFailure, isAcpSessionResumeFailureError } from "@pilibalaai/adapter-utils/acpx-engine/execute";
 
 // Wrap the staging seam + both sandbox bridges in call-recording spies that
 // still delegate to the real implementations (a runner-backed sandbox test
@@ -430,7 +431,9 @@ describe("shared ACPX engine runtime behavior", () => {
     expect((turnInputs[0]?.text as string).length).toBeGreaterThan(0);
     expect(turnInputs[0]?.signal).toBeInstanceOf(AbortSignal);
     expect((turnInputs[0]?.signal as AbortSignal).aborted).toBe(false);
-    expect(result.summary).toBe("end_turn");
+    // AMB-186: the fixture turn produces no output segments, so the summary
+    // is empty rather than the protocol stop reason.
+    expect(result.summary).toBe("");
     expect(result.sessionParams?.configFingerprint).toBeTypeOf("string");
     expect((result.sessionParams?.configFingerprint as string).length).toBeGreaterThan(0);
     expect(result.sessionParams?.sessionKey).toBe(`pilibala:company-1:agent-1:default:${result.sessionParams?.configFingerprint}`);
@@ -895,6 +898,101 @@ describe("shared ACPX engine runtime behavior", () => {
     expect(prompt).not.toContain("-d '{...}'");
     expect(prompt).not.toContain("runtime-secret-token");
     expect(promptMetrics?.runtimeNoteChars).toBeGreaterThan(0);
+  });
+
+  it("writes the derived PILIBALA_API_BASE into the run env file (AMB-189)", async () => {
+    // AMB-189 field failure: the run env file carries PILIBALA_API_URL but the
+    // agent derives PILIBALA_API_BASE in one terminal shell and reuses it in a
+    // later one — every terminal tool call is a fresh shell, so the derived
+    // variable is empty and `curl "$PILIBALA_API_BASE/api/..."` dies with
+    // exit 3 (URL using bad/illegal format) before any HTTP request leaves.
+    // The env file must carry the resolved base itself.
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const prevApiUrl = process.env.PILIBALA_API_URL;
+    process.env.PILIBALA_API_URL = "http://127.0.0.1:3104/api/";
+    try {
+      await runExecutor(
+        { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir },
+        {
+          authToken: "runtime-secret-token",
+          context: {
+            taskId: "issue-1",
+            wakeReason: "issue_assigned",
+            pilibalaWake: {
+              reason: "issue_assigned",
+              issue: { id: "issue-1", identifier: "TEST-1" },
+            },
+          },
+        },
+      );
+    } finally {
+      if (prevApiUrl === undefined) delete process.env.PILIBALA_API_URL;
+      else process.env.PILIBALA_API_URL = prevApiUrl;
+    }
+
+    const envFile = await fs.readFile(
+      path.join(stateDir, "agent-run-env", "agent-1.env"),
+      "utf8",
+    );
+    expect(envFile).toContain('export PILIBALA_API_URL="http://127.0.0.1:3104/api/"');
+    // Derived exactly as the API access note teaches: strip one trailing "/",
+    // then one trailing "/api".
+    expect(envFile).toContain('export PILIBALA_API_BASE="http://127.0.0.1:3104"');
+    expect(envFile).toContain('export PILIBALA_API_KEY="runtime-secret-token"');
+    expect(envFile).toContain('export PILIBALA_TASK_ID="issue-1"');
+    expect(envFile).toContain('export PILIBALA_RUN_ID="run-1"');
+  });
+
+  it("scales the env/API notes to the turn type: conversation turns lose publish teaching, execution turns keep it", async () => {
+    const baseContext = {
+      taskId: "issue-1",
+      wakeReason: "issue_commented",
+      pilibalaWake: {
+        reason: "issue_commented",
+        issue: { id: "issue-1", identifier: "TEST-1" },
+        comments: [],
+      },
+    };
+    const run = async (context: Record<string, unknown>) => {
+      const { meta } = await runExecutor(
+        { agent: "custom", agentCommand: "node ./fake-acp.js" },
+        { authToken: "runtime-secret-token", context },
+      );
+      return String(meta[0]?.prompt ?? "");
+    };
+
+    const executionPrompt = await run({ ...baseContext });
+    expect(executionPrompt).toContain("Pilibala runtime note:");
+    expect(executionPrompt).toContain("Pilibala API access note:");
+    expect(executionPrompt).toContain("Scoped issue comment example");
+    expect(executionPrompt).toContain("PILIBALA_RUN_ENV_FILE");
+
+    const conversationPrompt = await run({ ...baseContext, conversationMode: true });
+    expect(conversationPrompt).toContain("Pilibala conversation note:");
+    expect(conversationPrompt).toContain("delivered to the conversation automatically");
+    expect(conversationPrompt).not.toContain("Scoped issue comment example");
+    expect(conversationPrompt).not.toContain("PILIBALA_RUN_ENV_FILE");
+    expect(conversationPrompt).not.toContain("Pilibala runtime note:");
+    // Read access stays available for fallback fetches and card reads.
+    expect(conversationPrompt).toContain("Read example:");
+
+    // Resumed conversation turns use the resume-delta prompt shape; the same
+    // turn-type tiering must hold there.
+    const root = await makeTempRoot();
+    const resumedContext = { ...baseContext, conversationMode: true };
+    const resumedConfig = { agent: "custom", agentCommand: "node ./fake-acp.js", cwd: root, stateDir: path.join(root, "state") };
+    const fresh = await runExecutor(resumedConfig, { authToken: "runtime-secret-token", context: resumedContext });
+    const resumed = await runExecutor(resumedConfig, {
+      authToken: "runtime-secret-token",
+      context: resumedContext,
+      runtime: { sessionParams: fresh.result.sessionParams },
+    });
+    const resumedPrompt = String(resumed.turnInputs[0]?.text ?? "");
+    expect(resumedPrompt).toContain("## Pilibala Resume Delta");
+    expect(resumedPrompt).toContain("delivered to the conversation automatically");
+    expect(resumedPrompt).not.toContain("Scoped issue comment example");
+    expect(resumedPrompt).not.toContain("PILIBALA_RUN_ENV_FILE");
   });
 
   it("keeps large continuation history in ACP turns and preserves resume deltas", async () => {
@@ -1462,6 +1560,50 @@ describe("shared ACPX engine runtime behavior", () => {
       }),
     ).toBe("final update");
     expect(buildAcpxRunSummary({ outputSegments: ["", "  "], fallback: "end_turn" })).toBe("end_turn");
+    // AMB-186 call-site contract: the engine passes NO fallback, so an empty
+    // output set yields an empty summary instead of the protocol stop reason.
+    expect(buildAcpxRunSummary({ outputSegments: [] })).toBe("");
+  });
+
+  it("returns an empty run summary when a completed turn produced no output segments (AMB-186)", async () => {
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const execute = createAcpxEngineExecutor({
+      createRuntime: () => ({
+        ensureSession: async () => ({
+          backendSessionId: "backend-session",
+          agentSessionId: "agent-session",
+          runtimeSessionName: "runtime-session",
+        }),
+        startTurn: () => ({
+          events: (async function* () {
+            yield {
+              type: "text_delta",
+              text: "chain of thought only, no publishable output",
+              stream: "thought",
+              tag: "agent_thought_chunk",
+            };
+            yield { type: "done", stopReason: "end_turn" };
+          })(),
+          result: Promise.resolve({ status: "completed", stopReason: "end_turn" }),
+          cancel: async () => {},
+        }),
+        close: async () => {},
+      }) as never,
+    });
+
+    const result = await execute({
+      runId: "run-summary-no-output-turn",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: {},
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir },
+      context: {},
+      onLog: async () => {},
+      onMeta: async () => {},
+    } as never);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.summary).toBe("");
   });
 
   it("coalesces placeholder-title tool updates when the adapter opts in", async () => {
@@ -7641,6 +7783,531 @@ describe("ACPX engine run lifecycle corrections (F3: one teardown error policy)"
     }
   });
 
+  // Regression for the AMB-132/133 resume loop: a backend without
+  // session/close (the Hermes gateway advertises only { resume, list, fork })
+  // makes acpx 0.12.0 close({ discardPersistentState: true }) throw BEFORE
+  // persisting reset_on_next_ensure. The gate must remediate the persisted
+  // record itself and the close error must be recorded, never swallowed.
+  it("remediates the persisted record when close rejects session/close on a discard path", async () => {
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const recordId = "local-gate-record";
+    const store = createRuntimeStore({ stateDir });
+    await store.save({
+      acpxRecordId: recordId,
+      acpSessionId: "backend-dead-session",
+      agentSessionId: "agent-session",
+      agentCommand: "node ./fake-acp.js",
+      cwd: "/tmp/discard-gate-cwd",
+      createdAt: "2026-10-31T00:00:00.000Z",
+      lastUsedAt: "2026-10-31T00:00:00.000Z",
+      lastSeq: 3,
+      lastRequestId: "req-1",
+      messages: [],
+      updated_at: "2026-10-31T00:00:00.000Z",
+      closed: false,
+      acpx: {},
+    } as never);
+    // Fail fast when the seeded shape stops round-tripping through the real
+    // store parser: the remediation assertion below is only meaningful for a
+    // record the next run would actually load.
+    expect(await store.load(recordId)).toBeDefined();
+
+    const closeSpy = vi.fn(async () => {
+      throw new Error("Agent does not support session/close for local-gate-record.");
+    });
+    const logs: string[] = [];
+    const gateHandle = { ...okHandle, acpxRecordId: recordId };
+    const execute = createAcpxEngineExecutor({
+      createRuntime: () =>
+        ({
+          ensureSession: async () => gateHandle,
+          startTurn: () => ({
+            events: (async function* () {
+              yield { type: "done", stopReason: "end_turn" };
+            })(),
+            // Message-only resume failure (the Hermes wrapper shape): no
+            // detailCode survives the terminal wrapper.
+            result: Promise.resolve({
+              status: "failed",
+              error: new Error("Persistent ACP session local-gate-record could not be resumed: Internal error"),
+            }),
+            cancel: async () => {},
+          }),
+          close: closeSpy,
+        }) as never,
+    });
+
+    const result = await execute({
+      runId: "discard-gate-remediation",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: {},
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir },
+      context: {},
+      onLog: async (_stream: string, line: string) => {
+        logs.push(line);
+      },
+      onMeta: async () => {},
+    } as never);
+
+    // The close error is recorded, not silently swallowed.
+    expect(logs.join("\n")).toContain('teardown step "runtime-close" failed');
+    // The gate remediated the poisoned record despite the close throw: the
+    // next run bootstraps a fresh session instead of resuming the dead one.
+    const healed = await store.load(recordId);
+    expect(healed?.acpx?.reset_on_next_ensure).toBe(true);
+    expect(logs.join("\n")).toContain("persisted reset marker for record local-gate-record");
+    expect(result.exitCode).toBe(1);
+  });
+
+  // Regression for the AMB-90 configure-phase resume loop: a resume failure
+  // thrown while acpx CONFIGURES the session (set_session_model seam) must
+  // reset the continuity state exactly like the turn-thrown path — clear the
+  // session params and discard the dead persisted record — or every bounded
+  // retry deterministically re-resumes the same dead backend session.
+  it("repairs in-run when the resume failure surfaces at configure_session (warm-owner gap)", async () => {
+    // Live evidence (issue 319b2463, run 2f1bb613): a retained warm owner
+    // passes the handshake WITHOUT backend verification; its wrapper process
+    // may have died and evicted the session since, so the resume refusal
+    // first surfaces at set_config_option — phase configure_session, after
+    // the handshake repair window. configure_session is pre-turn (no agent
+    // work has executed), so the engine must repair in-run exactly like the
+    // handshake path: persist the discard gate, fresh-ensure, re-run
+    // configure, and continue to the turn. Turn-phase failures stay typed.
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const store = createRuntimeStore({ stateDir });
+    const closeSpy = vi.fn(async () => {});
+    const logs: string[] = [];
+    let ensureCalls: Array<{ resumeSessionId?: string }> = [];
+    let turnStarted = false;
+    // backend-session-v1 is healthy during the bootstrap run and dies before
+    // run 2 (offscreen); the repair's fresh bootstrap creates v2.
+    let sessionDied = false;
+    const execute = createAcpxEngineExecutor({
+      createRuntime: () =>
+        ({
+          ensureSession: async (input: { resumeSessionId?: string }) => {
+            ensureCalls.push({ resumeSessionId: input.resumeSessionId });
+            if (input.resumeSessionId) {
+              // Warm-owner gap: the resumed (warm) ensure succeeds WITHOUT any
+              // backend verification and serves the SAME backend session id the
+              // params carry. The dead session is only discovered when
+              // configure touches it. No acpxRecordId — the discard gate falls
+              // through to prepared.sessionKey.
+              return { ...okHandle, backendSessionId: input.resumeSessionId };
+            }
+            // The bootstrap created backend-session-v1 (dies offscreen); the
+            // repair's fresh bootstrap creates backend-session-v2.
+            return { ...okHandle, backendSessionId: sessionDied ? "backend-session-v2" : "backend-session-v1" };
+          },
+          setConfigOption: async () => {},
+          setSessionModel: async (input: { handle?: { backendSessionId?: string } }) => {
+            if (sessionDied && input.handle?.backendSessionId !== "backend-session-v2") {
+              const resumeError = new Error(
+                `Persistent ACP session ${input.handle?.backendSessionId ?? "unknown"} could not be resumed: Internal error`,
+              );
+              resumeError.name = "SessionResumeRequiredError";
+              throw resumeError;
+            }
+          },
+          startTurn: () => {
+            turnStarted = true;
+            return {
+              events: (async function* () {
+                yield { type: "done", stopReason: "end_turn" };
+              })(),
+              result: Promise.resolve({ status: "completed", stopReason: "end_turn" }),
+              cancel: async () => {},
+            };
+          },
+          close: closeSpy,
+        }) as never,
+    });
+
+    const bootstrap = await execute({
+      runId: "configure-repair-bootstrap",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: {},
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir, model: "test-model" },
+      context: {},
+      onLog: async () => {},
+      onMeta: async () => {},
+    } as never);
+    expect(bootstrap.exitCode).toBe(0);
+    const sessionKey = String(bootstrap.sessionParams?.sessionKey ?? "");
+    const deadSessionId = String(bootstrap.sessionParams?.acpSessionId ?? "");
+    expect(deadSessionId).toBe("backend-session-v1");
+    sessionDied = true;
+
+    await store.save({
+      acpxRecordId: sessionKey,
+      acpSessionId: deadSessionId,
+      agentSessionId: "agent-session",
+      agentCommand: "node ./fake-acp.js",
+      cwd: "/tmp/configure-repair-cwd",
+      createdAt: "2026-11-03T00:00:00.000Z",
+      lastUsedAt: "2026-11-03T00:00:00.000Z",
+      lastSeq: 3,
+      lastRequestId: "req-1",
+      messages: [],
+      updated_at: "2026-11-03T00:00:00.000Z",
+      closed: false,
+      acpx: {},
+    } as never);
+
+    ensureCalls = [];
+    const result = await execute({
+      runId: "configure-repair-run",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: { sessionParams: bootstrap.sessionParams },
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir, model: "test-model" },
+      context: {},
+      onLog: async (_stream: string, line: string) => {
+        logs.push(line);
+      },
+      onMeta: async () => {},
+    } as never);
+
+    // First-error elimination at configure: the run SUCCEEDS in-run.
+    expect(result.exitCode).toBe(0);
+    expect(turnStarted).toBe(true);
+    expect(ensureCalls).toHaveLength(2);
+    expect(ensureCalls[0]).toMatchObject({ resumeSessionId: deadSessionId });
+    expect(ensureCalls[1]!.resumeSessionId).toBeUndefined();
+    // The gate persisted the reset marker BEFORE the fresh retry.
+    const healed = await store.load(sessionKey);
+    expect(healed?.acpx?.reset_on_next_ensure).toBe(true);
+    expect(logs.join("\n")).toContain(`ACPX resume session "${deadSessionId}" is unavailable`);
+    expect((result.resultJson as Record<string, unknown>).sessionRepair).toMatchObject({
+      discardedSessionId: deadSessionId,
+      recoveredWithFreshSession: true,
+    });
+    expect(result.clearSession).toBe(true);
+  });
+
+  it("clears and discards the dead session when the configure repair also fails", async () => {
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const recordId = "local-config-resume";
+    const store = createRuntimeStore({ stateDir });
+    await store.save({
+      acpxRecordId: recordId,
+      acpSessionId: "backend-dead-config-session",
+      agentSessionId: "agent-session",
+      agentCommand: "node ./fake-acp.js",
+      cwd: "/tmp/configure-resume-cwd",
+      createdAt: "2026-11-03T00:00:00.000Z",
+      lastUsedAt: "2026-11-03T00:00:00.000Z",
+      lastSeq: 3,
+      lastRequestId: "req-1",
+      messages: [],
+      updated_at: "2026-11-03T00:00:00.000Z",
+      closed: false,
+      acpx: {},
+    } as never);
+    const closeSpy = vi.fn(async () => {
+      throw new Error("Agent does not support session/close for local-config-resume.");
+    });
+    const logs: string[] = [];
+    let ensureCalls: Array<{ resumeSessionId?: string }> = [];
+    // The session is healthy during the bootstrap run and dies before run 2
+    // (offscreen). After `sessionDied`, EVERY setSessionModel call fails —
+    // on the warm handle AND on the repair's fresh handle — so the repair
+    // cannot establish a working session and the run settles typed.
+    let sessionDied = false;
+    const execute = createAcpxEngineExecutor({
+      createRuntime: () =>
+        ({
+          ensureSession: async (input: { resumeSessionId?: string }) => {
+            ensureCalls.push({ resumeSessionId: input.resumeSessionId });
+            // Warm-owner gap shape: the resumed (warm) ensure succeeds without
+            // backend verification; the repair's fresh ensure returns a new
+            // handle. setSessionModel then fails on BOTH — the repair cannot
+            // establish a working session, so the run settles typed. No
+            // acpxRecordId — the discard gate falls through to the sessionKey.
+            if (input.resumeSessionId) {
+              return { ...okHandle, backendSessionId: "backend-dead-config-session" };
+            }
+            return {
+              ...okHandle,
+              backendSessionId: sessionDied ? "backend-fresh-config-retry" : "backend-dead-config-session",
+            };
+          },
+          // applySessionConfigOptions pre-checks setConfigOption before the
+          // per-option loop; without it the generic capability error fires
+          // before setSessionModel can throw the resume failure.
+          setConfigOption: async () => {},
+          // The model option is the configure-phase seam for agent "custom":
+          // setSessionModel throws the resume failure before any turn starts.
+          // Shape mirrors the live acpx error (name survives; AMB-90 runs
+          // recorded errorCode acpx_session_resume_failed for exactly this).
+          setSessionModel: async () => {
+            if (!sessionDied) return;
+            const resumeError = new Error("Persistent ACP session local-config-resume could not be resumed: Internal error");
+            resumeError.name = "SessionResumeRequiredError";
+            throw resumeError;
+          },
+          startTurn: () => {
+            turnStarted = true;
+            return {
+              events: (async function* () {
+                yield { type: "done", stopReason: "end_turn" };
+              })(),
+              result: Promise.resolve({ status: "completed", stopReason: "end_turn" }),
+              cancel: async () => {},
+            };
+          },
+          close: closeSpy,
+        }) as never,
+    });
+    let turnStarted = false;
+
+    const bootstrap = await execute({
+      runId: "configure-repair-fails-bootstrap",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: {},
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir, model: "test-model" },
+      context: {},
+      onLog: async () => {},
+      onMeta: async () => {},
+    } as never);
+    expect(bootstrap.exitCode).toBe(0);
+    const sessionKey = String(bootstrap.sessionParams?.sessionKey ?? "");
+    const deadSessionId = String(bootstrap.sessionParams?.acpSessionId ?? "");
+    expect(deadSessionId).toBe("backend-dead-config-session");
+    sessionDied = true;
+
+    await store.save({
+      acpxRecordId: sessionKey,
+      acpSessionId: deadSessionId,
+      agentSessionId: "agent-session",
+      agentCommand: "node ./fake-acp.js",
+      cwd: "/tmp/configure-resume-cwd",
+      createdAt: "2026-11-03T00:00:00.000Z",
+      lastUsedAt: "2026-11-03T00:00:00.000Z",
+      lastSeq: 3,
+      lastRequestId: "req-1",
+      messages: [],
+      updated_at: "2026-11-03T00:00:00.000Z",
+      closed: false,
+      acpx: {},
+    } as never);
+
+    ensureCalls = [];
+    turnStarted = false;
+    const result = await execute({
+      runId: "configure-resume-discard",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: { sessionParams: bootstrap.sessionParams },
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir, model: "test-model" },
+      context: {},
+      onLog: async (_stream: string, line: string) => {
+        logs.push(line);
+      },
+      onMeta: async () => {},
+    } as never);
+
+    // The continuity state resets: the run result tells the control plane to
+    // forget the session params, and the settlement discards the dead record
+    // (close rejected, so the gate remediation persists the reset marker).
+    // The repair was ATTEMPTED in-run first (two ensure calls: the warm
+    // resume, then the fresh retry); only after the fresh configure also
+    // failed does the run settle as the typed bounded-retry failure.
+    expect(ensureCalls).toHaveLength(2);
+    expect(ensureCalls[0]).toMatchObject({ resumeSessionId: deadSessionId });
+    expect(ensureCalls[1]!.resumeSessionId).toBeUndefined();
+    // The typed settle happens only because even the repair's fresh session
+    // could not be configured — and the turn never started.
+    expect(turnStarted).toBe(false);
+    expect(result.clearSession).toBe(true);
+    // The repair's close (and the settlement's) discard the dead persisted
+    // record; the bootstrap's own settlement close does not.
+    expect(
+      closeSpy.mock.calls.some(
+        (call) => ((call as unknown[])[0] as { discardPersistentState?: boolean } | undefined)?.discardPersistentState === true,
+      ),
+    ).toBe(true);
+    const healed = await store.load(sessionKey);
+    expect(healed?.acpx?.reset_on_next_ensure).toBe(true);
+    expect(result.errorCode).toBe("acpx_session_resume_failed");
+  });
+
+  // Path A (AMB-156) — first-error elimination: with the acpx cold-reuse
+  // eager-load patch, a dead backend session surfaces at the HANDSHAKE
+  // (ensureSession) instead of mid-turn. The handshake catch must repair
+  // in-run: persist the discard marker (the gate) BEFORE the fresh retry —
+  // without it shouldReuseExistingRecord reuses the dead record and the
+  // retry re-resumes the same dead id — and the run must SUCCEED on the
+  // fresh session, carrying a sessionRepair audit marker.
+  it("repairs in-run when the resume failure surfaces at the handshake", async () => {
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const store = createRuntimeStore({ stateDir });
+    const closeSpy = vi.fn(async () => {});
+    const logs: string[] = [];
+    let ensureCalls: Array<{ resumeSessionId?: string }> = [];
+    const execute = createAcpxEngineExecutor({
+      createRuntime: () =>
+        ({
+          ensureSession: async (input: { resumeSessionId?: string }) => {
+            ensureCalls.push({ resumeSessionId: input.resumeSessionId });
+            if (input.resumeSessionId) {
+              // Mirror the live acpx cold-reuse refusal: canonical
+              // SessionResumeRequiredError shape (name + message). ANY
+              // resumed id is dead in this fixture — only a fresh
+              // bootstrap (no resume id) succeeds.
+              const resumeError = new Error(
+                `Persistent ACP session ${input.resumeSessionId} could not be resumed: Internal error`,
+              );
+              resumeError.name = "SessionResumeRequiredError";
+              throw resumeError;
+            }
+            return { ...okHandle, backendSessionId: "backend-fresh-session" };
+          },
+          startTurn: () => ({
+            events: (async function* () {
+              yield { type: "done", stopReason: "end_turn" };
+            })(),
+            result: Promise.resolve({ status: "completed", stopReason: "end_turn" }),
+            cancel: async () => {},
+          }),
+          close: closeSpy,
+        }) as never,
+    });
+
+    const bootstrap = await execute({
+      runId: "handshake-repair-bootstrap",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: {},
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir },
+      context: {},
+      onLog: async () => {},
+      onMeta: async () => {},
+    } as never);
+    expect(bootstrap.exitCode).toBe(0);
+    const sessionKey = String(bootstrap.sessionParams?.sessionKey ?? "");
+    const deadSessionId = String(bootstrap.sessionParams?.acpSessionId ?? "");
+
+    // Seed the dead persisted record under the session key the repair gate
+    // will target (handle-less catch falls back to prepared.sessionKey).
+    await store.save({
+      acpxRecordId: sessionKey,
+      acpSessionId: deadSessionId,
+      agentSessionId: "agent-session",
+      agentCommand: "node ./fake-acp.js",
+      cwd: "/tmp/handshake-repair-cwd",
+      createdAt: "2026-11-03T00:00:00.000Z",
+      lastUsedAt: "2026-11-03T00:00:00.000Z",
+      lastSeq: 3,
+      lastRequestId: "req-1",
+      messages: [],
+      updated_at: "2026-11-03T00:00:00.000Z",
+      closed: false,
+      acpx: {},
+    } as never);
+
+    ensureCalls = [];
+    const result = await execute({
+      runId: "handshake-repair-run",
+      agent: { id: "agent-1", companyId: "company-1" },
+      runtime: { sessionParams: bootstrap.sessionParams },
+      config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir },
+      context: {},
+      onLog: async (_stream: string, line: string) => {
+        logs.push(line);
+      },
+      onMeta: async () => {},
+    } as never);
+
+    // First-error elimination: the run SUCCEEDS on the fresh session.
+    expect(result.exitCode).toBe(0);
+    // Two ensure calls: the dead resume first, then the fresh bootstrap
+    // (no resume id) — never a third.
+    expect(ensureCalls).toHaveLength(2);
+    expect(ensureCalls[0]).toMatchObject({ resumeSessionId: deadSessionId });
+    expect(ensureCalls[1]!.resumeSessionId).toBeUndefined();
+    // The gate persisted the reset marker BEFORE the retry, so the dead
+    // record cannot be reused by this or any later run.
+    const healed = await store.load(sessionKey);
+    expect(healed?.acpx?.reset_on_next_ensure).toBe(true);
+    expect(logs.join("\n")).toContain(`ACPX resume session "${deadSessionId}" is unavailable`);
+    // The repair is auditable on the succeeded result.
+    expect((result.resultJson as Record<string, unknown>).sessionRepair).toMatchObject({
+      discardedSessionId: deadSessionId,
+      recoveredWithFreshSession: true,
+    });
+  });
+
+  it("reports acpx_session_discard_unconfirmed when the reset cannot be persisted", async () => {
+    const root = await makeTempRoot();
+    const stateDir = path.join(root, "state");
+    const recordId = "local-gate-record";
+    const store = createRuntimeStore({ stateDir });
+    await store.save({
+      acpxRecordId: recordId,
+      acpSessionId: "backend-dead-session",
+      agentSessionId: "agent-session",
+      agentCommand: "node ./fake-acp.js",
+      cwd: "/tmp/discard-gate-cwd",
+      createdAt: "2026-10-31T00:00:00.000Z",
+      lastUsedAt: "2026-10-31T00:00:00.000Z",
+      lastSeq: 3,
+      lastRequestId: "req-1",
+      messages: [],
+      updated_at: "2026-10-31T00:00:00.000Z",
+      closed: false,
+      acpx: {},
+    } as never);
+    expect(await store.load(recordId)).toBeDefined();
+
+    // Make every persist fail after the seed: the gate must surface a hard,
+    // typed signal instead of pretending the discard succeeded.
+    const sessionsDir = path.join(stateDir, "sessions");
+    await fs.chmod(sessionsDir, 0o500);
+    try {
+      const logs: string[] = [];
+      const gateHandle = { ...okHandle, acpxRecordId: recordId };
+      const execute = createAcpxEngineExecutor({
+        createRuntime: () =>
+          ({
+            ensureSession: async () => gateHandle,
+            startTurn: () => ({
+              events: (async function* () {
+                yield { type: "done", stopReason: "end_turn" };
+              })(),
+              result: Promise.resolve({
+                status: "failed",
+                error: new Error("Persistent ACP session local-gate-record could not be resumed: Internal error"),
+              }),
+              cancel: async () => {},
+            }),
+            close: vi.fn(async () => {
+              throw new Error("Agent does not support session/close for local-gate-record.");
+            }),
+          }) as never,
+      });
+
+      const result = await execute({
+        runId: "discard-gate-unconfirmed",
+        agent: { id: "agent-1", companyId: "company-1" },
+        runtime: {},
+        config: { agent: "custom", agentCommand: "node ./fake-acp.js", stateDir },
+        context: {},
+        onLog: async (_stream: string, line: string) => {
+          logs.push(line);
+        },
+        onMeta: async () => {},
+      } as never);
+
+      expect(result.exitCode).toBe(1);
+      expect(logs.join("\n")).toContain("acpx_session_discard_unconfirmed");
+      expect(logs.join("\n")).toContain("local-gate-record");
+    } finally {
+      await fs.chmod(sessionsDir, 0o700);
+    }
+  });
+
 
   it("collects instructions after confirmed close on a thrown provider turn, before workspace restore", async () => {
     const { stateDir, localCwd, executionTarget } = await setupRemoteSandbox();
@@ -9184,6 +9851,14 @@ describe("isAcpSessionResumeFailure", () => {
         message: "Persistent ACP session local-abc123 could not be resumed: Internal error",
       },
     })).toBe(true);
+  });
+
+  it("matches a thrown resume error from the turn promise", () => {
+    expect(isAcpSessionResumeFailureError(new Error(
+      "Persistent ACP session local-abc123 could not be resumed: Internal error",
+    ))).toBe(true);
+    expect(isAcpSessionResumeFailureError({ detailCode: "SESSION_RESUME_REQUIRED" })).toBe(true);
+    expect(isAcpSessionResumeFailureError(new Error("provider disconnected"))).toBe(false);
   });
 
   it("does not match unrelated turn failures", () => {

@@ -3203,7 +3203,6 @@ export function agentRoutes(
     res.json(await listAdapterProviders(type) ?? []);
   });
 
-  async function validateManagedAgentBinding(req: Request, companyId: string, agentId: string, adapterType: string, config: Record<string, unknown>, binding: AiRuntimeConnectionBinding, environmentId: string | null | undefined, test: boolean, newAgent = false) {
   async function validateManagedAgentBinding(req: Request, companyId: string, agentId: string, adapterType: string, config: Record<string, unknown>, binding: AiRuntimeConnectionBinding, environmentId: string | null | undefined, probe: "none" | "legacy" | "always", newAgent = false, validateModelCatalog = false) {
     if (binding.mode === "router") {
       const settings = await import("../services/instance-settings.js");

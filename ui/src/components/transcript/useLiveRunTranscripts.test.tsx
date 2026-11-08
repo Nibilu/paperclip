@@ -112,7 +112,7 @@ describe("useLiveRunTranscripts", () => {
   it("pauses hidden-tab reads and resumes at the retained log offset", async () => {
     vi.useFakeTimers();
     const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
-    logMock.mockResolvedValue({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: 42 });
+    logMock.mockResolvedValue({ runId: "run-1", store: "memory", logRef: "log-1", content: "x".repeat(42), nextOffset: undefined });
     const runs = [{ id: "run-1", status: "running", adapterType: "codex_local" }];
     function Harness() {
       useLiveRunTranscripts({ companyId: "company-1", runs, enableRealtimeUpdates: false });
@@ -994,5 +994,192 @@ describe("useLiveRunTranscripts", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("paginates a terminal run's persisted log to EOF instead of stopping at the first window", async () => {
+    const page = (offset: number, size: number, next: number | undefined) => ({
+      runId: "run-1",
+      store: "memory",
+      logRef: "log-1",
+      content: `{"ts":"2026-04-20T00:00:00.000Z","stream":"stdout","chunk":"${"x".repeat(8)}"}\n`.repeat(1).slice(0, size),
+      nextOffset: next,
+    });
+    logMock.mockImplementation(async (_runId: string, offset: number) => {
+      if (offset === 0) return page(offset, 100, 100);
+      if (offset === 100) return page(offset, 100, 200);
+      return page(offset, 50, undefined);
+    });
+
+    function Harness() {
+      useLiveRunTranscripts({
+        companyId: "company-1",
+        runs: [{ id: "run-1", status: "cancelled", adapterType: "hermes_local", logBytes: 250 }],
+        enableRealtimeUpdates: false,
+        logReadLimitBytes: 100,
+      });
+      return null;
+    }
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<Harness />);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const offsets = logMock.mock.calls.map((call) => call[1]);
+    expect(offsets).toEqual([0, 100, 200]);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it("backfills a run's earlier log bytes after the user stops it mid-output", async () => {
+    const page = (content: string, next: number | undefined) => ({
+      runId: "run-1",
+      store: "memory",
+      logRef: "log-1",
+      content,
+      nextOffset: next,
+    });
+    logMock.mockImplementation(async (_runId: string, offset: number) => {
+      // Live watch: tail window (260 - 100), then EOF.
+      if (offset === 160) return page("t".repeat(100), 260);
+      if (offset === 260) return page("", undefined);
+      // Backfill after the user stops the run.
+      if (offset === 0) return page("e".repeat(100), 100);
+      if (offset === 100) return page("m".repeat(60), 160);
+      return page("", undefined);
+    });
+
+    const runningRuns = [
+      { id: "run-1", status: "running", adapterType: "hermes_local", logBytes: 260, lastOutputBytes: 260 },
+    ];
+    const cancelledRuns = [
+      { id: "run-1", status: "cancelled", adapterType: "hermes_local", logBytes: 260, lastOutputBytes: 260 },
+    ];
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    function Harness({ runs }: { runs: Array<{ id: string; status: string; adapterType: string; logBytes: number; lastOutputBytes: number }> }) {
+      useLiveRunTranscripts({ companyId: "company-1", runs, enableRealtimeUpdates: false, logReadLimitBytes: 100 });
+      return null;
+    }
+
+    await act(async () => {
+      root.render(<Harness runs={runningRuns} />);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(logMock.mock.calls.map((call) => call[1])).toEqual([160, 260]);
+
+    // The user stops the run: the terminal transition must re-read from the
+    // start of the retained history and stop once it reaches the live window.
+    await act(async () => {
+      root.render(<Harness runs={cancelledRuns} />);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(logMock.mock.calls.map((call) => call[1])).toEqual([160, 260, 0, 100]);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it("caps a terminal run's hydration at the retention byte budget", async () => {
+    const page = (next: number | undefined) => ({
+      runId: "run-1",
+      store: "memory",
+      logRef: "log-1",
+      content: "x".repeat(100),
+      nextOffset: next,
+    });
+    logMock.mockImplementation(async (_runId: string, offset: number) => {
+      if (offset === 750) return page(850);
+      if (offset === 850) return page(950);
+      if (offset === 950) return page(1000);
+      return page(undefined);
+    });
+
+    function Harness() {
+      useLiveRunTranscripts({
+        companyId: "company-1",
+        runs: [{ id: "run-1", status: "succeeded", adapterType: "hermes_local", logBytes: 1000 }],
+        enableRealtimeUpdates: false,
+        logReadLimitBytes: 100,
+        maxBytesPerRun: 250,
+      });
+      return null;
+    }
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<Harness />);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Starts at logBytes - maxBytesPerRun and stops once one budget's worth of
+    // bytes has been read.
+    const offsets = logMock.mock.calls.map((call) => call[1]);
+    expect(offsets).toEqual([750, 850, 950]);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it("keeps tail-only single-window hydration for ticker consumers (maxChunksPerRun)", async () => {
+    const page = (next: number | undefined) => ({
+      runId: "run-1",
+      store: "memory",
+      logRef: "log-1",
+      content: "x".repeat(100),
+      nextOffset: next,
+    });
+    logMock.mockImplementation(async (_runId: string, offset: number) => {
+      if (offset === 160) return page(260);
+      return page(undefined);
+    });
+
+    function Harness() {
+      useLiveRunTranscripts({
+        companyId: "company-1",
+        runs: [{ id: "run-1", status: "cancelled", adapterType: "hermes_local", logBytes: 260, lastOutputBytes: 260 }],
+        enableRealtimeUpdates: false,
+        logReadLimitBytes: 100,
+        maxChunksPerRun: 50,
+      });
+      return null;
+    }
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<Harness />);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(logMock.mock.calls.map((call) => call[1])).toEqual([160]);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
   });
 });

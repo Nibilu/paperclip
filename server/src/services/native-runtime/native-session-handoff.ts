@@ -165,7 +165,16 @@ export async function buildNativeSessionHandoff(input: {
     if (!row.body) continue;
     const { executionPolicy, ...entry } = row;
     const sourceTrust = historicalTrust(row.id, executionPolicy);
-    entries.push({ ...sanitizeQuarantinedCommentForHigherTrust({ ...entry, sourceTrust }), kind: "run_summary" });
+    // Conversation runs: the message entries above already carry the reply
+    // content. Replaying the run's own narrated summary here made the model
+    // treat a publish+verify ritual as the normative way to end a turn, and it
+    // re-enacted it on every subsequent trivial message (AMB-170/AMB-173).
+    // Replay only the completion status for conversation issues; execution
+    // issues keep the full summary because it is the durable work record.
+    const body = issue.conversationAgentId
+      ? `Turn completed (run ${row.status}); the reply was delivered to this thread.`
+      : entry.body;
+    entries.push({ ...sanitizeQuarantinedCommentForHigherTrust({ ...entry, body, sourceTrust }), kind: "run_summary" });
   }
   if (!entries.length) return null;
   const omittedEntriesAtLeast = Number(recent.length > LIMIT) + Number(decisions.length > 8) + Number(replies.length > 4) + Number(savedDocuments.length > 3) + Number(runSummaries.length > 2);

@@ -12,6 +12,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createHash, randomUUID } from "node:crypto";
+import { createRequire } from "node:module";
 import { parseFrontmatterMarkdown } from "@pilibalaai/shared";
 import { fileURLToPath } from "node:url";
 import type {
@@ -49,6 +50,7 @@ import type { DuplexLossReason } from "../duplex-observability.js";
 import { DUPLEX_CHANNEL_LOST_ERROR_CODE } from "../bridge-transport-contract.js";
 import {
   classifyToolDefinitionFailure,
+  formatSessionResumeRefusalFailure,
   formatTerminalSessionFailure,
   sanitizeTerminalSessionFailure,
   type AcpxTerminalSessionFailure,
@@ -109,6 +111,7 @@ import {
   type AcpRuntimeTurnResult,
   type AcpRuntimeUsageBreakdown,
   type AcpRuntimeUsageCost,
+  type AcpSessionRecord,
 } from "acpx/runtime";
 import {
   ACP_TOOL_KINDS,
@@ -143,6 +146,7 @@ import type {
 import { createRunResourceLedger } from "./run-resource-ledger.js";
 import { acpxAccountingModel } from "./accounting-model.js";
 import { settleAcpRun, type SettlementSteps } from "./settlement-sequence.js";
+import { confirmDiscardedPersistentRecord } from "./session-discard-gate.js";
 import {
   runAttempt,
   type RunPlan,
@@ -2104,6 +2108,59 @@ async function buildRuntime(input: {
     resolvedAdapterEnv.ANTHROPIC_CUSTOM_HEADERS = env.ANTHROPIC_CUSTOM_HEADERS;
   }
   if (authToken) env.PILIBALA_API_KEY = authToken;
+  if (authToken) env.PILIBALA_API_KEY = authToken;
+  // Persist the run's Pilibala credentials for the agent's tool children (AMB-169).
+  // The ACP daemon is a persistent process: a fresh session can land on a warm
+  // daemon whose process env carries a PREVIOUS run's credentials (or none), so
+  // bash children cannot rely on inherited env — probes showed both zero vars
+  // and stale-previous-run vars. The engine therefore rewrites a session-stable
+  // 0600 env file at EVERY run start; the agent sources it before API calls.
+  // The path rides the daemon env for freshly spawned daemons; the path is also
+  // deterministic from the per-agent stateDir, so reused daemons work via the
+  // run prompt/agent instructions pointing at the same file.
+  const agentRunEnvDir = path.join(stateDir, "agent-run-env");
+  const agentRunEnvPath = path.join(agentRunEnvDir, `${agent.id}.env`);
+  {
+    const lines: string[] = [];
+    for (const key of [
+      "PILIBALA_API_URL",
+      "PILIBALA_TASK_ID",
+      "PILIBALA_RUN_ID",
+      "PILIBALA_AGENT_ID",
+      "PILIBALA_COMPANY_ID",
+      "PILIBALA_API_KEY",
+    ]) {
+      const value = env[key];
+      if (typeof value === "string" && value.length > 0) {
+        lines.push(`export ${key}=${JSON.stringify(value)}`);
+      }
+    }
+    // AMB-189: the API access note teaches deriving PILIBALA_API_BASE from
+    // PILIBALA_API_URL, but terminal tool calls are fresh shells — a base
+    // derived in one call's shell never reaches the next call, and the sourced
+    // env file carried no resolved value, so curl died with exit 3 (bad URL)
+    // before any request left the machine. Ship the derived base itself,
+    // computed with the exact shell semantics the note teaches: strip one
+    // trailing "/" then one trailing "/api".
+    const apiUrl = env.PILIBALA_API_URL;
+    if (typeof apiUrl === "string" && apiUrl.length > 0) {
+      const apiBase = apiUrl.replace(/\/$/, "").replace(/\/api$/, "");
+      lines.push(`export PILIBALA_API_BASE=${JSON.stringify(apiBase)}`);
+    }
+    if (lines.length > 0) {
+      try {
+        await fs.mkdir(agentRunEnvDir, { recursive: true });
+        const tmpPath = `${agentRunEnvPath}.tmp`;
+        await fs.writeFile(tmpPath, `${lines.join("\n")}\n`, { mode: 0o600 });
+        await fs.rename(tmpPath, agentRunEnvPath);
+        env.PILIBALA_RUN_ENV_FILE = agentRunEnvPath;
+      } catch (error) {
+        // The credentials file is a delivery enhancement (AMB-169); a sandboxed
+        // or mocked FS must not fail the run. The daemon env still carries the
+        // same credentials for freshly spawned daemons.
+        input.ctx.onLog("stdout", `[pilibala] agent run-env file unavailable: ${error instanceof Error ? error.message : String(error)}\n`);
+      }
+    }
   if (input.ctx.observability) {
     applyObservabilityEnvironment(env, input.ctx.observability);
   }
@@ -2132,6 +2189,13 @@ async function buildRuntime(input: {
     const codexStartupConfig = buildCodexStartupConfig({
       existingConfig: env.CODEX_CONFIG,
       shellEnvironmentKeys,
+      ...(input.ctx.agentIdentity ? { identityEnvironmentKeys: [...new Set([
+        "PATH", "HOME", "LANG", "TMPDIR", "CODEX_HOME",
+        "PILIBALA_AGENT_KEY_ID", "PILIBALA_AGENT_PUBLIC_KEY", "PILIBALA_AGENT_PRIVATE_KEY",
+        // Preserve Codex's default secret-name exclusions. The short-lived
+        // Pilibala API token is required by the agent skill's Bash/curl calls.
+        ...Object.keys(env).filter(key => key === "PILIBALA_API_KEY" || !/key|secret|token/i.test(key)),
+      ])] } : {}),
       requestedModel,
       requestedThinkingEffort,
       fastMode,
@@ -2937,7 +3001,9 @@ interface RuntimeSettlementPlan {
   readonly dropWarmEntry: boolean;
   // Record a direct-close error to the run log; a warm_or_close error is
   // swallowed. This keeps today's split (the failure paths log, the turn path
-  // swallows).
+  // swallows). The session-discard gate additionally records every
+  // direct-close error when `discardPersistentState` is set — a discarded
+  // record must never fail silently.
   readonly recordCloseError: boolean;
   // Cancel the running turn with this reason before the close (the turn-error
   // path cancels before it closes). Null on every other path.
@@ -3110,27 +3176,68 @@ function renderPilibalaEnvNote(env: Record<string, string>): string {
     .filter((key) => key.startsWith("PILIBALA_"))
     .sort();
   if (pilibalaKeys.length === 0) return "";
-  return [
+  const lines = [
     "Pilibala runtime note:",
     `The following PILIBALA_* environment variables are available in this run: ${pilibalaKeys.join(", ")}`,
     "Do not assume these variables are missing without checking your shell environment.",
-  ].join("\n");
+  ];
+  if (env.PILIBALA_RUN_ENV_FILE) {
+    lines.push(
+      // AMB-169: terminal tool children may not inherit these variables, and a
+      // reused daemon can carry a PREVIOUS run's stale values. The run env file
+      // is rewritten with the current run's credentials on every run start.
+      "Important: before your FIRST Pilibala API call in a terminal session, load the current run's credentials:",
+      `  source "$PILIBALA_RUN_ENV_FILE"`,
+      "Then verify: [ -n \"$PILIBALA_RUN_ID\" ] && echo \"$PILIBALA_RUN_ID\" — it must be THIS run's id. Never scan /proc or self-mint tokens.",
+    );
+  }
+  return lines.join("\n");
 }
 
-function renderApiAccessNote(env: Record<string, string>): string {
+function renderApiAccessNote(
+  env: Record<string, string>,
+  options: { conversationTurn?: boolean } = {},
+): string {
   if (!env.PILIBALA_API_URL || !env.PILIBALA_API_KEY) return "";
+  // Conversation turns: the harness posts the agent's final message to the
+  // thread automatically (buildAcpxRunSummary fallback). Teaching the full
+  // curl publish procedure here made models re-enact a publish+verify ritual
+  // on trivial chat turns and pulled real run credentials into the thought
+  // stream (AMB-170/AMB-172). Keep read access, drop publish teaching.
+  if (options.conversationTurn) {
+    const lines = [
+      "Pilibala conversation note:",
+      "Your final message is delivered to the conversation automatically — do not post it via the API.",
+      "Use the Pilibala API only for reads the wake context does not already include (history, documents, cards); never to publish this reply.",
+    ];
+    if (env.PILIBALA_TASK_ID) {
+      lines.push(
+        "Read example:",
+        `  curl -s -H "Authorization: Bearer \${PIL...KEY}" "$PILIBALA_API_BASE/api/issues/$PILIBALA_TASK_ID/comments"`,
+      );
+    }
+    return lines.join("\n");
+  }
   const lines = [
     "Pilibala API access note:",
     "Use terminal commands with curl to make Pilibala API requests.",
     "Normalize the base URL before adding API paths:",
     `  PILIBALA_API_BASE="\${PILIBALA_API_URL%/}"; PILIBALA_API_BASE="\${PILIBALA_API_BASE%/api}"`,
-    "GET example:",
-    `  curl -s -H "Authorization: Bearer $PILIBALA_API_KEY" "$PILIBALA_API_BASE/api/agents/me"`,
   ];
+  if (env.PILIBALA_RUN_ENV_FILE) {
+    lines.push(
+      "Load the run credentials before the first API call of each terminal session (the child shell does not reliably inherit them):",
+      `  source "$PILIBALA_RUN_ENV_FILE"`,
+    );
+  }
+  lines.push(
+    "GET example:",
+    `  curl -s -H "Authorization: Bearer \${PILIBALA_API_KEY}" "$PILIBALA_API_BASE/api/agents/me"`,
+  );
   if (env.PILIBALA_TASK_ID) {
     lines.push(
       "Scoped issue comment example:",
-      `  curl -s -X POST -H "Authorization: Bearer $PILIBALA_API_KEY" -H "Content-Type: application/json" -H "X-Pilibala-Run-Id: $PILIBALA_RUN_ID" -d '{"body":"Status update from agent."}' "$PILIBALA_API_BASE/api/issues/$PILIBALA_TASK_ID/comments"`,
+      `  curl -s -X POST -H "Authorization: Bearer \${PILIBALA_API_KEY}" -H "Content-Type: application/json" -H "X-Pilibala-Run-Id: $PILIBALA_RUN_ID" -d '{"body":"Status update from agent."}' "$PILIBALA_API_BASE/api/issues/$PILIBALA_TASK_ID/comments"`,
     );
   } else {
     lines.push("Use a real issue id from the current context before making issue write requests.");
@@ -3200,8 +3307,15 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
       ? ""
       : renderTemplate(promptTemplate, templateData);
   const sessionHandoffNote = asString(context.pilibalaSessionHandoffMarkdown, "").trim();
-  const pilibalaEnvNote = externalChatTurn ? "" : renderPilibalaEnvNote(env);
-  const apiAccessNote = externalChatTurn ? "" : renderApiAccessNote(env);
+  // Conversation turns skip the runtime-env note entirely: listing PILIBALA_*
+  // vars plus "check your shell environment" nudges models into environment
+  // hunting on chat turns that never need the API write path (AMB-170/AMB-172).
+  const conversationTurn = context.conversationMode === true;
+  const pilibalaEnvNote =
+    externalChatTurn || conversationTurn ? "" : renderPilibalaEnvNote(env);
+  const apiAccessNote = externalChatTurn
+    ? ""
+    : renderApiAccessNote(env, { conversationTurn });
   const prompt = joinPromptSections([
     promptInstructionsPrefix,
     renderedBootstrapPrompt,
@@ -3420,12 +3534,22 @@ export function summarizeAcpStopActivity(
 // also match that canonical message. Detecting the failure lets the caller
 // forget the dead session so the next bounded turn bootstraps a fresh one
 // instead of deterministically re-failing every retry on the same checkpoint.
+function isAcpSessionResumeFailureMessage(message: unknown): boolean {
+  return typeof message === "string" && /persistent acp session .+ could not be resumed/i.test(message);
+}
+
+export function isAcpSessionResumeFailureError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const candidate = error as { message?: unknown; detailCode?: unknown; name?: unknown };
+  return candidate.detailCode === "SESSION_RESUME_REQUIRED"
+    || candidate.name === "SessionResumeRequiredError"
+    || isAcpSessionResumeFailureMessage(candidate.message);
+}
+
 export function isAcpSessionResumeFailure(terminal: AcpRuntimeTurnResult): boolean {
   if (terminal.status !== "failed") return false;
   if (terminal.error.detailCode === "SESSION_RESUME_REQUIRED") return true;
-  return /persistent acp session .+ could not be resumed/i.test(
-    terminal.error.message,
-  );
+  return isAcpSessionResumeFailureMessage(terminal.error.message);
 }
 
 function resultErrorMessage(result: AcpRuntimeTurnResult): string | null {
@@ -4393,7 +4517,23 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
       let childStderrState!: ChildStderrState;
       let processIdentitySink!: AcpxProcessIdentitySink;
       let resumedSession = false;
+      // The configure-phase resume repair re-runs the guarded ensure outside
+      // the handshake block's scope, so the block publishes its guard helpers
+      // here once constructed (the repair must guard identically: a late
+      // handle after the seal is still abandoned, never adopted silently).
+      let handshakeGuardHelpers: {
+        isTransportLost: () => boolean;
+        onLateHandleAfterSeal: (handle: AcpRuntimeHandle) => void;
+        onLateRejection: () => void;
+      } | null = null;
       let clearSession = false;
+      // Path A in-run repair audit (AMB-156): set when the handshake catch
+      // discarded a dead resumed session and retried fresh. Threads into the
+      // run result's resultJson so first-error recovery is inspectable.
+      let sessionRepairAudit:
+        | { attempted: true; discardedSessionId: string; recoveredWithFreshSession: true }
+        | { attempted: false }
+        = { attempted: false };
       let referencedProjectStagingFailuresField:
         | { referencedProjectStagingFailures: Array<{ projectId: string; error: string }> }
         | Record<string, never> = {};
@@ -4423,6 +4563,38 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         await withAdapterExecutionPhase(ctx, "phase_reporting", () => ctx
           .onLog("stderr", `[pilibala] ACPX teardown step "${step}" failed: ${reason}\n`)
           .catch(() => {}));
+      };
+      // The session-discard gate (see session-discard-gate.ts). Every
+      // settlement path that requested `discardPersistentState` must confirm
+      // the persisted record before the run ends: gone, or carrying
+      // `reset_on_next_ensure`. acpx 0.12.0 orders close() wrong for backends
+      // without session/close (Hermes gateway advertises { resume, list,
+      // fork }), so the reset flag was never persisted and the close error
+      // was swallowed here — the dead record then poisoned every later
+      // resume. The gate verifies the disk independently of the close call
+      // and remediates by persisting the flag itself; an unconfirmable
+      // record throws into the Phase 3 error policy (recorded, never silent).
+      const ensurePersistentDiscardConfirmed = async (plan: RuntimeSettlementPlan): Promise<void> => {
+        if (!plan.discardPersistentState) return;
+        const recordId = plan.handle.acpxRecordId ?? prepared.sessionKey;
+        const gateStore = createRuntimeStore({ stateDir: prepared.stateDir });
+        const outcome = await confirmDiscardedPersistentRecord({
+          store: {
+            loadRecord: () => gateStore.load(recordId),
+            persistRecord: (record) => gateStore.save(record as AcpSessionRecord),
+          },
+        });
+        if (outcome.remediated && outcome.confirmed) {
+          await withAdapterExecutionPhase(ctx, "phase_reporting", () => ctx
+            .onLog("stderr", `[pilibala] ACPX session-discard gate: persisted reset marker for record ${recordId} (close did not persist it)\n`)
+            .catch(() => {}));
+        }
+        if (!outcome.confirmed) {
+          throw new Error(
+            `acpx_session_discard_unconfirmed: persistent ACPX record ${recordId} could not be confirmed reset or removed`
+            + ` (${outcome.error ?? "unknown"}); the next run must not resume the same dead backend session`,
+          );
+        }
       };
       // Emit one per-phase timing run-log event. It is not an OpenTelemetry
       // export and it is not a Telemetry event: it carries the phase name
@@ -4740,11 +4912,54 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
             .onLog("stderr", "[pilibala] ACPX handshake late rejection: acpx_handshake_late_rejection\n")
             .catch(() => {});
         };
+        // Publish the guard helpers for the configure-phase resume repair: it
+        // re-runs the guarded ensure outside this block's scope and must guard
+        // identically (a late handle after the seal is abandoned, never
+        // silently adopted).
+        handshakeGuardHelpers = {
+          isTransportLost: isHandshakeTransportLost,
+          onLateHandleAfterSeal: closeLateHandshakeHandle,
+          onLateRejection: recordLateHandshakeRejection,
+        };
 
         try {
           if (!handle) {
             try {
-              // Step 7 — acp.handshake: ACP session establishment (session/new or
+              // AMB-161 A1: self-identify the executing acpx copy in every run log.
+              // Three "merged but not live" incidents (10-23 patch never installed;
+              // fix authored against the wrong version's patch file; wrong lane
+              // attributed) all came from verifying dist files instead of runtime
+              // evidence. Best-effort only — must never block the handshake.
+              try {
+                // NOTE: require.resolve returns a plain filesystem path (not a
+                // file:// URL) — passing it through fileURLToPath throws
+                // ERR_INVALID_URL. Use it directly.
+                const runtimeModulePath = createRequire(import.meta.url).resolve("acpx/runtime");
+                // The two patch targets live in different dist files: the
+                // load/resume preference in live-checkpoint-*.js, the
+                // loadSessionWithOptions call in runtime.js. Scan the whole
+                // dist directory so the markers stay truthful across builds.
+                const acpxDistDir = path.dirname(runtimeModulePath);
+                const distSources = fsSync.readdirSync(acpxDistDir)
+                  .filter((f) => f.endsWith(".js"))
+                  .map((f) => fsSync.readFileSync(path.join(acpxDistDir, f), "utf8"))
+                  .join("\n");
+                const patchMarkers = [
+                  ["forcing-load", distSources.includes("supportsLoadSession()) return await loadRuntimeSession")],
+                  ["suppress-replay", distSources.includes("loadSessionWithOptions(params.record.acpSessionId, params.record.cwd, { suppressReplayUpdates: true })")],
+                ].filter(([, present]) => present).map(([name]) => name).join("+") || "none";
+                const acpxVersion = runtimeModulePath.match(/acpx@(\d+\.\d+\.\d+)/)?.[1] ?? "unknown";
+                await ctx.onLog("stderr", `[pilibala] ACPX runtime: acpx@${acpxVersion} patches=${patchMarkers} resume=${resumeSessionId ? `${resumeSessionId.slice(0, 18)}…` : "none(fresh)"}\n`);
+              } catch (identifyError) {
+                // identification is diagnostic only — but never silent: an
+                // unidentified runtime is exactly what this line exists to prevent.
+                try {
+                  await ctx.onLog("stderr", `[pilibala] ACPX runtime identification failed: ${identifyError}\n`);
+                } catch {
+                  /* nothing more we can do */
+                }
+              }
+          // Step 7 — acp.handshake: ACP session establishment (session/new or
               // resume). A throwing handshake still reports its duration before the
               // resume-retry path below runs. The createRuntime/ensureSession
               // sub-split rides the step span as fixed, closed keys (Open Q2).
@@ -4777,12 +4992,74 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
                 }),
               });
             } catch (err) {
-              if (!resumeSessionId || !isResumeFailure(err)) throw err;
+              // AMB-156 Path A extension: the repair previously required a
+              // resumeSessionId, which skipped the fresh-ensure path entirely —
+              // but a FRESH ensure still loads the persisted record
+              // (loadOrCreateRuntimeSession), and that load refuses exactly the
+              // same way (observed: Hermes daemon poisons a session after a
+              // successful turn; the next load of that record fails with
+              // "Persistent ACP session <id> could not be resumed"). Without
+              // this extension the run surfaces a terminal error and the
+              // recovery ladder re-runs it as a separate visible retry; with
+              // it, the same discard+fresh repair runs in-run and the user
+              // sees no failure at all.
+              if (!isResumeFailure(err)) throw err;
               clearSession = true;
               resumedSession = false;
+              // On the fresh path the dead backend id only appears in the
+              // error message ("Persistent ACP session <id> could not be
+              // resumed") — parse it for the audit trail; fall back to the
+              // resume id when present.
+              const deadSessionId =
+                resumeSessionId ??
+                (typeof (err instanceof Error ? err.message : err) === "string"
+                  ? (err instanceof Error ? err.message : String(err)).match(
+                      /persistent acp session (\S+?) could not be resumed/i,
+                    )?.[1]
+                  : undefined) ??
+                "unknown";
+              // Path A in-run repair (AMB-156): the fresh retry below must not
+              // reuse the dead persisted record. acpx's
+              // shouldReuseExistingRecord passes for a retry without a resume
+              // id unless the record carries `reset_on_next_ensure`, so the
+              // retry would re-resume the same dead backend session. Persist
+              // the discard marker through the session-discard gate BEFORE
+              // retrying (close errors are recorded, never fatal to the
+              // repair — the gate is the persisted guarantee).
+              await runtime
+                .close({
+                  handle: handle ?? syntheticCloseHandle(),
+                  reason: "pilibala resume repair",
+                  discardPersistentState: true,
+                })
+                .catch((closeError: unknown) => {
+                  return ctx
+                    .onLog(
+                      "stderr",
+                      `[pilibala] resume-repair close failed (recorded, the gate still confirms the discard): ${
+                        closeError instanceof Error ? closeError.message : String(closeError)
+                      }\n`,
+                    )
+                    .catch(() => {});
+                });
+              await ensurePersistentDiscardConfirmed({
+                mode: "direct",
+                handle: handle ?? syntheticCloseHandle(),
+                reason: "pilibala resume repair",
+                discardPersistentState: true,
+                dropWarmEntry: false,
+                recordCloseError: true,
+                cancelTurnReason: null,
+                skipRemoteClose: false,
+              });
+              sessionRepairAudit = {
+                attempted: true,
+                discardedSessionId: deadSessionId,
+                recoveredWithFreshSession: true,
+              };
               await ctx.onLog(
                 "stdout",
-                `[pilibala] ACPX resume session "${resumeSessionId}" is unavailable; retrying with a fresh session.\n`,
+                `[pilibala] ACPX resume session "${deadSessionId}" is unavailable; discarded the dead session and retrying with a fresh one.\n`,
               );
               // Fresh-session retry: the runtime was already constructed on the
               // first attempt (never re-created), so this event reports only its
@@ -5001,6 +5278,129 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         });
         await emitPhase("configure_session", configureSessionStart, "ok");
       } catch (err) {
+        // A resume failure can also surface at configure_session (observed on
+        // the hermes engine=acp lane: the backend's load_session raises while
+        // acpx configures the resumed session). The failure is classified as
+        // the transient `acpx_session_resume_failed`, so the continuity state
+        // must reset exactly like the turn-thrown path: forget the session
+        // params (the bounded retry bootstraps fresh) and discard the dead
+        // persisted record. Leaving the record intact makes every bounded
+        // retry deterministically re-resume the same dead backend session
+        // (AMB-90: three consecutive failures on one session id).
+        const sessionResumeFailure = isAcpSessionResumeFailureError(err);
+        let configureRepaired = false;
+        if (sessionResumeFailure) {
+          // Path A completion (AMB-156): configure_session is pre-turn — no
+          // agent work has executed — so a dead backend session discovered
+          // here is safe to repair in-run, exactly like the handshake path.
+          // Live evidence (issue 319b2463, run 2f1bb613): a retained warm
+          // owner passes the handshake WITHOUT backend verification; its
+          // wrapper process may have died and evicted the session since, so
+          // the refusal first surfaces at setConfigOption — one phase after
+          // the handshake repair window. Repair: persist the discard gate,
+          // fresh-ensure, re-run configure, continue to the turn. Only a
+          // repair that cannot establish a working session settles typed.
+          configureRepaired = await (async () => {
+            try {
+              clearSession = true;
+              resumedSession = false;
+              // The dead id is the backend session the failed configure ran on
+              // (the warm owner's session in the live warm-gap case; the
+              // params' resume id in the cold-reuse case — same value).
+              const repairDiscardId = sessionHandle?.backendSessionId ?? "unknown";
+              await runtime
+                .close({
+                  handle: sessionHandle ?? syntheticCloseHandle(),
+                  reason: "pilibala configure resume repair",
+                  discardPersistentState: true,
+                })
+                .catch((closeError: unknown) => {
+                  return ctx
+                    .onLog(
+                      "stderr",
+                      `[pilibala] configure-repair close failed (recorded, the gate still confirms the discard): ${
+                        closeError instanceof Error ? closeError.message : String(closeError)
+                      }\n`,
+                    )
+                    .catch(() => {});
+                });
+              await ensurePersistentDiscardConfirmed({
+                mode: "direct",
+                handle: sessionHandle ?? syntheticCloseHandle(),
+                reason: "pilibala configure resume repair",
+                discardPersistentState: true,
+                dropWarmEntry: true,
+                recordCloseError: true,
+                cancelTurnReason: null,
+                skipRemoteClose: false,
+              });
+              sessionRepairAudit = {
+                attempted: true,
+                discardedSessionId: repairDiscardId,
+                recoveredWithFreshSession: true,
+              };
+              await ctx
+                .onLog(
+                  "stdout",
+                  `[pilibala] ACPX resume session "${repairDiscardId}" is unavailable; discarded the dead session and retrying with a fresh one.\n`,
+                )
+                .catch(() => {});
+              let repairEnsureSessionMs: number | undefined;
+              const guard = handshakeGuardHelpers;
+              if (!guard) {
+                throw new Error("ACPX handshake guard helpers were not published for the configure resume repair.");
+              }
+              const repairedHandle = await measureStartupStep(ctx, now, "acp.handshake", async () => {
+                const ensureSessionStart = now();
+                const established = await guardEnsureSession({
+                  call: () =>
+                    runtime.ensureSession({
+                      sessionKey: prepared.sessionKey,
+                      agent: prepared.acpxAgent,
+                      mode: prepared.mode,
+                      cwd: prepared.cwd,
+                      sessionOptions: { env: prepared.env },
+                    }),
+                  fence: handshakeFence,
+                  isTransportLost: guard.isTransportLost,
+                  onLateHandleAfterSeal: guard.onLateHandleAfterSeal,
+                  onLateRejection: guard.onLateRejection,
+                });
+                repairEnsureSessionMs = now() - ensureSessionStart;
+                return established;
+              }, {
+                ...prepared.stepMetrics,
+                // The repair reuses the runtime from the first attempt, so it
+                // reports only its own ensure-session sub-time on the span.
+                spanWallTimes: () => ({ ensureSession: repairEnsureSessionMs }),
+              });
+              if (!repairedHandle) {
+                throw new Error("ACPX did not return a runtime session handle during the configure resume repair.");
+              }
+              sessionHandle = repairedHandle;
+              await applySessionConfigOptions({
+                runtime,
+                handle: sessionHandle,
+                prepared,
+                onLog: ctx.onLog,
+              });
+              await emitPhase("configure_session", configureSessionStart, "ok");
+              return true;
+            } catch (repairError) {
+              await ctx
+                .onLog(
+                  "stderr",
+                  `[pilibala] configure resume repair failed; settling as the typed configure failure: ${
+                    repairError instanceof Error ? repairError.message : String(repairError)
+                  }\n`,
+                )
+                .catch(() => {});
+              return false;
+            }
+          })();
+        }
+        if (!configureRepaired) {
+        if (sessionResumeFailure) clearSession = true;
         // Record a direct close that drops the matching warm entry for the
         // settlement `endSession` step. The settlement stops the bridges, discards
         // the staged runtime, releases the staging lease, and flushes the child
@@ -5009,7 +5409,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           mode: "direct",
           handle: sessionHandle,
           reason: "pilibala config cleanup",
-          discardPersistentState: false,
+          discardPersistentState: sessionResumeFailure,
           dropWarmEntry: true,
           recordCloseError: true,
           cancelTurnReason: null,
@@ -5043,6 +5443,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           summary: message,
         };
         return settleFor("session_configuration", err);
+        }
       }
       // Startup succeeded: seal the ledger (promotes the startup_rollback entries
       // that survived to `per_run`) and hand the ready resources to the turn. The
@@ -5303,7 +5704,14 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               killCapturedLocalProcess(processIdentitySink.localProcess);
             } else {
               void runtime.close({ handle: sessionHandle, reason: "operator stop deadline", discardPersistentState: true })
-                .catch(() => {});
+                .catch((stopErr: unknown) => {
+                  // Fire-and-forget, but never silent: the settlement's
+                  // session-discard gate re-verifies the persisted record
+                  // later; this keeps the early close's failure attributable
+                  // in the run log instead of swallowed.
+                  void ctx.onLog("stderr", `[pilibala] ACPX operator-stop discard close failed: ${stopErr instanceof Error ? stopErr.message : String(stopErr)}\n`)
+                    .catch(() => {});
+                });
             }
           }, Math.max(1, asNumber(ctx.config.graceSec, 15)) * 1000);
         };
@@ -5533,7 +5941,12 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
             ? channelLostMessage
             : toolStalled
               ? toolStalledMessage
-              : formatTerminalSessionFailure(resultErrorMessage(terminal), failureDiagnostic);
+              : sessionUnavailable
+                ? // The dead session is already discarded (`clearSession`) and the
+                  // next attempt replays the full task conversation — tell the
+                  // user that instead of the raw gateway refusal.
+                  formatSessionResumeRefusalFailure(resultErrorMessage(terminal), failureDiagnostic)
+                : formatTerminalSessionFailure(resultErrorMessage(terminal), failureDiagnostic);
         const terminalStopReason = terminal.status === "failed" ? terminal.error.message : terminal.stopReason;
         // Silent session-loss fallback (see `isSilentSessionLossAfterResume`).
         // Runs here, after `errorMessage` and `terminalStopReason` exist.
@@ -5594,6 +6007,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           resultJson: {
             status: channelLost || toolStalled ? "failed" : terminal.status,
             ...activityDiagnostics,
+            ...(sessionRepairAudit.attempted ? { sessionRepair: sessionRepairAudit } : {}),
             ...(toolStalled && stalledTool
               ? {
                   acpStalledToolKind: stalledTool.kind,
@@ -5625,9 +6039,16 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               ? { cumulativeCostUsd: turnUsage.cumulativeCostUsd }
               : {}),
           },
+          // AMB-186: a completed or cancelled turn's transport metadata
+          // ("end_turn", "cancelled") is never agent output. With no output
+          // segments the summary stays EMPTY, so the presentation resolver's
+          // legacy-summary path (heartbeat-run-summary.ts
+          // legacy_adapter_summary_compatibility) posts no closing comment
+          // instead of leaking the protocol stop reason as an agent reply.
+          // Genuinely failed turns keep their diagnostic error message.
           summary: buildAcpxRunSummary({
             outputSegments,
-            fallback: terminalStopReason || terminal.status,
+            fallback: terminal.status === "failed" ? terminalStopReason : null,
           }),
           clearSession,
         };
@@ -5715,11 +6136,13 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         // running turn first (cancel-before-close), then close the runtime and drop
         // a matching warm entry. The settlement discards the staged runtime, stops
         // the bridges, releases the staging lease, and flushes the child stderr.
+        const sessionResumeFailure = isAcpSessionResumeFailureError(err);
+        if (sessionResumeFailure) clearSession = true;
         runtimeSettlement = {
           mode: "direct",
           handle: sessionHandle,
           reason: timedOut ? "pilibala timeout cleanup" : "pilibala error cleanup",
-          discardPersistentState: timedOut,
+          discardPersistentState: timedOut || sessionResumeFailure,
           dropWarmEntry: true,
           recordCloseError: true,
           cancelTurnReason: preEmitMessage,
@@ -5871,6 +6294,10 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               warmHandles.delete(prepared.sessionKey);
               flushChildStderr(existing.childStderrState);
             }
+            // No close call runs on a dead channel, so the discard request
+            // would silently do nothing at all — the gate is the only thing
+            // that persists the reset marker here.
+            await ensurePersistentDiscardConfirmed(settlement);
             return;
           }
           // The handshake guard abandoned this `ensureSession` call and no late
@@ -5880,7 +6307,12 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           // hook (armed at the `ensureSession` call site) closes it once,
           // whenever it shows up. A guarded call only ever runs on a cold
           // start, so there is no matching warm entry here to drop.
-          if (handshakeAbandoned && !lateHandle) return;
+          if (handshakeAbandoned && !lateHandle) {
+            // The runtime never produced a handle; the gate confirms the
+            // persisted record (if any) is gone or reset before the run ends.
+            await ensurePersistentDiscardConfirmed(settlement);
+            return;
+          }
           if (
             settlement.mode === "warm_or_close" &&
             warmHandleMatches(existing, runtime, settlement.handle) &&
@@ -5895,9 +6327,13 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
               reason: settlement.reason,
               discardPersistentState: settlement.discardPersistentState,
             }));
+            await ensurePersistentDiscardConfirmed(settlement);
             return;
           }
-          const onCloseError = settlement.recordCloseError || ctx.signal?.aborted
+          // A discarded record must never fail silently: on every
+          // `discardPersistentState` path the close error is recorded (the
+          // gate below independently verifies the persisted outcome).
+          const onCloseError = settlement.recordCloseError || ctx.signal?.aborted || settlement.discardPersistentState
             ? (closeErr: unknown) => recordTeardownError("runtime-close", closeErr)
             : () => {};
           await withAdapterExecutionPhase(ctx, "close_session", () => runtime
@@ -5908,6 +6344,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
             })
             .then(() => { runtimeStopConfirmed = true; })
             .catch(onCloseError));
+          await ensurePersistentDiscardConfirmed(settlement);
           if (settlement.dropWarmEntry && warmHandleMatches(existing, runtime, settlement.handle) && existing) {
             clearWarmHandleTimer(existing);
             warmHandles.delete(prepared.sessionKey);

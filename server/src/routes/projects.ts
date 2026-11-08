@@ -13,6 +13,7 @@ import { toolAccessService } from "../services/tool-access.js";
 import { Router, type Request, type Response } from "express";
 import type { Db } from "@pilibalaai/db";
 import { agents, authUsers, companyMemberships, instanceUserRoles, projectAccessMembers } from "@pilibalaai/db";
+import { agents, authUsers, companyMemberships, heartbeatRuns, instanceUserRoles, projectAccessMembers } from "@pilibalaai/db";
 import { inArray } from "drizzle-orm";
 import {
   addProjectAccessMemberSchema,
@@ -669,7 +670,25 @@ export function projectRoutes(db: Db) {
       collectProjectWorkspaceCommandPaths(req.body),
     );
     await assertNoManagedSandboxWorkspacePath(req.body);
-    const workspace = await svc.createWorkspace(id, req.body);
+    // Registrations made by a run-bound agent are task-scoped by default: they
+    // bind to the agent's current task, never take the primary slot, and are
+    // garbage-collected when that task reaches a terminal status.
+    const registeringActor = getActorInfo(req);
+    const payload: Record<string, unknown> = { ...req.body };
+    if (registeringActor.actorType === "agent") {
+      payload.lifecycle = "task_ephemeral";
+      if (!payload.boundIssueId && registeringActor.runId) {
+        const [runRow] = await db
+          .select({ contextSnapshot: heartbeatRuns.contextSnapshot })
+          .from(heartbeatRuns)
+          .where(eq(heartbeatRuns.id, registeringActor.runId));
+        const runIssueId = (runRow?.contextSnapshot ?? null)?.issueId;
+        if (typeof runIssueId === "string" && runIssueId.trim().length > 0) {
+          payload.boundIssueId = runIssueId;
+        }
+      }
+    }
+    const workspace = await svc.createWorkspace(id, payload);
     if (!workspace) {
       res.status(422).json({ error: "Invalid project workspace payload" });
       return;
@@ -689,6 +708,8 @@ export function projectRoutes(db: Db) {
         name: workspace.name,
         cwd: workspace.cwd,
         isPrimary: workspace.isPrimary,
+        lifecycle: workspace.lifecycle ?? null,
+        boundIssueId: workspace.boundIssueId ?? null,
       },
     });
 

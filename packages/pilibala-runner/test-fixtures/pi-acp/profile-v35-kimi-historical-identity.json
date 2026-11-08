@@ -1,5 +1,9 @@
 {
+<<<<<<<< HEAD:packages/pilibala-runner/test-fixtures/pi-acp/profile-v35-kimi-historical-identity.json
   "commandDigest": "sha256:00ce5ecc7f0e904811b70584b936c673182c1029b500e8d4823f44ae3cd755e2",
+========
+  "commandDigest": "sha256:ae618be3ae342dbe818b0b6f2e48eb81645be4761b360f0d1d15cc1333c92d15",
+>>>>>>>> clip_fork:packages/pilibala-runner/test-fixtures/pi-acp/profile-v23-identity.json
   "declaration": {
     "schema": "pilibala.acpx_profile_declaration.v1",
     "agent": "pi",
@@ -20,7 +24,11 @@
     "nativeQuestions": "select-confirm-input-editor-v4-root-field-types",
     "pathPolicy": "sdk-normalization-v1",
     "mcpToolNames": "provider-safe-exact-source-v1",
+<<<<<<<< HEAD:packages/pilibala-runner/test-fixtures/pi-acp/profile-v35-kimi-historical-identity.json
     "acpxPatchSha256": "1e7dae8c83bf8620f53f2bea13c175eeff95e7e955783f6f529bb1dcbdcdb6d2",
+========
+    "acpxPatchSha256": "79ef7f6921e4657687cd37526314494c0614d4808e83c96fafd67038c505f344",
+>>>>>>>> clip_fork:packages/pilibala-runner/test-fixtures/pi-acp/profile-v23-identity.json
     "nativeAssistantMessages": "pi1-rpc-deltas-v3-bound-message-and-tool-receipts",
     "nativeNotices": "session-extension-v2-bounded-runtime-failure",
     "messageProjectionSha256": "17d1e91b948dfa6a56e1905645add52b502041ad843c8d50a13b07956f22aadd",

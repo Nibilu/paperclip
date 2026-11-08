@@ -17,6 +17,43 @@ export interface LegacyContinuationInput {
     agentInvokable: boolean;
   };
 }
+/** Delivery-disposition acceptance (control-plane side, Fix #4): a succeeded run
+ * that deliberately addressed the board about THIS task has recorded a durable
+ * delivery disposition. Only agent-authored, allow_self comments count — the
+ * run-final auto mirror (internal_agent_write) exists for every run and would
+ * accept everything. NO length threshold: AMB-135's one-line date answer (60
+ * chars) is a complete delivery. Fails toward today's behavior: comments that
+ * don't match keep the repair machinery running exactly as before. */
+export const DELIVERY_AUTHORIZATION_REASON = "allow_self";
+
+/** Layer-1 terminal rule for accepted deliveries: a review policy makes
+ * "delivered, awaiting acceptance" a real, maintainable state; without one the
+ * review state has no participant to accept it — the review-path-lost detector
+ * immediately fires a repair wake for it (AMB-136). Plain delivered work
+ * completes: done is the evidence-supported terminal. */
+export function deliveredTerminalStatus(
+  reviewPolicy: string | null | undefined,
+): "in_review" | "done" {
+  return reviewPolicy ? "in_review" : "done";
+}
+
+export interface DeliveryCommentEvidence {
+  authorType: string | null;
+  deletedAt: Date | string | null;
+  authorizationReason: string | null;
+}
+
+export function deliveryCommentCountsAsDisposition(
+  comment: DeliveryCommentEvidence | null | undefined,
+): boolean {
+  return Boolean(
+    comment &&
+    comment.authorType === "agent" &&
+    !comment.deletedAt &&
+    comment.authorizationReason === DELIVERY_AUTHORIZATION_REASON,
+  );
+}
+
 export interface LegacyDispositionEpisode {
   id: string;
   attempt: number;

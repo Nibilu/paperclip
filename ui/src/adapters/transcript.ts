@@ -2,8 +2,96 @@ import { redactHomePathUserSegments, redactTranscriptEntryPaths } from "@pilibal
 import type { TranscriptEntry, StdoutLineParser, TranscriptParserSource } from "./types";
 
 export type RunLogChunk = { ts: string; stream: "stdout" | "stderr" | "system"; chunk: string; seq?: number };
-type TranscriptBuildOptions = { censorUsernameInLogs?: boolean };
+type TranscriptBuildOptions = { censorUsernameInLogs?: boolean; quiet?: boolean };
 type RedactionOptions = { enabled: boolean };
+
+/**
+ * Quiet-output control for transcripts, mirroring the Agent adapterConfig
+ * `quiet` / `verbose` toggles. These are presentation-only controls: they
+ * change how much transcript detail the UI shows, never what the agent
+ * executes. `verbose` wins over `quiet` when both are set.
+ */
+export function quietTranscriptFromAdapterConfig(config: unknown): boolean {
+  if (!config || typeof config !== "object") return false;
+  const record = config as Record<string, unknown>;
+  if (record.verbose === true) return false;
+  return record.quiet === true;
+}
+
+/**
+ * Quiet-output transform. Per the presentation contract, quiet output keeps
+ * the progress hints (thinking happened, tools ran) but strips their CONTENT,
+ * so a reader sees that work is advancing without the full log volume:
+ * - thinking → text-less lifecycle row (renders as "Thought"/"Thinking…")
+ * - tool_result → status only (✓/✗ row keeps name + short target, drops the
+ *   output body that floods the transcript)
+ * tool_call entries stay intact — the call's short target (command, file
+ * path) IS the action hint. Approval/permission prompts
+ * (`runtime_request`) are always kept — silencing them would block runs.
+ */
+function quietTransformTranscriptEntry(entry: TranscriptEntry): TranscriptEntry {
+  if (entry.kind === "thinking") {
+    return entry.text ? { ...entry, text: "" } : entry;
+  }
+  if (entry.kind === "tool_result") {
+    return entry.content ? { ...entry, content: "" } : entry;
+  }
+  return entry;
+}
+
+/**
+ * Extract complete top-level JSON values from a buffered stdout string.
+ *
+ * ACP-lane runtime events (`acpx.*`) arrive as one compact JSON object per
+ * stdout line, and the persisted log / websocket chunk strips the trailing
+ * newline (it was consumed as the line delimiter). Newline-based buffering
+ * therefore holds the whole event stream as one "incomplete" line until an
+ * unrelated newline-bearing chunk arrives — then flushes the concatenation as
+ * a single unparseable line, collapsing every thought delta into one assistant
+ * entry and hiding tool calls entirely (so the quiet filter has nothing to
+ * hide on ACP transcripts). Returns null when the buffer does not start a JSON
+ * value, so plain-text streams keep the newline-based buffering.
+ */
+function takeBufferedStdoutLines(
+  buffer: string,
+): { lines: string[]; rest: string } | null {
+  const leading = buffer.length - buffer.trimStart().length;
+  const first = buffer[leading];
+  if (first !== "{" && first !== "[") return null;
+  const lines: string[] = [];
+  let depth = 0;
+  let start = leading;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < buffer.length; i++) {
+    const ch = buffer[i];
+    if (inString) {
+      if (escape) escape = false;
+      else if (ch === "\\") escape = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === "{" || ch === "[") depth++;
+    else if (ch === "}" || ch === "]") {
+      depth--;
+      if (depth === 0) {
+        let end = i + 1;
+        while (
+          end < buffer.length &&
+          (buffer[end] === "\n" || buffer[end] === "\r" || buffer[end] === " " || buffer[end] === "\t")
+        ) {
+          end++;
+        }
+        lines.push(buffer.slice(start, end));
+        start = end;
+        const restTrimmed = buffer.slice(start).trimStart();
+        if (restTrimmed && !restTrimmed.startsWith("{") && !restTrimmed.startsWith("[")) break;
+      }
+    }
+  }
+  return { lines, rest: start < buffer.length ? buffer.slice(start) : "" };
+}
 
 function resolveStdoutParser(source: StdoutLineParser | TranscriptParserSource) {
   if (typeof source === "function") {
@@ -86,12 +174,16 @@ function appendParsedTranscriptLine(args: {
   parseLine: (line: string, ts: string) => TranscriptEntry[];
   reset: (() => void) | null;
   redactionOptions: RedactionOptions;
+  quiet?: boolean;
 }) {
-  const { entries, line, ts, parseLine, reset, redactionOptions } = args;
+  const { entries, line, ts, parseLine, reset, redactionOptions, quiet } = args;
   try {
+    const parsed = parseLine(line, ts);
     appendTranscriptEntries(
       entries,
-      parseLine(line, ts).map((entry) => redactTranscriptEntryPaths(entry, redactionOptions)),
+      (quiet ? parsed.map(quietTransformTranscriptEntry) : parsed).map((entry) =>
+        redactTranscriptEntryPaths(entry, redactionOptions),
+      ),
     );
   } catch (error) {
     reset?.();
@@ -140,6 +232,7 @@ export function createTranscriptBuilder(
   let stdoutBuffer = "";
   let lastStdoutTs = "";
   const redactionOptions = { enabled: opts?.censorUsernameInLogs ?? false };
+  const quiet = opts?.quiet === true;
   const { parseLine, reset } = resolveStdoutParser(parserSource);
 
   const append = (chunks: readonly RunLogChunk[]) => {
@@ -155,11 +248,9 @@ export function createTranscriptBuilder(
       lastStdoutTs = chunk.ts;
 
       const combined = stdoutBuffer + chunk.chunk;
-      const lines = combined.split(/\r?\n/);
-      stdoutBuffer = lines.pop() ?? "";
-      for (const line of lines) {
+      const emitLine = (line: string) => {
         const trimmed = line.trim();
-        if (!trimmed) continue;
+        if (!trimmed) return;
         appendParsedTranscriptLine({
           entries,
           line: trimmed,
@@ -167,7 +258,17 @@ export function createTranscriptBuilder(
           parseLine,
           reset,
           redactionOptions,
+          quiet,
         });
+      };
+      const bufferedJson = takeBufferedStdoutLines(combined);
+      if (bufferedJson) {
+        stdoutBuffer = bufferedJson.rest;
+        for (const line of bufferedJson.lines) emitLine(line);
+      } else {
+        const lines = combined.split(/\r?\n/);
+        stdoutBuffer = lines.pop() ?? "";
+        for (const line of lines) emitLine(line);
       }
     }
   };
@@ -176,14 +277,27 @@ export function createTranscriptBuilder(
     const trailing = stdoutBuffer.trim();
     stdoutBuffer = "";
     if (!trailing) return;
-    appendParsedTranscriptLine({
-      entries,
-      line: trailing,
-      ts: lastStdoutTs || new Date().toISOString(),
-      parseLine,
-      reset,
-      redactionOptions,
-    });
+    const ts = lastStdoutTs || new Date().toISOString();
+    const emitTrailing = (line: string) => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      appendParsedTranscriptLine({
+        entries,
+        line: trimmed,
+        ts,
+        parseLine,
+        reset,
+        redactionOptions,
+        quiet,
+      });
+    };
+    const bufferedJson = takeBufferedStdoutLines(trailing);
+    if (bufferedJson) {
+      for (const line of bufferedJson.lines) emitTrailing(line);
+      if (bufferedJson.rest.trim()) emitTrailing(bufferedJson.rest);
+    } else {
+      emitTrailing(trailing);
+    }
   };
 
   const dispose = () => {
@@ -203,6 +317,20 @@ export function buildTranscript(
   const redactionOptions = { enabled: opts?.censorUsernameInLogs ?? false };
   const { parseLine, reset } = resolveStdoutParser(parserSource);
 
+  const emit = (line: string, ts: string) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    appendParsedTranscriptLine({
+      entries,
+      line: trimmed,
+      ts,
+      parseLine,
+      reset,
+      redactionOptions,
+      quiet: opts?.quiet === true,
+    });
+  };
+
   for (const chunk of chunks) {
     if (chunk.stream === "stderr") {
       entries.push({ kind: "stderr", ts: chunk.ts, text: redactHomePathUserSegments(chunk.chunk, redactionOptions) });
@@ -214,33 +342,27 @@ export function buildTranscript(
     }
 
     const combined = stdoutBuffer + chunk.chunk;
-    const lines = combined.split(/\r?\n/);
-    stdoutBuffer = lines.pop() ?? "";
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      appendParsedTranscriptLine({
-        entries,
-        line: trimmed,
-        ts: chunk.ts,
-        parseLine,
-        reset,
-        redactionOptions,
-      });
+    const bufferedJson = takeBufferedStdoutLines(combined);
+    if (bufferedJson) {
+      stdoutBuffer = bufferedJson.rest;
+      for (const line of bufferedJson.lines) emit(line, chunk.ts);
+    } else {
+      const lines = combined.split(/\r?\n/);
+      stdoutBuffer = lines.pop() ?? "";
+      for (const line of lines) emit(line, chunk.ts);
     }
   }
 
   const trailing = stdoutBuffer.trim();
   if (trailing) {
     const ts = chunks.length > 0 ? chunks[chunks.length - 1]!.ts : new Date().toISOString();
-    appendParsedTranscriptLine({
-      entries,
-      line: trailing,
-      ts,
-      parseLine,
-      reset,
-      redactionOptions,
-    });
+    const bufferedJson = takeBufferedStdoutLines(stdoutBuffer);
+    if (bufferedJson) {
+      for (const line of bufferedJson.lines) emit(line, ts);
+      if (bufferedJson.rest.trim()) emit(bufferedJson.rest, ts);
+    } else {
+      emit(trailing, ts);
+    }
   }
 
   reset?.();

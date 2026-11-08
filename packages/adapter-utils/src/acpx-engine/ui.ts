@@ -166,5 +166,17 @@ export function parseAcpxStdoutLine(line: string, ts: string): TranscriptEntry[]
     return [{ kind: "system", ts, text: asString(parsed.message, type) }];
   }
 
+  // Corrupted acpx event lines (legacy redaction broke the JSON structure):
+  // keep the artifact visible as a neutral system note instead of an
+  // stdout/assistant-style message, so historical logs never read as agent
+  // output. The raw line stays in the persisted log for auditing.
+  if (line.includes('"type":"acpx.')) {
+    return [{
+      kind: "system",
+      ts,
+      text: `[corrupted acpx event] ${line.length > 160 ? `${line.slice(0, 157)}…` : line}`,
+    }];
+  }
+
   return [{ kind: "stdout", ts, text: line }];
 }

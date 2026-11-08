@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyToolDefinitionFailure, formatTerminalSessionFailure, sanitizeTerminalSessionFailure } from "./terminal-session-failure.js";
+import { classifyToolDefinitionFailure, formatSessionResumeRefusalFailure, formatTerminalSessionFailure, sanitizeTerminalSessionFailure } from "./terminal-session-failure.js";
 
 describe("terminal session failure diagnostics", () => {
   it.each([
@@ -163,5 +163,28 @@ describe("terminal session failure diagnostics", () => {
     expect(diagnostic.title).not.toMatch(/[\ud800-\udfff]/u);
     expect(diagnostic.details).not.toMatch(/[\ud800-\udfff]/u);
     expect(diagnostic.truncatedFields).toEqual(["title"]);
+  });
+
+  it("formats a resume refusal with next-step guidance and keeps the raw detail", () => {
+    const formatted = formatSessionResumeRefusalFailure(
+      "Persistent ACP session local-abc could not be resumed: Internal error",
+      { category: "service", title: "gateway refused", details: "storage_unavailable" },
+    );
+    expect(formatted).toContain("系统已自动重置会话");
+    expect(formatted).toContain("重新发送消息即可继续");
+    expect(formatted).toContain("有界任务历史摘要");
+    expect(formatted).toContain("v0.22.x");
+    expect(formatted).toContain("代价");
+    expect(formatted).toContain("get_task_history");
+    expect(formatted).toContain("Persistent ACP session local-abc could not be resumed: Internal error");
+    expect(formatted).toContain("gateway refused");
+    expect(formatted).toContain("storage_unavailable");
+    // No diagnostic: the guidance plus the raw message must still stand alone.
+    const bare = formatSessionResumeRefusalFailure(
+      "Persistent ACP session local-abc could not be resumed: Internal error",
+      null,
+    );
+    expect(bare).toContain("系统已自动重置会话");
+    expect(bare).toContain("Persistent ACP session local-abc could not be resumed: Internal error");
   });
 });

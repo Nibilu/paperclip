@@ -79,4 +79,43 @@ describe("useStreamlinedUiEnabled", () => {
     expect(resolveStreamlinedUiEnabled({ enableStreamlinedUi: true })).toBe(true);
     expect(resolveStreamlinedUiEnabled({ enableStreamlinedUi: false })).toBe(false);
   });
+
+  it("fails open immediately on a terminal auth error (403 pre-auth)", async () => {
+    // The boot gate runs pre-auth and the endpoint 403s by design; the gate
+    // must not ride the default retry ladder (~7.5s) before mounting.
+    mockInstanceSettingsApi.getExperimental.mockRejectedValue(
+      Object.assign(new Error("forbidden"), { status: 403 }),
+    );
+    const queryClient = new QueryClient();
+    flushSync(() => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <Probe />
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+
+    expect(host.textContent).toBe("true:true");
+    // The terminal error must not have been retried.
+    expect(mockInstanceSettingsApi.getExperimental).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps waiting while the error is temporary (503)", async () => {
+    mockInstanceSettingsApi.getExperimental.mockRejectedValue(
+      Object.assign(new Error("unavailable"), { status: 503 }),
+    );
+    const queryClient = new QueryClient();
+    flushSync(() => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <Probe />
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+
+    // Still loading — a temporary outage should retry, not fail open.
+    expect(host.textContent).toBe("true:false");
+  });
 });

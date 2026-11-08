@@ -95,6 +95,7 @@ const adapterDisplayMap: Record<string, AdapterDisplayInfo> = {
     label: "Gemini CLI",
     description: "Gemini CLI harness",
     icon: Gem,
+    recommended: true,
   },
   grok_local: {
     label: "Grok Build",
@@ -110,12 +111,13 @@ const adapterDisplayMap: Record<string, AdapterDisplayInfo> = {
     label: "Hermes Gateway",
     description: "Remote Hermes API server",
     icon: Bot,
-    hideFromVisualSelection: true,
+    recommended: true,
   },
   hermes_local: {
     label: "Hermes",
     description: "Hermes harness",
     icon: Bot,
+    recommended: true,
   },
   opencode_local: {
     label: "OpenCode",

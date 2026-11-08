@@ -37,6 +37,10 @@ import { automaticReadRecoveryCleanupCondition, directHumanCommentCondition, hum
 import { resolveProjectDefaultWorkspaceId } from "./project-default-workspace.js";
 import { type AuthorizationActor, executionWorkspaceReadSqlCondition, projectReadSqlCondition } from "./authorization.js";
 import { assertExecutionWorkspaceRecordAccess, assertTaskWorkspaceSourceProjectAccess } from "./task-workspace-access.js";
+import {
+  isHealthyProjectWorkspaceRow,
+  resolveProjectDefaultWorkspaceId,
+} from "./project-default-workspace.js";
 import { type TaskWorkspaceSelection, type TaskWorkspaceIntent } from "@pilibalaai/shared";
 import { executionWorkspaceService } from "./execution-workspaces.js";
 import { notifyChatPublicationWork } from "./chat-work-notifications.js";
@@ -318,12 +322,19 @@ const ISSUE_WAKE_DIAGNOSTICS_ACTIVITY_ACTIONS = [
   "issue.tree_hold_wakeup_deferred",
 ] as const;
 
-export type IssuePostCommitAction = {
-  type: "cancel_native_question_run";
-  runId: string;
-  issueId: string;
-  issueStatus: string;
-};
+export type IssuePostCommitAction =
+  | {
+    type: "cancel_native_question_run";
+    runId: string;
+    issueId: string;
+    issueStatus: string;
+  }
+  | {
+    type: "task_ephemeral_workspace_gc";
+    companyId: string;
+    issueId: string;
+    issueStatus: string;
+  };
 
 /** Execute side effects that must never run before the issue transaction commits. */
 export async function executeIssuePostCommitActions(
@@ -335,6 +346,23 @@ export async function executeIssuePostCommitActions(
   const heartbeat = heartbeatService(db);
   const cancelledRunIds = new Set<string>();
   for (const action of actions) {
+    if (action.type === "task_ephemeral_workspace_gc") {
+      try {
+        const { reapTaskEphemeralWorkspacesForIssue } = await import("./task-workspace-gc.js");
+        await reapTaskEphemeralWorkspacesForIssue(db, {
+          companyId: action.companyId,
+          issueId: action.issueId,
+        });
+      } catch (err) {
+        // The issue transition already committed; the GC rows remain visible
+        // to any later sweep. Do not report the transition as rolled back.
+        logger.warn(
+          { err, issueId: action.issueId },
+          "task-ephemeral workspace gc deferred to a later sweep",
+        );
+      }
+      continue;
+    }
     if (cancelledRunIds.has(action.runId)) continue;
     cancelledRunIds.add(action.runId);
     try {
@@ -10425,18 +10453,38 @@ export function issueService(db: Db) {
           // a Pilibala App parent) must fall through to its own project's
           // default workspaces, otherwise the inherited ids fail the
           // project-match assertions below and the create is impossible without
-          // the caller naming the target workspaces explicitly.
+          // the caller naming the target workspaces explicitly. Inheritance is
+          // a weak preference: an inherited binding whose registration row is
+          // gone or points at a dead local path must not poison the new task —
+          // it falls through to the health-gated project default instead.
           const inheritsSourceProject =
             issueData.projectId == null ||
             issueData.projectId === workspaceSource.projectId;
+          let inheritedWorkspaceHealthy = false;
           if (
             inheritsSourceProject &&
             issueData.projectWorkspaceId === undefined &&
             projectWorkspaceId == null &&
             workspaceSource.projectWorkspaceId
           ) {
-            projectWorkspaceId = workspaceSource.projectWorkspaceId;
-            inheritedWorkspaceSelection = true;
+            const inheritedRow = await tx
+              .select({
+                id: projectWorkspaces.id,
+                lifecycle: projectWorkspaces.lifecycle,
+                cwd: projectWorkspaces.cwd,
+                repoUrl: projectWorkspaces.repoUrl,
+                remoteWorkspaceRef: projectWorkspaces.remoteWorkspaceRef,
+              })
+              .from(projectWorkspaces)
+              .where(eq(projectWorkspaces.id, workspaceSource.projectWorkspaceId))
+              .then((rows) => rows[0] ?? null);
+            inheritedWorkspaceHealthy = Boolean(
+              inheritedRow && await isHealthyProjectWorkspaceRow(inheritedRow),
+            );
+            if (inheritedWorkspaceHealthy) {
+              projectWorkspaceId = workspaceSource.projectWorkspaceId;
+              inheritedWorkspaceSelection = true;
+            }
           }
           // The source's realized workspace (its checkout, branch, saved
           // snapshot and unmerged changes) is never shared. A parent and its
@@ -11834,6 +11882,25 @@ export function issueService(db: Db) {
         if (updated.status === "done") {
           await completeTerminalCaseHandoffsForIssue(tx, { companyId: updated.companyId, issueId: updated.id,
             publications: activityPublications });
+}
+        if ((issueData.status === "done" || issueData.status === "cancelled")
+          && updated.status === issueData.status) {
+          // Task-ephemeral workspace registrations are scoped to the issue
+          // lifecycle: on a terminal transition the bound registrations and
+          // their managed directories are reaped post-commit.
+          if (dbOrTx === db || postCommitActions) {
+            queuedPostCommitActions.push({
+              type: "task_ephemeral_workspace_gc",
+              companyId: updated.companyId,
+              issueId: updated.id,
+              issueStatus: updated.status,
+            });
+          } else {
+            logger.warn(
+              { issueId: updated.id },
+              "task-ephemeral workspace gc skipped: terminal update ran in an external transaction without a post-commit action queue",
+            );
+          }
         }
         if (workspaceSelectionActor && updated.workspaceBindingRevision !== receiptExisting.workspaceBindingRevision) {
           await executionWorkspaceService(db).assertTaskWorkspaceUpdateAccess({

@@ -1,5 +1,5 @@
 {
-  "commandDigest": "sha256:1dad3d26d91e66c6f911dbfa43e7963f36c0bbf0d7709f4bbb568029a8b4b46a",
+  "commandDigest": "sha256:b12a1ffdceda74c119e51ec9d40d73a7ec623a45bf6d1fe4f8d915afcf24ae9e",
   "declaration": {
     "schema": "pilibala.acpx_profile_declaration.v1",
     "agent": "copilot",
@@ -7,7 +7,7 @@
     "acpxVersion": "0.13.1",
     "agentServerVersion": "1.0.88",
     "protocolPolicyRevision": "copilot-agent-manual-v1",
-    "acpxPatchSha256": "00d6af17216cb0cad902b48633eb19bf0ec6b05837a984cb24661fca593f09c1",
+    "acpxPatchSha256": "79ef7f6921e4657687cd37526314494c0614d4808e83c96fafd67038c505f344",
     "policySha256": "a4be69be43db84052560420a3ca546a665c9165573c24d543eb33d144ba138a3",
     "distributionSourceSha256": "c0a65e247fc47b263bd369a3d5ab505c4b323d4e6493be8a9ecbeb0e9dbb9107",
     "agentFilesBinding": "registered-runtime-context-v1",

@@ -209,6 +209,7 @@ export {
   buildAnchorFallbackWorkspaceNotes,
   buildRunWorkspaceHints,
   prioritizeProjectWorkspaceCandidatesForRun,
+  filterRunProjectWorkspaceCandidatesForIssue,
   MULTI_PROJECT_WORKSPACE_SYNC_ENV,
   isMultiProjectWorkspaceSyncEnabled,
   isRemoteExecutionEnvironmentDriver,
@@ -1671,8 +1672,6 @@ export function heartbeatService(
     return recovery.reconcileFailedDispositionRepairBacklog();
   }
 
-  async function sweepStaleIssueLocks() {
-    return recovery.sweepStaleIssueLocks();
   async function sweepStaleIssueLocks(opts?: Parameters<typeof recovery.sweepStaleIssueLocks>[0]) {
     return recovery.sweepStaleIssueLocks(opts);
   }

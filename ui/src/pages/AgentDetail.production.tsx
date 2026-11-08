@@ -3257,7 +3257,7 @@ function RunDetail({ run: initialRun, agentRouteId, adapterType, adapterConfig }
       })()}
 
       {/* Log viewer */}
-      <LogViewer run={run} adapterType={adapterType} />
+      <LogViewer run={run} adapterType={adapterType} quiet={quietTranscriptFromAdapterConfig(adapterConfig)} />
       <ScrollToBottom />
     </div>
   );

@@ -579,7 +579,7 @@ describe("composed ACPX run fault matrix", () => {
     expect(ensureInputs[1]?.resumeSessionId).toBeUndefined();
     expect(started).toBe(1);
     expect(second.clearSession).toBe(true);
-    expect(logs.some((text) => text.includes("is unavailable; retrying with a fresh session"))).toBe(true);
+    expect(logs.some((text) => text.includes("is unavailable; discarded the dead session and retrying with a fresh one"))).toBe(true);
     // The host lane acquires only the runtime, and it appears once.
     assertDispositionReport(capture.last(), { acquired: ["acp_runtime"] });
   });
@@ -749,7 +749,9 @@ describe("composed ACPX run fault matrix", () => {
     expect(result.sessionId).toBe("backend-session");
     expect(result.sessionDisplayId).toBe("agent-session");
     expect(result.sessionParams).toBeTruthy();
-    expect(result.summary).toBe("end_turn");
+    // AMB-186: no output segments on this fixture turn — empty summary, not
+    // the protocol stop reason.
+    expect(result.summary).toBe("");
     expect(result.resultJson?.status).toBe("completed");
     assertDispositionReport(capture.last(), {
       acquired: SANDBOX_WITH_MANAGED_HOME,
