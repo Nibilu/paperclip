@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 
-import { act } from "react";
-import { createRoot } from "react-dom/client";
+import { act, type ReactNode } from "react";
+import { createRoot as createReactRoot } from "react-dom/client";
+import type { LiveEvent } from "@paperclipai/shared";
+import { __liveUpdatesTestUtils, type CompanyLiveEventHandler } from "../../context/LiveUpdatesProvider";
+import { LiveTranscriptInterests } from "../../lib/live-transcript-interests";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../api/client";
 import { useLiveRunTranscripts } from "./useLiveRunTranscripts";
@@ -9,7 +12,8 @@ import { TRANSCRIPT_REQUEST_TIMEOUT_MS } from "./read-transcript-request";
 
 const { useQueryMock, logMock, buildTranscriptMock } = vi.hoisted(() => ({
   useQueryMock: vi.fn(() => ({ data: { censorUsernameInLogs: false } })),
-  logMock: vi.fn(async () => ({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: 0 })),
+  logMock: vi.fn(async (_runId: string, _offset: number, _limit: number, _options: { signal: AbortSignal }) =>
+    ({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: 0 })),
   buildTranscriptMock: vi.fn((chunks: unknown[]) => chunks),
 }));
 
@@ -49,40 +53,37 @@ vi.mock("../../adapters", () => ({
   onAdapterChange: () => () => {},
 }));
 
-class FakeWebSocket {
-  static readonly CONNECTING = 0;
-  static readonly OPEN = 1;
-  static readonly CLOSING = 2;
-  static readonly CLOSED = 3;
-  static instances: FakeWebSocket[] = [];
-
-  readonly url: string;
-  readyState = FakeWebSocket.CONNECTING;
-  onopen: ((event: Event) => void) | null = null;
-  onmessage: ((event: MessageEvent) => void) | null = null;
-  onerror: ((event: Event) => void) | null = null;
-  onclose: ((event: CloseEvent) => void) | null = null;
-  closeCalls: Array<{ code?: number; reason?: string }> = [];
-
-  constructor(url: string) {
-    this.url = url;
-    FakeWebSocket.instances.push(this);
-  }
-
-  close(code?: number, reason?: string) {
-    this.closeCalls.push({ code, reason });
-    this.readyState = FakeWebSocket.CLOSING;
-  }
-
-  triggerOpen() {
-    this.readyState = FakeWebSocket.OPEN;
-    this.onopen?.(new Event("open"));
-  }
-
-  triggerClose() {
-    this.readyState = FakeWebSocket.CLOSED;
-    this.onclose?.(new CloseEvent("close"));
-  }
+const { LiveEventSubscriptionContext } = __liveUpdatesTestUtils;
+let listeners: Set<CompanyLiveEventHandler>;
+let interests: LiveTranscriptInterests;
+let sent: Array<{ type: string; revision?: number; runIds?: string[] }>;
+let socketConstructed: ReturnType<typeof vi.fn<() => void>>;
+function createRoot(container: HTMLDivElement) {
+  const root = createReactRoot(container);
+  const subscription = {
+    companyId: "company-1", transcripts: interests,
+    subscribe(handler: CompanyLiveEventHandler) {
+      listeners.add(handler);
+      return () => { listeners.delete(handler); };
+    },
+  };
+  return {
+    unmount: () => root.unmount(),
+    render: (children: ReactNode) => root.render(
+      <LiveEventSubscriptionContext.Provider value={subscription}>{children}</LiveEventSubscriptionContext.Provider>,
+    ),
+  };
+}
+function sendEvent(event: Omit<LiveEvent, "id">) {
+  for (const listener of listeners) listener({ ...event, id: 1 });
+}
+function negotiate() {
+  interests.open({ send: data => sent.push(JSON.parse(data)) });
+  interests.receive({ type: "live.capabilities", version: 1, capabilities: ["run-interests"] });
+  acknowledge();
+}
+function acknowledge() {
+  interests.receive({ type: "live.subscribed", version: 1, revision: sent.at(-1)?.revision });
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -93,12 +94,13 @@ describe("useLiveRunTranscripts", () => {
 
   beforeEach(() => {
     vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
-    FakeWebSocket.instances = [];
+    listeners = new Set(); interests = new LiveTranscriptInterests(); sent = [];
+    socketConstructed = vi.fn();
     useQueryMock.mockClear();
     logMock.mockReset();
-    logMock.mockImplementation(async () => ({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: 0 }));
+    logMock.mockImplementation(async (_id, offset) => ({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: offset }));
     buildTranscriptMock.mockClear();
-    globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
+    globalThis.WebSocket = class { constructor() { socketConstructed(); } } as unknown as typeof WebSocket;
   });
 
   afterEach(() => {
@@ -122,7 +124,7 @@ describe("useLiveRunTranscripts", () => {
       await act(async () => root.render(<Harness />));
       await act(async () => vi.advanceTimersByTimeAsync(10_000));
       expect(logMock).not.toHaveBeenCalled();
-      expect(FakeWebSocket.instances).toHaveLength(0);
+      expect(socketConstructed).not.toHaveBeenCalled();
       await act(async () => {
         visibility.mockReturnValue("visible");
         document.dispatchEvent(new Event("visibilitychange"));
@@ -144,40 +146,126 @@ describe("useLiveRunTranscripts", () => {
     }
   });
 
-  it("waits for a connecting socket to open before closing it during cleanup", async () => {
-    function Harness() {
-      useLiveRunTranscripts({
-        companyId: "company-1",
-        runs: [{ id: "run-1", status: "running", adapterType: "codex_local" }],
+  it("expands a compact log tail without hiding or duplicating the latest output", async () => {
+    let truncatedRunIds: ReadonlySet<string> = new Set();
+    const row = (seq: number, chunk: string) => JSON.stringify({ seq, chunk, ts: `2026-10-24T00:00:0${seq}Z`, stream: "stdout" });
+    const result = (content: string) => ({ runId: "run-1", store: "memory", logRef: "log-1", content, nextOffset: 100_000 });
+    let resolveExpanded!: (value: ReturnType<typeof result>) => void;
+    logMock.mockResolvedValueOnce(result(`${row(2, "Latest answer")}\n`));
+    logMock.mockResolvedValueOnce(result(""));
+    logMock.mockImplementationOnce(() => new Promise(resolve => { resolveExpanded = resolve; }));
+    function Harness({ limit, bytes = 100_000 }: { limit: number; bytes?: number }) {
+      ({ truncatedRunIds } = useLiveRunTranscripts({
+        runs: [{ id: "run-1", status: "succeeded", adapterType: "codex_local", logBytes: bytes }],
+        enableRealtimeUpdates: false,
+        logReadLimitBytes: limit,
+      }));
+      return null;
+    }
+    const root = createRoot(document.createElement("div"));
+    const chunks = () => buildTranscriptMock.mock.calls.at(-1)?.[0];
+    try {
+      await act(async () => root.render(<Harness limit={32_000} />));
+      expect(logMock).toHaveBeenNthCalledWith(1, "run-1", 68_000, 32_000, expect.objectContaining({ alignStartToRecord: true }));
+      expect(truncatedRunIds.has("run-1")).toBe(true);
+      expect(chunks()).toEqual([expect.objectContaining({ chunk: "Latest answer" })]);
+      await act(async () => root.render(<Harness limit={256_000} />));
+      expect(logMock).toHaveBeenLastCalledWith("run-1", 0, 256_000, expect.anything());
+      expect(chunks()).toEqual([expect.objectContaining({ chunk: "Latest answer" })]);
+      await act(async () => resolveExpanded(result(`${row(1, "Earlier activity")}\n${row(2, "Latest answer")}\n`)));
+      expect(truncatedRunIds.has("run-1")).toBe(false);
+      expect(chunks()).toEqual([
+        expect.objectContaining({ chunk: "Earlier activity" }),
+        expect.objectContaining({ chunk: "Latest answer" }),
+      ]);
+      await act(async () => root.render(<Harness limit={256_000} bytes={120_000} />));
+      expect(logMock).toHaveBeenLastCalledWith("run-1", 100_000, 256_000, expect.anything());
+    } finally {
+      await act(async () => root.unmount());
+    }
+  });
+
+  it("does not report omitted output when a run grows beyond the window after reading from the start", async () => {
+    let truncatedRunIds: ReadonlySet<string> = new Set();
+    const row = (seq: number) => `${JSON.stringify({ seq, chunk: `Output ${seq}`, stream: "stdout", ts: "2026-10-24T00:00:00Z" })}\n`;
+    const response = { runId: "run-1", store: "memory", logRef: "log-1" };
+    logMock.mockResolvedValueOnce({ ...response, content: row(1), nextOffset: 100 });
+    logMock.mockResolvedValueOnce({ ...response, content: "", nextOffset: 100 });
+    logMock.mockResolvedValueOnce({ ...response, content: row(2), nextOffset: 100_000 });
+    logMock.mockResolvedValueOnce({ ...response, content: "", nextOffset: 100_000 });
+    function Harness({ bytes }: { bytes: number }) {
+      ({ truncatedRunIds } = useLiveRunTranscripts({
+        runs: [{ id: "run-1", status: "succeeded", adapterType: "codex_local", logBytes: bytes }],
+        enableRealtimeUpdates: false, logReadLimitBytes: 32_000,
+      }));
+      return null;
+    }
+    const root = createRoot(document.createElement("div"));
+    try {
+      await act(async () => root.render(<Harness bytes={100} />));
+      expect(logMock).toHaveBeenNthCalledWith(1, "run-1", 0, 32_000, expect.anything());
+      expect(truncatedRunIds.has("run-1")).toBe(false);
+      await act(async () => root.render(<Harness bytes={100_000} />));
+      expect(logMock).toHaveBeenNthCalledWith(3, "run-1", 100, 32_000, expect.anything());
+      expect(truncatedRunIds.has("run-1")).toBe(false);
+    } finally { await act(async () => root.unmount()); }
+  });
+
+  it("keeps record alignment pending when an expanded log read needs retry", async () => {
+    const row = (seq: number, chunk: string) => JSON.stringify({ seq, chunk, ts: `2026-10-24T00:00:0${seq}Z`, stream: "stdout" });
+    const result = (content: string) => ({ runId: "run-1", store: "memory", logRef: "log-1", content, nextOffset: 500_000 });
+    const earlier = row(1, "Earlier activity");
+    const recent = row(2, "Latest answer");
+    logMock.mockResolvedValueOnce(result(`${recent}\n`));
+    logMock.mockResolvedValueOnce(result(""));
+    logMock.mockRejectedValueOnce(new Error("Temporary storage failure"));
+    logMock.mockImplementationOnce(async (...args: unknown[]) => {
+      const options = args[3] as { alignStartToRecord?: boolean };
+      return result(`${options.alignStartToRecord ? earlier : earlier.slice(15)}\n${recent}\n`);
+    });
+    let latest!: ReturnType<typeof useLiveRunTranscripts>;
+    function Harness({ limit, bytes = 500_000 }: { limit: number; bytes?: number }) {
+      latest = useLiveRunTranscripts({
+        runs: [{ id: "run-1", status: "succeeded", adapterType: "codex_local", logBytes: bytes }],
+        enableRealtimeUpdates: false,
+        logReadLimitBytes: limit,
       });
       return null;
     }
+    const root = createRoot(document.createElement("div"));
+    const chunks = () => buildTranscriptMock.mock.calls.at(-1)?.[0];
+    try {
+      await act(async () => root.render(<Harness limit={32_000} />));
+      await act(async () => root.render(<Harness limit={256_000} />));
+      expect(latest.errorsByRun.get("run-1")?.message).toBe("Temporary storage failure");
+      expect(chunks()).toEqual([expect.objectContaining({ chunk: "Latest answer" })]);
+      await act(async () => latest.retry());
+      expect(chunks()).toEqual([
+        expect.objectContaining({ chunk: "Earlier activity" }),
+        expect.objectContaining({ chunk: "Latest answer" }),
+      ]);
+      expect(logMock).toHaveBeenCalledWith("run-1", 244_000, 256_000, expect.objectContaining({ alignStartToRecord: true }));
+      expect(latest.errorsByRun.size).toBe(0);
+      await act(async () => root.render(<Harness limit={256_000} bytes={520_000} />));
+      expect(logMock).toHaveBeenLastCalledWith("run-1", 500_000, 256_000, expect.not.objectContaining({ alignStartToRecord: true }));
+    } finally {
+      await act(async () => root.unmount());
+    }
+  });
 
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    const root = createRoot(container);
-
-    await act(async () => {
-      root.render(<Harness />);
-      await Promise.resolve();
-    });
-
-    expect(FakeWebSocket.instances).toHaveLength(1);
-    const socket = FakeWebSocket.instances[0];
-    expect(socket.closeCalls).toHaveLength(0);
-
-    act(() => {
-      root.unmount();
-    });
-
-    expect(socket.closeCalls).toHaveLength(0);
-
-    act(() => {
-      socket.triggerOpen();
-    });
-
-    expect(socket.closeCalls).toEqual([{ code: 1000, reason: "live_run_transcripts_unmount" }]);
-    container.remove();
+  it("registers interests on the shared connection without creating a socket", async () => {
+    function Harness() {
+      useLiveRunTranscripts({ companyId: "company-1", runs: [{ id: "run-1", status: "running", adapterType: "codex_local" }] });
+      return null;
+    }
+    const root = createRoot(document.createElement("div"));
+    await act(async () => root.render(<Harness />));
+    await act(async () => negotiate());
+    expect(sent.at(-1)?.runIds).toEqual(["run-1"]);
+    expect(socketConstructed).not.toHaveBeenCalled();
+    await act(async () => root.unmount());
+    expect(sent.at(-1)?.runIds).toEqual([]);
+    expect(listeners.size).toBe(0);
   });
 
   it("treats stored run output as available before transcript chunks finish loading", async () => {
@@ -338,7 +426,7 @@ describe("useLiveRunTranscripts", () => {
     });
 
     expect(logMock).not.toHaveBeenCalled();
-    expect(FakeWebSocket.instances).toHaveLength(0);
+    expect(socketConstructed).not.toHaveBeenCalled();
 
     await act(async () => {
       root.render(<Harness status="running" />);
@@ -347,7 +435,7 @@ describe("useLiveRunTranscripts", () => {
 
     expect(logMock).toHaveBeenCalledTimes(1);
     expect(logMock).toHaveBeenCalledWith("run-queued", 0, 256_000, expect.objectContaining({ signal: expect.any(AbortSignal) }));
-    expect(FakeWebSocket.instances).toHaveLength(1);
+    expect(socketConstructed).not.toHaveBeenCalled();
 
     act(() => {
       root.unmount();
@@ -375,7 +463,7 @@ describe("useLiveRunTranscripts", () => {
       await Promise.resolve();
     });
 
-    expect(FakeWebSocket.instances).toHaveLength(0);
+    expect(socketConstructed).not.toHaveBeenCalled();
     expect(logMock).toHaveBeenCalledWith("run-1", 0, 64_000, expect.objectContaining({ signal: expect.any(AbortSignal) }));
 
     act(() => {
@@ -528,26 +616,13 @@ describe("useLiveRunTranscripts", () => {
       await Promise.resolve();
     });
 
-    expect(FakeWebSocket.instances).toHaveLength(1);
-    const socket = FakeWebSocket.instances[0]!;
+    expect(socketConstructed).not.toHaveBeenCalled();
 
     const sendLogEvent = (seq: number, chunk: string) => {
-      socket.onmessage?.(
-        new MessageEvent("message", {
-          data: JSON.stringify({
-            companyId: "company-1",
-            type: "heartbeat.run.log",
-            createdAt: "2026-04-20T00:00:01.000Z",
-            payload: {
-              runId: "run-1",
-              ts: "2026-04-20T00:00:01.000Z",
-              stream: "stdout",
-              chunk,
-              seq,
-            },
-          }),
-        }),
-      );
+      sendEvent({
+        companyId: "company-1", type: "heartbeat.run.log", createdAt: "2026-04-20T00:00:01.000Z",
+        payload: { runId: "run-1", ts: "2026-04-20T00:00:01.000Z", stream: "stdout", chunk, seq },
+      });
     };
 
     // The websocket races ahead of the poller and its seq-2 chunk arrives
@@ -606,26 +681,15 @@ describe("useLiveRunTranscripts", () => {
       await Promise.resolve();
     });
 
-    expect(FakeWebSocket.instances).toHaveLength(1);
+    expect(socketConstructed).not.toHaveBeenCalled();
     expect(buildTranscriptMock).toHaveBeenCalledTimes(2);
     buildTranscriptMock.mockClear();
 
     await act(async () => {
-      FakeWebSocket.instances[0]!.onmessage?.(
-        new MessageEvent("message", {
-          data: JSON.stringify({
-            companyId: "company-1",
-            type: "heartbeat.run.log",
-            createdAt: "2026-04-20T00:00:00.000Z",
-            payload: {
-              runId: "run-1",
-              ts: "2026-04-20T00:00:00.000Z",
-              stream: "stdout",
-              chunk: "hello from run 1\n",
-            },
-          }),
-        }),
-      );
+      sendEvent({
+        companyId: "company-1", type: "heartbeat.run.log", createdAt: "2026-04-20T00:00:00.000Z",
+        payload: { runId: "run-1", ts: "2026-04-20T00:00:00.000Z", stream: "stdout", chunk: "hello from run 1\n" },
+      });
       await Promise.resolve();
     });
 

@@ -4,6 +4,8 @@ import { ApiError } from "@/api/client";
 import { issuesApi } from "@/api/issues";
 import { queryKeys } from "@/lib/queryKeys";
 
+const PLAN_DOCUMENT_STALE_TIME_MS = 30_000;
+
 /**
  * The issue's `plan` document, or null when none exists ("no plan yet" is a
  * normal state, not an error). Shared by the redesigned thread (its "Plan
@@ -24,6 +26,7 @@ export function useIssuePlanDocument(issueId: string | null | undefined) {
   return useQuery<IssueDocument | null>({
     queryKey: [...queryKeys.issues.documents(issueId ?? ""), "plan"],
     enabled: Boolean(issueId) && !issueId?.startsWith("chat:"),
+    staleTime: PLAN_DOCUMENT_STALE_TIME_MS,
     queryFn: async () => {
       const plan = await readPlanDocument(queryClient, issueId!);
       return plan;

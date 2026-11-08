@@ -1,3 +1,5 @@
+import { pullRequestSeedProductCondition } from "./decision-queue-seed-rules.js";
+import { notifyApprovalQueueWork } from "./approval-work-notifications.js";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "@paperclipai/db";
 import {
@@ -41,6 +43,14 @@ export type DecisionMutationActor = {
   runId: string | null;
   agentApiKeyId: string | null;
   responsibleUserId: string | null;
+};
+
+export type DecisionQueueSeedSource = {
+  sourceKind: AttentionSourceKind;
+  sourceId: string;
+  issueId: string | null;
+  isPlanTarget?: boolean;
+  interactionKind?: string;
 };
 
 type SeedDefinition = {
@@ -367,6 +377,12 @@ export function decisionQueueService(db: Db) {
       .then((rows) => rows[0] ?? null);
   }
 
+  async function lockQueue(database: Db, companyId: string, id: string) {
+    const [queue] = await database.select({ id: decisionQueues.id }).from(decisionQueues)
+      .where(and(eq(decisionQueues.companyId, companyId), eq(decisionQueues.id, id))).for("update");
+    if (!queue) throw notFound("Decision queue not found");
+  }
+
   async function visibleItems(companyId: string, queueId: string, authActor: AuthorizationActor) {
     const rows = await db.select().from(decisionQueueItems)
       .where(and(eq(decisionQueueItems.companyId, companyId), eq(decisionQueueItems.queueId, queueId)))
@@ -378,6 +394,140 @@ export function decisionQueueService(db: Db) {
       }
     }
     return visible;
+  }
+
+  async function materializeSeedSources(companyId: string, items: DecisionQueueSeedSource[]) {
+    // Seeded membership is a projection of the current attention feed. Reconcile
+    // system-owned rows as well as inserting new matches; otherwise a resolved
+    // plan/question remains in the queue table and the rail advertises a count
+    // that the attention feed (correctly) no longer renders. An empty feed must
+    // still reconcile (prune stale rows), so no empty-items early return.
+    const issueIds = [...new Set(items.map(item => item.issueId).filter((id): id is string => Boolean(id)))];
+    const prIssueIds = new Set(issueIds.length === 0 ? [] : await db
+      .select({ issueId: issueWorkProducts.issueId })
+      .from(issueWorkProducts)
+      .where(and(
+        pullRequestSeedProductCondition(companyId),
+        inArray(issueWorkProducts.issueId, issueIds),
+      )).then((rows) => rows.map((row) => row.issueId)));
+
+    const matches = new Map<string, DecisionQueueSeedSource[]>();
+    for (const item of items) {
+      if (prIssueIds.has(item.issueId ?? "")) {
+        matches.set("prs", [...(matches.get("prs") ?? []), item]);
+      }
+      if (item.sourceKind === "issue_thread_interaction" && item.isPlanTarget === true) {
+        matches.set("plans", [...(matches.get("plans") ?? []), item]);
+      }
+      if (item.sourceKind === "issue_thread_interaction" && item.interactionKind === "ask_user_questions") {
+        matches.set("questions", [...(matches.get("questions") ?? []), item]);
+      }
+    }
+
+    for (const seed of DECISION_QUEUE_SEEDS) {
+      const matchingItems = matches.get(seed.key) ?? [];
+      await db.transaction(async (tx) => {
+        const txDb = tx as unknown as Db;
+        const existingQueue = await txDb.select().from(decisionQueues)
+          .where(and(eq(decisionQueues.companyId, companyId), eq(decisionQueues.key, seed.key)))
+          .then((rows) => rows[0] ?? null);
+        // Do not create empty built-in queues, but do reconcile an existing one
+        // when the current feed no longer has any matching attention items.
+        if (!existingQueue && matchingItems.length === 0) return;
+        const insertedQueue = await txDb.insert(decisionQueues).values({
+          companyId,
+          key: seed.key,
+          title: seed.title,
+          description: seed.description,
+          createdByType: "system",
+          seedRules: seed.rules,
+          seedRulesEnabled: true,
+        }).onConflictDoNothing({ target: [decisionQueues.companyId, decisionQueues.key] }).returning();
+        const queue = insertedQueue[0] ?? await txDb.select().from(decisionQueues)
+          .where(and(eq(decisionQueues.companyId, companyId), eq(decisionQueues.key, seed.key)))
+          .for("update")
+          .then((rows) => rows[0] ?? null);
+        if (!queue || !queue.seedRulesEnabled) return;
+        const desiredKeys = new Set(matchingItems.map((item) => `${item.sourceKind}:${item.sourceId}`));
+        const seededRows = await txDb.select({
+          sourceKind: decisionQueueItems.sourceKind,
+          sourceId: decisionQueueItems.sourceId,
+          addedByType: decisionQueueItems.addedByType,
+        }).from(decisionQueueItems).where(and(
+          eq(decisionQueueItems.companyId, companyId),
+          eq(decisionQueueItems.queueId, queue.id),
+          eq(decisionQueueItems.addedByType, "system"),
+        ));
+        let changed = false;
+        for (const stale of seededRows) {
+          if (desiredKeys.has(`${stale.sourceKind}:${stale.sourceId}`)) continue;
+          await txDb.delete(decisionQueueItems).where(and(
+            eq(decisionQueueItems.companyId, companyId),
+            eq(decisionQueueItems.queueId, queue.id),
+            eq(decisionQueueItems.sourceKind, stale.sourceKind),
+            eq(decisionQueueItems.sourceId, stale.sourceId),
+            eq(decisionQueueItems.addedByType, "system"),
+          ));
+          changed = true;
+        }
+        if (changed) {
+          await txDb.update(decisionQueues).set({ updatedAt: new Date() })
+            .where(and(eq(decisionQueues.companyId, companyId), eq(decisionQueues.id, queue.id)));
+        }
+        if (insertedQueue[0]) {
+          await txDb.insert(decisionTriageEvents).values({
+            companyId,
+            queueId: queue.id,
+            action: "queue.seeded",
+            ...eventActorColumns(SYSTEM_ACTOR),
+            details: { key: seed.key, rules: seed.rules.map((rule) => rule.key) },
+          });
+          await recordActivity(txDb, SYSTEM_ACTOR, {
+            companyId,
+            action: "decision_queue.seeded",
+            entityType: "decision_queue",
+            entityId: queue.id,
+            details: { key: seed.key },
+          });
+        }
+        let insertedAnyItem = false;
+        for (let offset = 0; offset < matchingItems.length; offset += 500) {
+          const inserted = await txDb.insert(decisionQueueItems).values(matchingItems.slice(offset, offset + 500).map(item => ({
+            companyId,
+            queueId: queue.id,
+            sourceKind: item.sourceKind,
+            sourceId: item.sourceId,
+            addedByType: "system",
+          }))).onConflictDoNothing({
+            target: [decisionQueueItems.queueId, decisionQueueItems.sourceKind, decisionQueueItems.sourceId],
+          }).returning();
+          if (inserted.length === 0) continue;
+          insertedAnyItem = true;
+          for (const item of inserted) {
+            await txDb.insert(decisionTriageEvents).values({
+              companyId,
+              queueId: queue.id,
+              sourceKind: item.sourceKind,
+              sourceId: item.sourceId,
+              action: "queue_item.seeded",
+              ...eventActorColumns(SYSTEM_ACTOR),
+              details: { seedKey: seed.key },
+            });
+            await recordActivity(txDb, SYSTEM_ACTOR, {
+              companyId,
+              action: "decision_queue_item.seeded",
+              entityType: "decision_queue",
+              entityId: queue.id,
+              details: { sourceKind: item.sourceKind, sourceId: item.sourceId, seedKey: seed.key },
+            });
+          }
+        }
+        if (insertedAnyItem) {
+          await txDb.update(decisionQueues).set({ updatedAt: new Date() })
+            .where(and(eq(decisionQueues.companyId, companyId), eq(decisionQueues.id, queue.id)));
+        }
+      });
+    }
   }
 
   return {
@@ -392,6 +542,7 @@ export function decisionQueueService(db: Db) {
     }) => {
       const result = await db.transaction(async (tx) => {
         const txDb = tx as unknown as Db;
+        if (input.key === "prs") await notifyApprovalQueueWork(txDb, input.companyId);
         const inserted = await txDb.insert(decisionQueues).values({
           companyId: input.companyId,
           key: input.key,
@@ -449,6 +600,7 @@ export function decisionQueueService(db: Db) {
     }) => {
       const row = await db.transaction(async (tx) => {
         const txDb = tx as unknown as Db;
+        if (input.key === "prs") await notifyApprovalQueueWork(txDb, input.companyId);
         const updated = await txDb.update(decisionQueues).set({ ...input.patch, updatedAt: new Date() })
           .where(and(eq(decisionQueues.companyId, input.companyId), eq(decisionQueues.key, input.key)))
           .returning().then((rows) => rows[0] ?? null);
@@ -491,6 +643,7 @@ export function decisionQueueService(db: Db) {
       await requireSourceRead(db, input.authActor, input.companyId, input.sourceKind, input.sourceId);
       return db.transaction(async (tx) => {
         const txDb = tx as unknown as Db;
+        await lockQueue(txDb, input.companyId, queue.id);
         const inserted = await txDb.insert(decisionQueueItems).values({
           companyId: input.companyId,
           queueId: queue.id,
@@ -556,6 +709,8 @@ export function decisionQueueService(db: Db) {
       }
       return db.transaction(async (tx) => {
         const txDb = tx as unknown as Db;
+        await lockQueue(txDb, input.companyId, queue.id);
+        if (input.key === "prs" && input.sourceKind === "approval") await notifyApprovalQueueWork(txDb, input.companyId);
         const removed = await txDb.delete(decisionQueueItems).where(and(
           eq(decisionQueueItems.companyId, input.companyId),
           eq(decisionQueueItems.queueId, queue.id),
@@ -682,135 +837,13 @@ export function decisionQueueService(db: Db) {
       });
     },
 
-    materializeSeededQueues: async (companyId: string, items: AttentionItem[]) => {
-      // Seeded membership is a projection of the current attention feed. Reconcile
-      // system-owned rows as well as inserting new matches; otherwise a resolved
-      // plan/question remains in the queue table and the rail advertises a count
-      // that the attention feed (correctly) no longer renders.
-      const issueIds = [...new Set(items.map(itemIssueId).filter((id): id is string => Boolean(id)))];
-      const prIssueIds = new Set(issueIds.length === 0 ? [] : await db
-        .select({ issueId: issueWorkProducts.issueId })
-        .from(issueWorkProducts)
-        .where(and(
-          eq(issueWorkProducts.companyId, companyId),
-          eq(issueWorkProducts.type, "pull_request"),
-          inArray(issueWorkProducts.issueId, issueIds),
-        )).then((rows) => rows.map((row) => row.issueId)));
-
-      const matches = new Map<string, AttentionItem[]>();
-      for (const item of items) {
-        if (prIssueIds.has(itemIssueId(item) ?? "")) {
-          matches.set("prs", [...(matches.get("prs") ?? []), item]);
-        }
-        if (item.sourceKind === "issue_thread_interaction" && item.subject.metadata?.isPlanTarget === true) {
-          matches.set("plans", [...(matches.get("plans") ?? []), item]);
-        }
-        if (item.sourceKind === "issue_thread_interaction" && item.subject.metadata?.kind === "ask_user_questions") {
-          matches.set("questions", [...(matches.get("questions") ?? []), item]);
-        }
-      }
-
-      for (const seed of DECISION_QUEUE_SEEDS) {
-        const matchingItems = matches.get(seed.key) ?? [];
-        await db.transaction(async (tx) => {
-          const txDb = tx as unknown as Db;
-          const existingQueue = await txDb.select().from(decisionQueues)
-            .where(and(eq(decisionQueues.companyId, companyId), eq(decisionQueues.key, seed.key)))
-            .then((rows) => rows[0] ?? null);
-          // Do not create empty built-in queues, but do reconcile an existing one
-          // when the current feed no longer has any matching attention items.
-          if (!existingQueue && matchingItems.length === 0) return;
-          const insertedQueue = await txDb.insert(decisionQueues).values({
-            companyId,
-            key: seed.key,
-            title: seed.title,
-            description: seed.description,
-            createdByType: "system",
-            seedRules: seed.rules,
-            seedRulesEnabled: true,
-          }).onConflictDoNothing({ target: [decisionQueues.companyId, decisionQueues.key] }).returning();
-          const queue = insertedQueue[0] ?? await txDb.select().from(decisionQueues)
-            .where(and(eq(decisionQueues.companyId, companyId), eq(decisionQueues.key, seed.key)))
-            .then((rows) => rows[0] ?? null);
-          if (!queue || !queue.seedRulesEnabled) return;
-          const desiredKeys = new Set(matchingItems.map((item) => `${item.sourceKind}:${item.subject.id}`));
-          const seededRows = await txDb.select({
-            sourceKind: decisionQueueItems.sourceKind,
-            sourceId: decisionQueueItems.sourceId,
-            addedByType: decisionQueueItems.addedByType,
-          }).from(decisionQueueItems).where(and(
-            eq(decisionQueueItems.companyId, companyId),
-            eq(decisionQueueItems.queueId, queue.id),
-            eq(decisionQueueItems.addedByType, "system"),
-          ));
-          let changed = false;
-          for (const stale of seededRows) {
-            if (desiredKeys.has(`${stale.sourceKind}:${stale.sourceId}`)) continue;
-            await txDb.delete(decisionQueueItems).where(and(
-              eq(decisionQueueItems.companyId, companyId),
-              eq(decisionQueueItems.queueId, queue.id),
-              eq(decisionQueueItems.sourceKind, stale.sourceKind),
-              eq(decisionQueueItems.sourceId, stale.sourceId),
-              eq(decisionQueueItems.addedByType, "system"),
-            ));
-            changed = true;
-          }
-          if (changed) {
-            await txDb.update(decisionQueues).set({ updatedAt: new Date() })
-              .where(and(eq(decisionQueues.companyId, companyId), eq(decisionQueues.id, queue.id)));
-          }
-          if (insertedQueue[0]) {
-            await txDb.insert(decisionTriageEvents).values({
-              companyId,
-              queueId: queue.id,
-              action: "queue.seeded",
-              ...eventActorColumns(SYSTEM_ACTOR),
-              details: { key: seed.key, rules: seed.rules.map((rule) => rule.key) },
-            });
-            await recordActivity(txDb, SYSTEM_ACTOR, {
-              companyId,
-              action: "decision_queue.seeded",
-              entityType: "decision_queue",
-              entityId: queue.id,
-              details: { key: seed.key },
-            });
-          }
-          let insertedAnyItem = false;
-          for (const item of matchingItems) {
-            const inserted = await txDb.insert(decisionQueueItems).values({
-              companyId,
-              queueId: queue.id,
-              sourceKind: item.sourceKind,
-              sourceId: item.subject.id,
-              addedByType: "system",
-            }).onConflictDoNothing({
-              target: [decisionQueueItems.queueId, decisionQueueItems.sourceKind, decisionQueueItems.sourceId],
-            }).returning();
-            if (!inserted[0]) continue;
-            insertedAnyItem = true;
-            await txDb.insert(decisionTriageEvents).values({
-              companyId,
-              queueId: queue.id,
-              sourceKind: item.sourceKind,
-              sourceId: item.subject.id,
-              action: "queue_item.seeded",
-              ...eventActorColumns(SYSTEM_ACTOR),
-              details: { seedKey: seed.key },
-            });
-            await recordActivity(txDb, SYSTEM_ACTOR, {
-              companyId,
-              action: "decision_queue_item.seeded",
-              entityType: "decision_queue",
-              entityId: queue.id,
-              details: { sourceKind: item.sourceKind, sourceId: item.subject.id, seedKey: seed.key },
-            });
-          }
-          if (insertedAnyItem) {
-            await txDb.update(decisionQueues).set({ updatedAt: new Date() })
-              .where(and(eq(decisionQueues.companyId, companyId), eq(decisionQueues.id, queue.id)));
-          }
-        });
-      }
-    },
+    materializeSeedSources,
+    materializeSeededQueues: (companyId: string, items: AttentionItem[]) => materializeSeedSources(companyId, items.map(item => ({
+      sourceKind: item.sourceKind,
+      sourceId: item.subject.id,
+      issueId: itemIssueId(item),
+      isPlanTarget: item.subject.metadata?.isPlanTarget === true,
+      interactionKind: typeof item.subject.metadata?.kind === "string" ? item.subject.metadata.kind : undefined,
+    }))),
   };
 }
