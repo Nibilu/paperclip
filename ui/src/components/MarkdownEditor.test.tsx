@@ -1746,13 +1746,14 @@ describe("MarkdownEditor", () => {
     ],
     matchText = "Pilibala App",
     onSubmit?: () => void,
+    typeText = "@Pil",
   ): Promise<{ option: HTMLButtonElement; root: ReturnType<typeof createRoot>; menu: HTMLElement }> {
     const root = createRoot(container);
 
     await act(async () => {
       root.render(
         <MarkdownEditor
-          value="@Pap"
+          value={typeText}
           onChange={handleChange}
           mentions={mentions}
           onSubmit={onSubmit}
@@ -1838,6 +1839,8 @@ describe("MarkdownEditor", () => {
         },
       ],
       "PAP-102",
+      undefined,
+      "@PAP",
     );
     const point = { clientX: 100, clientY: 50 };
 
@@ -1871,6 +1874,8 @@ describe("MarkdownEditor", () => {
         },
       ],
       "PAP-102",
+      undefined,
+      "@PAP",
     );
 
     expect(option.textContent).toContain("PAP-102");
@@ -1955,7 +1960,7 @@ describe("MarkdownEditor", () => {
         <Dialog open>
           <DialogContent>
             <DialogTitle>Create task</DialogTitle>
-            <MarkdownEditor value="@Pap" onChange={() => {}} mentions={mentions} />
+            <MarkdownEditor value="@Pil" onChange={() => {}} mentions={mentions} />
           </DialogContent>
         </Dialog>,
       );

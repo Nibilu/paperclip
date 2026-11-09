@@ -1332,7 +1332,8 @@ function Setup({
                             </details>
                           ) : (
                             <AiConnectionField companyId={companyId} agentName={name} adapterType={brandType} model={model} environmentId={environmentId ?? undefined} value={aiBinding}
-                              onChange={binding => { binding.mode !== "router" && setRuntimeAiBinding(binding); resetTest(); }} />
+                              onChange={binding => { binding.mode !== "router" && setRuntimeAiBinding(binding); resetTest();
+                                if (accountCatalogAvailable && hashKey([aiBinding ?? null]) === hashKey([binding ?? null])) void refreshAccountModels(); }} />
                           )
                         )}
                         {brandType === "hermes_local" && (

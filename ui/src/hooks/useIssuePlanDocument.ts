@@ -40,10 +40,14 @@ async function readPlanDocument(
 ): Promise<IssueDocument | null> {
   // Prefer the shared list cache: no request when the task page already
   // fetched the documents list.
-  const cachedList = queryClient.getQueryData<IssueDocument[]>(
-    [...queryKeys.issues.documents(issueId), "list"],
-  );
-  if (cachedList) {
+  const listKey = [...queryKeys.issues.documents(issueId), "list"];
+  const cachedList = queryClient.getQueryData<IssueDocument[]>(listKey);
+  const listState = queryClient.getQueryState(listKey);
+  // Trust the shared list cache only while it is fresh: a document-scope
+  // invalidation (upload, delete, live event) marks it stale, and reusing it
+  // here would keep serving a deleted plan until its own observer refetches.
+  if (cachedList && listState && !listState.isInvalidated &&
+      Date.now() - (listState.dataUpdatedAt ?? 0) < PLAN_DOCUMENT_STALE_TIME_MS) {
     return cachedList.find((document) => document.key === "plan") ?? null;
   }
 
@@ -58,8 +62,9 @@ async function readPlanDocument(
     return list.find((document) => document.key === "plan") ?? null;
   } catch (error) {
     // A transient list failure must not surface as a plan error; consumers
-    // render "no plan yet" and the next invalidation retries.
-    if (error instanceof ApiError && error.status >= 500) return null;
+    // render "no plan yet" and the next invalidation retries. A 404 means
+    // the issue has no documents at all — also just "no plan yet".
+    if (error instanceof ApiError && (error.status >= 500 || error.status === 404)) return null;
     throw error;
   }
 }

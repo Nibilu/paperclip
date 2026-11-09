@@ -11,7 +11,6 @@ import {
   type ReactNode,
 } from "react";
 import { cn } from "@/lib/utils";
-import { createUuid } from "@/lib/uuid";
 import { taskChatComposerSurfaceClasses } from "./composer-surface";
 import { useComposerStop } from "@/hooks/useComposerStop";
 import { useComposerSubmitKey } from "@/hooks/useComposerSubmitKey";
@@ -1051,11 +1050,6 @@ export function TaskChatComposer({
         setUncertainSubmission(retainedAfterMode);
         setBody(submittedBody);
         return;
-      }
-      attemptId = createUuid();
-      if (draftKey) {
-        saveDraft(draftKey, submittedBody);
-        saveDraftSubmission(draftKey, { attemptId, reviewed: false });
       }
       attemptId = crypto.randomUUID();
       if (requestOwner === undefined) markRequestUnbound(attemptId);

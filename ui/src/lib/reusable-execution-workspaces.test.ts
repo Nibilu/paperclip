@@ -210,7 +210,7 @@ describe("buildReusableExecutionWorkspaceOptionGroups", () => {
     ], { now });
 
     const option = groups[0]!.options[0]!;
-    expect(reusableWorkspaceOptionMatches(option, "pclip reusable")).toBe(true);
+    expect(reusableWorkspaceOptionMatches(option, "pil reusable")).toBe(true);
     expect(reusableWorkspaceOptionMatches(option, "inactive")).toBe(false);
   });
 

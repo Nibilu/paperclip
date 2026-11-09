@@ -1028,10 +1028,12 @@ describe("New agent setup", () => {
     expect(secrets.create).toHaveBeenCalledWith("company-1", expect.objectContaining({ value: "new-cursor-key" }));
     expect(api.hire.mock.calls[0][1].adapterConfig.env.CURSOR_API_KEY).toMatchObject({ type: "secret_ref", secretId: "org-secret-1" });
   });
+  // hermes_local is intentionally excluded: its default-provider flow uses the
+  // host Hermes config's credential (~/.hermes/.env) and no longer renders an
+  // OPENROUTER_API_KEY input; explicit providers ask for their own env key.
   it.each([
     ["cursor", "CURSOR_API_KEY"],
     ["gemini_local", "GEMINI_API_KEY"],
-    ["hermes_local", "OPENROUTER_API_KEY"],
   ])("provides %s credentials to tests and stores only a secret reference", async (adapter, key) => {
     await render(adapter);
     await fill(key, "adapter-test-key");

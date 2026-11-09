@@ -17,7 +17,7 @@ import type {
   IssueTreeHold,
   IssueWorkProduct,
   Project,
-} from "@pilibalaai/shared";
+ IssueDocument } from "@pilibalaai/shared";
 import { ONBOARDING_FIRST_TASK_ORIGIN_KIND } from "@pilibalaai/shared";
 import type {
   AnchorHTMLAttributes,
@@ -3977,13 +3977,15 @@ describe("IssueDetail", () => {
     mockIssuesApi.listComments.mockResolvedValue([{ id: "notice-inline", companyId: issue.companyId, issueId: issue.id, authorType: "system", body: "Unrelated prose", createdAt: new Date(), updatedAt: new Date(), metadata: { version: 1, sections: [], recovery: snapshot } }]);
     if (outcome === "pending question") mockIssuesApi.listInteractions.mockResolvedValue([{ id: "question-1", kind: "ask_user_questions", status: "pending", payload: { version: 1, questions: [] } }]);
     if (outcome.endsWith("plan")) {
-      mockIssuesApi.getDocument.mockResolvedValue({
+      const planDocument = {
         id: "plan-document", companyId: issue.companyId, issueId: issue.id, key: "plan", title: "Plan", format: "markdown", body: "# Current plan",
         latestRevisionId: "revision-4", latestRevisionNumber: 4,
         createdAt: new Date("2026-11-01T10:00:00Z"), updatedAt: new Date("2026-11-01T10:03:00Z"),
         createdByAgentId: "agent-1", createdByUserId: null, updatedByAgentId: "agent-1", updatedByUserId: null,
         lockedAt: null, lockedByAgentId: null, lockedByUserId: null,
-      });
+      } as IssueDocument;
+      mockIssuesApi.getDocument.mockResolvedValue(planDocument);
+      mockIssuesApi.listDocuments.mockResolvedValue([planDocument]);
       const fixture = (await import("@/fixtures/issueThreadInteractionFixtures")).genericPendingRequestConfirmationInteraction;
       const revision = outcome === "outdated plan" ? 3 : 4;
       mockIssuesApi.listInteractions.mockResolvedValue([{

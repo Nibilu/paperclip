@@ -493,7 +493,7 @@ describe("SearchableSelect", () => {
     expect(container.textContent).toContain("Recent");
     expect(container.textContent).toContain("All workspaces");
 
-    setInputValue(input!, "pclip reusable");
+    setInputValue(input!, "pil reusable");
     await flush();
 
     expect(container.textContent).toContain("Pilibala app");

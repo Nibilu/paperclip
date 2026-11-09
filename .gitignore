@@ -105,3 +105,4 @@ packages/adapter-utils/.claude/
 
 # Content-addressed CI task results
 .turbo/
+graphify-out/
