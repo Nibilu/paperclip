@@ -10,12 +10,41 @@ import { ApiError } from "../../api/client";
 import { useLiveRunTranscripts } from "./useLiveRunTranscripts";
 import { TRANSCRIPT_REQUEST_TIMEOUT_MS } from "./read-transcript-request";
 
-const { useQueryMock, logMock, buildTranscriptMock } = vi.hoisted(() => ({
-  useQueryMock: vi.fn(() => ({ data: { censorUsernameInLogs: false } })),
-  logMock: vi.fn(async (_runId: string, _offset: number, _limit: number, _options: { signal: AbortSignal }) =>
-    ({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: 0 })),
-  buildTranscriptMock: vi.fn((chunks: unknown[]) => chunks),
-}));
+const { useQueryMock, logMock, createTranscriptBuilderMock, builderEvents, clearBuilderEvents, setAppendChangedOverride } = vi.hoisted(() => {
+  type BuilderEvent = { kind: "construct" | "append" | "dispose"; adapter: unknown; opts: unknown; chunks: unknown[] };
+  const builderEvents: BuilderEvent[] = [];
+  let appendChangedOverride: ((chunks: unknown[]) => boolean) | null = null;
+  const NO_CHANGE = { appended: 0, mutated: false, changed: false };
+  const createTranscriptBuilderMock = vi.fn((adapter: unknown, opts: unknown) => {
+    builderEvents.push({ kind: "construct", adapter, opts, chunks: [] });
+    const entries: unknown[] = [];
+    return {
+      entries,
+      append: (chunks: unknown[]) => {
+        if (!chunks.length) return NO_CHANGE;
+        entries.push(...chunks);
+        builderEvents.push({ kind: "append", adapter, opts, chunks });
+        return { appended: chunks.length, mutated: false, changed: appendChangedOverride ? appendChangedOverride(chunks) : true };
+      },
+      flush: () => NO_CHANGE,
+      dispose: () => builderEvents.push({ kind: "dispose", adapter, opts, chunks: [] }),
+    };
+  });
+  return {
+    useQueryMock: vi.fn(() => ({ data: { censorUsernameInLogs: false } })),
+    logMock: vi.fn(async (_runId: string, _offset: number, _limit: number, _options: { signal: AbortSignal }) =>
+      ({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: 0 })),
+    createTranscriptBuilderMock,
+    builderEvents,
+    clearBuilderEvents: () => {
+      builderEvents.length = 0;
+      appendChangedOverride = null;
+    },
+    setAppendChangedOverride: (fn: ((chunks: unknown[]) => boolean) | null) => {
+      appendChangedOverride = fn;
+    },
+  };
+});
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: useQueryMock,
@@ -34,10 +63,14 @@ vi.mock("../../api/heartbeats", () => ({
 }));
 
 vi.mock("../../adapters", () => ({
-  buildTranscript: buildTranscriptMock,
+  createTranscriptBuilder: createTranscriptBuilderMock,
   getUIAdapter: () => null,
   onAdapterChange: () => () => {},
 }));
+
+const lastAppend = () => [...builderEvents].reverse().find((event) => event.kind === "append");
+const transcriptAppends = () => builderEvents.filter((event) => event.kind === "append");
+const transcriptConstructs = () => builderEvents.filter((event) => event.kind === "construct");
 
 const { LiveEventSubscriptionContext } = __liveUpdatesTestUtils;
 let listeners: Set<CompanyLiveEventHandler>;
@@ -85,7 +118,8 @@ describe("useLiveRunTranscripts", () => {
     useQueryMock.mockClear();
     logMock.mockReset();
     logMock.mockImplementation(async (_id, offset) => ({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: offset }));
-    buildTranscriptMock.mockClear();
+    createTranscriptBuilderMock.mockClear();
+    clearBuilderEvents();
     globalThis.WebSocket = class { constructor() { socketConstructed(); } } as unknown as typeof WebSocket;
   });
 
@@ -149,7 +183,7 @@ describe("useLiveRunTranscripts", () => {
       return null;
     }
     const root = createRoot(document.createElement("div"));
-    const chunks = () => buildTranscriptMock.mock.calls.at(-1)?.[0];
+    const chunks = () => lastAppend()?.chunks;
     try {
       await act(async () => root.render(<Harness limit={32_000} />));
       expect(logMock).toHaveBeenNthCalledWith(1, "run-1", 68_000, 32_000, expect.objectContaining({ alignStartToRecord: true }));
@@ -219,7 +253,7 @@ describe("useLiveRunTranscripts", () => {
       return null;
     }
     const root = createRoot(document.createElement("div"));
-    const chunks = () => buildTranscriptMock.mock.calls.at(-1)?.[0];
+    const chunks = () => lastAppend()?.chunks;
     try {
       await act(async () => root.render(<Harness limit={32_000} />));
       await act(async () => root.render(<Harness limit={256_000} />));
@@ -516,8 +550,8 @@ describe("useLiveRunTranscripts", () => {
       await Promise.resolve();
     });
 
-    const lastCall = buildTranscriptMock.mock.calls.at(-1) as unknown[] | undefined;
-    expect(lastCall?.[0]).toEqual([
+    const lastAppendChunks = lastAppend()?.chunks as unknown[] | undefined;
+    expect(lastAppendChunks).toEqual([
       { ts, stream: "stdout", chunk: '{"type":"acpx.text_delta","text":" the"}\n', seq: 1 },
       { ts, stream: "stdout", chunk: '{"type":"acpx.text_delta","text":" the"}\n', seq: 2 },
       { ts, stream: "stdout", chunk: '{"type":"acpx.text_delta","text":" the"}\n', seq: 3 },
@@ -562,8 +596,8 @@ describe("useLiveRunTranscripts", () => {
       await Promise.resolve();
     });
 
-    const lastCall = buildTranscriptMock.mock.calls.at(-1) as unknown[] | undefined;
-    expect(lastCall?.[0]).toEqual([
+    const lastAppendChunks = lastAppend()?.chunks as unknown[] | undefined;
+    expect(lastAppendChunks).toEqual([
       { ts, stream: "stdout", chunk: '{"type":"acpx.text_delta","text":" the"}\n', seq: undefined },
       { ts, stream: "stdout", chunk: '{"type":"acpx.text_delta","text":" the"}\n', seq: undefined },
       { ts, stream: "stdout", chunk: '{"type":"acpx.text_delta","text":" the"}\n', seq: undefined },
@@ -632,8 +666,8 @@ describe("useLiveRunTranscripts", () => {
       await Promise.resolve();
     });
 
-    const lastCall = buildTranscriptMock.mock.calls.at(-1) as unknown[] | undefined;
-    expect(lastCall?.[0]).toEqual([
+    const lastAppendChunks = lastAppend()?.chunks as unknown[] | undefined;
+    expect(lastAppendChunks).toEqual([
       { ts: "2026-04-20T00:00:00.500Z", stream: "stdout", chunk: "hello\n", seq: 1 },
       { ts: "2026-04-20T00:00:00.500Z", stream: "stdout", chunk: "world\n", seq: 2 },
       { ts: "2026-04-20T00:00:01.000Z", stream: "stdout", chunk: "!\n", seq: 3 },
@@ -668,8 +702,8 @@ describe("useLiveRunTranscripts", () => {
     });
 
     expect(socketConstructed).not.toHaveBeenCalled();
-    expect(buildTranscriptMock).toHaveBeenCalledTimes(2);
-    buildTranscriptMock.mockClear();
+    expect(transcriptConstructs()).toHaveLength(2);
+    clearBuilderEvents();
 
     await act(async () => {
       sendEvent({
@@ -679,12 +713,17 @@ describe("useLiveRunTranscripts", () => {
       await Promise.resolve();
     });
 
-    expect(buildTranscriptMock).toHaveBeenCalledTimes(1);
-    expect(buildTranscriptMock).toHaveBeenCalledWith(
-      [{ ts: "2026-04-20T00:00:00.000Z", stream: "stdout", chunk: "hello from run 1\n" }],
-      null,
-      { censorUsernameInLogs: false },
-    );
+    // The live chunk must be appended to run-1's existing builder — no
+    // full rebuild (zero new constructors), no append for run-2.
+    expect(transcriptConstructs()).toHaveLength(0);
+    expect(transcriptAppends()).toHaveLength(1);
+    expect(transcriptAppends()[0]).toMatchObject({
+      adapter: null,
+      opts: { censorUsernameInLogs: false },
+    });
+    expect(transcriptAppends()[0].chunks).toEqual([
+      { ts: "2026-04-20T00:00:00.000Z", stream: "stdout", chunk: "hello from run 1\n" },
+    ]);
 
     act(() => {
       root.unmount();
@@ -798,6 +837,109 @@ describe("useLiveRunTranscripts", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("appends only the new tail for each live chunk (no full rebuild per chunk)", async () => {
+    function Harness() {
+      useLiveRunTranscripts({
+        companyId: "company-1",
+        runs: [{ id: "run-1", status: "running", adapterType: "codex_local" }],
+      });
+      return null;
+    }
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<Harness />);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(transcriptConstructs()).toHaveLength(1);
+    clearBuilderEvents();
+
+    // 30 sequential live chunks: each must be parsed exactly once — the
+    // incremental builder replays only the new tail. A regression to the
+    // full-rebuild hot path (which once made busy task pages burn ~30% of a
+    // core) would construct a builder per chunk and re-append the whole
+    // history instead.
+    for (let i = 0; i < 30; i += 1) {
+      await act(async () => {
+        sendEvent({
+          companyId: "company-1", type: "heartbeat.run.log", createdAt: "2026-04-20T00:00:00.000Z",
+          payload: { runId: "run-1", ts: "2026-04-20T00:00:00.000Z", stream: "stdout", chunk: `line ${i}\n` },
+        });
+        await Promise.resolve();
+      });
+    }
+
+    expect(transcriptConstructs()).toHaveLength(0);
+    expect(transcriptAppends()).toHaveLength(30);
+    expect(transcriptAppends().reduce((total, event) => total + event.chunks.length, 0)).toBe(30);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it("keeps the transcript map reference stable when a chunk yields no visible change", async () => {
+    // Quiet mode strips thinking/tool content before coalescing, so a chunk
+    // can update the buffered transcript data without anything visible
+    // changing. The memo must then return the previous map reference so
+    // downstream consumers skip re-rendering the thread entirely.
+    const captured: { value: ReturnType<typeof useLiveRunTranscripts> | null } = { value: null };
+    function Harness() {
+      captured.value = useLiveRunTranscripts({
+        companyId: "company-1",
+        runs: [{ id: "run-1", status: "running", adapterType: "codex_local" }],
+      });
+      return null;
+    }
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<Harness />);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    clearBuilderEvents();
+
+    const sendChunk = (chunk: string) => act(async () => {
+      sendEvent({
+        companyId: "company-1", type: "heartbeat.run.log", createdAt: "2026-04-20T00:00:00.000Z",
+        payload: { runId: "run-1", ts: "2026-04-20T00:00:00.000Z", stream: "stdout", chunk },
+      });
+      await Promise.resolve();
+    });
+
+    // A visible chunk first: the map reference changes.
+    await sendChunk("visible\n");
+    const afterVisible = captured.value?.transcriptByRun;
+    expect(afterVisible?.get("run-1")).toHaveLength(1);
+
+    // A no-visible-change chunk (quiet-filtered): the data still lands in the
+    // transcript buffer, but the returned map keeps its identity.
+    setAppendChangedOverride(() => false);
+    await sendChunk("quiet-filtered\n");
+    expect(captured.value?.transcriptByRun).toBe(afterVisible);
+    expect(captured.value?.transcriptByRun.get("run-1")).toHaveLength(2);
+
+    // A visible chunk again: the reference must change so the UI catches up.
+    setAppendChangedOverride(null);
+    await sendChunk("visible again\n");
+    expect(captured.value?.transcriptByRun).not.toBe(afterVisible);
+    expect(captured.value?.transcriptByRun.get("run-1")).toHaveLength(3);
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
   });
 
 });

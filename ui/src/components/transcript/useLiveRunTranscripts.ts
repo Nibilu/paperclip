@@ -8,7 +8,14 @@ import type { LiveEvent } from "@pilibalaai/shared";
 import { ApiError } from "../../api/client";
 import { instanceSettingsApi } from "../../api/instanceSettings";
 import { heartbeatsApi } from "../../api/heartbeats";
-import { buildTranscript, getUIAdapter, onAdapterChange, type RunLogChunk, type TranscriptEntry } from "../../adapters";
+import {
+  createTranscriptBuilder,
+  getUIAdapter,
+  onAdapterChange,
+  type RunLogChunk,
+  type TranscriptBuilder,
+  type TranscriptEntry,
+} from "../../adapters";
 import { queryKeys } from "../../lib/queryKeys";
 import {
   mergeRunLogChunks,
@@ -215,8 +222,14 @@ export function useLiveRunTranscripts({
     censorUsernameInLogs: boolean;
     quiet: boolean;
     parserTick: number;
+    builder: TranscriptBuilder;
     transcript: TranscriptEntry[];
   }>());
+  // Last map returned from the transcript memo. When a live chunk produces no
+  // visible transcript entries (quiet-filtered or empty), the memo returns this
+  // same reference so downstream memos bail out instead of re-rendering the
+  // thread for output the current channel would not show anyway.
+  const previousTranscriptByRunRef = useRef<Map<string, TranscriptEntry[]> | null>(null);
   const previousCompanyRef = useRef(companyId);
   useEffect(() => {
     if (previousCompanyRef.current === companyId) return;
@@ -227,6 +240,7 @@ export function useLiveRunTranscripts({
     logIdentityRef.current.clear(); retiredLogIdentitiesRef.current.clear(); sequencesRef.current.clear();
     gapPendingRef.current.clear(); missingTerminalLogRunIdsRef.current.clear();
     absenceDeadlineByRunRef.current.clear(); prevKnownRunIdsRef.current.clear(); transcriptCacheRef.current.clear();
+    previousTranscriptByRunRef.current = null;
   }, [companyId]);
 
   // Tick counter to force transcript recomputation when dynamic parser loads
@@ -625,6 +639,11 @@ export function useLiveRunTranscripts({
     const censorUsernameInLogs = generalSettings?.censorUsernameInLogs === true;
     const cache = transcriptCacheRef.current;
     const currentRunIds = new Set<string>();
+    // Set when any run's visible transcript content actually changed (new
+    // entries appended, a builder rebuilt, or a run added/removed). When a
+    // chunk only produced quiet-filtered entries, nothing visible changed and
+    // the memo returns the previous map reference (see the bail-out below).
+    let visibleChanged = false;
     for (const run of normalizedRuns) {
       currentRunIds.add(run.id);
       const chunks = chunksByRun.get(run.id) ?? EMPTY_RUN_LOG_CHUNKS;
@@ -643,27 +662,85 @@ export function useLiveRunTranscripts({
       }
 
       const adapter = getUIAdapter(run.adapterType);
-      const transcript = buildTranscript(chunks, adapter, hasQuietControl ? {
-        censorUsernameInLogs,
-        quiet,
-      } : {
-        censorUsernameInLogs,
-      });
+      const builderOpts = hasQuietControl ? { censorUsernameInLogs, quiet } : { censorUsernameInLogs };
+      const canIncrement =
+        cached &&
+        cached.censorUsernameInLogs === censorUsernameInLogs &&
+        cached.quiet === quiet &&
+        cached.parserTick === parserTick &&
+        chunks.length > cached.chunks.length;
+      if (canIncrement) {
+        // Prefix-diff against the chunk array the builder already consumed.
+        // Chunk objects are created fresh by the merge step and never mutated,
+        // so element identity is exact: the first diverging index is where the
+        // old parse result stops being valid. A live stream only appends, so
+        // the common case parses just the new tail instead of the whole
+        // history (the O(n²) full rebuild this cache exists to avoid).
+        const priorChunks = cached.chunks;
+        let divergeAt = 0;
+        const limit = Math.min(priorChunks.length, chunks.length);
+        while (divergeAt < limit && priorChunks[divergeAt] === chunks[divergeAt]) {
+          divergeAt += 1;
+        }
+        if (divergeAt === priorChunks.length) {
+          const appended = cached.builder.append(chunks.slice(divergeAt));
+          let flushed = { appended: 0, mutated: false, changed: false };
+          if (isTerminalStatus(run.status)) {
+            // An incomplete trailing line is emitted once, when the stream
+            // ends without a newline — mirroring buildTranscript's trailing
+            // flush. While running it stays buffered and is parsed when a
+            // later chunk completes it.
+            flushed = cached.builder.flush();
+          }
+          cached.chunks = chunks;
+          next.set(run.id, cached.transcript);
+          // Delta coalescing mutates the last entry in place without growing
+          // the array, so the builder's change report — not the array length —
+          // decides whether downstream needs to re-render.
+          if (appended.changed || flushed.changed) visibleChanged = true;
+          continue;
+        }
+        // Mid-array insert/replace (late seq-ordered delivery): the cached
+        // entries no longer match any prefix. Full rebuild — rare, and bounded
+        // by the retention budget.
+        cached.builder.dispose();
+      } else if (cached) {
+        // Quiet/censor/parser settings changed: rebuild from scratch with the
+        // new options. Dispose the stale builder so a stateful parser resets.
+        cached.builder.dispose();
+      }
+
+      // Single parse pass: the builder is the only parser. Its append +
+      // terminal flush reproduce buildTranscript's output exactly (same
+      // stderr/system handling, same trailing-line flush, same quiet
+      // filtering via the shared appendParsedTranscriptLine path).
+      const builder = createTranscriptBuilder(adapter, builderOpts);
+      builder.append(chunks);
+      if (isTerminalStatus(run.status)) builder.flush();
       cache.set(run.id, {
         adapterType: run.adapterType,
         chunks,
         censorUsernameInLogs,
         quiet,
         parserTick,
-        transcript,
+        builder,
+        transcript: builder.entries,
       });
-      next.set(run.id, transcript);
+      next.set(run.id, builder.entries);
+      visibleChanged = true;
     }
     for (const runId of cache.keys()) {
       if (!currentRunIds.has(runId)) {
         cache.delete(runId);
+        visibleChanged = true;
       }
     }
+    if (!visibleChanged && previousTranscriptByRunRef.current !== null) {
+      // Nothing visible changed (quiet-filtered chunk, settings identical):
+      // reuse the previous map so downstream memos see an unchanged input.
+      return previousTranscriptByRunRef.current;
+    }
+    previousTranscriptByRunRef.current = next;
     return next;
   }, [chunksByRun, generalSettings?.censorUsernameInLogs, normalizedRuns, parserTick]);
 

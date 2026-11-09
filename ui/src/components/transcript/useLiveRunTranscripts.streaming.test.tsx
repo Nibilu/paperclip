@@ -8,12 +8,40 @@ import { LiveTranscriptInterests } from "../../lib/live-transcript-interests";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useLiveRunTranscripts } from "./useLiveRunTranscripts";
 
-const { useQueryMock, logMock, buildTranscriptMock } = vi.hoisted(() => ({
-  useQueryMock: vi.fn(() => ({ data: { censorUsernameInLogs: false } })),
-  logMock: vi.fn(async (_runId: string, _offset: number, _limit: number, _options: { signal: AbortSignal }) =>
-    ({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: 0 })),
-  buildTranscriptMock: vi.fn((chunks: unknown[]) => chunks),
-}));
+const { useQueryMock, logMock, createTranscriptBuilderMock, builderEvents, builtEntries, clearBuilderEvents } = vi.hoisted(() => {
+  type BuilderEvent = { kind: "construct" | "append" | "dispose"; adapter: unknown; opts: unknown; chunks: unknown[] };
+  const builderEvents: BuilderEvent[] = [];
+  const builtEntries: unknown[][] = [];
+  const NO_CHANGE = { appended: 0, mutated: false, changed: false };
+  const createTranscriptBuilderMock = vi.fn((adapter: unknown, opts: unknown) => {
+    builderEvents.push({ kind: "construct", adapter, opts, chunks: [] });
+    const entries: unknown[] = [];
+    builtEntries.push(entries);
+    return {
+      entries,
+      append: (chunks: unknown[]) => {
+        if (!chunks.length) return NO_CHANGE;
+        entries.push(...chunks);
+        builderEvents.push({ kind: "append", adapter, opts, chunks });
+        return { appended: chunks.length, mutated: false, changed: true };
+      },
+      flush: () => NO_CHANGE,
+      dispose: () => builderEvents.push({ kind: "dispose", adapter, opts, chunks: [] }),
+    };
+  });
+  return {
+    useQueryMock: vi.fn(() => ({ data: { censorUsernameInLogs: false } })),
+    logMock: vi.fn(async (_runId: string, _offset: number, _limit: number, _options: { signal: AbortSignal }) =>
+      ({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: 0 })),
+    createTranscriptBuilderMock,
+    builderEvents,
+    builtEntries,
+    clearBuilderEvents: () => {
+      builderEvents.length = 0;
+      builtEntries.length = 0;
+    },
+  };
+});
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: useQueryMock,
@@ -32,10 +60,16 @@ vi.mock("../../api/heartbeats", () => ({
 }));
 
 vi.mock("../../adapters", () => ({
-  buildTranscript: buildTranscriptMock,
+  createTranscriptBuilder: createTranscriptBuilderMock,
   getUIAdapter: () => null,
   onAdapterChange: () => () => {},
 }));
+
+const lastAppendChunks = () => [...builderEvents].reverse().find((event) => event.kind === "append")?.chunks;
+// Accumulated transcript entries of the most recently constructed builder —
+// the incremental path appends in place, so cumulative content lives here
+// rather than in any single append call.
+const lastBuilderEntries = () => builtEntries[builtEntries.length - 1];
 
 const { LiveEventSubscriptionContext } = __liveUpdatesTestUtils;
 let listeners: Set<CompanyLiveEventHandler>;
@@ -83,7 +117,8 @@ describe("useLiveRunTranscripts shared-stream recovery", () => {
     useQueryMock.mockClear();
     logMock.mockReset();
     logMock.mockImplementation(async (_id, offset) => ({ runId: "run-1", store: "memory", logRef: "log-1", content: "", nextOffset: offset }));
-    buildTranscriptMock.mockClear();
+    createTranscriptBuilderMock.mockClear();
+    clearBuilderEvents();
     globalThis.WebSocket = class { constructor() { socketConstructed(); } } as unknown as typeof WebSocket;
   });
 
@@ -279,7 +314,7 @@ describe("useLiveRunTranscripts shared-stream recovery", () => {
       segments.push(line(2, "saved during disconnect"), line(3, "last saved page"));
       await act(async () => { visibility.mockReturnValue("visible"); document.dispatchEvent(new Event("visibilitychange")); });
       await act(async () => acknowledge());
-      const chunks = buildTranscriptMock.mock.calls.at(-1)?.[0];
+      const chunks = lastBuilderEntries();
       expect(chunks).toEqual([
         expect.objectContaining({ chunk: "initial output" }),
         expect.objectContaining({ chunk: "saved during disconnect" }),

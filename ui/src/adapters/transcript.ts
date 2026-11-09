@@ -104,7 +104,9 @@ function resolveStdoutParser(source: StdoutLineParser | TranscriptParserSource) 
   return { parseLine: source.parseStdoutLine, reset: null as (() => void) | null };
 }
 
-export function appendTranscriptEntry(entries: TranscriptEntry[], entry: TranscriptEntry) {
+export type TranscriptAppendResult = { appended: number; mutated: boolean };
+
+export function appendTranscriptEntry(entries: TranscriptEntry[], entry: TranscriptEntry): TranscriptAppendResult {
   if ((entry.kind === "thinking" || entry.kind === "assistant") && entry.delta) {
     const last = entries[entries.length - 1];
     if (
@@ -113,18 +115,29 @@ export function appendTranscriptEntry(entries: TranscriptEntry[], entry: Transcr
       last.delta &&
       last.channel === entry.channel
     ) {
+      // Delta coalescing mutates the existing entry in place — the entries
+      // array does not grow, but the visible transcript did change. An empty
+      // delta (quiet mode strips thinking/tool content before coalescing)
+      // changes nothing visible: report no mutation so callers can skip the
+      // re-render entirely.
       last.text += entry.text;
       last.ts = entry.ts;
-      return;
+      return { appended: 0, mutated: entry.text !== "" };
     }
   }
   entries.push(entry);
+  return { appended: 1, mutated: false };
 }
 
-export function appendTranscriptEntries(entries: TranscriptEntry[], incoming: TranscriptEntry[]) {
+export function appendTranscriptEntries(entries: TranscriptEntry[], incoming: TranscriptEntry[]): TranscriptAppendResult {
+  let appended = 0;
+  let mutated = false;
   for (const entry of incoming) {
-    appendTranscriptEntry(entries, entry);
+    const result = appendTranscriptEntry(entries, entry);
+    appended += result.appended;
+    mutated ||= result.mutated;
   }
+  return { appended, mutated };
 }
 
 function truncateTranscriptLine(line: string, maxLength = 160) {
@@ -175,11 +188,11 @@ function appendParsedTranscriptLine(args: {
   reset: (() => void) | null;
   redactionOptions: RedactionOptions;
   quiet?: boolean;
-}) {
+}): TranscriptAppendResult {
   const { entries, line, ts, parseLine, reset, redactionOptions, quiet } = args;
   try {
     const parsed = parseLine(line, ts);
-    appendTranscriptEntries(
+    return appendTranscriptEntries(
       entries,
       (quiet ? parsed.map(quietTransformTranscriptEntry) : parsed).map((entry) =>
         redactTranscriptEntryPaths(entry, redactionOptions),
@@ -187,7 +200,7 @@ function appendParsedTranscriptLine(args: {
     );
   } catch (error) {
     reset?.();
-    appendTranscriptEntry(entries, createTranscriptParseErrorEntry(line, ts, error, redactionOptions));
+    return appendTranscriptEntry(entries, createTranscriptParseErrorEntry(line, ts, error, redactionOptions));
   }
 }
 
@@ -217,9 +230,15 @@ function appendParsedTranscriptLine(args: {
 export interface TranscriptBuilder {
   /** Entries accumulated so far; appended in place by `append`. */
   readonly entries: TranscriptEntry[];
-  append(chunks: readonly RunLogChunk[]): void;
+  /**
+   * Parse and append chunks. Returns what the visible transcript did:
+   * `appended` counts entries pushed; `mutated` reports delta coalescing
+   * (`last.text += entry.text`) that changed an existing entry without
+   * pushing. `changed` is true when a consumer should re-render.
+   */
+  append(chunks: readonly RunLogChunk[]): { appended: number; mutated: boolean; changed: boolean };
   /** Emit a buffered incomplete trailing stdout line (stream ended). */
-  flush(): void;
+  flush(): { appended: number; mutated: boolean; changed: boolean };
   /** Release a stateful parser's accumulated state. */
   dispose(): void;
 }
@@ -235,14 +254,18 @@ export function createTranscriptBuilder(
   const quiet = opts?.quiet === true;
   const { parseLine, reset } = resolveStdoutParser(parserSource);
 
-  const append = (chunks: readonly RunLogChunk[]) => {
+  const append = (chunks: readonly RunLogChunk[]): TranscriptAppendResult & { changed: boolean } => {
+    let appended = 0;
+    let mutated = false;
     for (const chunk of chunks) {
       if (chunk.stream === "stderr") {
         entries.push({ kind: "stderr", ts: chunk.ts, text: redactHomePathUserSegments(chunk.chunk, redactionOptions) });
+        appended += 1;
         continue;
       }
       if (chunk.stream === "system") {
         entries.push({ kind: "system", ts: chunk.ts, text: redactHomePathUserSegments(chunk.chunk, redactionOptions) });
+        appended += 1;
         continue;
       }
       lastStdoutTs = chunk.ts;
@@ -250,8 +273,8 @@ export function createTranscriptBuilder(
       const combined = stdoutBuffer + chunk.chunk;
       const emitLine = (line: string) => {
         const trimmed = line.trim();
-        if (!trimmed) return;
-        appendParsedTranscriptLine({
+        if (!trimmed) return { appended: 0, mutated: false };
+        return appendParsedTranscriptLine({
           entries,
           line: trimmed,
           ts: chunk.ts,
@@ -264,24 +287,33 @@ export function createTranscriptBuilder(
       const bufferedJson = takeBufferedStdoutLines(combined);
       if (bufferedJson) {
         stdoutBuffer = bufferedJson.rest;
-        for (const line of bufferedJson.lines) emitLine(line);
+        for (const line of bufferedJson.lines) {
+          const result = emitLine(line);
+          appended += result.appended;
+          mutated ||= result.mutated;
+        }
       } else {
         const lines = combined.split(/\r?\n/);
         stdoutBuffer = lines.pop() ?? "";
-        for (const line of lines) emitLine(line);
+        for (const line of lines) {
+          const result = emitLine(line);
+          appended += result.appended;
+          mutated ||= result.mutated;
+        }
       }
     }
+    return { appended, mutated, changed: appended > 0 || mutated };
   };
 
-  const flush = () => {
+  const flush = (): TranscriptAppendResult & { changed: boolean } => {
     const trailing = stdoutBuffer.trim();
     stdoutBuffer = "";
-    if (!trailing) return;
+    if (!trailing) return { appended: 0, mutated: false, changed: false };
     const ts = lastStdoutTs || new Date().toISOString();
     const emitTrailing = (line: string) => {
       const trimmed = line.trim();
-      if (!trimmed) return;
-      appendParsedTranscriptLine({
+      if (!trimmed) return { appended: 0, mutated: false };
+      return appendParsedTranscriptLine({
         entries,
         line: trimmed,
         ts,
@@ -291,13 +323,26 @@ export function createTranscriptBuilder(
         quiet,
       });
     };
+    let appended = 0;
+    let mutated = false;
     const bufferedJson = takeBufferedStdoutLines(trailing);
     if (bufferedJson) {
-      for (const line of bufferedJson.lines) emitTrailing(line);
-      if (bufferedJson.rest.trim()) emitTrailing(bufferedJson.rest);
+      for (const line of bufferedJson.lines) {
+        const result = emitTrailing(line);
+        appended += result.appended;
+        mutated ||= result.mutated;
+      }
+      if (bufferedJson.rest.trim()) {
+        const result = emitTrailing(bufferedJson.rest);
+        appended += result.appended;
+        mutated ||= result.mutated;
+      }
     } else {
-      emitTrailing(trailing);
+      const result = emitTrailing(trailing);
+      appended += result.appended;
+      mutated ||= result.mutated;
     }
+    return { appended, mutated, changed: appended > 0 || mutated };
   };
 
   const dispose = () => {
