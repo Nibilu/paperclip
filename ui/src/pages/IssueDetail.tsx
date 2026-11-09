@@ -6063,6 +6063,7 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
     setBreadcrumbPanelControl({
       open: panelVisible && !suppressPanelUntilPlan,
       onToggle: toggleTaskSidePanel,
+      onMobileProperties: () => setMobilePropsOpen(true),
     });
 
     return () => setBreadcrumbPanelControl(null);

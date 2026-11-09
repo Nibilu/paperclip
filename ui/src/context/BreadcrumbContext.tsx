@@ -42,6 +42,13 @@ interface BreadcrumbContextValue {
 export interface BreadcrumbPanelControl {
   open: boolean;
   onToggle: () => void;
+  /**
+   * Mobile has no docked third column (the properties aside is `hidden md:flex`
+   * on small viewports), so the properties toggle must open the full-screen
+   * mobile Sheet instead of flipping the docked panel state — flipping it is
+   * invisible on mobile and reads as "the button does nothing".
+   */
+  onMobileProperties?: () => void;
 }
 
 interface BreadcrumbProviderProps {

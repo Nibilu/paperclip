@@ -66,12 +66,21 @@ export function BreadcrumbBar({ taskDetailLayout = false, showPropertiesToggle =
   const { selectedCompanyId, selectedCompany } = useCompany();
   const taskPanelOpen = breadcrumbPanelControl?.open ?? panelVisible;
   const toggleTaskPanel = breadcrumbPanelControl?.onToggle ?? togglePanelVisible;
+  const openPropertiesPanel = () => {
+    // Mobile cannot show the docked third column (`hidden md:flex`); hand the
+    // toggle to the page's full-screen Sheet when it provides one.
+    if (isMobile && breadcrumbPanelControl?.onMobileProperties) {
+      breadcrumbPanelControl.onMobileProperties();
+      return;
+    }
+    toggleTaskPanel();
+  };
   const propertiesToggle = showPropertiesToggle ? (
     <Button
       variant="ghost"
       size="icon-sm"
       className="ml-5 size-9 shrink-0 text-muted-foreground"
-      onClick={toggleTaskPanel}
+      onClick={openPropertiesPanel}
       aria-label={taskPanelOpen ? "Hide properties" : "Show properties"}
       title={taskPanelOpen ? "Hide properties" : "Show properties"}
     >
