@@ -197,6 +197,7 @@ import {
   type TaskDateGroup,
 } from "../lib/task-date-groups";
 import { taskStatusIconProps } from "@/lib/task-status-presentation";
+import { createUuid } from "@/lib/uuid";
 
 const INBOX_HEARTBEAT_RUN_LIMIT = 200;
 const INBOX_ISSUE_LIST_LIMIT = 100;
@@ -1942,7 +1943,7 @@ function StreamlinedInbox({
       if (issueId) {
         let idempotencyKey = retryRequestKeys.current.get(run.id);
         if (!idempotencyKey) {
-          idempotencyKey = crypto.randomUUID();
+          idempotencyKey = createUuid();
           retryRequestKeys.current.set(run.id, idempotencyKey);
         }
         const result = await issuesApi.retryTask(issueId, { idempotencyKey, observedRunId: run.id }).catch(error => {

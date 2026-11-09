@@ -49,6 +49,7 @@ import {
   SOURCE_COLLAPSE_MS,
   SOURCE_LINK_EXIT,
 } from "./onboarding/onboarding-motion";
+import { createUuid } from "@/lib/uuid";
 
 /**
  * Where the connect step's sign-in sequence is. Space and visibility land on
@@ -1276,7 +1277,7 @@ function OnboardingWizardInner({
       || (!sourceSelected && setupNameConflict === JSON.stringify([createdCompanyId, agentName.trim().toLowerCase()]))) return;
     const companyId = createdCompanyId;
     preparingSetup.current.add(companyId);
-    const id = setupAgentId ?? crypto.randomUUID();
+    const id = setupAgentId ?? createUuid();
     let restoring = Boolean(setupAgentId);
     void (async () => {
       if (!setupAgentId) {
