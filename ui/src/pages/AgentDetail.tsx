@@ -886,7 +886,7 @@ export function AgentDetail() {
       {/* Header */}
       <header className="agent-character-header flex items-center gap-2">
         <div role="img" aria-label={`${agent.name} avatar`} className="shrink-0">
-          <AgentCharacter agent={agent} state={characterStateForAgent(currentAgent.status) === "rest" ? "idle" : characterStateForAgent(currentAgent.status)} size={128} className="agent-header-character" trackingScope="page" followCursor />
+          <AgentCharacter agent={agent} state={characterStateForAgent(currentAgent.status) === "rest" ? "idle" : characterStateForAgent(currentAgent.status)} motion="still" size={128} className="agent-header-character" trackingScope="page" followCursor />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
