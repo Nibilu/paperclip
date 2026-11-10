@@ -164,6 +164,8 @@ const mockApprovalsApi = vi.hoisted(() => ({
 }));
 const mockSecretsApi = vi.hoisted(() => ({
   list: vi.fn(),
+  create: vi.fn(),
+  remove: vi.fn(),
   removeUserSecretDefinition: vi.fn(),
   listMyUserSecrets: vi.fn(),
   createUserSecretDefinition: vi.fn(),
@@ -374,6 +376,8 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       user: { id: SESSION_USER_ID, name: "B", email: "b@example.com", image: null },
     });
     mockSecretsApi.list.mockResolvedValue([]);
+    mockSecretsApi.create.mockReset().mockResolvedValue({ id: "org-secret-1" });
+    mockSecretsApi.remove.mockReset().mockResolvedValue({ ok: true });
     mockSecretsApi.listMyUserSecrets.mockResolvedValue([]);
     mockSecretsApi.removeUserSecretDefinition.mockResolvedValue({ ok: true });
     window.localStorage.clear();
@@ -458,8 +462,8 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       mockCompaniesApi.list.mockResolvedValue(mockCompany.companies);
       mockAdapterRegistry.list = [
         { type: "claude_local" }, { type: "codex_local" },
-        { type: "pilibala_runner" }, { type: "copilot_runtime", recommended: true },
-        { type: "gemini_local", recommended: true }, { type: "opencode_local" },
+        { type: "pilibala_runner" }, { type: "copilot_runtime" },
+        { type: "gemini_local" }, { type: "opencode_local" },
       ];
       window.localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({
         step: 4, createdCompanyId: "c1", agentName: "Ada", ...savedOverrides,
@@ -480,9 +484,14 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       const root = await openProviderChoices();
       try {
         const sources = [...document.body.querySelectorAll("button[aria-checked]")];
-        expect(sources).toHaveLength(2);
+        // The row is the recommended focus: Claude, Codex, and Gemini — the
+        // runner-availability knob changes nothing about what is offered.
+        // Copilot and the runner stay out (not recommended), and the
+        // non-recommended rest is the Add Agent flow's domain.
+        expect(sources).toHaveLength(3);
         expect(sources.map(source => source.textContent)).toEqual([
           expect.stringContaining("Claude"), expect.stringContaining("OpenAI"),
+          expect.stringContaining("Gemini"),
         ]);
         expect(document.body.textContent).not.toContain("GitHub Copilot");
         expect(document.body.textContent).not.toContain("Windows");
@@ -495,7 +504,7 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       const root = await openProviderChoices();
       try {
         const sources = [...document.body.querySelectorAll("button[aria-checked]")];
-        expect(sources).toHaveLength(1);
+        expect(sources).toHaveLength(2);
         expect(sources[0]?.textContent).toContain("OpenAI");
       } finally { await act(async () => root.unmount()); }
     });
@@ -516,8 +525,11 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       } finally { await act(async () => root.unmount()); }
     });
 
-    it("clears a saved Gemini model when only Codex is available", async () => {
-      mockAdapterRegistry.disabled = new Set(["claude_local"]);
+    it("clears a saved Gemini model once Gemini is no longer offered", async () => {
+      // Gemini is recommended, so the row offers it — the stale-model reset
+      // fires when the named source leaves the row (disabled here), snapping
+      // the draft to the first offered source with the model cleared.
+      mockAdapterRegistry.disabled = new Set(["claude_local", "gemini_local"]);
       const root = await openProviderChoices({ adapterType: "gemini_local", model: "gemini-model" });
       try {
         expect(document.body.querySelector('button[aria-checked="true"]')).toBeNull();
@@ -528,8 +540,11 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       } finally { await act(async () => root.unmount()); }
     });
 
-    it.each([false, true])("explains unavailable onboarding providers and clears an old Copilot draft: %s", async savedCopilot => {
-      mockAdapterRegistry.disabled = new Set(["claude_local", "codex_local"]);
+    it.each([false, true])(("explains unavailable onboarding providers and clears an old Copilot draft: %s"), async savedCopilot => {
+      // With every recommended source unavailable the row is empty, so the
+      // step explains itself and any draft — including a retired Copilot one —
+      // resets to the default, unanswered.
+      mockAdapterRegistry.disabled = new Set(["claude_local", "codex_local", "gemini_local"]);
       const root = await openProviderChoices(savedCopilot ? {
         adapterType: "pilibala_runner", onboardingCopilot: true, runner: "pilibala", model: "copilot-model",
       } : {});
@@ -2090,6 +2105,7 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
   });
 
   describe("the adapter step login panel (cheap auth signal, no adapter test)", () => {
+    const GATEWAY_KEY = "hermes-api-server-key-e2e";
     const SANDBOX_ENVIRONMENT = {
       id: "env-sandbox-1",
       driver: "sandbox" as const,
@@ -2644,6 +2660,109 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       expect(labels.join(" ")).not.toContain("codex_local");
 
       await act(async () => root.unmount());
+    });
+
+    it("offers the gateway source, collects its address, and never offers saved user keys", async () => {
+      localHealth.get.mockResolvedValue({ deploymentMode: "local_trusted" });
+      mockEnvironmentsApi.list.mockResolvedValue([LOCAL_ENVIRONMENT]);
+      mockInstanceSettingsApi.get.mockResolvedValue({ defaultEnvironmentId: null });
+      mockAdapterRegistry.list = [{ type: "claude_local" }, { type: "codex_local" }, { type: "hermes_gateway" }];
+      const { root } = await openStep4();
+      try {
+        await pickSource(/Hermes Gateway/);
+        // The gateway is hired with an address, not a credential — the step
+        // asks for it directly.
+        const urlField = document.body.querySelector('input[placeholder="http://127.0.0.1:8642"]') as HTMLInputElement;
+        expect(urlField, "the step should collect the gateway URL").toBeTruthy();
+        // Saved keys are user secrets; the gateway's schema secret field
+        // rejects a user-secret reference at persistence, so the select and
+        // its auto-pick never surface for this source.
+        expect(document.body.querySelector('select[aria-label="Saved API key"]')).toBeNull();
+
+        // With the key filled but the address missing, the probe could only
+        // fail — the button waits for the address it asked for.
+        const keyField = document.body.querySelector('input[type="password"]') as HTMLInputElement;
+        expect(keyField, "the step should collect the gateway API key").toBeTruthy();
+        await act(async () => setControlledValue(keyField, GATEWAY_KEY));
+        await flushReact();
+        const connectWhileBlank = [...document.body.querySelectorAll("button")].find(button => button.textContent?.trim() === "Connect");
+        expect(connectWhileBlank).toBeTruthy();
+        expect(connectWhileBlank!.disabled, "Connect waits for the gateway address").toBe(true);
+
+        await act(async () => setControlledValue(urlField, "http://127.0.0.1:8642"));
+        await flushReact();
+        const connect = [...document.body.querySelectorAll("button")].find(button => button.textContent?.trim() === "Connect");
+        expect(connect!.disabled, "address plus key unblocks Connect").toBe(false);
+      } finally { await act(async () => root.unmount()); }
+    });
+
+    it("stores the gateway key as a company secret and hires with a secret_ref", async () => {
+      localHealth.get.mockResolvedValue({ deploymentMode: "local_trusted" });
+      mockEnvironmentsApi.list.mockResolvedValue([LOCAL_ENVIRONMENT]);
+      mockInstanceSettingsApi.get.mockResolvedValue({ defaultEnvironmentId: null });
+      mockAdapterRegistry.list = [{ type: "claude_local" }, { type: "codex_local" }, { type: "hermes_gateway" }];
+      const { root } = await openStep4();
+      try {
+        await pickSource(/Hermes Gateway/);
+        const urlField = document.body.querySelector('input[placeholder="http://127.0.0.1:8642"]') as HTMLInputElement;
+        const keyField = document.body.querySelector('input[type="password"]') as HTMLInputElement;
+        await act(async () => setControlledValue(urlField, "http://127.0.0.1:8642"));
+        await act(async () => setControlledValue(keyField, GATEWAY_KEY));
+        await flushReact();
+        const connect = [...document.body.querySelectorAll("button")].find(button => button.textContent?.trim() === "Connect");
+        await act(async () => connect!.click());
+        for (let i = 0; i < 12; i++) {
+          if (mockAgentsApi.hire.mock.calls.length) break;
+          await flushReact();
+        }
+        expect(mockAgentsApi.hire).toHaveBeenCalledTimes(1);
+
+        // The key is a company secret — the gateway's schema secret field
+        // accepts only a company secret_ref at persistence.
+        expect(mockSecretsApi.create).toHaveBeenCalledWith("company-new", expect.objectContaining({
+          key: expect.stringContaining("API_SERVER_KEY.setup."),
+          value: GATEWAY_KEY,
+        }));
+        const hireBody = (mockAgentsApi.hire.mock.calls.at(-1) as unknown[])[1] as { adapterConfig: Record<string, unknown>; runtimeConfig: Record<string, unknown> };
+        expect(hireBody.adapterConfig.apiKey).toEqual({ type: "secret_ref", secretId: "org-secret-1", version: "latest" });
+        // The whole payload, not just that one field: the point is that the
+        // raw key is nowhere in what gets persisted, however nested.
+        expect(JSON.stringify(hireBody)).not.toContain(GATEWAY_KEY);
+      } finally { await act(async () => root.unmount()); }
+    });
+
+    it("gates the hermes_local hire on the adapter's own environment probe", async () => {
+      // The row offers Hermes like it offers Claude — so the hire carries the
+      // same guarantee: a passing environment probe before the agent exists.
+      // The hermes adapter ships a real testEnvironment (ACP engine checks or
+      // the CLI hello probe); skipping it would hire a harness no one tested.
+      localHealth.get.mockResolvedValue({ deploymentMode: "local_trusted" });
+      mockEnvironmentsApi.list.mockResolvedValue([LOCAL_ENVIRONMENT]);
+      mockInstanceSettingsApi.get.mockResolvedValue({ defaultEnvironmentId: null });
+      mockAdapterRegistry.list = [{ type: "claude_local" }, { type: "codex_local" }, { type: "hermes_local" }];
+      const { root } = await openStep4();
+      try {
+        await pickSource(/Hermes/);
+        const keyField = document.body.querySelector('input[type="password"]') as HTMLInputElement;
+        expect(keyField, "hermes_local answers with an API key").toBeTruthy();
+        await act(async () => setControlledValue(keyField, GATEWAY_KEY));
+        await flushReact();
+        const connect = [...document.body.querySelectorAll("button")].find(button => button.textContent?.trim() === "Connect");
+        await act(async () => connect!.click());
+        for (let i = 0; i < 12; i++) {
+          if (mockAgentsApi.hire.mock.calls.length) break;
+          await flushReact();
+        }
+        expect(mockAgentsApi.hire).toHaveBeenCalledTimes(1);
+        expect(mockAgentsApi.testEnvironment).toHaveBeenCalledWith(
+          "company-new",
+          "hermes_local",
+          expect.objectContaining({ aiConnection: { provider: "openrouter", method: "api_key", mode: "responsible_user" } }),
+          expect.anything(),
+        );
+        const hireBody = (mockAgentsApi.hire.mock.calls.at(-1) as unknown[])[1] as { runtimeConfig: Record<string, unknown> };
+        expect(hireBody.runtimeConfig.aiConnection).toEqual({ provider: "openrouter", method: "api_key", mode: "responsible_user" });
+      } finally { await act(async () => root.unmount()); }
     });
 
     it("will not advance on a saved adapter the step no longer offers", async () => {
@@ -4902,16 +5021,20 @@ describe("OnboardingWizard restore-gate (stale localStorage across accounts)", (
       });
     });
 
-    it("does not offer Gemini from a saved initial onboarding draft", async () => {
+    it("offers Gemini from a saved initial onboarding draft without starting a sign-in", async () => {
+      // The recommended-driven row offers Gemini wherever the registry does.
+      // A restored draft naming it sees its tile — but the row stays a
+      // question until pressed (no preselection), so no sign-in may start on
+      // arrival.
       localHealth.get.mockResolvedValue({ deploymentMode: "local_trusted" });
       mockEnvironmentsApi.list.mockResolvedValue([LOCAL_ENVIRONMENT]);
       mockInstanceSettingsApi.get.mockResolvedValue({ defaultEnvironmentId: null });
-      mockAdapterRegistry.list.push({ type: "gemini_local", recommended: true });
+      mockAdapterRegistry.list = [{ type: "claude_local" }, { type: "codex_local" }, { type: "gemini_local", recommended: true }];
       const { root } = await openStep4({ adapterType: "gemini_local" });
       try {
         const sources = [...document.body.querySelectorAll("button[aria-checked]")];
-        expect(sources).toHaveLength(2);
-        expect(sources.some(source => /Gemini|Google|gemini_local/.test(source.textContent ?? ""))).toBe(false);
+        expect(sources).toHaveLength(3);
+        expect(sources.some(source => /Gemini|Google|gemini_local/.test(source.textContent ?? ""))).toBe(true);
         expect(document.body.querySelector('button[aria-checked="true"]')).toBeNull();
         expect(managedApi.startLocalLogin).not.toHaveBeenCalled();
         expect(managedApi.connectLocal).not.toHaveBeenCalled();

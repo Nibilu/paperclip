@@ -73,7 +73,11 @@ vi.mock("../adapters/metadata", () => ({ isVisualAdapterChoice: () => true }));
 vi.mock("../adapters/adapter-display-registry", () => ({
   getAdapterDisplay: (type: string) => ({
     type,
-    recommended: false,
+    // Mirrors the real registry, where these five and only these five are
+    // `recommended` — the connect row is built from that flag, so a Copilot
+    // runner draft (not recommended) stays unofferable and snaps, while the
+    // row itself mirrors the registry's recommended members.
+    recommended: ["claude_local", "codex_local", "gemini_local", "hermes_gateway", "hermes_local"].includes(type),
     label: type,
     description: "",
     icon: () => null,
