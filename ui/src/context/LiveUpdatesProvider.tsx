@@ -707,6 +707,10 @@ function applyRunLiveStatusPatchToArray<T extends LiveRunForIssue>(
   return changed ? nextRuns : runs;
 }
 
+// Run-log live-status patch throttle (see readRunLiveStatusPatchFromPayload).
+const RUN_LOG_LIVE_STATUS_PATCH_MIN_INTERVAL_MS = 1_000;
+const lastLiveLogPatchAtByRunId = new Map<string, number>();
+
 function readRunLiveStatusPatchFromPayload(
   payload: Record<string, unknown>,
   eventCreatedAt: string,
@@ -731,6 +735,18 @@ function readRunLiveStatusPatchFromPayload(
   }
 
   if (eventType === "heartbeat.run.log" || eventType === "heartbeat.run.activity") {
+    // Output chunks arrive at token/tool rates (16-142/s measured). A per-chunk
+    // live-runs patch re-renders every live-runs consumer and cascades through
+    // the whole page's query observers (AMB-220). Throttle per run: 1s keeps
+    // lastEventAt fresh enough (the server already throttles its own
+    // runtime-status touches for the "Working... X ago" label to 5s) while
+    // cutting the patch rate by 16-142x. Chunk content still reaches the
+    // transcript pipeline via dispatchLiveEventToSubscribers below.
+    const lastLogPatchAt = lastLiveLogPatchAtByRunId.get(runId) ?? 0;
+    const nowMs = Date.now();
+    if (nowMs - lastLogPatchAt < RUN_LOG_LIVE_STATUS_PATCH_MIN_INTERVAL_MS) return null;
+    if (lastLiveLogPatchAtByRunId.size > 1024) lastLiveLogPatchAtByRunId.clear();
+    lastLiveLogPatchAtByRunId.set(runId, nowMs);
     patch.lastEventAt = readString(payload.ts) ?? eventCreatedAt;
     return patch;
   }
