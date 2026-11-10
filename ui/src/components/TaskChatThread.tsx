@@ -120,6 +120,8 @@ import {
 } from "@/components/task-chat/TaskChatThreadView";
 import { TaskChatComposer } from "@/components/task-chat/TaskChatComposer";
 import { TaskChatComposerDock } from "@/components/task-chat/TaskChatComposerDock";
+import { IssueRecoveryActionCard } from "@/components/IssueRecoveryActionCard";
+import { useCurrentWorkspaceRetry } from "@/components/WorkspaceBaseRefRecovery";
 import {
   RunnerGoalWidget,
   useRunnerGoalControl,
@@ -517,6 +519,12 @@ function durableInputLabel(
 export function TaskChatThread(props: TaskChatThreadProps) {
   const coordinatorEnabled = useCoordinatorPresentation();
   const { status: connectionStatus } = useConnectivity();
+  // AMB-229: the conversation shell must agree with the list chip — surface the
+  // active recovery action here too (IssueChatThread already renders the card;
+  // this shell previously dropped it, leaving detail pages silent while the
+  // list showed "Recovery needed"). Workspace-base-retry owns its own surface,
+  // same suppression rule as the classic shell.
+  const workspaceRetry = useCurrentWorkspaceRetry();
   const { enabled: streamlinedPreference } = useStreamlinedUiEnabled();
   const streamlinedUiEnabled = coordinatorEnabled || streamlinedPreference;
   const {
@@ -3536,6 +3544,28 @@ export function TaskChatThread(props: TaskChatThreadProps) {
                   issueStatus={issueStatus}
                   onResume={onResumeAssignee}
                   resuming={resumeAssigneePending}
+                />
+              </div>
+            ) : null}
+            {props.recoveryAction && !workspaceRetry ? (
+              <div className="mx-auto w-full max-w-(--tc-shell-max-w) px-4 pt-2">
+                <IssueRecoveryActionCard
+                  action={props.recoveryAction}
+                  agentMap={agentMap}
+                  scheduledRetry={props.scheduledRetry ?? null}
+                  variant="compact"
+                  onResolve={props.onResolveRecoveryAction}
+                  onProposalDecision={props.onProposalDecisionRecoveryAction}
+                  proposalPending={props.proposalDecisionRecoveryActionPending}
+                  onReissueIsolated={props.onReissueIsolatedRecoveryAction}
+                  reissuePending={props.reissueIsolatedRecoveryActionPending}
+                  onReconcileForward={props.onReconcileForwardRecoveryAction}
+                  onBreakGlassOverride={props.onBreakGlassOverrideRecoveryAction}
+                  onQuarantineRestore={props.onQuarantineRestoreRecoveryAction}
+                  quarantineRestorePending={props.quarantineRestoreRecoveryActionPending}
+                  canBreakGlass={props.canBreakGlassRecoveryAction}
+                  reconcilePending={props.reconcileRecoveryActionPending}
+                  canFalsePositive={props.canFalsePositiveRecoveryAction}
                 />
               </div>
             ) : null}

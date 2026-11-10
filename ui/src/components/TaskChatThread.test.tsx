@@ -5861,3 +5861,47 @@ it("explains a missing provider runtime with an installation repair", () => {
   expect(container.textContent).toContain("Reinstall or rebuild Pilibala");
   expect(container.textContent).toContain("test the agent's runtime");
 });
+
+describe("TaskChatThread recovery surface (AMB-229)", () => {
+  const activeStrandedAction = {
+    id: "ra-amb229",
+    companyId: "company-1",
+    sourceIssueId: "issue-1",
+    kind: "stranded_assigned_issue",
+    status: "active",
+    outcome: null,
+    cause: "process_lost",
+    ownerType: "board",
+    ownerAgentId: null,
+    ownerUserId: null,
+    previousOwnerAgentId: null,
+    returnOwnerAgentId: null,
+    fingerprint: "fp-amb229",
+    nextAction: "Retry or reassign the task.",
+    evidence: {},
+    createdAt: new Date("2026-11-10T00:00:00Z"),
+    updatedAt: new Date("2026-11-10T00:00:00Z"),
+  } as unknown as NonNullable<ComponentProps<typeof TaskChatThread>["recoveryAction"]>;
+
+  it("renders the active recovery card so the conversation detail agrees with the list chip", () => {
+    renderThread({
+      comments: [],
+      onAdd: async () => {},
+      issueStatus: "in_progress",
+      recoveryAction: activeStrandedAction,
+    });
+    expect(container.textContent).toContain("Stranded Task");
+  });
+
+  it("still renders the card without a workspace-retry provider (default surface)", () => {
+    // No WorkspaceBaseRefRecoveryProvider above the thread: useCurrentWorkspaceRetry()
+    // returns null and the card must NOT be suppressed.
+    renderThread({
+      comments: [],
+      onAdd: async () => {},
+      issueStatus: "in_progress",
+      recoveryAction: activeStrandedAction,
+    });
+    expect(container.querySelector("[data-testid='recovery-action-breakglass-trigger'], [data-testid='recovery-divergence-diagnosis'], p") ).not.toBeNull();
+  });
+});

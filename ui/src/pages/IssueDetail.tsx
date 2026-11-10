@@ -8640,7 +8640,17 @@ export function TaskDetailSurface({ conversation, tasksTab }: { tasksTab?: TaskS
                   blockerAttention={issue.blockerAttention ?? null}
                   successfulRunHandoff={issue.successfulRunHandoff ?? null}
                   scheduledRetry={issue.scheduledRetry ?? null}
-                  recoveryAction={issue.interruption?.responsibility === "system" || isPreviousServerStopCause(issue.activeRecoveryAction?.cause) ? null : issue.activeRecoveryAction ?? null}
+                  // AMB-229: the list chip already surfaces "Recovery needed" for an
+                  // active stranded_assigned_issue hold; system-responsibility
+                  // suppression must not leave the detail page silent for it. Other
+                  // system-interruption scenarios keep upstream #16965 behavior.
+                  recoveryAction={
+                    (issue.interruption?.responsibility === "system" &&
+                      !(issue.activeRecoveryAction?.status === "active" && issue.activeRecoveryAction?.kind === "stranded_assigned_issue"))
+                    || isPreviousServerStopCause(issue.activeRecoveryAction?.cause)
+                      ? null
+                      : issue.activeRecoveryAction ?? null
+                  }
                   onResolveRecoveryAction={handleResolveRecoveryAction}
                   onProposalDecisionRecoveryAction={handleProposalDecisionRecoveryAction}
                   proposalDecisionRecoveryActionPending={resolveRecoveryAction.isPending}
