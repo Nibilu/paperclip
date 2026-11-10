@@ -40,7 +40,7 @@ export { AdapterMark } from "../AdapterMark";
 function AgentBasicsCharacter() {
   const { selectedCompanyId } = useCompany();
   const { appearance } = useAgentAppearanceDraft(`${selectedCompanyId}:new-agent`);
-  return <AgentCharacter appearance={appearance} state="sleepy" muted size={256} className="size-48" trackingScope="page" />;
+  return <AgentCharacter appearance={appearance} state="sleepy" muted motion="still" size={256} className="size-48" trackingScope="page" />;
 }
 
 export function AgentBasicsDialog({
