@@ -18,7 +18,7 @@ import {
   runAdapterExecutionTargetShellCommand,
   type AdapterExecutionTarget,
 } from "@pilibalaai/adapter-utils/execution-target";
-import { conflict, notFound } from "../errors.js";
+import { conflict, HttpError, notFound } from "../errors.js";
 import { agentInstructionsService, agentInstructionsBundleMode } from "./agent-instructions.js";
 import { agentInstructionRevisionService } from "./agent-instruction-revisions.js";
 import { resolveInstructionActor } from "./agent-instruction-authorization.js";
@@ -592,7 +592,18 @@ export function agentInstructionWorkingCopyService(db: Db, options: { environmen
   }
 
   async function list(companyId: string, agentId: string, actor: AuthorizationActor) {
-    await revisions.readCurrent({ companyId, agentId }, actor);
+    // An external host bundle has no managed revisions and no managed working
+    // copies; the readCurrent context rejects it with
+    // INSTRUCTION_MANAGED_BUNDLE_REQUIRED. That is an empty answer, not a
+    // failure — the identity tab polls this list and must not log an error.
+    try {
+      await revisions.readCurrent({ companyId, agentId }, actor);
+    } catch (error) {
+      if (error instanceof HttpError && error.status === 422
+        && typeof error.details === "object" && error.details !== null
+        && (error.details as { code?: unknown }).code === "INSTRUCTION_MANAGED_BUNDLE_REQUIRED") return [];
+      throw error;
+    }
     const rows = await db.select().from(copies).where(and(eq(copies.companyId, companyId), eq(copies.agentId, agentId), inArray(copies.state, ["conflict", "pending_collection", "pending_commit", "unavailable"]))).orderBy(desc(copies.createdAt)).limit(50);
     return rows.map(row => ({ runId: row.runId, entryFile: row.entryFile, baseRevisionId: row.baseRevisionId,
       baseHash: row.baseHash, state: row.state as "conflict" | "pending_collection" | "pending_commit" | "unavailable",
