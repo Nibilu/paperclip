@@ -83,3 +83,19 @@ it("can follow the whole page while measuring gaze from the character and cleani
   player.destroy();
   expect(remove.mock.calls.some(([event]) => event === "pointermove")).toBe(true);
 });
+
+it("renders looping animations at ~30fps but one-shots at the full frame rate", () => {
+  const player = create(); intersect([{ isIntersecting: true }]);
+  expect(renderer.render).toHaveBeenCalledTimes(1); // the initial render
+  const t0 = performance.now();
+  const [earlyId, earlyFrame] = [...frames][0]; frames.delete(earlyId); earlyFrame(t0 + 5);
+  expect(renderer.render).toHaveBeenCalledTimes(1); // 5ms into a loop: skipped
+  const [dueId, dueFrame] = [...frames][0]; frames.delete(dueId); dueFrame(t0 + 60);
+  expect(renderer.render).toHaveBeenCalledTimes(2); // 60ms: due, rendered
+  const oneShot = characterDefinition(appearanceForPalette("arctic-blue"));
+  oneShot.animations.push({ id: "oneshot", name: "One Shot", loop: false, steps: [{ id: "s", expressionId: "idle", duration: 3 }] });
+  player.setDefinition(oneShot); player.setAnimation("oneshot");
+  const afterSwitch = renderer.render.mock.calls.length;
+  const [nextId, nextFrame] = [...frames][0]; frames.delete(nextId); nextFrame(t0 + 76);
+  expect(renderer.render.mock.calls.length).toBe(afterSwitch + 1); // one-shots render every frame
+});

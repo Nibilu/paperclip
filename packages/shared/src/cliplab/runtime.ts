@@ -21,6 +21,12 @@ export function createCharacter(target: HTMLElement, definition: Definition, opt
   const region = options.trackingScope === 'page' ? target.ownerDocument.documentElement : options.trackingRegion ?? target
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
   const coarse = window.matchMedia('(pointer: coarse)')
+  // Looping animations are ambient (breathing, blinking) — rendering them at the
+  // display's full rate costs the whole pipeline (vertex rewrite, face texture
+  // re-upload, draw calls) for motion the eye cannot distinguish at ~30fps.
+  // One-shots keep the full rate so moments (success, onboarding sequences)
+  // stay crisp and their completion timing stays exact.
+  const LOOP_FRAME_INTERVAL = 1000 / 30
   const canRun = () => !destroyed && visible && !document.hidden && !reduced.matches
   const render = () => renderer.render({ ...definition.character, followCursor: options.followCursor !== false, followRotation: options.followRotation !== false }, sampleDefinition(definition, animation, elapsed), { cursor: gaze, reducedMotion: reduced.matches }, gaze)
   const pointer = (event: PointerEvent) => { if (event.pointerType !== 'touch') goal = pointerGaze(event, target.getBoundingClientRect()) }
@@ -38,10 +44,12 @@ export function createCharacter(target: HTMLElement, definition: Definition, opt
   }
   function frame(now: number) {
     if (!canRun()) { sync(); return }
-    const seconds = Math.min((now - last) / 1000, .1); last = now
+    const selected = definition.animations.find(a => a.id === animation)
+    const dt = now - last
+    if ((selected?.loop ?? true) && dt < LOOP_FRAME_INTERVAL) { raf = requestAnimationFrame(frame); return }
+    const seconds = Math.min(dt / 1000, .1); last = now
     elapsed += seconds; gaze = easeGaze(gaze, goal, seconds, false)
     try { render() } catch { playing = false; sync(); options.onError?.(); return }
-    const selected = definition.animations.find(a => a.id === animation)
     if (selected && !selected.loop && elapsed * definition.character.speed >= animationDuration(selected)) {
       animation = 'idle'; elapsed = 0; options.onComplete?.()
     }
