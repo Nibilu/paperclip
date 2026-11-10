@@ -1991,7 +1991,15 @@ export function PromptsTab({
 
   const candidates = useQuery({
     queryKey: queryKeys.agents.instructionCandidates(agent.id),
-    queryFn: () => agentsApi.instructionCandidates(agent.id, companyId),
+    queryFn: () => agentsApi.instructionCandidates(agent.id, companyId).catch((error) => {
+      // An external host bundle has no managed revisions to list; the server
+      // rejects the read with this code. Treat it as "no candidates" instead of
+      // surfacing an error every time the identity tab opens.
+      const body = error instanceof ApiError ? error.body : null;
+      const code = body && typeof body === "object" ? (body as { code?: unknown }).code : null;
+      if (error instanceof ApiError && error.status === 422 && code === "INSTRUCTION_MANAGED_BUNDLE_REQUIRED") return [];
+      throw error;
+    }),
     enabled: Boolean(companyId && isLocal && currentMode === "managed"),
   });
   // Whole-folder failures belong to their run's diagnostics. They have no

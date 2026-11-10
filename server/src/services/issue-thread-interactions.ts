@@ -693,6 +693,48 @@ function parseStoredInteractionResult<S extends z.ZodTypeAny>(
   return null;
 }
 
+/**
+ * Rows persisted by pre-rebrand builds can carry `questionSet.schema` values
+ * that predate the current literal ("paperclip.question_set.v1"), so rewrite
+ * the known legacy literal before validation instead of rejecting the row.
+ */
+function withLegacyQuestionSetSchemaNormalized(
+  row: IssueThreadInteractionRow,
+): IssueThreadInteractionRow {
+  const payload: unknown = row.payload;
+  if (!payload || typeof payload !== "object" || !("questionSet" in payload)) return row;
+  const questionSet = (payload as { questionSet: { schema?: unknown } }).questionSet;
+  if (questionSet?.schema !== "paperclip.question_set.v1") return row;
+  return {
+    ...row,
+    payload: {
+      ...payload,
+      questionSet: { ...questionSet, schema: "pilibala.question_set.v1" },
+    },
+  } as IssueThreadInteractionRow;
+}
+
+/**
+ * Tolerant counterpart to `hydrateInteraction` for read paths that fan out over
+ * stored rows. Same rationale as `parseStoredInteractionResult` (LOOA-629): one
+ * stale row must not brick the entire list for the web thread and plugin
+ * consumers. An unparseable payload is dropped with a warning; the write paths
+ * keep the strict hydrate so current-code bugs fail loudly.
+ */
+function hydrateStoredInteractionTolerantly(
+  row: IssueThreadInteractionRow,
+): IssueThreadInteraction | null {
+  try {
+    return hydrateInteraction(withLegacyQuestionSetSchemaNormalized(row));
+  } catch (error) {
+    console.warn(
+      `[pilibala] Dropping interaction ${row.id} (${row.kind}) whose payload predates the current schema`,
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+}
+
 function hydrateInteraction(
   row: IssueThreadInteractionRow,
 ): IssueThreadInteraction {
@@ -3367,9 +3409,10 @@ export function issueThreadInteractionService(
           .then((issueRows) => issueRows[0]),
       ]);
 
-      const interactions = rows.map((row) =>
-        hydrateInteraction(
-          issue &&
+      const interactions = rows
+        .map((row) =>
+          hydrateStoredInteractionTolerantly(
+            issue &&
             isTerminalIssueStatus(issue.status) &&
             row.status === "pending"
             ? {
@@ -3380,7 +3423,8 @@ export function issueThreadInteractionService(
               }
             : row,
         ),
-      );
+      )
+        .filter((interaction): interaction is IssueThreadInteraction => interaction !== null);
       return withAcceptanceReadiness(interactions, issue);
     },
 
@@ -3391,7 +3435,9 @@ export function issueThreadInteractionService(
         .where(eq(issueThreadInteractions.id, interactionId))
         .then((rows) => rows[0] ?? null);
 
-      return row ? (await withAcceptanceReadiness([hydrateInteraction(row)]))[0] : null;
+      if (!row) return null;
+      const interaction = hydrateStoredInteractionTolerantly(row);
+      return interaction ? (await withAcceptanceReadiness([interaction]))[0] : null;
     },
 
     recordSecretProposalExecutionResult: async (
