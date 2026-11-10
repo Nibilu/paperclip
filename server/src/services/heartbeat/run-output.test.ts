@@ -268,11 +268,16 @@ describe("object-backed diagnostic recording", () => {
     expect(chunks).toHaveLength(1);
     expect(chunks[0]).not.toContain(privateKeyPem.split("\n")[1]!);
     expect(chunks[0]).toContain("REDACTED");
+    // Drain the batched live-event fan-out so its flush timer cannot leak
+    // publishes into the next test's window (same shared newRunRow id).
+    await output.flushOutputProgress({ force: true });
   });
   it("admits a burst without serial network waits, publishes after receipts, and coalesces progress", async () => {
     const { publishLiveEvent } = await import("../live-events.js");
     vi.mocked(publishLiveEvent).mockClear();
-    const row = { ...newRunRow };
+    // Unique run id: sibling recorders in this file share newRunRow and their
+    // flush timers can fire inside this test's window.
+    const row = { ...newRunRow, id: "run-output-burst-test" };
     const writes: Array<Partial<Run>> = [];
     const db = {
       async transaction<T>(write: (tx: Db) => Promise<T>): Promise<T> { return write(this as unknown as Db); },
@@ -309,14 +314,48 @@ describe("object-backed diagnostic recording", () => {
     expect(commit).toHaveLength(100);
     expect(publishLiveEvent).not.toHaveBeenCalled();
     for (const resolve of commit) resolve();
-    await vi.waitFor(() =>
-      expect(
-        vi
-          .mocked(publishLiveEvent)
-          .mock.calls.filter(([event]) => event.type === "heartbeat.run.log"),
-      ).toHaveLength(100),
-    );
+    await vi.waitFor(() => {
+      // Live events are batched (AMB-220): every published heartbeat.run.log
+      // must carry a payload.chunks list, and the batches together must cover
+      // all 100 chunks in order once the receipts resolve.
+      const logEvents = vi
+        .mocked(publishLiveEvent)
+        .mock.calls.filter(
+          ([event]) =>
+            event.type === "heartbeat.run.log" &&
+            (event.payload as { runId?: string }).runId === row.id,
+        );
+      expect(logEvents.length).toBeGreaterThan(0);
+      expect(logEvents.length).toBeLessThan(100);
+      const allChunks = logEvents.flatMap(([event]) => {
+        const payload = event.payload as { chunks?: Array<Record<string, unknown>> };
+        return payload.chunks ?? [];
+      });
+      expect(allChunks).toHaveLength(100);
+      expect(allChunks.map((chunk) => chunk.seq)).toEqual(
+        Array.from({ length: 100 }, (_, index) => index + 11),
+      );
+      for (const chunk of allChunks) {
+        expect(typeof chunk.ts).toBe("string");
+        expect(chunk.stream).toBe("stdout");
+        expect(typeof chunk.chunk).toBe("string");
+      }
+    });
+    // Forced flush (run completion) must drain any pending batch before
+    // terminal status events publish.
     await recorder.flushOutputProgress({ force: true });
+    const logEventsAfterForce = vi
+      .mocked(publishLiveEvent)
+      .mock.calls.filter(
+        ([event]) =>
+          event.type === "heartbeat.run.log" &&
+          (event.payload as { runId?: string }).runId === row.id,
+      );
+    const totalChunksAfterForce = logEventsAfterForce.flatMap(([event]) => {
+      const payload = event.payload as { chunks?: Array<Record<string, unknown>> };
+      return payload.chunks ?? [];
+    });
+    expect(totalChunksAfterForce).toHaveLength(100);
     expect(row.lastOutputSeq).toBe(110);
     expect(row.lastOutputBytes).toBe(10000);
     expect(writes.filter((write) => write.lastOutputSeq !== undefined)).toHaveLength(2);

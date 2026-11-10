@@ -82,7 +82,63 @@ export function createHeartbeatRunOutput(db: Db, input: HeartbeatRunOutputInput)
   let persistedLogBytes = Number(run.logBytes ?? 0);
   let progressWrite: Promise<void> | null = null;
   let recordingFailureReported = false;
+  // Live log fan-out batching (AMB-220): delta streams emit one live event per
+  // output chunk (measured 16-142 chunks/s peaks), and every event re-renders
+  // every live-runs consumer on connected clients. Coalesce the live events
+  // into one batched heartbeat.run.log per flush window; clients already
+  // expand payload.chunks. The DB append path below is unchanged — only the
+  // live fan-out is coalesced. Forced flushes (run completion) drain the
+  // pending batch before terminal status events publish.
+  const LIVE_LOG_BATCH_FLUSH_INTERVAL_MS = 150;
+  const LIVE_LOG_BATCH_MAX_BYTES = 96 * 1024;
+  const LIVE_LOG_BATCH_MAX_ENTRIES = 96;
+  type LiveLogBatchEntry = {
+    ts: string;
+    seq: number;
+    stream: "stdout" | "stderr";
+    chunk: string;
+    truncated: boolean;
+  };
+  const liveLogBatch: LiveLogBatchEntry[] = [];
+  let liveLogBatchBytes = 0;
+  let liveLogBatchTimer: ReturnType<typeof setTimeout> | null = null;
+  const flushLiveLogBatch = (): void => {
+    if (liveLogBatchTimer) {
+      clearTimeout(liveLogBatchTimer);
+      liveLogBatchTimer = null;
+    }
+    if (liveLogBatch.length === 0) return;
+    const chunks = liveLogBatch.slice();
+    liveLogBatch.length = 0;
+    liveLogBatchBytes = 0;
+    publishLiveEvent({
+      companyId: run.companyId,
+      type: "heartbeat.run.log",
+      payload: {
+        runId: run.id,
+        agentId: run.agentId,
+        issueId,
+        logRef: handle?.logRef,
+        logStore: handle?.store,
+        chunks: chunks.map((entry) => ({
+          ts: entry.ts,
+          seq: entry.seq,
+          stream: entry.stream,
+          chunk: entry.chunk,
+          truncated: entry.truncated,
+        })),
+      },
+    });
+  };
+  const scheduleLiveLogBatchFlush = (): void => {
+    if (liveLogBatchTimer) return;
+    liveLogBatchTimer = setTimeout(() => {
+      liveLogBatchTimer = null;
+      flushLiveLogBatch();
+    }, LIVE_LOG_BATCH_FLUSH_INTERVAL_MS);
+  };
   const flushOutputProgress = async (opts?: { force?: boolean }) => {
+    if (opts?.force) flushLiveLogBatch();
     if (progressWrite) {
       await progressWrite;
       if (opts?.force) return flushOutputProgress(opts);
@@ -229,22 +285,22 @@ export function createHeartbeatRunOutput(db: Db, input: HeartbeatRunOutputInput)
             ? sanitizedChunk.slice(sanitizedChunk.length - MAX_LIVE_LOG_CHUNK_BYTES)
             : sanitizedChunk;
 
-        publishLiveEvent({
-          companyId: run.companyId,
-          type: "heartbeat.run.log",
-          payload: {
-            runId: run.id,
-            agentId: run.agentId,
-            issueId,
-            ts,
-            seq: chunkSeq,
-            stream,
-            chunk: payloadChunk,
-            logRef: handle?.logRef,
-            logStore: handle?.store,
-            truncated: payloadChunk.length !== sanitizedChunk.length,
-          },
+        liveLogBatch.push({
+          ts,
+          seq: chunkSeq,
+          stream,
+          chunk: payloadChunk,
+          truncated: payloadChunk.length !== sanitizedChunk.length,
         });
+        liveLogBatchBytes += payloadChunk.length;
+        if (
+          liveLogBatch.length >= LIVE_LOG_BATCH_MAX_ENTRIES ||
+          liveLogBatchBytes >= LIVE_LOG_BATCH_MAX_BYTES
+        ) {
+          flushLiveLogBatch();
+        } else {
+          scheduleLiveLogBatchFlush();
+        }
       });
       if (waitForCommit) await recorded;
       else void recorded.catch(reportRecordingFailure);
