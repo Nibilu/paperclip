@@ -60,6 +60,7 @@ function makeCtx(overrides: Record<string, unknown> = {}) {
         taskKey: null,
       },
       config: {
+        engine: "cli",
         command: "/usr/bin/hermes",
         timeoutSec: 60,
         graceSec: 5,

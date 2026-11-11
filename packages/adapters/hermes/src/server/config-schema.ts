@@ -33,12 +33,12 @@ export function getConfigSchema(): AdapterConfigSchema {
         key: "engine",
         label: "Execution engine",
         type: "select",
-        default: "cli",
+        default: "acp",
         options: [
-          { value: "cli", label: "Hermes CLI (default)" },
-          { value: "acp", label: "ACP (shared engine)" },
+          { value: "acp", label: "ACP (shared engine) (default)" },
+          { value: "cli", label: "Hermes CLI" },
         ],
-        hint: "CLI shells out to `hermes chat`. ACP runs Hermes's Agent Client Protocol server through Pilibala's shared ACP engine.",
+        hint: "By default Hermes runs through Pilibala's shared ACP engine (Agent Client Protocol). The CLI option shells out to `hermes chat` and stays available as an explicit fallback.",
       },
       {
         key: "agentCommand",

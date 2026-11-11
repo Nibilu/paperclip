@@ -62,6 +62,7 @@ console.log("Fixture completed\\nsession_id: ${SESSION_ID}");
       },
       runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: "task-synthetic" },
       config: {
+        engine: "cli",
         hermesCommand: command, provider: "openrouter", model: "fixture-model", cwd: dir,
         instructionsFilePath, env: { CAPTURE_PATH: capturePath }, timeoutSec: 10, graceSec: 1,
       },

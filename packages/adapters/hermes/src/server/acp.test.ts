@@ -13,11 +13,11 @@ const originalVersion = process.version;
 afterEach(() => Object.defineProperty(process, "version", { value: originalVersion }));
 
 describe("hermes engine selection", () => {
-  it("defaults to the CLI engine when engine is unset or unknown", async () => {
+  it("defaults to the shared ACP engine when engine is unset or unknown", async () => {
     await expect(resolveHermesExecutionEngineForRun({ config: {} }))
-      .resolves.toMatchObject({ engine: "cli", explicit: false });
+      .resolves.toMatchObject({ engine: "acp", explicit: false });
     await expect(resolveHermesExecutionEngineForRun({ config: { engine: "sometimes" } }))
-      .resolves.toMatchObject({ engine: "cli", explicit: false });
+      .resolves.toMatchObject({ engine: "acp", explicit: false });
   });
 
   it("keeps an explicitly selected CLI engine free of ACP prerequisites", async () => {

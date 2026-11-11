@@ -25,6 +25,7 @@ function makeStubScript(body: string): string {
 const BASE_CTX = () => ({
   adapterType: "hermes_local",
   config: {
+    engine: "cli",
     managedAiRouting: { kind: "gateway", protocol: "chat", auth: "bearer", models: [] },
     model: "test/model",
     provider: "custom",

@@ -33,6 +33,7 @@ test("testEnvironment accepts config.command when hermesCommand is absent", asyn
       companyId: "company-test",
       adapterType: "hermes_local",
       config: {
+        engine: "cli",
         command: cliPath,
       },
     });
@@ -75,6 +76,7 @@ test("execute renders prompt API base from adapter env PILIBALA_API_URL", async 
         companyId: "company-test",
       },
       config: {
+        engine: "cli",
         hermesCommand: cliPath,
         env: {
           PILIBALA_API_URL: { type: "plain", value: "http://127.0.0.1:3101" },
@@ -103,7 +105,7 @@ test("managed connections probe the selected environment without falling back to
   try {
     await writeFile(cliPath, '#!/bin/sh\n[ "$HERMES_HOME" = "' + tempDir + '" ] || exit 1\n[ "$OPENAI_API_KEY" = "selected-key" ] || exit 1\n[ "$ANTHROPIC_API_KEY" = "" ] || exit 1\n[ "$1" = "chat" ] || exit 1\necho hello\n');
     await chmod(cliPath, 0o755);
-    const config = { command: cliPath, managedAiRouting: true, model: "custom/model", provider: "auto", env: { HERMES_HOME: tempDir, OPENAI_API_KEY: "selected-key", ANTHROPIC_API_KEY: "" } };
+    const config = { engine: "cli", command: cliPath, managedAiRouting: true, model: "custom/model", provider: "auto", env: { HERMES_HOME: tempDir, OPENAI_API_KEY: "selected-key", ANTHROPIC_API_KEY: "" } };
     const passed = await testEnvironment({ companyId: "test", adapterType: "hermes_local", config });
     expect(passed.status).toBe("pass");
     expect(passed.checks[0]?.code).toBe("hermes_hello_probe_passed");

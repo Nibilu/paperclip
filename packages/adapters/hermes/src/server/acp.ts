@@ -82,9 +82,11 @@ function normalizeEngine(value: unknown): HermesEngineSelection {
   const raw = typeof value === "string" ? value.trim().toLowerCase() : "";
   if (raw === "acp") return { engine: "acp", explicit: true };
   if (raw === "cli") return { engine: "cli", explicit: true };
-  // Default engine stays "cli": the Hermes CLI lane is the long-standing
-  // production path; ACP is opt-in until it has soak time.
-  return { engine: "cli", explicit: false };
+  // Default engine is "acp": the shared ACP engine is the primary execution
+  // channel (AMB-230). Soak is done — Hermi ACP / new-acp-hermi / Testing run
+  // on it daily and the S1/S3 live-fire lifecycles passed — while the Hermes
+  // CLI lane stays available as an explicit engine=cli override.
+  return { engine: "acp", explicit: false };
 }
 
 export function resolveHermesExecutionEngine(config: Record<string, unknown>): HermesEngineSelection {
