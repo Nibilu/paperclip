@@ -5151,6 +5151,12 @@ html:not(.dark) .coordinator-sidebar {
   .coordinator-workspace [data-testid="task-chat-scroller"] ~ button {
     bottom: calc(var(--task-composer-dock-height, 0px) + var(--spacing) * 3);
   }
+  /* AMB-252: the dock floats over the thread on desktop, so the in-flow
+     notices that close the thread (paused assignee, recovery card) must be
+     lifted above it — same offset mechanism as the scroller padding above. */
+  .coordinator-workspace [data-testid="task-chat-bottom-notices"] {
+    margin-bottom: calc(var(--task-composer-dock-height, 0px) + var(--spacing) * 2);
+  }
 }
 .coordinator-workspace .task-chat-composer-dock > :last-child { border-radius: var(--coordinator-card-radius); }
 .coordinator-workspace [cmdk-root] { height: auto; flex: none; }

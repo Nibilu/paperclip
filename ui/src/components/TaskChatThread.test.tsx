@@ -5904,4 +5904,31 @@ describe("TaskChatThread recovery surface (AMB-229)", () => {
     });
     expect(container.querySelector("[data-testid='recovery-action-breakglass-trigger'], [data-testid='recovery-divergence-diagnosis'], p") ).not.toBeNull();
   });
+
+  it("wraps the recovery card in the bottom-notices container the desktop dock offset targets (AMB-252)", () => {
+    renderThread({
+      comments: [],
+      onAdd: async () => {},
+      issueStatus: "in_progress",
+      recoveryAction: activeStrandedAction,
+    });
+    const notices = container.querySelector(
+      "[data-testid='task-chat-bottom-notices']",
+    );
+    expect(notices).not.toBeNull();
+    // The card renders INSIDE the wrapper, so the desktop CSS that lifts the
+    // wrapper above the floating composer dock also lifts the card (AMB-252).
+    expect(notices?.textContent).toContain("Stranded Task");
+  });
+
+  it("renders no bottom-notices wrapper when neither a recovery action nor a paused agent closes the thread", () => {
+    renderThread({
+      comments: [],
+      onAdd: async () => {},
+      issueStatus: "in_progress",
+    });
+    expect(
+      container.querySelector("[data-testid='task-chat-bottom-notices']"),
+    ).toBeNull();
+  });
 });

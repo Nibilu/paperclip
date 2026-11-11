@@ -3322,6 +3322,15 @@ export function TaskChatThread(props: TaskChatThreadProps) {
     retryNativeEvents?.();
     void retryPlan();
   };
+  // AMB-252: on the desktop coordinator workspace the composer dock is a
+  // position:absolute bottom-0 overlay, so the in-flow notices that close the
+  // thread (paused assignee, recovery card) must be wrapped in one container
+  // that the desktop CSS lifts above the floating dock (--task-composer-dock-height).
+  const showAssigneePausedNotice =
+    assignedAgentForNotice?.status === "paused" &&
+    !isTerminalIssueStatus(issueStatus);
+  const showRecoveryCard = Boolean(props.recoveryAction && !workspaceRetry);
+  const showBottomNotices = showAssigneePausedNotice || showRecoveryCard;
 
   return (
     <TaskChatRequestHistoryContext.Provider value={issueId ?? "unknown"}>
@@ -3537,36 +3546,40 @@ export function TaskChatThread(props: TaskChatThreadProps) {
                 ) : null}
               </div>
             </div>
-            {assignedAgentForNotice?.status === "paused" && !isTerminalIssueStatus(issueStatus) ? (
-              <div className="mx-auto w-full max-w-(--tc-shell-max-w) px-4 pt-2">
-                <IssueAssigneePausedNotice
-                  agent={assignedAgentForNotice}
-                  issueStatus={issueStatus}
-                  onResume={onResumeAssignee}
-                  resuming={resumeAssigneePending}
-                />
-              </div>
-            ) : null}
-            {props.recoveryAction && !workspaceRetry ? (
-              <div className="mx-auto w-full max-w-(--tc-shell-max-w) px-4 pt-2">
-                <IssueRecoveryActionCard
-                  action={props.recoveryAction}
-                  agentMap={agentMap}
-                  scheduledRetry={props.scheduledRetry ?? null}
-                  variant="compact"
-                  onResolve={props.onResolveRecoveryAction}
-                  onProposalDecision={props.onProposalDecisionRecoveryAction}
-                  proposalPending={props.proposalDecisionRecoveryActionPending}
-                  onReissueIsolated={props.onReissueIsolatedRecoveryAction}
-                  reissuePending={props.reissueIsolatedRecoveryActionPending}
-                  onReconcileForward={props.onReconcileForwardRecoveryAction}
-                  onBreakGlassOverride={props.onBreakGlassOverrideRecoveryAction}
-                  onQuarantineRestore={props.onQuarantineRestoreRecoveryAction}
-                  quarantineRestorePending={props.quarantineRestoreRecoveryActionPending}
-                  canBreakGlass={props.canBreakGlassRecoveryAction}
-                  reconcilePending={props.reconcileRecoveryActionPending}
-                  canFalsePositive={props.canFalsePositiveRecoveryAction}
-                />
+            {showBottomNotices ? (
+              <div data-testid="task-chat-bottom-notices">
+                {showAssigneePausedNotice ? (
+                  <div className="mx-auto w-full max-w-(--tc-shell-max-w) px-4 pt-2">
+                    <IssueAssigneePausedNotice
+                      agent={assignedAgentForNotice}
+                      issueStatus={issueStatus}
+                      onResume={onResumeAssignee}
+                      resuming={resumeAssigneePending}
+                    />
+                  </div>
+                ) : null}
+                {props.recoveryAction && !workspaceRetry ? (
+                  <div className="mx-auto w-full max-w-(--tc-shell-max-w) px-4 pt-2">
+                    <IssueRecoveryActionCard
+                      action={props.recoveryAction}
+                      agentMap={agentMap}
+                      scheduledRetry={props.scheduledRetry ?? null}
+                      variant="compact"
+                      onResolve={props.onResolveRecoveryAction}
+                      onProposalDecision={props.onProposalDecisionRecoveryAction}
+                      proposalPending={props.proposalDecisionRecoveryActionPending}
+                      onReissueIsolated={props.onReissueIsolatedRecoveryAction}
+                      reissuePending={props.reissueIsolatedRecoveryActionPending}
+                      onReconcileForward={props.onReconcileForwardRecoveryAction}
+                      onBreakGlassOverride={props.onBreakGlassOverrideRecoveryAction}
+                      onQuarantineRestore={props.onQuarantineRestoreRecoveryAction}
+                      quarantineRestorePending={props.quarantineRestoreRecoveryActionPending}
+                      canBreakGlass={props.canBreakGlassRecoveryAction}
+                      reconcilePending={props.reconcileRecoveryActionPending}
+                      canFalsePositive={props.canFalsePositiveRecoveryAction}
+                    />
+                  </div>
+                ) : null}
               </div>
             ) : null}
             {showComposer ? (
