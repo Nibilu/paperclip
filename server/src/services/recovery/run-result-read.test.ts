@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getEmbeddedPostgresTestSupport, startEmbeddedPostgresTestDatabase } from "../../__tests__/helpers/embedded-postgres.js";
 import { isAiAuthenticationBlocked } from "../ai-auth-failure.js";
-import { recoveryRunResultColumn } from "./run-result-read.js";
+import { hasAcpCompletionSignal, recoveryRunResultColumn } from "./run-result-read.js";
 import { classifyAdapterFailureForRecovery, classifyContinuationFailure, recoveryService } from "./service.js";
 
 const support = await getEmbeddedPostgresTestSupport();
@@ -103,5 +103,40 @@ describe.skipIf(!support.supported)("recovery result PostgreSQL projection", () 
     const expected = result && typeof result === "object" && !Array.isArray(result) ? result : result === null ? null : {};
     expect(selected.resultJson).toEqual(expected);
     expect(classifyContinuationFailure({ ...run, resultJson: selected.resultJson })).toEqual(classifyContinuationFailure(run));
+  });
+
+  it("projects the acpx completion signal (status + mode) through to the recovery read model (AMB-250)", async () => {
+    const { selected } = await read({ status: "completed", mode: "persistent", usage: { totalTokens: 7 },
+      output: randomBytes(64 * 1024).toString("base64") });
+    expect(hasAcpCompletionSignal(selected.resultJson)).toBe(true);
+  });
+});
+
+describe("hasAcpCompletionSignal (AMB-250)", () => {
+  const acpCompletion = { status: "completed", mode: "persistent", usage: { totalTokens: 1 } };
+
+  it("accepts the shared acpx-engine completion shape on any adapter's acp lane", () => {
+    expect(hasAcpCompletionSignal(acpCompletion)).toBe(true);
+    expect(hasAcpCompletionSignal({ ...acpCompletion, mode: "oneshot" })).toBe(true);
+  });
+
+  it("rejects the hermes gateway lane's bare status (no acp mode) — the repair ladder keeps firing there", () => {
+    expect(hasAcpCompletionSignal({ status: "completed" })).toBe(false);
+  });
+
+  it("rejects non-acp result shapes (cli lanes, failures, unrelated payloads)", () => {
+    expect(hasAcpCompletionSignal({ status: "failed", mode: "persistent" })).toBe(false);
+    expect(hasAcpCompletionSignal({ mode: "persistent" })).toBe(false);
+    expect(hasAcpCompletionSignal({ exitCode: 0 })).toBe(false);
+    expect(hasAcpCompletionSignal(null)).toBe(false);
+    expect(hasAcpCompletionSignal(undefined)).toBe(false);
+    expect(hasAcpCompletionSignal("completed")).toBe(false);
+    expect(hasAcpCompletionSignal([acpCompletion])).toBe(false);
+  });
+
+  it("does not gate on adapter metadata — the signal shape alone decides (no allow-list)", () => {
+    const claudeAcp = { status: "completed", mode: "persistent", adapter: "claude_local" };
+    const hermesAcp = { status: "completed", mode: "persistent", adapter: "hermes_local" };
+    expect(hasAcpCompletionSignal(claudeAcp)).toBe(hasAcpCompletionSignal(hermesAcp));
   });
 });

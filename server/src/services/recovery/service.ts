@@ -14,7 +14,7 @@ import { PLUGIN_WORKER_UNAVAILABLE_CODE } from "../plugin-worker-unavailable-err
 import { ENVIRONMENT_PROVIDER_UNAVAILABLE_CODE } from "../environment-provider-unavailable-error.js";
 import { RUNNER_REVISION_MISMATCH_CODE } from "../runner-revision-mismatch.js";
 import { recoveryRunContextColumn, recoveryRunVersionColumn } from "./run-context-read.js";
-import { recoveryRunResultColumn } from "./run-result-read.js";
+import { hasAcpCompletionSignal, recoveryRunResultColumn } from "./run-result-read.js";
 import { readLegacyDispositionSource } from "./legacy-disposition-read.js";
 import { isAgentAwaitingSetup } from "../../modules/agent-lifecycle/index.js";
 import { classifyRunFailure } from "./error-classification.js";
@@ -4081,6 +4081,28 @@ export function recoveryService(
       return "covered";
     }
 
+    // ACP completion signal (AMB-250): the shared acpx-engine stamps the
+    // turn-completion signal into the run's result_json on every adapter's
+    // acp lane (`status: "completed"` + acp session `mode`). A succeeded run
+    // carrying that signal finished its turn against the engine — without a
+    // delivery comment it previously fell through to the repair ladder, whose
+    // resume raced the settled session lineage and failed (AMB-230). The
+    // judgment is signal-shaped — no adapterType/engine allow-list — so it
+    // covers every adapter's acp mode and any future one; non-acp shapes
+    // (e.g. the hermes gateway lane's bare `status`) keep the ladder.
+    if (latestRun && latestRun.status === "succeeded"
+      && hasAcpCompletionSignal(latestRun.resultJson)) {
+      await resolveDispositionRepairActionAsCovered(current, "acp_completion_signal_recorded");
+      // Same gap-closer as the delivery acceptance above.
+      if (current.status === "in_progress"
+        && !(await hasUnsettledSuccessorRun(current.companyId, current.id))) {
+        await issuesSvc.update(current.id, {
+          status: deliveredTerminalStatus(current.reviewPolicy),
+        });
+      }
+      return "covered";
+    }
+
     const episode = options.legacyEpisode ?? (
       parseObject(parseObject(latestRun?.contextSnapshot).legacyDispositionEpisode).id && latestRun
         ? legacyDispositionEpisode(latestRun) : undefined
@@ -4265,7 +4287,13 @@ export function recoveryService(
       attempt: nextAttempt,
       legacyEpisode: episode,
       maxAttempts,
-      latestRetryWithFreshSession: resumeFromFailedRepair,
+      // AMB-250: every repair beyond the first attempt bootstraps a fresh
+      // session. The first repair legitimately resumes the source run's
+      // session, but once a repair attempt already happened on this
+      // fingerprint, resuming again races the (possibly superseded) session
+      // lineage and fails fast (AMB-230). The R11 failed-repair path keeps
+      // its unconditional fresh retry (S14) via resumeFromFailedRepair.
+      latestRetryWithFreshSession: resumeFromFailedRepair || nextAttempt >= 2,
     });
     if (!scheduled && episode) {
       // Admission can reject a stale snapshot under the issue lock. An empty
