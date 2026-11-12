@@ -182,6 +182,136 @@ function isThinkingLine(line: string): boolean {
 // ── Main parser ────────────────────────────────────────────────────────────
 
 /**
+ * Classify a modern (non-quiet) Hermes CLI tool completion row.
+ *
+ * Grammar (hermes-agent cli_modern_layout.tool_row):
+ *   {emoji|✗} {Verb} {detail}[  {N.N}s][ [exit N]]
+ * e.g. `🐍 Exec import os, json  0.2s`, `💻 $ pytest -q  0.4s [exit 1]`,
+ * `✗ Memory ? [quota]`. The verb is the (capitalized) tool verb, so the
+ * classification is anchored on a curated verb whitelist plus tool emojis
+ * to keep genuine model text out of the tool lane.
+ *
+ * @returns tool_call/tool_result pair, or null when the line is not a row.
+ */
+const MODERN_TOOL_ROW_RE = /^(\p{Extended_Pictographic}\uFE0F?|✗) ([^ ]{1,14})(?: (.*))?$/u;
+
+const MODERN_TOOL_ROW_VERBS = new Set([
+  "$", "exec", "read", "write", "edit", "patch", "find", "grep", "search",
+  "recall", "browse", "navigate", "click", "type", "scroll", "back", "press",
+  "snapshot", "images", "vision", "fetch", "skills", "skill", "cron", "proc",
+  "delegate", "memory", "create", "speak", "send", "tasks", "terminal", "ask",
+  "running", "loading", "listing", "updating", "scheduling", "delegating",
+  "generating", "reading", "writing", "editing", "planning", "completed",
+]);
+
+const MODERN_TOOL_EMOJI_NAMES: Record<string, string> = {
+  "🐍": "execute_code",
+  "💻": "terminal",
+  "📖": "read_file",
+  "✍": "write_file",
+  "🔧": "patch",
+  "🔎": "search_files",
+  "🔍": "web_search",
+  "📄": "web_extract",
+  "⚙": "process_manage",
+  "🧠": "memory",
+  "📚": "skills",
+  "🎨": "image_generate",
+  "🔊": "text_to_speech",
+  "📨": "send_message",
+  "⏰": "cronjob_manage",
+  "🔀": "delegate_task",
+  "👁": "vision_analyze",
+  "🌐": "browser",
+  "📸": "browser_snapshot",
+  "👆": "browser_click",
+  "⌨": "browser_type",
+  "◀": "browser_back",
+  "🖼": "browser_get_images",
+  "⚡": "tool",
+};
+
+// On failure the CLI replaces the tool's emoji with a red ✗, so the tool
+// must be recovered from the verb (cli_modern_layout.tool_row).
+const MODERN_ERROR_ROW_TOOL_BY_VERB: Record<string, string> = {
+  "$": "terminal",
+  exec: "execute_code",
+  read: "read_file",
+  write: "write_file",
+  edit: "patch",
+  patch: "patch",
+  find: "search_files",
+  grep: "search_files",
+  search: "web_search",
+  recall: "session_search",
+  browse: "browser",
+  navigate: "browser",
+  snapshot: "browser_snapshot",
+  click: "browser_click",
+  type: "browser_type",
+  press: "browser_type",
+  scroll: "browser",
+  back: "browser",
+  images: "browser_get_images",
+  vision: "vision_analyze",
+  fetch: "web_extract",
+  proc: "process_manage",
+  skills: "skills_list",
+  skill: "skill_view",
+  cron: "cronjob_manage",
+  delegate: "delegate_task",
+  memory: "memory",
+  create: "image_generate",
+  speak: "text_to_speech",
+  send: "send_message",
+  terminal: "terminal",
+};
+
+function parseModernHermesToolRow(
+  line: string,
+  ts: string,
+): TranscriptEntry[] | null {
+  const match = MODERN_TOOL_ROW_RE.exec(line);
+  if (!match) return null;
+  const [, markRaw, verbRaw, detailRaw = ""] = match;
+  const mark = markRaw.replace(/\uFE0F/g, "");
+  const verb = verbRaw.toLowerCase();
+  const isError = mark === "✗";
+  const toolName = isError ? MODERN_ERROR_ROW_TOOL_BY_VERB[verb] : MODERN_TOOL_EMOJI_NAMES[mark];
+  if (!toolName) return null;
+  if (!MODERN_TOOL_ROW_VERBS.has(verb)) return null;
+  const hasDuration = /\s\d+(?:\.\d+)?s$/.test(detailRaw);
+  const hasExitSuffix = /\s\[exit \d+\]$/.test(detailRaw);
+  // Non-error rows must carry a duration or exit suffix; error rows are
+  // anchored by the ✗ mark plus the verb whitelist above.
+  if (!isError && !hasDuration && !hasExitSuffix) return null;
+
+  const durationMatch = hasDuration ? /(\d+(?:\.\d+)?)s$/.exec(detailRaw) : null;
+  const detail = detailRaw
+    .replace(/\s\d+(?:\.\d+)?s$/, "")
+    .replace(/\s\[exit \d+\]$/, "")
+    .trim();
+  const id = syntheticToolUseId();
+  const resultText = durationMatch ? `${detail}  ${durationMatch[1]}s` : detail;
+  return [
+    {
+      kind: "tool_call" as const,
+      ts,
+      name: toolName,
+      input: { detail },
+      toolUseId: id,
+    },
+    {
+      kind: "tool_result" as const,
+      ts,
+      toolUseId: id,
+      content: resultText,
+      isError,
+    },
+  ] as TranscriptEntry[];
+}
+
+/**
  * Parse a single line of Hermes stdout into transcript entries.
  *
  * Emits structured tool_call/tool_result pairs (with synthetic IDs) so
@@ -250,6 +380,23 @@ export function parseHermesStdoutLine(
   if (/^\p{Emoji_Presentation}\s*(Completed|Running|Error)?\s*$/u.test(trimmed)) {
     return [];
   }
+
+  // ── Lifecycle status lines (AMB-254 follow-up C3) ─────────────────────
+  // The CLI prints lifecycle notices (memory provider, compaction) to stdout
+  // via _emit_status. They are NOT model text: without a dedicated rule they
+  // land in the assistant catch-all and read as the agent speaking.
+  if (/^👁️ Hindsight — /.test(trimmed) || /^✓ Context compaction complete/.test(trimmed)) {
+    return [{ kind: "system", ts, text: trimmed }];
+  }
+
+  // ── Modern tool completion rows (non-quiet Hermes CLI) ─────────────────
+  // The current CLI (cli_modern_layout.tool_row) prints finished calls as
+  //   {emoji|✗} {Verb} {detail}[  {N.N}s][ [exit N]]
+  // with no ┊ prefix, so the legacy ┊ handling never matches and every row
+  // falls into the assistant catch-all (AMB-261 evidence: `🐍 Exec … 0.2s`,
+  // `✗ Memory ? […]`).
+  const toolRow = parseModernHermesToolRow(trimmed, ts);
+  if (toolRow) return toolRow;
 
   // ── Session info line ────────────────────────────────────────────────
   if (trimmed.startsWith("session_id:")) {

@@ -174,3 +174,69 @@ describe("parseHermesStdoutLine — corrupted acpx event lines", () => {
     expect(entries.every((e) => !String((e as { text?: string }).text ?? "").includes("[corrupted acpx event]"))).toBe(true);
   });
 });
+
+describe("parseHermesStdoutLine — modern non-quiet tool rows & lifecycle lines (AMB-261)", () => {
+  it("classifies the Hindsight memory lifecycle line as system, not assistant", () => {
+    const entries = parseHermesStdoutLine("👁️ Hindsight — saving to memory…", TS);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.kind).toBe("system");
+    expect((entries[0] as { text?: string }).text).toContain("Hindsight");
+  });
+
+  it("classifies the compaction lifecycle line as system", () => {
+    const entries = parseHermesStdoutLine("✓ Context compaction complete — continuing turn...", TS);
+    expect(entries[0]?.kind).toBe("system");
+  });
+
+  it("parses `🐍 Exec … 0.2s` as an execute_code tool row, not assistant text", () => {
+    const entries = parseHermesStdoutLine("🐍 Exec import os, json, urllib.request  0.2s", TS);
+    expect(entries).toHaveLength(2);
+    const call = entries[0] as { kind: string; name?: string; input?: { detail?: string }; toolUseId?: string };
+    const result = entries[1] as { kind: string; toolUseId?: string; content?: string; isError?: boolean };
+    expect(call.kind).toBe("tool_call");
+    expect(call.name).toBe("execute_code");
+    expect(call.input?.detail).toContain("import os, json");
+    expect(call.toolUseId).toBeTruthy();
+    expect(result.kind).toBe("tool_result");
+    expect(result.toolUseId).toBe(call.toolUseId);
+    expect(result.content).toContain("0.2s");
+    expect(result.isError).toBe(false);
+  });
+
+  it("parses `💻 $ … 1.3s` as a terminal tool row", () => {
+    const entries = parseHermesStdoutLine("💻 $ envf=/tmp/run.env pid=2893054 + 5 commands…  1.3s", TS);
+    const call = entries[0] as { kind: string; name?: string };
+    expect(call.kind).toBe("tool_call");
+    expect(call.name).toBe("terminal");
+  });
+
+  it("parses `✗ $ … [exit 1]` as a failed terminal tool row", () => {
+    const entries = parseHermesStdoutLine("✗ $ cat <<'EOF' import subprocess, hmac  0.4s [exit 1]", TS);
+    const call = entries[0] as { kind: string; name?: string };
+    const result = entries[1] as { kind: string; isError?: boolean };
+    expect(call.kind).toBe("tool_call");
+    expect(call.name).toBe("terminal");
+    expect(result.kind).toBe("tool_result");
+    expect(result.isError).toBe(true);
+  });
+
+  it("parses `✗ Memory ? […]` as a failed memory tool row", () => {
+    const entries = parseHermesStdoutLine("✗ Memory ? [Applying all 1 operations would put memory at its cap]", TS);
+    const call = entries[0] as { kind: string; name?: string };
+    const result = entries[1] as { kind: string; isError?: boolean };
+    expect(call.kind).toBe("tool_call");
+    expect(call.name).toBe("memory");
+    expect(result.isError).toBe(true);
+  });
+
+  it("keeps genuine assistant text in the assistant lane (negative guards)", () => {
+    // ✗ + unknown verb: model line starting with a failure glyph.
+    expect(parseHermesStdoutLine("✗ This approach failed because the build broke", TS)[0]?.kind).toBe("assistant");
+    // Emoji + unknown verb, no duration: model text.
+    expect(parseHermesStdoutLine("✅ All checks passed, including the tricky ones", TS)[0]?.kind).toBe("assistant");
+    // Plain model text ending in a number+unit: still assistant.
+    expect(parseHermesStdoutLine("回复已送达，耗时约 2s。", TS)[0]?.kind).toBe("assistant");
+    // "Hm-Cli is here." — model greeting, not a tool row.
+    expect(parseHermesStdoutLine("Hm-Cli is here.", TS)[0]?.kind).toBe("assistant");
+  });
+});
