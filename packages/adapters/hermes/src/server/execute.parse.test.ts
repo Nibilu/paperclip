@@ -84,3 +84,105 @@ describe("parseHermesOutput — modern classic-CLI display (c80f0e6c)", () => {
     expect(parsed.response).toBe("真正的回复内容。");
   });
 });
+
+describe("parseHermesOutput — current non-quiet output (AMB-266 / C4)", () => {
+  /** Real line shapes from dev runs d6cb2e51 / f64c5197 (HM-Cli, non-quiet). */
+  const CURRENT_NO_BANNER_STDOUT = [
+    "[hermes] Reconciled 3 Pilibala-managed skill(s) into the Hermes skills home.\n",
+    "[hermes] Starting Hermes Agent (model=z-ai/glm-5.3-flash, provider=auto [auto], timeout=10800s)\n",
+    'Query: You are "HM-Cli", an AI agent employee in a Pilibala-managed company.\nPilibala runtime identity:\n- Agent ID: agent-1\n...24KB of composed prompt...\n',
+    "今天是周四（2026年11月12日，北京时间）。已回复到 AMB-143 会话中。\n",
+    "👁️ Hindsight — saving to memory…\n",
+    "\n",
+    "Resume this session with:\n",
+    "  hermes --resume local-4a526286d3d2cabcbee484a8e4bb0d57f679d06c7e0c01b0cc375a5c63b28d01\n",
+    "[hermes] Exit code: 0, timed out: false\n",
+  ].join("");
+
+  it("no-banner stdout with a Query echo and no structural separator: echo guard returns no response", () => {
+    // The reply cannot be told apart from the echo body line-by-line, so the
+    // documented fail-safe applies: no response (raw stdout stays in the log).
+    const parsed = parseHermesOutput(CURRENT_NO_BANNER_STDOUT, "");
+    expect(parsed.response).toBeUndefined();
+    expect(parsed.sessionId).toBe(
+      "local-4a526286d3d2cabcbee484a8e4bb0d57f679d06c7e0c01b0cc375a5c63b28d01",
+    );
+  });
+
+  it("no-banner stdout without a Query echo (resumed runs): reply extracts cleanly", () => {
+    // Real shape of dev run d6cb2e51 (HM-Cli, non-quiet, resumed): no echo,
+    // reply directly followed by lifecycle + exit-summary lines.
+    const stdout = [
+      "[hermes] Reconciled 3 Pilibala-managed skill(s) into the Hermes skills home.\n",
+      "[hermes] Starting Hermes Agent (model=z-ai/glm-5.3-flash, provider=auto [auto], timeout=10800s)\n",
+      "今天是周四（2026年11月12日，北京时间）。已回复到 AMB-143 会话中。\n",
+      "👁️ Hindsight — saving to memory…\n",
+      "\n",
+      "Resume this session with:\n",
+      "  hermes --resume local-4a526286d3d2cabcbee484a8e4bb0d57f679d06c7e0c01b0cc375a5c63b28d01\n",
+      "[hermes] Exit code: 0, timed out: false\n",
+    ].join("");
+    const parsed = parseHermesOutput(stdout, "");
+    expect(parsed.response).toBe("今天是周四（2026年11月12日，北京时间）。已回复到 AMB-143 会话中。");
+    expect(parsed.response).not.toContain("Hindsight");
+    expect(parsed.sessionId).toBe(
+      "local-4a526286d3d2cabcbee484a8e4bb0d57f679d06c7e0c01b0cc375a5c63b28d01",
+    );
+  });
+
+  it("no-banner stdout where a tool row separates the echo from the reply: reply is recovered", () => {
+    // The tool row ends the echo-suppression window (same structural signal
+    // as the live log filter), so the reply after it survives.
+    const stdout = [
+      'Query: You are "HM-Cli".\nPilibala runtime identity:\n- Agent ID: agent-1\n',
+      "💻 $ grep -rn quiet src/  0.2s\n",
+      "grep 命中 3 处，quiet 默认是 true。\n",
+      "👁️ Hindsight — saving to memory…\n",
+      "Session: local-abc123\n",
+    ].join("");
+    const parsed = parseHermesOutput(stdout, "");
+    expect(parsed.response).toBe("grep 命中 3 处，quiet 默认是 true。");
+    expect(parsed.sessionId).toBe("local-abc123");
+  });
+
+  it("captures the session id from the indented resume hint", () => {
+    const parsed = parseHermesOutput(CURRENT_NO_BANNER_STDOUT, "");
+    expect(parsed.sessionId).toBe(
+      "local-4a526286d3d2cabcbee484a8e4bb0d57f679d06c7e0c01b0cc375a5c63b28d01",
+    );
+  });
+
+  it("captures the session id from the `Session: <id>` exit summary line (no resume hint)", () => {
+    const stdout = "回复完成。\nSession: local-82ff33a4374bc7135905a105ec623123110f7187d03584cdcac60dc9d5973ab9\n";
+    const parsed = parseHermesOutput(stdout, "");
+    expect(parsed.response).toBe("回复完成。");
+    expect(parsed.sessionId).toBe("local-82ff33a4374bc7135905a105ec623123110f7187d03584cdcac60dc9d5973ab9");
+  });
+
+  it("drops modern tool rows and lifecycle lines from the fallback reply", () => {
+    const stdout = [
+      "先看日志。",
+      "🐍 Exec import os, json, urllib.request  0.2s",
+      "查到了，结论如下：一切正常。",
+      "👁️ Hindsight — saving to memory…",
+      "Session: local-abc123",
+    ].join("\n") + "\n";
+    const parsed = parseHermesOutput(stdout, "");
+    expect(parsed.response).toBe("先看日志。\n查到了，结论如下：一切正常。");
+    expect(parsed.sessionId).toBe("local-abc123");
+  });
+
+  it("keeps genuine model text that only looks like noise (negative guard)", () => {
+    const stdout = "✗ This approach failed because the build broke.\nSession: local-keep1\n";
+    const parsed = parseHermesOutput(stdout, "");
+    expect(parsed.response).toBe("✗ This approach failed because the build broke.");
+    expect(parsed.sessionId).toBe("local-keep1");
+  });
+
+  it("banner-delimited answers still win over the fallback path (AMB-160 regression)", () => {
+    const parsed = parseHermesOutput(MODERN_DISPLAY_STDOUT, "");
+    expect(parsed.response).toBe("今天是 2026 年 11 月 3 日，星期二。");
+    expect(parsed.response).not.toContain("Query:");
+    expect(parsed.sessionId).toBe("local-863e321b60c9ceaeb2462c0dd48087092c6eaaf296e437bb849fb5aa71f1a7c4");
+  });
+});

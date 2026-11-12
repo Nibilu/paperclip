@@ -267,7 +267,7 @@ const MODERN_ERROR_ROW_TOOL_BY_VERB: Record<string, string> = {
   terminal: "terminal",
 };
 
-function parseModernHermesToolRow(
+export function parseModernHermesToolRow(
   line: string,
   ts: string,
 ): TranscriptEntry[] | null {

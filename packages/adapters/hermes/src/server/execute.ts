@@ -56,6 +56,7 @@ import {
   resolveProvider,
 } from "./detect-model.js";
 import { reconcileHermesPilibalaSkills } from "./skills.js";
+import { parseModernHermesToolRow } from "../ui/parse-stdout.js";
 
 const executeHermesAcp = createHermesAcpExecutor();
 
@@ -238,6 +239,14 @@ export function buildPrompt(
 /** Regex to extract session ID from Hermes quiet-mode output: "session_id: <id>" */
 const SESSION_ID_REGEX = /^session_id:\s*(\S+)/m;
 
+/**
+ * Non-quiet exit summary line: "Session: <id>" (modern footer block). The
+ * classic regexes never matched it — `session_id:` is quiet-mode only and
+ * SESSION_ID_REGEX_LEGACY requires an "id"/"saved" token — so non-quiet runs
+ * lost session continuity whenever the footer carried no --resume hint.
+ */
+const SESSION_SUMMARY_REGEX = /^Session:[ \t]+([a-zA-Z0-9_.-]+)[ \t]*$/m;
+
 /** Regex for legacy session output format */
 const SESSION_ID_REGEX_LEGACY = /session[_ ](?:id|saved)[:\s]+([a-zA-Z0-9_-]+)/i;
 
@@ -296,7 +305,10 @@ export function createCliLiveStreamFilter(): (chunk: string) => string | null {
         } else if (
           /^(\[hermes\]|\[pilibala\]|session_id:)/.test(trimmed) ||
           trimmed.includes("┊") ||
-          /^\[tool\]/.test(trimmed)
+          /^\[tool\]/.test(trimmed) ||
+          // Modern (no-┊) tool completion rows also end the echo window —
+          // they are real tool activity and must render as tool cards.
+          parseModernHermesToolRow(trimmed, "")
         ) {
           suppressing = false;
           out += `${line}\n`;
@@ -361,6 +373,25 @@ function cleanResponse(raw: string): string {
       if (/^\[done\]\s*┊/.test(t)) return false;
       if (/^┊\s*[\p{Emoji_Presentation}]/u.test(t) && !/^┊\s*💬/.test(t)) return false;
       if (/^\p{Emoji_Presentation}\s*(Completed|Running|Error)?\s*$/u.test(t)) return false;
+      // ── Modern CLI noise (AMB-254 follow-up C4) ─────────────────────────
+      // Lifecycle status lines printed after the answer (memory provider,
+      // compaction, provider fallback) are never reply content.
+      if (/^👁️ Hindsight — /.test(t) || /^✓ Context compaction complete/.test(t)) return false;
+      if (/^⚠️ Model fallback:/.test(t)) return false;
+      // Modern (no-┊) tool completion rows — classified by the shared UI
+      // parser whitelist so genuine model text is never dropped.
+      if (parseModernHermesToolRow(t, "")) return false;
+      // Banner chrome and the exit footer survive here when the banner
+      // block itself was absent or malformed.
+      if (/^─{8,}$/.test(t) || /^☤/.test(t)) return false;
+      if (
+        /^Reconciled session\b/.test(t) ||
+        /^Resume this session with:/.test(t) ||
+        /^hermes (--resume|-c )/.test(t) ||
+        /^(Session|Title|Duration|Messages|Total cost|Total tokens):/.test(t)
+      ) {
+        return false;
+      }
       return true;
     })
     .map((line) => {
@@ -409,8 +440,14 @@ export function parseHermesOutput(stdout: string, stderr: string): ParsedOutput 
       result.sessionId = legacyMatch?.[1] ?? null;
     }
     // In non-quiet mode, extract clean response from stdout by
-    // filtering out tool lines, system messages, and noise
-    const cleaned = cleanResponse(stdout);
+    // filtering out tool lines, system messages, and noise.
+    // Narrow the fallback first (AMB-254 follow-up C4): run the same
+    // structural filter the live log uses, so the composed-prompt echo is
+    // suppressed and banner chrome / the exit footer never reach the reply
+    // (live evidence: AMB-160 posted a 24KB prompt echo as the reply). The
+    // remaining lifecycle/tool-row noise is dropped by cleanResponse.
+    const bulkFiltered = createCliLiveStreamFilter()(stdout) ?? "";
+    const cleaned = cleanResponse(bulkFiltered);
     if (cleaned.length > 0) {
       result.response = cleaned;
     }
@@ -435,13 +472,18 @@ export function parseHermesOutput(stdout: string, stderr: string): ParsedOutput 
   if (sessionMatch?.[1]) {
     result.sessionId = sessionMatch[1];
   } else {
-    const legacyMatch = combined.match(SESSION_ID_REGEX_LEGACY);
-    if (legacyMatch?.[1]) {
-      result.sessionId = legacyMatch[1];
+    const summaryMatch = combined.match(SESSION_SUMMARY_REGEX);
+    if (summaryMatch?.[1]) {
+      result.sessionId = summaryMatch[1];
     } else {
-      const resumeHintMatch = combined.match(RESUME_HINT_REGEX);
-      if (resumeHintMatch?.[1]) {
-        result.sessionId = resumeHintMatch[1];
+      const legacyMatch = combined.match(SESSION_ID_REGEX_LEGACY);
+      if (legacyMatch?.[1]) {
+        result.sessionId = legacyMatch[1];
+      } else {
+        const resumeHintMatch = combined.match(RESUME_HINT_REGEX);
+        if (resumeHintMatch?.[1]) {
+          result.sessionId = resumeHintMatch[1];
+        }
       }
     }
   }
