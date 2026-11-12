@@ -49,18 +49,23 @@ export function AgentConversationsSidebar() {
     return agent ? [agent] : [];
   });
   if (active && !conversations.some(agent => agent.id === active.id)) conversations.unshift(active);
+  // Terminated agents leave the chat list (same eligibility rule as the
+  // teammates roster below), except the conversation currently being viewed;
+  // their history stays reachable through direct links.
+  const listedConversations = conversations.filter(agent => agent.status !== "terminated" || agent.id === activeId);
   // Everyone you can chat with is listed, not only agents you've already
   // talked to: conversations first by recent activity, then the rest of the
   // roster alphabetically. Same eligibility rule as the Agents nav section —
   // terminated agents and agents you've left are omitted.
-  const listedIds = new Set(conversations.map(agent => agent.id));
+  const listedIds = new Set(listedConversations.map(agent => agent.id));
   const teammates = roster
     .filter(agent => !listedIds.has(agent.id) && agent.status !== "terminated"
       && (!memberships.isSuccess || resourceMembershipState(memberships.data, "agent", agent.id) !== "left"))
     .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: "base" }));
   const previews = Object.fromEntries((chats.data ?? []).filter(chat => chat.conversationState === "active")
     .map(chat => [chat.conversationAgentId!, "Working…"]));
-  return <AgentConversationSidebar key={`${companyId}:${userId}`} agents={[...conversations, ...teammates]} availableAgents={roster}
+  return <AgentConversationSidebar key={`${companyId}:${userId}`} agents={[...listedConversations, ...teammates]}
+    availableAgents={roster.filter(agent => agent.status !== "terminated")}
     existingChatAgentIds={existingChatAgentIds}
     activeId={active?.id} previews={previews}
     unreadAgentIds={unreadAgentIds}

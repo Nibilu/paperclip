@@ -8,11 +8,11 @@ import { AgentConversationsSidebar } from "./AgentConversationsSidebar";
 import type { AgentConversationSidebarProps } from "./AgentConversationSidebar";
 import { queryKeys } from "@/lib/queryKeys";
 const state = vi.hoisted(() => ({ companyId: "company-a", navigate: vi.fn(), closeSidebar: vi.fn(), ensure: vi.fn(), getAgent: vi.fn(), newAgent: vi.fn() }));
-const sidebarInputs = vi.hoisted(() => [] as Pick<AgentConversationSidebarProps, "existingChatAgentIds" | "unreadAgentIds" | "unreadMessageCounts">[]);
+const sidebarInputs = vi.hoisted(() => [] as Pick<AgentConversationSidebarProps, "availableAgents" | "existingChatAgentIds" | "unreadAgentIds" | "unreadMessageCounts">[]);
 vi.mock("./AgentConversationSidebar", async importOriginal => {
   const original = await importOriginal<typeof import("./AgentConversationSidebar")>();
   return { AgentConversationSidebar: (props: AgentConversationSidebarProps) => {
-    sidebarInputs.push({ existingChatAgentIds: props.existingChatAgentIds, unreadAgentIds: props.unreadAgentIds, unreadMessageCounts: props.unreadMessageCounts });
+    sidebarInputs.push({ availableAgents: props.availableAgents, existingChatAgentIds: props.existingChatAgentIds, unreadAgentIds: props.unreadAgentIds, unreadMessageCounts: props.unreadMessageCounts });
     return <original.AgentConversationSidebar {...props} />;
   } };
 });
@@ -166,22 +166,21 @@ it("reuses chat indexes for 500 agents across unchanged parent renders and refre
   } finally { parse.mockRestore(); }
 });
 
-it("retains terminated agents' history by id without offering them for new chats", async () => {
+it("omits terminated agents from the chat list and the new-chat picker", async () => {
   const retired = { ...roster[0], id: "retired-id", name: "Retired", status: "terminated", urlKey: "alice" };
-  client.setQueryData(queryKeys.agents.detail(retired.id), retired);
+  client.setQueryData(queryKeys.agents.list("company-a"), [...roster, retired]);
   client.setQueryData(queryKeys.agentChats.list("company-a", "user-a"), [chat(retired.id), chat("alice")]);
   await render();
-  const historyLink = container.querySelector<HTMLAnchorElement>('a[href="/chats/retired-id"]')!;
-  expect(historyLink.textContent).toContain("RetiredTerminated");
-  await act(async () => historyLink.click());
-  expect(state.navigate).toHaveBeenLastCalledWith("/chats/retired-id");
-  expect(state.ensure).not.toHaveBeenCalled();
+  expect(container.querySelector('a[href="/chats/retired-id"]')).toBeNull();
+  expect(container.textContent).not.toContain("Retired");
+  const input = sidebarInputs.at(-1)!;
+  expect(input.availableAgents?.some(agent => agent.id === retired.id)).toBe(false);
 });
 
 it("keeps healthy chats usable while a historical lookup fails and retries", async () => {
-  const retired = { ...roster[0], id: "retired-id", name: "Retired", status: "terminated" };
-  state.getAgent.mockRejectedValueOnce(new Error("Unavailable")).mockResolvedValue(retired);
-  client.setQueryData(queryKeys.agentChats.list("company-a", "user-a"), [chat(retired.id), chat("alice")]);
+  const departed = { ...roster[0], id: "gone-id", name: "Gone", urlKey: "gone", status: "idle" };
+  state.getAgent.mockRejectedValueOnce(new Error("Unavailable")).mockResolvedValue(departed);
+  client.setQueryData(queryKeys.agentChats.list("company-a", "user-a"), [chat(departed.id), chat("alice")]);
   await render();
   await vi.waitFor(async () => {
     await act(async () => {});
@@ -199,7 +198,7 @@ it("keeps healthy chats usable while a historical lookup fails and retries", asy
   await act(async () => [...container.querySelectorAll("button")].find(button => button.textContent === "Retry chat history")!.click());
   await vi.waitFor(async () => {
     await act(async () => {});
-    expect(container.querySelector('a[href="/chats/retired-id"]')).not.toBeNull();
+    expect(container.querySelector('a[href="/chats/gone"]')).not.toBeNull();
   });
   expect(container.querySelector('[role="alert"]')).toBeNull();
   expect(container.querySelector('a[href="/chats/alice"]')).not.toBeNull();

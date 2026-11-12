@@ -542,9 +542,10 @@ export function AgentActionButtons({
             onClick={() => openNewIssue({ assigneeAgentId: agent.id })}
             disabled={assignAndRunDisabled}
             title={workActionsDisabled ? workActionsDisabledReason : undefined}
+            aria-label={assignLabel}
           >
-            {showAssignIcon && <Plus className="size-4" />}
-            {assignLabel}
+            {showAssignIcon ? <Plus className="size-4" /> : <Plus className="size-4 sm:hidden" aria-hidden="true" />}
+            <span className="hidden sm:inline">{assignLabel}</span>
           </Button>
         )}
         {pauseDialog}

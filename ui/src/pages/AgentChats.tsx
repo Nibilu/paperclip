@@ -49,6 +49,11 @@ function AgentChatsContent({ companyId, userId, enabled, loaded, agents, chats, 
       return null;
     }).find((path): path is string => path !== null)
     : undefined;
+  // Same eligibility rule as the sidebar roster: terminated and
+  // pending-approval agents cannot open new chats.
+  const chatableAgents = (agents.data ?? []).filter(
+    (agent) => agent.status !== "terminated" && agent.status !== "pending_approval",
+  );
   const primaryAgent = agents.data?.find(agent => agent.id === primary?.primaryAgentId
     && agent.status !== "terminated" && agent.status !== "pending_approval");
   const entryPath = recentChatPath ?? (loaded && enabled && !blockingError && !resolvingRecent
@@ -72,7 +77,7 @@ function AgentChatsContent({ companyId, userId, enabled, loaded, agents, chats, 
     {error ? <QueryErrorState error={error} action="load your chats" onRetry={() => { agentsView.retry(); chatsView.retry(); sessionView.retry(); }} />
       : agents.isPending || session.isPending ? <p role="status" className="text-sm text-muted-foreground">Loading agents…</p>
       : <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {(agents.data ?? []).slice(0, 6).map(agent => <button key={agent.id} type="button" disabled={openingId !== null}
+        {chatableAgents.slice(0, 6).map(agent => <button key={agent.id} type="button" disabled={openingId !== null}
           onClick={async () => {
             setOpeningId(agent.id); setOpenError(null);
             try { await openChat(agent); } catch (error) { setOpenError(error instanceof Error ? error.message : "Couldn’t open chat. Try again."); } finally { setOpeningId(null); }
@@ -82,7 +87,7 @@ function AgentChatsContent({ companyId, userId, enabled, loaded, agents, chats, 
         </button>)}
       </div>}
     {openError && <p role="alert" className="text-sm text-destructive">{openError}</p>}
-    {agents.data?.length === 0 && <p className="text-sm text-muted-foreground">Add an agent to start a conversation.</p>}
+    {chatableAgents.length === 0 && <p className="text-sm text-muted-foreground">Add an agent to start a conversation.</p>}
     <Button variant="ghost" className="self-start" asChild><Link to="/agents/all">Browse all agents</Link></Button>
   </div>;
 }
