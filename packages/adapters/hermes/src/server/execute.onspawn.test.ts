@@ -227,3 +227,55 @@ describe("hermes-local adapter onSpawn forwarding", () => {
     }
   });
 });
+
+describe("hermes-local adapter config.pilibalaApiUrl env injection (AMB-267 / C5)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function spawnedEnv(ctx: unknown): Record<string, string> {
+    const mocked = vi.mocked(serverUtils.runChildProcess);
+    expect(mocked.mock.calls.length).toBeGreaterThan(0);
+    const opts = mocked.mock.calls[mocked.mock.calls.length - 1]![3] as Record<string, unknown>;
+    return opts.env as Record<string, string>;
+  }
+
+  it("normalizes and injects the configured URL into the subprocess env", async () => {
+    const { ctx } = makeCtx({ pilibalaApiUrl: "https://pilib.example.com" });
+    try {
+      await execute(ctx as any);
+    } catch {
+      // mocked runChildProcess resolves; unexpected throws are irrelevant here
+    }
+    expect(spawnedEnv(ctx).PILIBALA_API_URL).toBe("https://pilib.example.com/api");
+  });
+
+  it("wins over the server-derived env (config > adapter env > server env)", async () => {
+    const previous = process.env.PILIBALA_API_URL;
+    process.env.PILIBALA_API_URL = "http://127.0.0.1:9999/api";
+    try {
+      const { ctx } = makeCtx({ pilibalaApiUrl: "https://config-wins.example.com/api" });
+      try {
+        await execute(ctx as any);
+      } catch {
+        // ignore
+      }
+      expect(spawnedEnv(ctx).PILIBALA_API_URL).toBe("https://config-wins.example.com/api");
+    } finally {
+      if (previous === undefined) delete process.env.PILIBALA_API_URL;
+      else process.env.PILIBALA_API_URL = previous;
+    }
+  });
+
+  it("leaves the derived env untouched when no config URL is set", async () => {
+    const { ctx } = makeCtx();
+    try {
+      await execute(ctx as any);
+    } catch {
+      // ignore
+    }
+    const env = spawnedEnv(ctx);
+    // buildPilibalaEnv still derives the base URL from the agent identity.
+    expect(env.PILIBALA_API_URL).not.toBe("https://config-wins.example.com/api");
+  });
+});

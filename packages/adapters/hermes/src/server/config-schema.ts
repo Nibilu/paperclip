@@ -14,6 +14,7 @@ import {
 } from "../shared/constants.js";
 
 const acpVisible = { visibleWhen: { key: "engine", values: ["acp"] } };
+const cliVisible = { visibleWhen: { key: "engine", values: ["cli"] } };
 
 function providerLabel(provider: string): string {
   if (provider === "auto") return "Auto";
@@ -128,6 +129,7 @@ export function getConfigSchema(): AdapterConfigSchema {
         type: "toggle",
         default: true,
         hint: "Resume Hermes sessions across Pilibala heartbeats.",
+        meta: cliVisible,
       },
       {
         key: "worktreeMode",
@@ -135,6 +137,7 @@ export function getConfigSchema(): AdapterConfigSchema {
         type: "toggle",
         default: false,
         hint: "Pass Hermes --worktree.",
+        meta: cliVisible,
       },
       {
         key: "checkpoints",
@@ -142,12 +145,13 @@ export function getConfigSchema(): AdapterConfigSchema {
         type: "toggle",
         default: false,
         hint: "Pass Hermes --checkpoints.",
+        meta: cliVisible,
       },
       {
         key: "quiet",
         label: "Quiet output",
         type: "toggle",
-        default: true,
+        default: false,
         hint: "Pass Hermes --quiet for cleaner Pilibala run transcripts.",
       },
       {
@@ -161,7 +165,7 @@ export function getConfigSchema(): AdapterConfigSchema {
         key: "pilibalaApiUrl",
         label: "Pilibala API URL",
         type: "text",
-        hint: "Optional API base override. Defaults to PILIBALA_API_URL.",
+        hint: "Prompt-text + subprocess env override for the CLI engine. The ACP engine ignores it; defaults to the server's PILIBALA_API_URL.",
       },
       {
         key: "promptTemplate",

@@ -173,13 +173,17 @@ export function buildPrompt(
   const companyName = cfgString(context.companyName) || cfgString(ctx.config?.companyName) || "";
   const projectName = cfgString(context.projectName) || cfgString(ctx.config?.projectName) || "";
 
-  // Build API URL — ensure it has the /api path
+  // Build API URL — ensure it has the /api path.
+  // Priority (AMB-254 follow-up C5): adapterConfig.pilibalaApiUrl → the
+  // server process's PILIBALA_API_URL → empty. The stale hardcoded
+  // http://127.0.0.1:3100/api default is gone: a wrong port is worse than an
+  // absent line, and the subprocess still inherits the server env at spawn.
   let pilibalaApiUrl =
     cfgString(config.pilibalaApiUrl) ||
     process.env.PILIBALA_API_URL ||
-    "http://127.0.0.1:3100/api";
+    "";
   // Ensure /api suffix
-  if (!pilibalaApiUrl.endsWith("/api")) {
+  if (pilibalaApiUrl && !pilibalaApiUrl.endsWith("/api")) {
     pilibalaApiUrl = pilibalaApiUrl.replace(/\/+$/, "") + "/api";
   }
 
@@ -688,6 +692,15 @@ export async function execute(
     ...buildPilibalaEnv(ctx.agent, ctx.agentIdentity),
     ...buildRuntimeToolsEnv(ctx.runtimeTools),
   };
+  // An explicit adapterConfig.pilibalaApiUrl wins for this subprocess
+  // (config > adapter env > server-derived env, AMB-254 follow-up C5),
+  // normalized to the /api suffix the prompt guidance assumes.
+  const configuredApiUrl = cfgString(config.pilibalaApiUrl);
+  if (configuredApiUrl) {
+    env.PILIBALA_API_URL = configuredApiUrl.endsWith("/api")
+      ? configuredApiUrl
+      : configuredApiUrl.replace(/\/+$/, "") + "/api";
+  }
 
   // Scope the overlay to this child process. Read the current bundle on every
   // invocation; never infer its availability from a persisted session ID.
