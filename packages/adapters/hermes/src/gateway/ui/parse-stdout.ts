@@ -1,5 +1,7 @@
 import type { TranscriptEntry } from "@pilibalaai/adapter-utils";
 
+import { shapeModernToolInput } from "../../ui/parse-stdout.js";
+
 /**
  * Strip ANSI escape sequences (CSI, OSC) from terminal text.
  * Same pattern used in claude-local adapter quota.ts.
@@ -74,6 +76,40 @@ export function parseHermesGatewayStdoutLine(line: string, ts: string): Transcri
     if (eventName === "reasoning.available") {
       const reasoning = extractReasoningText(data);
       return [{ kind: "thinking", ts, text: reasoning || "Hermes reasoning available" }];
+    }
+    // ── Tool lifecycle → real tool cards (parity with the ACP lane) ────────
+    // The gateway wire format carries structured fields per event
+    // (gateway/platforms/api_server_runs.py _FIXED_EVENT_FIELDS):
+    //   tool.started   {tool, preview, tool_call_id?}
+    //   tool.completed {tool, duration, error, tool_call_id?, preview}
+    // `preview` is the secret-redacted args/result summary (bounded to 500
+    // chars server-side BEFORE truncation), so rendering it is safe.
+    if (eventName === "tool.started") {
+      const toolName = asString(data?.tool) || "gateway_tool";
+      const toolUseId = asString(data?.tool_call_id) || toolName;
+      const preview = stripAnsi(asString(data?.preview));
+      return [{
+        kind: "tool_call",
+        ts,
+        name: toolName,
+        toolUseId,
+        input: preview ? shapeModernToolInput(toolName, preview) : {},
+      }];
+    }
+    if (eventName === "tool.completed") {
+      const toolName = asString(data?.tool) || "gateway_tool";
+      const toolUseId = asString(data?.tool_call_id) || toolName;
+      const preview = stripAnsi(asString(data?.preview));
+      const duration = Number(data?.duration);
+      const durationText = Number.isFinite(duration) && duration > 0 ? `${duration}s` : "";
+      return [{
+        kind: "tool_result",
+        ts,
+        toolUseId,
+        toolName,
+        content: preview || durationText,
+        isError: data?.error === true,
+      }];
     }
     return [{ kind: "system", ts, text: `Hermes event: ${eventName}` }];
   }

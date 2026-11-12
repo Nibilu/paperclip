@@ -182,7 +182,7 @@ function isThinkingLine(line: string): boolean {
 // ── Main parser ────────────────────────────────────────────────────────────
 
 /** Map a modern tool row onto the input field names the transcript UI summarizes. */
-function shapeModernToolInput(toolName: string, detail: string): Record<string, string> {
+export function shapeModernToolInput(toolName: string, detail: string): Record<string, string> {
   if (!detail) return {};
   switch (toolName) {
     case "terminal":
