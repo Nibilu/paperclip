@@ -123,7 +123,7 @@ it("saves identity on name submission before an adapter is selected", async () =
   expect(agents.create).toHaveBeenCalledTimes(1);
   const input = agents.create.mock.calls[0][1];
   expect(input).toMatchObject({ name: "Ada & Co", adapterType: "process", metadata: { setupAdapterPending: true }, runtimeConfig: { heartbeat: { enabled: false } } });
-  expect(document.body.textContent).toContain("Choose an adapter");
+  expect(document.body.textContent).toContain("Choose your agent/harness");
   expect(document.querySelector('input[name="new-agent-adapter"]:checked')).toBeNull();
   expect(state.navigate).not.toHaveBeenCalled();
   await act(async () => document.querySelector<HTMLInputElement>('input[value="codex_local"]')!.click());
@@ -138,11 +138,11 @@ it("retries a failed name save with the same identity", async () => {
   agents.create.mockRejectedValueOnce(new Error("Creation unavailable"));
   await name();
   expect(document.body.textContent).toContain("Creation unavailable");
-  expect(document.body.textContent).not.toContain("Choose an adapter");
+  expect(document.body.textContent).not.toContain("Choose your agent/harness");
   await click("Choose adapter");
   expect(agents.create).toHaveBeenCalledTimes(2);
   expect(agents.create.mock.calls[1][1].setupId).toBe(agents.create.mock.calls[0][1].setupId);
-  expect(document.body.textContent).toContain("Choose an adapter");
+  expect(document.body.textContent).toContain("Choose your agent/harness");
 });
 it("keeps the draft on adapter save failure and updates it on retry", async () => {
   await name();
@@ -173,7 +173,7 @@ it("ignores repeated name submission while the record is being saved", async () 
   });
   expect(agents.create).toHaveBeenCalledTimes(1);
   await act(async () => finish({ ...input, id: input.setupId }));
-  expect(document.body.textContent).toContain("Choose an adapter");
+  expect(document.body.textContent).toContain("Choose your agent/harness");
 });
 it("does not navigate after closing while an adapter save is pending", async () => {
   await name();

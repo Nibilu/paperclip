@@ -73,11 +73,13 @@ vi.mock("../adapters/metadata", () => ({ isVisualAdapterChoice: () => true }));
 vi.mock("../adapters/adapter-display-registry", () => ({
   getAdapterDisplay: (type: string) => ({
     type,
-    // Mirrors the real registry, where these five and only these five are
-    // `recommended` — the connect row is built from that flag, so a Copilot
-    // runner draft (not recommended) stays unofferable and snaps, while the
-    // row itself mirrors the registry's recommended members.
-    recommended: ["claude_local", "codex_local", "gemini_local", "hermes_gateway", "hermes_local"].includes(type),
+    // Mirrors the real registry: claude/codex/gemini are the zero-config
+    // recommended row; hermes (local + gateway) and pi are recommended but
+    // account-configured, so the wizard renders them in the provisioned-
+    // runtimes area instead. A Copilot runner draft (not recommended) stays
+    // unofferable and snaps.
+    recommended: ["claude_local", "codex_local", "gemini_local", "hermes_gateway", "hermes_local", "pi_local"].includes(type),
+    accountConfigured: ["hermes_gateway", "hermes_local", "pi_local"].includes(type),
     label: type,
     description: "",
     icon: () => null,

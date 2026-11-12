@@ -1251,7 +1251,7 @@ function OnboardingWizardInner({
   // Hermes agents can pick them during first-run setup. External/plugin
   // adapters automatically appear with generic defaults, and server-disabled
   // types are filtered out.
-  const { recommendedAdapters } = useMemo(() => {
+  const { recommendedAdapters, configuredAdapters, moreAdapters } = useMemo(() => {
     const all = listUIAdapters()
       .filter((a) =>
         !disabledTypes.has(a.type) &&
@@ -1259,13 +1259,27 @@ function OnboardingWizardInner({
       )
       .map((a) => ({ ...getAdapterDisplay(a.type), type: a.type }));
 
-    // The first-run row is the recommended focus; the Add Agent flow offers
-    // the full registry. Snapping treats only this row as "visible": a saved
-    // draft naming anything else must be answered again, not silently kept.
+    // The first-run grid is the recommended focus, split in two: zero-config
+    // sources (subscribe or paste a key) and account-configured adapters,
+    // which are hired through a provider/model selector on a runtime an
+    // administrator provisions on this machine or a linked remote gateway.
+    // The Add Agent flow offers the full registry. Snapping treats only these
+    // two rows as "visible": a saved draft naming anything else must be
+    // answered again, not silently kept.
+    const firstRun = all.filter((a) => a.recommended);
     return {
-      recommendedAdapters: all.filter((a) => a.recommended),
+      recommendedAdapters: firstRun.filter((a) => !a.accountConfigured),
+      configuredAdapters: firstRun.filter((a) => a.accountConfigured),
+      moreAdapters: all.filter((a) => !a.recommended && !a.comingSoon),
     };
   }, [disabledTypes]);
+  // Both rows answer the same question ("what runs this agent"), so every
+  // predicate that decides whether a choice is offerable reads the union.
+  const selectableSources = useMemo(
+    () => [...recommendedAdapters, ...configuredAdapters],
+    [recommendedAdapters, configuredAdapters],
+  );
+  const [showMoreAgents, setShowMoreAgents] = useState(false);
 
   /**
    * A source chosen from the visible row. Read off the row rather than off
@@ -1273,7 +1287,32 @@ function OnboardingWizardInner({
    * no longer offers — a selection the customer cannot see.
    */
   const sourceSelected =
-    sourcePicked && recommendedAdapters.some((opt) => opt.type === adapterType);
+    sourcePicked && selectableSources.some((opt) => opt.type === adapterType);
+
+  /**
+   * One handler for every source row on the connect step (zero-config,
+   * provisioned runtimes, and the expanded "More agents" list).
+   */
+  const pickSource = (id: string) => {
+    if (connectPhase !== "idle") return;
+    autoConnectStartedRef.current = false;
+    setSourcePicked(true);
+    setAdapterType(id);
+    if (id !== adapterType) {
+      setRunner("auto");
+      // A saved key picked for the previous source binds by
+      // that source's env key; carrying it across sources
+      // would bind the wrong credential (and for the
+      // gateway, hide the key field behind a selection it
+      // can never use).
+      setSelectedSavedKey(null);
+    }
+    if (id !== adapterType) {
+      if (id === "opencode_local") setModel(DEFAULT_OPENCODE_LOCAL_MODEL);
+      else if (id !== "codex_local") setModel("");
+    }
+    setConnectPhase("collapsing");
+  };
 
   /**
    * Whether the connect step may advance.
@@ -1320,7 +1359,7 @@ function OnboardingWizardInner({
           return null;
         }
       }
-      const provisionalAdapter = disabledTypes.has("process") ? recommendedAdapters[0]?.type : "process";
+      const provisionalAdapter = disabledTypes.has("process") ? selectableSources[0]?.type : "process";
       if (!sourceSelected && !provisionalAdapter) throw new Error("No agent adapters are available on this instance.");
       const createAdapter = sourceSelected ? adapterType : provisionalAdapter!;
       if (!stillTheSameCompany(companyId)) return null;
@@ -1709,7 +1748,7 @@ function OnboardingWizardInner({
     // external adapter is indistinguishable from a disabled one - and snapping
     // would replace the customer's choice with a built-in and persist it.
     if (!adapterRegistryLoaded) return;
-    const visible = recommendedAdapters.filter(
+    const visible = selectableSources.filter(
       (a) => !a.comingSoon,
     );
     if (visible.length === 0) {
@@ -1742,7 +1781,7 @@ function OnboardingWizardInner({
       return;
     }
     setModel("");
-  }, [adapterRegistryLoaded, recommendedAdapters, adapterType]);
+  }, [adapterRegistryLoaded, selectableSources, adapterType]);
 
   const COMMAND_PLACEHOLDERS: Record<string, string> = {
     claude_local: "claude",
@@ -3179,29 +3218,10 @@ function OnboardingWizardInner({
                       }
                       collapsed={connectCollapsed}
                       settling={connectPhase === "unwindRow"}
-                      onSelect={(id) => {
-                        if (connectPhase !== "idle") return;
-                        autoConnectStartedRef.current = false;
-                        setSourcePicked(true);
-                        setAdapterType(id);
-                        if (id !== adapterType) {
-                          setRunner("auto");
-                          // A saved key picked for the previous source binds by
-                          // that source's env key; carrying it across sources
-                          // would bind the wrong credential (and for the
-                          // gateway, hide the key field behind a selection it
-                          // can never use).
-                          setSelectedSavedKey(null);
-                        }
-                        if (id !== adapterType) {
-                          if (id === "opencode_local") setModel(DEFAULT_OPENCODE_LOCAL_MODEL);
-                          else if (id !== "codex_local") setModel("");
-                        }
-                        setConnectPhase("collapsing");
-                      }}
+                      onSelect={pickSource}
                     />
 
-                    {adapterRegistryLoaded && recommendedAdapters.length === 0 && (
+                    {adapterRegistryLoaded && selectableSources.length === 0 && (
                       <p role="status" className="text-sm text-muted-foreground">
                         Claude and Codex are unavailable on this instance. Ask an administrator to enable one,
                         or exit setup and choose New Agent on the Agents page to use another provider.
@@ -3237,6 +3257,68 @@ function OnboardingWizardInner({
                       </div>
                     </motion.div>
                   </div>
+
+                  {configuredAdapters.length > 0 && (
+                    <div className="space-y-1">
+                      <ModelSourceTiles
+                        label="Provisioned runtimes"
+                        sources={configuredAdapters.map((opt) => ({
+                          id: opt.type,
+                          label: CONNECT_SOURCE_NAMES[opt.type] ?? opt.label,
+                          icon: <ModelSourceMark type={opt.type} Fallback={opt.icon} />,
+                          // The credential tag under a tile names the row's
+                          // subscription/key mode; these adapters are hired
+                          // through an account instead, so their slot stays
+                          // empty rather than repeating the wrong promise.
+                          credentialMode: null,
+                        }))}
+                        mode={credentialMode}
+                        selectedId={
+                          sourcePicked &&
+                          configuredAdapters.some((opt) => opt.type === adapterType)
+                            ? adapterType
+                            : null
+                        }
+                        onSelect={pickSource}
+                      />
+                      <p className="px-3 text-sm text-muted-foreground">
+                        Run on a runtime your administrator provisions on this machine, or a
+                        linked remote gateway — sign in or configure a provider and model to use.
+                      </p>
+                    </div>
+                  )}
+
+                  {moreAdapters.length > 0 && (
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        className="cursor-pointer px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                        aria-expanded={showMoreAgents}
+                        onClick={() => setShowMoreAgents((value) => !value)}
+                      >
+                        {showMoreAgents ? "Fewer agents" : "More agents"}
+                      </button>
+                      {showMoreAgents && (
+                        <ModelSourceTiles
+                          label="All agents"
+                          sources={moreAdapters.map((opt) => ({
+                            id: opt.type,
+                            label: CONNECT_SOURCE_NAMES[opt.type] ?? opt.label,
+                            icon: <ModelSourceMark type={opt.type} Fallback={opt.icon} />,
+                            credentialMode: null,
+                          }))}
+                          mode={credentialMode}
+                          selectedId={
+                            sourcePicked &&
+                            moreAdapters.some((opt) => opt.type === adapterType)
+                              ? adapterType
+                              : null
+                          }
+                          onSelect={pickSource}
+                        />
+                      )}
+                    </div>
+                  )}
 
                   {/*
                     Room first, card second. `height` opens the space — which the

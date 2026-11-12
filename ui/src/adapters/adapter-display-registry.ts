@@ -55,6 +55,13 @@ export interface AdapterDisplayInfo {
   description: string;
   icon: ComponentType<{ className?: string }>;
   recommended?: boolean;
+  /**
+   * Hired through an account (provider + model) rather than a bare
+   * subscription/key: the runtime is provisioned by an administrator on this
+   * machine or a linked remote gateway. First-run setup renders these in
+   * their own area behind a provider/model selector, not the zero-config row.
+   */
+  accountConfigured?: boolean;
   comingSoon?: boolean;
   disabledLabel?: string;
   experimental?: boolean;
@@ -112,12 +119,14 @@ const adapterDisplayMap: Record<string, AdapterDisplayInfo> = {
     description: "Remote Hermes API server",
     icon: Bot,
     recommended: true,
+    accountConfigured: true,
   },
   hermes_local: {
     label: "Hermes",
     description: "Hermes harness",
     icon: Bot,
     recommended: true,
+    accountConfigured: true,
   },
   opencode_local: {
     label: "OpenCode",
@@ -128,6 +137,8 @@ const adapterDisplayMap: Record<string, AdapterDisplayInfo> = {
     label: "Pi",
     description: "Pi harness",
     icon: Terminal,
+    recommended: true,
+    accountConfigured: true,
   },
   cursor: {
     label: "Cursor",

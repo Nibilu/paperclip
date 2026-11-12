@@ -181,7 +181,7 @@ describe("New agent setup", () => {
     api.get.mockResolvedValue({ id: setupId, companyId: "company-1", name: "Atlas", adapterType: "process", adapterConfig: {}, runtimeConfig: {}, metadata: { setupAdapterPending: true }, pauseReason: "setup", status: "paused" });
     await renderCurrentParams();
     await settle();
-    expect(document.body.textContent).toContain("Choose an adapter");
+    expect(document.body.textContent).toContain("Choose your agent/harness");
     expect(api.create).not.toHaveBeenCalled();
     expect(api.testEnvironment).not.toHaveBeenCalled();
     await act(async () => document.querySelector<HTMLInputElement>('input[name="new-agent-adapter"][value="codex_local"]')!.click());
@@ -636,7 +636,7 @@ describe("New agent setup", () => {
     await renderCurrentParams();
     expect(container.textContent).toContain("Google Antigravity is not available yet");
     expect(container.textContent).toContain("Connect a model");
-    expect(container.textContent).not.toContain("Choose an adapter");
+    expect(container.textContent).not.toContain("Choose your agent/harness");
     expect(api.create).not.toHaveBeenCalled();
     expect(api.update).not.toHaveBeenCalled();
     expect(api.testEnvironment).not.toHaveBeenCalled();

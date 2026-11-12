@@ -225,7 +225,7 @@ export function AgentBasicsDialog({
                 <DialogTitle className="text-3xl font-semibold tracking-tight">
                   {step === "name"
                     ? "Meet your next agent"
-                    : "Choose an adapter"}
+                    : "Choose your agent/harness"}
                 </DialogTitle>
                 <DialogDescription className="text-base">
                   {step === "name"

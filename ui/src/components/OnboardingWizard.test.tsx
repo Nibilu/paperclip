@@ -223,7 +223,8 @@ vi.mock("../adapters/adapter-display-registry", () => ({
     // then sat in the "Advanced settings" disclosure and was reachable anyway;
     // with the step down to a tile row built from this flag, it made that row
     // empty in every test and hid the surface under it.
-    recommended: ["claude_local", "codex_local", "gemini_local", "hermes_gateway", "hermes_local"].includes(type) || mockAdapterRegistry.list.some(entry => entry.type === type && entry.recommended),
+    recommended: ["claude_local", "codex_local", "gemini_local", "hermes_gateway", "hermes_local", "pi_local"].includes(type) || mockAdapterRegistry.list.some(entry => entry.type === type && entry.recommended),
+    accountConfigured: ["hermes_gateway", "hermes_local", "pi_local"].includes(type),
     label: type,
     description: "",
     icon: () => null,
