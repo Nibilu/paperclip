@@ -39,6 +39,7 @@ vi.mock("node:fs/promises", () => ({
 }));
 
 import { execute } from "./execute.js";
+import { DEFAULT_TIMEOUT_SEC, DEFAULT_GRACE_SEC } from "../shared/constants.js";
 import * as serverUtils from "@pilibalaai/adapter-utils/server-utils";
 
 function makeCtx(overrides: Record<string, unknown> = {}) {
@@ -277,5 +278,58 @@ describe("hermes-local adapter config.pilibalaApiUrl env injection (AMB-267 / C5
     const env = spawnedEnv(ctx);
     // buildPilibalaEnv still derives the base URL from the agent identity.
     expect(env.PILIBALA_API_URL).not.toBe("https://config-wins.example.com/api");
+  });
+});
+
+describe("hermes-local adapter timeout semantics (AMB-268 / C6)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function spawnedOpts(ctx: unknown): Record<string, unknown> {
+    const mocked = vi.mocked(serverUtils.runChildProcess);
+    expect(mocked.mock.calls.length).toBeGreaterThan(0);
+    return mocked.mock.calls[mocked.mock.calls.length - 1]![3] as Record<string, unknown>;
+  }
+
+  async function runWith(configOverride: Record<string, unknown>) {
+    const { ctx } = makeCtx(configOverride);
+    try {
+      await execute(ctx as any);
+    } catch {
+      // mocked runChildProcess resolves; unrelated throws don't matter here
+    }
+    return spawnedOpts(ctx);
+  }
+
+  it("uses the configured positive timeout", async () => {
+    const opts = await runWith({ timeoutSec: 120, graceSec: 7 });
+    expect(opts.timeoutSec).toBe(120);
+    expect(opts.graceSec).toBe(7);
+  });
+
+  it("treats 0 (schema-untouched default) as the lane default, not 'no timeout'", async () => {
+    const opts = await runWith({ timeoutSec: 0 });
+    expect(opts.timeoutSec).toBe(DEFAULT_TIMEOUT_SEC);
+  });
+
+  it("treats a negative timeoutSec as the explicit no-timeout opt-out (never arms a timer)", async () => {
+    const opts = await runWith({ timeoutSec: -5, graceSec: -3 });
+    expect(opts.timeoutSec).toBe(0);
+    expect(opts.graceSec).toBe(DEFAULT_GRACE_SEC);
+  });
+
+  it("falls back to the lane default when unset", async () => {
+    const { ctx } = makeCtx();
+    delete (ctx.config as Record<string, unknown>).timeoutSec;
+    delete (ctx.config as Record<string, unknown>).graceSec;
+    try {
+      await execute(ctx as any);
+    } catch {
+      // ignore
+    }
+    const opts = spawnedOpts(ctx);
+    expect(opts.timeoutSec).toBe(DEFAULT_TIMEOUT_SEC);
+    expect(opts.graceSec).toBe(DEFAULT_GRACE_SEC);
   });
 });

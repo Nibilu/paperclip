@@ -550,8 +550,27 @@ export async function execute(
   // ── Resolve configuration ──────────────────────────────────────────────
   const hermesCmd = resolveHermesCommand(config);
   const model = cfgString(config.model) || DEFAULT_MODEL;
-  const timeoutSec = cfgNumber(config.timeoutSec) || DEFAULT_TIMEOUT_SEC;
-  const graceSec = cfgNumber(config.graceSec) || DEFAULT_GRACE_SEC;
+  // Timeout semantics aligned with the ACP lane's
+  // resolveAdapterExecutionTargetTimeout (AMB-254 follow-up C6): a positive
+  // value is the configured wall-clock timeout; a negative value is the
+  // explicit "no adapter wall-clock timeout" opt-out (runChildProcess treats
+  // timeoutSec<=0 as no timer — a raw negative used to arm an immediate
+  // SIGTERM); zero is the schema's untouched default and falls back to the
+  // lane default rather than being swallowed ambiguously.
+  const configuredTimeoutSec = cfgNumber(config.timeoutSec);
+  const timeoutSec =
+    configuredTimeoutSec === undefined || configuredTimeoutSec === 0
+      ? DEFAULT_TIMEOUT_SEC
+      : configuredTimeoutSec > 0
+        ? configuredTimeoutSec
+        : 0;
+  // Same guard for the grace window: a negative value would only be clamped
+  // downstream to a 1s kill timer; treat it as "not set".
+  const configuredGraceSec = cfgNumber(config.graceSec);
+  const graceSec =
+    configuredGraceSec !== undefined && configuredGraceSec > 0
+      ? configuredGraceSec
+      : DEFAULT_GRACE_SEC;
   const maxTurns = cfgNumber(config.maxTurnsPerRun);
   const toolsets = cfgString(config.toolsets) || cfgStringArray(config.enabledToolsets)?.join(",");
   const extraArgs = cfgStringArray(config.extraArgs);

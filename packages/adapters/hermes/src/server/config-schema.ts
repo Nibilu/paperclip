@@ -103,13 +103,14 @@ export function getConfigSchema(): AdapterConfigSchema {
         label: "Timeout seconds",
         type: "number",
         default: DEFAULT_TIMEOUT_SEC,
+        hint: "Wall-clock timeout for the run. Positive = timeout; 0 or empty = the default; negative = no adapter wall-clock timeout.",
       },
       {
         key: "graceSec",
         label: "Grace seconds",
         type: "number",
         default: DEFAULT_GRACE_SEC,
-        hint: "Seconds to wait after SIGTERM before killing the Hermes process.",
+        hint: "Seconds to wait after SIGTERM before killing the Hermes process. 0 or empty = the default.",
       },
       {
         key: "maxTurnsPerRun",
