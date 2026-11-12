@@ -542,3 +542,25 @@ describePostgres("heartbeat run state database wiring", () => {
     expect(retained.sessionDisplayId).toBe("retained");
   });
 });
+
+describe("hermes canonical session ids — unified-runtime local- shape (AMB-266)", () => {
+  const { isCanonicalSessionIdForAdapter, normalizeResumeParamsForAdapter } = extracted;
+
+  it("accepts the local-<sha256> receipt id that `hermes chat` mints today", () => {
+    const id = "local-4a526286d3d2cabcbee484a8e4bb0d57f679d06c7e0c01b0cc375a5c63b28d01";
+    expect(isCanonicalSessionIdForAdapter("hermes_local", id)).toBe(true);
+    expect(normalizeResumeParamsForAdapter("hermes_local", { sessionId: id })).toEqual({ sessionId: id });
+  });
+
+  it("keeps the classic mint and uuid shapes canonical", () => {
+    expect(isCanonicalSessionIdForAdapter("hermes_local", "20261112_090000_ab12cd")).toBe(true);
+    expect(isCanonicalSessionIdForAdapter("hermes_local", randomUUID())).toBe(true);
+  });
+
+  it("still rejects arbitrary strings as hermes session ids", () => {
+    expect(isCanonicalSessionIdForAdapter("hermes_local", "not-a-session")).toBe(false);
+    expect(isCanonicalSessionIdForAdapter("hermes_local", "local-")).toBe(false);
+    expect(isCanonicalSessionIdForAdapter("hermes_local", "local-zzzz")).toBe(false);
+    expect(normalizeResumeParamsForAdapter("hermes_local", { sessionId: "garbage" })).toBeNull();
+  });
+});

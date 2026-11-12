@@ -891,8 +891,15 @@ export type RunSessionOutcome =
 
 const HERMES_ADAPTER_TYPE = "hermes_local";
 
+// Canonical Hermes session ids: the classic mint (hermes_state_ids
+// new_session_id) `YYYYMMDD_HHMMSS_<hex>`, a uuid (ACP surfaces), or the
+// unified-runtime local receipt id `local-<sha256 hex>` (hermes_state_keys
+// local_identity) — the shape `hermes chat` runs mint today. Without the
+// local- branch every Pilibala-managed run's session was rejected as
+// non-canonical and resume silently degraded to fresh sessions
+// (AMB-266 / AMB-132 lineage).
 const HERMES_SESSION_ID_REGEX =
-  /^(?:\d{8}_\d{6}_[A-Za-z0-9_-]{4,}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
+  /^(?:\d{8}_\d{6}_[A-Za-z0-9_-]{4,}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|local-[0-9a-f]{16,64})$/;
 
 export function requiresCanonicalSessionIds(adapterType: string | null | undefined) {
   return adapterType === HERMES_ADAPTER_TYPE;
