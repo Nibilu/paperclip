@@ -5,7 +5,7 @@ import { withAccountHomeSecretMutationLock } from "@pilibalaai/adapter-codex-loc
 import { syncConnectionCredentialBindings } from "./connection-credential-bindings.js";
 import { createHash, randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
 import {
   type Db,
   authUsers,
@@ -100,6 +100,10 @@ export function aiConnectionService(db: Db) {
         and(
           eq(toolConnections.companyId, companyId),
           eq(toolConnections.connectionPurpose, "ai"),
+          // Removal archives the row (DELETE is a soft delete). Archived
+          // connections are dead: no credential resolution, not bindable, and
+          // the customer expects them gone from the connections list.
+          ne(toolConnections.status, "archived"),
         ),
       );
   }
