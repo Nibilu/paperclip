@@ -20,6 +20,7 @@ import { prepareManagedAiRuntime, assertManagedAiProjectAuth } from "./ai-connec
 import { isRunnerRevisionMismatch, runnerRevisionMismatchTestResult } from "./runner-revision-mismatch.js";
 import { aiConnectionService } from "./ai-connections.js";
 import { validateAiApiKey } from "./ai-api-key-test.js";
+import { discoverOpenAiCompatibleModels } from "./ai-gateway-models.js";
 import { probeCopilotExecutionTarget } from "./copilot-connection-probe.js";
 import type { PluginWorkerManager } from "./plugin-worker-manager.js";
 import { assertEnvironmentSelectionForCompany } from "./environment-selection.js";
@@ -621,6 +622,29 @@ export function agentEnvironmentTestService(db: Db, pluginWorkerManager?: Plugin
     const nativePiOpenRouter = adapterType === "pilibala_runner" && context.config.provider === "acpx"
       && context.config.acpxAgent === "pi" && binding.provider === "openrouter"
       && asRecord(context.config.managedAiRouting)?.kind === "openrouter";
+    // Gateway/local destinations are user-managed OpenAI-compatible endpoints:
+    // the credential resolves from the vault per grant (projected into env, or
+    // auth "none"), and the provider CLI hello probe does not apply — the
+    // endpoint itself is the provider. Prove the account live the same way
+    // creation did: fetch the endpoint's model catalog with its own key.
+    const managedRouting = asRecord(context.config.managedAiRouting);
+    const managedRoutingKind = typeof managedRouting?.kind === "string" ? managedRouting.kind : undefined;
+    if (managedRoutingKind === "gateway" || managedRoutingKind === "local") {
+      const baseUrl = typeof managedRouting?.baseUrl === "string" ? managedRouting.baseUrl.trim() : "";
+      const noAuth = managedRouting?.auth === "none";
+      const env = parseObject(context.config.env);
+      const projectedKey = Object.values(env).find((value): value is string => typeof value === "string" && value.length > 0);
+      const discovery = await discoverOpenAiCompatibleModels(baseUrl, noAuth ? undefined : projectedKey);
+      if (!baseUrl || !discovery.models.length) {
+        result.status = "fail";
+        result.checks.push({ code: "ai_connection_gateway_unreachable", level: "error", retryable: true,
+          message: `The gateway did not return a model catalog${discovery.reason ? ` (${discovery.reason})` : ""}. Check the base URL and API key.` });
+        return finishManagedConnectionTest(adapterType, context, result);
+      }
+      result.checks.push({ code: "ai_connection_gateway_verified", level: "info",
+        message: `The gateway verified this account and exposed ${discovery.models.length} models. No model prompt was sent.` });
+      return finishManagedConnectionTest(adapterType, context, result);
+    }
     if (resolvedMethod === "api_key" && (!context.config.managedAiRouting || nativePiOpenRouter)) {
       const envKey = AI_CONNECTION_CAPABILITIES[binding.provider].methods.api_key?.envKey;
       const key = envKey ? parseObject(context.config.env)[envKey] : undefined;

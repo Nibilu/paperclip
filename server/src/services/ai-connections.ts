@@ -289,16 +289,11 @@ export function aiConnectionService(db: Db) {
     // the binding first, but an unknown mode must never skip those checks.
     if (binding.mode !== "responsible_user" && binding.mode !== "shared" && binding.mode !== "delegated")
       throw aiConnectionConfigurationFailure("ai_connection_incompatible", "Select a supported AI connection mode");
-    if (
-      !isAiConnectionCompatible(
-        binding,
-        input.adapterType,
-        input.model,
-        input.runnerProvider,
-        input.acpxAgent,
-      )
-    )
-      throw aiConnectionConfigurationFailure("ai_connection_incompatible", "Select an AI connection compatible with this harness and model");
+    // Compatibility is decided authoritatively below, against the resolved
+    // connection's metadata (routing included). A bare responsible_user
+    // binding carries only the coerced provider name — judging it here would
+    // reject personal-default gateway connections that this harness serves
+    // fine.
     if (binding.mode === "responsible_user" && !userId)
       throw aiConnectionConfigurationFailure("ai_connection_responsible_user_missing", "This run needs a responsible user to select an AI connection");
     if (userId && !(await membership(companyId, userId)))

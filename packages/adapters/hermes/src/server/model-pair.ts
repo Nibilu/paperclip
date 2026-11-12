@@ -63,7 +63,10 @@ export async function validateHermesAdapterConfig(
   });
 
   const entries = await listProviders().catch(() => [] as HermesProviderEntryLike[]);
-  if (entries.length > 0 && !entries.some((entry) => entry.name === provider)) {
+  // Provider names arrive in two casings: the registry/config entry (e.g.
+  // "Riceapis") and config.yaml's current-provider value (e.g. "riceapis").
+  const wantedProvider = provider.toLowerCase();
+  if (entries.length > 0 && !entries.some((entry) => entry.name.toLowerCase() === wantedProvider)) {
     throw new Error(
       `Unknown model provider "${provider}". Pick a provider from the setup catalog — Pilibala keeps the provider/model pair validated end to end.`,
     );
