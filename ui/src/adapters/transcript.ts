@@ -58,6 +58,21 @@ function takeBufferedStdoutLines(
   const leading = buffer.length - buffer.trimStart().length;
   const first = buffer[leading];
   if (first !== "{" && first !== "[") return null;
+  if (first === "[") {
+    // A `[`-opening buffer is only a JSON stream if its first line actually
+    // parses as JSON. The hermes-gateway lane persists SSE event envelopes as
+    // `[hermes-gateway:event] run=… data={…}` — plain text that merely starts
+    // with a bracket — and the depth scanner below would shred those lines at
+    // every bracket pair, leaking envelope fragments into stdout and breaking
+    // tool-card classification (gateway tool cards, AMB-254 follow-up).
+    const firstLineEnd = buffer.indexOf("\n", leading);
+    const firstLine = firstLineEnd === -1 ? buffer.slice(leading) : buffer.slice(leading, firstLineEnd);
+    try {
+      JSON.parse(firstLine.trim());
+    } catch {
+      return null;
+    }
+  }
   const lines: string[] = [];
   let depth = 0;
   let start = leading;

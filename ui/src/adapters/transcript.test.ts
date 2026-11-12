@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { buildTranscript, createTranscriptBuilder, quietTranscriptFromAdapterConfig, type RunLogChunk } from "./transcript";
 import { grokLocalUIAdapter } from "./grok-local";
 import { kimiLocalUIAdapter } from "./kimi-local";
+import { hermesGatewayUIAdapter } from "./hermes-gateway";
+import { parseStdoutLine as parseHermesGatewayStdoutLine } from "@pilibalaai/hermes-pilibala-adapter/gateway/ui";
 import type { TranscriptEntry } from "./types";
 import type { UIAdapterModule } from "./types";
 
@@ -411,5 +413,80 @@ describe("createTranscriptBuilder (incremental streaming)", () => {
       for (const chunk of acpChunks) builder.append([chunk]);
       builder.flush();
       expect(builder.entries.map((e) => e.kind)).toEqual(["thinking", "tool_call", "tool_call", "tool_result", "assistant"]);
+    });
+  });
+
+  describe("hermes-gateway SSE envelopes", () => {
+    const gwChunk = (text: string, i: number): RunLogChunk => ({
+      ts: `2026-03-20T13:00:00.00${i}Z`,
+      stream: "stdout",
+      chunk: text,
+    });
+
+    it("classifies envelope lines as thinking/tool cards instead of shredding them as JSON", () => {
+      // Realistic gateway lane log: system prelude + SSE event envelopes.
+      // The envelopes START with `[` (from "[hermes-gateway:event]") which used
+      // to trip the JSON line-buffer's depth scanner and split every line at
+      // bracket boundaries — leaking envelope fragments as stdout and breaking
+      // tool-card classification.
+      const gwChunks: RunLogChunk[] = [
+        gwChunk("[hermes-gateway] run created: run_abc123\n", 0),
+        gwChunk(
+          '[hermes-gateway:event] run=run_abc123 event=message.delta data={"delta":"正在检查"}\n',
+          1,
+        ),
+        gwChunk(
+          '[hermes-gateway:event] run=run_abc123 event=message.delta data={"delta":"目录内容"}\n',
+          2,
+        ),
+        gwChunk(
+          '[hermes-gateway:event] run=run_abc123 event=tool.started data={"tool":"terminal","preview":"ls -la","tool_call_id":"call_1"}\n',
+          3,
+        ),
+        gwChunk(
+          '[hermes-gateway:event] run=run_abc123 event=tool.completed data={"tool":"terminal","duration":12,"error":false,"tool_call_id":"call_1","preview":"total 0"}\n',
+          4,
+        ),
+        gwChunk(
+          '[hermes-gateway:event] run=run_abc123 event=reasoning.available data={"text":"先看目录再回答"}\n',
+          5,
+        ),
+        gwChunk(
+          '[hermes-gateway:event] run=run_abc123 event=run.completed data={"output":"目录为空"}\n',
+          6,
+        ),
+      ];
+
+      const entries = buildTranscript(gwChunks, hermesGatewayUIAdapter, { quiet: false });
+
+      const kinds = entries.map((e) => e.kind);
+      expect(kinds).toContain("tool_call");
+      expect(kinds).toContain("tool_result");
+      expect(kinds).toContain("thinking");
+
+      // Assistant deltas coalesce into ONE entry; no envelope text leaks.
+      const assistant = entries.filter((e): e is Extract<TranscriptEntry, { kind: "assistant" }> => e.kind === "assistant");
+      expect(assistant).toHaveLength(1);
+      expect(assistant[0]!.text).toBe("正在检查目录内容");
+      for (const entry of entries) {
+        const text = entry.kind === "stdout" ? entry.text : entry.kind === "system" ? entry.text : "";
+        expect(text).not.toContain("[hermes-gateway:event]");
+      }
+
+      const call = entries.find((e): e is Extract<TranscriptEntry, { kind: "tool_call" }> => e.kind === "tool_call");
+      expect(call?.toolUseId).toBe("call_1");
+      const result = entries.find((e): e is Extract<TranscriptEntry, { kind: "tool_result" }> => e.kind === "tool_result");
+      expect(result?.toolUseId).toBe("call_1");
+      expect(result?.content).toBe("total 0");
+    });
+
+    it("keeps bracket-opening plain text in the newline buffer without JSON.parse", () => {
+      const bracketChunks: RunLogChunk[] = [
+        gwChunk("[hermes-gateway:event] run=run_x event=tool.started data={\"tool\":\"terminal\",\"preview\":\"echo hi\",\"tool_call_id\":\"c9\"}\n", 0),
+        gwChunk("[trailing plain line\n", 1),
+      ];
+      const entries = buildTranscript(bracketChunks, parseHermesGatewayStdoutLine, { quiet: false });
+      expect(entries.map((e) => e.kind)).toEqual(["tool_call", "stdout"]);
+      expect(entries[1]!.kind === "stdout" && entries[1]!.text).toBe("[trailing plain line");
     });
   });
