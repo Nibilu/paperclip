@@ -40,7 +40,7 @@ import {
   redactPathText,
 } from "./RunDetails";
 
-export function LogViewer({ run, adapterType }: { run: HeartbeatRun; adapterType: string }) {
+export function LogViewer({ run, adapterType, quiet = false }: { run: HeartbeatRun; adapterType: string; quiet?: boolean }) {
   const { visible } = usePageVisibility();
   const connection = useConnectivityStore();
   const [events, setEvents] = useState<HeartbeatRunEvent[]>([]);
@@ -431,8 +431,8 @@ export function LogViewer({ run, adapterType }: { run: HeartbeatRun; adapterType
   }, []);
 
   const transcript = useMemo(
-    () => buildTranscript(logLines, adapter, { censorUsernameInLogs }),
-    [adapter, censorUsernameInLogs, logLines, parserTick],
+    () => buildTranscript(logLines, adapter, { censorUsernameInLogs, quiet }),
+    [adapter, censorUsernameInLogs, logLines, parserTick, quiet],
   );
   const toolDecisionLookup = useQuery({
     queryKey: queryKeys.tools.runDecisions(run.companyId, run.id),

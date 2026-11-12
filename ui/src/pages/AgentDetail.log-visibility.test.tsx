@@ -18,13 +18,48 @@ vi.mock("@tanstack/react-query", async (original) => ({
 vi.mock("../adapters", () => ({
   getUIAdapter: () => null,
   onAdapterChange: () => () => {},
-  buildTranscript: (lines: unknown[]) => lines,
+  buildTranscript: (lines: unknown[], _adapter?: unknown, opts?: { quiet?: boolean }) =>
+    opts?.quiet === true
+      ? (lines as Array<{ chunk: string }>).filter((line) => !line.chunk.includes("quiet-drop"))
+      : lines,
 }));
 vi.mock("../components/transcript/RunTranscriptView", () => ({
   RunTranscriptView: ({ entries }: { entries: Array<{ chunk: string }> }) => <div>{entries.map(line => line.chunk).join(" ")}</div>,
 }));
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); log.mockReset(); events.mockReset(); events.mockResolvedValue([]); });
+
+it("threads the agent quiet control into the run-page transcript (AMB-259 gap 2)", async () => {
+  const row = (seq: number, chunk: string) => JSON.stringify({ seq, ts: `2026-09-10T12:00:0${seq}Z`, stream: "stdout", chunk }) + "\n";
+  const content = row(1, "quiet-drop thinking body") + row(2, "kept answer body");
+  log.mockResolvedValueOnce({ content, nextOffset: content.length });
+  const run = { id: "run-quiet", companyId: "company-1", agentId: "agent-1", status: "succeeded", logRef: "log" } as HeartbeatRun;
+
+  // quiet=true (from the agent's adapterConfig): quiet-filtered entries.
+  const quietContainer = document.createElement("div");
+  document.body.append(quietContainer);
+  const quietRoot = createRoot(quietContainer);
+  try {
+    await act(async () => quietRoot.render(<LogViewer run={run} adapterType="codex_local" quiet={true} />));
+    expect(quietContainer.textContent).toContain("kept answer body");
+    expect(quietContainer.textContent).not.toContain("quiet-drop thinking body");
+  } finally {
+    await act(async () => quietRoot.unmount());
+  }
+
+  // quiet=false (verbose or unset): full transcript, nothing dropped.
+  const fullContainer = document.createElement("div");
+  document.body.append(fullContainer);
+  const fullRoot = createRoot(fullContainer);
+  try {
+    log.mockResolvedValueOnce({ content, nextOffset: content.length });
+    await act(async () => fullRoot.render(<LogViewer run={{ ...run, id: "run-full" }} adapterType="codex_local" />));
+    expect(fullContainer.textContent).toContain("kept answer body");
+    expect(fullContainer.textContent).toContain("quiet-drop thinking body");
+  } finally {
+    await act(async () => fullRoot.unmount());
+  }
+});
 
 it("retains legacy history and reads only the next offset on visibility recovery", async () => {
   const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");

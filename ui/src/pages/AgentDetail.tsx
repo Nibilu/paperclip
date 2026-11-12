@@ -177,6 +177,7 @@ import {
 } from "./agent-detail-navigation";
 import { LogViewer } from "../components/run-log/LogViewer";
 import { asRecord, asNonEmptyString } from "../components/run-log/RunDetails";
+import { quietTranscriptFromAdapterConfig } from "../adapters/transcript";
 
 export { LogViewer } from "../components/run-log/LogViewer";
 export {
@@ -3506,7 +3507,7 @@ function RunDetail({ run: initialRun, agentRouteId, adapterType, adapterConfig }
       })()}
 
       {/* Log viewer */}
-      <LogViewer run={run} adapterType={adapterType} />
+      <LogViewer run={run} adapterType={adapterType} quiet={quietTranscriptFromAdapterConfig(adapterConfig)} />
       <ScrollToBottom />
       <RunnerInspector
         runId={run.id}
