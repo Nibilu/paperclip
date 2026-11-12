@@ -2369,7 +2369,7 @@ export function agentRoutes(
     const provider = asNonEmptyString(config.provider);
     if (!provider || (type === "hermes_local" && provider === "auto")) return;
     const providers = await listAdapterProviders(type);
-    if (providers && !providers.some((entry) => entry.name === provider)) {
+    if (providers && !providers.some((entry) => entry.name.toLowerCase() === provider.toLowerCase())) {
       throw unprocessable("Unsupported provider for this adapter");
     }
   }

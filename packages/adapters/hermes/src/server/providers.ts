@@ -7,6 +7,9 @@
  *    (plugins/model-providers/*), enumerated through the Hermes venv's Python.
  *    Each entry carries name, base URL, credential env vars, and fallback
  *    models. This is what the UI shows as the "Model provider" options.
+ *    User-defined gateways from config.yaml `custom_providers` are merged in:
+ *    `key_env` supplies the credential env var and the cached `models` map
+ *    becomes the fallback list (inline `api_key` values are never read).
  *
  * 2. Live model list — when a provider exposes an OpenAI-compatible
  *    /v1/models endpoint and a credential exists in ~/.hermes/.env (or the
@@ -106,6 +109,29 @@ for p in list_providers():
         "envVars": [v for v in (getattr(p, "env_vars", ()) or ()) if isinstance(v, str)],
         "fallbackModels": [m for m in (getattr(p, "fallback_models", ()) or ()) if isinstance(m, str)],
     })
+try:
+    import yaml
+    with open("/home/amber/.hermes/config.yaml", "r", encoding="utf-8") as handle:
+        cfg = yaml.safe_load(handle) or {}
+    known = {e["name"].lower() for e in out}
+    for cp in (cfg.get("custom_providers") or []):
+        if not isinstance(cp, dict):
+            continue
+        cname = str(cp.get("name") or "").strip()
+        cbase = str(cp.get("base_url") or "").strip()
+        if not cname or not cbase or cname.lower() in known:
+            continue
+        raw_models = cp.get("models")
+        cmodels = [str(m) for m in (raw_models.keys() if isinstance(raw_models, dict) else (raw_models or []))]
+        out.append({
+            "name": cname,
+            "baseUrl": cbase,
+            "envVars": [str(cp["key_env"])] if cp.get("key_env") else [],
+            "fallbackModels": cmodels,
+        })
+        known.add(cname.lower())
+except Exception:
+    pass
 print(json.dumps(out))
 `;
   let lastError: unknown = null;
@@ -183,7 +209,11 @@ export async function listHermesProviderModels(
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.result;
 
   const entries = await listHermesProviders();
-  const entry = entries.find((candidate) => candidate.name === provider);
+  // Provider names arrive from two casings: the registry/config entry
+  // (e.g. "Riceapis") and config.yaml's current-provider value (e.g.
+  // "riceapis"). Match case-insensitively so both resolve to one entry.
+  const wanted = provider.toLowerCase();
+  const entry = entries.find((candidate) => candidate.name.toLowerCase() === wanted);
   const fallback: HermesModelListResult = {
     provider,
     models: entry?.fallbackModels ?? [],
