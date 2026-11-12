@@ -1619,6 +1619,38 @@ describe("AgentConfigForm environment selector", () => {
     expect(container.textContent).not.toContain("No environment variables");
   });
 
+  it.each([
+    { adapterType: "hermes_local" },
+    { adapterType: "hermes_gateway" },
+  ])("keeps the Run Policy section reachable on the $adapterType runtime (harness) view", async ({ adapterType }) => {
+    // Regression guard for the UP-PORT 2026-11 drop (AMB-260): the runtime view
+    // used to pass hiddenSections={["identity", "run-policy"]}, which removed
+    // the only edit surface for timeout/grace/persist-session/heartbeat on
+    // existing agents. The section must render for every adapter type.
+    mockEnvironmentsApi.list.mockResolvedValue([
+      makeEnvironment({ id: "local-1", name: "Local", driver: "local" }),
+    ]);
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    roots.push(root);
+    const agent = {
+      ...makeAgent({ adapterType, adapterConfig: {} }),
+      chainOfCommand: [],
+      access: { canAssignTasks: false, taskAssignSource: "none" as const, membership: null, grants: [] },
+    };
+    await act(async () => renderFormView(root, createFormQueryClient(), <MemoryRouter>
+      <ConfigurationTab agent={agent} companyId="company-1" content="runtime"
+        onDirtyChange={vi.fn()} onSaveActionChange={vi.fn()} onCancelActionChange={vi.fn()} onSavingChange={vi.fn()}
+        updatePermissions={{ mutate: vi.fn(), isPending: false }} />
+    </MemoryRouter>));
+    await flushReact();
+
+    expect(container.querySelector('[data-config-section="run-policy"]')).not.toBeNull();
+    expect(container.textContent).toContain("Run Policy");
+    expect(container.textContent).toContain("Heartbeat on interval");
+  });
+
   it("shows concise Environment copy when one runnable non-local environment exists", async () => {
     const result = await renderForm(e2bEnvironments());
     roots.push(result.root);

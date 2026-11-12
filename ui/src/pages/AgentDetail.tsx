@@ -1755,7 +1755,7 @@ export function ConfigurationTab({
         environmentVariablesPlacement={content === "secrets" ? "secrets" : "configuration"}
         compactTestFeedback
         sectionOrder={["adapter", "configuration", "environment", "environment-variables"]}
-        hiddenSections={["identity", "run-policy"]}
+        hiddenSections={["identity"]}
         sectionTitles={{ adapter: "", configuration: "", environment: "" }}
         canConfigureProviderTrace={canConfigureProviderTrace}
       /> : null}
