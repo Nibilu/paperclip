@@ -283,7 +283,10 @@ const TOKEN_USAGE_REGEX =
  * - A "Query: " line opens suppression; every following line is echo body and
  *   is dropped until a structural signal ends it (a ┊ tool line, an
  *   [hermes]/[pilibala]/session_id: line, or the banner's opening ──── rule).
- * - Banner separators, the ☤ title line, and the resume hint never display.
+ * - ──── separators and the ☤ title line are preserved as parser structure:
+ *   the stateful UI parser (createHermesStdoutParser) turns reasoning blocks
+ *   into thinking entries and banner bodies into assistant entries. The resume
+ *   hint and session-summary footer never display.
  * - Quiet-mode and legacy output have no "Query:" line and pass through.
  * parseHermesOutput is unaffected: it parses the complete stdout collected by
  * runChildProcess, not the filtered live stream.
@@ -306,6 +309,10 @@ export function createCliLiveStreamFilter(): (chunk: string) => string | null {
       if (suppressing) {
         if (/^─{8,}$/.test(trimmed)) {
           suppressing = false;
+          // Pass the structural separator through: the stateful UI parser
+          // needs it to tell a reasoning box opening (dim text next) from the
+          // answer banner opening (☤ Hermes next).
+          out += `${line}\n`;
         } else if (
           /^(\[hermes\]|\[pilibala\]|session_id:)/.test(trimmed) ||
           trimmed.includes("┊") ||
@@ -319,7 +326,13 @@ export function createCliLiveStreamFilter(): (chunk: string) => string | null {
         }
         continue;
       }
-      if (/^─{8,}$/.test(trimmed) || /^☤/.test(trimmed)) continue;
+      // ──── separators and the ☤ banner title are STRUCTURE, not chrome: the
+      // stateful UI parser consumes them as reasoning-box / answer-banner
+      // boundaries, so the live feed must keep them.
+      if (/^─{8,}$/.test(trimmed) || /^☤/.test(trimmed)) {
+        out += `${line}\n`;
+        continue;
+      }
       // Session-summary footer (newer CLI builds print this block instead of
       // a single "Reconciled session" hint line). Parser reads the resume id
       // from the complete stdout, so the live feed can drop it wholesale.

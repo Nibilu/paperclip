@@ -58,17 +58,55 @@ describe.each(CHUNKINGS)("createCliLiveStreamFilter [%s chunking]", (mode) => {
     expect(out).not.toContain("Company ID: 22bb83e2");
     expect(out).not.toContain("## Task");
     expect(out).not.toContain("今天是星期几");
-    expect(out).not.toContain("☤");
-    expect(out).not.toContain("────────────────────────");
     expect(out).not.toContain("Reconciled session local-0609d045");
   });
 
-  it("keeps the real answer, tool activity, and adapter banners", () => {
+  it("keeps the real answer, tool activity, adapter banners, and parser structure", () => {
     const out = forwardAll(mode, CLASSIC_RUN_STDOUT);
     expect(out).toContain("今天是 2026 年 11 月 4 日，星期三。");
     expect(out).toContain("┊ 💻 $");
     expect(out).toContain("[hermes] Reconciled 6 Pilibala-managed skill(s)");
     expect(out).toContain("[hermes] Starting Hermes Agent");
+    // ──── separators and the ☤ title are STRUCTURE for the stateful UI
+    // parser (createHermesStdoutParser): reasoning-box / banner boundaries.
+    expect(out).toContain("────────────────────────");
+    expect(out).toContain("☤ Hermes");
+  });
+
+  it("emits the banner open/close separators for the parser", () => {
+    const out = forwardAll(mode, CLASSIC_RUN_STDOUT);
+    const separators = out.split("\n").filter((l) => /^─{8,}$/.test(l.trim()));
+    // In this fixture the echo ends at the ┊ tool row, so only the banner's
+    // opening and closing separators are emitted.
+    expect(separators).toHaveLength(2);
+  });
+});
+
+describe("createCliLiveStreamFilter reasoning-block structure (AMB-254 UI parity)", () => {
+  it("emits the echo-end separator when a reasoning box directly follows the echo", () => {
+    const filter = createCliLiveStreamFilter();
+    const raw = [
+      'Query: You are "HM-Cli", an AI agent employee.',
+      "Pilibala runtime identity: Agent ID 19e9c7ad",
+      "────────────────────────────────────────",
+      "先定位 run id，再读日志字段。",
+      "∴ Thought for 3s · 定位日志",
+      "────────────────────────────────────────",
+      "💻 $ echo probe  0.2s",
+    ].join("\n");
+    let acc = "";
+    for (const chunk of raw.split("\n").map((l) => `${l}\n`)) {
+      const out = filter(chunk);
+      if (out) acc += out;
+    }
+    const lines = acc.split("\n").filter(Boolean);
+    // Line 1: the separator that ends echo suppression — the stateful parser
+    // uses it to open the reasoning block, so it must survive.
+    expect(lines[0]).toMatch(/^─{8,}$/);
+    expect(acc).toContain("先定位 run id，再读日志字段。");
+    expect(acc).toContain("💻 $ echo probe  0.2s");
+    expect(acc).not.toContain("Query:");
+    expect(acc).not.toContain("Pilibala runtime identity");
   });
 });
 

@@ -181,6 +181,121 @@ function isThinkingLine(line: string): boolean {
 
 // ── Main parser ────────────────────────────────────────────────────────────
 
+/** Map a modern tool row onto the input field names the transcript UI summarizes. */
+function shapeModernToolInput(toolName: string, detail: string): Record<string, string> {
+  if (!detail) return {};
+  switch (toolName) {
+    case "terminal":
+    case "execute_code":
+      return { command: detail };
+    case "read_file":
+    case "write_file":
+    case "patch":
+      return { path: detail };
+    case "search_files":
+      return { pattern: detail };
+    case "web_search":
+    case "session_search":
+      return { query: detail };
+    case "browser":
+    case "browser_snapshot":
+      return { url: detail };
+    case "image_generate":
+    case "vision_analyze":
+      return { prompt: detail };
+    default:
+      // "text" is in the summarizer's recognized fallback list, so unknown
+      // tools still render their preview instead of "detail payload".
+      return { text: detail };
+  }
+}
+
+/**
+ * Stateful stdout parser for the modern (non-quiet) Hermes CLI.
+ *
+ * The classic parser is line-stateless, but two modern-layout structures span
+ * lines and need state to classify (AMB-254 follow-up: UI parity with the ACP
+ * lane):
+ *
+ * - **Reasoning blocks**: `────` (dim separator) → dim reasoning lines →
+ *   `∴ Thought for Ns · Title` → `────`. The live filter used to drop the
+ *   separators, so the reasoning text fell into the assistant catch-all and
+ *   merged with the real reply. With the separators preserved, lines inside a
+ *   reasoning block become `thinking` entries — the same shape the ACP lane
+ *   emits for thought-channel deltas.
+ * - **Answer banner**: `────` → `☤ Hermes` → answer → `────`. Answer lines
+ *   become `assistant` entries; the chrome is consumed.
+ *
+ * The stateless `parseHermesStdoutLine` stays unchanged for compatibility;
+ * prefer this factory for UI transcript building.
+ */
+export interface HermesStdoutParser {
+  parseLine: (line: string, ts: string) => TranscriptEntry[];
+  reset: () => void;
+}
+
+export function createHermesStdoutParser(): HermesStdoutParser {
+  type Mode = "idle" | "pending-separator" | "reasoning" | "answer-banner";
+  let mode: Mode = "idle";
+  return {
+    reset() {
+      mode = "idle";
+    },
+    parseLine(line: string, ts: string): TranscriptEntry[] {
+      const trimmed = stripAnsi(line).trim();
+      if (!trimmed) return [];
+
+      if (mode === "reasoning") {
+        if (/^─{8,}$/.test(trimmed)) {
+          mode = "idle";
+          return [];
+        }
+        // CLI chrome inside the block: the "∴ Thought for Ns" summary and the
+        // "... N more lines" notice. The thinking text above carries content.
+        if (/^∴ /.test(trimmed) || /^\.\.\. \(\d+ more lines/.test(trimmed)) {
+          return [];
+        }
+        return [{ kind: "thinking", ts, text: trimmed, delta: true }];
+      }
+
+      if (mode === "answer-banner") {
+        if (/^─{8,}$/.test(trimmed)) {
+          mode = "idle";
+          return [];
+        }
+        return [{ kind: "assistant", ts, text: trimmed }];
+      }
+
+      if (/^─{8,}$/.test(trimmed)) {
+        // Could open a reasoning box (followed by dim text) or the answer
+        // banner (followed by ☤ Hermes) — decide on the NEXT line.
+        mode = "pending-separator";
+        return [];
+      }
+      if (/^Query:\s/.test(trimmed)) {
+        // Echo head (the live filter normally suppresses this; the parser
+        // stays self-sufficient when fed raw lines).
+        return [];
+      }
+      if (mode === "pending-separator") {
+        if (/^☤/.test(trimmed)) {
+          mode = "answer-banner";
+          return [];
+        }
+        // Anything else after a lone separator: a reasoning box opened.
+        mode = "reasoning";
+        if (/^∴ /.test(trimmed) || /^\.\.\. \(\d+ more lines/.test(trimmed)) return [];
+        return [{ kind: "thinking", ts, text: trimmed, delta: true }];
+      }
+      if (/^☤/.test(trimmed)) {
+        // Stray banner title without its separator — chrome either way.
+        return [];
+      }
+      return parseHermesStdoutLine(line, ts);
+    },
+  };
+}
+
 /**
  * Classify a modern (non-quiet) Hermes CLI tool completion row.
  *
@@ -293,12 +408,16 @@ export function parseModernHermesToolRow(
     .trim();
   const id = syntheticToolUseId();
   const resultText = durationMatch ? `${detail}  ${durationMatch[1]}s` : detail;
+  // Shape the input with the field names the transcript UI's tool-card
+  // summarizer reads (command/path/query/…) so a CLI lane card renders like
+  // the ACP lane's card for the same tool instead of "detail payload".
+  const input = shapeModernToolInput(toolName, detail);
   return [
     {
       kind: "tool_call" as const,
       ts,
       name: toolName,
-      input: { detail },
+      input,
       toolUseId: id,
     },
     {

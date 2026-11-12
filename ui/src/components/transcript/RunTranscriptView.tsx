@@ -278,7 +278,9 @@ function summarizeToolInput(name: string, input: unknown, density: TranscriptDen
   }
 
   const direct =
-    summarizeRecord(record, ["command", "cmd", "path", "filePath", "file_path", "query", "url", "prompt", "message"])
+    // "code" added so execute_code cards (ACP `code` field, CLI rows shaped to
+    // `code`/`command`) render the snippet instead of "code payload".
+    summarizeRecord(record, ["command", "cmd", "code", "path", "filePath", "file_path", "query", "url", "prompt", "message"])
     ?? summarizeRecord(record, ["pattern", "name", "title", "target", "tool", "text"])
     ?? null;
   if (direct) return truncate(direct, compactMax);
