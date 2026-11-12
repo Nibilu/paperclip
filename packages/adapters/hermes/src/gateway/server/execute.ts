@@ -53,7 +53,8 @@ type TerminalState = {
 
 type ExecutionState = {
   runId: string;
-  outputChunks: string[];
+  /** Contiguous assistant output segments; a non-delta event starts a new one. */
+  outputSegments: string[];
   lastEventName: string | null;
   gatewayBaseUrl: URL;
   gatewayHeaders: Record<string, string>;
@@ -528,7 +529,7 @@ function createExecutionState(input: {
   });
   return {
     runId: input.runId,
-    outputChunks: [],
+    outputSegments: [],
     lastEventName: null,
     gatewayBaseUrl: input.baseUrl,
     gatewayHeaders: input.headers,
@@ -572,6 +573,7 @@ async function handleEvent(
   const parsed = parseJsonData(frame.data);
   const record = asRecord(parsed);
   const eventName = eventNameFromData(parsed, frame.event);
+  const previousEventName = state.lastEventName;
   state.lastEventName = eventName;
   const delta = asString(record?.delta, "") || asString(record?.text_delta, "");
   const sanitizedDelta = eventName === "message.delta" && delta ? redactText(delta) : null;
@@ -585,7 +587,14 @@ async function handleEvent(
   );
 
   if (sanitizedDelta !== null) {
-    state.outputChunks.push(sanitizedDelta);
+    // Segment boundaries: a delta that follows any other event opens a new
+    // contiguous assistant output segment. mapFinalResultForTest takes the
+    // last segment as the run summary (acpx buildAcpxRunSummary semantics,
+    // AMB-269 / C7) instead of joining every delta ever streamed.
+    if (previousEventName !== "message.delta" || state.outputSegments.length === 0) {
+      state.outputSegments.push("");
+    }
+    state.outputSegments[state.outputSegments.length - 1] += sanitizedDelta;
     // No bare-delta onLog here. The [hermes-gateway:event] envelope above is
     // the single persisted record for this delta; the gateway UI parser
     // (gateway/ui/parse-stdout.ts) extracts and delta-merges the text from it.
@@ -818,6 +827,15 @@ function terminalExecutionRecovery(status: string): AdapterExecutionResult["exec
     : undefined;
 }
 
+/** acpx buildAcpxRunSummary semantics: the last non-empty output segment. */
+function lastNonEmptyOutputSegment(segments: string[]): string {
+  for (let i = segments.length - 1; i >= 0; i -= 1) {
+    const text = (segments[i] ?? "").trim();
+    if (text) return text;
+  }
+  return "";
+}
+
 function terminalResultCode(status: string): { exitCode: number; signal: string | null; errorCode: string | null } {
   if (status === "completed") return { exitCode: 0, signal: null, errorCode: null };
   if (FAILURE_STATUSES.has(status)) return { exitCode: 1, signal: null, errorCode: "hermes_gateway_run_failed" };
@@ -827,15 +845,20 @@ function terminalResultCode(status: string): { exitCode: number; signal: string 
 
 export function mapFinalResultForTest(input: {
   terminal: TerminalState;
-  outputChunks: string[];
+  outputSegments: string[];
   sessionKey: string | null;
   strategy: SessionKeyStrategy;
   redactText?: TextRedactor;
 }): AdapterExecutionResult {
   const redactText = input.redactText ?? sanitizeSensitiveText;
   const payload = input.terminal.payload ?? {};
+  // Last-resort summary semantics aligned with the shared engine's
+  // buildAcpxRunSummary (AMB-269 / C7): the run summary is the LAST
+  // contiguous assistant output segment, never the concatenation of every
+  // delta ever streamed — a full join could stitch tool/turn boundaries and
+  // status text into the reply.
   const output = redactText(
-    input.terminal.output ?? extractOutput(payload) ?? input.outputChunks.join("").trim(),
+    input.terminal.output ?? extractOutput(payload) ?? lastNonEmptyOutputSegment(input.outputSegments),
   );
   const sessionId = extractSessionId(payload) ?? input.sessionKey;
   const sessionDisplayId = sessionId ? redactText(sessionId) : null;
@@ -1204,7 +1227,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   return mapFinalResultForTest({
     terminal: outcome,
-    outputChunks: state.outputChunks,
+    outputSegments: state.outputSegments,
     sessionKey,
     strategy,
     redactText,

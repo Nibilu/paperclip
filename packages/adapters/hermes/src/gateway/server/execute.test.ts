@@ -984,7 +984,7 @@ describe("gateway connection failure reporting", () => {
       terminal: { runId: "run-remote", status, payload: {
         error: "ECONNREFUSED", code: "ECONNREFUSED",
         connectionFailure: marker("create_run", "connection_refused"),
-      } }, outputChunks: [], sessionKey: null, strategy: "none",
+      } }, outputSegments: [], sessionKey: null, strategy: "none",
     });
     expect(result.resultJson?.connectionFailure).toBeUndefined();
     expect(result.errorCode).toBe(status === "completed" ? undefined : status === "failed" ? "hermes_gateway_run_failed" : "hermes_gateway_cancelled");
@@ -1411,7 +1411,7 @@ describe("mapFinalResultForTest", () => {
         status: "failed",
         payload: { status: "failed", error: "boom" },
       },
-      outputChunks: [],
+      outputSegments: [],
       sessionKey: "session-key",
       strategy: "issue",
     });
@@ -1428,7 +1428,7 @@ describe("mapFinalResultForTest", () => {
         eventName: "run.cancelled",
         payload: { status: "cancelled", last_event: "run.cancelled" },
       },
-      outputChunks: [],
+      outputSegments: [],
       sessionKey: "session-key",
       strategy: "issue",
     });
@@ -1468,7 +1468,7 @@ describe("mapFinalResultForTest", () => {
         status: "completed",
         payload: { status: "completed", session_id: sessionKey },
       },
-      outputChunks: [],
+      outputSegments: [],
       sessionKey,
       strategy: "issue",
     });
@@ -1483,11 +1483,58 @@ describe("mapFinalResultForTest", () => {
   it("falls back to the inbound session key when the payload omits session_id", () => {
     const result = mapFinalResultForTest({
       terminal: { runId: "run-4", status: "completed", payload: { status: "completed" } },
-      outputChunks: [],
+      outputSegments: [],
       sessionKey: "pilibala:company:c1:agent:a1",
       strategy: "agent",
     });
     expect(result.sessionId).toBe("pilibala:company:c1:agent:a1");
     expect(result.sessionDisplayId).toBe("[redacted-session-key]");
+  });
+});
+
+describe("mapFinalResultForTest — last-segment summary fallback (AMB-269 / C7)", () => {
+  const base = {
+    sessionKey: "session-key",
+    strategy: "issue" as const,
+  };
+
+  it("takes the LAST contiguous delta segment when the terminal payload has no output", () => {
+    const result = mapFinalResultForTest({
+      ...base,
+      terminal: { runId: "run-3", status: "completed", payload: { status: "completed" } },
+      outputSegments: ["first message about the scan", "", "final answer for the user"],
+    });
+    expect(result.summary).toBe("final answer for the user");
+  });
+
+  it("skips empty trailing segments and never joins across segments", () => {
+    const result = mapFinalResultForTest({
+      ...base,
+      terminal: { runId: "run-4", status: "completed", payload: {} },
+      outputSegments: ["earlier turn", "later turn", "", ""],
+    });
+    expect(result.summary).toBe("later turn");
+  });
+
+  it("returns no summary when no segment carried text", () => {
+    const result = mapFinalResultForTest({
+      ...base,
+      terminal: { runId: "run-5", status: "completed", payload: {} },
+      outputSegments: ["", ""],
+    });
+    expect(result.summary).toBeUndefined();
+  });
+
+  it("terminal payload output still wins over the delta segments (normal path unchanged)", () => {
+    const result = mapFinalResultForTest({
+      ...base,
+      terminal: {
+        runId: "run-6",
+        status: "completed",
+        payload: { status: "completed", output: "authoritative terminal output" },
+      },
+      outputSegments: ["delta-built segment"],
+    });
+    expect(result.summary).toBe("authoritative terminal output");
   });
 });
