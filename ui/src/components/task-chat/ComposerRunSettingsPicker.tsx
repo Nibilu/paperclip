@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, ChevronDown, Plus, RotateCcw, Search, X, Zap } from "lucide-react";
 import { aiRuntimeConnectionBindingSchema, agentHarnessType, type Agent, type IssueAssigneeAdapterOverrides } from "@paperclipai/shared";
@@ -8,6 +8,7 @@ import { COPILOT_MODEL_DISCOVERY_QUERY_OPTIONS, copilotTaskModelCatalogOptions }
 import { cn } from "@/lib/utils";
 import { useMobileEntityPickerViewportStyle } from "@/hooks/useMobileEntityPickerViewportStyle";
 import { getLastComposerEffort, rememberComposerEffort } from "@/lib/recent-composer-effort";
+import { scoreFuzzyTextFields } from "@/lib/searchable-select";
 import type { InlineEntityOption } from "@/components/InlineEntitySelector";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -168,8 +169,24 @@ export function ComposerRunSettingsPicker({
       .toLowerCase().includes(assigneeSearch.trim().toLowerCase());
   });
   const query = modelSearch.trim();
-  const filteredModels = models.filter((item) =>
-    `${item.label} ${item.id}`.toLowerCase().includes(query.toLowerCase()));
+  // Typed words match in any order against label and id (e.g. "sonnet 4" finds
+  // "claude-sonnet-4-5" / "Sonnet 4.5"), the same word-wise matching the
+  // settings model fields offer, and the best matches surface first.
+  const filteredModels = useMemo(() => {
+    if (!query) return models;
+    return models
+      .map((item, index) => ({
+        item,
+        index,
+        score: scoreFuzzyTextFields([
+          { text: item.label, weight: 0 },
+          { text: item.id, weight: 20 },
+        ], query),
+      }))
+      .filter((entry): entry is { item: (typeof models)[number]; index: number; score: number } => entry.score !== null)
+      .sort((left, right) => left.score - right.score || left.index - right.index)
+      .map((entry) => entry.item);
+  }, [models, query]);
   const exactMatch = models.some((item) => item.id.toLowerCase() === query.toLowerCase());
   const needsProvider = agent && (["opencode_local", "pi_local", "kimi_local"].includes(agent.adapterType)
     || (agent.adapterType === "paperclip_runner" && provider === "opencode"));
