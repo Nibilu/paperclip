@@ -240,6 +240,33 @@ describe("composer assignee picker", () => {
     }
   });
 
+  it("suggests models from the words typed in any order", async () => {
+    render(vi.fn(), vi.fn(), false, { modelOptionsOverride: [
+      { id: "claude-sonnet-4-5", label: "Sonnet 4.5" },
+      { id: "claude-opus-4-1", label: "Opus 4.1" },
+      { id: "gpt-6-sol", label: "GPT-6 Sol" },
+    ] });
+    await click("Select model and effort");
+    await click("Choose exact model");
+    const input = document.querySelector<HTMLInputElement>('input[aria-label="Search or paste a model ID"]')!;
+    const setValue = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
+    const optionText = () => [...document.querySelectorAll<HTMLButtonElement>('button[role="option"]')]
+      .map((option) => option.textContent ?? "");
+    for (const [search, expected, excluded] of [
+      ["sonnet 4", "Sonnet 4.5", "GPT-6 Sol"],
+      ["opus 41", "Opus 4.1", "Sonnet 4.5"],
+      ["sonnet", "Sonnet 4.5", "Opus 4.1"],
+      ["gpt sol", "GPT-6 Sol", "Opus 4.1"],
+    ] as const) {
+      flushSync(() => {
+        setValue.call(input, search);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      expect(optionText().some((text) => text.includes(expected))).toBe(true);
+      expect(optionText().some((text) => text.includes(excluded))).toBe(false);
+    }
+  });
+
   it("offers the Codex CLI catalog instead of unrelated OpenAI API models", async () => {
     vi.spyOn(agentsApi, "adapterModels").mockResolvedValueOnce([
       { id: "gpt-6-sol", label: "GPT-6 Sol" },
